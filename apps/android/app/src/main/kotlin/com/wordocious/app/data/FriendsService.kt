@@ -40,13 +40,14 @@ object FriendsService {
         val streak: Int? = null,
         val playedToday: Int? = null,
         val weekPoints: Int? = null,
+        val todayPoints: Int? = null,  // §216 additive: today's total, for the race strip
         val h2hW: Int? = null,
         val h2hL: Int? = null,
         val remindedAt: String? = null,
     )
 
     @Serializable
-    data class MeDigest(val playedToday: Int = 0, val weekPoints: Int = 0)
+    data class MeDigest(val playedToday: Int = 0, val weekPoints: Int = 0, val todayPoints: Int? = null)
 
     /** The caller's own digest for the weekly podium (§212). */
     var meDigest: MeDigest? = null; private set

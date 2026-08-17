@@ -22,6 +22,7 @@ export interface FriendProfile {
   streak?: number;
   playedToday?: number;
   weekPoints?: number;
+  todayPoints?: number;
   h2hW?: number;
   h2hL?: number;
   remindedAt?: string | null;
@@ -85,8 +86,8 @@ export async function loadFriends(force = false): Promise<void> {
 }
 
 /** The caller's own digest (playedToday/weekPoints) for the weekly podium. */
-let meDigest: { playedToday: number; weekPoints: number } | null = null;
-export const getMeDigest = (): { playedToday: number; weekPoints: number } | null => meDigest;
+let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number } | null = null;
+export const getMeDigest = (): { playedToday: number; weekPoints: number; todayPoints?: number } | null => meDigest;
 
 /** Nudge a pending invite (§212) — 24h rate limit lives server-side. */
 export async function remindFriend(addresseeId: string): Promise<{ remindedAt?: string; error?: string }> {

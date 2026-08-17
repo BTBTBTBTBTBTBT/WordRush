@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   };
   const friends: Array<Prof & {
     since: string | null; streak: number;
-    playedToday?: number; weekPoints?: number; h2hW?: number; h2hL?: number;
+    playedToday?: number; weekPoints?: number; todayPoints?: number; h2hW?: number; h2hL?: number;
   }> = [];
   const incoming: Array<Prof & { requestedAt: string }> = [];
   const outgoing: string[] = [];
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
   // Engagement digest (Aug 11): one daily_results sweep answers "who played
   // today", "who's winning the week", and the 90-day head-to-head record —
   // per-day TOTAL points across all modes, me vs each friend.
-  let meDigest: { playedToday: number; weekPoints: number } | null = null;
+  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number } | null = null;
   if (wantDigest && friends.length >= 0) {
     const ids = [me, ...friends.map((f) => f.id)];
     const cutoff = new Date(`${day}T00:00:00Z`);
@@ -111,10 +111,17 @@ export async function GET(req: NextRequest) {
       }
       f.playedToday = playedCount.get(f.id) ?? 0;
       f.weekPoints = weekPointsOf(f.id);
+      // ADDITIVE (Aug 17): today's total points, for the "topped N of M
+      // friends today" strip. Shipped decoders ignore it.
+      f.todayPoints = Math.round(theirDays.get(day) ?? 0);
       f.h2hW = w;
       f.h2hL = l;
     }
-    meDigest = { playedToday: playedCount.get(me) ?? 0, weekPoints: weekPointsOf(me) };
+    meDigest = {
+      playedToday: playedCount.get(me) ?? 0,
+      weekPoints: weekPointsOf(me),
+      todayPoints: Math.round(myDays.get(day) ?? 0),
+    };
   }
 
   return NextResponse.json(

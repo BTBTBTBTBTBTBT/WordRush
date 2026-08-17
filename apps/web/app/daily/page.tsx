@@ -34,6 +34,7 @@ import {
   loadFriends,
   getFriendIds,
   getFriends,
+  getMeDigest,
   onFriendsChange,
   sendTaunt,
   type FriendProfile,
@@ -335,6 +336,16 @@ export default function DailyPage() {
       </div>
     );
 
+  // §216: on the FRIENDS board, the week's points leader wears the crown.
+  const crownId = (() => {
+    if (!friendsOnly || !user) return null;
+    void friendsVersion;
+    const entries = getFriends().map((f) => ({ id: f.id, pts: f.weekPoints ?? 0 }));
+    entries.push({ id: user.id, pts: getMeDigest()?.weekPoints ?? 0 });
+    entries.sort((a, b) => b.pts - a.pts);
+    return entries.length > 0 && entries[0].pts > 0 ? entries[0].id : null;
+  })();
+
   // One row of the leaderboard — shared by the top-50 list and the
   // "your neighborhood" rank window so they can never drift apart visually.
   const renderLbRow = (entry: LeaderboardEntry, rank: number, scoreLabels = lbScoreLabels) => {
@@ -361,6 +372,7 @@ export default function DailyPage() {
             style={{ color: 'var(--color-text)' }}
           >
             {entry.username}
+            {entry.user_id === crownId && <span> 👑</span>}
             {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
           </Link>
           <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>

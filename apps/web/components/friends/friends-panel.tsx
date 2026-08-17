@@ -124,9 +124,43 @@ export function FriendsPanel() {
         level: profile.level ?? 0, pts: meDigest?.weekPoints ?? 0, me: true,
       });
     }
+    // Always on (§216): a Monday-morning zero-point podium still shows the
+    // race — medals wait for the first score (see raceStarted below).
     entries.sort((a, b) => b.pts - a.pts);
-    return entries.slice(0, 3).filter((e) => e.pts > 0 || entries.some((x) => x.pts > 0));
+    return entries.slice(0, 3);
   })();
+  const raceStarted = podium.some((e) => e.pts > 0);
+
+  // §216: the week's leader wears the crown on roster rows (and on the
+  // friends leaderboard) — only once someone has actually scored.
+  const crownId = raceStarted ? podium[0].id : null;
+
+  // §216: "topped N of M friends today" — my day total vs each friend's.
+  const myToday = meDigest?.todayPoints ?? 0;
+  const toppedCount = myToday > 0
+    ? friends.filter((f) => (f.todayPoints ?? 0) < myToday).length
+    : 0;
+
+  // §216: friendversary chip on milestone days.
+  const friendversary = (f: FriendProfile): number | null => {
+    if (!f.since) return null;
+    const t = Date.parse(f.since);
+    if (!Number.isFinite(t)) return null;
+    const days = Math.floor((Date.now() - t) / 86_400_000);
+    return [7, 30, 100, 365].includes(days) ? days : null;
+  };
+
+  // §216: one tap nudges every friend who hasn't played today (server still
+  // enforces 1 taunt per friend per day).
+  const slackers = friends.filter((f) => f.playedToday === 0 && !isNewFriend(f));
+  const nudgeAll = async () => {
+    let n = 0;
+    for (const f of slackers) {
+      const r = await sendTaunt(f.id, 'slowpoke');
+      if (r.sent) n += 1;
+    }
+    setNote(n > 0 ? `Nudged ${n} friend${n === 1 ? '' : 's'} 🔔` : 'Everyone already nudged today');
+  };
 
   const fireTaunt = async (tauntId: string) => {
     if (!tauntTarget) return;
@@ -179,28 +213,63 @@ export function FriendsPanel() {
             {friends.length}
           </span>
         )}
+        {/* §216: one-tap nudge for everyone who hasn't played today. */}
+        {slackers.length > 0 && (
+          <button
+            onClick={nudgeAll}
+            aria-label="Nudge all friends who haven't played today"
+            className="ml-auto text-[10px] font-bold px-2 py-1 rounded-lg"
+            style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+          >
+            🔔 Nudge slackers
+          </button>
+        )}
       </div>
 
       {/* Weekly race podium (§212) — who owns the week among your circle. */}
       {podium.length > 0 && (
-        <div className="flex items-end justify-center gap-5 py-2">
-          {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
-            const e = podium[i];
-            const medal = ['🥇', '🥈', '🥉'][i];
-            return (
-              <div key={e.id} className={`flex flex-col items-center gap-0.5 ${i === 0 ? '-mt-2' : ''}`}>
-                <span className={i === 0 ? 'text-lg' : 'text-sm'}>{medal}</span>
-                <Avatar f={e as unknown as FriendProfile} />
-                <span className="text-[10px] font-black truncate max-w-[72px]"
-                  style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
-                  {e.username}
-                </span>
-                <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  {e.pts.toLocaleString()} pts
-                </span>
-              </div>
-            );
-          })}
+        <div>
+          <div className="flex items-end justify-center gap-5 py-2">
+            {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
+              const e = podium[i];
+              const medal = ['🥇', '🥈', '🥉'][i];
+              return (
+                <div key={e.id} className={`flex flex-col items-center gap-0.5 ${i === 0 ? '-mt-2' : ''}`}>
+                  {/* Medals wait for the first score of the week (§216). */}
+                  <span className={i === 0 ? 'text-lg' : 'text-sm'}>{raceStarted ? medal : '🏁'}</span>
+                  <Avatar f={e as unknown as FriendProfile} />
+                  <span className="text-[10px] font-black truncate max-w-[72px]"
+                    style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
+                    {e.username}
+                  </span>
+                  <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    {e.pts.toLocaleString()} pts
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {!raceStarted && (
+            <p className="text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              Race resets Mondays — first daily takes the lead.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* §216: today's race — how many friends you've topped so far. */}
+      {myToday > 0 && friends.length > 0 && (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span>TODAY&apos;S RACE</span>
+            <span>topped {toppedCount} of {friends.length} friend{friends.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-hover)' }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${Math.round((toppedCount / friends.length) * 100)}%`, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }}
+            />
+          </div>
         </div>
       )}
 
@@ -220,12 +289,23 @@ export function FriendsPanel() {
                   <span className="flex-1 min-w-0">
                     <span className="block text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
                       {f.username}
+                      {/* §216: the week's leader wears the crown. */}
+                      {f.id === crownId && <span className="ml-1"> 👑</span>}
                       {isNewFriend(f) && (
                         <span
                           className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
                           style={{ background: '#7c3aed22', color: '#7c3aed' }}
                         >
                           NEW
+                        </span>
+                      )}
+                      {/* §216: friendversary chip on milestone days. */}
+                      {friendversary(f) !== null && (
+                        <span
+                          className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
+                          style={{ background: '#ec489922', color: '#ec4899' }}
+                        >
+                          🎉 {friendversary(f)} DAYS
                         </span>
                       )}
                     </span>

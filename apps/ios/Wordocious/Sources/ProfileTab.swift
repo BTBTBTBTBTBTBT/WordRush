@@ -1517,7 +1517,9 @@ struct LeaderboardTab: View {
             // score alone on the right.
             NavigationLink(value: entry.userId) {
                 VStack(alignment: .leading, spacing: 2) {
-                    (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                    (Text(entry.username)
+                        + (entry.userId == crownId ? Text(" 👑") : Text(""))
+                        + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                         .minimumScaleFactor(0.7)
                     HStack(spacing: 5) {
@@ -1550,6 +1552,19 @@ struct LeaderboardTab: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+    }
+
+    /// §216: on the FRIENDS board, the week's points leader wears the crown.
+    private var crownId: String? {
+        guard friendsOnly else { return nil }
+        _ = friendsVersion
+        var entries = FriendsService.friends.map { (id: $0.id, pts: $0.weekPoints ?? 0) }
+        if let uid = auth.profile?.id {
+            entries.append((id: uid, pts: FriendsService.meDigest?.weekPoints ?? 0))
+        }
+        entries.sort { $0.pts > $1.pts }
+        guard let top = entries.first, top.pts > 0 else { return nil }
+        return top.id
     }
 
     /// FRIENDS ghost row — a friend who hasn't played this mode today, in the

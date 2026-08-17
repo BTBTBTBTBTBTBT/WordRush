@@ -140,6 +140,33 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = WTheme.textMuted,
                 )
             }
+            Spacer(Modifier.weight(1f))
+            // §216: one-tap nudge for everyone who hasn't played today
+            // (server still enforces 1 taunt per friend per day).
+            val slackers = friends.filter { it.playedToday == 0 && !isNewFriend(it) }
+            if (slackers.isNotEmpty()) {
+                Box(
+                    Modifier.clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF7C3AED).copy(alpha = 0.09f))
+                        .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(10.dp))
+                        .clickableNoRipple {
+                            scope.launch {
+                                var n = 0
+                                for (f in slackers) {
+                                    if (FriendsService.taunt(f.id, "slowpoke", com.wordocious.app.todayLocalDate()) == FriendsService.TauntOutcome.SENT) n++
+                                }
+                                note = if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"} 🔔" else "Everyone already nudged today"
+                            }
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        "🔔 Nudge slackers", fontSize = 10.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = Color(0xFF7C3AED), fontFamily = Nunito,
+                    )
+                }
+            }
         }
 
         // Weekly race podium (§212) — who owns the week among your circle.
@@ -154,34 +181,82 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                     FriendsService.meDigest?.weekPoints ?: 0, isMe = true,
                 )
             } else friendEntries
-            if (all.none { it.pts > 0 }) emptyList()
-            else all.sortedByDescending { it.pts }.take(3)
+            // Always on (§216): a Monday-morning zero-point podium still
+            // shows the race — medals wait for the first score.
+            all.sortedByDescending { it.pts }.take(3)
         }
+        val raceStarted = podium.any { it.pts > 0 }
+        // §216: the week's leader wears the crown — only once someone scored.
+        val crownId = if (raceStarted) podium.firstOrNull()?.id else null
         if (podium.isNotEmpty()) {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             ) {
-                listOf(1, 0, 2).filter { it < podium.size }.forEach { i ->
-                    val e = podium[i]
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp),
-                    ) {
-                        Text(listOf("🥇", "🥈", "🥉")[i], fontSize = if (i == 0) 20.sp else 14.sp)
-                        PodiumAvatar(e)
-                        Text(
-                            e.username, fontSize = 10.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                            color = if (e.isMe) Color(0xFF7C3AED) else WTheme.text, maxLines = 1,
-                        )
-                        Text(
-                            "${e.pts} pts", fontSize = 9.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
-                        )
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    listOf(1, 0, 2).filter { it < podium.size }.forEach { i ->
+                        val e = podium[i]
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp),
+                        ) {
+                            Text(if (raceStarted) listOf("🥇", "🥈", "🥉")[i] else "🏁", fontSize = if (i == 0) 20.sp else 14.sp)
+                            PodiumAvatar(e)
+                            Text(
+                                e.username, fontSize = 10.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                color = if (e.isMe) Color(0xFF7C3AED) else WTheme.text, maxLines = 1,
+                            )
+                            Text(
+                                "${e.pts} pts", fontSize = 9.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
+                            )
+                        }
                     }
+                }
+                if (!raceStarted) {
+                    Text(
+                        "Race resets Mondays — first daily takes the lead.",
+                        fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = WTheme.textMuted, fontFamily = Nunito,
+                    )
+                }
+            }
+        }
+
+        // §216: today's race — how many friends you've topped so far.
+        val myToday = FriendsService.meDigest?.todayPoints ?: 0
+        if (myToday > 0 && friends.isNotEmpty()) {
+            val topped = friends.count { (it.todayPoints ?: 0) < myToday }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "TODAY'S RACE", fontSize = 9.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                        letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "topped $topped of ${friends.size} friend${if (friends.size == 1) "" else "s"}",
+                        fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = WTheme.textMuted, fontFamily = Nunito,
+                    )
+                }
+                Box(
+                    Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
+                        .background(WTheme.surfaceHover),
+                ) {
+                    Box(
+                        Modifier.fillMaxWidth(topped.toFloat() / friends.size.coerceAtLeast(1))
+                            .height(6.dp).clip(RoundedCornerShape(3.dp))
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899)))),
+                    )
                 }
             }
         }
@@ -204,11 +279,27 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Text(
-                                f.username, fontSize = 12.sp,
+                                // §216: the week's leader wears the crown.
+                                if (f.id == crownId) "${f.username} 👑" else f.username,
+                                fontSize = 12.sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                                 color = WTheme.text, maxLines = 1,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
+                            // §216: friendversary chip on milestone days.
+                            friendversary(f)?.let { days ->
+                                Box(
+                                    Modifier.clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFEC4899).copy(alpha = 0.13f))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        "🎉 $days DAYS", fontSize = 8.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                        color = Color(0xFFEC4899), fontFamily = Nunito,
+                                    )
+                                }
+                            }
                             if (isNewFriend(f)) {
                                 Box(
                                     Modifier.clip(RoundedCornerShape(4.dp))
@@ -728,6 +819,16 @@ private fun isNewFriend(f: FriendsService.FriendProfile): Boolean {
         .recoverCatching { java.time.Instant.parse(since).toEpochMilli() }
         .getOrNull() ?: return false
     return System.currentTimeMillis() - t < 24 * 60 * 60 * 1000L
+}
+
+/** §216: friendship age in days when today is a milestone (7/30/100/365). */
+private fun friendversary(f: FriendsService.FriendProfile): Int? {
+    val since = f.since ?: return null
+    val t = runCatching { java.time.OffsetDateTime.parse(since).toInstant().toEpochMilli() }
+        .recoverCatching { java.time.Instant.parse(since).toEpochMilli() }
+        .getOrNull() ?: return null
+    val days = ((System.currentTimeMillis() - t) / 86_400_000L).toInt()
+    return if (days in listOf(7, 30, 100, 365)) days else null
 }
 
 @Composable

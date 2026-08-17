@@ -334,6 +334,16 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             }
         } else emptyList()
     }
+    // §216: on the FRIENDS board, the week's points leader wears the crown.
+    val crownId = remember(friendsOnly, friendsVersion) {
+        if (!friendsOnly || userId == null) null
+        else {
+            val racers = FriendsService.friends.map { it.id to (it.weekPoints ?: 0) } +
+                (userId to (FriendsService.meDigest?.weekPoints ?: 0))
+            val top = racers.maxByOrNull { it.second }
+            if (top != null && top.second > 0) top.first else null
+        }
+    }
     // Canned-taunt picker (§207): fixed phrases, one per friend per day.
     tauntTarget?.let { target ->
         androidx.compose.ui.window.Dialog(onDismissRequest = { tauntTarget = null; tauntStatus = null }) {
@@ -601,6 +611,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     }
                                 } else null,
                                 scoreLabel = lbScoreLabels[entry.compositeScore],
+                                crownId = crownId,
                             )
                             if (index < entries.size - 1) Divider()
                         }
@@ -1134,7 +1145,7 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null, crownId: String? = null) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -1159,6 +1170,8 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
             Text(
                 androidx.compose.ui.text.buildAnnotatedString {
                     append(entry.username ?: "Player")
+                    // §216: the week's leader wears the crown (friends board).
+                    if (entry.userId == crownId) append(" 👑")
                     if (isCurrentUser) {
                         withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
                     }

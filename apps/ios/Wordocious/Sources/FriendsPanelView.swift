@@ -41,25 +41,79 @@ struct FriendsPanelView: View {
                     Text("\(friends.count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
+                // §216: one-tap nudge for everyone who hasn't played today
+                // (server still enforces 1 taunt per friend per day).
+                let slackers = friends.filter { $0.playedToday == 0 && !isNewFriend($0) }
+                if !slackers.isEmpty {
+                    Button {
+                        Task {
+                            var n = 0
+                            for f in slackers {
+                                let outcome = await FriendsService.taunt(
+                                    friendId: f.id, tauntId: "slowpoke",
+                                    day: LeaderboardService.todayLocal())
+                                if outcome == .sent { n += 1 }
+                            }
+                            note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s") 🔔" : "Everyone already nudged today"
+                        }
+                    } label: {
+                        Text("🔔 Nudge slackers").font(Brand.font(10, .bold))
+                            .foregroundStyle(Color(hex: 0x7C3AED))
+                            .padding(.horizontal, 8).padding(.vertical, 5)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                    }.buttonStyle(.plain)
+                }
             }
 
-            // Weekly race podium (§212) — who owns the week among your circle.
+            // Weekly race podium (§212, always-on since §216) — who owns the
+            // week among your circle; medals wait for the first score.
             if !podium.isEmpty {
-                HStack(alignment: .bottom, spacing: 22) {
-                    ForEach(podiumOrder, id: \.entry.id) { slot in
-                        VStack(spacing: 2) {
-                            Text(["🥇", "🥈", "🥉"][slot.rank]).font(.system(size: slot.rank == 0 ? 20 : 14))
-                            AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
-                            Text(slot.entry.username).font(Brand.font(10, .black)).lineLimit(1)
-                                .foregroundStyle(slot.entry.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
-                                .frame(maxWidth: 76)
-                            Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                VStack(spacing: 4) {
+                    HStack(alignment: .bottom, spacing: 22) {
+                        ForEach(podiumOrder, id: \.entry.id) { slot in
+                            VStack(spacing: 2) {
+                                Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
+                                    .font(.system(size: slot.rank == 0 ? 20 : 14))
+                                AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
+                                Text(slot.entry.username).font(Brand.font(10, .black)).lineLimit(1)
+                                    .foregroundStyle(slot.entry.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
+                                    .frame(maxWidth: 76)
+                                Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                            }
+                            .padding(.top, slot.rank == 0 ? 0 : 8)
                         }
-                        .padding(.top, slot.rank == 0 ? 0 : 8)
+                    }
+                    .frame(maxWidth: .infinity)
+                    if !raceStarted {
+                        Text("Race resets Mondays — first daily takes the lead.")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     }
                 }
-                .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
+            }
+
+            // §216: today's race — how many friends you've topped so far.
+            if let myToday = FriendsService.meDigest?.todayPoints, myToday > 0, !friends.isEmpty {
+                let topped = friends.filter { ($0.todayPoints ?? 0) < myToday }.count
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("TODAY'S RACE").font(Brand.font(9, .black)).tracking(0.8)
+                            .foregroundStyle(Theme.textMuted)
+                        Spacer()
+                        Text("topped \(topped) of \(friends.count) friend\(friends.count == 1 ? "" : "s")")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.surfaceAlt)
+                            Capsule()
+                                .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                                .frame(width: geo.size.width * CGFloat(topped) / CGFloat(max(1, friends.count)))
+                        }
+                    }
+                    .frame(height: 6)
+                }
             }
 
             // Friends list — rows into their profiles (H2H lives there).
@@ -84,11 +138,20 @@ struct FriendsPanelView: View {
                                         HStack(spacing: 6) {
                                             Text(f.username).font(Brand.font(12, .heavy))
                                                 .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                            // §216: the week's leader wears the crown.
+                                            if f.id == crownId { Text("👑").font(.system(size: 11)) }
                                             if isNewFriend(f) {
                                                 Text("NEW").font(Brand.font(8, .black))
                                                     .foregroundStyle(Color(hex: 0x7C3AED))
                                                     .padding(.horizontal, 4).padding(.vertical, 2)
                                                     .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x7C3AED).opacity(0.13)))
+                                            }
+                                            // §216: friendversary chip on milestone days.
+                                            if let days = friendversary(f) {
+                                                Text("🎉 \(days) DAYS").font(Brand.font(8, .black))
+                                                    .foregroundStyle(Color(hex: 0xEC4899))
+                                                    .padding(.horizontal, 4).padding(.vertical, 2)
+                                                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xEC4899).opacity(0.13)))
                                             }
                                         }
                                         // §212: today's progress, streak, rivalry — the live row.
@@ -410,8 +473,21 @@ struct FriendsPanelView: View {
                                        pts: FriendsService.meDigest?.weekPoints ?? 0, isMe: true))
         }
         entries.sort { $0.pts > $1.pts }
-        guard entries.contains(where: { $0.pts > 0 }) else { return [] }
+        // Always on (§216): a Monday-morning zero-point podium still shows
+        // the race — medals wait for the first score (see raceStarted).
         return Array(entries.prefix(3))
+    }
+
+    private var raceStarted: Bool { podium.contains { $0.pts > 0 } }
+
+    /// §216: the week's leader wears the crown — only once someone scored.
+    private var crownId: String? { raceStarted ? podium.first?.id : nil }
+
+    /// §216: friendversary chip on milestone days.
+    private func friendversary(_ f: FriendsService.FriendProfile) -> Int? {
+        guard let since = f.since, let date = parseISO(since) else { return nil }
+        let days = Int(Date().timeIntervalSince(date) / 86_400)
+        return [7, 30, 100, 365].contains(days) ? days : nil
     }
 
     /// Silver–gold–bronze display order, tagged with the medal rank.

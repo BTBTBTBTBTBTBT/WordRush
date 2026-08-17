@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/expire-pro",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/friends-recap",
+      "schedule": "0 13 * * 1"
     }
   ]
 }

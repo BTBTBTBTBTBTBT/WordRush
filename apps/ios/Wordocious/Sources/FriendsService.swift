@@ -22,12 +22,13 @@ enum FriendsService {
         var streak: Int?
         var playedToday: Int?
         var weekPoints: Int?
+        var todayPoints: Int?   // §216 additive: today's total, for the race strip
         var h2hW: Int?
         var h2hL: Int?
         var remindedAt: String?
     }
 
-    struct MeDigest: Decodable, Equatable { let playedToday: Int; let weekPoints: Int }
+    struct MeDigest: Decodable, Equatable { let playedToday: Int; let weekPoints: Int; var todayPoints: Int? }
     static var meDigest: MeDigest?
 
     private struct FriendsPayload: Decodable {
