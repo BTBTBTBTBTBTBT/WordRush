@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.People
@@ -109,6 +110,12 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
         }
     }
 
+    // Two cards (founder ask, Aug 17): requests in flight moved out of the
+    // FRIENDS box into their own INVITES card — the roster reads finished
+    // even while invites are pending.
+    var inviteNote by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(inviteNote) { if (inviteNote != null) { delay(2_500); inviteNote = null } }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -132,37 +139,6 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                     "${friends.size}", fontSize = 12.sp,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = WTheme.textMuted,
                 )
-            }
-        }
-
-        // Incoming requests first — they're the actionable part.
-        if (incoming.isNotEmpty()) {
-            Text(
-                "FRIEND REQUESTS", fontSize = 10.sp,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
-            )
-            incoming.forEach { r ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FriendAvatar(r)
-                    Text(
-                        r.username, fontSize = 12.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                        color = WTheme.text, maxLines = 1,
-                        modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
-                    )
-                    Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(Color(0xFF7C3AED))
-                            .clickableNoRipple { scope.launch { FriendsService.accept(r.id) } },
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Filled.Check, "Accept ${r.username}", tint = Color.White, modifier = Modifier.size(14.dp)) }
-                    Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(WTheme.surfaceHover)
-                            .border(1.5.dp, WTheme.border, CircleShape)
-                            .clickableNoRipple { scope.launch { FriendsService.decline(r.id) } },
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Filled.Close, "Decline ${r.username}", tint = WTheme.textMuted, modifier = Modifier.size(14.dp)) }
-                }
             }
         }
 
@@ -204,70 +180,6 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                         Text(
                             "${e.pts} pts", fontSize = 9.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
-                        )
-                    }
-                }
-            }
-        }
-
-        // Sent requests — the loop's missing feedback (Tier 1, Aug 11):
-        // sending a request now visibly puts something here, with a cancel.
-        if (outgoing.isNotEmpty()) {
-            Text(
-                "SENT — WAITING", fontSize = 10.sp,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
-            )
-            outgoing.forEach { r ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FriendAvatar(r)
-                    Text(
-                        buildAnnotatedString {
-                            append(r.username)
-                            withStyle(SpanStyle(color = WTheme.textMuted, fontSize = 10.sp)) {
-                                append("  · ${agoShort(r.requestedAt)}")
-                            }
-                        },
-                        fontSize = 12.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                        color = WTheme.text, maxLines = 1,
-                        modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
-                    )
-                    // §212: the invite usually died unseen — re-push, 1/24h.
-                    val reminded = withinDay(r.remindedAt)
-                    Box(
-                        Modifier.clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF7C3AED).copy(alpha = 0.09f))
-                            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(10.dp))
-                            .clickableNoRipple {
-                                if (reminded) return@clickableNoRipple
-                                scope.launch {
-                                    note = when (FriendsService.remind(r.id)) {
-                                        FriendsService.RemindOutcome.REMINDED -> "Reminder sent to ${r.username} 🔔"
-                                        FriendsService.RemindOutcome.ALREADY -> "Already reminded today"
-                                        FriendsService.RemindOutcome.FAILED -> "Could not remind"
-                                    }
-                                }
-                            }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                            .alpha(if (reminded) 0.55f else 1f),
-                    ) {
-                        Text(
-                            if (reminded) "Reminded" else "Remind", fontSize = 10.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                            color = Color(0xFF7C3AED), fontFamily = Nunito,
-                        )
-                    }
-                    Box(
-                        Modifier.clip(RoundedCornerShape(10.dp)).background(WTheme.surfaceHover)
-                            .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
-                            .clickableNoRipple { scope.launch { FriendsService.decline(r.id) } }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            "Cancel", fontSize = 10.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                            color = WTheme.textMuted, fontFamily = Nunito,
                         )
                     }
                 }
@@ -456,6 +368,136 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
         note?.let {
             Text(it, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.textMuted)
         }
+    }
+
+    // INVITES card — requests in flight (incoming + sent), split out of the
+    // FRIENDS card so the roster reads finished (founder ask, Aug 17).
+    // Renders only when something is actually pending.
+    if (incoming.isNotEmpty() || outgoing.isNotEmpty()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(WTheme.surface, RoundedCornerShape(20.dp))
+            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(15.dp))
+            Text(
+                "INVITES",
+                fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                style = TextStyle(
+                    brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
+                    fontFamily = Nunito,
+                ),
+            )
+            Text(
+                "${incoming.size + outgoing.size}", fontSize = 12.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = WTheme.textMuted,
+            )
+        }
+
+        // Incoming requests first — they're the actionable part.
+        if (incoming.isNotEmpty()) {
+            Text(
+                "FRIEND REQUESTS", fontSize = 10.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
+            )
+            incoming.forEach { r ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FriendAvatar(r)
+                    Text(
+                        r.username, fontSize = 12.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                        color = WTheme.text, maxLines = 1,
+                        modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
+                    )
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(Color(0xFF7C3AED))
+                            .clickableNoRipple { scope.launch { FriendsService.accept(r.id) } },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Check, "Accept ${r.username}", tint = Color.White, modifier = Modifier.size(14.dp)) }
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape).background(WTheme.surfaceHover)
+                            .border(1.5.dp, WTheme.border, CircleShape)
+                            .clickableNoRipple { scope.launch { FriendsService.decline(r.id) } },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Close, "Decline ${r.username}", tint = WTheme.textMuted, modifier = Modifier.size(14.dp)) }
+                }
+            }
+        }
+
+        // Sent requests — the loop's missing feedback (Tier 1, Aug 11):
+        // sending a request now visibly puts something here, with a cancel.
+        if (outgoing.isNotEmpty()) {
+            Text(
+                "SENT — WAITING", fontSize = 10.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
+            )
+            outgoing.forEach { r ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FriendAvatar(r)
+                    Text(
+                        buildAnnotatedString {
+                            append(r.username)
+                            withStyle(SpanStyle(color = WTheme.textMuted, fontSize = 10.sp)) {
+                                append("  · ${agoShort(r.requestedAt)}")
+                            }
+                        },
+                        fontSize = 12.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                        color = WTheme.text, maxLines = 1,
+                        modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
+                    )
+                    // §212: the invite usually died unseen — re-push, 1/24h.
+                    val reminded = withinDay(r.remindedAt)
+                    Box(
+                        Modifier.clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF7C3AED).copy(alpha = 0.09f))
+                            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(10.dp))
+                            .clickableNoRipple {
+                                if (reminded) return@clickableNoRipple
+                                scope.launch {
+                                    inviteNote = when (FriendsService.remind(r.id)) {
+                                        FriendsService.RemindOutcome.REMINDED -> "Reminder sent to ${r.username} 🔔"
+                                        FriendsService.RemindOutcome.ALREADY -> "Already reminded today"
+                                        FriendsService.RemindOutcome.FAILED -> "Could not remind"
+                                    }
+                                }
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .alpha(if (reminded) 0.55f else 1f),
+                    ) {
+                        Text(
+                            if (reminded) "Reminded" else "Remind", fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = Color(0xFF7C3AED), fontFamily = Nunito,
+                        )
+                    }
+                    Box(
+                        Modifier.clip(RoundedCornerShape(10.dp)).background(WTheme.surfaceHover)
+                            .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
+                            .clickableNoRipple { scope.launch { FriendsService.decline(r.id) } }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "Cancel", fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = WTheme.textMuted, fontFamily = Nunito,
+                        )
+                    }
+                }
+            }
+        }
+
+        inviteNote?.let {
+            Text(it, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.textMuted)
+        }
+    }
+    }
     }
 
     // Taunt picker — the leaderboard dialog's twin (§207 fixed phrases).

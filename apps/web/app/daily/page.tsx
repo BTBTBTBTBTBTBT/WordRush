@@ -840,6 +840,9 @@ export default function DailyPage() {
                 </div>
               ) : (
                 <div>
+                  {/* Full sweep rows (founder ask, Aug 17): the RPC already
+                      returns time + modes for any day — show them like today's
+                      board instead of the bare name/pill/score line. */}
                   {yesterdaySweep.filter((e) => !isBlocked(e.user_id)).map((entry) => (
                     <div
                       key={entry.user_id}
@@ -847,17 +850,29 @@ export default function DailyPage() {
                       style={{ borderBottom: '1px solid var(--color-border)' }}
                     >
                       <RankIcon rank={entry.rank} />
-                      <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{entry.username}</span>
-                      <span
-                        className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-                        style={{
-                          background: entry.is_flawless ? '#d9770622' : '#a78bfa22',
-                          color: entry.is_flawless ? '#d97706' : '#a78bfa',
-                        }}
-                      >
-                        {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
-                      </span>
-                      <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</span>
+                      {lbAvatar(entry.avatar_url, null, entry.username)}
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/profile/${entry.user_id}`}
+                          className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {entry.username}
+                        </Link>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                          <span className="truncate">{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+                          <span
+                            className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
+                            style={{
+                              background: entry.is_flawless ? '#d9770622' : '#a78bfa22',
+                              color: entry.is_flawless ? '#d97706' : '#a78bfa',
+                            }}
+                          >
+                            {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text-muted)' }}>{ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</span>
                     </div>
                   ))}
                 </div>

@@ -10,6 +10,7 @@ struct FriendsPanelView: View {
     @State private var username = ""
     @State private var sending = false
     @State private var note: String?
+    @State private var inviteNote: String?
     @FocusState private var fieldFocused: Bool
     // Typeahead (Aug 11): 2+ letters → matching users, so invites go to the
     // right Carlie instead of a blind exact-match fire.
@@ -25,6 +26,10 @@ struct FriendsPanelView: View {
         let incoming = FriendsService.incoming
         let outgoing = FriendsService.outgoingProfiles
 
+        // Two cards (founder ask, Aug 17): requests in flight moved out of the
+        // FRIENDS box into their own INVITES card — the roster reads finished
+        // even while invites are pending.
+        VStack(spacing: 14) {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "person.2.fill").font(.system(size: 16, weight: .bold))
@@ -55,82 +60,6 @@ struct FriendsPanelView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
-            }
-
-            // Incoming requests first — they're the actionable part.
-            if !incoming.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("FRIEND REQUESTS").font(Brand.font(9, .black)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
-                    ForEach(incoming) { r in
-                        HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
-                            NavigationLink(value: r.id) {
-                                Text(r.username).font(Brand.font(12, .heavy))
-                                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                            }.buttonStyle(.plain)
-                            Spacer()
-                            Button { Task { await FriendsService.accept(requesterId: r.id) } } label: {
-                                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(.white).frame(width: 26, height: 26)
-                                    .background(Circle().fill(Color(hex: 0x7C3AED)))
-                            }.buttonStyle(.plain)
-                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
-                                Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Theme.textMuted).frame(width: 26, height: 26)
-                                    .background(Circle().fill(Theme.surfaceAlt))
-                                    .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-                            }.buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-
-            // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
-            if !outgoing.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("SENT — WAITING").font(Brand.font(9, .black)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
-                    ForEach(outgoing) { r in
-                        HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
-                            NavigationLink(value: r.id) {
-                                // foregroundColor (not Style): Text concatenation
-                                // needs the pre-iOS-17 modifier.
-                                (Text(r.username).font(Brand.font(12, .heavy)).foregroundColor(Theme.textPrimary)
-                                    + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
-                                    .lineLimit(1)
-                            }.buttonStyle(.plain)
-                            Spacer()
-                            // §212: the invite usually died unseen — re-push, 1/24h.
-                            Button {
-                                Task {
-                                    switch await FriendsService.remind(addresseeId: r.id) {
-                                    case .reminded: note = "Reminder sent to \(r.username) 🔔"
-                                    case .already: note = "Already reminded today"
-                                    case .failed: note = "Could not remind"
-                                    }
-                                }
-                            } label: {
-                                Text(withinDay(r.remindedAt) ? "Reminded" : "Remind").font(Brand.font(10, .bold))
-                                    .foregroundStyle(Color(hex: 0x7C3AED))
-                                    .padding(.horizontal, 8).padding(.vertical, 5)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
-                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(withinDay(r.remindedAt))
-                            .opacity(withinDay(r.remindedAt) ? 0.55 : 1)
-                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
-                                Text("Cancel").font(Brand.font(10, .bold))
-                                    .foregroundStyle(Theme.textMuted)
-                                    .padding(.horizontal, 8).padding(.vertical, 5)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceAlt))
-                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
-                            }.buttonStyle(.plain)
-                        }
-                    }
-                }
             }
 
             // Friends list — rows into their profiles (H2H lives there).
@@ -272,6 +201,11 @@ struct FriendsPanelView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+
+        if !incoming.isEmpty || !outgoing.isEmpty {
+            invitesCard
+        }
+        }
         .task { await FriendsService.load() }
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
             version = FriendsService.version
@@ -291,6 +225,108 @@ struct FriendsPanelView: View {
                 }
             }
         }
+    }
+
+    /// INVITES card — requests in flight (incoming + sent), split out of the
+    /// FRIENDS card so the roster reads finished (founder ask, Aug 17).
+    /// Renders only when something is actually pending.
+    @ViewBuilder private var invitesCard: some View {
+        let incoming = FriendsService.incoming
+        let outgoing = FriendsService.outgoingProfiles
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "paperplane.fill").font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color(hex: 0x7C3AED))
+                Text("INVITES")
+                    .font(Brand.font(16, .black)).tracking(0.3)
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                Text("\(incoming.count + outgoing.count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
+                Spacer()
+            }
+
+            // Incoming requests first — they're the actionable part.
+            if !incoming.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("FRIEND REQUESTS").font(Brand.font(9, .black)).tracking(0.8)
+                        .foregroundStyle(Theme.textMuted)
+                    ForEach(incoming) { r in
+                        HStack(spacing: 10) {
+                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
+                            NavigationLink(value: r.id) {
+                                Text(r.username).font(Brand.font(12, .heavy))
+                                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                            }.buttonStyle(.plain)
+                            Spacer()
+                            Button { Task { await FriendsService.accept(requesterId: r.id) } } label: {
+                                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.white).frame(width: 26, height: 26)
+                                    .background(Circle().fill(Color(hex: 0x7C3AED)))
+                            }.buttonStyle(.plain)
+                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Theme.textMuted).frame(width: 26, height: 26)
+                                    .background(Circle().fill(Theme.surfaceAlt))
+                                    .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+
+            // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
+            if !outgoing.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("SENT — WAITING").font(Brand.font(9, .black)).tracking(0.8)
+                        .foregroundStyle(Theme.textMuted)
+                    ForEach(outgoing) { r in
+                        HStack(spacing: 10) {
+                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
+                            NavigationLink(value: r.id) {
+                                // foregroundColor (not Style): Text concatenation
+                                // needs the pre-iOS-17 modifier.
+                                (Text(r.username).font(Brand.font(12, .heavy)).foregroundColor(Theme.textPrimary)
+                                    + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
+                                    .lineLimit(1)
+                            }.buttonStyle(.plain)
+                            Spacer()
+                            // §212: the invite usually died unseen — re-push, 1/24h.
+                            Button {
+                                Task {
+                                    switch await FriendsService.remind(addresseeId: r.id) {
+                                    case .reminded: inviteNote = "Reminder sent to \(r.username) 🔔"
+                                    case .already: inviteNote = "Already reminded today"
+                                    case .failed: inviteNote = "Could not remind"
+                                    }
+                                }
+                            } label: {
+                                Text(withinDay(r.remindedAt) ? "Reminded" : "Remind").font(Brand.font(10, .bold))
+                                    .foregroundStyle(Color(hex: 0x7C3AED))
+                                    .padding(.horizontal, 8).padding(.vertical, 5)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(withinDay(r.remindedAt))
+                            .opacity(withinDay(r.remindedAt) ? 0.55 : 1)
+                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                Text("Cancel").font(Brand.font(10, .bold))
+                                    .foregroundStyle(Theme.textMuted)
+                                    .padding(.horizontal, 8).padding(.vertical, 5)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceAlt))
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+
+            if let inviteNote {
+                Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
     }
 
     /// "5/9 today · 🔥12 · 7–4 you" — the row's engagement digest (§212).

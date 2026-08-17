@@ -692,7 +692,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 )
                             } else {
                                 yesterdaySweep.forEachIndexed { i, e ->
-                                    YesterdaySweepRow(entry = e, scoreLabel = ySweepScoreLabels[e.totalScore])
+                                    YesterdaySweepRow(entry = e, scoreLabel = ySweepScoreLabels[e.totalScore], onOpenProfile = onOpenProfile)
                                     if (i < yesterdaySweep.size - 1) Divider()
                                 }
                             }
@@ -1236,14 +1236,22 @@ private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, 
 /** Compact sweep-yesterday row — RankIcon, name, FLAWLESS/SWEEP pill, total
  *  score (muted). Mirrors YesterdayRow's shape; rank comes from the RPC. */
 @Composable
-private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry, scoreLabel: String? = null) {
+private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry, scoreLabel: String? = null, onOpenProfile: (String) -> Unit = {}) {
+    // Full detail (founder ask, Aug 17): the RPC already returns time + modes
+    // for any day — mirror today's SweepRow shape (name over "time · X/9").
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RankIcon(entry.rank.toInt())
-        Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
-        SweepPill(entry.isFlawless)
+        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
+        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+            Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                SweepPill(entry.isFlawless)
+            }
+        }
         Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }

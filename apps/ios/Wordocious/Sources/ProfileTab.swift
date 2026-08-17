@@ -1254,15 +1254,25 @@ struct LeaderboardTab: View {
         }
     }
 
-    /// Compact sweep-yesterday row — rankIcon, name, FLAWLESS/SWEEP pill,
-    /// total score (muted). Mirrors yesterdayRow's shape.
+    /// Sweep-yesterday row — full detail (founder ask, Aug 17): the RPC
+    /// already returns time + modes for any day, so mirror today's sweepRow
+    /// shape (name over "time · X/9" + pill; muted score at right).
     private func yesterdaySweepRow(_ entry: SweepEntry) -> some View {
         HStack(spacing: 12) {
             rankIcon(entry.rank).frame(width: 22)
-            Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-            .minimumScaleFactor(0.7)
+            AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
+            NavigationLink(value: entry.userId) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 5) {
+                        Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        sweepPill(isFlawless: entry.isFlawless)
+                    }
+                }
+            }.buttonStyle(.plain)
             Spacer()
-            sweepPill(isFlawless: entry.isFlawless)
             Text(ySweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

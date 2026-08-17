@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users, UserPlus, Check, X, Bell } from 'lucide-react';
+import { Users, UserPlus, Check, X, Bell, Send } from 'lucide-react';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -71,6 +71,7 @@ export function FriendsPanel() {
   const [username, setUsername] = useState('');
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [inviteNote, setInviteNote] = useState<string | null>(null);
   // Typeahead (Aug 11): type 2+ letters → matching users, so invites go to
   // the right Carlie instead of a blind exact-match fire.
   const [suggestions, setSuggestions] = useState<FriendProfile[]>([]);
@@ -157,6 +158,10 @@ export function FriendsPanel() {
   };
 
   return (
+    // Two cards (founder ask, Aug 17): requests in flight moved out of the
+    // FRIENDS box into their own INVITES card — the roster reads finished
+    // even while invites are pending.
+    <div className="space-y-3.5">
     <div
       className="p-5 space-y-4"
       style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
@@ -196,89 +201,6 @@ export function FriendsPanel() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Incoming requests first — they're the actionable part. */}
-      {incoming.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Friend requests
-          </p>
-          {incoming.map((r) => (
-            <div key={r.id} className="flex items-center gap-2.5">
-              <Avatar f={r} />
-              <Link
-                href={`/profile/${r.id}`}
-                className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--color-text)' }}
-              >
-                {r.username}
-              </Link>
-              <button
-                onClick={() => acceptFriend(r.id)}
-                aria-label={`Accept ${r.username}`}
-                className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                style={{ background: '#7c3aed', color: '#ffffff' }}
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => declineFriend(r.id)}
-                aria-label={`Decline ${r.username}`}
-                className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Sent requests — the loop's missing feedback (Tier 1, Aug 11):
-          sending a request now visibly puts something here, with a cancel. */}
-      {outgoing.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Sent — waiting
-          </p>
-          {outgoing.map((r) => (
-            <div key={r.id} className="flex items-center gap-2.5">
-              <Avatar f={r} />
-              <Link
-                href={`/profile/${r.id}`}
-                className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--color-text)' }}
-              >
-                {r.username}{' '}
-                <span className="font-bold text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                  · {agoShort(r.requestedAt)}
-                </span>
-              </Link>
-              {/* §212: the invite usually died unseen — re-push, 1/24h. */}
-              <button
-                onClick={async () => {
-                  const res = await remindFriend(r.id);
-                  setNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
-                }}
-                disabled={withinDay(r.remindedAt)}
-                aria-label={`Remind ${r.username}`}
-                className="text-[10px] font-bold px-2 py-1 rounded-lg disabled:opacity-50"
-                style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
-              >
-                {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
-              </button>
-              <button
-                onClick={() => declineFriend(r.id)}
-                aria-label={`Cancel request to ${r.username}`}
-                className="text-[10px] font-bold px-2 py-1 rounded-lg"
-                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
-              >
-                Cancel
-              </button>
-            </div>
-          ))}
         </div>
       )}
 
@@ -461,6 +383,117 @@ export function FriendsPanel() {
           </div>
         </div>
       )}
+    </div>
+
+    {/* INVITES card — requests in flight (incoming + sent), split out of the
+        FRIENDS card so the roster reads finished (founder ask, Aug 17).
+        Renders only when something is actually pending. */}
+    {(incoming.length > 0 || outgoing.length > 0) && (
+      <div
+        className="p-5 space-y-4"
+        style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
+      >
+        <div className="flex items-center gap-2">
+          <Send className="w-4 h-4" style={{ color: '#7c3aed' }} />
+          <h3
+            className="text-base font-black tracking-tight text-transparent bg-clip-text"
+            style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+          >
+            INVITES
+          </h3>
+          <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>
+            {incoming.length + outgoing.length}
+          </span>
+        </div>
+
+        {/* Incoming requests first — they're the actionable part. */}
+        {incoming.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Friend requests
+            </p>
+            {incoming.map((r) => (
+              <div key={r.id} className="flex items-center gap-2.5">
+                <Avatar f={r} />
+                <Link
+                  href={`/profile/${r.id}`}
+                  className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  {r.username}
+                </Link>
+                <button
+                  onClick={() => acceptFriend(r.id)}
+                  aria-label={`Accept ${r.username}`}
+                  className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: '#7c3aed', color: '#ffffff' }}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => declineFriend(r.id)}
+                  aria-label={`Decline ${r.username}`}
+                  className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Sent requests — the loop's missing feedback (Tier 1, Aug 11):
+            sending a request now visibly puts something here, with a cancel. */}
+        {outgoing.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Sent — waiting
+            </p>
+            {outgoing.map((r) => (
+              <div key={r.id} className="flex items-center gap-2.5">
+                <Avatar f={r} />
+                <Link
+                  href={`/profile/${r.id}`}
+                  className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  {r.username}{' '}
+                  <span className="font-bold text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                    · {agoShort(r.requestedAt)}
+                  </span>
+                </Link>
+                {/* §212: the invite usually died unseen — re-push, 1/24h. */}
+                <button
+                  onClick={async () => {
+                    const res = await remindFriend(r.id);
+                    setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
+                  }}
+                  disabled={withinDay(r.remindedAt)}
+                  aria-label={`Remind ${r.username}`}
+                  className="text-[10px] font-bold px-2 py-1 rounded-lg disabled:opacity-50"
+                  style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+                >
+                  {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
+                </button>
+                <button
+                  onClick={() => declineFriend(r.id)}
+                  aria-label={`Cancel request to ${r.username}`}
+                  className="text-[10px] font-bold px-2 py-1 rounded-lg"
+                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {inviteNote && (
+          <p className="text-xs font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{inviteNote}</p>
+        )}
+      </div>
+    )}
     </div>
   );
 }
