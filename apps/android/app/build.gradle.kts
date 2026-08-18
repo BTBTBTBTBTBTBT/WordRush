@@ -19,7 +19,7 @@ android {
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
         targetSdk = 35       // Play requires new apps target API 35 (Android 15) as of 2025-08
 
-        versionCode = 81
+        versionCode = 82
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -78,7 +78,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     // Google Play Billing (Pro subscriptions + day pass) — coroutine extensions
-    implementation("com.android.billingclient:billing-ktx:7.1.1")
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
     // Play in-app review (win-moment rating ask)
     implementation("com.google.android.play:review-ktx:2.0.2")
 
