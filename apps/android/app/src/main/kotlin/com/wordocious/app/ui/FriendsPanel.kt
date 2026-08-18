@@ -194,6 +194,24 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             ) {
+                // §218 (founder ask): the podium is the WEEKLY race, but bare
+                // "pts" read as today's score — name the window and when it
+                // closes. Weeks run Mon-Sun, reset Monday 00:00 local.
+                val daysLeft = 8 - java.time.LocalDate.now().dayOfWeek.value
+                val weekEndsLabel = if (daysLeft == 1) "ends tonight" else "ends Sunday · ${daysLeft}d left"
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "THIS WEEK'S RACE", fontSize = 9.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                        letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        weekEndsLabel, fontSize = 10.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = WTheme.textMuted, fontFamily = Nunito,
+                    )
+                }
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
@@ -808,7 +826,9 @@ fun FriendsScreen(onClose: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
         // §212: recruiting and friending are the same motion — the gift-Pro
         // panel lives here too.
         InvitePanel()
-        Spacer(Modifier.height(24.dp))
+        // §218: the pushed screen renders under the BottomNav — clear it so
+        // the gift-Pro card's tail is reachable (iOS chrome.bottomInset twin).
+        Spacer(Modifier.height(96.dp))
     }
 }
 

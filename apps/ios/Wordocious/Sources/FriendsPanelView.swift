@@ -70,6 +70,15 @@ struct FriendsPanelView: View {
             // week among your circle; medals wait for the first score.
             if !podium.isEmpty {
                 VStack(spacing: 4) {
+                    // §218 (founder ask): the podium is the WEEKLY race, but
+                    // bare "pts" read as today's score — name the window and
+                    // when it closes.
+                    HStack {
+                        Text("THIS WEEK'S RACE").font(Brand.font(9, .black)).tracking(0.8)
+                            .foregroundStyle(Theme.textMuted)
+                        Spacer()
+                        Text(weekEndsLabel).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    }
                     HStack(alignment: .bottom, spacing: 22) {
                         ForEach(podiumOrder, id: \.entry.id) { slot in
                             VStack(spacing: 2) {
@@ -480,6 +489,14 @@ struct FriendsPanelView: View {
 
     private var raceStarted: Bool { podium.contains { $0.pts > 0 } }
 
+    /// §218: when the weekly race closes — weeks run Mon–Sun, reset Monday
+    /// 00:00 local (same boundary as weekStart in the friends digest).
+    private var weekEndsLabel: String {
+        let dow = Calendar.current.component(.weekday, from: Date()) // 1 Sun … 7 Sat
+        let daysLeft = dow == 1 ? 1 : 9 - dow // Mon→7 … Sat→2, Sun→1
+        return daysLeft == 1 ? "ends tonight" : "ends Sunday · \(daysLeft)d left"
+    }
+
     /// §216: the week's leader wears the crown — only once someone scored.
     private var crownId: String? { raceStarted ? podium.first?.id : nil }
 
@@ -550,6 +567,11 @@ struct FriendsPanelView: View {
 /// whole screen to breathe. Pushed from the profile's compact row, and
 /// presented as a sheet from the empty Friends board CTA.
 struct FriendsScreenView: View {
+    // §218: pushed views don't inherit the root's safeAreaInset, so without
+    // this the BottomNav covered the tail of the gift-Pro card (the same
+    // cutoff PublicProfileView fixed) — pad by the reported chrome height.
+    @ObservedObject private var chrome = ChromeVisibility.shared
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -559,6 +581,7 @@ struct FriendsScreenView: View {
                 InvitePanelView()
             }
             .padding(16)
+            .padding(.bottom, chrome.bottomInset)
         }
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Friends")

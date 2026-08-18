@@ -135,6 +135,14 @@ export function FriendsPanel() {
   // friends leaderboard) — only once someone has actually scored.
   const crownId = raceStarted ? podium[0].id : null;
 
+  // §218: when the weekly race closes — weeks run Mon–Sun, reset Monday
+  // 00:00 local (same boundary as weekStart in the friends digest).
+  const weekEndsLabel = (() => {
+    const dow = new Date().getDay(); // 0 Sun … 6 Sat
+    const daysLeft = dow === 0 ? 1 : 8 - dow; // Mon→7 … Sat→2, Sun→1
+    return daysLeft === 1 ? 'ends tonight' : `ends Sunday · ${daysLeft}d left`;
+  })();
+
   // §216: "topped N of M friends today" — my day total vs each friend's.
   const myToday = meDigest?.todayPoints ?? 0;
   const toppedCount = myToday > 0
@@ -229,6 +237,12 @@ export function FriendsPanel() {
       {/* Weekly race podium (§212) — who owns the week among your circle. */}
       {podium.length > 0 && (
         <div>
+          {/* §218 (founder ask): the podium is the WEEKLY race, but bare "pts"
+              read as today's score — name the window and when it closes. */}
+          <div className="flex items-center justify-between text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="font-black uppercase tracking-wider">This week&apos;s race</span>
+            <span>{weekEndsLabel}</span>
+          </div>
           <div className="flex items-end justify-center gap-5 py-2">
             {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
               const e = podium[i];
