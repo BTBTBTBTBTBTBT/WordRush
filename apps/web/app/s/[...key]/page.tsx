@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { buildCopy, MODE_ROUTE, parseLeaderboardShare, type SP } from '@/lib/share-page-copy';
 import LiveBoardSection from '@/components/share/live-board-section';
+import { GetAppBadges } from '@/components/share/get-app-badges';
 
 // Per-result share landing page. The Share button (lib/share-utils.ts, plus
 // the iOS/Android ShareService mirrors) uploads the result PNG to the public
@@ -135,6 +136,10 @@ export default function SharePage(
           Wordocious Home
         </Link>
       </div>
+
+      {/* §219: store badges — the visitor's platform first, both on desktop.
+          Android especially: no smart-banner equivalent exists there. */}
+      <GetAppBadges />
     </main>
   );
 }
