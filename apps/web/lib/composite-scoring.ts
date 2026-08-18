@@ -24,6 +24,16 @@
  *  clock — same pattern as SOLUTIONS_CUTOVER_DATE. */
 export const SCORING_CUTOVER_DATE = '2026-07-14';
 
+/** Days (YYYY-MM-DD, local) >= this get the loss-time refinement (§220):
+ *  a LOSS earns a fractional time bonus (0–0.99 points) so equal-board
+ *  losses rank by fastest time — while time can never outweigh a board
+ *  (every structural loss increment is ≥ 6 points). The tie-aware decimal
+ *  display reveals the fraction only when integer scores collide. Shares
+ *  the deck cutover day — one rules-refresh date. */
+export const LOSS_TIME_CUTOVER_DATE = '2026-08-24';
+/** Strictly < 1 so the loss time bonus can never cross a board boundary. */
+const LOSS_TIME_MAX = 0.99;
+
 interface ScoreConfig {
   maxGuesses: number;
   guessWeight: number;
@@ -146,11 +156,16 @@ export function computeScoreBreakdown(
   // (2-decimal precision so second-level differences still rank). V1: one
   // point per second under the cap.
   const speedMax = v2 ? SPEED_FRACTION * config.guessWeight : config.timeCap;
+  // §220: post-cutover LOSSES earn a fractional (< 1 point) time bonus so
+  // equal-board losses order by speed instead of by who recorded first.
+  const lossTime = !dateKey || dateKey >= LOSS_TIME_CUTOVER_DATE;
   const timeBonus = completed
     ? (v2
       ? Math.round((Math.max(0, config.timeCap - timeSeconds) / config.timeCap) * speedMax * 100) / 100
       : Math.max(0, config.timeCap - timeSeconds))
-    : 0;
+    : (lossTime
+      ? Math.round((Math.max(0, config.timeCap - timeSeconds) / config.timeCap) * LOSS_TIME_MAX * 100) / 100
+      : 0);
   // Completion / progress bonus. Wins (and all non-Gauntlet multi-board losses)
   // use the proportional boards bonus. Losses in Gauntlet and single-board modes
   // use the progress-aware credit.

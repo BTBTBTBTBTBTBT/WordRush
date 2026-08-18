@@ -21,6 +21,11 @@ public enum DailyScoring {
     /// Days (YYYY-MM-DD, local) before this date score with the V1 formula.
     public static let scoringCutoverDate = "2026-07-14"
 
+    /// §220: days >= this give LOSSES a fractional (< 1 point) time bonus so
+    /// equal-board losses rank by fastest time — time can never outweigh a
+    /// board (every structural loss increment is >= 6 points).
+    public static let lossTimeCutoverDate = "2026-08-24"
+
     public struct Config {
         let maxGuesses: Int
         let guessWeight: Int
@@ -104,11 +109,15 @@ public enum DailyScoring {
         // V2: speed bonus = fraction of remaining time × 80% of one guess-step
         // (2-decimal precision). V1: one point per second under the cap.
         let speedMax = v2 ? speedFraction * Double(c.guessWeight) : Double(c.timeCap)
+        // §220: post-cutover LOSSES earn a fractional (< 1 point) time bonus.
+        let lossTime = dateKey == nil || dateKey! >= Self.lossTimeCutoverDate
         let timeBonus: Double
         if completed {
             timeBonus = v2
                 ? ((Double(max(0, c.timeCap - timeSeconds)) / Double(c.timeCap)) * speedMax * 100).rounded() / 100
                 : Double(max(0, c.timeCap - timeSeconds))
+        } else if lossTime {
+            timeBonus = ((Double(max(0, c.timeCap - timeSeconds)) / Double(c.timeCap)) * 0.99 * 100).rounded() / 100
         } else {
             timeBonus = 0
         }

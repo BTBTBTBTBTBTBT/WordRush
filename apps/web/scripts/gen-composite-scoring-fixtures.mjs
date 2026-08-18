@@ -58,6 +58,9 @@ const CASES = [
 const DATE_VARIANTS = [
   ['v1', '2026-07-13'], // day before SCORING_CUTOVER_DATE → legacy formula
   ['v2', '2026-07-14'], // cutover day → guess-first formula
+  // §220: LOSS_TIME_CUTOVER_DATE — losses gain a fractional (< 1 point) time
+  // bonus so equal-board losses rank by speed. Wins are unchanged vs [v2].
+  ['loss-time', '2026-08-24'],
 ];
 
 const fixtures = DATE_VARIANTS.flatMap(([tag, dateKey]) =>

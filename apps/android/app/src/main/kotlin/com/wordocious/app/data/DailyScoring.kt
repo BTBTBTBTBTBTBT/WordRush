@@ -1,7 +1,7 @@
 package com.wordocious.app.data
 
+import kotlin.math.floor
 import kotlin.math.max
-import kotlin.math.round
 
 /**
  * Composite-score formula ported 1:1 from apps/web/lib/composite-scoring.ts
@@ -24,6 +24,17 @@ import kotlin.math.round
 object DailyScoring {
     /** Days (YYYY-MM-DD, local) before this date score with the V1 formula. */
     const val SCORING_CUTOVER_DATE = "2026-07-14"
+
+    /** §220: days >= this give LOSSES a fractional (< 1 point) time bonus so
+     *  equal-board losses rank by fastest time — time can never outweigh a
+     *  board (every structural loss increment is >= 6 points). */
+    const val LOSS_TIME_CUTOVER_DATE = "2026-08-24"
+
+    /** JS Math.round parity (half-up): kotlin.math.round is half-to-even and
+     *  diverges from web/iOS on exact .5 values (§220 fixture catch). Scoring
+     *  values are non-negative, where floor(x + 0.5) == JS Math.round(x). */
+    private fun jsRound(x: Double): Double = floor(x + 0.5)
+
 
     data class Config(
         val maxGuesses: Int,
@@ -105,9 +116,12 @@ object DailyScoring {
         // V2: speed bonus = fraction of remaining time × 80% of one guess-step
         // (2-decimal precision). V1: one point per second under the cap.
         val speedMax = if (v2) SPEED_FRACTION * c.guessWeight else c.timeCap.toDouble()
+        // §220: post-cutover LOSSES earn a fractional (< 1 point) time bonus.
+        val lossTime = dateKey == null || dateKey >= LOSS_TIME_CUTOVER_DATE
         val timeBonus = when {
+            !completed && lossTime -> jsRound((max(0, c.timeCap - timeSeconds).toDouble() / c.timeCap) * 0.99 * 100) / 100
             !completed -> 0.0
-            v2 -> round((max(0, c.timeCap - timeSeconds).toDouble() / c.timeCap) * speedMax * 100) / 100
+            v2 -> jsRound((max(0, c.timeCap - timeSeconds).toDouble() / c.timeCap) * speedMax * 100) / 100
             else -> max(0, c.timeCap - timeSeconds).toDouble()
         }
         // Completion / progress bonus. Wins (and non-Gauntlet multi-board losses)
@@ -125,7 +139,7 @@ object DailyScoring {
             else -> (boardsSolved.toDouble() / max(1, totalBoards)) * 200.0
         }
         val hintPenalty = if (hasHints) (hintsUsed * (c.hintCost ?: 0)).toDouble() else 0.0
-        val total = round(max(0.0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty) * 100) / 100
+        val total = jsRound(max(0.0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty) * 100) / 100
         return Breakdown(
             basePoints, guessBonus, timeBonus, completionBonus, hintPenalty, total,
             hasHints, guessBonusApplies, speedMax, c.maxGuesses, c.timeCap, c.guessWeight, c.hintCost ?: 0,
