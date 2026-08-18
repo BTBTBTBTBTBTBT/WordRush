@@ -346,21 +346,25 @@ struct LeaderboardShareCardView: View {
     }
 
     private func tintedImage(_ ctx: GraphicsContext, asset: String, color: Color) -> GraphicsContext.ResolvedImage? {
-        // .alwaysTemplate FIRST: withTintColor only recolors template images —
-        // on the raw asset it silently kept the original black artwork, which
-        // is why every shared card's crown rendered black (founder, Aug 10).
-        guard let ui = UIImage(named: asset)?
-            .withRenderingMode(.alwaysTemplate)
-            .withTintColor(UIColor(color), renderingMode: .alwaysOriginal) else { return nil }
-        return ctx.resolve(Image(uiImage: ui))
+        // SwiftUI's Image(uiImage:) IGNORES UIKit's withTintColor — the Aug 10
+        // template+tint attempt still shipped the original black artwork
+        // (founder caught it again Aug 18: ink crown/medals on a shared card).
+        // ResolvedImage.shading is the GraphicsContext-native tint: it fills
+        // template images with the given shading at draw time.
+        var img = ctx.resolve(Image(asset).renderingMode(.template))
+        img.shading = .color(color)
+        return img
     }
 
     private func tintedSymbol(_ ctx: GraphicsContext, _ name: String, pointSize: CGFloat,
                               color: Color) -> GraphicsContext.ResolvedImage? {
-        let cfg = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .semibold)
-        guard let ui = UIImage(systemName: name, withConfiguration: cfg)?
-            .withTintColor(UIColor(color), renderingMode: .alwaysOriginal) else { return nil }
-        return ctx.resolve(Image(uiImage: ui))
+        // Same shading approach as tintedImage — SF symbols are template by
+        // nature; the old UIImage withTintColor was equally ignored. pointSize
+        // now only informs the caller's draw rect (see drawRankGlyph).
+        _ = pointSize
+        var img = ctx.resolve(Image(systemName: name).renderingMode(.template))
+        img.shading = .color(color)
+        return img
     }
 
     // ── Rank iconography (web drawLbRankGlyph: crown gold, medal silver,
@@ -376,9 +380,13 @@ struct LeaderboardShareCardView: View {
         case 2, 3:
             if let img = tintedSymbol(ctx, "medal.fill", pointSize: 32,
                                       color: rank == 2 ? silver : bronze) {
+                // Fit the symbol's aspect into a 36pt box (the resolved size
+                // is the default body-text glyph, no longer the 32pt config).
+                let target: CGFloat = 36
                 let s = img.size
-                ctx.draw(img, in: CGRect(x: cx - s.width / 2, y: cy - s.height / 2,
-                                         width: s.width, height: s.height))
+                let scale = target / max(s.width, s.height, 1)
+                let w = s.width * scale, h = s.height * scale
+                ctx.draw(img, in: CGRect(x: cx - w / 2, y: cy - h / 2, width: w, height: h))
             }
         default:
             let t = resolved(ctx, "\(rank)", 30, .black, textMuted)
