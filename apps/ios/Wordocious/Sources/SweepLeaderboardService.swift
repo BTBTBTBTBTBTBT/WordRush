@@ -73,6 +73,11 @@ final class SweepCache {
     struct DailySnapshot {
         let entries: [SweepEntry]
         let userRank: (rank: Int, total: Int)?
+        /// §223: the dot-strip/guess-count detail rides the snapshot (web
+        /// sweepCache parity) so a tab return repaints dots instantly instead
+        /// of blinking them out until the refetch lands. Defaulted so existing
+        /// call sites compile.
+        var details: [String: LeaderboardService.SweepDetails] = [:]
     }
     struct AllTimeSnapshot {
         let entries: [AllTimeSweepEntry]

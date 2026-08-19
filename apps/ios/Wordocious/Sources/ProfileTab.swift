@@ -1000,6 +1000,9 @@ struct LeaderboardTab: View {
     @State private var entries: [LeaderboardEntry] = []
     @State private var yesterday: [LeaderboardEntry] = []
     @State private var yesterdaySweep: [SweepEntry] = []
+    // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
+    @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
+    @State private var ySweepDetails: [String: LeaderboardService.SweepDetails] = [:]
     @State private var reloadToken = 0
     @State private var userRank: (rank: Int, total: Int)?
     // "Your neighborhood" rows when the user placed past the top-50 list.
@@ -1202,8 +1205,15 @@ struct LeaderboardTab: View {
     @ViewBuilder private var sweepBoard: some View {
         if let r = sweepRank { rankBanner(r) }
 
-        Text("DAILY SWEEP").font(Brand.font(10, .black)).tracking(0.8)
-            .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .center) {
+            Text("DAILY SWEEP").font(Brand.font(10, .black)).tracking(0.8)
+                .foregroundStyle(Theme.textMuted)
+            Spacer()
+            // §223 microcopy: the sweep board pre-answers "why is 9/9 below
+            // 8/9" — it ranks by points, not wins.
+            Text("Ranked by total points across all modes").font(Brand.font(9, .bold))
+                .foregroundStyle(Theme.textMuted)
+        }
 
         if sweepLoading {
             LeaderboardSkeleton()
@@ -1266,10 +1276,12 @@ struct LeaderboardTab: View {
                     Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                         .minimumScaleFactor(0.7)
                     HStack(spacing: 5) {
-                        Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
+                        Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                         sweepPill(isFlawless: entry.isFlawless)
                     }
+                    SweepModeDots(details: ySweepDetails[entry.userId],
+                                  day: LeaderboardService.yesterdayLocal())
                 }
             }.buttonStyle(.plain)
             Spacer()
@@ -1656,6 +1668,19 @@ struct LeaderboardTab: View {
         return s
     }
 
+    // §223: guesses (and hints) are the numbers that actually explain the
+    // ranking — the formula is guess-first, so 9 slow wins can trail 8 sharp
+    // ones (founder double-take, Aug 18). Details still loading → the plain
+    // line, never a blocked row.
+    private func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?) -> String {
+        var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9"
+        if let d = details {
+            s += " · \(d.guesses)g"
+            if d.hints > 0 { s += " · \(d.hints)h" }
+        }
+        return s
+    }
+
     /// A sweep-board row — reuses the per-mode row shell: rankIcon, name,
     /// total score, then "total time · X/9" + the FLAWLESS/SWEEP pill.
     private func sweepRow(rank: Int, entry: SweepEntry) -> some View {
@@ -1673,10 +1698,12 @@ struct LeaderboardTab: View {
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                         .minimumScaleFactor(0.7)
                     HStack(spacing: 5) {
-                        Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
+                        Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                         sweepPill(isFlawless: entry.isFlawless)
                     }
+                    SweepModeDots(details: sweepDetails[entry.userId],
+                                  day: LeaderboardService.todayLocal())
                 }
             }.buttonStyle(.plain)
             Spacer()
@@ -1763,10 +1790,16 @@ struct LeaderboardTab: View {
 
     private func loadYesterday() async {
         if isSweep {
-            let rows = (try? await SweepLeaderboardService.fetchDailySweep(
-                day: LeaderboardService.yesterdayLocal(), limit: 5)) ?? []
+            let day = LeaderboardService.yesterdayLocal()
+            let rows = (try? await SweepLeaderboardService.fetchDailySweep(day: day, limit: 5)) ?? []
             guard !Task.isCancelled else { return }
             yesterdaySweep = rows
+            // §223: dot-strip + guess/hint detail rides in behind the rows —
+            // the podium paints first, dots fill in when the fetch lands.
+            let details = await LeaderboardService.fetchSweepModeDetails(
+                day: day, userIds: rows.map(\.userId))
+            guard !Task.isCancelled else { return }
+            ySweepDetails = details
             return
         }
         // Friends toggle carries into Yesterday's Winners: podium among friends.
@@ -1788,11 +1821,13 @@ struct LeaderboardTab: View {
         if let cached = SweepCache.shared.daily(cacheKey) {
             sweepEntries = cached.entries
             sweepRank = cached.userRank
+            sweepDetails = cached.details
             sweepLoading = false
         } else {
             sweepLoading = true
             sweepRank = nil
             sweepEntries = []
+            sweepDetails = [:]
         }
 
         let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
@@ -1801,17 +1836,65 @@ struct LeaderboardTab: View {
         sweepEntries = fetched
         sweepLoading = false
 
+        // §223: dot-strip + guess/hint detail rides in behind the rows — the
+        // board paints first, dots fill in when the fetch lands (web parity).
+        let details = await LeaderboardService.fetchSweepModeDetails(
+            day: LeaderboardService.todayLocal(), userIds: fetched.map(\.userId))
+        guard !Task.isCancelled else { return }
+        sweepDetails = details
+
         var rank: (rank: Int, total: Int)? = nil
         if let uid = auth.profile?.id {
             rank = await SweepLeaderboardService.dailySweepRank(userId: uid)
             guard !Task.isCancelled else { return }
             sweepRank = rank
         }
-        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank))
+        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank, details: details))
     }
 }
 
 let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
+
+/// §223: the Sweep board's nine-dot mode strip. Fixed order = the mode grid.
+/// One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction
+/// of that mode's theoretical ceiling, never a comparison to the field, so the
+/// strip reads identically with three players or three thousand (founder call,
+/// Aug 18: relative "best on board" dies in a crowd). Red = loss, hollow =
+/// not played. The [0.35, 0.9] remap spreads real-world ratios (~0.4–0.9)
+/// across the full visual range. Mirrors SweepModeDots in app/daily/page.tsx.
+struct SweepModeDots: View {
+    let details: LeaderboardService.SweepDetails?
+    let day: String
+
+    private static let dotModes = ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
+                                   "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE"]
+
+    var body: some View {
+        if let details {
+            HStack(spacing: 3) {
+                ForEach(Self.dotModes, id: \.self) { mode in
+                    dot(details.modes[mode], mode: mode)
+                }
+            }
+            .accessibilityLabel("Per-mode results")
+        }
+    }
+
+    @ViewBuilder private func dot(_ d: LeaderboardService.SweepModeDetail?, mode: String) -> some View {
+        if let d {
+            if d.completed {
+                let ratio = d.score / DailyScoring.modeScoreCeiling(gameMode: mode, dateKey: day)
+                let t = min(1, max(0, (ratio - 0.35) / 0.55))
+                Circle().fill(Color(hex: 0x7C3AED).opacity(0.18 + 0.82 * t))
+                    .frame(width: 7, height: 7)
+            } else {
+                Circle().fill(Color(hex: 0xEF4444)).frame(width: 7, height: 7)
+            }
+        } else {
+            Circle().stroke(Theme.border, lineWidth: 1).frame(width: 7, height: 7)
+        }
+    }
+}
 
 /// Sweep-board rank pill — GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP"
 /// (completed all 9 but dropped a board). Mirrors the per-mode Win/Loss pill

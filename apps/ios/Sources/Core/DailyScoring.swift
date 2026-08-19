@@ -157,4 +157,26 @@ public enum DailyScoring {
                   hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
                   bestCorrectLetters: bestCorrectLetters, dateKey: dateKey).total
     }
+
+    /// §223: a mode's theoretical score ceiling — a perfect run (one guess per
+    /// board, instant, no hints; a full 5-stage clear for Gauntlet) scored by
+    /// the same formula as everything else. The Sweep board's per-mode dots
+    /// grade each result against THIS (absolute), not against the field, so a
+    /// dot means the same thing whether three people played or three thousand.
+    /// Ported 1:1 from modeScoreCeiling in lib/composite-scoring.ts.
+    private static var ceilingCache: [String: Double] = [:]
+    private static let ceilingLock = NSLock()
+    public static func modeScoreCeiling(gameMode: String, dateKey: String) -> Double {
+        let key = "\(gameMode):\(dateKey)"
+        ceilingLock.lock()
+        defer { ceilingLock.unlock() }
+        if let cached = ceilingCache[key] { return cached }
+        let c = config[gameMode] ?? config["DUEL"]!
+        let ceiling = compositeScore(
+            gameMode: gameMode, completed: true, guessCount: c.totalBoards, timeSeconds: 0,
+            boardsSolved: c.totalBoards, totalBoards: c.totalBoards, hintsUsed: 0,
+            stagesCompleted: gameMode == "GAUNTLET" ? 5 : nil, dateKey: dateKey)
+        ceilingCache[key] = ceiling
+        return ceiling
+    }
 }

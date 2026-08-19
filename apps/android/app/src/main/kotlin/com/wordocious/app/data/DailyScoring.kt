@@ -153,4 +153,26 @@ object DailyScoring {
         dateKey: String? = null,
     ): Double = breakdown(gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
         hintsUsed, stagesCompleted, bestCorrectLetters, dateKey).total
+
+    private val ceilingCache = mutableMapOf<String, Double>()
+
+    /**
+     * §223 (ported from web modeScoreCeiling): a mode's theoretical score
+     * ceiling — a perfect run (one guess per board, instant, no hints; a full
+     * 5-stage clear for Gauntlet) scored by the same formula as everything
+     * else. The Sweep board's per-mode dots grade each result against THIS
+     * (absolute), not against the field, so a dot means the same thing whether
+     * three people played or three thousand. Keyed on `dateKey` because the
+     * formula itself is date-selected (V1 vs V2 cutover).
+     */
+    fun modeScoreCeiling(gameMode: String, dateKey: String): Double =
+        ceilingCache.getOrPut("$gameMode:$dateKey") {
+            val c = config[gameMode] ?: config.getValue("DUEL")
+            compositeScore(
+                gameMode, completed = true, guessCount = c.totalBoards, timeSeconds = 0,
+                boardsSolved = c.totalBoards, totalBoards = c.totalBoards, hintsUsed = 0,
+                stagesCompleted = if (gameMode == "GAUNTLET") 5 else null,
+                dateKey = dateKey,
+            )
+        }
 }

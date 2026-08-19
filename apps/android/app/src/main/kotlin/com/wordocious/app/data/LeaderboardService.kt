@@ -55,7 +55,14 @@ object LeaderboardService {
 
     /** Same stale-while-revalidate treatment for the Daily Sweep board (iOS
      *  SweepCache). Keyed "sweep:<local-day>" so it self-invalidates at midnight. */
-    data class CachedSweep(val entries: List<SweepEntry>, val rank: RankInfo?)
+    data class CachedSweep(
+        val entries: List<SweepEntry>,
+        val rank: RankInfo?,
+        /** §223 dot-strip details, cached with the rows so a Sweep-tile re-entry
+         *  repaints the dots instantly too. Defaulted so call sites that predate
+         *  the strip keep compiling. */
+        val details: Map<String, SweepDetails> = emptyMap(),
+    )
     private val sweepCache = mutableMapOf<String, CachedSweep>()
     fun sweepCacheKey(day: String) = "sweep:$day"
     fun cachedSweep(key: String): CachedSweep? = sweepCache[key]
@@ -176,6 +183,60 @@ object LeaderboardService {
         ).decodeList<SweepRankRow>().firstOrNull() ?: return@runCatching null
         RankInfo(row.rank.toInt(), row.totalPlayers.toInt())
     }.getOrElseNotCancelled { null }
+
+    /** Raw daily_results row behind [fetchSweepModeDetails] (column subset). */
+    @Serializable
+    private data class SweepDetailRow(
+        @SerialName("user_id") val userId: String,
+        @SerialName("game_mode") val gameMode: String,
+        @SerialName("composite_score") val compositeScore: Double = 0.0,
+        val completed: Boolean = false,
+        @SerialName("guess_count") val guessCount: Int = 0,
+        @SerialName("hints_used") val hintsUsed: Int = 0,
+    )
+
+    /** One mode's result inside [SweepDetails]. */
+    data class SweepModeDetail(val score: Double, val completed: Boolean)
+
+    /**
+     * §223: per-mode detail behind the Sweep board's dot strip + guess/hint
+     * totals (web fetchSweepModeDetails parity). The composite total alone left
+     * a 9/9 FLAWLESS below an 8/9 row with no visible reason (founder
+     * double-take, Aug 18) — these are the numbers that explain the ranking.
+     */
+    data class SweepDetails(
+        val modes: Map<String, SweepModeDetail>,
+        val guesses: Int,
+        val hints: Int,
+    )
+
+    /**
+     * Per-user sweep details for [day], keyed by user id. Fetched straight from
+     * `daily_results` for the board's users — the same publicly-readable table
+     * the per-mode boards already query — so the sweep RPCs never had to change
+     * shape (web parity). Empty on a network/decode error: a missing entry just
+     * renders a row without dots/guess totals, never a blocked board.
+     */
+    suspend fun fetchSweepModeDetails(day: String, userIds: List<String>): Map<String, SweepDetails> = runCatching {
+        if (userIds.isEmpty()) return@runCatching emptyMap<String, SweepDetails>()
+        client.postgrest["daily_results"]
+            .select(Columns.raw("user_id,game_mode,composite_score,completed,guess_count,hints_used")) {
+                filter {
+                    eq("day", day)
+                    eq("play_type", "solo")
+                    isIn("user_id", userIds)
+                }
+            }
+            .decodeList<SweepDetailRow>()
+            .groupBy { it.userId }
+            .mapValues { (_, rows) ->
+                SweepDetails(
+                    modes = rows.associate { it.gameMode to SweepModeDetail(it.compositeScore, it.completed) },
+                    guesses = rows.sumOf { it.guessCount },
+                    hints = rows.sumOf { it.hintsUsed },
+                )
+            }
+    }.getOrElseNotCancelled { emptyMap() }
 
     /** All-time sweep ranking (RPC alltime_sweep_leaderboard). Null on error. */
     suspend fun fetchAllTimeSweepOrNull(limit: Int = 50, offset: Int = 0): List<AllTimeSweepEntry>? = runCatching {

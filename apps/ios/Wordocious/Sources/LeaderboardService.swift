@@ -231,6 +231,61 @@ enum LeaderboardService {
         } catch { return nil }
     }
 
+    // §223: per-mode detail behind the Sweep board's dot strip + guess/hint
+    // totals. Fetched straight from daily_results for the board's users (the
+    // same publicly-readable table the per-mode boards already query), so the
+    // sweep RPCs never had to change shape. Mirrors fetchSweepModeDetails in
+    // lib/daily-service.ts.
+    struct SweepModeDetail {
+        let score: Double
+        let completed: Bool
+    }
+    struct SweepDetails {
+        var modes: [String: SweepModeDetail] = [:]
+        var guesses = 0
+        var hints = 0
+    }
+
+    private struct SweepDetailRow: Decodable {
+        let userId: String
+        let gameMode: String
+        let compositeScore: Double
+        let completed: Bool
+        let guessCount: Int?
+        let hintsUsed: Int?
+        enum CodingKeys: String, CodingKey {
+            case userId = "user_id"
+            case gameMode = "game_mode"
+            case compositeScore = "composite_score"
+            case completed
+            case guessCount = "guess_count"
+            case hintsUsed = "hints_used"
+        }
+    }
+
+    /// Non-throwing (web parity): the dots and g/h counts are enrichment — a
+    /// failed fetch renders the plain sweep rows, never an error state.
+    static func fetchSweepModeDetails(day: String, userIds: [String]) async -> [String: SweepDetails] {
+        guard !userIds.isEmpty else { return [:] }
+        let rows: [SweepDetailRow] = (try? await AuthService.shared.client
+            .from("daily_results")
+            .select("user_id, game_mode, composite_score, completed, guess_count, hints_used")
+            .eq("day", value: day)
+            .eq("play_type", value: "solo")
+            .in("user_id", values: userIds)
+            .execute()
+            .value) ?? []
+        var out: [String: SweepDetails] = [:]
+        for row in rows {
+            var d = out[row.userId] ?? SweepDetails()
+            d.modes[row.gameMode] = SweepModeDetail(score: row.compositeScore, completed: row.completed)
+            d.guesses += row.guessCount ?? 0
+            d.hints += row.hintsUsed ?? 0
+            out[row.userId] = d
+        }
+        return out
+    }
+
     /// Distinct players who attempted this mode today, ALL play types (solo + VS) —
     /// matches web getDailyPlayerCount (no play_type filter), which intentionally
     /// differs from the solo-only leaderboard "of N" total.

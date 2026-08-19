@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.DailyScoring
 import com.wordocious.app.data.FriendTaunts
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.data.LeaderboardService
@@ -169,6 +170,11 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     val isSweep = selectedMode == SWEEP_ID
     var sweepEntries by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
     var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    // §223: per-user dot-strip details (per-mode score/win + guess/hint totals)
+    // for today's and yesterday's sweep rows, keyed by user id. A missing entry
+    // renders a row without dots or g/h — the detail fetch never blocks a row.
+    var sweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
+    var ySweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
     // Reload when mode changes OR once a daily result row has LANDED on the
     // server (recordedTick) so a just-finished puzzle shows on the board
     // without a tab round-trip. The optimistic completionTick fires BEFORE the
@@ -212,6 +218,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 sweepEntries = cachedSweep.entries
                 playerCount = cachedSweep.entries.size
                 sweepRank = cachedSweep.rank
+                sweepDetails = cachedSweep.details
                 loading = false
             } else {
                 loading = true
@@ -222,9 +229,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             sweepEntries = rows
             playerCount = rows.size
             loading = false
+            // §223: the dot strip + guess/hint totals land AFTER the rows paint,
+            // so the board never waits on the detail query (web parity — the
+            // details swap in silently; a fetch failure just leaves plain rows).
+            val details = LeaderboardService.fetchSweepModeDetails(day, rows.map { it.userId })
+            ensureActive()
+            sweepDetails = details
             sweepRank = if (userId != null) LeaderboardService.getUserSweepRank(userId, day) else null
             ensureActive()
-            LeaderboardService.cacheSweep(sweepKey, LeaderboardService.CachedSweep(rows, sweepRank))
+            LeaderboardService.cacheSweep(sweepKey, LeaderboardService.CachedSweep(rows, sweepRank, details))
             return@LaunchedEffect
         }
         // Stale-while-revalidate: a mode-chip tap or screen re-entry paints the
@@ -307,6 +320,12 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         yesterdaySweep = if (showYesterday && selectedMode == SWEEP_ID) {
             LeaderboardService.fetchDailySweepOrNull(day = com.wordocious.app.yesterdayLocalDate(), limit = 5) ?: emptyList()
         } else emptyList()
+        // §223: yesterday's rows carry the same dot strip + g/h numbers. Fetched
+        // after the rows land so the card opens immediately even when the detail
+        // query is slow (missing details just render plain rows).
+        ySweepDetails = if (yesterdaySweep.isNotEmpty()) {
+            LeaderboardService.fetchSweepModeDetails(com.wordocious.app.yesterdayLocalDate(), yesterdaySweep.map { it.userId })
+        } else emptyMap()
     }
 
     val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode
@@ -450,11 +469,22 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             item {
                 // iOS relabels the section when the cross-mode Sweep board is up.
                 if (isSweep) {
-                    Text(
-                        "DAILY SWEEP", fontSize = 10.sp, fontWeight = FontWeight.Black,
-                        color = WTheme.textMuted, letterSpacing = 0.8.sp,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "DAILY SWEEP", fontSize = 10.sp, fontWeight = FontWeight.Black,
+                            color = WTheme.textMuted, letterSpacing = 0.8.sp,
+                        )
+                        // §223 microcopy (web "Daily games only" slot): pre-answers
+                        // "why is 9/9 below 8/9" — the board ranks by points, not wins.
+                        Text(
+                            "Ranked by total points across all modes",
+                            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        )
+                    }
                 } else {
                     // Founder-approved clarity (iOS parity): this board ranks
                     // DAILY games only — Unlimited runs never appear here.
@@ -540,6 +570,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
                                     scoreLabel = sweepScoreLabels[entry.totalScore],
+                                    details = sweepDetails[entry.userId],
+                                    day = com.wordocious.app.todayLocalDate(),
                                 )
                                 if (index < sweepEntries.size - 1) Divider()
                             }
@@ -706,7 +738,12 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 )
                             } else {
                                 yesterdaySweep.forEachIndexed { i, e ->
-                                    YesterdaySweepRow(entry = e, scoreLabel = ySweepScoreLabels[e.totalScore], onOpenProfile = onOpenProfile)
+                                    YesterdaySweepRow(
+                                        entry = e, scoreLabel = ySweepScoreLabels[e.totalScore],
+                                        onOpenProfile = onOpenProfile,
+                                        details = ySweepDetails[e.userId],
+                                        day = com.wordocious.app.yesterdayLocalDate(),
+                                    )
                                     if (i < yesterdaySweep.size - 1) Divider()
                                 }
                             }
@@ -1067,10 +1104,18 @@ private fun EmptyBoardCard(message: String) {
     }
 }
 
-/** One Daily Sweep row — total score over "total time · X/9" + FLAWLESS/SWEEP
- *  pill. Reuses [RankIcon] + the LeaderboardRow shell (score/time formatters). */
+/** One Daily Sweep row — total score over "total time · X/9[ · Ng][ · Nh]" +
+ *  FLAWLESS/SWEEP pill, with the §223 dot strip beneath. Reuses [RankIcon] +
+ *  the LeaderboardRow shell (score/time formatters). */
 @Composable
-internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, scoreLabel: String? = null) {
+internal fun SweepRow(
+    rank: Int, entry: LeaderboardService.SweepEntry, isCurrentUser: Boolean,
+    onOpenProfile: (String) -> Unit = {}, scoreLabel: String? = null,
+    // §223 dot-strip inputs, defaulted so pre-§223 call sites (RecordsScreen)
+    // keep compiling: null details render the plain row — never a blocked one.
+    details: LeaderboardService.SweepDetails? = null,
+    day: String = com.wordocious.app.todayLocalDate(),
+) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -1100,8 +1145,61 @@ internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrent
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 SweepPill(entry.isFlawless)
+            }
+            SweepModeDots(details, day)
+        }
+        Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+    }
+}
+
+/** §223: "{time} · {won}/9[ · Ng][ · Nh]" — guesses (and hints, when any) are
+ *  the numbers that actually explain the ranking: the formula is guess-first,
+ *  so 9 slow wins can trail 8 sharp ones (founder double-take, Aug 18). The
+ *  g/h segments appear only once details land. */
+private fun sweepStatsLine(entry: LeaderboardService.SweepEntry, details: LeaderboardService.SweepDetails?): String = buildString {
+    append("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9")
+    if (details != null) {
+        append(" · ${details.guesses}g")
+        if (details.hints > 0) append(" · ${details.hints}h")
+    }
+}
+
+/** §223: the Sweep board's nine-dot mode strip — fixed order = the mode grid. */
+private val SWEEP_DOT_MODES = listOf(
+    "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
+    "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE",
+)
+
+/**
+ * One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction of
+ * that mode's theoretical ceiling ([DailyScoring.modeScoreCeiling]), never a
+ * comparison to the field, so the strip reads identically with three players or
+ * three thousand (founder call, Aug 18: relative "best on board" dies in a
+ * crowd). Red = loss, hollow = not played. The [0.35, 0.9] remap spreads
+ * real-world ratios (~0.4–0.9) across the full visual range. Renders nothing
+ * until details land — the row never waits on the detail fetch.
+ */
+@Composable
+private fun SweepModeDots(details: LeaderboardService.SweepDetails?, day: String) {
+    if (details == null) return
+    Row(
+        Modifier.padding(top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SWEEP_DOT_MODES.forEach { mode ->
+            val d = details.modes[mode]
+            val dot = Modifier.size(7.dp).clip(CircleShape)
+            when {
+                d == null -> Box(dot.border(1.dp, WTheme.border, CircleShape))
+                !d.completed -> Box(dot.background(Color(0xFFEF4444)))
+                else -> {
+                    val ratio = (d.score / DailyScoring.modeScoreCeiling(mode, day)).toFloat()
+                    val t = ((ratio - 0.35f) / 0.55f).coerceIn(0f, 1f)
+                    Box(dot.background(Color(0xFF7C3AED).copy(alpha = 0.18f + 0.82f * t)))
+                }
             }
         }
         Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -1251,10 +1349,18 @@ private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, 
     }
 }
 
-/** Compact sweep-yesterday row — RankIcon, name, FLAWLESS/SWEEP pill, total
- *  score (muted). Mirrors YesterdayRow's shape; rank comes from the RPC. */
+/** Sweep-yesterday row — RankIcon, name, then the same score-over-stats right
+ *  column as [SweepRow] (§223: yesterday's card gained the guess/hint numbers
+ *  and dot strip too, so it explains its ranking the same way today's board
+ *  does — web renders full sweep rows for any day). Rank comes from the RPC;
+ *  the score stays muted, matching [YesterdayRow]. */
 @Composable
-private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry, scoreLabel: String? = null, onOpenProfile: (String) -> Unit = {}) {
+private fun YesterdaySweepRow(
+    entry: LeaderboardService.SweepEntry, scoreLabel: String? = null,
+    onOpenProfile: (String) -> Unit = {},
+    details: LeaderboardService.SweepDetails? = null,
+    day: String = com.wordocious.app.yesterdayLocalDate(),
+) {
     // Full detail (founder ask, Aug 17): the RPC already returns time + modes
     // for any day — mirror today's SweepRow shape (name over "time · X/9").
     Row(
@@ -1266,9 +1372,10 @@ private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry, scoreLabel: 
         Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 SweepPill(entry.isFlawless)
             }
+            SweepModeDots(details, day)
         }
         Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
