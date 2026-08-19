@@ -1202,7 +1202,6 @@ private fun SweepModeDots(details: LeaderboardService.SweepDetails?, day: String
                 }
             }
         }
-        Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
     }
 }
 
