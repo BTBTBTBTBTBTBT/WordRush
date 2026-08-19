@@ -33,6 +33,8 @@ Usage:
                                                      # curate the GUESS list (see below)
   python3 scripts/curate-solutions.py --grow-allowed 5 [--write]
                                                      # GROW the guess list (see below)
+  python3 scripts/curate-solutions.py --grow-length 6 [--write]
+                                                     # GROW the 6/7 ANSWER bank (append-only, §222)
 
 --curate-allowed curates allowed-{6,7}.json — the guess-validation dictionary,
 NOT the answer bank. That list was a raw scrape of a ~1913 dictionary and half
@@ -276,6 +278,109 @@ def write_length_bundles(n, kept):
         print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, f"solutions-{n}.json"), REPO)}')
 
 
+def grow_length(n, threshold):
+    """GROW the 6/7-letter ANSWER bank (§222) — the only mode that ADDS answers.
+
+    Every other solutions mode only CUTS, so common words the ~1913 scrape
+    never had (COOKIE) could never be dealt as a daily answer. Candidates are
+    the n-letter GUESS list minus current AND legacy answers (legacy words were
+    cut deliberately in July — they must not sneak back), promoted iff:
+      - zipf >= threshold — the ANSWER bar (3.0), not the guess bar (1.0/2.0),
+      - never offensive/manual-blocklist, never a name (allowlist wins),
+      - not a cheap plural: an S-ender whose singular is itself common
+        (COOKIES←COOKIE) reads as a lazy answer — same rule as the 5-letter
+        promote path. Blocks promotions only; legacy plurals stay.
+
+    APPEND-ONLY: the shipped array is order-locked (position = daily index +
+    deck permutation input), so additions are deterministically shuffled and
+    appended AFTER the existing entries. The engine's growth date-gate
+    (SOLUTIONS_GROWTH_CUTOVER_DATE) keeps pre-growth dates on the frozen
+    prefix; this function asserts the prefix is byte-identical.
+    """
+    z = zipf()
+    current = load_json_list(os.path.join(DATA, f'solutions-{n}.json'))
+    legacy = set(load_json_list(os.path.join(DATA, f'solutions-{n}-legacy.json')))
+    allowed = load_json_list(os.path.join(DATA, f'allowed-{n}.json'))
+    manual = load_wordset(os.path.join(SCRIPT_DATA, 'manual-blocklist.txt'))
+    offensive = load_wordset(os.path.join(SCRIPT_DATA, 'offensive-blocklist.txt'))
+    names = load_wordset(os.path.join(SCRIPT_DATA, 'names-blocklist.txt'))
+    name_ok = load_wordset(os.path.join(SCRIPT_DATA, 'name-word-allowlist.txt'))
+    blocked = load_wordset(os.path.join(SCRIPT_DATA, 'proper-noun-blocklist.txt')) - name_ok
+    pat = re.compile(rf'^[A-Z]{{{n}}}$')
+    cur_set = set(current)
+
+    # The names-blocklist holds first names only; the guess list carries
+    # places/surnames (MEDICI, POMPEII) that the guess bar tolerates but the
+    # answer bar must not. Two screens, both from the §221 audit: web2's
+    # capitalisation split (G6 — PARIS, LAWTON), and WordNet's instance
+    # hypernyms (a word ALL of whose senses are instances of something is a
+    # specific named thing, not a common noun — catches what web2 predates).
+    _, proper = load_lexicon()
+    try:
+        from nltk.corpus import wordnet as wn
+    except ImportError:
+        sys.exit('nltk/wordnet not installed in this venv — needed for --grow-length')
+
+    def instance_only(w):
+        syns = wn.synsets(w.lower())
+        return bool(syns) and all(s.instance_hypernyms() for s in syns)
+
+    # names-blocklist.txt is 5-letter-only (built for the 5-letter bank), so
+    # 6/7 growth screens against the full NLTK first-names corpus directly.
+    try:
+        from nltk.corpus import names as nltk_names
+        names = names | {x.upper() for x in nltk_names.words() if len(x) == n}
+    except (ImportError, LookupError):
+        sys.exit('nltk names corpus not available — needed for --grow-length')
+
+    def plural_base_freq(w):
+        # COOKIES←COOKIE, BOARDS←BOARD, BUDDIES←BUDDY: judge every plausible
+        # singular and take the most common one.
+        bases = [w[:-1]]
+        if w.endswith('ES'):
+            bases.append(w[:-2])
+        if w.endswith('IES'):
+            bases.append(w[:-3] + 'Y')
+        return max(z(b) for b in bases)
+
+    # G8 twin for answers: hand-vouched modern words (SELFIE, EBOOK) bypass the
+    # WordNet-known requirement — a human already made the "real word" call.
+    modern = load_wordset(os.path.join(SCRIPT_DATA, 'modern-words.txt'))
+
+    added, skipped = [], []
+    for w in sorted(set(allowed)):
+        if w in cur_set or w in legacy or not pat.match(w):
+            continue
+        syns = wn.synsets(w.lower())  # morphy resolves inflections (BANKED→bank)
+        if w in offensive:
+            reason = 'offensive'
+        elif w in manual:
+            reason = 'manual'
+        elif not syns and w not in modern:
+            # Not in WordNet at all: the residue here is overwhelmingly
+            # surnames/places that web2 happens to lowercase (SHARIF, CROCKER,
+            # CRAWLEY) plus scrape junk — none of it answer-quality.
+            reason = 'not-in-wordnet'
+        elif (w in names or w in blocked or w in proper or instance_only(w)) and w not in name_ok:
+            reason = 'name'
+        elif z(w) < threshold:
+            reason = f'freq<{threshold}({round(z(w), 2)})'
+        elif w.endswith('S') and plural_base_freq(w) >= 3.0:
+            reason = 'plural'
+        else:
+            added.append(w)
+            continue
+        skipped.append((w, reason))
+
+    random.Random(SHUFFLE_SEED + f'-grow-{n}').shuffle(added)
+    final = current + added
+    assert final[:len(current)] == current, 'prefix invariance violated'
+    assert len(final) == len(set(final)), 'duplicate in grown bank'
+    allowed_set = set(allowed)
+    assert all(w in allowed_set for w in final), 'grown answer not guessable'
+    return final, added, skipped
+
+
 def curate_allowed(n):
     """Curate the n-letter GUESS list: keep iff zipf >= ALLOWED_THRESHOLD or the
     word is a current/legacy answer — and never an offensive-blocklist word
@@ -434,12 +539,33 @@ def main():
                     help='curate the 6- or 7-letter GUESS list (allowed-N.json)')
     ap.add_argument('--grow-allowed', type=int, choices=(5, 6, 7),
                     help='GROW the n-letter guess list under the G1-G7 rule set (additive)')
+    ap.add_argument('--grow-length', type=int, choices=(6, 7),
+                    help='GROW the 6/7-letter ANSWER bank (append-only, §222)')
     ap.add_argument('--grow-threshold', type=float, default=GROW_THRESHOLD,
                     help=f'frequency bar for grown words (default {GROW_THRESHOLD})')
     args = ap.parse_args()
 
     if args.scan_only:
         scan_lengths()
+        return
+
+    if args.grow_length:
+        n = args.grow_length
+        final, added, skipped = grow_length(n, args.threshold)
+        os.makedirs(OUT, exist_ok=True)
+        z = zipf()
+        with open(os.path.join(OUT, f'solutions-{n}-grown.txt'), 'w') as f:
+            f.write('\n'.join(f'{w}\t{round(z(w), 2)}' for w in sorted(added)) + '\n')
+        with open(os.path.join(OUT, f'solutions-{n}-skipped.txt'), 'w') as f:
+            f.write('\n'.join(f'{w}\t{r}' for w, r in sorted(skipped)) + '\n')
+        print(f'solutions-{n}: {len(final) - len(added)} → {len(final)}  (+{len(added)} appended — prefix frozen)')
+        weakest = sorted(added, key=z)[:15]
+        print('  weakest additions:', ', '.join(f'{w}({round(z(w), 2)})' for w in weakest))
+        print(f'  review: scripts/out/solutions-{n}-grown.txt, solutions-{n}-skipped.txt')
+        if args.write:
+            write_length_bundles(n, final)
+        else:
+            print('  (dry run — pass --write to sync the bundles)')
         return
 
     if args.grow_allowed:

@@ -17,6 +17,16 @@ import kotlinx.serialization.json.Json
  */
 const val SOLUTIONS_CUTOVER_DATE = "2026-07-08"
 
+/**
+ * §222: the 6/7-letter answer banks GREW on this date (append-only — the
+ * pre-growth bank is an untouched prefix). Dates before it resolve against
+ * only that frozen prefix (hash index and deck permutation both depend on
+ * pool size). Undated seeds (unlimited, live VS) gate on wall-clock UTC so
+ * server + clients flip together. Equal to DECK_CUTOVER_DATE by design.
+ * Mirrors packages/core SOLUTIONS_GROWTH_CUTOVER_DATE — keep in lockstep.
+ */
+const val SOLUTIONS_GROWTH_CUTOVER_DATE = "2026-08-24"
+
 object GameDictionary {
     private var allowedWords: Set<String> = emptySet()
     private var allowedWordsList: List<String> = emptyList()   // ordered (prefill picks by index — order matters)
@@ -25,6 +35,17 @@ object GameDictionary {
     // dates resolve against this so replays + the archive keep the played words.
     private var legacySolutionWords: List<String> = emptyList()
     private val lengthDictionaries = HashMap<Int, Triple<Set<String>, List<String>, List<String>>>()
+
+    /** Bank sizes the day before the §222 growth shipped — frozen prefix lengths. */
+    private val preGrowthPoolSizes = mapOf(6 to 1681, 7 to 1181)
+    private val frozenPrefixes = HashMap<Int, List<String>>()
+
+    /** Parity tests pin "today" so undated-seed fixtures don't change meaning
+     *  on the growth cutover day. Production never sets this. */
+    @Volatile var todayOverrideForTests: String? = null
+
+    private fun todayUtc(): String =
+        todayOverrideForTests ?: java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString()
 
     fun init(allowed: List<String>, solutions: List<String>, legacySolutions: List<String> = emptyList()) {
         val up = allowed.map { it.uppercase() }
@@ -55,6 +76,7 @@ object GameDictionary {
         val up = allowed.map { it.uppercase() }
         lengthDictionaries[length] = Triple(up.toHashSet(), solutions.map { it.uppercase() }, legacySolutions.map { it.uppercase() })
         lengthAllowedLists[length] = up
+        frozenPrefixes.remove(length)
     }
 
     /** Length-keyed analogue of [solutionPool] — pre-cutover daily dates use
@@ -66,6 +88,14 @@ object GameDictionary {
                 "Legacy $length-letter solutions not initialized — pre-cutover seed cannot be resolved"
             }
             return dict.third
+        }
+        // §222 growth gate: pre-growth dates (wall clock for undated seeds)
+        // see only the frozen prefix of the grown bank.
+        val frozen = preGrowthPoolSizes[length]
+        if (frozen != null && dict.second.size > frozen &&
+            (dateKey ?: todayUtc()) < SOLUTIONS_GROWTH_CUTOVER_DATE
+        ) {
+            return frozenPrefixes.getOrPut(length) { dict.second.subList(0, frozen) }
         }
         return dict.second
     }

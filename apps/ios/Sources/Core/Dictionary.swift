@@ -5,6 +5,16 @@ import Foundation
 /// Mirrors packages/core SOLUTIONS_CUTOVER_DATE — keep in lockstep.
 public let SOLUTIONS_CUTOVER_DATE = "2026-07-08"
 
+/// §222: the 6/7-letter answer banks GREW on this date (append-only — the
+/// pre-growth bank is an untouched prefix). Dates before it resolve against
+/// only that frozen prefix (hash index and deck permutation both depend on
+/// pool size). Undated seeds (unlimited, live VS) gate on wall-clock UTC so
+/// server + clients flip together. Equal to DECK_CUTOVER_DATE by design.
+/// Mirrors packages/core SOLUTIONS_GROWTH_CUTOVER_DATE — keep in lockstep.
+public let SOLUTIONS_GROWTH_CUTOVER_DATE = "2026-08-24"
+/// Bank sizes the day before the growth shipped — the frozen prefix lengths.
+private let PRE_GROWTH_POOL_SIZES: [Int: Int] = [6: 1681, 7: 1181]
+
 public final class GameDictionary {
     public static let shared = GameDictionary()
 
@@ -19,6 +29,20 @@ public final class GameDictionary {
     private var legacySolutionWords: [String] = []
     private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String], legacySolutions: [String])] = [:]
     private var lengthAllowedArrays: [Int: [String]] = [:]
+    private var frozenPrefixes: [Int: [String]] = [:]
+
+    /// Parity tests pin "today" so undated-seed fixtures don't change meaning
+    /// on the growth cutover day. Production never sets this.
+    public var todayOverrideForTests: String?
+
+    private func todayUTC() -> String {
+        if let pinned = todayOverrideForTests { return pinned }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        return fmt.string(from: Date())
+    }
 
     public func initDictionary(allowed: [String], solutions: [String], legacySolutions: [String] = []) {
         allowedWords = Set(allowed.map { $0.uppercased() })
@@ -48,6 +72,7 @@ public final class GameDictionary {
             legacySolutions: legacySolutions.map { $0.uppercased() }
         )
         lengthAllowedArrays[length] = upper
+        frozenPrefixes[length] = nil
     }
 
     /// Length-keyed analogue of solutionPool(forDateKey:) — pre-cutover daily
@@ -60,6 +85,15 @@ public final class GameDictionary {
             precondition(!dict.legacySolutions.isEmpty,
                          "Legacy \(length)-letter solutions not initialized — pre-cutover seed cannot be resolved")
             return dict.legacySolutions
+        }
+        // §222 growth gate: pre-growth dates (wall clock for undated seeds)
+        // see only the frozen prefix of the grown bank.
+        if let frozen = PRE_GROWTH_POOL_SIZES[length], dict.solutions.count > frozen,
+           (dateKey ?? todayUTC()) < SOLUTIONS_GROWTH_CUTOVER_DATE {
+            if frozenPrefixes[length] == nil {
+                frozenPrefixes[length] = Array(dict.solutions.prefix(frozen))
+            }
+            return frozenPrefixes[length]!
         }
         return dict.solutions
     }

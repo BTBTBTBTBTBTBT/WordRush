@@ -15,8 +15,33 @@ let legacySolutionWords: string[] = [];
  */
 export const SOLUTIONS_CUTOVER_DATE = '2026-07-08';
 
+/**
+ * §222: the 6/7-letter answer banks GREW on this date (append-only — the
+ * pre-growth bank is an untouched prefix of the shipped array). Dates before
+ * it resolve against only that frozen prefix: the hash index is
+ * `mod pool.length` and the deck permutation is seeded by pool size, so an
+ * ungated growth would silently reshuffle every already-played daily.
+ * Undated seeds (unlimited, live VS matches) gate on wall-clock UTC instead,
+ * so the server and every up-to-date client flip to the grown pool together
+ * on the cutover day. Deliberately equal to DECK_CUTOVER_DATE — the pools
+ * change once, on the same day the deck dealing starts.
+ */
+export const SOLUTIONS_GROWTH_CUTOVER_DATE = '2026-08-24';
+// Bank sizes the day before the growth shipped — the frozen prefix lengths.
+const PRE_GROWTH_POOL_SIZES = new Map<number, number>([[6, 1681], [7, 1181]]);
+
+let todayOverride: string | null = null;
+/** Parity tests pin "today" so undated-seed fixtures don't change meaning on
+ *  the cutover day. Production never calls this. */
+export function _setTodayForTests(date: string | null): void {
+  todayOverride = date;
+}
+function todayUTC(): string {
+  return todayOverride ?? new Date().toISOString().slice(0, 10);
+}
+
 // Multi-length dictionaries (for 6-letter, 7-letter, etc.)
-const lengthDictionaries: Map<number, { allowed: Set<string>, allowedArray: string[], solutions: string[], legacySolutions: string[] }> = new Map();
+const lengthDictionaries: Map<number, { allowed: Set<string>, allowedArray: string[], solutions: string[], legacySolutions: string[], frozenPrefix?: string[] }> = new Map();
 
 export function initDictionary(allowed: string[], solutions: string[], legacySolutions?: string[]): void {
   allowedWords = new Set(allowed.map(w => w.toUpperCase()));
@@ -72,6 +97,14 @@ export function getSolutionPoolForLengthAndDate(length: number, dateKey: string 
       throw new Error(`Legacy ${length}-letter solutions not initialized — pre-cutover seed cannot be resolved`);
     }
     return dict.legacySolutions;
+  }
+  // §222 growth gate: pre-growth dates (wall clock for undated seeds) see
+  // only the frozen prefix of the grown bank.
+  const frozen = PRE_GROWTH_POOL_SIZES.get(length);
+  if (frozen !== undefined && dict.solutions.length > frozen
+      && (dateKey ?? todayUTC()) < SOLUTIONS_GROWTH_CUTOVER_DATE) {
+    dict.frozenPrefix ??= dict.solutions.slice(0, frozen);
+    return dict.frozenPrefix;
   }
   return dict.solutions;
 }

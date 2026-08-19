@@ -103,6 +103,9 @@ final class EngineParityTests: XCTestCase {
         let legacySolutions7: [String] = loadJSON("solutions-7-legacy")
         dict.initDictionaryForLength(6, allowed: allowed6, solutions: solutions6, legacySolutions: legacySolutions6)
         dict.initDictionaryForLength(7, allowed: allowed7, solutions: solutions7, legacySolutions: legacySolutions7)
+        // §222: pin "today" post-growth so undated-seed fixtures don't change
+        // meaning on the cutover day. Matches gen-parity-fixtures.ts.
+        dict.todayOverrideForTests = "2026-09-01"
     }
 
     private func loadFixture<T: Decodable>(_ filename: String) -> T {

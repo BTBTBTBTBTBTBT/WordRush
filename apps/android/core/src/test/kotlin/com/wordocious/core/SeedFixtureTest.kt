@@ -14,7 +14,12 @@ import org.junit.Test
  */
 class SeedFixtureTest {
 
-    @Before fun setup() = DictionaryLoader.ensureLoaded()
+    @Before fun setup() {
+        DictionaryLoader.ensureLoaded()
+        // §222: pin "today" post-growth so undated-seed fixtures don't change
+        // meaning on the cutover day. Matches gen-parity-fixtures.ts.
+        GameDictionary.todayOverrideForTests = "2026-09-01"
+    }
 
     private fun loadFixture(name: String): String =
         javaClass.classLoader!!.getResource("fixtures/$name")!!.readText()

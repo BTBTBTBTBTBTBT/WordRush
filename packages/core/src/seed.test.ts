@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength, DECK_CUTOVER_DATE } from './seed';
-import { initDictionary, initDictionaryForLength } from './dictionary';
+import {
+  initDictionary, initDictionaryForLength, getSolutionPoolForLengthAndDate,
+  SOLUTIONS_GROWTH_CUTOVER_DATE, _setTodayForTests,
+} from './dictionary';
 
 // ── Pin tests: the REAL solutions bank must keep producing the SAME words for
 // pre-cutover daily seeds through the solutions-curation change (date-gated
@@ -225,5 +228,52 @@ describe('deck dealing (§215, real lists)', () => {
       seen.add(w);
     }
     expect(seen.size).toBe(100);
+  });
+});
+
+// ── §222: the 6/7 answer banks grew append-only on SOLUTIONS_GROWTH_CUTOVER_DATE.
+// Dates before it (and undated seeds while the wall clock is before it) must
+// resolve against exactly the pre-growth prefix, or history reshuffles.
+describe('6/7 answer growth gate (§222, real lists)', () => {
+  const dataDir = join(__dirname, '..', '..', '..', 'apps', 'web', 'data');
+  const grown6: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-6.json'), 'utf-8'));
+  const legacy6: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-6-legacy.json'), 'utf-8'));
+  const allowed6: string[] = JSON.parse(readFileSync(join(dataDir, 'allowed-6.json'), 'utf-8'));
+
+  beforeAll(() => {
+    initDictionaryForLength(6, allowed6, grown6, legacy6);
+  });
+  afterAll(() => { _setTodayForTests(null); });
+
+  it('the bank actually grew, append-only', () => {
+    expect(grown6.length).toBeGreaterThan(1681);
+    expect(grown6).toContain('COOKIE');
+    expect(grown6.slice(0, 1681)).not.toContain('COOKIE');
+  });
+
+  it('pre-growth dates see exactly the frozen 1681-word prefix', () => {
+    const pre = getSolutionPoolForLengthAndDate(6, '2026-08-23');
+    expect(pre).toEqual(grown6.slice(0, 1681));
+    const post = getSolutionPoolForLengthAndDate(6, SOLUTIONS_GROWTH_CUTOVER_DATE);
+    expect(post).toHaveLength(grown6.length);
+  });
+
+  it('undated seeds gate on wall-clock today', () => {
+    _setTodayForTests('2026-08-23');
+    expect(getSolutionPoolForLengthAndDate(6, null)).toHaveLength(1681);
+    _setTodayForTests('2026-08-24');
+    expect(getSolutionPoolForLengthAndDate(6, null)).toHaveLength(grown6.length);
+    _setTodayForTests(null);
+  });
+
+  it('growth does not move any pre-growth daily answer', () => {
+    // Same seeds resolved against the grown bank vs. a bank that never grew.
+    const withGrown = ['2026-08-01', '2026-08-20', '2026-08-23']
+      .map(d => generateSolutionsFromSeedForLength(`daily-${d}-DUEL_6`, 1, 6)[0]);
+    initDictionaryForLength(6, allowed6, grown6.slice(0, 1681), legacy6);
+    const withOld = ['2026-08-01', '2026-08-20', '2026-08-23']
+      .map(d => generateSolutionsFromSeedForLength(`daily-${d}-DUEL_6`, 1, 6)[0]);
+    expect(withGrown).toEqual(withOld);
+    initDictionaryForLength(6, allowed6, grown6, legacy6);
   });
 });

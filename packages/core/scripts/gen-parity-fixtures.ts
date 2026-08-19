@@ -22,7 +22,7 @@
 import fs from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { initDictionary, initDictionaryForLength, getSolutionPoolForDate } from '../src/dictionary';
+import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTodayForTests } from '../src/dictionary';
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 
@@ -35,6 +35,11 @@ const allowed = load('allowed');
 initDictionary(allowed, load('solutions'), load('solutions-legacy'));
 initDictionaryForLength(6, load('allowed-6'), load('solutions-6'), load('solutions-6-legacy'));
 initDictionaryForLength(7, load('allowed-7'), load('solutions-7'), load('solutions-7-legacy'));
+
+// §222: undated seeds resolve their pool from wall-clock "today". Pin it
+// post-growth so the fixtures mean the same thing before and after the
+// cutover day — the Swift/Kotlin parity tests pin the identical date.
+_setTodayForTests('2026-09-01');
 
 // Case INPUTS are the contract with the Swift/Kotlin tests — keep in lockstep
 // with EngineParityTests.swift / SeedFixtureTest.kt / PrefillFixtureTest.kt.
