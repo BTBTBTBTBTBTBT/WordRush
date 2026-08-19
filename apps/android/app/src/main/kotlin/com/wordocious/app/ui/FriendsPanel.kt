@@ -603,7 +603,12 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
         }
 
         inviteNote?.let {
-            Text(it, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.textMuted)
+            // Tap dismisses early (the 2.5s auto-clear above is the default).
+            Text(
+                it, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                color = WTheme.textMuted,
+                modifier = Modifier.clickableNoRipple { inviteNote = null },
+            )
         }
     }
     }

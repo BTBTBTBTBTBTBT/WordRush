@@ -393,7 +393,16 @@ struct FriendsPanelView: View {
             }
 
             if let inviteNote {
+                // Transient confirmation — the row's "Reminded" pill carries the
+                // durable state, so this clears itself (founder: it "just
+                // lingered"). 2.5s matches the Android panel; tap dismisses.
+                // .task(id:) restarts the timer per note and cancels on change.
                 Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+                    .onTapGesture { self.inviteNote = nil }
+                    .task(id: inviteNote) {
+                        try? await Task.sleep(nanoseconds: 2_500_000_000)
+                        if !Task.isCancelled { self.inviteNote = nil }
+                    }
             }
         }
         .padding(20)

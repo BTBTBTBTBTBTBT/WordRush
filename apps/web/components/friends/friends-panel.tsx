@@ -72,6 +72,14 @@ export function FriendsPanel() {
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [inviteNote, setInviteNote] = useState<string | null>(null);
+  // The note is a transient confirmation — the row's "Reminded" pill carries
+  // the durable state, so this clears itself (founder: it "just lingered").
+  // 2.5s matches the Android panel's existing auto-dismiss.
+  useEffect(() => {
+    if (!inviteNote) return;
+    const t = setTimeout(() => setInviteNote(null), 2500);
+    return () => clearTimeout(t);
+  }, [inviteNote]);
   // Typeahead (Aug 11): type 2+ letters → matching users, so invites go to
   // the right Carlie instead of a blind exact-match fire.
   const [suggestions, setSuggestions] = useState<FriendProfile[]>([]);
@@ -584,7 +592,13 @@ export function FriendsPanel() {
         )}
 
         {inviteNote && (
-          <p className="text-xs font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{inviteNote}</p>
+          <p
+            className="text-xs font-extrabold cursor-pointer"
+            style={{ color: 'var(--color-text-muted)' }}
+            onClick={() => setInviteNote(null)}
+          >
+            {inviteNote}
+          </p>
         )}
       </div>
     )}
