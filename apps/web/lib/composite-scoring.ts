@@ -287,3 +287,25 @@ export function calculateCompositeScore(
     stagesCompleted, bestCorrectLetters, dateKey,
   ).total;
 }
+
+/**
+ * §223: a mode's theoretical score ceiling — a perfect run (one guess per
+ * board, instant, no hints; a full 5-stage clear for Gauntlet) scored by the
+ * same formula as everything else. The Sweep board's per-mode dots grade each
+ * result against THIS (absolute), not against the field, so a dot means the
+ * same thing whether three people played or three thousand.
+ */
+const ceilingCache = new Map<string, number>();
+export function modeScoreCeiling(gameMode: string, dateKey: string): number {
+  const key = `${gameMode}:${dateKey}`;
+  const cached = ceilingCache.get(key);
+  if (cached !== undefined) return cached;
+  const config = MODE_SCORE_CONFIG[gameMode] ?? MODE_SCORE_CONFIG.DUEL;
+  const stages = gameMode === 'GAUNTLET' ? 5 : undefined;
+  const ceiling = calculateCompositeScore(
+    gameMode, true, config.totalBoards, 0, config.totalBoards, config.totalBoards, 0,
+    stages, undefined, dateKey,
+  );
+  ceilingCache.set(key, ceiling);
+  return ceiling;
+}

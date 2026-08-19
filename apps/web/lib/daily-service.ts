@@ -594,6 +594,46 @@ export async function fetchDailySweepLeaderboard(
     }));
 }
 
+// §223: per-mode detail behind the Sweep board's dot strip + guess/hint
+// totals. Fetched straight from daily_results for the board's users (the
+// same publicly-readable table the per-mode boards already query), so the
+// sweep RPCs never had to change shape.
+export interface SweepModeDetail {
+  score: number;
+  completed: boolean;
+}
+
+export interface SweepDetails {
+  modes: Record<string, SweepModeDetail>;
+  guesses: number;
+  hints: number;
+}
+
+export async function fetchSweepModeDetails(
+  day: string,
+  userIds: string[],
+): Promise<Map<string, SweepDetails>> {
+  const out = new Map<string, SweepDetails>();
+  if (userIds.length === 0) return out;
+  const { data } = await supabase
+    .from('daily_results')
+    .select('user_id, game_mode, composite_score, completed, guess_count, hints_used')
+    .eq('day', day)
+    .eq('play_type', 'solo')
+    .in('user_id', userIds);
+  for (const row of (data as any[]) ?? []) {
+    let d = out.get(row.user_id);
+    if (!d) {
+      d = { modes: {}, guesses: 0, hints: 0 };
+      out.set(row.user_id, d);
+    }
+    d.modes[row.game_mode] = { score: Number(row.composite_score), completed: !!row.completed };
+    d.guesses += row.guess_count ?? 0;
+    d.hints += row.hints_used ?? 0;
+  }
+  return out;
+}
+
 /**
  * The current user's Sweep rank for a given day. Null if they didn't sweep.
  */

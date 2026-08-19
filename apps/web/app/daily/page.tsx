@@ -5,7 +5,7 @@ import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, P
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
+import { formatScore, tieAwareScoreLabels, modeScoreCeiling } from '@/lib/composite-scoring';
 import { formatShortTime as formatTime } from '@/lib/format';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
@@ -19,6 +19,7 @@ import {
   fetchRankWindow,
   competitionRank,
   fetchDailySweepLeaderboard,
+  fetchSweepModeDetails,
   getUserDailyRank,
   getUserSweepRank,
   getDailyPlayerCount,
@@ -28,6 +29,7 @@ import {
   formatHintsLabel,
   type LeaderboardEntry,
   type SweepEntry,
+  type SweepDetails,
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
@@ -63,7 +65,62 @@ const sweepCache = new Map<string, {
   lb: SweepEntry[];
   count: number;
   rank: { rank: number; totalPlayers: number } | null;
+  details: Map<string, SweepDetails>;
 }>();
+
+// §223: the Sweep board's nine-dot mode strip. Fixed order = the mode grid.
+const SWEEP_DOT_MODES: Array<[string, string]> = [
+  ['DUEL', 'Classic'], ['QUORDLE', 'Quad'], ['OCTORDLE', 'Octo'],
+  ['SEQUENCE', 'Succession'], ['RESCUE', 'Deliverance'], ['DUEL_6', 'Six'],
+  ['DUEL_7', 'Seven'], ['GAUNTLET', 'Gauntlet'], ['PROPERNOUNDLE', 'Proper'],
+];
+
+// One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction
+// of that mode's theoretical ceiling, never a comparison to the field, so the
+// strip reads identically with three players or three thousand (founder call,
+// Aug 18: relative "best on board" dies in a crowd). Red = loss, hollow =
+// not played. The [0.35, 0.9] remap spreads real-world ratios (~0.4–0.9)
+// across the full visual range.
+function SweepModeDots({ details, day }: { details: SweepDetails | undefined; day: string }) {
+  if (!details) return null;
+  return (
+    <div className="flex items-center gap-[3px] mt-1" aria-label="Per-mode results">
+      {SWEEP_DOT_MODES.map(([mode, label]) => {
+        const d = details.modes[mode];
+        if (!d) {
+          return (
+            <span
+              key={mode}
+              title={`${label}: not played`}
+              className="w-[7px] h-[7px] rounded-full shrink-0"
+              style={{ border: '1px solid var(--color-border)' }}
+            />
+          );
+        }
+        if (!d.completed) {
+          return (
+            <span
+              key={mode}
+              title={`${label}: lost · ${formatScore(d.score)}`}
+              className="w-[7px] h-[7px] rounded-full shrink-0"
+              style={{ background: '#ef4444' }}
+            />
+          );
+        }
+        const ratio = d.score / modeScoreCeiling(mode, day);
+        const t = Math.min(1, Math.max(0, (ratio - 0.35) / 0.55));
+        return (
+          <span
+            key={mode}
+            title={`${label}: ${formatScore(d.score)}`}
+            className="w-[7px] h-[7px] rounded-full shrink-0"
+            style={{ background: '#7c3aed', opacity: 0.18 + 0.82 * t }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 
 
@@ -132,6 +189,9 @@ export default function DailyPage() {
   const [showYesterday, setShowYesterday] = useState(false);
   const [yesterdayLeaderboard, setYesterdayLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [yesterdaySweep, setYesterdaySweep] = useState<SweepEntry[]>([]);
+  // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
+  const [sweepDetails, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
+  const [ySweepDetails, setYSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
 
   const isPro = isProActive;
 
@@ -200,6 +260,7 @@ export default function DailyPage() {
         setSweepLeaderboard(cachedSweep.lb);
         setPlayerCount(cachedSweep.count);
         setUserRank(cachedSweep.rank);
+        setSweepDetails(cachedSweep.details);
         setRankWindow(null);
         setLoading(false);
       } else {
@@ -207,12 +268,15 @@ export default function DailyPage() {
         setUserRank(null);
         setRankWindow(null);
         setSweepLeaderboard([]);
+        setSweepDetails(new Map());
       }
 
       const lb = await fetchDailySweepLeaderboard(day, 50);
       if (seq !== loadSeq.current) return;
       setSweepLeaderboard(lb);
       setLoading(false);
+      const details = await fetchSweepModeDetails(day, lb.map((e) => e.user_id));
+      if (seq === loadSeq.current) setSweepDetails(details);
 
       let rank: { rank: number; totalPlayers: number } | null = null;
       if (user) {
@@ -223,7 +287,7 @@ export default function DailyPage() {
       // user swept; otherwise the (≤50) board length is the best estimate.
       const count = rank?.totalPlayers ?? lb.length;
       if (seq === loadSeq.current) setPlayerCount(count);
-      sweepCache.set(sweepKey, { lb, count, rank });
+      sweepCache.set(sweepKey, { lb, count, rank, details });
       return;
     }
 
@@ -294,7 +358,10 @@ export default function DailyPage() {
   useEffect(() => {
     if (!showYesterday) return;
     if (selectedMode === 'SWEEP') {
-      fetchDailySweepLeaderboard(yesterday, 5).then(setYesterdaySweep);
+      fetchDailySweepLeaderboard(yesterday, 5).then(async (lb) => {
+        setYesterdaySweep(lb);
+        setYSweepDetails(await fetchSweepModeDetails(yesterday, lb.map((e) => e.user_id)));
+      });
     } else {
       // Friends toggle carries into Yesterday's Winners: podium among friends.
       const ids = friendsOnly && user ? [...new Set([...getFriendIds(), user.id])] : undefined;
@@ -456,6 +523,7 @@ export default function DailyPage() {
   const renderSweepRow = (entry: SweepEntry, rank: number) => {
     const isCurrentUser = user && entry.user_id === user.id;
     const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
+    const det = sweepDetails.get(entry.user_id);
     return (
       <div
         key={entry.user_id}
@@ -479,7 +547,14 @@ export default function DailyPage() {
             {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
           </Link>
           <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <span className="truncate">{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+            {/* §223: guesses (and hints) are the numbers that actually explain
+                the ranking — the formula is guess-first, so 9 slow wins can
+                trail 8 sharp ones (founder double-take, Aug 18). */}
+            <span className="truncate">
+              {formatTime(entry.total_time)} · {entry.modes_won}/9
+              {det ? ` · ${det.guesses}g` : ''}
+              {det && det.hints > 0 ? ` · ${det.hints}h` : ''}
+            </span>
             <span
               className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
               style={{ background: `${pillColor}22`, color: pillColor }}
@@ -487,6 +562,7 @@ export default function DailyPage() {
               {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
             </span>
           </div>
+          <SweepModeDots details={det} day={getTodayLocal()} />
         </div>
         <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
           {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
@@ -719,7 +795,9 @@ export default function DailyPage() {
               </div>
             )}
             <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              Daily games only
+              {/* §223 microcopy: the sweep board pre-answers "why is 9/9 below
+                  8/9" — it ranks by points, not wins. */}
+              {isSweep ? 'Ranked by total points across all modes' : 'Daily games only'}
             </div>
             {!isSweep && !loading && leaderboard.length > 0 && (
               <button
@@ -874,7 +952,11 @@ export default function DailyPage() {
                           {entry.username}
                         </Link>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                          <span className="truncate">{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+                          <span className="truncate">
+                            {formatTime(entry.total_time)} · {entry.modes_won}/9
+                            {ySweepDetails.get(entry.user_id) ? ` · ${ySweepDetails.get(entry.user_id)!.guesses}g` : ''}
+                            {(ySweepDetails.get(entry.user_id)?.hints ?? 0) > 0 ? ` · ${ySweepDetails.get(entry.user_id)!.hints}h` : ''}
+                          </span>
                           <span
                             className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
                             style={{
@@ -885,6 +967,7 @@ export default function DailyPage() {
                             {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
                           </span>
                         </div>
+                        <SweepModeDots details={ySweepDetails.get(entry.user_id)} day={yesterday} />
                       </div>
                       <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text-muted)' }}>{ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</span>
                     </div>
