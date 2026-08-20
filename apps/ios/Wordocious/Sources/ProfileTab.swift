@@ -1278,6 +1278,7 @@ struct LeaderboardTab: View {
                     HStack(spacing: 5) {
                         Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .lineLimit(1)
                         sweepPill(isFlawless: entry.isFlawless)
                     }
                     SweepModeDots(details: ySweepDetails[entry.userId],
@@ -1700,6 +1701,7 @@ struct LeaderboardTab: View {
                     HStack(spacing: 5) {
                         Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .lineLimit(1)
                         sweepPill(isFlawless: entry.isFlawless)
                     }
                     SweepModeDots(details: sweepDetails[entry.userId],
@@ -1903,6 +1905,10 @@ struct SweepModeDots: View {
     let color = isFlawless ? Color(hex: 0xD97706) : Color(hex: 0xA78BFA)
     Text(isFlawless ? "FLAWLESS" : "SWEEP").font(Brand.font(9, .heavy))
         .foregroundStyle(color)
+        // The §223 g/h stats can squeeze this row — the pill never wraps or
+        // truncates (the "FLAWLES\nS" lesson from the Android port); the
+        // stats text is the flexible element.
+        .lineLimit(1).fixedSize()
         .padding(.horizontal, 5).padding(.vertical, 1)
         .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
 }
