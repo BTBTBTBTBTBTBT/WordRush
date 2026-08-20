@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
@@ -785,9 +785,21 @@ private fun Divider() {
 @Composable
 private fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String) {
     val url = avatarUrl?.takeIf { it.isNotBlank() }
+    // iOS AvatarView parity (founder, Aug 20: "make the android version look
+    // more like the iphone version") — the fallback is TWO-letter initials in
+    // white on the wordmark gradient (#A78BFA → #EC4899), not a single letter
+    // on a washed flat.
     Box(
         Modifier.size(24.dp).clip(CircleShape)
-            .background(if (url == null) Color(0xFF7C3AED).copy(alpha = 0.13f) else Color.Transparent),
+            .background(
+                if (url == null) {
+                    androidx.compose.ui.graphics.Brush.linearGradient(
+                        listOf(Color(0xFFA78BFA), Color(0xFFEC4899)),
+                    )
+                } else {
+                    androidx.compose.ui.graphics.SolidColor(Color.Transparent)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (url != null) {
@@ -799,8 +811,8 @@ private fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String)
         } else {
             val emoji = avatarEmoji?.trim().orEmpty()
             Text(
-                if (emoji.isNotEmpty()) emoji else username.take(1).uppercase(),
-                fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                if (emoji.isNotEmpty()) emoji else username.take(2).uppercase(),
+                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White,
             )
         }
     }
@@ -814,8 +826,11 @@ private fun RankIcon(rank: Int) {
             androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),
             null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp),
         )
-        2 -> Icon(Icons.Filled.MilitaryTech, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
-        3 -> Icon(Icons.Filled.MilitaryTech, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
+        // WorkspacePremium is the rosette-medal glyph — visually the twin of
+        // iOS's medal.fill / web's lucide Medal; MilitaryTech read as a
+        // different icon set on Doug's screenshots.
+        2 -> Icon(Icons.Filled.WorkspacePremium, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
+        3 -> Icon(Icons.Filled.WorkspacePremium, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
         // width(), NOT size(): a 20dp SQUARE constrained the height too, so a
         // 3-digit rank wrapped to a second line that was then clipped — rank
         // 425 displayed as "42". iOS uses .frame(width: 20) for exactly this.
@@ -1081,6 +1096,9 @@ private fun SweepPill(flawless: Boolean) {
         Text(
             if (flawless) "FLAWLESS" else "SWEEP",
             fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = fg,
+            // The §223 g/h stats squeezed this pill into wrapping ("FLAWLES\nS"
+            // on Doug's phone) — a pill never wraps; the stats text ellipsizes.
+            maxLines = 1, softWrap = false,
         )
     }
 }
@@ -1145,7 +1163,12 @@ internal fun SweepRow(
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(
+                    sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    color = WTheme.textMuted, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
                 SweepPill(entry.isFlawless)
             }
             SweepModeDots(details, day)
@@ -1371,7 +1394,12 @@ private fun YesterdaySweepRow(
         Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(
+                    sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    color = WTheme.textMuted, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
                 SweepPill(entry.isFlawless)
             }
             SweepModeDots(details, day)
