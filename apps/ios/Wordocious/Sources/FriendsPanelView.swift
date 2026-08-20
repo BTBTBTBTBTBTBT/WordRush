@@ -19,6 +19,10 @@ struct FriendsPanelView: View {
     // §212: one-tap taunts from friend rows (leaderboard sheet twin).
     @State private var tauntTarget: FriendsService.FriendProfile?
     @State private var tauntStatus: String?
+    // §225: context-menu targets — Unfriend confirmation, and a programmatic
+    // profile push (menu items can't be NavigationLinks).
+    @State private var unfriendTarget: FriendsService.FriendProfile?
+    @State private var profileTarget: String?
 
     var body: some View {
         let _ = version
@@ -81,15 +85,23 @@ struct FriendsPanelView: View {
                     }
                     HStack(alignment: .bottom, spacing: 22) {
                         ForEach(podiumOrder, id: \.entry.id) { slot in
-                            VStack(spacing: 2) {
-                                Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
-                                    .font(.system(size: slot.rank == 0 ? 20 : 14))
-                                AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
-                                Text(slot.entry.username).font(Brand.font(10, .black)).lineLimit(1)
-                                    .foregroundStyle(slot.entry.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
-                                    .frame(maxWidth: 76)
-                                Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                            // §225: podium columns open profiles too — same door
+                            // as the friend rows below.
+                            NavigationLink(value: slot.entry.id) {
+                                VStack(spacing: 2) {
+                                    Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
+                                        .font(.system(size: slot.rank == 0 ? 20 : 14))
+                                    AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
+                                    // §225: 9pt + scale floor so ~14 characters fit
+                                    // before truncation ("TheRealMich..." complaint).
+                                    Text(slot.entry.username).font(Brand.font(9, .black)).lineLimit(1)
+                                        .minimumScaleFactor(0.75)
+                                        .foregroundStyle(slot.entry.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
+                                        .frame(maxWidth: 76)
+                                    Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                                }
                             }
+                            .buttonStyle(.plain)
                             .padding(.top, slot.rank == 0 ? 0 : 8)
                         }
                     }
@@ -139,66 +151,97 @@ struct FriendsPanelView: View {
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(friends) { f in
-                        HStack(spacing: 10) {
-                            NavigationLink(value: f.id) {
-                                HStack(spacing: 10) {
-                                    AvatarView(url: f.avatar_url, username: f.username, size: 30, emoji: f.avatar_emoji)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        HStack(spacing: 6) {
-                                            Text(f.username).font(Brand.font(12, .heavy))
-                                                .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                                            // §216: the week's leader wears the crown.
-                                            if f.id == crownId { Text("👑").font(.system(size: 11)) }
-                                            if isNewFriend(f) {
-                                                Text("NEW").font(Brand.font(8, .black))
-                                                    .foregroundStyle(Color(hex: 0x7C3AED))
-                                                    .padding(.horizontal, 4).padding(.vertical, 2)
-                                                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x7C3AED).opacity(0.13)))
-                                            }
-                                            // §216: friendversary chip on milestone days.
-                                            if let days = friendversary(f) {
-                                                Text("🎉 \(days) DAYS").font(Brand.font(8, .black))
-                                                    .foregroundStyle(Color(hex: 0xEC4899))
-                                                    .padding(.horizontal, 4).padding(.vertical, 2)
-                                                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xEC4899).opacity(0.13)))
-                                            }
+                        // §225: the WHOLE row is the door to the profile — the
+                        // old link stopped at the username, so most of the row
+                        // animated on tap but went nowhere (founder screenshot).
+                        // The bell/Say-hi Buttons nest inside the label; their
+                        // taps win over the link, so taunting never navigates.
+                        NavigationLink(value: f.id) {
+                            HStack(spacing: 10) {
+                                AvatarView(url: f.avatar_url, username: f.username, size: 30, emoji: f.avatar_emoji)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    HStack(spacing: 6) {
+                                        Text(f.username).font(Brand.font(12, .heavy))
+                                            .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                        // §216: the week's leader wears the crown.
+                                        if f.id == crownId { Text("👑").font(.system(size: 11)) }
+                                        if isNewFriend(f) {
+                                            Text("NEW").font(Brand.font(8, .black))
+                                                .foregroundStyle(Color(hex: 0x7C3AED))
+                                                .padding(.horizontal, 4).padding(.vertical, 2)
+                                                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x7C3AED).opacity(0.13)))
                                         }
-                                        // §212: today's progress, streak, rivalry — the live row.
-                                        if let played = f.playedToday {
-                                            Text(statusLine(f, played: played))
-                                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                                        // §216: friendversary chip on milestone days.
+                                        if let days = friendversary(f) {
+                                            Text("🎉 \(days) DAYS").font(Brand.font(8, .black))
+                                                .foregroundStyle(Color(hex: 0xEC4899))
+                                                .padding(.horizontal, 4).padding(.vertical, 2)
+                                                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xEC4899).opacity(0.13)))
                                         }
+                                    }
+                                    // §212: today's progress, streak, rivalry — the live row.
+                                    if let played = f.playedToday {
+                                        Text(statusLine(f, played: played))
+                                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
                                     }
                                 }
-                            }.buttonStyle(.plain)
-                            Spacer()
-                            if isNewFriend(f) {
-                                Button {
-                                    Task {
-                                        let outcome = await FriendsService.taunt(
-                                            friendId: f.id, tauntId: "hi",
-                                            day: LeaderboardService.todayLocal())
-                                        note = outcome == .sent ? "👋 sent to \(f.username)!"
-                                            : outcome == .alreadySent ? "Already said hi today" : "Could not send"
+                                Spacer()
+                                if isNewFriend(f) {
+                                    Button {
+                                        Task {
+                                            let outcome = await FriendsService.taunt(
+                                                friendId: f.id, tauntId: "hi",
+                                                day: LeaderboardService.todayLocal())
+                                            note = outcome == .sent ? "👋 sent to \(f.username)!"
+                                                : outcome == .alreadySent ? "Already said hi today" : "Could not send"
+                                        }
+                                    } label: {
+                                        Text("👋 Say hi").font(Brand.font(10, .bold))
+                                            .foregroundStyle(Color(hex: 0x7C3AED))
+                                            .padding(.horizontal, 8).padding(.vertical, 5)
+                                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
+                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                                    }.buttonStyle(.plain)
+                                } else {
+                                    // §225: fixed-width slot — bell or empty air —
+                                    // so "Lvl N" hangs in one clean column (founder:
+                                    // TheRealMichael's bell-less "Lvl 44" floated left).
+                                    ZStack {
+                                        if f.playedToday == 0 {
+                                            // Slacker bell — one-tap taunt (§207 picker).
+                                            Button { tauntTarget = f } label: {
+                                                Image(systemName: "bell.fill").font(.system(size: 12, weight: .bold))
+                                                    .foregroundStyle(Color(hex: 0x7C3AED))
+                                                    .frame(width: 26, height: 26)
+                                                    .background(Circle().fill(Theme.surfaceAlt))
+                                                    .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                                            }.buttonStyle(.plain)
+                                        } else {
+                                            Color.clear
+                                        }
                                     }
-                                } label: {
-                                    Text("👋 Say hi").font(Brand.font(10, .bold))
-                                        .foregroundStyle(Color(hex: 0x7C3AED))
-                                        .padding(.horizontal, 8).padding(.vertical, 5)
-                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
-                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-                                }.buttonStyle(.plain)
-                            } else if f.playedToday == 0 {
-                                // Slacker bell — one-tap taunt (§207 picker).
-                                Button { tauntTarget = f } label: {
-                                    Image(systemName: "bell.fill").font(.system(size: 12, weight: .bold))
-                                        .foregroundStyle(Color(hex: 0x7C3AED))
-                                        .frame(width: 26, height: 26)
-                                        .background(Circle().fill(Theme.surfaceAlt))
-                                        .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-                                }.buttonStyle(.plain)
+                                    .frame(width: 32, height: 26)
+                                }
+                                Text("Lvl \(f.level)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                                // §225: chevron so the row reads as tappable.
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Theme.textMuted)
                             }
-                            Text("Lvl \(f.level)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                        // §225: long-press menu — Unfriend used to live only on a
+                        // profile page these rows couldn't even reach.
+                        .contextMenu {
+                            Button { profileTarget = f.id } label: {
+                                Label("View Profile", systemImage: "person.crop.circle")
+                            }
+                            Button { tauntTarget = f } label: {
+                                Label("Taunt", systemImage: "bell")
+                            }
+                            Button(role: .destructive) { unfriendTarget = f } label: {
+                                Label("Unfriend", systemImage: "person.badge.minus")
+                            }
                         }
                     }
                 }
@@ -266,6 +309,20 @@ struct FriendsPanelView: View {
                     }
                 }
             }
+            // §225: not everyone knows their username — hand them a profile
+            // link instead. Message + separate URL, the ActivityShareSheet
+            // convention, so the sheet previews the site icon.
+            if let p = AuthService.shared.profile,
+               let profileUrl = URL(string: "https://wordocious.com/profile/\(p.id)") {
+                ShareLink(item: profileUrl, message: Text("Add me on Wordocious — I'm \(p.username)")) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "square.and.arrow.up").font(.system(size: 10, weight: .semibold))
+                        Text("Share invite link").font(Brand.font(10, .bold))
+                    }
+                    .foregroundStyle(Theme.textMuted)
+                }
+                .buttonStyle(.plain)
+            }
             if let note {
                 Text(note).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
             }
@@ -283,6 +340,33 @@ struct FriendsPanelView: View {
             version = FriendsService.version
         }
         .sheet(item: $tauntTarget) { target in tauntSheet(target) }
+        // §225: Unfriend confirmation — the mutation was only reachable from a
+        // profile page the rows couldn't open. remove() prunes the cache and
+        // notifies, so the roster refreshes itself.
+        .confirmationDialog(
+            "Unfriend \(unfriendTarget?.username ?? "")?",
+            isPresented: Binding(
+                get: { unfriendTarget != nil },
+                set: { if !$0 { unfriendTarget = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Unfriend", role: .destructive) {
+                if let f = unfriendTarget {
+                    Task { _ = await FriendsService.remove(friendId: f.id) }
+                }
+                unfriendTarget = nil
+            }
+            Button("Cancel", role: .cancel) { unfriendTarget = nil }
+        } message: {
+            Text("You can re-add them anytime.")
+        }
+        // §225: programmatic push for the context menu's View Profile — the
+        // HomeView isPresented idiom (menu items can't be NavigationLinks).
+        .navigationDestination(isPresented: Binding(
+            get: { profileTarget != nil },
+            set: { if !$0 { profileTarget = nil } })) {
+            if let id = profileTarget { PublicProfileView(userId: id) }
+        }
         .onChange(of: username) { q in
             searchTask?.cancel()
             let query = q.trimmingCharacters(in: .whitespaces)
@@ -416,6 +500,9 @@ struct FriendsPanelView: View {
         if played > 0 {
             var lead = "\(played)/9 today"
             if let s = f.streak, s > 0 { lead += " · 🔥\(s)" }
+            // §225: show the score, not just the count — todayPoints already
+            // rides the §216 digest. formatted() = grouping separators.
+            if let pts = f.todayPoints, pts > 0 { lead += " · \(pts.formatted()) pts" }
             parts.append(lead)
         } else {
             parts.append("hasn't played today")
@@ -593,8 +680,17 @@ struct FriendsScreenView: View {
             .padding(.bottom, chrome.bottomInset)
         }
         .background(Theme.background.ignoresSafeArea())
+        // navigationTitle stays for the next push's back label; the principal
+        // item is what renders. §225 (founder): the plain black system title
+        // clashed with the chrome — wear the SETTINGS idiom instead (Brand
+        // caps in the wordmark gradient).
         .navigationTitle("Friends")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("FRIENDS").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
+            }
+        }
     }
 }
 

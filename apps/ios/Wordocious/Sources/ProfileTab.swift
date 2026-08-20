@@ -1076,7 +1076,16 @@ struct LeaderboardTab: View {
             .fullScreenCover(isPresented: $showPNDaily) {
                 NavigationStack { ProperNoundleView() }
             }
-            .sheet(isPresented: $showFriendsSheet) { NavigationStack { FriendsScreenView() } }
+            // §225: this sheet's OWN NavigationStack never registered a String
+            // destination, so friend rows animated on tap but navigated
+            // nowhere (the pushed path resolves via line above; sheets don't
+            // inherit the outer stack's destinations).
+            .sheet(isPresented: $showFriendsSheet) {
+                NavigationStack {
+                    FriendsScreenView()
+                        .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
+                }
+            }
             // §214 (Lindsay): the post-game "View Leaderboard" capsule lands
             // here with its mode preselected (root switches the tab).
             .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in

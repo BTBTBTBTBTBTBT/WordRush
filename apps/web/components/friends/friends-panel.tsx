@@ -6,7 +6,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users, UserPlus, Check, X, Bell, Send } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -23,6 +24,7 @@ import {
   hasRequested,
   getMeDigest,
   remindFriend,
+  removeFriend,
   sendTaunt,
   type FriendProfile,
 } from '@/lib/friends-service';
@@ -67,6 +69,7 @@ function Avatar({ f }: { f: FriendProfile }) {
 
 export function FriendsPanel() {
   const { user, profile } = useAuth();
+  const router = useRouter();
   const [, force] = useState(0);
   const [username, setUsername] = useState('');
   const [sending, setSending] = useState(false);
@@ -86,6 +89,18 @@ export function FriendsPanel() {
   // §212: one-tap taunts from friend rows (same picker as the leaderboard).
   const [tauntTarget, setTauntTarget] = useState<FriendProfile | null>(null);
   const [tauntStatus, setTauntStatus] = useState<string | null>(null);
+  // §225: per-row kebab menu — unfriending used to be reachable only from
+  // the friend's profile page, so it effectively didn't exist. The menu
+  // puts View profile / Taunt / Unfriend one quiet tap away.
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [unfriendTarget, setUnfriendTarget] = useState<FriendProfile | null>(null);
+  // Any click outside the open menu dismisses it (menu clicks stopPropagation).
+  useEffect(() => {
+    if (!menuFor) return;
+    const close = () => setMenuFor(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [menuFor]);
 
   useEffect(() => {
     if (!user) return;
@@ -190,6 +205,25 @@ export function FriendsPanel() {
     setNote(r.sent ? `👋 sent to ${f.username}!` : r.alreadySent ? 'Already said hi today' : 'Could not send');
   };
 
+  // §225: typing a username assumes the friend is already here — the share
+  // link is the door for friends who aren't on Wordocious yet. Native share
+  // sheet where the platform has one, clipboard + transient note elsewhere.
+  const shareInvite = async () => {
+    const myId = profile?.id ?? user.id;
+    const text = `Add me on Wordocious — I'm ${profile?.username ?? ''}`.trim();
+    const url = `https://wordocious.com/profile/${myId}`;
+    if (typeof navigator.share === 'function') {
+      try { await navigator.share({ text, url }); } catch { /* user closed the sheet */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setNote('Link copied'); // auto-dismisses in 2.5s (§224)
+    } catch {
+      setNote('Could not copy link');
+    }
+  };
+
   const handleAdd = async () => {
     const name = username.trim();
     if (!name || sending) return;
@@ -256,18 +290,26 @@ export function FriendsPanel() {
               const e = podium[i];
               const medal = ['🥇', '🥈', '🥉'][i];
               return (
-                <div key={e.id} className={`flex flex-col items-center gap-0.5 ${i === 0 ? '-mt-2' : ''}`}>
+                // §225: podium columns are doors to the profiles too — same
+                // dead-tap complaint as the roster rows below.
+                <Link
+                  key={e.id}
+                  href={e.me ? '/profile' : `/profile/${e.id}`}
+                  className={`flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity ${i === 0 ? '-mt-2' : ''}`}
+                >
                   {/* Medals wait for the first score of the week (§216). */}
                   <span className={i === 0 ? 'text-lg' : 'text-sm'}>{raceStarted ? medal : '🏁'}</span>
                   <Avatar f={e as unknown as FriendProfile} />
-                  <span className="text-[10px] font-black truncate max-w-[72px]"
+                  {/* §225: 9px + 80px fits ~14 chars before the ellipsis —
+                      "TheRealMich..." at 10px/72px cut the founder's name. */}
+                  <span className="text-[9px] font-black truncate max-w-[80px]"
                     style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
                     {e.username}
                   </span>
                   <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                     {e.pts.toLocaleString()} pts
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -305,7 +347,18 @@ export function FriendsPanel() {
               ? ((f.h2hW ?? 0) >= (f.h2hL ?? 0) ? `${f.h2hW}–${f.h2hL} you` : `${f.h2hL}–${f.h2hW} them`)
               : null;
             return (
-              <div key={f.id} className="flex items-center gap-2.5">
+              // §225 (founder's dead-tap report): the WHOLE row navigates to
+              // the friend's profile, not just the name — taps on the Lvl
+              // label or the gaps used to go nowhere. Real controls (bell,
+              // say-hi, kebab) handle themselves and stop the row tap.
+              <div
+                key={f.id}
+                className="flex items-center gap-2.5 cursor-pointer"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('a,button')) return;
+                  router.push(`/profile/${f.id}`);
+                }}
+              >
                 <Link href={`/profile/${f.id}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                   <Avatar f={f} />
                   <span className="flex-1 min-w-0">
@@ -333,7 +386,11 @@ export function FriendsPanel() {
                     </span>
                     {played !== undefined && (
                       <span className="block text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
-                        {played > 0 ? `${played}/9 today${f.streak ? ` · 🔥${f.streak}` : ''}` : "hasn't played today"}
+                        {/* §225: show the score, not just the count — the
+                            digest already ships todayPoints (§216). */}
+                        {played > 0
+                          ? `${played}/9 today · ${(f.todayPoints ?? 0).toLocaleString()} pts${f.streak ? ` · 🔥${f.streak}` : ''}`
+                          : "hasn't played today"}
                         {record ? ` · ${record}` : ''}
                       </span>
                     )}
@@ -341,7 +398,7 @@ export function FriendsPanel() {
                 </Link>
                 {isNewFriend(f) && (
                   <button
-                    onClick={() => sayHi(f)}
+                    onClick={(e) => { e.stopPropagation(); sayHi(f); }}
                     aria-label={`Say hi to ${f.username}`}
                     className="text-[10px] font-bold px-2 py-1 rounded-lg"
                     style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
@@ -349,18 +406,66 @@ export function FriendsPanel() {
                     👋 Say hi
                   </button>
                 )}
-                {played === 0 && !isNewFriend(f) && (
-                  <button
-                    onClick={() => setTauntTarget(f)}
-                    aria-label={`Taunt ${f.username}`}
-                    className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                    style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
-                  >
-                    <Bell className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-                  </button>
-                )}
+                {/* §225: fixed-width slot whether or not the bell renders
+                    (friends who already played show none), so the Lvl labels
+                    line up in a clean column instead of jittering per row. */}
+                <span className="w-7 shrink-0 flex justify-center">
+                  {played === 0 && !isNewFriend(f) && (
+                    <button
+                      // stopPropagation: a bell tap taunts, it never navigates.
+                      onClick={(e) => { e.stopPropagation(); setTauntTarget(f); }}
+                      aria-label={`Taunt ${f.username}`}
+                      className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                      style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+                    >
+                      <Bell className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                    </button>
+                  )}
+                </span>
                 <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>
                   Lvl {f.level}
+                </span>
+                {/* §225: the chevron is the "this row goes somewhere" cue. */}
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                {/* §225 kebab: View profile / Taunt / Unfriend — unfriending
+                    finally reachable without hunting for the profile page. */}
+                <span className="relative shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuFor((m) => (m === f.id ? null : f.id)); }}
+                    aria-label={`More options for ${f.username}`}
+                    className="w-6 h-6 flex items-center justify-center rounded-lg hover:opacity-80 transition-opacity"
+                  >
+                    <MoreHorizontal className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+                  </button>
+                  {menuFor === f.id && (
+                    <div
+                      className="absolute right-0 top-7 z-40 w-36 overflow-hidden"
+                      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => { setMenuFor(null); router.push(`/profile/${f.id}`); }}
+                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
+                        style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                      >
+                        View profile
+                      </button>
+                      <button
+                        onClick={() => { setMenuFor(null); setTauntTarget(f); }}
+                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
+                        style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                      >
+                        Taunt
+                      </button>
+                      <button
+                        onClick={() => { setMenuFor(null); setUnfriendTarget(f); }}
+                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
+                        style={{ color: '#dc2626' }}
+                      >
+                        Unfriend
+                      </button>
+                    </div>
+                  )}
                 </span>
               </div>
             );
@@ -400,6 +505,15 @@ export function FriendsPanel() {
           <UserPlus className="w-3.5 h-3.5" /> Add
         </button>
       </div>
+      {/* §225: the invite door for friends who aren't on Wordocious yet —
+          typing a username only works once they already have an account. */}
+      <button
+        onClick={shareInvite}
+        className="flex items-center gap-1.5 text-[10px] font-bold hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
+        <Send className="w-3.5 h-3.5" /> Share invite link
+      </button>
       {/* Typeahead results — tap sends to that exact account (by id). */}
       {suggestions.length > 0 && (
         <div className="space-y-1">
@@ -482,6 +596,48 @@ export function FriendsPanel() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* §225: unfriend confirm — a mis-tap on a destructive menu item
+          shouldn't cost a friendship (re-adding takes a whole new request
+          round trip). Same modal shell as the taunt picker above. */}
+      {unfriendTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setUnfriendTarget(null)}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+              Unfriend {unfriendTarget.username}? You can re-add them anytime.
+            </p>
+            <div className="flex" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <button
+                onClick={() => setUnfriendTarget(null)}
+                className="flex-1 px-4 py-3 text-xs font-extrabold"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const f = unfriendTarget;
+                  setUnfriendTarget(null);
+                  // Optimistic mutator — the roster refreshes via onFriendsChange.
+                  await removeFriend(f.id);
+                }}
+                className="flex-1 px-4 py-3 text-xs font-black"
+                style={{ color: '#dc2626', borderLeft: '1px solid var(--color-border)' }}
+              >
+                Unfriend
+              </button>
+            </div>
           </div>
         </div>
       )}

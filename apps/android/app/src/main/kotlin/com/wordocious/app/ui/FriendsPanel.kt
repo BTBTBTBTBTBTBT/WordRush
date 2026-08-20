@@ -1,7 +1,11 @@
 package com.wordocious.app.ui
 
+import android.content.Intent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -26,9 +31,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.ui.draw.alpha
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -43,9 +52,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,6 +91,11 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     // §212: one-tap taunts from friend rows (leaderboard dialog twin).
     var tauntTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
     var tauntStatus by remember { mutableStateOf<String?>(null) }
+    // §225: long-press row menu + unfriend confirm — unfriend was only
+    // reachable by drilling into the friend's profile page.
+    var menuTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    var unfriendTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(note) { if (note != null) { delay(2_500); note = null } }
     LaunchedEffect(username) {
@@ -222,14 +238,21 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp),
+                            modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp)
+                                // §225 dead-tap report: the podium looked
+                                // tappable but went nowhere — into the profile.
+                                .clickableNoRipple { onOpenProfile(e.id) },
                         ) {
                             Text(if (raceStarted) listOf("🥇", "🥈", "🥉")[i] else "🏁", fontSize = if (i == 0) 20.sp else 14.sp)
                             PodiumAvatar(e)
                             Text(
-                                e.username, fontSize = 10.sp,
+                                // §225: 9.sp + capped width fits ~14 chars
+                                // before the ellipsis ("TheRealMich…" ask).
+                                e.username, fontSize = 9.sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                                color = if (e.isMe) Color(0xFF7C3AED) else WTheme.text, maxLines = 1,
+                                color = if (e.isMe) Color(0xFF7C3AED) else WTheme.text,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 80.dp),
                             )
                             Text(
                                 "${e.pts} pts", fontSize = 9.sp,
@@ -282,10 +305,15 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
         // Friends list — avatar rows into their profiles (H2H lives there).
         if (friends.isNotEmpty()) {
             friends.forEach { f ->
+                // §225: Box anchors the long-press DropdownMenu to this row.
+                Box {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.clickableNoRipple { onOpenProfile(f.id) },
+                    modifier = Modifier.combinedClickableNoRipple(
+                        onLongClick = { menuTarget = f },
+                        onClick = { onOpenProfile(f.id) },
+                    ),
                 ) {
                     FriendAvatar(f)
                     Column(
@@ -363,24 +391,55 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                                 color = Color(0xFF7C3AED), fontFamily = Nunito,
                             )
                         }
-                    } else if (f.playedToday == 0) {
-                        // Slacker bell — one-tap taunt (§207 picker).
-                        Box(
-                            Modifier.size(26.dp).clip(CircleShape).background(WTheme.surfaceHover)
-                                .border(1.5.dp, WTheme.border, CircleShape)
-                                .clickableNoRipple { tauntTarget = f },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Outlined.Notifications, "Taunt ${f.username}",
-                                tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp),
-                            )
+                    }
+                    // §225: every row reserves the bell's 26.dp so the Lvl
+                    // labels sit in a clean column, bell or no bell.
+                    Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) {
+                        if (!isNewFriend(f) && f.playedToday == 0) {
+                            // Slacker bell — one-tap taunt (§207 picker). Its
+                            // own click target; the row tap opens the profile.
+                            Box(
+                                Modifier.size(26.dp).clip(CircleShape).background(WTheme.surfaceHover)
+                                    .border(1.5.dp, WTheme.border, CircleShape)
+                                    .clickableNoRipple { tauntTarget = f },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Notifications, "Taunt ${f.username}",
+                                    tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp),
+                                )
+                            }
                         }
                     }
                     Text(
                         "Lvl ${f.level}", fontSize = 10.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
                     )
+                    // §225: rows read tappable now that they navigate.
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
+                        tint = WTheme.textMuted, modifier = Modifier.size(14.dp),
+                    )
+                }
+                // §225: long-press menu — profile / taunt / unfriend without
+                // the profile-page detour.
+                DropdownMenu(
+                    expanded = menuTarget?.id == f.id,
+                    onDismissRequest = { menuTarget = null },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("View profile", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito) },
+                        onClick = { menuTarget = null; onOpenProfile(f.id) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Taunt", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito) },
+                        onClick = { menuTarget = null; tauntTarget = f },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Unfriend", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito, color = Color(0xFFDC2626)) },
+                        onClick = { menuTarget = null; unfriendTarget = f },
+                    )
+                }
                 }
             }
         } else if (incoming.isEmpty() && outgoing.isEmpty()) {
@@ -435,6 +494,27 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                 )
             }
         }
+        // §225: adding by username only works when the friend is already
+        // here — the share link covers the "get them on the app" direction.
+        Text(
+            "Share invite link", fontSize = 11.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            color = WTheme.textMuted, fontFamily = Nunito,
+            modifier = Modifier.clickableNoRipple {
+                val myId = AuthService.userId ?: return@clickableNoRipple
+                val myName = AuthService.profile.value?.username ?: return@clickableNoRipple
+                // Plain-text ACTION_SEND, InvitePanel.share idiom (ShareHelper
+                // is image-first, so no fit there).
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Add me on Wordocious — I'm $myName\nhttps://wordocious.com/profile/$myId",
+                    )
+                }
+                context.startActivity(Intent.createChooser(send, null))
+            },
+        )
         // Typeahead results — tap sends to that exact account (by id).
         if (suggestions.isNotEmpty()) {
             suggestions.forEach { u ->
@@ -614,6 +694,27 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     }
     }
 
+    // §225: unfriend confirm — reachable from the row menu now, not just the
+    // buried profile-page button. FriendsService.remove drops the cached row
+    // immediately; the forced reload refreshes podium/digest to match.
+    unfriendTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { unfriendTarget = null },
+            title = { Text("Unfriend ${target.username}?", fontWeight = androidx.compose.ui.text.font.FontWeight.Black, fontFamily = Nunito) },
+            text = { Text("You can re-add them anytime.", fontFamily = Nunito) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val id = target.id
+                    unfriendTarget = null
+                    scope.launch { FriendsService.remove(id); FriendsService.load(force = true) }
+                }) { Text("Unfriend", color = Color(0xFFDC2626), fontWeight = androidx.compose.ui.text.font.FontWeight.Black) }
+            },
+            dismissButton = {
+                TextButton(onClick = { unfriendTarget = null }) { Text("Keep", fontWeight = androidx.compose.ui.text.font.FontWeight.Black) }
+            },
+        )
+    }
+
     // Taunt picker — the leaderboard dialog's twin (§207 fixed phrases).
     tauntTarget?.let { target ->
         androidx.compose.ui.window.Dialog(onDismissRequest = { tauntTarget = null; tauntStatus = null }) {
@@ -671,12 +772,28 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     }
 }
 
+// §225: tap opens the profile, long-press opens the row menu — the no-ripple
+// twin of Util.clickableNoRipple for rows that need both gestures.
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Modifier.combinedClickableNoRipple(onLongClick: () -> Unit, onClick: () -> Unit): Modifier {
+    val interaction = remember { MutableInteractionSource() }
+    return this.combinedClickable(
+        interactionSource = interaction, indication = null,
+        onLongClick = onLongClick, onClick = onClick,
+    )
+}
+
 /** "5/9 today · 🔥12 · 7–4 you" — the row's engagement digest (§212). */
 private fun statusLine(f: FriendsService.FriendProfile, played: Int): String {
     val parts = mutableListOf<String>()
     if (played > 0) {
         var lead = "$played/9 today"
         f.streak?.takeIf { it > 0 }?.let { lead += " · 🔥$it" }
+        // §225: played rows show today's score — "5/9 today · 2,116 pts".
+        // The digest carries todayPoints since §216; US locale pins the
+        // comma grouping the copy spec shows.
+        f.todayPoints?.takeIf { it > 0 }?.let { lead += " · ${String.format(java.util.Locale.US, "%,d", it)} pts" }
         parts.add(lead)
     } else {
         parts.add("hasn't played today")
