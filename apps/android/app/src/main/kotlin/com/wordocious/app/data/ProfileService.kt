@@ -165,9 +165,17 @@ object ProfileService {
             .toMap()
     }.getOrElse { emptyMap() }
 
+    /** §226 trophy epoch: trophies count from the App Store launch (iOS 1.1,
+     *  2026-07-29). Pre-epoch medal rows are retained but never shown.
+     *  Mirrors web TROPHY_EPOCH_DATE + the all-time sweep RPCs — lockstep. */
+    private const val TROPHY_EPOCH_DATE = "2026-07-29"
+
     suspend fun fetchUserMedals(userId: String, limit: Int = 10): List<UserMedal> = runCatching {
         client.postgrest["medals"]
-            .select { filter { eq("user_id", userId) }; order("day", Order.DESCENDING); limit(limit.toLong()) }
+            .select {
+                filter { eq("user_id", userId); gte("day", TROPHY_EPOCH_DATE) }
+                order("day", Order.DESCENDING); limit(limit.toLong())
+            }
             .decodeList<UserMedal>()
     }.getOrElse { emptyList() }
 

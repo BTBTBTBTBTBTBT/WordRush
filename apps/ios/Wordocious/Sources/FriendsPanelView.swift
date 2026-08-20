@@ -81,7 +81,11 @@ struct FriendsPanelView: View {
                         Text("THIS WEEK'S RACE").font(Brand.font(9, .black)).tracking(0.8)
                             .foregroundStyle(Theme.textMuted)
                         Spacer()
-                        Text(weekEndsLabel).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                            Text(FriendsPanelView.weekEndsLabel(at: ctx.date))
+                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                                .monospacedDigit()
+                        }
                     }
                     HStack(alignment: .bottom, spacing: 22) {
                         ForEach(podiumOrder, id: \.entry.id) { slot in
@@ -585,12 +589,19 @@ struct FriendsPanelView: View {
 
     private var raceStarted: Bool { podium.contains { $0.pts > 0 } }
 
-    /// §218: when the weekly race closes — weeks run Mon–Sun, reset Monday
-    /// 00:00 local (same boundary as weekStart in the friends digest).
-    private var weekEndsLabel: String {
-        let dow = Calendar.current.component(.weekday, from: Date()) // 1 Sun … 7 Sat
-        let daysLeft = dow == 1 ? 1 : 9 - dow // Mon→7 … Sat→2, Sun→1
-        return daysLeft == 1 ? "ends tonight" : "ends Sunday · \(daysLeft)d left"
+    /// §218/§226: when the weekly race closes — weeks run Mon–Sun, reset
+    /// Monday 00:00 local (same boundary as weekStart in the friends digest).
+    /// Live clock (founder: a static "4d" carried no urgency) — the Text is
+    /// driven by a TimelineView so it ticks like the daily countdown.
+    static func weekEndsLabel(at now: Date) -> String {
+        let cal = Calendar.current
+        let dow = cal.component(.weekday, from: now) // 1 Sun … 7 Sat
+        let daysToMonday = dow == 1 ? 1 : 9 - dow // Mon→7 … Sat→2, Sun→1
+        let end = cal.startOfDay(for: cal.date(byAdding: .day, value: daysToMonday, to: now)!)
+        let secs = max(0, Int(end.timeIntervalSince(now)))
+        let d = secs / 86400
+        let clock = String(format: "%02d:%02d:%02d", (secs % 86400) / 3600, (secs % 3600) / 60, secs % 60)
+        return d >= 1 ? "ends Sunday · \(d)d \(clock)" : "ends tonight · \(clock)"
     }
 
     /// §216: the week's leader wears the crown — only once someone scored.

@@ -29,11 +29,17 @@ enum ProfileExtras {
 }
 
 enum MedalsService {
+    /// §226 trophy epoch: trophies count from the App Store launch (iOS 1.1,
+    /// 2026-07-29). Pre-epoch medal rows are retained but never shown.
+    /// Mirrors web TROPHY_EPOCH_DATE + the all-time sweep RPCs — lockstep.
+    static let trophyEpochDate = "2026-07-29"
+
     /// Most-recent medals for a user (powers the Profile "Daily Medals" list).
     static func recent(userId: String, limit: Int = 5) async -> [MedalRow] {
         (try? await AuthService.shared.client.from("medals")
             .select("id, medal_type, game_mode, day")
             .eq("user_id", value: userId)
+            .gte("day", value: trophyEpochDate)
             .order("day", ascending: false)
             .limit(limit)
             .execute().value) ?? []

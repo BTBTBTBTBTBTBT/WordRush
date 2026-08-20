@@ -714,6 +714,17 @@ export interface Medal {
 /**
  * Fetch a user's medals.
  */
+
+/**
+ * §226 trophy epoch: competitive trophies count from the App Store launch
+ * (iOS 1.1, 2026-07-29). Pre-epoch medal rows are RETAINED in the DB but
+ * never displayed or counted — the founder's months of solo pre-launch play
+ * had banked walls of default gold. Mirrored in the all-time sweep RPCs
+ * (20260820000001_trophy_epoch.sql) and the iOS/Android medal fetches —
+ * keep in lockstep.
+ */
+export const TROPHY_EPOCH_DATE = '2026-07-29';
+
 export async function fetchUserMedals(
   userId: string,
   limit: number = 50,
@@ -722,6 +733,7 @@ export async function fetchUserMedals(
     .from('medals')
     .select('*')
     .eq('user_id', userId)
+    .gte('day', TROPHY_EPOCH_DATE)
     .order('created_at', { ascending: false })
     .limit(limit);
 

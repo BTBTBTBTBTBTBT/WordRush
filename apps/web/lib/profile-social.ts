@@ -1,5 +1,5 @@
 import { supabase } from './supabase-client';
-import { getTodayLocal, toLocalDayString } from './daily-service';
+import { getTodayLocal, toLocalDayString, TROPHY_EPOCH_DATE } from './daily-service';
 
 /**
  * Data layer for the "profile social" redesign — the public-profile identity
@@ -286,6 +286,8 @@ export async function fetchMedalHistory(targetId: string): Promise<MedalRow[]> {
       .select('day, game_mode, medal_type, composite_score')
       .eq('user_id', targetId)
       .eq('play_type', 'solo')
+      // §226 trophy epoch — pre-launch medals are retained but never shown.
+      .gte('day', TROPHY_EPOCH_DATE)
       .order('day', { ascending: false })
       .limit(100) as { data: MedalRow[] | null };
     return data ?? [];

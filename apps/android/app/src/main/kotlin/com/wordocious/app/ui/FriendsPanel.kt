@@ -210,11 +210,25 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             ) {
-                // §218 (founder ask): the podium is the WEEKLY race, but bare
-                // "pts" read as today's score — name the window and when it
-                // closes. Weeks run Mon-Sun, reset Monday 00:00 local.
-                val daysLeft = 8 - java.time.LocalDate.now().dayOfWeek.value
-                val weekEndsLabel = if (daysLeft == 1) "ends tonight" else "ends Sunday · ${daysLeft}d left"
+                // §218/§226 (founder asks): the podium is the WEEKLY race, but
+                // bare "pts" read as today's score — name the window and when
+                // it closes. Weeks run Mon-Sun, reset Monday 00:00 local.
+                // Live clock (a static "4d" carried no urgency) — ticks every
+                // second like the daily countdown.
+                var raceTick by remember { mutableIntStateOf(0) }
+                LaunchedEffect(Unit) { while (true) { delay(1_000); raceTick++ } }
+                val weekEndsLabel = remember(raceTick) {
+                    val now = java.time.LocalDateTime.now()
+                    val end = now.toLocalDate()
+                        .plusDays((8 - now.dayOfWeek.value).toLong())
+                        .atStartOfDay()
+                    val secs = java.time.Duration.between(now, end).seconds.coerceAtLeast(0)
+                    val d = secs / 86400
+                    val clock = String.format(
+                        "%02d:%02d:%02d", (secs % 86400) / 3600, (secs % 3600) / 60, secs % 60,
+                    )
+                    if (d >= 1) "ends Sunday · ${d}d $clock" else "ends tonight · $clock"
+                }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         "THIS WEEK'S RACE", fontSize = 9.sp,

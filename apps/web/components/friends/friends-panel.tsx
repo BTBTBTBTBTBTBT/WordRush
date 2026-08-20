@@ -158,12 +158,26 @@ export function FriendsPanel() {
   // friends leaderboard) — only once someone has actually scored.
   const crownId = raceStarted ? podium[0].id : null;
 
-  // §218: when the weekly race closes — weeks run Mon–Sun, reset Monday
-  // 00:00 local (same boundary as weekStart in the friends digest).
+  // §218/§226: when the weekly race closes — weeks run Mon–Sun, reset Monday
+  // 00:00 local (same boundary as weekStart in the friends digest). Now a
+  // LIVE clock (founder: a static "4d" carried no urgency) — "4d 07:23:45",
+  // "ends tonight · 07:23:45" on the last day, ticking like the daily timer.
+  const [, tickRace] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tickRace((v) => v + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
   const weekEndsLabel = (() => {
-    const dow = new Date().getDay(); // 0 Sun … 6 Sat
-    const daysLeft = dow === 0 ? 1 : 8 - dow; // Mon→7 … Sat→2, Sun→1
-    return daysLeft === 1 ? 'ends tonight' : `ends Sunday · ${daysLeft}d left`;
+    const now = new Date();
+    const end = new Date(now);
+    const dow = now.getDay(); // 0 Sun … 6 Sat
+    end.setDate(now.getDate() + (dow === 0 ? 1 : 8 - dow)); // next Monday
+    end.setHours(0, 0, 0, 0);
+    const secs = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+    const d = Math.floor(secs / 86400);
+    const clock = [Math.floor((secs % 86400) / 3600), Math.floor((secs % 3600) / 60), secs % 60]
+      .map((n) => String(n).padStart(2, '0')).join(':');
+    return d >= 1 ? `ends Sunday · ${d}d ${clock}` : `ends tonight · ${clock}`;
   })();
 
   // §216: "topped N of M friends today" — my day total vs each friend's.
