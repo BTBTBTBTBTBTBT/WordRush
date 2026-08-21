@@ -230,10 +230,47 @@ fun WordociousTheme(content: @Composable () -> Unit) {
         // title, which is why the founder spotted "the font looks a little off"
         // on the game screen while the home screen looked right.
         // Gradient text MUST spell out `fontFamily = Nunito` alongside `brush`.
+        //
+        // §227 (the founder's iPhone-vs-Android side-by-side: "bloated, less
+        // crisp"): the dp/sp numbers on the Android screens already matched
+        // iOS; what didn't was the LINE BOX. Material3's bodyLarge default is
+        // a flat 24sp lineHeight, so a 9sp tile label, a 10sp stats line and
+        // a 13sp streak number each sat in a 24sp-tall box (times the user's
+        // fontScale) — taller rows, taller pills, and a 26dp icon + 4dp + 24sp
+        // label overflowing the 52dp mode tile so the icon hugged the top
+        // edge. iOS line boxes are font-proportional. Home fixed this for
+        // itself (homeTightTextStyle); this is the same style at the root so
+        // every screen gets it and no screen can drift back.
+        val d = androidx.compose.ui.platform.LocalDensity.current
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalTextStyle provides
-                androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = Nunito),
+                tightTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = Nunito)),
+            // iOS Brand.font caps Larger Text at 1.6x the base size; nothing
+            // capped Android at the root, so a phone's large-text setting
+            // inflated whole screens. Fixed chrome keeps its tighter 1.3x
+            // CappedFontScale underneath (coerceAtMost composes).
+            androidx.compose.ui.platform.LocalDensity provides
+                androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(MAX_FONT_SCALE)),
             content = content,
         )
     }
 }
+
+/** iOS `Brand.maxScale` — the Larger Text ceiling the app root applies. */
+const val MAX_FONT_SCALE = 1.6f
+
+/**
+ * Font-proportional line boxes (iOS density parity): 1.3x the resolved
+ * fontSize (em, so it scales WITH each Text, unlike Material's flat 24sp),
+ * font padding off, centered and trimmed — the TileView/ModeGlyph fix class.
+ * Texts passing an explicit TextStyle (brush-gradient titles) already have an
+ * unspecified → font-metric line height and are unaffected.
+ */
+fun tightTextStyle(base: androidx.compose.ui.text.TextStyle): androidx.compose.ui.text.TextStyle = base.copy(
+    lineHeight = androidx.compose.ui.unit.TextUnit(1.3f, androidx.compose.ui.unit.TextUnitType.Em),
+    platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+        alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+        trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+    ),
+)

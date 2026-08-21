@@ -424,12 +424,17 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
             // (Shared AppHeader is above.) Page title: DAILY CHALLENGE + countdown.
             item {
+                // §227 (founder side-by-side): iOS `header` is VStack(spacing: 4),
+                // 28pt black with -0.5 tracking, 4pt under it, inside the 8pt
+                // content inset — same numbers here.
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         "DAILY CHALLENGE", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.5).sp,
                         style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
                     )
                     DailyCountdownChip()
@@ -926,7 +931,7 @@ private fun DailyCountdownChip() {
         ) {
             androidx.compose.material3.Icon(
                 Icons.Filled.CalendarMonth, null,
-                tint = WTheme.textMuted, modifier = Modifier.size(12.dp),
+                tint = WTheme.textMuted, modifier = Modifier.size(11.dp),   // iOS .system(size: 11)
             )
             Text(today, fontSize = 12.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold)
         }
@@ -936,7 +941,7 @@ private fun DailyCountdownChip() {
         ) {
             androidx.compose.material3.Icon(
                 Icons.Filled.Schedule, null,
-                tint = WTheme.textMuted, modifier = Modifier.size(12.dp),
+                tint = WTheme.textMuted, modifier = Modifier.size(11.dp),   // iOS .system(size: 11)
             )
             Text(
                 "%02d:%02d:%02d".format(h, m, s),
@@ -1021,13 +1026,16 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
         ) {
-            Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
+            // §227: iOS ModeIconView(box: 26) — radius box*0.27 (7), fill
+            // accent@0.08 (this was 0.12/8dp: a heavier, rounder box than the
+            // iPhone's), glyph box*0.5 (13).
+            Box(Modifier.size(26.dp).clip(RoundedCornerShape(7.dp)).background(accent.copy(alpha = 0.08f)), Alignment.Center) {
                 // Web-faithful mode icon (WordleGrid/IV/VIII/TrendingUp/Shield/6/7/Skull/Crown);
                 // the sweep tile draws the broom line-art.
                 if (isSweep) {
                     Icon(
                         androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
-                        null, tint = accent, modifier = Modifier.size(14.dp),
+                        null, tint = accent, modifier = Modifier.size(13.dp),
                     )
                 } else {
                     mode?.let { ModeGlyph(it, accent, box = 26.dp) }
@@ -1149,7 +1157,10 @@ internal fun SweepRow(
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         // Same shape as LeaderboardRow (Doug's Aug-16 feedback): stats under
         // the name so the name keeps the row's flexible width.
-        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        Column(
+            Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },
+            verticalArrangement = Arrangement.spacedBy(2.dp),   // iOS VStack(spacing: 2)
+        ) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
@@ -1162,30 +1173,36 @@ internal fun SweepRow(
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                    color = WTheme.textMuted, maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
+            Text(
+                sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                color = WTheme.textMuted, maxLines = 1,
+            )
+            // §227: the pill rides the dots row (the dots are ~70dp wide, so
+            // the pill always fits) — the stats line gets the full width and
+            // never truncates. Web + iOS made exactly this move.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                SweepModeDots(details, day)
                 SweepPill(entry.isFlawless)
             }
-            SweepModeDots(details, day)
         }
         Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
     }
 }
 
-/** §223: "{time} · {won}/9[ · Ng][ · Nh]" — guesses (and hints, when any) are
- *  the numbers that actually explain the ranking: the formula is guess-first,
- *  so 9 slow wins can trail 8 sharp ones (founder double-take, Aug 18). The
- *  g/h segments appear only once details land. */
+/** §223: "{time} · {won}/9[ · N guesses][ · N hints]" — guesses (and hints,
+ *  when any) are the numbers that actually explain the ranking: the formula is
+ *  guess-first, so 9 slow wins can trail 8 sharp ones (founder double-take,
+ *  Aug 18). The segments appear only once details land. §227: spelled out —
+ *  the founder read "2h" as HOURS; the pill moved off this line so the words
+ *  have the width (iOS sweepStatsLine parity). */
 private fun sweepStatsLine(entry: LeaderboardService.SweepEntry, details: LeaderboardService.SweepDetails?): String = buildString {
     append("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9")
     if (details != null) {
-        append(" · ${details.guesses}g")
-        if (details.hints > 0) append(" · ${details.hints}h")
+        append(" · ${details.guesses} guess${if (details.guesses == 1) "" else "es"}")
+        if (details.hints > 0) append(" · ${details.hints} hint${if (details.hints == 1) "" else "s"}")
     }
 }
 
@@ -1208,7 +1225,6 @@ private val SWEEP_DOT_MODES = listOf(
 private fun SweepModeDots(details: LeaderboardService.SweepDetails?, day: String) {
     if (details == null) return
     Row(
-        Modifier.padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1246,7 +1262,10 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         // Same shape as LeaderboardRow (Doug's Aug-16 feedback): stats under
         // the name so the name keeps the row's flexible width.
-        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        Column(
+            Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },
+            verticalArrangement = Arrangement.spacedBy(2.dp),   // iOS VStack(spacing: 2)
+        ) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
@@ -1289,7 +1308,10 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         // right column's width was set by the widest stats string and names
         // truncated at ~5 chars ("nanc…"). Name on top, stats underneath,
         // score alone on the right — the name gets the row's flexible width.
-        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        Column(
+            Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },
+            verticalArrangement = Arrangement.spacedBy(2.dp),   // iOS VStack(spacing: 2)
+        ) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
@@ -1304,7 +1326,7 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 if (playType == "vs") {
                     // VS records show the head-to-head W/L tally instead of the
                     // solo guesses/time + Win/Loss pill (web records page parity).
@@ -1391,18 +1413,23 @@ private fun YesterdaySweepRow(
     ) {
         RankIcon(entry.rank.toInt())
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
-        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        Column(
+            Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },
+            verticalArrangement = Arrangement.spacedBy(2.dp),   // iOS VStack(spacing: 2)
+        ) {
             Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                    color = WTheme.textMuted, maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
+            Text(
+                sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                color = WTheme.textMuted, maxLines = 1,
+            )
+            // §227: pill on the dots row, stats line owns the width (see SweepRow).
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                SweepModeDots(details, day)
                 SweepPill(entry.isFlawless)
             }
-            SweepModeDots(details, day)
         }
         Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }

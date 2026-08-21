@@ -550,19 +550,23 @@ export default function DailyPage() {
             {/* §223: guesses (and hints) are the numbers that actually explain
                 the ranking — the formula is guess-first, so 9 slow wins can
                 trail 8 sharp ones (founder double-take, Aug 18). */}
+            {/* §227: full words — "2h" read as hours, not hints. The pill
+                lives on the dots row so this line gets the width. */}
             <span className="truncate">
               {formatTime(entry.total_time)} · {entry.modes_won}/9
-              {det ? ` · ${det.guesses}g` : ''}
-              {det && det.hints > 0 ? ` · ${det.hints}h` : ''}
+              {det ? ` · ${det.guesses} guess${det.guesses === 1 ? '' : 'es'}` : ''}
+              {det && det.hints > 0 ? ` · ${det.hints} hint${det.hints === 1 ? '' : 's'}` : ''}
             </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <SweepModeDots details={det} day={getTodayLocal()} />
             <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
               style={{ background: `${pillColor}22`, color: pillColor }}
             >
               {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
             </span>
           </div>
-          <SweepModeDots details={det} day={getTodayLocal()} />
         </div>
         <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
           {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
@@ -954,11 +958,14 @@ export default function DailyPage() {
                         <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                           <span className="truncate">
                             {formatTime(entry.total_time)} · {entry.modes_won}/9
-                            {ySweepDetails.get(entry.user_id) ? ` · ${ySweepDetails.get(entry.user_id)!.guesses}g` : ''}
-                            {(ySweepDetails.get(entry.user_id)?.hints ?? 0) > 0 ? ` · ${ySweepDetails.get(entry.user_id)!.hints}h` : ''}
+                            {(() => { const g = ySweepDetails.get(entry.user_id)?.guesses; return g !== undefined ? ` · ${g} guess${g === 1 ? '' : 'es'}` : ''; })()}
+                            {(() => { const h = ySweepDetails.get(entry.user_id)?.hints ?? 0; return h > 0 ? ` · ${h} hint${h === 1 ? '' : 's'}` : ''; })()}
                           </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <SweepModeDots details={ySweepDetails.get(entry.user_id)} day={yesterday} />
                           <span
-                            className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
+                            className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
                             style={{
                               background: entry.is_flawless ? '#d9770622' : '#a78bfa22',
                               color: entry.is_flawless ? '#d97706' : '#a78bfa',
@@ -967,7 +974,6 @@ export default function DailyPage() {
                             {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
                           </span>
                         </div>
-                        <SweepModeDots details={ySweepDetails.get(entry.user_id)} day={yesterday} />
                       </div>
                       <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text-muted)' }}>{ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</span>
                     </div>

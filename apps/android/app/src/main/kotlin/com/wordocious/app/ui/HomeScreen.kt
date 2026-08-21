@@ -499,14 +499,10 @@ internal val HERO_HEIGHT = 78.dp
  * height and are unaffected.
  */
 @Composable
-internal fun homeTightTextStyle(): TextStyle = LocalTextStyle.current.copy(
-    lineHeight = 1.3.em,
-    platformStyle = PlatformTextStyle(includeFontPadding = false),
-    lineHeightStyle = LineHeightStyle(
-        alignment = LineHeightStyle.Alignment.Center,
-        trim = LineHeightStyle.Trim.Both,
-    ),
-)
+internal fun homeTightTextStyle(): TextStyle =
+    // §227: WordociousTheme now applies this at the root for every screen;
+    // kept as the one definition Home names so the two can't drift.
+    com.wordocious.app.ui.theme.tightTextStyle(LocalTextStyle.current)
 
 /**
  * Fixed-visual card chrome (heroes, mode cards, play-mode toggle, WOTD

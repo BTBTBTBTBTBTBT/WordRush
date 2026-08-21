@@ -1284,14 +1284,16 @@ struct LeaderboardTab: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                         .minimumScaleFactor(0.7)
-                    HStack(spacing: 5) {
-                        Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            .lineLimit(1)
+                    Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
+                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        .lineLimit(1)
+                    // §227: the pill rides the dots row (the dots are ~70pt wide,
+                    // so the pill always fits) — the stats line gets the width.
+                    HStack(spacing: 6) {
+                        SweepModeDots(details: ySweepDetails[entry.userId],
+                                      day: LeaderboardService.yesterdayLocal())
                         sweepPill(isFlawless: entry.isFlawless)
                     }
-                    SweepModeDots(details: ySweepDetails[entry.userId],
-                                  day: LeaderboardService.yesterdayLocal())
                 }
             }.buttonStyle(.plain)
             Spacer()
@@ -1683,10 +1685,12 @@ struct LeaderboardTab: View {
     // ones (founder double-take, Aug 18). Details still loading → the plain
     // line, never a blocked row.
     private func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?) -> String {
+        // §227: full words — the founder read "2h" as hours-since-completion.
+        // Room comes from the pill living on the dots row, not this line.
         var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9"
         if let d = details {
-            s += " · \(d.guesses)g"
-            if d.hints > 0 { s += " · \(d.hints)h" }
+            s += " · \(d.guesses) guess\(d.guesses == 1 ? "" : "es")"
+            if d.hints > 0 { s += " · \(d.hints) hint\(d.hints == 1 ? "" : "s")" }
         }
         return s
     }
@@ -1707,14 +1711,16 @@ struct LeaderboardTab: View {
                     (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                         .minimumScaleFactor(0.7)
-                    HStack(spacing: 5) {
-                        Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            .lineLimit(1)
+                    Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
+                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        .lineLimit(1)
+                    // §227: the pill rides the dots row (the dots are ~70pt wide,
+                    // so the pill always fits) — the stats line gets the width.
+                    HStack(spacing: 6) {
+                        SweepModeDots(details: sweepDetails[entry.userId],
+                                      day: LeaderboardService.todayLocal())
                         sweepPill(isFlawless: entry.isFlawless)
                     }
-                    SweepModeDots(details: sweepDetails[entry.userId],
-                                  day: LeaderboardService.todayLocal())
                 }
             }.buttonStyle(.plain)
             Spacer()

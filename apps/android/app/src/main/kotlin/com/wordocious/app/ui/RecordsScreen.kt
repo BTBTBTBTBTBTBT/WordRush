@@ -573,7 +573,7 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
         // Hall of Fame
         item {
             Spacer(Modifier.height(8.dp))
-            Text("HALL OF FAME", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            Text("HALL OF FAME", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(8.dp))
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
@@ -597,7 +597,7 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
         // By Game Mode
         item {
             Spacer(Modifier.height(20.dp))
-            Text(if (isSweep) "SWEEP RANKING" else "BY GAME MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            Text(if (isSweep) "SWEEP RANKING" else "BY GAME MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(8.dp))
             ModePickerRow(selectedMode) { selectedMode = it }
             Spacer(Modifier.height(8.dp))
@@ -786,7 +786,7 @@ private fun YourRecordsTab() {
         // Milestone + Record Chase (top-3 beatable records with progress bars)
         if (nextShield > 0 || chases.isNotEmpty()) item {
             CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))) {
-                Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
@@ -829,7 +829,7 @@ private fun YourRecordsTab() {
         // sweep window (totals + today/all-time rank), populating only on select.
         item {
             val isSweep = selectedMode == SWEEP_ID
-            Text("YOUR BESTS BY MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            Text("YOUR BESTS BY MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(8.dp))
             ModePickerRow(selectedMode) { selectedMode = it }
             Spacer(Modifier.height(8.dp))
@@ -897,7 +897,7 @@ private fun YourRecordsTab() {
                 Column(
                     Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
                 ) {
-                    Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                    Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         MedalCount(com.wordocious.app.R.drawable.ic_crown, Color(0xFFD97706), profile?.goldMedals ?: 0)
@@ -910,7 +910,7 @@ private fun YourRecordsTab() {
                 Column(
                     Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
                 ) {
-                    Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                    Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
                     Spacer(Modifier.height(2.dp))
                     // Star icon + 13sp count (iOS Label(…, systemImage: "star.fill")),
                     // so this card doesn't outweigh the MEDALS card beside it.
@@ -927,7 +927,7 @@ private fun YourRecordsTab() {
         // Trophy shelf — the specific records you hold, spelled out (web parity).
         if (recordsHeld.isNotEmpty()) item {
             CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))) {
-                Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
                 Spacer(Modifier.height(6.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     recordsHeld.forEach { r ->
