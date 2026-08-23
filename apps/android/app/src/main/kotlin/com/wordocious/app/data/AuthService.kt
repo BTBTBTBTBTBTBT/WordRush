@@ -44,6 +44,8 @@ data class Profile(
     @SerialName("pro_prompt_shown") val proPromptShown: Boolean = false,
     @SerialName("last_played_at") val lastPlayedAt: String? = null,
     @SerialName("is_admin") val isAdmin: Boolean = false,
+    /** §228: 'admin' | 'tester' accounts never request ads (see AdsManager). */
+    @SerialName("role") val role: String? = null,
     @SerialName("is_banned") val isBanned: Boolean = false,
     // Personalization (migration 20260626000001) — all optional.
     val bio: String? = null,
@@ -165,6 +167,11 @@ object AuthService {
             val instant = parseTimestamp(until) ?: return false
             return instant.isAfter(java.time.Instant.now())
         }
+
+    /** §228 (the AdSense disablement): developer and beta-tester accounts must
+     *  never generate ad traffic. Admin or 'tester' role = no ads. */
+    val isAdsExempt: Boolean
+        get() = _profile.value?.let { it.isAdmin || it.role == "admin" || it.role == "tester" } ?: false
 
     val isProActive: Boolean
         get() {

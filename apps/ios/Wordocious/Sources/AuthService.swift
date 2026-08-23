@@ -108,6 +108,14 @@ final class AuthService: ObservableObject {
     /// lapsed subscription can't ride the cache past its end date). The server
     /// response overwrites it either way within about a second; the cache only
     /// decides what shows in the meantime.
+    /// §228 (the AdSense disablement): developer and beta-tester accounts must
+    /// never generate ad traffic — three months of family testing on live
+    /// units read as invalid traffic to Google. Admin or 'tester' role = no ads.
+    var isAdsExempt: Bool {
+        guard let p = profile else { return false }
+        return p.isAdmin == true || p.role == "admin" || p.role == "tester"
+    }
+
     var isProActive: Bool {
         if let profile { return Wordocious.isProActive(profile) }
         return AuthService.cachedProEntitlement

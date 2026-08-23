@@ -10,6 +10,8 @@ struct Profile: Codable, Identifiable, Equatable {
     var proExpiresAt: String?
     var isBanned: Bool
     var isAdmin: Bool?
+    /// §228: 'admin' | 'tester' accounts never request ads (see AdsConfig).
+    var role: String?
     var hasOnboarded: Bool
     var level: Int
     var xp: Int
@@ -53,6 +55,7 @@ struct Profile: Codable, Identifiable, Equatable {
         case proExpiresAt = "pro_expires_at"
         case isBanned = "is_banned"
         case isAdmin = "is_admin"
+        case role
         case hasOnboarded = "has_onboarded"
         case totalWins = "total_wins"
         case totalLosses = "total_losses"
@@ -73,7 +76,7 @@ struct Profile: Codable, Identifiable, Equatable {
 
     /// Columns to request from the profiles table. (social_links is fetched
     /// separately/optionally so a missing column never breaks profile loading.)
-    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,last_seen_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji,is_private"
+    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,role,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,last_seen_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji,is_private"
 
     /// The stored Pro window as a date. Purchase fulfillment has to compare
     /// against this before writing — pro_expires_at holds time from sources the

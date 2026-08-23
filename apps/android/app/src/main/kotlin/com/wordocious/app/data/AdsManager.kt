@@ -40,12 +40,18 @@ object AdsManager {
     // Standard interstitials show a close button after a few seconds, which is
     // the normal pattern for a game-start gate. (Old rewarded unit
     // .../6697119876 left in AdMob, unused.)
-    private const val INTERSTITIAL_UNIT = "ca-app-pub-3015627373086578/8174953152"
+    // §228: debug builds use Google's sample units — a developer's own device
+    // must never touch live inventory (three months of family beta traffic on
+    // live units is what got the publisher account disabled on 2026-08-22).
+    private val INTERSTITIAL_UNIT = if (com.wordocious.app.BuildConfig.DEBUG)
+        "ca-app-pub-3940256099942544/1033173712" else "ca-app-pub-3015627373086578/8174953152"
 
-    const val BANNER_UNIT = "ca-app-pub-3015627373086578/3452009437"
+    val BANNER_UNIT: String = if (com.wordocious.app.BuildConfig.DEBUG)
+        "ca-app-pub-3940256099942544/6300978111" else "ca-app-pub-3015627373086578/3452009437"
 
-    /** Whether ads should show right now (enabled + not Pro) — web AdGate gate. */
-    val active: Boolean get() = ENABLED && !AuthService.isProActive
+    /** Whether ads should show right now (enabled + not Pro + not an
+     *  admin/tester account — §228) — web AdGate gate. */
+    val active: Boolean get() = ENABLED && !AuthService.isProActive && !AuthService.isAdsExempt
 
     /**
      * True once the Mobile Ads SDK has actually initialized (consent resolved).

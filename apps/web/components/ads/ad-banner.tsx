@@ -15,11 +15,20 @@ import { AD_CONFIG } from '@/lib/ads/ad-config';
  * already present), which positions/dismisses a bottom banner automatically.
  */
 export function AdBanner() {
-  const { isProActive } = useAuth();
+  const { isProActive, profile } = useAuth();
   const pushed = useRef(false);
+
+  // §228 (the AdSense disablement): developer/tester accounts and non-
+  // production builds must never request ads — three months of family beta
+  // traffic on live units read as invalid traffic to Google.
+  const role = (profile as { role?: string; is_admin?: boolean } | null)?.role;
+  const adsExempt =
+    !!(profile as { is_admin?: boolean } | null)?.is_admin || role === 'admin' || role === 'tester';
 
   const show =
     !isProActive &&
+    !adsExempt &&
+    process.env.NODE_ENV === 'production' &&
     AD_CONFIG.enabled &&
     !!AD_CONFIG.adSenseClientId &&
     !!AD_CONFIG.bannerSlotId;

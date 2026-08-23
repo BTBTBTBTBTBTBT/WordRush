@@ -10,11 +10,11 @@ struct AdBannerContainer: View {
     static let height: CGFloat = 50
     /// Whether the banner slot is mounted right now (free account, ads on).
     /// Must stay in lockstep with the `body` condition below.
-    @MainActor static var isShowing: Bool { AdsConfig.enabled && !AuthService.shared.isProActive }
+    @MainActor static var isShowing: Bool { AdsConfig.active }
 
     @ObservedObject private var auth = AuthService.shared
     var body: some View {
-        if AdsConfig.enabled && !auth.isProActive {
+        if AdsConfig.enabled && !auth.isProActive && !auth.isAdsExempt {
             AdBannerRepresentable()
                 .frame(height: Self.height)
                 .frame(maxWidth: .infinity)

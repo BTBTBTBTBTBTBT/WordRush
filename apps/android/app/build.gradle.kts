@@ -19,7 +19,7 @@ android {
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
         targetSdk = 35       // Play requires new apps target API 35 (Android 15) as of 2025-08
 
-        versionCode = 90
+        versionCode = 91
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -56,7 +56,8 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    // buildConfig: AdsManager keys test-vs-live ad units off BuildConfig.DEBUG (§228).
+    buildFeatures { compose = true; buildConfig = true }
 
     packaging {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
