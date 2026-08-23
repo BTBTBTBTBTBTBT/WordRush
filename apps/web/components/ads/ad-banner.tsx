@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AD_CONFIG } from '@/lib/ads/ad-config';
 
@@ -17,6 +18,11 @@ import { AD_CONFIG } from '@/lib/ads/ad-config';
 export function AdBanner() {
   const { isProActive, profile } = useAuth();
   const pushed = useRef(false);
+  // §229: no ads on account-only screens (records, friends, VS lobby,
+  // profile) — a crawler sees no content there, and ads on contentless
+  // pages is an AdSense policy violation in its own right.
+  const pathname = usePathname() ?? '';
+  const appOnly = /^\/(records|friends|vs|profile)(\/|$)/.test(pathname);
 
   // §228 (the AdSense disablement): developer/tester accounts and non-
   // production builds must never request ads — three months of family beta
@@ -28,6 +34,7 @@ export function AdBanner() {
   const show =
     !isProActive &&
     !adsExempt &&
+    !appOnly &&
     process.env.NODE_ENV === 'production' &&
     AD_CONFIG.enabled &&
     !!AD_CONFIG.adSenseClientId &&
