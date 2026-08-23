@@ -78,7 +78,7 @@ targets:
             CFBundleURLSchemes:
               - com.googleusercontent.apps.193086095286-4ftdf92g8cnsur8kd7odqq0jueqq5oog
         # AdMob app ID — real Wordocious AdMob app (created 2026-06-03).
-        GADApplicationIdentifier: ca-app-pub-3015627373086578~8393761846
+        GADApplicationIdentifier: ca-app-pub-6632322515624356~7373908732
         # App Tracking Transparency prompt copy (shown before requesting IDFA).
         NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
         # Camera permission — used only when taking a new profile photo.

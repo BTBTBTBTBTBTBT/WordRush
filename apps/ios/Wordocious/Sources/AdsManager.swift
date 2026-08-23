@@ -12,14 +12,15 @@ enum AdsConfig {
     /// Master switch. Real unit IDs + flipping the app ID is all that's needed for prod.
     static let enabled = true
 
-    // Real AdMob unit IDs (Wordocious AdMob app, created 2026-06-03).
+    // Real AdMob unit IDs — ShowLoud LLC publisher (pub-6632322515624356), created
+    // 2026-08-23 (§230) after the personal publisher was disabled.
     // §228: DEBUG builds use Google's sample units — a developer's own device
     // must never touch live inventory (the untested-device beta traffic is what
     // got the publisher account disabled on 2026-08-22).
     #if DEBUG
     static let bannerUnitID = "ca-app-pub-3940256099942544/2934735716"
     #else
-    static let bannerUnitID = "ca-app-pub-3015627373086578/4287985559"
+    static let bannerUnitID = "ca-app-pub-6632322515624356/4366752811"
     #endif
     /// STANDARD interstitial shown on game start ("Game Start Interstitial").
     ///
@@ -32,7 +33,7 @@ enum AdsConfig {
     #if DEBUG
     static let interstitialUnitID = "ca-app-pub-3940256099942544/4411468910"
     #else
-    static let interstitialUnitID = "ca-app-pub-3015627373086578/1609544807"
+    static let interstitialUnitID = "ca-app-pub-6632322515624356/1740589475"
     #endif
 
     /// Whether ads should be shown right now (enabled + not Pro + not an

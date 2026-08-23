@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import { Landing } from './landing';
 import { ModeLanding } from './mode-landing';
+import { DailyLanding } from './daily-landing';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 // Public (no login) so AdSense / search crawlers can index real content —
@@ -86,6 +87,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (MODE_LANDING_PATHS[pathname]) {
       return <ModeLanding guideSlug={MODE_LANDING_PATHS[pathname]} />;
     }
+    // §229: the leaderboard URL was still the 7-word skeleton to crawlers —
+    // the one indexed app page left behind by the mode-landing fix.
+    if (pathname === '/daily') {
+      return <DailyLanding />;
+    }
     return (
       <div
         className="fixed inset-0 flex flex-col"
@@ -135,6 +141,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (!user && !isGuest) {
     if (MODE_LANDING_PATHS[pathname]) {
       return <ModeLanding guideSlug={MODE_LANDING_PATHS[pathname]} />;
+    }
+    if (pathname === '/daily') {
+      return <DailyLanding />;
     }
     return <Landing />;
   }

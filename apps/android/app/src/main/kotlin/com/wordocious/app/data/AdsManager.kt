@@ -23,7 +23,7 @@ import com.google.android.ump.UserMessagingPlatform
  * the Mobile Ads SDK (gated on canRequestAds) → preload the interstitial.
  *
  * IDs: the REAL Wordocious Android AdMob app, created 2026-07-30 under the same
- * publisher as iOS (pub-3015627373086578). App ~3743919404 is Android; iOS is
+ * ShowLoud LLC publisher (pub-6632322515624356, §230 — the personal pub-3015 was disabled 2026-08-22). App ~3517539727 is Android; iOS is ~7373908732;
  * the separate ~8393761846. Both are declared by the single app-ads.txt on
  * wordocious.com, which is per-publisher, not per-app.
  *
@@ -44,10 +44,10 @@ object AdsManager {
     // must never touch live inventory (three months of family beta traffic on
     // live units is what got the publisher account disabled on 2026-08-22).
     private val INTERSTITIAL_UNIT = if (com.wordocious.app.BuildConfig.DEBUG)
-        "ca-app-pub-3940256099942544/1033173712" else "ca-app-pub-3015627373086578/8174953152"
+        "ca-app-pub-3940256099942544/1033173712" else "ca-app-pub-6632322515624356/1003941509"
 
     val BANNER_UNIT: String = if (com.wordocious.app.BuildConfig.DEBUG)
-        "ca-app-pub-3940256099942544/6300978111" else "ca-app-pub-3015627373086578/3452009437"
+        "ca-app-pub-3940256099942544/6300978111" else "ca-app-pub-6632322515624356/8114426132"
 
     /** Whether ads should show right now (enabled + not Pro + not an
      *  admin/tester account — §228) — web AdGate gate. */
