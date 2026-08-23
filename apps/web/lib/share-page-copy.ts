@@ -35,12 +35,16 @@ export const MODE_ROUTE: Record<string, string> = {
   // FRIENDS (§207): friends-only board + podium snapshots.
   FriendsBoard: '/daily',
   FriendsPodium: '/daily',
+  // SWEEP SHARE (§231): the Daily Sweep board + its settled podium.
+  SweepBoard: '/daily',
+  SweepPodium: '/daily',
 };
 
-/** The three daily-leaderboard /s/ kinds (lib/share-utils leaderboardKind).
+/** The daily-leaderboard /s/ kinds (lib/share-utils leaderboardKind).
  *  Storage keys read `<kind>-<Mode>-<yyyy-mm-dd>`; the query carries
- *  m=<kind> & lm=<Mode> (+ r/tp for the sharer's rank). */
-const LB_KINDS = ['FriendsBoard', 'FriendsPodium', 'Leaderboard', 'VsLeaderboard', 'Podium'] as const;
+ *  m=<kind> & lm=<Mode> (+ r/tp for the sharer's rank). The Sweep kinds
+ *  (§231) are keyed `Sweep*-DailySweep-<day>` with lm=SWEEP. */
+const LB_KINDS = ['FriendsBoard', 'FriendsPodium', 'SweepBoard', 'SweepPodium', 'Leaderboard', 'VsLeaderboard', 'Podium'] as const;
 
 export type LeaderboardShareKind = (typeof LB_KINDS)[number];
 
@@ -123,7 +127,7 @@ export function boardDayStatus(
   date: string | undefined,
   todayLocal: string,
 ): 'live' | 'final' {
-  if (kind === 'Podium' || kind === 'FriendsPodium') return 'final';
+  if (kind === 'Podium' || kind === 'FriendsPodium' || kind === 'SweepPodium') return 'final';
   return date === todayLocal ? 'live' : 'final';
 }
 
@@ -179,6 +183,30 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const shortDate = fromPath.date ? fmtDayShort(fromPath.date) : undefined;
     const boardBits = [lbModeDisp, shortDate].filter(Boolean).join(' ');
     const boardDisp = lbModeDisp || 'daily';
+
+    // SWEEP SHARE (§231): the board IS the mode — lm carries 'SWEEP', not a
+    // catalog mode, so the copy names the board directly.
+    if (lb.kind === 'SweepBoard' || lb.kind === 'SweepPodium') {
+      const podium = lb.kind === 'SweepPodium';
+      const name = podium ? 'Yesterday’s Sweep Podium' : 'Daily Sweep Leaderboard';
+      const title = dateDisp ? `Wordocious ${name} — ${dateDisp}` : `Wordocious ${name}`;
+      const rank = Number(str(sp.r)) || 0;
+      const tp = Number(str(sp.tp)) || 0;
+      const standing = rank > 0 && tp > 0 ? `#${rank} of ${tp}` : rank > 0 ? `#${rank}` : '';
+      const description = podium
+        ? `Yesterday’s Daily Sweep podium is settled — they swept all nine. ${PLAY_HOOK}`
+        : standing
+          ? `I’m ${standing} on today’s Daily Sweep board. Can you sweep all nine? ${PLAY_HOOK}`
+          : `Today’s Daily Sweep board is live. Can you sweep all nine? ${PLAY_HOOK}`;
+      return {
+        mode: lb.kind,
+        modeDisp: name,
+        won: false,
+        stats: dateDisp ?? '',
+        title,
+        description,
+      };
+    }
 
     if (lb.kind === 'Podium' || lb.kind === 'FriendsPodium') {
       const friendsPodium = lb.kind === 'FriendsPodium';

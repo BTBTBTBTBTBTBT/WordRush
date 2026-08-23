@@ -332,7 +332,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
 
     // LEADERBOARD SHARE — today's board card + yesterday's podium card (web
     // /daily parity). Single-tap, spoiler-free by construction, so no variant
-    // chooser. Sweep has no card design — its buttons stay hidden.
+    // chooser. The Sweep board shares its own card (§231) — same two buttons.
     val shareContext = androidx.compose.ui.platform.LocalContext.current
     val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     var sharingLb by remember { mutableStateOf(false) }
@@ -485,10 +485,35 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         )
                         // §223 microcopy (web "Daily games only" slot): pre-answers
                         // "why is 9/9 below 8/9" — the board ranks by points, not wins.
-                        Text(
-                            "Ranked by total points across all modes",
-                            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                "Ranked by total points across all modes",
+                                fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                            )
+                            // Today's sweep-board share (§231) — the RPC rows
+                            // and the sharer's sweep rank are already on the page.
+                            if (!loading && sweepEntries.isNotEmpty()) {
+                                Icon(
+                                    Icons.Filled.Share, "Share sweep board",
+                                    tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
+                                    modifier = Modifier.size(14.dp).clickableNoRipple {
+                                        if (!sharingLb) {
+                                            sharingLb = true
+                                            shareScope.launch {
+                                                try {
+                                                    com.wordocious.app.data.LeaderboardShare.shareDailySweepCard(
+                                                        shareContext, sweepEntries, userId, sweepRank,
+                                                    )
+                                                } finally { sharingLb = false }
+                                            }
+                                        }
+                                    },
+                                )
+                            }
+                        }
                     }
                 } else {
                     // Founder-approved clarity (iOS parity): this board ranks
@@ -707,8 +732,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         )
                     }
                     // Settled-podium share — only once the dropdown is open with
-                    // rows (web parity). Sweep has no card design.
-                    if (showYesterday && !isSweep && yesterday.isNotEmpty()) {
+                    // rows (web parity). The Sweep tile shares yesterday's
+                    // sweep podium instead (§231).
+                    if (showYesterday && (if (isSweep) yesterdaySweep else yesterday).isNotEmpty()) {
                         Spacer(Modifier.width(6.dp))
                         Icon(
                             Icons.Filled.Share, "Share yesterday's podium",
@@ -718,10 +744,16 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     sharingPodium = true
                                     shareScope.launch {
                                         try {
-                                            com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
-                                                shareContext, selectedMode, "solo", yesterday, userId,
-                                                friends = friendsOnly,
-                                            )
+                                            if (isSweep) {
+                                                com.wordocious.app.data.LeaderboardShare.shareYesterdaySweepPodiumCard(
+                                                    shareContext, yesterdaySweep, userId,
+                                                )
+                                            } else {
+                                                com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
+                                                    shareContext, selectedMode, "solo", yesterday, userId,
+                                                    friends = friendsOnly,
+                                                )
+                                            }
                                         } finally { sharingPodium = false }
                                     }
                                 }

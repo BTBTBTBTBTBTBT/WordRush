@@ -40,7 +40,11 @@ export type ShareMode =
   | 'Gauntlet'
   | 'ProperNoundle'
   | 'Six'
-  | 'Seven';
+  | 'Seven'
+  /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
+   *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
+   *  the leaderboard card falls back to its variant theme). */
+  | 'DailySweep';
 
 interface ShareBase {
   mode: ShareMode;
@@ -184,7 +188,11 @@ export interface ShareLeaderboardInput {
   /** FRIENDS (§207): 'friends' = today's friends-only board, 'friendsPodium'
    *  = yesterday's settled podium among friends — same geometry, indigo
    *  identity, dense friend ranks in rows/you/shareRank. */
-  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium';
+  /** SWEEP SHARE (§231): 'sweep' = today's Daily Sweep board, 'sweepPodium'
+   *  = yesterday's settled Sweep podium — the founder wants the Sweep board
+   *  shareable exactly like every other board. Rows carry the RPC's
+   *  tie-aware sweep rank; `mode` is 'DailySweep'. */
+  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium' | 'sweep' | 'sweepPodium';
   /** Mode chip text ("Classic Six", "Classic VS"). */
   modeChip: string;
   /** Date chip text ("Aug 7, 2026 · #123" / "Aug 6, 2026 · Final"). */
@@ -1136,6 +1144,10 @@ const LB_THEME: Record<ShareLeaderboardInput['variant'], {
   // Friends (§207): indigo — the leaderboard tab's own accent family.
   friends:       { bg: '#eef2ff', label: '#4f46e5', panelBorder: '#6366f155', footer: '#4f46e5' },
   friendsPodium: { bg: '#eef2ff', label: '#d97706', panelBorder: '#f59e0b55', footer: '#4f46e5' },
+  // Sweep (§231): pink-washed violet — the all-nine brag's own identity
+  // (shared verbatim with the iOS/Android cards).
+  sweep:       { bg: '#fdf2f8', label: '#7c3aed', panelBorder: '#ec489955', footer: '#7c3aed' },
+  sweepPodium: { bg: '#fdf2f8', label: '#d97706', panelBorder: '#f59e0b55', footer: '#7c3aed' },
 };
 const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   solo: 'DAILY LEADERBOARD',
@@ -1143,6 +1155,8 @@ const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   podium: 'YESTERDAY’S PODIUM',
   friends: 'FRIENDS LEADERBOARD',
   friendsPodium: 'FRIENDS PODIUM',
+  sweep: 'DAILY SWEEP BOARD',
+  sweepPodium: 'YESTERDAY’S SWEEP PODIUM',
 };
 
 // Rank iconography — same colors as the in-app RankIcon (crown gold, medal
@@ -1419,7 +1433,9 @@ function drawLeaderboardCard(
   const chipGap = 16;
   let chipX = (width - modeChipW - chipGap - dateChipW) / 2;
 
-  const modeAccent = input.variant === 'vs' ? VS_ACCENT : MODE_ACCENT[input.mode];
+  // 'DailySweep' (§231) isn't in the mode catalog → no MODE_ACCENT entry; the
+  // variant theme's label color carries the chip instead.
+  const modeAccent = input.variant === 'vs' ? VS_ACCENT : (MODE_ACCENT[input.mode] ?? theme.label);
   drawRoundRect(ctx, chipX, chipY, modeChipW, chipH, chipH / 2);
   ctx.fillStyle = modeAccent;
   ctx.fill();

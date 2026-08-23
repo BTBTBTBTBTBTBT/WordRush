@@ -36,6 +36,10 @@ enum LbShareVariant: String {
     // FRIENDS (§207): friends-only board + settled friends podium — same
     // geometry, indigo identity, dense friend ranks in rows/you/shareRank.
     case friends, friendsPodium
+    // SWEEP (§231): the cross-mode Sweep board + its settled podium — same
+    // geometry, the Daily Sweep violet/pink identity, rows from SweepEntry
+    // (RPC tie-aware ranks, "time · X/9 · Sweep|Flawless" sublines).
+    case sweep, sweepPodium
 
     /// /s/ kind — also the storage-key prefix (web leaderboardKind()).
     var kind: String {
@@ -45,6 +49,8 @@ enum LbShareVariant: String {
         case .podium: return "Podium"
         case .friends: return "FriendsBoard"
         case .friendsPodium: return "FriendsPodium"
+        case .sweep: return "SweepBoard"
+        case .sweepPodium: return "SweepPodium"
         }
     }
 }
@@ -258,6 +264,75 @@ enum LeaderboardShareBuilder {
         }
         return input
     }
+
+    // MARK: Sweep (§231)
+
+    /// Web ShareMode for the Daily Sweep — the `lm` URL param + key segment.
+    static let sweepShareMode = "SWEEP"
+    /// share_events game_mode tag — the existing Daily Sweep card's mode.
+    static let sweepGameModeRaw = "DailySweep"
+    static let sweepModeChip = "Daily Sweep"
+    static let sweepAccent = Color(hex: 0x7C3AED)
+
+    /// "12m 4s · 9/9 · Flawless" — the sweep row's full-stats subline. The
+    /// sweep has no guess count; time + modes-won + the sweep tier are what
+    /// the board itself shows.
+    static func sweepSubline(_ e: SweepEntry) -> String {
+        "\(formatShortTime(e.totalTime)) · \(e.modesWon)/9 · \(e.isFlawless ? "Flawless" : "Sweep")"
+    }
+
+    private static func sweepRow(_ e: SweepEntry, userId: String?,
+                                 scoreLabels: [Double: String]) -> LbShareRow {
+        // Sublines stay on every row (web parity) — a sweep card is at most
+        // 5 + 1 rows, so there's room without the daily card's compression.
+        LbShareRow(rank: e.rank, name: e.username,
+                   scoreDisplay: scoreLabels[e.totalScore] ?? formatScore(e.totalScore),
+                   subline: sweepSubline(e),
+                   isYou: userId != nil && e.userId == userId)
+    }
+
+    /// Sweep board / sweep podium card from the page's SweepEntry rows. Ranks
+    /// come from the entries themselves (the RPC is tie-aware), so no
+    /// RankedEntry wrapping. `podium` → yesterday's settled top 3 with the
+    /// "· Final" chip; otherwise today's top 5 "as of h:mm". The sharer below
+    /// the top rows gets their you-row only when the board holds it (no extra
+    /// window read — a sweep board is tiny) plus "#R of TOTAL" from the sweep
+    /// rank; absent either, the card simply omits it. No delta pill: sweeping
+    /// two days running is rare enough that "vs yesterday" would almost
+    /// always be blank. Nil for an empty board.
+    static func buildSweepInput(
+        podium: Bool, day: String, now: Date = Date(),
+        entries: [SweepEntry], userId: String?,
+        userRank: (rank: Int, total: Int)?
+    ) -> LbShareInput? {
+        let top = Array(entries.prefix(podium ? 3 : 5))
+        guard !top.isEmpty else { return nil }
+        let youInTop = userId != nil && top.contains { $0.userId == userId }
+        let userEntry = userId.flatMap { uid in entries.first { $0.userId == uid } }
+        let belowTop = !youInTop && userRank != nil && userEntry != nil
+        let cardLabels = tieAwareScoreLabels(
+            top.map(\.totalScore) + (belowTop ? [userEntry!.totalScore] : []))
+        let puzzle = puzzleNumber(forDay: day)
+        let dateChip = podium
+            ? "\(formatBoardDate(day)) · Final"
+            : "\(formatBoardDate(day))\(puzzle.map { " · #\($0)" } ?? "") · as of \(clockTime(now))"
+
+        var input = LbShareInput(
+            variant: podium ? .sweepPodium : .sweep,
+            shareMode: sweepShareMode, gameModeRaw: sweepGameModeRaw,
+            modeAccent: sweepAccent, modeChip: sweepModeChip,
+            dateChip: dateChip,
+            rows: top.map { sweepRow($0, userId: userId, scoreLabels: cardLabels) },
+            footer: "Can you sweep all nine? Play free at wordocious.com",
+            day: day)
+        input.shareRank = userRank?.rank
+        input.sharePlayers = userRank?.total
+        if belowTop, let r = userRank, let e = userEntry {
+            input.you = sweepRow(e, userId: userId, scoreLabels: cardLabels)
+            input.youRankLine = "#\(r.rank) of \(r.total)"
+        }
+        return input
+    }
 }
 
 // MARK: - Card renderer (web drawLeaderboardCard parity, 1080×1080)
@@ -290,6 +365,14 @@ struct LeaderboardShareCardView: View {
         case .friendsPodium:
             return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0xD97706),
                            panelBorder: Color(hex: 0xF59E0B, alpha: 1.0 / 3), footer: Color(hex: 0x4F46E5))
+        // Sweep (§231): the Daily Sweep card's violet→pink family on a blush
+        // ground, so a sweep board reads as the sweep's own surface.
+        case .sweep:
+            return LbTheme(bg: Color(hex: 0xFDF2F8), label: Color(hex: 0x7C3AED),
+                           panelBorder: Color(hex: 0xEC4899, alpha: 0x55 / 255.0), footer: Color(hex: 0x7C3AED))
+        case .sweepPodium:
+            return LbTheme(bg: Color(hex: 0xFDF2F8), label: Color(hex: 0xD97706),
+                           panelBorder: Color(hex: 0xF59E0B, alpha: 0x55 / 255.0), footer: Color(hex: 0x7C3AED))
         }
     }
     private var labelText: String {
@@ -299,6 +382,8 @@ struct LeaderboardShareCardView: View {
         case .podium: return "YESTERDAY’S PODIUM"
         case .friends: return "FRIENDS LEADERBOARD"
         case .friendsPodium: return "FRIENDS PODIUM"
+        case .sweep: return "DAILY SWEEP BOARD"
+        case .sweepPodium: return "YESTERDAY’S SWEEP PODIUM"
         }
     }
 
@@ -795,6 +880,20 @@ enum LeaderboardShareFlow {
             day: day,
             ranked: ranked, userId: userId,
             userRank: userRank, userEntry: userEntry) else { return }
+        ShareService.shareLeaderboard(input)
+    }
+
+    /// SWEEP (§231): share today's Sweep board or yesterday's sweep podium.
+    /// Everything the card needs is already on the page (entries carry RPC
+    /// ranks; the sweep rank banner's tuple is the sharer's rank), so unlike
+    /// the per-mode flows there are no extra lookups.
+    @MainActor
+    static func shareSweep(podium: Bool, entries: [SweepEntry],
+                           userId: String?, userRank: (rank: Int, total: Int)? = nil) {
+        guard let input = LeaderboardShareBuilder.buildSweepInput(
+            podium: podium,
+            day: podium ? LeaderboardService.yesterdayLocal() : LeaderboardService.todayLocal(),
+            entries: entries, userId: userId, userRank: userRank) else { return }
         ShareService.shareLeaderboard(input)
     }
 }

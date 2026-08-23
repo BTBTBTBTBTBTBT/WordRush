@@ -43,7 +43,12 @@ import {
   type FriendProfile,
 } from '@/lib/friends-service';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
-import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
+import {
+  shareDailyLeaderboardCard,
+  shareDailySweepCard,
+  shareYesterdayPodiumCard,
+  shareYesterdaySweepPodiumCard,
+} from '@/lib/leaderboard-share-flow';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
@@ -588,14 +593,24 @@ export default function DailyPage() {
 
   // ── LEADERBOARD SHARE — today's board card + yesterday's podium card.
   // Single-tap, spoiler-free by construction (names/scores/stats only), so no
-  // variant chooser. Sweep has no card design — its buttons stay hidden.
+  // variant chooser. The Sweep board shares too (§231 — founder: share the
+  // Sweep board like every other board), via its own card + podium flows.
   const [sharingLb, setSharingLb] = useState(false);
   const [sharingPodium, setSharingPodium] = useState(false);
 
   const handleShareLeaderboard = async () => {
-    if (sharingLb || loading || isSweep) return;
+    if (sharingLb || loading) return;
     setSharingLb(true);
     try {
+      if (isSweep) {
+        await shareDailySweepCard({
+          day: getTodayLocal(),
+          entries: sweepLeaderboard.filter((e) => !isBlocked(e.user_id)),
+          userId: user?.id ?? null,
+          userRank,
+        });
+        return;
+      }
       // The sharer's row when the page already holds it — the top-50 list or
       // the "your neighborhood" rank window; the flow fetches it otherwise.
       const userEntry = user
@@ -622,9 +637,17 @@ export default function DailyPage() {
   };
 
   const handleSharePodium = async () => {
-    if (sharingPodium || isSweep) return;
+    if (sharingPodium) return;
     setSharingPodium(true);
     try {
+      if (isSweep) {
+        await shareYesterdaySweepPodiumCard({
+          day: yesterday,
+          entries: yesterdaySweep.filter((e) => !isBlocked(e.user_id)),
+          userId: user?.id ?? null,
+        });
+        return;
+      }
       await shareYesterdayPodiumCard({
         dbMode: selectedMode,
         playType: 'solo',
@@ -803,7 +826,7 @@ export default function DailyPage() {
                   8/9" — it ranks by points, not wins. */}
               {isSweep ? 'Ranked by total points across all modes' : 'Daily games only'}
             </div>
-            {!isSweep && !loading && leaderboard.length > 0 && (
+            {!loading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
               <button
                 onClick={handleShareLeaderboard}
                 disabled={sharingLb}
@@ -907,7 +930,7 @@ export default function DailyPage() {
             {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {/* Settled-podium share — only once the dropdown is open with rows. */}
-          {showYesterday && !isSweep && yesterdayLeaderboard.length > 0 && (
+          {showYesterday && (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) && (
             <button
               onClick={handleSharePodium}
               disabled={sharingPodium}

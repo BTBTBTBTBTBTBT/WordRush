@@ -147,6 +147,27 @@ describe('buildCopy — leaderboard cards', () => {
     );
   });
 
+  it('builds the SWEEP board card (§231): #rank of sweeper-count brag, lm=SWEEP', () => {
+    const c = buildCopy(
+      { m: 'SweepBoard', lm: 'SWEEP', r: '4', tp: '31' },
+      ['u', 'SweepBoard-DailySweep-2026-08-23'],
+    );
+    expect(c.mode).toBe('SweepBoard');
+    expect(c.title).toBe('Wordocious Daily Sweep Leaderboard — Aug 23, 2026');
+    expect(c.description).toBe(
+      'I’m #4 of 31 on today’s Daily Sweep board. Can you sweep all nine? Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
+  it('builds the SWEEP podium card, recovered from the path alone', () => {
+    const c = buildCopy({}, ['u', 'SweepPodium-DailySweep-2026-08-22']);
+    expect(c.mode).toBe('SweepPodium');
+    expect(c.title).toBe('Wordocious Yesterday’s Sweep Podium — Aug 22, 2026');
+    expect(c.description).toBe(
+      'Yesterday’s Daily Sweep podium is settled — they swept all nine. Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
   it('recovers kind + board mode from the path when the query is stripped', () => {
     const c = buildCopy({}, ['u', 'VsLeaderboard-Six-2026-08-07']);
     expect(c.title).toBe('Wordocious VS Battle Leaderboard — Classic Six Aug 7');
@@ -165,6 +186,21 @@ describe('parseLeaderboardShare', () => {
       { m: 'Leaderboard', lm: 'Classic' },
       ['u', 'Leaderboard-Classic-2026-08-07'],
     )).toEqual({ kind: 'Leaderboard', lbMode: 'Classic', date: '2026-08-07' });
+  });
+
+  it('recognizes the SWEEP kinds (§231) from the query and from the path alone', () => {
+    expect(parseLeaderboardShare(
+      { m: 'SweepBoard', lm: 'SWEEP' },
+      ['u', 'SweepBoard-DailySweep-2026-08-23'],
+    )).toEqual({ kind: 'SweepBoard', lbMode: 'SWEEP', date: '2026-08-23' });
+    expect(parseLeaderboardShare({}, ['u', 'SweepPodium-DailySweep-2026-08-22']))
+      .toEqual({ kind: 'SweepPodium', lbMode: 'DailySweep', date: '2026-08-22' });
+  });
+
+  it('treats a SweepBoard as live only on the recipient’s today; SweepPodium is always final', () => {
+    expect(boardDayStatus('SweepBoard', '2026-08-23', '2026-08-23')).toBe('live');
+    expect(boardDayStatus('SweepBoard', '2026-08-22', '2026-08-23')).toBe('final');
+    expect(boardDayStatus('SweepPodium', '2026-08-23', '2026-08-23')).toBe('final');
   });
 
   it('recovers kind + board mode from the path when the query is stripped', () => {

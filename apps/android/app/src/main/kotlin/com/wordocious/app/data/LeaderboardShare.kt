@@ -55,7 +55,10 @@ object LeaderboardShare {
 
     // FRIENDS (§207): friends-only board + settled friends podium — same
     // geometry, indigo identity, dense friend ranks in rows/you/shareRank.
-    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM }
+    // SWEEP (§231): today's cross-mode Daily Sweep board + yesterday's settled
+    // sweep podium — same geometry, pink-washed violet identity, RPC tie-aware
+    // ranks carried through verbatim.
+    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM, SWEEP, SWEEP_PODIUM }
 
     private data class Theme(val bg: Int, val label: Int, val panelBorder: Int, val footer: Int)
 
@@ -67,6 +70,10 @@ object LeaderboardShare {
         // Friends: indigo — the leaderboard tab's own accent family.
         Variant.FRIENDS -> Theme(0xFFEEF2FF.toInt(), 0xFF4F46E5.toInt(), 0x556366F1, 0xFF4F46E5.toInt())
         Variant.FRIENDS_PODIUM -> Theme(0xFFEEF2FF.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF4F46E5.toInt())
+        // Sweep: pink-washed violet — the all-nine brag's own identity (shared
+        // verbatim with the web/iOS cards).
+        Variant.SWEEP -> Theme(0xFFFDF2F8.toInt(), 0xFF7C3AED.toInt(), 0x55EC4899, 0xFF7C3AED.toInt())
+        Variant.SWEEP_PODIUM -> Theme(0xFFFDF2F8.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF7C3AED.toInt())
     }
 
     private fun label(v: Variant): String = when (v) {
@@ -75,6 +82,8 @@ object LeaderboardShare {
         Variant.PODIUM -> "YESTERDAY’S PODIUM"
         Variant.FRIENDS -> "FRIENDS LEADERBOARD"
         Variant.FRIENDS_PODIUM -> "FRIENDS PODIUM"
+        Variant.SWEEP -> "DAILY SWEEP BOARD"
+        Variant.SWEEP_PODIUM -> "YESTERDAY’S SWEEP PODIUM"
     }
 
     // ── Card input (web ShareLeaderboardInput) ─────────────────────────────────
@@ -289,6 +298,75 @@ object LeaderboardShare {
             you = if (belowTop) toRow(userRank!!.rank, userEntry!!, userId, subline, cardLabels) else null,
             youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank!!.totalPlayers}" else null,
             footer = "Today’s board is open — wordocious.com",
+            day = day,
+            shareRank = userRank?.rank,
+            sharePlayers = userRank?.totalPlayers,
+        )
+    }
+
+    // ── Sweep builders (§231) ──────────────────────────────────────────────────
+
+    /** The Sweep board has no catalog mode: it rides the existing Daily Sweep
+     *  share mode ("DailySweep" /s/ key segment, `lm=SWEEP` like the DB-style
+     *  board id) and the violet the sweep label already uses. */
+    private const val SWEEP_SHARE_MODE = "DailySweep"
+    private const val SWEEP_LM = "SWEEP"
+    private const val SWEEP_ACCENT = 0xFF7C3AED.toInt()
+
+    /** "12m 4s · 8/9 · Flawless" — the sweep row's own stats, not guesses. */
+    private fun sweepSubline(e: LeaderboardService.SweepEntry): String =
+        "${com.wordocious.app.ui.formatShortTime(e.totalTime)} · ${e.modesWon}/9 · ${if (e.isFlawless) "Flawless" else "Sweep"}"
+
+    private fun sweepRow(
+        e: LeaderboardService.SweepEntry,
+        userId: String?,
+        scoreLabels: Map<Double, String>,
+    ): RowInput = RowInput(
+        // The RPC already ranks tie-aware (§217) — never re-rank by index.
+        rank = e.rank.toInt(),
+        name = e.username ?: "Player",
+        scoreDisplay = scoreLabels[e.totalScore] ?: com.wordocious.app.ui.formatScore(e.totalScore),
+        subline = sweepSubline(e),
+        isYou = userId != null && e.userId == userId,
+    )
+
+    /**
+     * Sweep-board card (§231): top 5 (board) or top 3 (podium) rows from the
+     * RPC, ranks carried verbatim. A sharer below the visible rows gets their
+     * own row (if the caller's list holds it) and "#R of TOTAL" from the sweep
+     * rank; either missing → omitted. No delta pill — the sweep rank has no
+     * yesterday to compare against. Null for an empty board.
+     */
+    fun buildSweepInput(
+        variant: Variant,
+        day: String,
+        entries: List<LeaderboardService.SweepEntry>,
+        userId: String?,
+        userRank: LeaderboardService.RankInfo? = null,
+        now: Calendar = Calendar.getInstance(),
+    ): CardInput? {
+        val podium = variant == Variant.SWEEP_PODIUM
+        val top = entries.take(if (podium) 3 else 5)
+        if (top.isEmpty()) return null
+        val youInTop = userId != null && top.any { it.userId == userId }
+        val userEntry = if (!youInTop && userId != null) entries.firstOrNull { it.userId == userId } else null
+        val belowTop = userEntry != null && userRank != null
+        val puzzle = puzzleNumberForDay(day)
+        val cardLabels = com.wordocious.app.ui.tieAwareScoreLabels(
+            top.map { it.totalScore } + if (belowTop) listOf(userEntry!!.totalScore) else emptyList(),
+        )
+        return CardInput(
+            variant = variant,
+            shareMode = SWEEP_SHARE_MODE,
+            gameModeLower = SWEEP_LM.lowercase(),
+            accent = SWEEP_ACCENT,
+            modeChip = "Daily Sweep",
+            dateChip = if (podium) "${formatBoardDate(day)} · Final"
+                else "${formatBoardDate(day)}${if (puzzle != null) " · #$puzzle" else ""} · as of ${formatClockTime(now)}",
+            rows = top.map { sweepRow(it, userId, cardLabels) },
+            you = if (belowTop) sweepRow(userEntry!!, userId, cardLabels) else null,
+            youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank.totalPlayers}" else null,
+            footer = "Can you sweep all nine? Play free at wordocious.com",
             day = day,
             shareRank = userRank?.rank,
             sharePlayers = userRank?.totalPlayers,
@@ -583,6 +661,8 @@ object LeaderboardShare {
         Variant.SOLO -> "Leaderboard"
         Variant.FRIENDS -> "FriendsBoard"
         Variant.FRIENDS_PODIUM -> "FriendsPodium"
+        Variant.SWEEP -> "SweepBoard"
+        Variant.SWEEP_PODIUM -> "SweepPodium"
     }
 
     /**
@@ -598,7 +678,10 @@ object LeaderboardShare {
         val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
         SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
 
-        val q = linkedMapOf("m" to kind(input.variant), "lm" to input.shareMode)
+        // The Sweep card's /s/ key reads `SweepBoard-DailySweep-<day>` but its
+        // `lm` carries the DB-style board id (web/iOS parity, §231).
+        val lm = if (input.shareMode == SWEEP_SHARE_MODE) SWEEP_LM else input.shareMode
+        val q = linkedMapOf("m" to kind(input.variant), "lm" to lm)
         input.shareRank?.let { q["r"] = "$it" }
         input.sharePlayers?.let { q["tp"] = "$it" }
         q["w"] = "1080"; q["h"] = "1080"
@@ -750,6 +833,36 @@ object LeaderboardShare {
             }
         }
         val input = buildPodiumInput(playType, friends, meta, day, entries, userId, userRank, userEntry) ?: return
+        renderAndShare(context, input)
+    }
+
+    /**
+     * Share today's Daily Sweep board (§231). The page's RPC rows + the
+     * sharer's sweep rank come in already tie-ranked; nothing else to fetch —
+     * a sharer below the visible rows whose row isn't in the list simply gets
+     * no you-row.
+     */
+    suspend fun shareDailySweepCard(
+        context: Context,
+        entries: List<LeaderboardService.SweepEntry>,
+        userId: String?,
+        userRank: LeaderboardService.RankInfo?,
+    ) {
+        val input = buildSweepInput(Variant.SWEEP, todayLocalDate(), entries, userId, userRank) ?: return
+        renderAndShare(context, input)
+    }
+
+    /** Share yesterday's settled sweep podium (§231): top 3, "· Final" chip,
+     *  plus the sharer's final sweep rank when they're below the podium. */
+    suspend fun shareYesterdaySweepPodiumCard(
+        context: Context,
+        entries: List<LeaderboardService.SweepEntry>,
+        userId: String?,
+    ) {
+        val day = yesterdayLocalDate()
+        val userRank = if (userId != null && entries.take(3).none { it.userId == userId })
+            LeaderboardService.getUserSweepRank(userId, day) else null
+        val input = buildSweepInput(Variant.SWEEP_PODIUM, day, entries, userId, userRank) ?: return
         renderAndShare(context, input)
     }
 }

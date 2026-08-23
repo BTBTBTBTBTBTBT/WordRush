@@ -5,13 +5,14 @@
 // environment — see leaderboard-share.test.ts. The fetch-and-share glue that
 // pairs with this lives in leaderboard-share-flow.ts.
 
-import type { LeaderboardEntry } from './daily-service';
+import type { LeaderboardEntry, SweepEntry } from './daily-service';
 import type {
   ShareLeaderboardInput,
   ShareLeaderboardRowInput,
   ShareMode,
 } from './share-image';
 import { formatScore, tieAwareScoreLabels } from './composite-scoring';
+import { formatShortTime } from './format';
 
 /** A leaderboard entry with its display rank. Ranks come from the page (index
  *  + 1 with holes where blocked rows were) so the card can never disagree with
@@ -246,4 +247,102 @@ export function buildYesterdayPodiumShareInput(
     input.youRankLine = `#${opts.userRank!.rank} of ${opts.userRank!.totalPlayers}`;
   }
   return input;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// SWEEP SHARE (§231): the Daily Sweep board, shared like every other board.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** "12:34 · 8/9 · Flawless" — the sweep row's subline (mirrors the /daily
+ *  sweep row: total time, modes won, sweep vs flawless). */
+function sweepSubline(e: SweepEntry): string {
+  return `${formatShortTime(e.total_time)} · ${e.modes_won}/9 · ${e.is_flawless ? 'Flawless' : 'Sweep'}`;
+}
+
+function sweepRow(e: SweepEntry, userId: string | null | undefined): ShareLeaderboardRowInput {
+  return {
+    // The RPC's tie-aware rank — the same number the page renders, so the
+    // card can never disagree with the board the sharer is looking at.
+    rank: e.rank,
+    name: e.username,
+    scoreDisplay: formatScore(e.total_score),
+    subline: sweepSubline(e),
+    isYou: !!userId && e.user_id === userId,
+  };
+}
+
+const SWEEP_FOOTER = 'Can you sweep all nine? Play free at wordocious.com';
+
+export interface DailySweepShareOpts {
+  /** Board day (YYYY-MM-DD, local). */
+  day: string;
+  /** Block-filtered sweep rows, top of the board first (the page's ≤50). */
+  entries: SweepEntry[];
+  userId?: string | null;
+  /** Sharer's sweep rank (getUserSweepRank) — drives "#R of N". */
+  userRank?: { rank: number; totalPlayers: number } | null;
+  /** Snapshot moment for the "as of" stamp — injectable for tests. */
+  now?: Date;
+}
+
+/**
+ * Today's Sweep-board card: top 5 rows with full sweep stats. A sharer below
+ * the top 5 gets their highlighted you-row (from the board entries — the board
+ * holds ≤50, and a sweeper outside it simply has no you-row) with "#R of N".
+ * No "vs yesterday" delta: a sweep rank has no per-mode yesterday to compare
+ * against. Returns null when nobody has swept yet.
+ */
+export function buildDailySweepShareInput(opts: DailySweepShareOpts): ShareLeaderboardInput | null {
+  const top = opts.entries.slice(0, 5);
+  if (top.length === 0) return null;
+  const youInTop = !!opts.userId && top.some((e) => e.user_id === opts.userId);
+  const userEntry = !youInTop && opts.userId && opts.userRank
+    ? opts.entries.find((e) => e.user_id === opts.userId) ?? null
+    : null;
+  const puzzle = puzzleNumberForDay(opts.day);
+  const input: ShareLeaderboardInput = {
+    layout: 'leaderboard',
+    mode: 'DailySweep',
+    variant: 'sweep',
+    modeChip: 'Daily Sweep',
+    dateChip: `${formatBoardDate(opts.day)}${puzzle ? ` · #${puzzle}` : ''} · as of ${formatClockTime(opts.now ?? new Date())}`,
+    rows: top.map((e) => sweepRow(e, opts.userId)),
+    footer: SWEEP_FOOTER,
+    date: new Date(opts.day + 'T00:00:00'),
+    shareRank: opts.userRank?.rank,
+    sharePlayers: opts.userRank?.totalPlayers,
+  };
+  if (userEntry) {
+    input.you = sweepRow(userEntry, opts.userId);
+    input.youRankLine = `#${opts.userRank!.rank} of ${opts.userRank!.totalPlayers}`;
+  }
+  return input;
+}
+
+export interface YesterdaySweepPodiumShareOpts {
+  /** Yesterday's day string — the card is keyed and dated to it. */
+  day: string;
+  entries: SweepEntry[];
+  userId?: string | null;
+}
+
+/**
+ * Yesterday's settled Sweep podium: top 3 only, "· Final" chip. Null when
+ * nobody swept yesterday.
+ */
+export function buildYesterdaySweepPodiumShareInput(
+  opts: YesterdaySweepPodiumShareOpts,
+): ShareLeaderboardInput | null {
+  const top = opts.entries.slice(0, 3);
+  if (top.length === 0) return null;
+  return {
+    layout: 'leaderboard',
+    mode: 'DailySweep',
+    variant: 'sweepPodium',
+    modeChip: 'Daily Sweep',
+    dateChip: `${formatBoardDate(opts.day)} · Final`,
+    rows: top.map((e) => sweepRow(e, opts.userId)),
+    footer: SWEEP_FOOTER,
+    date: new Date(opts.day + 'T00:00:00'),
+  };
 }

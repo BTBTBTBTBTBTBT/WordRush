@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildDailyLeaderboardShareInput,
+  buildDailySweepShareInput,
   buildYesterdayPodiumShareInput,
+  buildYesterdaySweepPodiumShareInput,
   buildRankDelta,
   puzzleNumberForDay,
   formatBoardDate,
   type RankedEntry,
 } from './leaderboard-share';
-import type { LeaderboardEntry } from './daily-service';
+import type { LeaderboardEntry, SweepEntry } from './daily-service';
 
 // Pure card-assembly logic for the LEADERBOARD SHARE feature. Pins the
 // approved-mock invariants: top-5 full stats vs compressed-plus-you-row
@@ -183,5 +185,97 @@ describe('buildYesterdayPodiumShareInput', () => {
         playType: 'solo', mode: 'Classic', modeLabel: 'Classic', day: '2026-08-06', ranked: [],
       }),
     ).toBeNull();
+  });
+});
+
+// SWEEP SHARE (§231): the Sweep board shares like every other board. Rows
+// carry the RPC's tie-aware rank and the sweep subline; the you-row comes
+// from the board itself (no fetch), and there's no vs-yesterday delta.
+function sweepBoard(n: number, overrides: Partial<SweepEntry>[] = []): SweepEntry[] {
+  return Array.from({ length: n }, (_, i) => ({
+    user_id: `u${i + 1}`,
+    username: `sweeper${i + 1}`,
+    avatar_url: null,
+    total_score: 9000 - i * 100,
+    total_time: 754 + i,
+    modes_won: 9 - (i % 2),
+    is_flawless: i % 2 === 0,
+    rank: i + 1,
+    ...overrides[i],
+  }));
+}
+
+describe('buildDailySweepShareInput (§231)', () => {
+  it('renders the sweep variant with DailySweep identity and sweep-stat sublines', () => {
+    const input = buildDailySweepShareInput({
+      day: '2026-08-23', entries: sweepBoard(7), userId: 'u2',
+      userRank: { rank: 2, totalPlayers: 7 }, now: new Date(2026, 7, 23, 11, 15),
+    })!;
+    expect(input.variant).toBe('sweep');
+    expect(input.mode).toBe('DailySweep');
+    expect(input.modeChip).toBe('Daily Sweep');
+    expect(input.dateChip).toBe('Aug 23, 2026 · #139 · as of 11:15 AM');
+    expect(input.rows).toHaveLength(5);
+    expect(input.rows[0]).toEqual({
+      rank: 1, name: 'sweeper1', scoreDisplay: '9,000', subline: '12m 34s · 9/9 · Flawless', isYou: false,
+    });
+    expect(input.rows[1].subline).toBe('12m 35s · 8/9 · Sweep');
+    expect(input.rows[1].isYou).toBe(true);
+    expect(input.you).toBeUndefined();
+    expect(input.delta).toBeUndefined();
+    expect(input.shareRank).toBe(2);
+    expect(input.sharePlayers).toBe(7);
+    expect(input.footer).toBe('Can you sweep all nine? Play free at wordocious.com');
+  });
+
+  it('uses the RPC tie-aware rank on rows, not the list index', () => {
+    const input = buildDailySweepShareInput({
+      day: '2026-08-23',
+      entries: sweepBoard(3, [{}, { total_score: 9000, rank: 1 }, { rank: 3 }]),
+    })!;
+    expect(input.rows.map((r) => r.rank)).toEqual([1, 1, 3]);
+  });
+
+  it('adds the you-row + "#R of N" for a sharer below the top 5 who is on the board', () => {
+    const input = buildDailySweepShareInput({
+      day: '2026-08-23', entries: sweepBoard(9), userId: 'u8', userRank: { rank: 8, totalPlayers: 40 },
+    })!;
+    expect(input.rows).toHaveLength(5);
+    expect(input.you?.name).toBe('sweeper8');
+    expect(input.you?.isYou).toBe(true);
+    expect(input.youRankLine).toBe('#8 of 40');
+  });
+
+  it('omits the you-row when the sharer is not among the board entries', () => {
+    const input = buildDailySweepShareInput({
+      day: '2026-08-23', entries: sweepBoard(6), userId: 'u99', userRank: { rank: 70, totalPlayers: 80 },
+    })!;
+    expect(input.you).toBeUndefined();
+    expect(input.youRankLine).toBeUndefined();
+    expect(input.shareRank).toBe(70);
+  });
+
+  it('returns null when nobody has swept', () => {
+    expect(buildDailySweepShareInput({ day: '2026-08-23', entries: [] })).toBeNull();
+  });
+});
+
+describe('buildYesterdaySweepPodiumShareInput (§231)', () => {
+  it('renders the top 3 only with the Final chip', () => {
+    const input = buildYesterdaySweepPodiumShareInput({
+      day: '2026-08-22', entries: sweepBoard(6), userId: 'u3',
+    })!;
+    expect(input.variant).toBe('sweepPodium');
+    expect(input.mode).toBe('DailySweep');
+    expect(input.rows).toHaveLength(3);
+    expect(input.rows[2].isYou).toBe(true);
+    expect(input.rows[2].subline).toBe('12m 36s · 9/9 · Flawless');
+    expect(input.dateChip).toBe('Aug 22, 2026 · Final');
+    expect(input.you).toBeUndefined();
+    expect(input.footer).toBe('Can you sweep all nine? Play free at wordocious.com');
+  });
+
+  it('returns null when nobody swept yesterday', () => {
+    expect(buildYesterdaySweepPodiumShareInput({ day: '2026-08-22', entries: [] })).toBeNull();
   });
 });

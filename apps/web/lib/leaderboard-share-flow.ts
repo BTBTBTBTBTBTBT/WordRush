@@ -14,10 +14,13 @@ import {
   fetchDailyLeaderboard,
   getUserDailyRank,
   type LeaderboardEntry,
+  type SweepEntry,
 } from './daily-service';
 import {
   buildDailyLeaderboardShareInput,
+  buildDailySweepShareInput,
   buildYesterdayPodiumShareInput,
+  buildYesterdaySweepPodiumShareInput,
   type RankedEntry,
 } from './leaderboard-share';
 import type { ShareMode } from './share-image';
@@ -31,7 +34,8 @@ function modeMeta(dbKey: string): { mode: ShareMode; label: string } | null {
 }
 
 export interface ShareDailyLeaderboardOpts {
-  /** DB mode key ('DUEL', 'DUEL_6', …). Sweep has no card — don't call for it. */
+  /** DB mode key ('DUEL', 'DUEL_6', …). The Sweep board has its own entry
+   *  point (shareDailySweepCard, §231). */
   dbMode: string;
   playType: 'solo' | 'vs';
   /** Today's local day (the board being shared). */
@@ -181,6 +185,35 @@ export async function shareYesterdayPodiumCard(
     userRank,
     userEntry,
   });
+  if (!input) return null;
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// SWEEP SHARE (§231): the Daily Sweep board, shared like every other board.
+// The page already holds everything the card needs (the ≤50 sweep rows and
+// the sharer's sweep rank), so neither flow fetches anything.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Share today's Sweep board (top 5 + the sharer's "#R of N"). */
+export async function shareDailySweepCard(opts: {
+  day: string;
+  entries: SweepEntry[];
+  userId: string | null;
+  userRank: { rank: number; totalPlayers: number } | null;
+}): Promise<ShareResultOutcome | null> {
+  const input = buildDailySweepShareInput(opts);
+  if (!input) return null;
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+
+/** Share yesterday's settled Sweep podium (top 3, "· Final"). */
+export async function shareYesterdaySweepPodiumCard(opts: {
+  day: string;
+  entries: SweepEntry[];
+  userId: string | null;
+}): Promise<ShareResultOutcome | null> {
+  const input = buildYesterdaySweepPodiumShareInput(opts);
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }

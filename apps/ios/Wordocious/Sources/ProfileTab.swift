@@ -1022,8 +1022,8 @@ struct LeaderboardTab: View {
     @State private var showYesterday = false
     @State private var showAuth = false
     // LEADERBOARD SHARE — single-tap, spoiler-free by construction (names/
-    // scores/stats only), so no variant chooser. Sweep has no card design —
-    // its buttons stay hidden (web daily/page.tsx parity).
+    // scores/stats only), so no variant chooser. The Sweep board shares too
+    // (§231) — same flags, sweep variants.
     @State private var sharingLb = false
     @State private var sharingPodium = false
     // FRIENDS (§207): All|Friends toggle — dense friend ranks + ghost rows
@@ -1222,6 +1222,25 @@ struct LeaderboardTab: View {
             // 8/9" — it ranks by points, not wins.
             Text("Ranked by total points across all modes").font(Brand.font(9, .bold))
                 .foregroundStyle(Theme.textMuted)
+            // §231: the same share icon as the per-mode board — today's sweep
+            // board card with the sharer's sweep rank.
+            if !sweepLoading && !sweepEntries.isEmpty {
+                Button {
+                    guard !sharingLb else { return }
+                    sharingLb = true
+                    LeaderboardShareFlow.shareSweep(
+                        podium: false, entries: sweepEntries,
+                        userId: auth.profile?.id, userRank: sweepRank)
+                    sharingLb = false
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.textMuted)
+                }
+                .buttonStyle(.plain)
+                .opacity(sharingLb ? 0.4 : 1)
+                .accessibilityLabel("Share sweep leaderboard")
+            }
         }
 
         if sweepLoading {
@@ -1247,11 +1266,32 @@ struct LeaderboardTab: View {
 
         // Yesterday's Winners — same toggle as the per-mode board, but the
         // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
-        Button { showYesterday.toggle() } label: {
-            HStack(spacing: 6) {
-                Text("Yesterday's Winners").font(Brand.font(12, .heavy))
-                Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
-            }.foregroundStyle(Theme.textMuted)
+        HStack(spacing: 8) {
+            Button { showYesterday.toggle() } label: {
+                HStack(spacing: 6) {
+                    Text("Yesterday's Winners").font(Brand.font(12, .heavy))
+                    Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
+                }.foregroundStyle(Theme.textMuted)
+            }
+            // §231: settled sweep-podium share — only once the dropdown is
+            // open with rows (per-mode parity).
+            if showYesterday && !yesterdaySweep.isEmpty {
+                Button {
+                    guard !sharingPodium else { return }
+                    sharingPodium = true
+                    LeaderboardShareFlow.shareSweep(
+                        podium: true, entries: yesterdaySweep,
+                        userId: auth.profile?.id)
+                    sharingPodium = false
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.textMuted)
+                }
+                .buttonStyle(.plain)
+                .opacity(sharingPodium ? 0.4 : 1)
+                .accessibilityLabel("Share yesterday's sweep podium")
+            }
         }
         if showYesterday {
             if yesterdaySweep.isEmpty {

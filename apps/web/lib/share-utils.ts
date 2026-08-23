@@ -111,12 +111,15 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
  *  platform strips the query string (see share-page-copy.parseShareKey). */
 function leaderboardKind(
   input: ShareLeaderboardInput,
-): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' {
+): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' | 'SweepBoard' | 'SweepPodium' {
   switch (input.variant) {
     case 'vs': return 'VsLeaderboard';
     case 'podium': return 'Podium';
     case 'friends': return 'FriendsBoard';
     case 'friendsPodium': return 'FriendsPodium';
+    // SWEEP SHARE (§231): keys read `SweepBoard-DailySweep-<day>`; lm=SWEEP.
+    case 'sweep': return 'SweepBoard';
+    case 'sweepPodium': return 'SweepPodium';
     default: return 'Leaderboard';
   }
 }
@@ -174,7 +177,10 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
 
     if (input.layout === 'leaderboard') {
       params.set('m', leaderboardKind(input));
-      params.set('lm', input.mode);
+      // The Sweep board has no catalog mode — lm carries the DB-style 'SWEEP'
+      // the daily page selects by, so the landing page can tell it apart
+      // from a real mode (§231; iOS/Android emit the same value).
+      params.set('lm', input.mode === 'DailySweep' ? 'SWEEP' : input.mode);
       if (input.shareRank) params.set('r', String(input.shareRank));
       if (input.sharePlayers) params.set('tp', String(input.sharePlayers));
       params.set('w', '1080');
