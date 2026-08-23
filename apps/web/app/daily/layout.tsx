@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Daily Challenge — Wordocious',
@@ -64,9 +65,14 @@ function DailyChallengeExplainer() {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  // The page is a client component that bails out of server rendering (its
+  // HTML is a 6-word shell). Without this boundary the bailout swallows the
+  // whole route — explainer included — so the crawler never saw it (the
+  // first deploy of this section was invisible to Googlebot). The boundary
+  // contains the bailout to the page; the explainer streams in the HTML.
   return (
     <>
-      {children}
+      <Suspense fallback={null}>{children}</Suspense>
       <DailyChallengeExplainer />
     </>
   );
