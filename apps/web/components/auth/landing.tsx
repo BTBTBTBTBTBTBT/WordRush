@@ -166,6 +166,7 @@ export function Landing() {
           <Link href="/how-to-play">How to Play</Link><span>·</span>
           <Link href="/guides">Mode Guides</Link><span>·</span>
           <Link href="/faq">FAQ</Link><span>·</span>
+          <Link href="/about">About</Link><span>·</span>
           <Link href="/privacy">Privacy</Link><span>·</span>
           <Link href="/terms">Terms</Link><span>·</span>
           <Link href="/support">Support</Link>

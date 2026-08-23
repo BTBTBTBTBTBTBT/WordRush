@@ -19,8 +19,16 @@ export function AdGate({ children }: AdGateProps) {
   const { isProActive } = useAuth();
   const isPro = isProActive;
 
-  // Determine if we should show the ad at all
-  const shouldShowAd = !isPro && AD_CONFIG.enabled;
+  // §229: the web interstitial is OFF. A full-screen ad with a forced
+  // countdown before the game loads violates AdSense's web placement
+  // policies (interstitials on load, ads on a screen with no content) — and
+  // with the site never approved, free players have been sitting through a
+  // blank countdown wall since June. A reviewer hitting that wall is one
+  // credible reason every review came back "low value content". The native
+  // apps keep their AdMob game-start interstitial (a different policy regime).
+  // Web monetization is the banner plus Auto ads once approved.
+  const WEB_INTERSTITIAL_ENABLED = false;
+  const shouldShowAd = WEB_INTERSTITIAL_ENABLED && !isPro && AD_CONFIG.enabled;
 
   const [phase, setPhase] = useState<'ad' | 'done'>(() =>
     shouldShowAd ? 'ad' : 'done',

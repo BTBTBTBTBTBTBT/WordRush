@@ -28,6 +28,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${w} — Word of the Day (${params.date}) | Wordocious`,
     description: desc.slice(0, 300),
     alternates: { canonical: `https://wordocious.com/word/${params.date}` },
+    // §229: 60 of the site's 100 indexed URLs were these templated date
+    // pages (~280 words each, one template) — AdSense's "low value content"
+    // classifier reads that as an auto-generated site, which is what every
+    // review for months came back with. Out of the index (and the sitemap)
+    // until each page carries substantial unique content; the /words hub
+    // stays indexable.
+    robots: { index: false, follow: true },
   };
 }
 

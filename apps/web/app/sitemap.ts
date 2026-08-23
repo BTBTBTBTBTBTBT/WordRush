@@ -1,5 +1,4 @@
 import { MetadataRoute } from 'next';
-import { recentDates, dateKey } from '@/lib/word-of-day';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://wordocious.com';
@@ -58,14 +57,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '/' ? 1 : 0.8,
   }));
 
-  // The last 60 Word of the Day archive pages — unique, indexable content that
-  // grows daily. Older pages stay live but drop out of the sitemap.
-  const wordEntries: MetadataRoute.Sitemap = recentDates(60).map((d) => ({
-    url: `${baseUrl}/word/${dateKey(d)}`,
-    lastModified: d,
-    changeFrequency: 'monthly',
-    priority: 0.6,
-  }));
-
-  return [...staticEntries, ...wordEntries];
+  // §229: the Word of the Day date pages are noindex for now — 60 templated
+  // pages outnumbered the site's real content 60:40 in this sitemap, and
+  // AdSense's "low value content" classifier treats that as auto-generated.
+  // They stay live and linked from /words; they return to the sitemap once
+  // each carries substantial unique content.
+  return staticEntries;
 }
