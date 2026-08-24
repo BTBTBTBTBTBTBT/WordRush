@@ -540,16 +540,21 @@ struct DailyRecordsView: View {
         let isMe = e.userId == auth.profile?.id
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
+            // §236: score rides the name line; the stats line owns the width.
             NavigationLink(value: e.userId) {
                 VStack(alignment: .leading, spacing: 2) {
-                    (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 8) {
+                        (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Spacer(minLength: 6)
+                        Text(sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore))
+                            .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1).fixedSize()
+                    }
                     Text(sweepStatsLine(e, details: sweepDetails[e.userId]))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        .lineLimit(1)
-                    // §227: the pill rides the dots row (the dots are ~70pt wide,
-                    // so the pill always fits) — the stats line gets the width.
+                        .lineLimit(1).minimumScaleFactor(0.8)
                     HStack(spacing: 6) {
                         SweepModeDots(details: sweepDetails[e.userId],
                                       day: LeaderboardService.todayLocal())
@@ -557,8 +562,6 @@ struct DailyRecordsView: View {
                     }
                 }
             }.buttonStyle(.plain)
-            Spacer()
-            Text(sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)

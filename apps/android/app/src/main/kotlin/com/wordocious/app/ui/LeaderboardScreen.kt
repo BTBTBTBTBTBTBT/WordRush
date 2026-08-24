@@ -1193,25 +1193,33 @@ internal fun SweepRow(
             Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },
             verticalArrangement = Arrangement.spacedBy(2.dp),   // iOS VStack(spacing: 2)
         ) {
-            // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
-            // siblings, a squeezed row wrapped " (you)" one character per line.
-            Text(
-                androidx.compose.ui.text.buildAnnotatedString {
-                    append(entry.username ?: "Player")
-                    if (isCurrentUser) {
-                        withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
-                    }
-                },
-                fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
-                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
+            // §236 (founder: stats "cut off"): the score shared the row with
+            // the flexible column and squeezed the stats. It now rides the
+            // NAME line (the name ellipsizes harmlessly); the stats line owns
+            // the full row width. ONE AnnotatedString for name+(you) — as two
+            // siblings, a squeezed row wrapped " (you)" one char per line.
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        append(entry.username ?: "Player")
+                        if (isCurrentUser) {
+                            withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
+                        }
+                    },
+                    fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    scoreLabel ?: formatScore(entry.totalScore),
+                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                    maxLines = 1, softWrap = false,
+                )
+            }
             Text(
                 sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 color = WTheme.textMuted, maxLines = 1,
             )
-            // §227: the pill rides the dots row (the dots are ~70dp wide, so
-            // the pill always fits) — the stats line gets the full width and
-            // never truncates. Web + iOS made exactly this move.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1220,7 +1228,6 @@ internal fun SweepRow(
                 SweepPill(entry.isFlawless)
             }
         }
-        Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
     }
 }
 
@@ -1449,12 +1456,15 @@ private fun YesterdaySweepRow(
             Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },
             verticalArrangement = Arrangement.spacedBy(2.dp),   // iOS VStack(spacing: 2)
         ) {
-            Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            // §236: score rides the name line (see SweepRow).
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, maxLines = 1, softWrap = false)
+            }
             Text(
                 sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 color = WTheme.textMuted, maxLines = 1,
             )
-            // §227: pill on the dots row, stats line owns the width (see SweepRow).
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1463,7 +1473,6 @@ private fun YesterdaySweepRow(
                 SweepPill(entry.isFlawless)
             }
         }
-        Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 

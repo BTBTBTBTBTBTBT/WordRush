@@ -1320,15 +1320,20 @@ struct LeaderboardTab: View {
         HStack(spacing: 12) {
             rankIcon(entry.rank).frame(width: 22)
             AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
+            // §236: score rides the name line; the stats line owns the width.
             NavigationLink(value: entry.userId) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 8) {
+                        Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Spacer(minLength: 6)
+                        Text(ySweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore))
+                            .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+                            .lineLimit(1).fixedSize()
+                    }
                     Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        .lineLimit(1)
-                    // §227: the pill rides the dots row (the dots are ~70pt wide,
-                    // so the pill always fits) — the stats line gets the width.
+                        .lineLimit(1).minimumScaleFactor(0.8)
                     HStack(spacing: 6) {
                         SweepModeDots(details: ySweepDetails[entry.userId],
                                       day: LeaderboardService.yesterdayLocal())
@@ -1336,8 +1341,6 @@ struct LeaderboardTab: View {
                     }
                 }
             }.buttonStyle(.plain)
-            Spacer()
-            Text(ySweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -1731,16 +1734,28 @@ struct LeaderboardTab: View {
             AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
             // Same shape as row() (Doug's Aug-16 feedback): stats under the
             // name so the name keeps the row's flexible width.
+            // §236 (founder: "still can't see the information clearly — it's
+            // cut off"): the score shared a line with the STATS, and "33m 10s ·
+            // 8/9 · 90 guesses · 2 hints" lost the width war. The score now
+            // rides the NAME line (the name truncates harmlessly); the stats
+            // line owns the full row width, with a scale floor as the last
+            // resort on the narrowest phones.
             NavigationLink(value: entry.userId) {
                 VStack(alignment: .leading, spacing: 2) {
-                    (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 8) {
+                        (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Spacer(minLength: 6)
+                        Text(sweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore))
+                            .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1).fixedSize()
+                    }
                     Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        .lineLimit(1)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                     // §227: the pill rides the dots row (the dots are ~70pt wide,
-                    // so the pill always fits) — the stats line gets the width.
+                    // so the pill always fits).
                     HStack(spacing: 6) {
                         SweepModeDots(details: sweepDetails[entry.userId],
                                       day: LeaderboardService.todayLocal())
@@ -1748,9 +1763,6 @@ struct LeaderboardTab: View {
                     }
                 }
             }.buttonStyle(.plain)
-            Spacer()
-            Text(sweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore))
-                .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)

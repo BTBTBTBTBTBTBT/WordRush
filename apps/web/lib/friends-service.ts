@@ -66,13 +66,31 @@ export function onFriendsChange(l: () => void): () => void {
  * stays unloaded so a later call retries — no throw, no UI break.
  */
 let fetchedDay = '';
+let fetchedAt = 0;
+let inflight: Promise<void> | null = null;
 
 export async function loadFriends(force = false): Promise<void> {
   // §232: the cache is session-lived, but the DATA is day-scoped — an app/tab
   // left open across midnight kept showing yesterday's race under today's
   // countdown (founder's Monday screenshot: last week's podium, "9/9 today"
   // rows that were really Sunday's). A day rollover invalidates the cache.
-  if (loaded && !force && fetchedDay === localDay()) return;
+  if (loaded && !force && fetchedDay === localDay()) {
+    // §237 stale-while-revalidate: paint the cache instantly, but if it's
+    // older than 30s refetch in the background — your own points stayed
+    // frozen at whatever they were when the screen first loaded.
+    if (Date.now() - fetchedAt > 30_000) void loadFriends(true);
+    return;
+  }
+  if (inflight) return inflight;
+  inflight = doLoad();
+  try {
+    await inflight;
+  } finally {
+    inflight = null;
+  }
+}
+
+async function doLoad(): Promise<void> {
   try {
     const res = await fetch(
       `/api/friends?day=${localDay()}&weekStart=${localWeekStart()}`,
@@ -87,6 +105,7 @@ export async function loadFriends(force = false): Promise<void> {
     outgoingList = json.outgoingProfiles ?? [];
     meDigest = json.me ?? null;
     fetchedDay = localDay();
+    fetchedAt = Date.now();
     loaded = true;
     notify();
   } catch {
@@ -212,7 +231,11 @@ export async function removeFriend(friendId: string): Promise<boolean> {
  * re-reads the trusted score and pushes any friends we just passed.
  */
 export function beatCheck(day: string, gameMode: string, playType: 'solo' | 'vs' = 'solo'): void {
-  void post('/api/friends/beat-check', { day, gameMode, playType });
+  void post('/api/friends/beat-check', { day, gameMode, playType }).then(() => {
+    // §237: the server has the new score now — refresh the race digest so the
+    // Friends panel shows your points the moment you finish, not next launch.
+    if (loaded) void loadFriends(true);
+  });
 }
 
 /** Send a canned taunt. 429 → { alreadySent: true }. */

@@ -330,24 +330,28 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         }}
       >
         <RankIcon rank={rank} />
+        {/* §236: same shell as the daily board's sweep row — score on the
+            NAME line, stats owning the full width, dots + pill beneath. */}
         <div className="flex-1 min-w-0">
-          <Link
-            href={`/profile/${entry.user_id}`}
-            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-            style={{ color: 'var(--color-text)' }}
-          >
-            {entry.username}
-            {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-          </Link>
-        </div>
-        <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/profile/${entry.user_id}`}
+              className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity flex-1 min-w-0"
+              style={{ color: 'var(--color-text)' }}
+            >
+              {entry.username}
+              {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
+            </Link>
+            <span className="font-black text-xs shrink-0" style={{ color: 'var(--color-text)' }}>
+              {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
+            </span>
+          </div>
           {/* §232: daily-board parity — words-not-codes stats + the dot strip
               with the pill beside it (founder ask, Aug 24). */}
-          <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
             {sweepStatsText(entry, det)}
           </div>
-          <div className="flex items-center justify-end gap-1.5">
+          <div className="flex items-center gap-1.5">
             <SweepModeDots details={det} day={today} />
             <span
               className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"

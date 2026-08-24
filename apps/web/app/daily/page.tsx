@@ -487,21 +487,28 @@ export default function DailyPage() {
         {lbAvatar(entry.avatar_url, null, entry.username)}
         {/* Same shape as renderLbRow (Doug's Aug-16 feedback): stats under the
             name so the name keeps the row's flexible width. */}
+        {/* §236 (founder: stats "cut off"): the score rides the NAME line —
+            the name truncates harmlessly and the stats line owns the full
+            row width, so the words always fit. */}
         <div className="flex-1 min-w-0">
-          <Link
-            href={`/profile/${entry.user_id}`}
-            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-            style={{ color: 'var(--color-text)' }}
-          >
-            {entry.username}
-            {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/profile/${entry.user_id}`}
+              className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity flex-1 min-w-0"
+              style={{ color: 'var(--color-text)' }}
+            >
+              {entry.username}
+              {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
+            </Link>
+            <span className="font-black text-xs shrink-0" style={{ color: 'var(--color-text)' }}>
+              {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
+            </span>
+          </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             {/* §223: guesses (and hints) are the numbers that actually explain
                 the ranking — the formula is guess-first, so 9 slow wins can
                 trail 8 sharp ones (founder double-take, Aug 18). */}
-            {/* §227: full words — "2h" read as hours, not hints. The pill
-                lives on the dots row so this line gets the width. */}
+            {/* §227: full words — "2h" read as hours, not hints. */}
             <span className="truncate">
               {formatTime(entry.total_time)} · {entry.modes_won}/9
               {det ? ` · ${det.guesses} guess${det.guesses === 1 ? '' : 'es'}` : ''}
@@ -517,9 +524,6 @@ export default function DailyPage() {
               {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
             </span>
           </div>
-        </div>
-        <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
-          {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
         </div>
       </div>
     );
@@ -915,14 +919,20 @@ export default function DailyPage() {
                     >
                       <RankIcon rank={entry.rank} />
                       {lbAvatar(entry.avatar_url, null, entry.username)}
+                      {/* §236: score rides the name line; stats own the width. */}
                       <div className="flex-1 min-w-0">
-                        <Link
-                          href={`/profile/${entry.user_id}`}
-                          className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-                          style={{ color: 'var(--color-text)' }}
-                        >
-                          {entry.username}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/profile/${entry.user_id}`}
+                            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity flex-1 min-w-0"
+                            style={{ color: 'var(--color-text)' }}
+                          >
+                            {entry.username}
+                          </Link>
+                          <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                            {ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                           <span className="truncate">
                             {formatTime(entry.total_time)} · {entry.modes_won}/9
@@ -943,7 +953,6 @@ export default function DailyPage() {
                           </span>
                         </div>
                       </div>
-                      <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text-muted)' }}>{ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</span>
                     </div>
                   ))}
                 </div>

@@ -115,6 +115,8 @@ object FriendsService {
 
     /** Local day of the last successful fetch — see the §232 note in [load]. */
     private var fetchedDay = ""
+    /** §237: when it was fetched — the stale-while-revalidate clock. */
+    private var fetchedAtMs = 0L
 
     /** Load once per launch (force to refresh). No-throw. */
     suspend fun load(force: Boolean = false) {
@@ -123,7 +125,13 @@ object FriendsService {
         // countdown (founder's Monday screenshot: last week's podium, "9/9
         // today" rows that were really Sunday's). A day rollover invalidates
         // the cache so the next load refetches.
-        if (loaded && !force && fetchedDay == localDay()) return
+        if (loaded && !force && fetchedDay == localDay()) {
+            // §237 stale-while-revalidate: the cached data is already on
+            // screen (Compose reads these properties directly), so only fall
+            // through to a refetch when it's older than 30s — your own points
+            // stayed frozen at whatever they were when the screen first loaded.
+            if (System.currentTimeMillis() - fetchedAtMs <= 30_000) return
+        }
         val resp = api("GET", "/api/friends?day=${localDay()}&weekStart=${localWeekStart()}") ?: return
         val payload = runCatching { json.decodeFromString<FriendsPayload>(resp.second) }.getOrNull() ?: return
         if (resp.first != 200) return
@@ -134,6 +142,7 @@ object FriendsService {
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
         fetchedDay = localDay()
+        fetchedAtMs = System.currentTimeMillis()
         loaded = true
         notifyChanged()
     }
@@ -234,6 +243,9 @@ object FriendsService {
     suspend fun beatCheck(day: String, gameMode: String, playType: String = "solo") {
         api("POST", "/api/friends/beat-check",
             """{"day":"$day","gameMode":"$gameMode","playType":"$playType"}""")
+        // §237: the server has the new score now — refresh the race digest so
+        // the Friends panel shows your points the moment you finish.
+        if (loaded) load(force = true)
     }
 
     enum class TauntOutcome { SENT, ALREADY_SENT, FAILED }

@@ -82,13 +82,24 @@ enum FriendsService {
 
     /// §232: the local day the digest was fetched — see load().
     private static var fetchedDay = ""
+    /// §237: when it was fetched — the stale-while-revalidate clock.
+    private static var fetchedAt = Date.distantPast
 
     static func load(force: Bool = false) async {
         // §232: the cache is session-lived, but the DATA is day-scoped — an app
         // left open across midnight kept showing yesterday's race under today's
         // countdown (founder's Monday screenshot: last week's podium, "9/9 today"
         // rows that were really Sunday's). A day rollover invalidates the cache.
-        if loaded && !force && fetchedDay == localDay() { return }
+        if loaded && !force && fetchedDay == localDay() {
+            // §237 stale-while-revalidate: paint the cache instantly, but if
+            // it's older than 30s refetch in the background — your own points
+            // stayed frozen at whatever they were when the screen first loaded.
+            if Date().timeIntervalSince(fetchedAt) > 30 {
+                fetchedAt = Date()  // claim the slot so repeat appears don't stack fetches
+                Task { await load(force: true) }
+            }
+            return
+        }
         guard let url = URL(string: "https://wordocious.com/api/friends?day=\(localDay())&weekStart=\(localWeekStart())") else { return }
         let req = await PublicProfileService.authedRequest(url)
         guard let (data, resp) = try? await URLSession.shared.data(for: req),
@@ -102,6 +113,7 @@ enum FriendsService {
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
         fetchedDay = localDay()
+        fetchedAt = Date()
         loaded = true
         notify()
     }
@@ -219,6 +231,9 @@ enum FriendsService {
     static func beatCheck(day: String, gameMode: String, playType: String = "solo") {
         Task.detached(priority: .background) {
             _ = await post("beat-check", body: ["day": day, "gameMode": gameMode, "playType": playType])
+            // §237: the server has the new score now — refresh the race digest
+            // so the Friends panel shows your points the moment you finish.
+            if loaded { await load(force: true) }
         }
     }
 
