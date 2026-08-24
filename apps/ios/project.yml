@@ -93,8 +93,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
-        MARKETING_VERSION: "1.18"
-        CURRENT_PROJECT_VERSION: "163"
+        MARKETING_VERSION: "1.19"
+        CURRENT_PROJECT_VERSION: "164"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -124,8 +124,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
-        MARKETING_VERSION: "1.18"
-        CURRENT_PROJECT_VERSION: "163"
+        MARKETING_VERSION: "1.19"
+        CURRENT_PROJECT_VERSION: "164"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES
