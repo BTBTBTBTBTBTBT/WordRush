@@ -23,6 +23,8 @@ struct FriendsPanelView: View {
     // profile push (menu items can't be NavigationLinks).
     @State private var unfriendTarget: FriendsService.FriendProfile?
     @State private var profileTarget: String?
+    // §234: double-tap guard for the weekly-race share card.
+    @State private var sharingRace = false
 
     var body: some View {
         let _ = version
@@ -85,6 +87,27 @@ struct FriendsPanelView: View {
                             Text(FriendsPanelView.weekEndsLabel(at: ctx.date))
                                 .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                                 .monospacedDigit()
+                        }
+                        // §234: share the race — the sweep-board touchpoint
+                        // (muted glyph at the header's trailing edge), only
+                        // once someone has actually scored this week.
+                        if raceStarted {
+                            Button {
+                                guard !sharingRace else { return }
+                                sharingRace = true
+                                LeaderboardShareFlow.shareWeeklyRace(
+                                    friends: friends,
+                                    meDigest: FriendsService.meDigest,
+                                    username: AuthService.shared.profile?.username)
+                                sharingRace = false
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Theme.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                            .opacity(sharingRace ? 0.4 : 1)
+                            .accessibilityLabel("Share weekly race")
                         }
                     }
                     // §232: Monday's answer — last week's settled winner.

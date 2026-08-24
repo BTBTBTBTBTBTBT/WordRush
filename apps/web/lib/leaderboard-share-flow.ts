@@ -9,7 +9,7 @@
 // navigator.share/fallbacks) via shareResult.
 
 import { shareResult, type ShareResultOutcome } from './share-utils';
-import { getFriendIds } from './friends-service';
+import { getFriendIds, type FriendProfile } from './friends-service';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -19,6 +19,7 @@ import {
 import {
   buildDailyLeaderboardShareInput,
   buildDailySweepShareInput,
+  buildWeeklyRaceShareInput,
   buildYesterdayPodiumShareInput,
   buildYesterdaySweepPodiumShareInput,
   type RankedEntry,
@@ -214,6 +215,23 @@ export async function shareYesterdaySweepPodiumCard(opts: {
   userId: string | null;
 }): Promise<ShareResultOutcome | null> {
   const input = buildYesterdaySweepPodiumShareInput(opts);
+  if (!input) return null;
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// WEEKLY RACE SHARE (§234): the friends weekly race — a brag card of this
+// week's standings + the time left. The friends panel already holds the whole
+// roster and the sharer's digest, so nothing is fetched.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Share the friends weekly-race standings (top 5 + the sharer's "#R of N"). */
+export async function shareWeeklyRaceCard(opts: {
+  friends: FriendProfile[];
+  me: { id: string; username: string; weekPoints: number; todayPoints?: number } | null;
+  now?: Date;
+}): Promise<ShareResultOutcome | null> {
+  const input = buildWeeklyRaceShareInput(opts);
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }

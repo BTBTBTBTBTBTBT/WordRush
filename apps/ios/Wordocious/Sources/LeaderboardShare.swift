@@ -40,6 +40,9 @@ enum LbShareVariant: String {
     // geometry, the Daily Sweep violet/pink identity, rows from SweepEntry
     // (RPC tie-aware ranks, "time · X/9 · Sweep|Flawless" sublines).
     case sweep, sweepPodium
+    // WEEKLY RACE (§234): the friends panel's THIS WEEK'S RACE — me + friends
+    // by the week's daily points, indigo identity, live "Nd HH:MM left" chip.
+    case weeklyRace
 
     /// /s/ kind — also the storage-key prefix (web leaderboardKind()).
     var kind: String {
@@ -51,6 +54,7 @@ enum LbShareVariant: String {
         case .friendsPodium: return "FriendsPodium"
         case .sweep: return "SweepBoard"
         case .sweepPodium: return "SweepPodium"
+        case .weeklyRace: return "WeeklyRace"
         }
     }
 }
@@ -333,6 +337,89 @@ enum LeaderboardShareBuilder {
         }
         return input
     }
+
+    // MARK: Weekly race (§234)
+
+    /// Web ShareMode for the weekly race — the `lm` URL param + key segment.
+    static let weeklyRaceShareMode = "WEEKLY"
+    /// share_events game_mode tag.
+    static let weeklyRaceGameModeRaw = "WeeklyRace"
+    static let weeklyRaceModeChip = "Weekly Race"
+    /// Chip accent = the variant's label indigo (the DailySweep convention).
+    static let weeklyRaceAccent = Color(hex: 0x4F46E5)
+
+    /// "3d 14:22" / "07:44:03" — compact time-to-Monday-midnight for the date
+    /// chip. Same boundary as FriendsPanelView.weekEndsLabel (weeks run
+    /// Mon–Sun, reset Monday 00:00 local); compact because it rides a chip
+    /// that also carries the date and the as-of stamp.
+    static func weeklyRaceTimeLeft(at now: Date) -> String {
+        let cal = Calendar.current
+        let dow = cal.component(.weekday, from: now) // 1 Sun … 7 Sat
+        let daysToMonday = dow == 1 ? 1 : 9 - dow // Mon→7 … Sat→2, Sun→1
+        let end = cal.startOfDay(for: cal.date(byAdding: .day, value: daysToMonday, to: now)!)
+        let secs = max(0, Int(end.timeIntervalSince(now)))
+        let d = secs / 86400
+        return d >= 1
+            ? "\(d)d " + String(format: "%02d:%02d", (secs % 86400) / 3600, (secs % 3600) / 60)
+            : String(format: "%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60)
+    }
+
+    /// Weekly-race card from the FriendsService cache — the panel's podium
+    /// extended to the top 5. Me + all friends sorted by this week's points,
+    /// dense ranks; a sharer below the top 5 gets the "• • •" you-row with
+    /// "#R of N" (everyone is already in the list, so no window read). No
+    /// delta pill — the race IS the week, there's no yesterday to compare.
+    /// Nil until someone scores: a Monday-morning zero-point card would just
+    /// be a list of names.
+    static func buildWeeklyRaceInput(
+        friends: [FriendsService.FriendProfile],
+        me: (username: String, weekPoints: Int, todayPoints: Int)?,
+        now: Date = Date()
+    ) -> LbShareInput? {
+        struct Entry { let name: String; let week: Int; let today: Int; let isYou: Bool }
+        var entries = friends.map {
+            Entry(name: $0.username, week: $0.weekPoints ?? 0,
+                  today: $0.todayPoints ?? 0, isYou: false)
+        }
+        // Sharer's row wears their REAL username (the panel's "You" alias
+        // would be meaningless on a card that leaves the phone).
+        if let me {
+            entries.append(Entry(name: me.username, week: me.weekPoints,
+                                 today: me.todayPoints, isYou: true))
+        }
+        entries.sort { $0.week > $1.week }
+        guard entries.contains(where: { $0.week > 0 }) else { return nil }
+
+        func row(_ e: Entry, rank: Int) -> LbShareRow {
+            LbShareRow(rank: rank, name: e.name,
+                       scoreDisplay: "\(e.week.formatted()) pts",
+                       subline: e.today > 0 ? "\(e.today.formatted()) today" : nil,
+                       isYou: e.isYou)
+        }
+
+        let day = LeaderboardService.todayLocal()
+        // Live board, but the horizon is the week — the chip carries the
+        // countdown ("2d 14:22 left") alongside the snapshot stamp.
+        let dateChip = "\(formatBoardDate(day)) · \(weeklyRaceTimeLeft(at: now)) left · as of \(clockTime(now))"
+
+        var input = LbShareInput(
+            variant: .weeklyRace,
+            shareMode: weeklyRaceShareMode, gameModeRaw: weeklyRaceGameModeRaw,
+            modeAccent: weeklyRaceAccent, modeChip: weeklyRaceModeChip,
+            dateChip: dateChip,
+            rows: entries.prefix(5).enumerated().map { row($0.element, rank: $0.offset + 1) },
+            footer: "Think you can catch them? Play free at wordocious.com",
+            day: day)
+        if let youIdx = entries.firstIndex(where: { $0.isYou }) {
+            input.shareRank = youIdx + 1
+            input.sharePlayers = entries.count
+            if youIdx >= 5 {
+                input.you = row(entries[youIdx], rank: youIdx + 1)
+                input.youRankLine = "#\(youIdx + 1) of \(entries.count)"
+            }
+        }
+        return input
+    }
 }
 
 // MARK: - Card renderer (web drawLeaderboardCard parity, 1080×1080)
@@ -373,6 +460,11 @@ struct LeaderboardShareCardView: View {
         case .sweepPodium:
             return LbTheme(bg: Color(hex: 0xFDF2F8), label: Color(hex: 0xD97706),
                            panelBorder: Color(hex: 0xF59E0B, alpha: 0x55 / 255.0), footer: Color(hex: 0x7C3AED))
+        // Weekly race (§234): the friends board's indigo — the race lives in
+        // the same social family as the FRIENDS variants.
+        case .weeklyRace:
+            return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0x4F46E5),
+                           panelBorder: Color(hex: 0x6366F1, alpha: 0x55 / 255.0), footer: Color(hex: 0x4F46E5))
         }
     }
     private var labelText: String {
@@ -384,6 +476,7 @@ struct LeaderboardShareCardView: View {
         case .friendsPodium: return "FRIENDS PODIUM"
         case .sweep: return "DAILY SWEEP BOARD"
         case .sweepPodium: return "YESTERDAY’S SWEEP PODIUM"
+        case .weeklyRace: return "FRIENDS WEEKLY RACE"
         }
     }
 
@@ -894,6 +987,22 @@ enum LeaderboardShareFlow {
             podium: podium,
             day: podium ? LeaderboardService.yesterdayLocal() : LeaderboardService.todayLocal(),
             entries: entries, userId: userId, userRank: userRank) else { return }
+        ShareService.shareLeaderboard(input)
+    }
+
+    /// WEEKLY RACE (§234): share the friends panel's THIS WEEK'S RACE. The
+    /// whole race already rides the FriendsService cache (weekPoints /
+    /// todayPoints come with the friends digest), so this is pure assembly —
+    /// no lookups at all.
+    @MainActor
+    static func shareWeeklyRace(friends: [FriendsService.FriendProfile],
+                                meDigest: FriendsService.MeDigest?,
+                                username: String?) {
+        guard let input = LeaderboardShareBuilder.buildWeeklyRaceInput(
+            friends: friends,
+            me: username.map { (username: $0,
+                                weekPoints: meDigest?.weekPoints ?? 0,
+                                todayPoints: meDigest?.todayPoints ?? 0) }) else { return }
         ShareService.shareLeaderboard(input)
     }
 }

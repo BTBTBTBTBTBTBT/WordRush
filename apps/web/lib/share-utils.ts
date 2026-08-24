@@ -111,7 +111,7 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
  *  platform strips the query string (see share-page-copy.parseShareKey). */
 function leaderboardKind(
   input: ShareLeaderboardInput,
-): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' | 'SweepBoard' | 'SweepPodium' {
+): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' | 'SweepBoard' | 'SweepPodium' | 'WeeklyRace' {
   switch (input.variant) {
     case 'vs': return 'VsLeaderboard';
     case 'podium': return 'Podium';
@@ -120,6 +120,8 @@ function leaderboardKind(
     // SWEEP SHARE (§231): keys read `SweepBoard-DailySweep-<day>`; lm=SWEEP.
     case 'sweep': return 'SweepBoard';
     case 'sweepPodium': return 'SweepPodium';
+    // WEEKLY RACE (§234): keys read `WeeklyRace-WeeklyRace-<day>`; lm=WEEKLY.
+    case 'weeklyRace': return 'WeeklyRace';
     default: return 'Leaderboard';
   }
 }
@@ -179,8 +181,9 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       params.set('m', leaderboardKind(input));
       // The Sweep board has no catalog mode — lm carries the DB-style 'SWEEP'
       // the daily page selects by, so the landing page can tell it apart
-      // from a real mode (§231; iOS/Android emit the same value).
-      params.set('lm', input.mode === 'DailySweep' ? 'SWEEP' : input.mode);
+      // from a real mode (§231; iOS/Android emit the same value). The weekly
+      // race (§234) likewise carries 'WEEKLY' — the race spans all modes.
+      params.set('lm', input.mode === 'DailySweep' ? 'SWEEP' : input.mode === 'WeeklyRace' ? 'WEEKLY' : input.mode);
       if (input.shareRank) params.set('r', String(input.shareRank));
       if (input.sharePlayers) params.set('tp', String(input.sharePlayers));
       params.set('w', '1080');

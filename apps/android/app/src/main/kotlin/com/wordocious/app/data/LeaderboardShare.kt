@@ -58,7 +58,9 @@ object LeaderboardShare {
     // SWEEP (§231): today's cross-mode Daily Sweep board + yesterday's settled
     // sweep podium — same geometry, pink-washed violet identity, RPC tie-aware
     // ranks carried through verbatim.
-    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM, SWEEP, SWEEP_PODIUM }
+    // WEEKLY_RACE (§234): the friends panel's THIS WEEK'S RACE as a card —
+    // me + friends ranked by the week's points, countdown on the date chip.
+    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM, SWEEP, SWEEP_PODIUM, WEEKLY_RACE }
 
     private data class Theme(val bg: Int, val label: Int, val panelBorder: Int, val footer: Int)
 
@@ -74,6 +76,8 @@ object LeaderboardShare {
         // verbatim with the web/iOS cards).
         Variant.SWEEP -> Theme(0xFFFDF2F8.toInt(), 0xFF7C3AED.toInt(), 0x55EC4899, 0xFF7C3AED.toInt())
         Variant.SWEEP_PODIUM -> Theme(0xFFFDF2F8.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF7C3AED.toInt())
+        // Weekly race: the friends board's indigo — same circle, longer window.
+        Variant.WEEKLY_RACE -> Theme(0xFFEEF2FF.toInt(), 0xFF4F46E5.toInt(), 0x556366F1, 0xFF4F46E5.toInt())
     }
 
     private fun label(v: Variant): String = when (v) {
@@ -84,6 +88,7 @@ object LeaderboardShare {
         Variant.FRIENDS_PODIUM -> "FRIENDS PODIUM"
         Variant.SWEEP -> "DAILY SWEEP BOARD"
         Variant.SWEEP_PODIUM -> "YESTERDAY’S SWEEP PODIUM"
+        Variant.WEEKLY_RACE -> "FRIENDS WEEKLY RACE"
     }
 
     // ── Card input (web ShareLeaderboardInput) ─────────────────────────────────
@@ -370,6 +375,78 @@ object LeaderboardShare {
             day = day,
             shareRank = userRank?.rank,
             sharePlayers = userRank?.totalPlayers,
+        )
+    }
+
+    // ── Weekly-race builder (§234) ─────────────────────────────────────────────
+
+    /** Like the Sweep board, the weekly race has no catalog mode: its own
+     *  "WeeklyRace" /s/ key segment with `lm=WEEKLY` and the friends board's
+     *  indigo (shared verbatim with the web/iOS cards). */
+    private const val WEEKLY_SHARE_MODE = "WeeklyRace"
+    private const val WEEKLY_LM = "WEEKLY"
+    private const val WEEKLY_ACCENT = 0xFF4F46E5.toInt()
+
+    /** "4d 07:32" / "07:32:18" until Monday 00:00 local — the FriendsPanel
+     *  countdown's next-Monday-midnight math, compacted for the date chip. */
+    private fun weeklyTimeLeft(now: java.time.LocalDateTime = java.time.LocalDateTime.now()): String {
+        // Weeks run Mon–Sun, reset Monday 00:00 local (§218 panel parity).
+        val end = now.toLocalDate().plusDays((8 - now.dayOfWeek.value).toLong()).atStartOfDay()
+        val secs = java.time.Duration.between(now, end).seconds.coerceAtLeast(0)
+        val d = secs / 86400
+        return if (d >= 1) "%dd %02d:%02d".format(d, (secs % 86400) / 3600, (secs % 3600) / 60)
+        else "%02d:%02d:%02d".format(secs / 3600, (secs % 3600) / 60, secs % 60)
+    }
+
+    /**
+     * Friends weekly-race card (§234): me + every friend ranked by this week's
+     * points (dense positional ranks — the panel podium's ordering, extended
+     * past three). Top 5 rows with a "N today" subline for anyone who scored
+     * today; a sharer below the top 5 gets their highlighted row + "#R of N".
+     * Null until anyone scored — the Monday zero-point podium isn't a card.
+     */
+    fun buildWeeklyRaceInput(
+        friends: List<FriendsService.FriendProfile>,
+        me: FriendsService.MeDigest?,
+        username: String,
+        now: Calendar = Calendar.getInstance(),
+    ): CardInput? {
+        // The sharer rides under their REAL username — this card lands in
+        // other people's feeds, where "You" names nobody.
+        data class Entry(val name: String, val week: Int, val today: Int, val isYou: Boolean)
+        val entries = (friends.map { Entry(it.username, it.weekPoints ?: 0, it.todayPoints ?: 0, false) } +
+            Entry(username, me?.weekPoints ?: 0, me?.todayPoints ?: 0, true))
+            .sortedByDescending { it.week }
+        if (entries.none { it.week > 0 }) return null
+
+        fun row(rank: Int, e: Entry) = RowInput(
+            rank = rank,
+            name = e.name,
+            scoreDisplay = String.format(java.util.Locale.US, "%,d pts", e.week),
+            subline = if (e.today > 0) String.format(java.util.Locale.US, "%,d today", e.today) else null,
+            isYou = e.isYou,
+        )
+
+        val top = entries.take(5)
+        val myIdx = entries.indexOfFirst { it.isYou }
+        val belowTop = myIdx >= 5
+        val day = todayLocalDate()
+        return CardInput(
+            variant = Variant.WEEKLY_RACE,
+            shareMode = WEEKLY_SHARE_MODE,
+            gameModeLower = WEEKLY_LM.lowercase(),
+            accent = WEEKLY_ACCENT,
+            modeChip = "Weekly Race",
+            // A race card is live TWICE over — the countdown names the window
+            // still open, "as of" marks the standings as a snapshot.
+            dateChip = "${formatBoardDate(day)} · ${weeklyTimeLeft()} left · as of ${formatClockTime(now)}",
+            rows = top.mapIndexed { i, e -> row(i + 1, e) },
+            you = if (belowTop) row(myIdx + 1, entries[myIdx]) else null,
+            youRankLine = if (belowTop) "#${myIdx + 1} of ${entries.size}" else null,
+            footer = "Think you can catch them? Play free at wordocious.com",
+            day = day,
+            shareRank = myIdx + 1,
+            sharePlayers = entries.size,
         )
     }
 
@@ -663,6 +740,7 @@ object LeaderboardShare {
         Variant.FRIENDS_PODIUM -> "FriendsPodium"
         Variant.SWEEP -> "SweepBoard"
         Variant.SWEEP_PODIUM -> "SweepPodium"
+        Variant.WEEKLY_RACE -> "WeeklyRace"
     }
 
     /**
@@ -679,8 +757,13 @@ object LeaderboardShare {
         SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
 
         // The Sweep card's /s/ key reads `SweepBoard-DailySweep-<day>` but its
-        // `lm` carries the DB-style board id (web/iOS parity, §231).
-        val lm = if (input.shareMode == SWEEP_SHARE_MODE) SWEEP_LM else input.shareMode
+        // `lm` carries the DB-style board id (web/iOS parity, §231); the
+        // weekly-race card's `lm` is likewise its window, WEEKLY (§234).
+        val lm = when (input.shareMode) {
+            SWEEP_SHARE_MODE -> SWEEP_LM
+            WEEKLY_SHARE_MODE -> WEEKLY_LM
+            else -> input.shareMode
+        }
         val q = linkedMapOf("m" to kind(input.variant), "lm" to lm)
         input.shareRank?.let { q["r"] = "$it" }
         input.sharePlayers?.let { q["tp"] = "$it" }
@@ -863,6 +946,21 @@ object LeaderboardShare {
         val userRank = if (userId != null && entries.take(3).none { it.userId == userId })
             LeaderboardService.getUserSweepRank(userId, day) else null
         val input = buildSweepInput(Variant.SWEEP_PODIUM, day, entries, userId, userRank) ?: return
+        renderAndShare(context, input)
+    }
+
+    /**
+     * Share the friends weekly race (§234). Everything the card needs is the
+     * FriendsPanel's own state — the cached friends digest and the sharer's
+     * meDigest + username — so there is nothing to fetch.
+     */
+    suspend fun shareWeeklyRaceCard(
+        context: Context,
+        friends: List<FriendsService.FriendProfile>,
+        me: FriendsService.MeDigest?,
+        username: String,
+    ) {
+        val input = buildWeeklyRaceInput(friends, me, username) ?: return
         renderAndShare(context, input)
     }
 }

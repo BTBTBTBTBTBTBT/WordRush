@@ -175,8 +175,9 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
   const playType = kind === 'VsLeaderboard' ? 'vs' : 'solo';
   // FRIENDS (§207): the recipient has different friends than the sharer, so a
   // "here's now" refetch of the GLOBAL board would contradict the card. No
-  // live section — a friends-flavored invite line renders instead.
-  const friendsKind = kind === 'FriendsBoard' || kind === 'FriendsPodium';
+  // live section — a friends-flavored invite line renders instead. The weekly
+  // race (§234) is the same private-circle situation, so it joins this gate.
+  const friendsKind = kind === 'FriendsBoard' || kind === 'FriendsPodium' || kind === 'WeeklyRace';
   // SWEEP SHARE (§231): the Sweep board is global (no mode key) — a live
   // SweepBoard refetches the sweep RPC; SweepPodium is final by definition.
   const sweepKind = kind === 'SweepBoard' || kind === 'SweepPodium';
@@ -202,7 +203,11 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
     return (
       <section style={{ width: 'min(92vw, 480px)', textAlign: 'center' }}>
         <p className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
-          {kind === 'FriendsPodium' ? 'Their friends podium is settled' : 'A private race between friends'}
+          {kind === 'FriendsPodium'
+            ? 'Their friends podium is settled'
+            : kind === 'WeeklyRace'
+              ? 'A private weekly race between friends'
+              : 'A private race between friends'}
         </p>
         <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
           Add your friends on Wordocious and start your own

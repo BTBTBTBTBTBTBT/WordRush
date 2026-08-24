@@ -168,6 +168,26 @@ describe('buildCopy — leaderboard cards', () => {
     );
   });
 
+  it('builds the WEEKLY RACE card (§234): #rank of racer-count in the sibling voice, lm=WEEKLY', () => {
+    const c = buildCopy(
+      { m: 'WeeklyRace', lm: 'WEEKLY', r: '2', tp: '8' },
+      ['u', 'WeeklyRace-WeeklyRace-2026-08-24'],
+    );
+    expect(c.mode).toBe('WeeklyRace');
+    expect(c.title).toBe('Wordocious Friends Weekly Race — Aug 24, 2026');
+    expect(c.description).toBe(
+      '#2 of 8 in their friends’ weekly race — resets Monday. Think you can catch them? Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
+  it('builds the WEEKLY RACE card without a standing, recovered from the path alone', () => {
+    const c = buildCopy({}, ['u', 'WeeklyRace-WeeklyRace-2026-08-24']);
+    expect(c.mode).toBe('WeeklyRace');
+    expect(c.title).toBe('Wordocious Friends Weekly Race — Aug 24, 2026');
+    expect(c.description).toContain('resets Monday');
+    expect(c.description).not.toContain('#');
+  });
+
   it('recovers kind + board mode from the path when the query is stripped', () => {
     const c = buildCopy({}, ['u', 'VsLeaderboard-Six-2026-08-07']);
     expect(c.title).toBe('Wordocious VS Battle Leaderboard — Classic Six Aug 7');
@@ -201,6 +221,15 @@ describe('parseLeaderboardShare', () => {
     expect(boardDayStatus('SweepBoard', '2026-08-23', '2026-08-23')).toBe('live');
     expect(boardDayStatus('SweepBoard', '2026-08-22', '2026-08-23')).toBe('final');
     expect(boardDayStatus('SweepPodium', '2026-08-23', '2026-08-23')).toBe('final');
+  });
+
+  it('recognizes the WEEKLY RACE kind (§234) from the query and from the path alone', () => {
+    expect(parseLeaderboardShare(
+      { m: 'WeeklyRace', lm: 'WEEKLY' },
+      ['u', 'WeeklyRace-WeeklyRace-2026-08-24'],
+    )).toEqual({ kind: 'WeeklyRace', lbMode: 'WEEKLY', date: '2026-08-24' });
+    expect(parseLeaderboardShare({}, ['u', 'WeeklyRace-WeeklyRace-2026-08-24']))
+      .toEqual({ kind: 'WeeklyRace', lbMode: 'WeeklyRace', date: '2026-08-24' });
   });
 
   it('recovers kind + board mode from the path when the query is stripped', () => {

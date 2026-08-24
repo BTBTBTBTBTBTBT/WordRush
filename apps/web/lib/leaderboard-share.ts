@@ -6,6 +6,7 @@
 // pairs with this lives in leaderboard-share-flow.ts.
 
 import type { LeaderboardEntry, SweepEntry } from './daily-service';
+import type { FriendProfile } from './friends-service';
 import type {
   ShareLeaderboardInput,
   ShareLeaderboardRowInput,
@@ -345,4 +346,103 @@ export function buildYesterdaySweepPodiumShareInput(
     footer: SWEEP_FOOTER,
     date: new Date(opts.day + 'T00:00:00'),
   };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// WEEKLY RACE SHARE (§234): the friends weekly race — the founder wants to
+// brag about the THIS WEEK'S RACE podium: a timestamped card of the current
+// weekly standings plus how much time is left before Monday's reset.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Compact time-to-Monday-00:00-local — the same clock math as the friends
+ *  panel's weekEndsLabel, compressed for the date chip: "6d 12:33" with a
+ *  day or more left, "07:23:45" (ticking seconds matter) inside the last day. */
+export function formatRaceTimeLeft(now: Date): string {
+  const end = new Date(now);
+  const dow = now.getDay(); // 0 Sun … 6 Sat
+  end.setDate(now.getDate() + (dow === 0 ? 1 : 8 - dow)); // next Monday
+  end.setHours(0, 0, 0, 0);
+  const secs = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+  const d = Math.floor(secs / 86400);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const hh = pad(Math.floor((secs % 86400) / 3600));
+  const mm = pad(Math.floor((secs % 3600) / 60));
+  return d >= 1 ? `${d}d ${hh}:${mm}` : `${hh}:${mm}:${pad(secs % 60)}`;
+}
+
+/** Local YYYY-MM-DD of a Date — the card's storage-key day. */
+function localDayOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export interface WeeklyRaceShareOpts {
+  /** The whole friends roster — the race is everyone, not just the podium 3. */
+  friends: FriendProfile[];
+  /** The sharer. The card shows their REAL username (the panel's "You" row
+   *  would read as a stranger on someone else's phone). Null = signed-out /
+   *  no profile — the card still builds from friends alone. */
+  me: { id: string; username: string; weekPoints: number; todayPoints?: number } | null;
+  /** Snapshot moment for the countdown + "as of" stamp — injectable for tests. */
+  now?: Date;
+}
+
+/**
+ * The friends weekly-race card: me + all friends sorted by weekPoints desc,
+ * dense ranks 1..N, top 5 rows; a sharer below the top 5 gets the standard
+ * highlighted you-row with "#R of N". The date chip carries the race clock —
+ * "Aug 24, 2026 · 6d 12:33 left · as of 11:20 AM" — so the brag stays honest
+ * as a snapshot of a race that's still running. Null when nobody has points
+ * yet (a Monday-morning zero board isn't a brag).
+ */
+export function buildWeeklyRaceShareInput(opts: WeeklyRaceShareOpts): ShareLeaderboardInput | null {
+  const entries = [
+    ...(opts.me ? [{
+      id: opts.me.id,
+      username: opts.me.username,
+      weekPoints: opts.me.weekPoints,
+      todayPoints: opts.me.todayPoints ?? 0,
+    }] : []),
+    ...opts.friends.map((f) => ({
+      id: f.id,
+      username: f.username,
+      weekPoints: f.weekPoints ?? 0,
+      todayPoints: f.todayPoints ?? 0,
+    })),
+  ];
+  if (!entries.some((e) => e.weekPoints > 0)) return null;
+
+  // Dense ranks 1..N — same ordering the panel's podium sorts by.
+  const ranked = [...entries]
+    .sort((a, b) => b.weekPoints - a.weekPoints)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+  const row = (e: (typeof ranked)[number]): ShareLeaderboardRowInput => ({
+    rank: e.rank,
+    name: e.username,
+    scoreDisplay: `${e.weekPoints.toLocaleString()} pts`,
+    // Today's contribution keeps the weekly total feeling live.
+    subline: e.todayPoints > 0 ? `${e.todayPoints.toLocaleString()} today` : undefined,
+    isYou: !!opts.me && e.id === opts.me.id,
+  });
+
+  const now = opts.now ?? new Date();
+  const top = ranked.slice(0, 5);
+  const myRow = opts.me ? ranked.find((e) => e.id === opts.me!.id) ?? null : null;
+  const belowTop = !!myRow && myRow.rank > 5;
+  const input: ShareLeaderboardInput = {
+    layout: 'leaderboard',
+    mode: 'WeeklyRace',
+    variant: 'weeklyRace',
+    modeChip: 'Weekly Race',
+    dateChip: `${formatBoardDate(localDayOf(now))} · ${formatRaceTimeLeft(now)} left · as of ${formatClockTime(now)}`,
+    rows: top.map(row),
+    footer: 'Think you can catch them? Play free at wordocious.com',
+    date: now,
+    shareRank: myRow?.rank,
+    sharePlayers: myRow ? ranked.length : undefined,
+  };
+  if (belowTop) {
+    input.you = row(myRow);
+    input.youRankLine = `#${myRow.rank} of ${ranked.length}`;
+  }
+  return input;
 }

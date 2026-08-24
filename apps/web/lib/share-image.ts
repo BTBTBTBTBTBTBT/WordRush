@@ -44,7 +44,11 @@ export type ShareMode =
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
-  | 'DailySweep';
+  | 'DailySweep'
+  /** WEEKLY RACE SHARE (§234): the friends weekly-race card — like DailySweep,
+   *  not a playable mode (no catalog accent; the chip falls back to the
+   *  weeklyRace variant theme). */
+  | 'WeeklyRace';
 
 interface ShareBase {
   mode: ShareMode;
@@ -192,7 +196,10 @@ export interface ShareLeaderboardInput {
    *  = yesterday's settled Sweep podium — the founder wants the Sweep board
    *  shareable exactly like every other board. Rows carry the RPC's
    *  tie-aware sweep rank; `mode` is 'DailySweep'. */
-  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium' | 'sweep' | 'sweepPodium';
+  /** WEEKLY RACE SHARE (§234): 'weeklyRace' = the friends weekly race — a
+   *  timestamped brag card of this week's standings (me + friends by
+   *  weekPoints) with how much time is left; `mode` is 'WeeklyRace'. */
+  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium' | 'sweep' | 'sweepPodium' | 'weeklyRace';
   /** Mode chip text ("Classic Six", "Classic VS"). */
   modeChip: string;
   /** Date chip text ("Aug 7, 2026 · #123" / "Aug 6, 2026 · Final"). */
@@ -1148,6 +1155,10 @@ const LB_THEME: Record<ShareLeaderboardInput['variant'], {
   // (shared verbatim with the iOS/Android cards).
   sweep:       { bg: '#fdf2f8', label: '#7c3aed', panelBorder: '#ec489955', footer: '#7c3aed' },
   sweepPodium: { bg: '#fdf2f8', label: '#d97706', panelBorder: '#f59e0b55', footer: '#7c3aed' },
+  // Weekly race (§234): the friends indigo family — the race lives inside the
+  // FRIENDS surface, so its brag card wears the same colors (shared verbatim
+  // with the iOS/Android cards).
+  weeklyRace: { bg: '#eef2ff', label: '#4f46e5', panelBorder: '#6366f155', footer: '#4f46e5' },
 };
 const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   solo: 'DAILY LEADERBOARD',
@@ -1157,6 +1168,7 @@ const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   friendsPodium: 'FRIENDS PODIUM',
   sweep: 'DAILY SWEEP BOARD',
   sweepPodium: 'YESTERDAY’S SWEEP PODIUM',
+  weeklyRace: 'FRIENDS WEEKLY RACE',
 };
 
 // Rank iconography — same colors as the in-app RankIcon (crown gold, medal

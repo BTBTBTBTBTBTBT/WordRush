@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.ui.draw.alpha
 import androidx.compose.material3.AlertDialog
@@ -95,6 +96,8 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     // reachable by drilling into the friend's profile page.
     var menuTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
     var unfriendTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    // §234: weekly-race share in flight — one card render/upload at a time.
+    var sharingRace by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(note) { if (note != null) { delay(2_500); note = null } }
@@ -241,6 +244,30 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = WTheme.textMuted, fontFamily = Nunito,
                     )
+                    // §234: share the race as a card — the panel's own cached
+                    // digest is the whole input, so no fetch. Hidden until
+                    // anyone scored (a zero-point board brags about nothing).
+                    if (raceStarted) {
+                        Icon(
+                            Icons.Filled.Share, "Share weekly race",
+                            tint = WTheme.textMuted.copy(alpha = if (sharingRace) 0.4f else 1f),
+                            modifier = Modifier.padding(start = 8.dp).size(14.dp).clickableNoRipple {
+                                if (!sharingRace) {
+                                    sharingRace = true
+                                    scope.launch {
+                                        try {
+                                            com.wordocious.app.data.LeaderboardShare.shareWeeklyRaceCard(
+                                                context, FriendsService.friends, FriendsService.meDigest,
+                                                // Real username on the sharer's row — the card
+                                                // travels to feeds where "You" names nobody.
+                                                AuthService.profile.value?.username ?: "You",
+                                            )
+                                        } finally { sharingRace = false }
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
                 // §232: Monday's question — "who won last week?" — answered in
                 // place. lastWeekPoints is the settled previous week from the

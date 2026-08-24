@@ -2,14 +2,17 @@ import { describe, it, expect } from 'vitest';
 import {
   buildDailyLeaderboardShareInput,
   buildDailySweepShareInput,
+  buildWeeklyRaceShareInput,
   buildYesterdayPodiumShareInput,
   buildYesterdaySweepPodiumShareInput,
   buildRankDelta,
+  formatRaceTimeLeft,
   puzzleNumberForDay,
   formatBoardDate,
   type RankedEntry,
 } from './leaderboard-share';
 import type { LeaderboardEntry, SweepEntry } from './daily-service';
+import type { FriendProfile } from './friends-service';
 
 // Pure card-assembly logic for the LEADERBOARD SHARE feature. Pins the
 // approved-mock invariants: top-5 full stats vs compressed-plus-you-row
@@ -277,5 +280,92 @@ describe('buildYesterdaySweepPodiumShareInput (§231)', () => {
 
   it('returns null when nobody swept yesterday', () => {
     expect(buildYesterdaySweepPodiumShareInput({ day: '2026-08-22', entries: [] })).toBeNull();
+  });
+});
+
+// WEEKLY RACE SHARE (§234): the friends weekly race — me + all friends by
+// weekPoints, dense ranks, a countdown-bearing date chip.
+function friend(overrides: Partial<FriendProfile> & { id: string; username: string }): FriendProfile {
+  return { avatar_url: null, level: 5, ...overrides };
+}
+
+describe('formatRaceTimeLeft (§234)', () => {
+  it('compresses to "Nd HH:MM" with a day or more until Monday 00:00', () => {
+    // Mon Aug 24 2026, 11:20 AM local → next Monday Aug 31 00:00 = 6d 12:40.
+    expect(formatRaceTimeLeft(new Date(2026, 7, 24, 11, 20, 0))).toBe('6d 12:40');
+  });
+  it('ticks HH:MM:SS inside the last day', () => {
+    // Sun Aug 30 2026, 16:36:15 → Monday 00:00 = 07:23:45.
+    expect(formatRaceTimeLeft(new Date(2026, 7, 30, 16, 36, 15))).toBe('07:23:45');
+  });
+});
+
+describe('buildWeeklyRaceShareInput (§234)', () => {
+  const me = { id: 'me', username: 'brian', weekPoints: 4200, todayPoints: 350 };
+
+  it('renders the weeklyRace identity: me + friends by weekPoints, dense ranks, countdown chip', () => {
+    const input = buildWeeklyRaceShareInput({
+      friends: [
+        friend({ id: 'f1', username: 'doug', weekPoints: 5100, todayPoints: 0 }),
+        friend({ id: 'f2', username: 'carlie', weekPoints: 3900, todayPoints: 120 }),
+      ],
+      me,
+      now: new Date(2026, 7, 24, 11, 20, 0),
+    })!;
+    expect(input.variant).toBe('weeklyRace');
+    expect(input.mode).toBe('WeeklyRace');
+    expect(input.modeChip).toBe('Weekly Race');
+    expect(input.dateChip).toBe('Aug 24, 2026 · 6d 12:40 left · as of 11:20 AM');
+    expect(input.rows.map((r) => r.rank)).toEqual([1, 2, 3]);
+    expect(input.rows[0]).toEqual({
+      rank: 1, name: 'doug', scoreDisplay: '5,100 pts', subline: undefined, isYou: false,
+    });
+    // The sharer's row wears their REAL username, not the panel's 'You'.
+    expect(input.rows[1]).toEqual({
+      rank: 2, name: 'brian', scoreDisplay: '4,200 pts', subline: '350 today', isYou: true,
+    });
+    expect(input.rows[2].subline).toBe('120 today');
+    expect(input.you).toBeUndefined();
+    expect(input.shareRank).toBe(2);
+    expect(input.sharePlayers).toBe(3);
+    expect(input.footer).toBe('Think you can catch them? Play free at wordocious.com');
+  });
+
+  it('caps the card at 5 rows and appends the you-row + "#R of N" for a sharer below the top 5', () => {
+    const input = buildWeeklyRaceShareInput({
+      friends: Array.from({ length: 7 }, (_, i) =>
+        friend({ id: `f${i + 1}`, username: `racer${i + 1}`, weekPoints: 9000 - i * 500 })),
+      me: { id: 'me', username: 'brian', weekPoints: 100 },
+      now: new Date(2026, 7, 24, 11, 20, 0),
+    })!;
+    expect(input.rows).toHaveLength(5);
+    expect(input.rows.every((r) => !r.isYou)).toBe(true);
+    expect(input.you).toMatchObject({ rank: 8, name: 'brian', scoreDisplay: '100 pts', isYou: true });
+    // A zero-today sharer gets no subline — the weekly total is the row.
+    expect(input.you?.subline).toBeUndefined();
+    expect(input.youRankLine).toBe('#8 of 8');
+    expect(input.shareRank).toBe(8);
+    expect(input.sharePlayers).toBe(8);
+  });
+
+  it('builds from friends alone when the sharer has no profile (no isYou, no rank chrome)', () => {
+    const input = buildWeeklyRaceShareInput({
+      friends: [friend({ id: 'f1', username: 'doug', weekPoints: 500 })],
+      me: null,
+      now: new Date(2026, 7, 24, 11, 20, 0),
+    })!;
+    expect(input.rows).toHaveLength(1);
+    expect(input.rows[0].isYou).toBe(false);
+    expect(input.shareRank).toBeUndefined();
+    expect(input.sharePlayers).toBeUndefined();
+    expect(input.you).toBeUndefined();
+  });
+
+  it('returns null when nobody has points yet (a Monday-morning zero board is no brag)', () => {
+    expect(buildWeeklyRaceShareInput({
+      friends: [friend({ id: 'f1', username: 'doug', weekPoints: 0 })],
+      me: { id: 'me', username: 'brian', weekPoints: 0 },
+    })).toBeNull();
+    expect(buildWeeklyRaceShareInput({ friends: [], me: null })).toBeNull();
   });
 });

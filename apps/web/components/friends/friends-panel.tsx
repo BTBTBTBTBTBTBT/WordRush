@@ -7,9 +7,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, MoreHorizontal, Share } from 'lucide-react';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
+import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
 import {
   loadFriends,
   getFriends,
@@ -135,6 +136,10 @@ export function FriendsPanel() {
     return () => clearInterval(t);
   }, []);
 
+  // §234: busy-guard for the weekly-race share button (same discipline as
+  // every other share button — a double-tap must not fire two share sheets).
+  const [sharingRace, setSharingRace] = useState(false);
+
   if (!user) return null;
 
   const friends = getFriends();
@@ -163,6 +168,30 @@ export function FriendsPanel() {
     return entries.slice(0, 3);
   })();
   const raceStarted = podium.some((e) => e.pts > 0);
+
+  // §234 (founder: a brag card for the weekly race): a timestamped card of the
+  // current standings + how long is left. The card uses the sharer's REAL
+  // username — the panel's 'You' row would read as a stranger on someone
+  // else's phone.
+  const shareRace = async () => {
+    if (sharingRace) return;
+    setSharingRace(true);
+    try {
+      await shareWeeklyRaceCard({
+        friends,
+        me: profile
+          ? {
+              id: profile.id,
+              username: profile.username,
+              weekPoints: meDigest?.weekPoints ?? 0,
+              todayPoints: meDigest?.todayPoints,
+            }
+          : null,
+      });
+    } finally {
+      setSharingRace(false);
+    }
+  };
 
   // §216: the week's leader wears the crown on roster rows (and on the
   // friends leaderboard) — only once someone has actually scored.
@@ -307,7 +336,22 @@ export function FriendsPanel() {
               read as today's score — name the window and when it closes. */}
           <div className="flex items-center justify-between text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <span className="font-black uppercase tracking-wider">This week&apos;s race</span>
-            <span>{weekEndsLabel}</span>
+            <span className="flex items-center gap-1.5">
+              <span>{weekEndsLabel}</span>
+              {/* §234: share the race — only once it has points (a zero board
+                  isn't a brag; the builder returns null for it anyway). */}
+              {raceStarted && (
+                <button
+                  onClick={shareRace}
+                  disabled={sharingRace}
+                  aria-label="Share weekly race"
+                  className="p-1 -my-1 active:scale-95 transition-transform"
+                  style={{ color: 'var(--color-text-muted)', opacity: sharingRace ? 0.4 : 1 }}
+                >
+                  <Share className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </span>
           </div>
           {/* §232: Monday's answer — last week's settled winner. */}
           {lastWeek && (
