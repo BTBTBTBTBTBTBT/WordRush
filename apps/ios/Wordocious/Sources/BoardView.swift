@@ -435,6 +435,11 @@ struct CompletedMiniBoardView: View {
     let tileSize: CGFloat
     let rowCount: Int
     var framed: Bool = true
+    /// §233: on the persistent post-game of a LOST run, the failed board
+    /// spells out its answer under the tiles (the answer never appears in the
+    /// tiles themselves) — Android/web parity; off everywhere else, so the
+    /// home grid, profiles, and VS recaps never spoil.
+    var revealMissed: Bool = false
 
     var body: some View {
         let width = board.solution.count
@@ -460,6 +465,12 @@ struct CompletedMiniBoardView: View {
                         }
                     }
                 }
+            }
+            if revealMissed && board.status != .won {
+                Text(board.solution.uppercased())
+                    .font(Brand.font(11, .black))
+                    .foregroundStyle(Color(hex: 0xDC2626))
+                    .lineLimit(1).minimumScaleFactor(0.6)
             }
         }
         .modifier(SolvedBoardFrame(won: framed && board.status == .won,

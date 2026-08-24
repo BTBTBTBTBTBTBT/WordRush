@@ -269,14 +269,44 @@ fun CompletedDailyBoard(modeId: String) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun CompletedBoardsRecapGrid(boards: List<com.wordocious.core.BoardState>) {
-    FlowRow(horizontalArrangement = Arrangement.Center, verticalArrangement = Arrangement.Center) {
+internal fun CompletedBoardsRecapGrid(
+    boards: List<com.wordocious.core.BoardState>,
+    /** §233: spell the missed word under each unsolved board (post-game loss). */
+    revealMissed: Boolean = false,
+) {
+    // §233 (founder vs. Doug's Deliverance-loss screenshot): iOS lays these out
+    // in a FIXED grid — 2 columns for 2–4 boards, 4 for OctoWord's 8
+    // (CompletedBoardLayout.cols) — while the unconstrained FlowRow wrapped
+    // whatever fit, so QuadWord/Deliverance rendered 3-across-then-1-below.
+    val cols = if (boards.size > 4) 4 else 2
+    FlowRow(
+        horizontalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
+        maxItemsInEachRow = cols,
+    ) {
         boards.forEach { b ->
-            // Aspect ratio (cols/rows) gives the weight-based MiniBoardView a
-            // concrete height so its rows don't collapse to ~0.
-            Box(Modifier.padding(4.dp).width(if (boards.size > 4) 64.dp else 96.dp)
-                .aspectRatio(b.solution.length.toFloat() / b.maxGuesses)) {
-                MiniBoardView(board = b)
+            Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // Aspect ratio (cols/rows) gives the weight-based MiniBoardView a
+                // concrete height so its rows don't collapse to ~0. Rows INCLUDE
+                // Deliverance's prefills — MiniBoardView renders them, so sizing
+                // by maxGuesses alone squashed its 9-row boards (§233).
+                val rows = (b.prefilledGuesses?.size ?: 0) + b.maxGuesses
+                Box(Modifier.width(if (boards.size > 4) 64.dp else 96.dp)
+                    .aspectRatio(b.solution.length.toFloat() / rows)) {
+                    MiniBoardView(board = b)
+                }
+                // §233: a missed board's word never appears in its tiles — spell
+                // it out in loss red under the red-bordered board (the treatment
+                // iOS's share card uses for revealed losses), so the player
+                // learns what beat them without re-summoning the loss overlay.
+                if (revealMissed && b.status != GameStatus.WON) {
+                    Text(
+                        b.solution.uppercase(),
+                        fontSize = 11.sp, fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp, color = Color(0xFFDC2626),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
         }
     }

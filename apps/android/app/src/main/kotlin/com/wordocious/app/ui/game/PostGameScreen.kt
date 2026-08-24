@@ -112,10 +112,16 @@ fun PostGameScreen(
     // best green (correct-position) count across the player's own guesses (hint
     // rows excluded).
     val gauntletProgress = state.gauntlet?.takeIf { mode == GameMode.GAUNTLET }
+    // §233 (founder, Doug's Deliverance-loss screenshot): this used to pass 0
+    // boards on a loss, so a 3/4 loss read "0 pts / Did not finish" while the
+    // recorded composite was ~150 — computeRunScore feeds the REAL solved count
+    // into the same DailyScoring.breakdown, so the card was lying about the
+    // number on the leaderboard. iOS GameScreen passes the actual solved count
+    // for wins AND losses; match it.
     val cardBoardsSolved = if (gauntletProgress != null) gauntletProgress.stageResults.sumOf { r ->
         if (r.status == GameStatus.WON) (gauntletProgress.stages.getOrNull(r.stageIndex)?.boardCount ?: 0)
         else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
-    } else (if (won) boardsSolved else 0)
+    } else boardsSolved
     val cardTotalBoards = if (gauntletProgress != null) (gauntletProgress.stages.sumOf { it.boardCount }.takeIf { it > 0 } ?: 21) else totalBoards
     val stagesCompleted = gauntletProgress?.stageResults?.count { it.status == GameStatus.WON }
     val bestCorrectLetters = if (mode != GameMode.GAUNTLET && totalBoards == 1) {
@@ -263,8 +269,11 @@ fun PostGameScreen(
                 // Compact uniform recap (completed-daily-board sizing) — the
                 // in-play MultiBoardLayout rendered 2-column modes
                 // (QuadWord/Deliverance) zoomed huge post-game while OctoWord's
-                // 4 columns looked right (iOS build-87 parity).
-                CompletedBoardsRecapGrid(state.boards)
+                // 4 columns looked right (iOS build-87 parity). §233: on a loss
+                // the unsolved boards spell out their missed word — the tap-
+                // through GAME OVER overlay was the only reveal, and Doug's
+                // screenshot showed the persistent screen kept the answer secret.
+                CompletedBoardsRecapGrid(state.boards, revealMissed = !won)
             } else {
                 Box(
                     modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),

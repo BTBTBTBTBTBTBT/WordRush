@@ -78,7 +78,8 @@ struct GameScreen: View {
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing), count: cols),
                                           spacing: CompletedBoardLayout.gridSpacing) {
                                     ForEach(vm.boards.indices, id: \.self) { i in
-                                        CompletedMiniBoardView(board: vm.boards[i], tileSize: tile, rowCount: rowCount)
+                                        CompletedMiniBoardView(board: vm.boards[i], tileSize: tile, rowCount: rowCount,
+                                                               revealMissed: vm.status != .won)
                                     }
                                 }
                                 .frame(maxWidth: CompletedBoardLayout.maxWidth(vm.boardCount))

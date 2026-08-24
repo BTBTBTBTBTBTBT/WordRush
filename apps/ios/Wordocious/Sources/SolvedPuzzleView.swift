@@ -56,7 +56,7 @@ struct SolvedPuzzleView: View {
                         boards(d)
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
                                            guessCount: d.guessCount, timeSeconds: d.timeSeconds,
-                                           boardsSolved: d.won ? d.solutions.count : 0, totalBoards: d.solutions.count,
+                                           boardsSolved: d.won ? d.solutions.count : solvedCount(d), totalBoards: d.solutions.count,
                                            day: LeaderboardService.todayLocal())
                         // Single-board modes (Classic / Six / Seven): word + definition,
                         // using the actual displayed board's solution (reliable).
@@ -174,7 +174,8 @@ struct SolvedPuzzleView: View {
                              count: CompletedBoardLayout.cols(bs.count))
             LazyVGrid(columns: cols, spacing: CompletedBoardLayout.gridSpacing) {
                 ForEach(bs.indices, id: \.self) { i in
-                    CompletedMiniBoardView(board: bs[i], tileSize: tileSize, rowCount: rowCount, framed: true)
+                    CompletedMiniBoardView(board: bs[i], tileSize: tileSize, rowCount: rowCount, framed: true,
+                                           revealMissed: !d.won)
                 }
             }
             .frame(maxWidth: CompletedBoardLayout.maxWidth(bs.count))
