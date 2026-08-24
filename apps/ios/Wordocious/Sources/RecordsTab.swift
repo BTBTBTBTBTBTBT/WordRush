@@ -334,6 +334,9 @@ struct DailyRecordsView: View {
     @State private var sweepEntries: [SweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
     @State private var sweepLoading = false
+    // §232: dot-strip + guess/hint detail — daily-board parity (founder ask,
+    // Aug 24: Records' sweep rows must match the leaderboard's sweep section).
+    @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
     // TIE-AWARE score display (web parity): rows sharing a whole number on the
     // same board render the decimals that rank them.
     private var lbScoreLabels: [Double: String] { tieAwareScoreLabels(entries.map(\.compositeScore)) }
@@ -529,24 +532,33 @@ struct DailyRecordsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
+    // §232: daily-board parity (founder ask, Aug 24) — this row wore a bare
+    // "time · X/9" while the leaderboard's sweep section had the §223 words +
+    // dot strip. Same shape as ProfileTab's sweepRow now: stats under the name,
+    // the SweepModeDots strip with the FLAWLESS/SWEEP pill riding it (§227).
     private func sweepRow(_ rank: Int, _ e: SweepEntry) -> some View {
         let isMe = e.userId == auth.profile?.id
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
             NavigationLink(value: e.userId) {
-                (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                VStack(alignment: .leading, spacing: 2) {
+                    (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text(sweepStatsLine(e, details: sweepDetails[e.userId]))
+                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        .lineLimit(1)
+                    // §227: the pill rides the dots row (the dots are ~70pt wide,
+                    // so the pill always fits) — the stats line gets the width.
+                    HStack(spacing: 6) {
+                        SweepModeDots(details: sweepDetails[e.userId],
+                                      day: LeaderboardService.todayLocal())
+                        sweepPill(isFlawless: e.isFlawless)
+                    }
+                }
             }.buttonStyle(.plain)
             Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                HStack(spacing: 5) {
-                    Text("\(formatShortTime(e.totalTime)) · \(e.modesWon)/9")
-                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    sweepPill(isFlawless: e.isFlawless)
-                }
-            }
+            Text(sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
@@ -557,11 +569,13 @@ struct DailyRecordsView: View {
         if let cached = SweepCache.shared.daily(cacheKey) {
             sweepEntries = cached.entries
             sweepRank = cached.userRank
+            sweepDetails = cached.details
             sweepLoading = false
         } else {
             sweepLoading = true
             sweepRank = nil
             sweepEntries = []
+            sweepDetails = [:]
         }
 
         let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
@@ -570,13 +584,20 @@ struct DailyRecordsView: View {
         sweepEntries = fetched
         sweepLoading = false
 
+        // §232 (§223 pattern): dot-strip + guess/hint detail rides in behind
+        // the rows — the board paints first, dots fill in when the fetch lands.
+        let details = await LeaderboardService.fetchSweepModeDetails(
+            day: LeaderboardService.todayLocal(), userIds: fetched.map(\.userId))
+        guard !Task.isCancelled else { return }
+        sweepDetails = details
+
         var rank: (rank: Int, total: Int)? = nil
         if let uid = auth.profile?.id {
             rank = await SweepLeaderboardService.dailySweepRank(userId: uid)
             guard !Task.isCancelled else { return }
             sweepRank = rank
         }
-        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank))
+        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank, details: details))
     }
 
     @ViewBuilder private func rankIcon(_ rank: Int) -> some View {

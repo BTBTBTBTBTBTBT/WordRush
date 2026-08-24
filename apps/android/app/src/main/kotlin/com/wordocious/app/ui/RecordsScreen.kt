@@ -172,6 +172,9 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     val isSweep = selectedMode == SWEEP_ID
     var sweepEntries by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
     var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    // §232: dot-strip + guess/hint detail — daily-board parity (founder ask,
+    // Aug 24): Records' sweep rows must read like the leaderboard's §223 rows.
+    var sweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
 
     // Re-fetch once a daily result row has LANDED on the server (recordedTick)
     // so a finished puzzle appears here immediately, without a tab round-trip
@@ -194,6 +197,12 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
             sweepEntries = rows
             playerCount = rows.size
             loading = false
+            // §232: the dot strip + guess/hint totals land AFTER the rows paint
+            // (LeaderboardScreen parity) — the board never waits on the detail
+            // query, and a fetch failure just leaves plain rows.
+            val details = LeaderboardService.fetchSweepModeDetails(day, rows.map { it.userId })
+            ensureActive()
+            sweepDetails = details
             sweepRank = if (userId != null) LeaderboardService.getUserSweepRank(userId, day) else null
             ensureActive()
             return@LaunchedEffect
@@ -353,7 +362,14 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     // TIE-AWARE score display (daily-board parity).
                     val sweepScoreLabels = tieAwareScoreLabels(sweepEntries.map { it.totalScore })
                     sweepEntries.forEachIndexed { i, entry ->
-                        SweepRow(rank = i + 1, entry = entry, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile, scoreLabel = sweepScoreLabels[entry.totalScore])
+                        // §232: pass the per-user details + day so the words-not-
+                        // codes stats, dot strip, and pill render here too.
+                        SweepRow(
+                            rank = i + 1, entry = entry, isCurrentUser = entry.userId == userId,
+                            onOpenProfile = onOpenProfile, scoreLabel = sweepScoreLabels[entry.totalScore],
+                            details = sweepDetails[entry.userId],
+                            day = com.wordocious.app.todayLocalDate(),
+                        )
                         if (i < sweepEntries.size - 1) HorizontalDivider(color = WTheme.border)
                     }
                 }

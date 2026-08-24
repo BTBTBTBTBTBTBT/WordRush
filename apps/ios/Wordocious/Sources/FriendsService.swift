@@ -23,12 +23,13 @@ enum FriendsService {
         var playedToday: Int?
         var weekPoints: Int?
         var todayPoints: Int?   // §216 additive: today's total, for the race strip
+        var lastWeekPoints: Int?   // §232 additive: the settled previous week's points
         var h2hW: Int?
         var h2hL: Int?
         var remindedAt: String?
     }
 
-    struct MeDigest: Decodable, Equatable { let playedToday: Int; let weekPoints: Int; var todayPoints: Int? }
+    struct MeDigest: Decodable, Equatable { let playedToday: Int; let weekPoints: Int; var todayPoints: Int?; var lastWeekPoints: Int? }
     static var meDigest: MeDigest?
 
     private struct FriendsPayload: Decodable {
@@ -79,8 +80,15 @@ enum FriendsService {
         return localDay(start)
     }
 
+    /// §232: the local day the digest was fetched — see load().
+    private static var fetchedDay = ""
+
     static func load(force: Bool = false) async {
-        if loaded && !force { return }
+        // §232: the cache is session-lived, but the DATA is day-scoped — an app
+        // left open across midnight kept showing yesterday's race under today's
+        // countdown (founder's Monday screenshot: last week's podium, "9/9 today"
+        // rows that were really Sunday's). A day rollover invalidates the cache.
+        if loaded && !force && fetchedDay == localDay() { return }
         guard let url = URL(string: "https://wordocious.com/api/friends?day=\(localDay())&weekStart=\(localWeekStart())") else { return }
         let req = await PublicProfileService.authedRequest(url)
         guard let (data, resp) = try? await URLSession.shared.data(for: req),
@@ -93,6 +101,7 @@ enum FriendsService {
         outgoing = Set(payload.outgoing.map { $0.lowercased() })
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
+        fetchedDay = localDay()
         loaded = true
         notify()
     }

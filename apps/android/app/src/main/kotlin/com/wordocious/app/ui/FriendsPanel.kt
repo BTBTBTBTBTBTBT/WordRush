@@ -242,6 +242,27 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                         color = WTheme.textMuted, fontFamily = Nunito,
                     )
                 }
+                // §232: Monday's question — "who won last week?" — answered in
+                // place. lastWeekPoints is the settled previous week from the
+                // digest; hidden until anyone actually scored.
+                val lastWeek = remember(version) {
+                    val entries = FriendsService.friends.map {
+                        it.username to (it.lastWeekPoints ?: 0)
+                    } + listOfNotNull(
+                        com.wordocious.app.data.AuthService.profile.value?.let {
+                            "You" to (FriendsService.meDigest?.lastWeekPoints ?: 0)
+                        },
+                    )
+                    entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }
+                }
+                lastWeek?.let { (name, pts) ->
+                    Text(
+                        "Last week: 👑 $name · $pts pts", fontSize = 10.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = WTheme.textMuted, fontFamily = Nunito,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),

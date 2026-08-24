@@ -41,13 +41,22 @@ object FriendsService {
         val playedToday: Int? = null,
         val weekPoints: Int? = null,
         val todayPoints: Int? = null,  // §216 additive: today's total, for the race strip
+        // §232 additive: the settled previous week's points — absent on older
+        // digests, so nullable with a default (must never break the decode).
+        val lastWeekPoints: Int? = null,
         val h2hW: Int? = null,
         val h2hL: Int? = null,
         val remindedAt: String? = null,
     )
 
     @Serializable
-    data class MeDigest(val playedToday: Int = 0, val weekPoints: Int = 0, val todayPoints: Int? = null)
+    data class MeDigest(
+        val playedToday: Int = 0,
+        val weekPoints: Int = 0,
+        val todayPoints: Int? = null,
+        // §232 additive: last week's settled points (nullable — absent is fine).
+        val lastWeekPoints: Int? = null,
+    )
 
     /** The caller's own digest for the weekly podium (§212). */
     var meDigest: MeDigest? = null; private set
@@ -104,9 +113,17 @@ object FriendsService {
     fun hasRequested(userId: String) = outgoing.contains(userId.lowercase())
     fun hasIncomingFrom(userId: String) = incoming.any { it.id.equals(userId, ignoreCase = true) }
 
+    /** Local day of the last successful fetch — see the §232 note in [load]. */
+    private var fetchedDay = ""
+
     /** Load once per launch (force to refresh). No-throw. */
     suspend fun load(force: Boolean = false) {
-        if (loaded && !force) return
+        // §232: the cache is session-lived, but the DATA is day-scoped — an app
+        // left open across midnight kept showing yesterday's race under today's
+        // countdown (founder's Monday screenshot: last week's podium, "9/9
+        // today" rows that were really Sunday's). A day rollover invalidates
+        // the cache so the next load refetches.
+        if (loaded && !force && fetchedDay == localDay()) return
         val resp = api("GET", "/api/friends?day=${localDay()}&weekStart=${localWeekStart()}") ?: return
         val payload = runCatching { json.decodeFromString<FriendsPayload>(resp.second) }.getOrNull() ?: return
         if (resp.first != 200) return
@@ -116,6 +133,7 @@ object FriendsService {
         outgoing = payload.outgoing.map { it.lowercase() }.toSet()
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
+        fetchedDay = localDay()
         loaded = true
         notifyChanged()
     }

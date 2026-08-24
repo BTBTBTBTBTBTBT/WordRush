@@ -87,6 +87,12 @@ struct FriendsPanelView: View {
                                 .monospacedDigit()
                         }
                     }
+                    // §232: Monday's answer — last week's settled winner.
+                    if let lw = lastWeekWinner {
+                        Text("Last week: 👑 \(lw.name) · \(lw.pts.formatted()) pts")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     HStack(alignment: .bottom, spacing: 22) {
                         ForEach(podiumOrder, id: \.entry.id) { slot in
                             // §225: podium columns open profiles too — same door
@@ -588,6 +594,19 @@ struct FriendsPanelView: View {
     }
 
     private var raceStarted: Bool { podium.contains { $0.pts > 0 } }
+
+    /// §232: Monday's question — "who won last week?" — answered in place.
+    /// lastWeekPoints is the settled previous week (Mon–Sun) from the digest;
+    /// nil (line hidden) when nobody scored.
+    private var lastWeekWinner: (name: String, pts: Int)? {
+        var entries = FriendsService.friends.map { (name: $0.username, pts: $0.lastWeekPoints ?? 0) }
+        if AuthService.shared.profile != nil {
+            entries.append((name: "You", pts: FriendsService.meDigest?.lastWeekPoints ?? 0))
+        }
+        entries.sort { $0.pts > $1.pts }
+        guard let top = entries.first, top.pts > 0 else { return nil }
+        return top
+    }
 
     /// §218/§226: when the weekly race closes — weeks run Mon–Sun, reset
     /// Monday 00:00 local (same boundary as weekStart in the friends digest).

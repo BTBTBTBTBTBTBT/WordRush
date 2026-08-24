@@ -1720,21 +1720,6 @@ struct LeaderboardTab: View {
         return s
     }
 
-    // §223: guesses (and hints) are the numbers that actually explain the
-    // ranking — the formula is guess-first, so 9 slow wins can trail 8 sharp
-    // ones (founder double-take, Aug 18). Details still loading → the plain
-    // line, never a blocked row.
-    private func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?) -> String {
-        // §227: full words — the founder read "2h" as hours-since-completion.
-        // Room comes from the pill living on the dots row, not this line.
-        var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9"
-        if let d = details {
-            s += " · \(d.guesses) guess\(d.guesses == 1 ? "" : "es")"
-            if d.hints > 0 { s += " · \(d.hints) hint\(d.hints == 1 ? "" : "s")" }
-        }
-        return s
-    }
-
     /// A sweep-board row — reuses the per-mode row shell: rankIcon, name,
     /// total score, then "total time · X/9" + the FLAWLESS/SWEEP pill.
     private func sweepRow(rank: Int, entry: SweepEntry) -> some View {
@@ -1911,6 +1896,24 @@ struct LeaderboardTab: View {
 }
 
 let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
+
+// §223: guesses (and hints) are the numbers that actually explain the
+// ranking — the formula is guess-first, so 9 slow wins can trail 8 sharp
+// ones (founder double-take, Aug 18). Details still loading → the plain
+// line, never a blocked row. §232: file-scope (was private to the daily
+// board) so Records' daily-sweep rows render the identical line — the web
+// twin lives in components/leaderboard/sweep-mode-dots.tsx for the same
+// reason (founder ask, Aug 24: Records must match).
+func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?) -> String {
+    // §227: full words — the founder read "2h" as hours-since-completion.
+    // Room comes from the pill living on the dots row, not this line.
+    var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9"
+    if let d = details {
+        s += " · \(d.guesses) guess\(d.guesses == 1 ? "" : "es")"
+        if d.hints > 0 { s += " · \(d.hints) hint\(d.hints == 1 ? "" : "s")" }
+    }
+    return s
+}
 
 /// §223: the Sweep board's nine-dot mode strip. Fixed order = the mode grid.
 /// One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction
