@@ -6,14 +6,20 @@ import type { Metadata } from 'next';
 // column, anon key) and titles the card with it. noindex is inherited from
 // the parent (§229) — link scrapers read og tags regardless.
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+// Server-only: profiles RLS blocks ANON reads (verified — the anon query
+// returns [] and every unfurl fell back to "Player Profile"), so this
+// metadata lookup uses the service key. It runs exclusively in
+// generateMetadata on the server and exposes only the username, which is
+// public on every leaderboard already.
+const LOOKUP_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+  ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 async function usernameFor(id: string): Promise<string | null> {
-  if (!SUPABASE_URL || !ANON_KEY || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  if (!SUPABASE_URL || !LOOKUP_KEY || !/^[0-9a-f-]{36}$/i.test(id)) return null;
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}&select=username`,
-      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` }, next: { revalidate: 3600 } },
+      { headers: { apikey: LOOKUP_KEY, Authorization: `Bearer ${LOOKUP_KEY}` }, next: { revalidate: 3600 } },
     );
     if (!res.ok) return null;
     const rows = (await res.json()) as Array<{ username?: string }>;
