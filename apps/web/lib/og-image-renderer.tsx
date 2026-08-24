@@ -24,6 +24,80 @@ export const OG_CONTENT_TYPE = 'image/png';
  * hence the `@fontsource`-sourced weight-900 WOFF instead of Google's
  * variable-axis TTF.
  */
+
+// §235: the pills carry the modes' REAL iconography (the founder: "logos,
+// not abbreviations") — the same vectors the app tiles use. Classic's grid
+// board and the Six/Seven hands are the app's custom SVGs; Succession,
+// Deliverance, Gauntlet, ProperNoundle use their lucide glyphs; QuadWord and
+// OctoWord's roman numerals ARE their logos. Satori can't render SVG <text>,
+// so the hands' digit badges are positioned HTML overlays.
+function modeBadgeIcon(id: string, accent: string): React.ReactNode {
+  const stroke = { stroke: accent, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
+  switch (id) {
+    case 'practice':
+      return (
+        <svg width="26" height="30" viewBox="0 0 20 24">
+          {[0, 1, 2, 3, 4, 5].map((row) =>
+            [0, 1, 2, 3, 4].map((col) => (
+              <rect key={`${row}-${col}`} x={col * 4} y={row * 4} width="3.2" height="3.2" rx="0.6" fill={accent} opacity={0.85} />
+            )),
+          )}
+        </svg>
+      );
+    case 'sequence':
+      return (
+        <svg width="28" height="28" viewBox="0 0 24 24">
+          <path d="M22 7 L13.5 15.5 L8.5 10.5 L2 17" {...stroke} />
+          <path d="M16 7 L22 7 L22 13" {...stroke} />
+        </svg>
+      );
+    case 'rescue':
+      return (
+        <svg width="28" height="28" viewBox="0 0 24 24">
+          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" {...stroke} />
+        </svg>
+      );
+    case 'gauntlet':
+      return (
+        <svg width="28" height="28" viewBox="0 0 24 24">
+          <path d="m12.5 17-.5-1-.5 1h1z" {...stroke} />
+          <path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z" {...stroke} />
+          <circle cx="9" cy="12" r="1" fill={accent} />
+          <circle cx="15" cy="12" r="1" fill={accent} />
+        </svg>
+      );
+    case 'propernoundle':
+      return (
+        <svg width="28" height="28" viewBox="0 0 24 24">
+          <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.52l4.276 3.664a1 1 0 0 0 1.516-.294z" {...stroke} />
+          <path d="M5 21h14" {...stroke} />
+        </svg>
+      );
+    case 'six':
+      return (
+        <svg width="28" height="30" viewBox="0 0 24 26">
+          <path d="M16 13V6C16 5.17 15.33 4.5 14.5 4.5S13 5.17 13 6V11" stroke="#0e7490" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M13 5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V11" stroke="#0e7490" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M10 4V3C10 2.17 9.33 1.5 8.5 1.5S7 2.17 7 3V11" stroke="#0e7490" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M7 4.5V4C7 3.17 6.33 2.5 5.5 2.5S4 3.17 4 4V14C4 19.52 8.48 24 14 24C16.76 24 19 21.76 19 19V13C19 12.17 18.33 11.5 17.5 11.5S16 12.17 16 13" stroke="#0e7490" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <circle cx="11.5" cy="17" r="5.5" fill="#06b6d426" />
+        </svg>
+      );
+    case 'seven':
+      return (
+        <svg width="28" height="30" viewBox="0 0 24 26">
+          <path d="M8 13V6C8 5.17 8.67 4.5 9.5 4.5S11 5.17 11 6V11" stroke="#4d7c0f" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M11 5V3.5C11 2.67 11.67 2 12.5 2S14 2.67 14 3.5V11" stroke="#4d7c0f" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M14 4V3C14 2.17 14.67 1.5 15.5 1.5S17 2.17 17 3V11" stroke="#4d7c0f" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M17 4.5V4C17 3.17 17.67 2.5 18.5 2.5S20 3.17 20 4V14C20 19.52 15.52 24 10 24C7.24 24 5 21.76 5 19V13C5 12.17 5.67 11.5 6.5 11.5S8 12.17 8 13" stroke="#4d7c0f" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <circle cx="12.5" cy="17" r="5.5" fill="#84cc1626" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 export async function renderWordociousOgImage(): Promise<ImageResponse> {
   const nunitoData = await fetch(
     new URL('../app/fonts/Nunito-Black.woff', import.meta.url),
@@ -111,9 +185,9 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             Epic Word Battles
           </div>
 
-          {/* Game mode pills — ALL nine dailies with their catalog glyph +
-              accent (§235, founder: the invite card should show every game,
-              not a sample of four). Two centered rows via flexWrap. */}
+          {/* Game mode pills — every daily mode with its REAL tile icon
+              (§235). Two centered rows via flexWrap; badges are the app's
+              tile style: accent-tinted rounded square, icon in accent. */}
           <div
             style={{
               display: 'flex',
@@ -121,7 +195,7 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
               justifyContent: 'center',
               gap: '16px',
               marginTop: '44px',
-              maxWidth: '1080px',
+              maxWidth: '1100px',
             }}
           >
             {MODES.filter((m) => m.dailyEligible).map((m) => (
@@ -139,19 +213,30 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
               >
                 <div
                   style={{
-                    width: '42px',
-                    height: '42px',
+                    width: '46px',
+                    height: '46px',
                     borderRadius: '12px',
-                    background: m.accentHex,
-                    color: '#ffffff',
-                    fontSize: m.glyph && m.glyph.length > 2 ? '18px' : '24px',
-                    fontWeight: 900,
+                    background: `${m.accentHex}26`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    position: 'relative',
                   }}
                 >
-                  {m.glyph ?? m.title[0]}
+                  {m.romanNumeral ? (
+                    <div style={{ fontSize: '16px', fontWeight: 900, color: m.accentHex, display: 'flex' }}>
+                      {m.romanNumeral}
+                    </div>
+                  ) : (
+                    modeBadgeIcon(m.id, m.accentHex)
+                  )}
+                  {/* Satori can't draw SVG <text>: the hands' digits overlay. */}
+                  {m.id === 'six' && (
+                    <div style={{ position: 'absolute', left: '17px', top: '22px', fontSize: '12px', fontWeight: 900, color: '#0e7490', display: 'flex' }}>6</div>
+                  )}
+                  {m.id === 'seven' && (
+                    <div style={{ position: 'absolute', left: '19px', top: '22px', fontSize: '12px', fontWeight: 900, color: '#4d7c0f', display: 'flex' }}>7</div>
+                  )}
                 </div>
                 <div style={{ fontSize: '26px', fontWeight: 800, color: '#5b21b6', display: 'flex' }}>
                   {m.title}
