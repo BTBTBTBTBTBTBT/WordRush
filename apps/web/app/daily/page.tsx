@@ -50,6 +50,7 @@ import {
   shareYesterdaySweepPodiumCard,
 } from '@/lib/leaderboard-share-flow';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
+import { SweepModeDots } from '@/components/leaderboard/sweep-mode-dots';
 
 const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
 
@@ -72,62 +73,6 @@ const sweepCache = new Map<string, {
   rank: { rank: number; totalPlayers: number } | null;
   details: Map<string, SweepDetails>;
 }>();
-
-// §223: the Sweep board's nine-dot mode strip. Fixed order = the mode grid.
-const SWEEP_DOT_MODES: Array<[string, string]> = [
-  ['DUEL', 'Classic'], ['QUORDLE', 'Quad'], ['OCTORDLE', 'Octo'],
-  ['SEQUENCE', 'Succession'], ['RESCUE', 'Deliverance'], ['DUEL_6', 'Six'],
-  ['DUEL_7', 'Seven'], ['GAUNTLET', 'Gauntlet'], ['PROPERNOUNDLE', 'Proper'],
-];
-
-// One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction
-// of that mode's theoretical ceiling, never a comparison to the field, so the
-// strip reads identically with three players or three thousand (founder call,
-// Aug 18: relative "best on board" dies in a crowd). Red = loss, hollow =
-// not played. The [0.35, 0.9] remap spreads real-world ratios (~0.4–0.9)
-// across the full visual range.
-function SweepModeDots({ details, day }: { details: SweepDetails | undefined; day: string }) {
-  if (!details) return null;
-  return (
-    <div className="flex items-center gap-[3px] mt-1" aria-label="Per-mode results">
-      {SWEEP_DOT_MODES.map(([mode, label]) => {
-        const d = details.modes[mode];
-        if (!d) {
-          return (
-            <span
-              key={mode}
-              title={`${label}: not played`}
-              className="w-[7px] h-[7px] rounded-full shrink-0"
-              style={{ border: '1px solid var(--color-border)' }}
-            />
-          );
-        }
-        if (!d.completed) {
-          return (
-            <span
-              key={mode}
-              title={`${label}: lost · ${formatScore(d.score)}`}
-              className="w-[7px] h-[7px] rounded-full shrink-0"
-              style={{ background: '#ef4444' }}
-            />
-          );
-        }
-        const ratio = d.score / modeScoreCeiling(mode, day);
-        const t = Math.min(1, Math.max(0, (ratio - 0.35) / 0.55));
-        return (
-          <span
-            key={mode}
-            title={`${label}: ${formatScore(d.score)}`}
-            className="w-[7px] h-[7px] rounded-full shrink-0"
-            style={{ background: '#7c3aed', opacity: 0.18 + 0.82 * t }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-
 
 function CountdownTimer() {
   const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilMidnightLocal());

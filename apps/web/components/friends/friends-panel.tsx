@@ -125,6 +125,16 @@ export function FriendsPanel() {
     return () => { stale = true; clearTimeout(t); };
   }, [username]);
 
+  // §218/§226/§232 (hooks above the early return — they were below it): when the weekly race closes — weeks run Mon–Sun, reset Monday
+  // 00:00 local (same boundary as weekStart in the friends digest). Now a
+  // LIVE clock (founder: a static "4d" carried no urgency) — "4d 07:23:45",
+  // "ends tonight · 07:23:45" on the last day, ticking like the daily timer.
+  const [, tickRace] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tickRace((v) => v + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   if (!user) return null;
 
   const friends = getFriends();
@@ -158,15 +168,15 @@ export function FriendsPanel() {
   // friends leaderboard) — only once someone has actually scored.
   const crownId = raceStarted ? podium[0].id : null;
 
-  // §218/§226: when the weekly race closes — weeks run Mon–Sun, reset Monday
-  // 00:00 local (same boundary as weekStart in the friends digest). Now a
-  // LIVE clock (founder: a static "4d" carried no urgency) — "4d 07:23:45",
-  // "ends tonight · 07:23:45" on the last day, ticking like the daily timer.
-  const [, tickRace] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => tickRace((v) => v + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
+  // §232: Monday's question — "who won last week?" — answered in place.
+  // lastWeekPoints is the settled previous week from the digest.
+  const lastWeek = (() => {
+    const entries = friends.map((f) => ({ name: f.username, pts: f.lastWeekPoints ?? 0 }));
+    if (profile) entries.push({ name: 'You', pts: (meDigest as { lastWeekPoints?: number } | null)?.lastWeekPoints ?? 0 });
+    entries.sort((a, b) => b.pts - a.pts);
+    return entries[0] && entries[0].pts > 0 ? entries[0] : null;
+  })();
+
   const weekEndsLabel = (() => {
     const now = new Date();
     const end = new Date(now);
@@ -299,6 +309,12 @@ export function FriendsPanel() {
             <span className="font-black uppercase tracking-wider">This week&apos;s race</span>
             <span>{weekEndsLabel}</span>
           </div>
+          {/* §232: Monday's answer — last week's settled winner. */}
+          {lastWeek && (
+            <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              Last week: 👑 {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts
+            </div>
+          )}
           <div className="flex items-end justify-center gap-5 py-2">
             {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
               const e = podium[i];

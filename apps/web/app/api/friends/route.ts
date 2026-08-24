@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
   // Engagement digest (Aug 11): one daily_results sweep answers "who played
   // today", "who's winning the week", and the 90-day head-to-head record —
   // per-day TOTAL points across all modes, me vs each friend.
-  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number } | null = null;
+  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number } | null = null;
   if (wantDigest && friends.length >= 0) {
     const ids = [me, ...friends.map((f) => f.id)];
     const cutoff = new Date(`${day}T00:00:00Z`);
@@ -100,6 +100,21 @@ export async function GET(req: NextRequest) {
       for (const [d, pts] of totals.get(id) ?? []) if (d >= weekStart) sum += pts;
       return Math.round(sum);
     };
+    // §232: the settled previous week (Mon..Sun before weekStart) — the
+    // Monday-morning "Last week: 👑 …" line. Pure date-string math on the
+    // client's own week boundary; additive field, shipped decoders ignore it.
+    const lastWeekStart = (() => {
+      const d = new Date(`${weekStart}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() - 7);
+      return d.toISOString().slice(0, 10);
+    })();
+    const lastWeekPointsOf = (id: string): number => {
+      let sum = 0;
+      for (const [d, pts] of totals.get(id) ?? []) {
+        if (d >= lastWeekStart && d < weekStart) sum += pts;
+      }
+      return Math.round(sum);
+    };
     const myDays = totals.get(me) ?? new Map<string, number>();
     for (const f of friends as any[]) {
       const theirDays = totals.get(f.id) ?? new Map<string, number>();
@@ -114,6 +129,7 @@ export async function GET(req: NextRequest) {
       // ADDITIVE (Aug 17): today's total points, for the "topped N of M
       // friends today" strip. Shipped decoders ignore it.
       f.todayPoints = Math.round(theirDays.get(day) ?? 0);
+      f.lastWeekPoints = lastWeekPointsOf(f.id);
       f.h2hW = w;
       f.h2hL = l;
     }
@@ -121,6 +137,7 @@ export async function GET(req: NextRequest) {
       playedToday: playedCount.get(me) ?? 0,
       weekPoints: weekPointsOf(me),
       todayPoints: Math.round(myDays.get(day) ?? 0),
+      lastWeekPoints: lastWeekPointsOf(me),
     };
   }
 

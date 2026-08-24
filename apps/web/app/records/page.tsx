@@ -16,10 +16,12 @@ import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { loadFriends, getFriendIds, onFriendsChange } from '@/lib/friends-service';
 import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
 import { SectionHeader } from '@/components/profile/stat-kit';
+import { SweepModeDots, sweepStatsText } from '@/components/leaderboard/sweep-mode-dots';
 import {
   fetchAllTimeRecords,
   fetchDailyLeaderboard,
   fetchDailySweepLeaderboard,
+  fetchSweepModeDetails,
   fetchAllTimeSweepLeaderboard,
   getDailyPlayerCount,
   getUserDailyRank,
@@ -30,6 +32,7 @@ import {
   type AllTimeRecord,
   type LeaderboardEntry,
   type SweepEntry,
+  type SweepDetails,
   type AllTimeSweepEntry,
 } from '@/lib/daily-service';
 
@@ -191,6 +194,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   }, [userId]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
+  // §232: dot-strip + guess/hint detail — daily-board parity (founder ask).
+  const [sweepDetails, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
   const [playerCount, setPlayerCount] = useState(0);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -211,6 +216,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       if (seq !== loadSeq.current) return;
       setSweepLeaderboard(lb);
       setLoading(false);
+      const details = await fetchSweepModeDetails(today, lb.map((e) => e.user_id));
+      if (seq === loadSeq.current) setSweepDetails(details);
       let rank: { rank: number; totalPlayers: number } | null = null;
       if (userId) {
         rank = await getUserSweepRank(userId, today);
@@ -312,6 +319,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const renderSweepRow = (entry: SweepEntry, rank: number) => {
     const isCurrentUser = !!userId && entry.user_id === userId;
     const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
+    const det = sweepDetails.get(entry.user_id);
     return (
       <div
         key={entry.user_id}
@@ -334,10 +342,15 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         </div>
         <div className="text-right">
           <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</div>
-          <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <span>{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+          {/* §232: daily-board parity — words-not-codes stats + the dot strip
+              with the pill beside it (founder ask, Aug 24). */}
+          <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            {sweepStatsText(entry, det)}
+          </div>
+          <div className="flex items-center justify-end gap-1.5">
+            <SweepModeDots details={det} day={today} />
             <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
               style={{ background: `${pillColor}22`, color: pillColor }}
             >
               {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}

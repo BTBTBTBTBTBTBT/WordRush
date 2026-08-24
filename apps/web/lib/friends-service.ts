@@ -23,6 +23,8 @@ export interface FriendProfile {
   playedToday?: number;
   weekPoints?: number;
   todayPoints?: number;
+  /** §232: the settled previous week's points (additive). */
+  lastWeekPoints?: number;
   h2hW?: number;
   h2hL?: number;
   remindedAt?: string | null;
@@ -63,8 +65,14 @@ export function onFriendsChange(l: () => void): () => void {
  * Load (once per session) the caller's friends world. On failure the cache
  * stays unloaded so a later call retries — no throw, no UI break.
  */
+let fetchedDay = '';
+
 export async function loadFriends(force = false): Promise<void> {
-  if (loaded && !force) return;
+  // §232: the cache is session-lived, but the DATA is day-scoped — an app/tab
+  // left open across midnight kept showing yesterday's race under today's
+  // countdown (founder's Monday screenshot: last week's podium, "9/9 today"
+  // rows that were really Sunday's). A day rollover invalidates the cache.
+  if (loaded && !force && fetchedDay === localDay()) return;
   try {
     const res = await fetch(
       `/api/friends?day=${localDay()}&weekStart=${localWeekStart()}`,
@@ -78,6 +86,7 @@ export async function loadFriends(force = false): Promise<void> {
     outgoingIds = new Set((json.outgoing ?? []).map((s: string) => s.toLowerCase()));
     outgoingList = json.outgoingProfiles ?? [];
     meDigest = json.me ?? null;
+    fetchedDay = localDay();
     loaded = true;
     notify();
   } catch {
@@ -86,8 +95,8 @@ export async function loadFriends(force = false): Promise<void> {
 }
 
 /** The caller's own digest (playedToday/weekPoints) for the weekly podium. */
-let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number } | null = null;
-export const getMeDigest = (): { playedToday: number; weekPoints: number; todayPoints?: number } | null => meDigest;
+let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number } | null = null;
+export const getMeDigest = (): { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number } | null => meDigest;
 
 /** Nudge a pending invite (§212) — 24h rate limit lives server-side. */
 export async function remindFriend(addresseeId: string): Promise<{ remindedAt?: string; error?: string }> {
