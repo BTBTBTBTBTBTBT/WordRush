@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/server';
+import { MODES } from './modes.generated';
 
 // Shared renderer for both the Open Graph image and Twitter card image.
 // Lives outside `app/` (in lib/) so it doesn't accidentally register as a
@@ -74,8 +75,8 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://wordocious.com/icon-512.png"
-              width={170}
-              height={170}
+              width={150}
+              height={150}
               style={{ borderRadius: '38px' }}
               alt=""
             />
@@ -102,7 +103,7 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
               fontSize: '52px',
               fontWeight: 800,
               color: '#4b5563',
-              marginTop: '32px',
+              marginTop: '24px',
               letterSpacing: '-0.5px',
               display: 'flex',
             }}
@@ -110,29 +111,51 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             Epic Word Battles
           </div>
 
-          {/* Game mode pills */}
+          {/* Game mode pills — ALL nine dailies with their catalog glyph +
+              accent (§235, founder: the invite card should show every game,
+              not a sample of four). Two centered rows via flexWrap. */}
           <div
             style={{
               display: 'flex',
-              gap: '22px',
-              marginTop: '56px',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '16px',
+              marginTop: '44px',
+              maxWidth: '1080px',
             }}
           >
-            {['Classic', 'QuadWord', 'OctoWord', 'Gauntlet'].map((mode) => (
+            {MODES.filter((m) => m.dailyEligible).map((m) => (
               <div
-                key={mode}
+                key={m.id}
                 style={{
-                  padding: '16px 36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 24px 10px 12px',
                   background: 'rgba(255, 255, 255, 0.55)',
                   border: '2px solid #c4b5fd',
                   borderRadius: '999px',
-                  fontSize: '28px',
-                  fontWeight: 800,
-                  color: '#5b21b6',
-                  display: 'flex',
                 }}
               >
-                {mode}
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: m.accentHex,
+                    color: '#ffffff',
+                    fontSize: m.glyph && m.glyph.length > 2 ? '18px' : '24px',
+                    fontWeight: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {m.glyph ?? m.title[0]}
+                </div>
+                <div style={{ fontSize: '26px', fontWeight: 800, color: '#5b21b6', display: 'flex' }}>
+                  {m.title}
+                </div>
               </div>
             ))}
           </div>
