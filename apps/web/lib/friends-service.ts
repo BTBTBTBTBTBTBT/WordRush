@@ -25,6 +25,8 @@ export interface FriendProfile {
   todayPoints?: number;
   /** §232: the settled previous week's points (additive). */
   lastWeekPoints?: number;
+  /** §238: settled-week history — [0] = last week, back ~12 weeks (additive). */
+  pastWeekPoints?: number[];
   h2hW?: number;
   h2hL?: number;
   remindedAt?: string | null;
@@ -114,8 +116,9 @@ async function doLoad(): Promise<void> {
 }
 
 /** The caller's own digest (playedToday/weekPoints) for the weekly podium. */
-let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number } | null = null;
-export const getMeDigest = (): { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number } | null => meDigest;
+type MeDigest = { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[] };
+let meDigest: MeDigest | null = null;
+export const getMeDigest = (): MeDigest | null => meDigest;
 
 /** Nudge a pending invite (§212) — 24h rate limit lives server-side. */
 export async function remindFriend(addresseeId: string): Promise<{ remindedAt?: string; error?: string }> {

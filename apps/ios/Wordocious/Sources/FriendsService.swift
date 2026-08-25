@@ -24,12 +24,16 @@ enum FriendsService {
         var weekPoints: Int?
         var todayPoints: Int?   // §216 additive: today's total, for the race strip
         var lastWeekPoints: Int?   // §232 additive: the settled previous week's points
+        var pastWeekPoints: [Int]?   // §238 additive: settled weeks, [0] = last week, back ~12
         var h2hW: Int?
         var h2hL: Int?
         var remindedAt: String?
     }
 
-    struct MeDigest: Decodable, Equatable { let playedToday: Int; let weekPoints: Int; var todayPoints: Int?; var lastWeekPoints: Int? }
+    struct MeDigest: Decodable, Equatable {
+        let playedToday: Int; let weekPoints: Int; var todayPoints: Int?; var lastWeekPoints: Int?
+        var pastWeekPoints: [Int]?   // §238 additive: settled weeks, [0] = last week
+    }
     static var meDigest: MeDigest?
 
     private struct FriendsPayload: Decodable {

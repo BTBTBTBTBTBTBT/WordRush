@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, MoreHorizontal, Share } from 'lucide-react';
+import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, ChevronDown, MoreHorizontal, Share } from 'lucide-react';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
@@ -140,6 +140,9 @@ export function FriendsPanel() {
   // every other share button — a double-tap must not fire two share sheets).
   const [sharingRace, setSharingRace] = useState(false);
 
+  // §238: the "Last week" line unfolds into the settled-week history.
+  const [showPastWeeks, setShowPastWeeks] = useState(false);
+
   if (!user) return null;
 
   const friends = getFriends();
@@ -148,7 +151,7 @@ export function FriendsPanel() {
 
   // Weekly race podium (§212): me + friends by this week's daily points.
   const meDigest = getMeDigest();
-  const podium = (() => {
+  const standings = (() => {
     if (friends.length === 0) return [];
     const entries = friends.map((f) => ({
       id: f.id, username: f.username, avatar_url: f.avatar_url,
@@ -165,9 +168,12 @@ export function FriendsPanel() {
     // Always on (§216): a Monday-morning zero-point podium still shows the
     // race — medals wait for the first score (see raceStarted below).
     entries.sort((a, b) => b.pts - a.pts);
-    return entries.slice(0, 3);
+    return entries;
   })();
-  const raceStarted = podium.some((e) => e.pts > 0);
+  // §238 (founder: "see the rankings of 4th, 5th, 6th"): the podium keeps
+  // its three medals; everyone else gets a ranked row beneath it.
+  const podium = standings.slice(0, 3);
+  const raceStarted = standings.some((e) => e.pts > 0);
 
   // §234 (founder: a brag card for the weekly race): a timestamped card of the
   // current standings + how long is left. The card uses the sharer's REAL
@@ -205,6 +211,40 @@ export function FriendsPanel() {
     entries.sort((a, b) => b.pts - a.pts);
     return entries[0] && entries[0].pts > 0 ? entries[0] : null;
   })();
+
+  // §238: winner per settled week, oldest weeks trimmed to the ones anyone
+  // scored in. k indexes pastWeekPoints — 0 = last week, 1 = two weeks ago…
+  const pastWeeks = (() => {
+    const meArr = (meDigest as { pastWeekPoints?: number[] } | null)?.pastWeekPoints ?? [];
+    const len = Math.max(0, meArr.length, ...friends.map((f) => f.pastWeekPoints?.length ?? 0));
+    const out: Array<{ k: number; name: string; pts: number }> = [];
+    for (let k = 0; k < len; k++) {
+      const entries = friends.map((f) => ({ name: f.username, pts: f.pastWeekPoints?.[k] ?? 0 }));
+      if (profile) entries.push({ name: 'You', pts: meArr[k] ?? 0 });
+      entries.sort((a, b) => b.pts - a.pts);
+      if (entries[0] && entries[0].pts > 0) out.push({ k, name: entries[0].name, pts: entries[0].pts });
+    }
+    return out;
+  })();
+
+  // §238: "Aug 10–16" — the local Mon–Sun range of the week k+1 Mondays back
+  // (same local week boundary as weekStart everywhere else).
+  const pastWeekLabel = (k: number): string => {
+    const mon = new Date();
+    mon.setHours(0, 0, 0, 0);
+    mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7) - 7 * (k + 1));
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const f = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${f(mon)}–${f(sun)}`;
+  };
+
+  // §238: 4th/5th/…/21st/22nd — the ranked rows under the podium.
+  const ordinal = (n: number): string => {
+    const v = n % 100;
+    if (v >= 11 && v <= 13) return `${n}th`;
+    return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+  };
 
   const weekEndsLabel = (() => {
     const now = new Date();
@@ -353,12 +393,29 @@ export function FriendsPanel() {
               )}
             </span>
           </div>
-          {/* §232: Monday's answer — last week's settled winner. */}
+          {/* §232: Monday's answer — last week's settled winner. §238: the
+              line unfolds into the whole settled-week history. */}
           {lastWeek && (
-            <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              Last week: 👑 {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts
-            </div>
+            <button
+              type="button"
+              onClick={() => pastWeeks.length > 1 && setShowPastWeeks((v) => !v)}
+              className="flex items-center gap-1 text-[10px] font-bold mt-0.5"
+              style={{ color: 'var(--color-text-muted)', cursor: pastWeeks.length > 1 ? 'pointer' : 'default' }}
+            >
+              <span>Last week: 👑 {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts</span>
+              {pastWeeks.length > 1 && (
+                <ChevronDown
+                  className="w-3 h-3 transition-transform"
+                  style={{ transform: showPastWeeks ? 'rotate(180deg)' : 'none' }}
+                />
+              )}
+            </button>
           )}
+          {showPastWeeks && pastWeeks.filter((w) => w.k > 0).map((w) => (
+            <div key={w.k} className="text-[10px] font-bold mt-0.5 pl-1" style={{ color: 'var(--color-text-muted)' }}>
+              {pastWeekLabel(w.k)}: 👑 {w.name} · {w.pts.toLocaleString()} pts
+            </div>
+          ))}
           <div className="flex items-end justify-center gap-5 py-2">
             {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
               const e = podium[i];
@@ -387,6 +444,30 @@ export function FriendsPanel() {
               );
             })}
           </div>
+          {/* §238: everyone past the medals, ranked. Score is shrink-0 and
+              the name truncates — the §236 sweep-row lesson. */}
+          {standings.length > 3 && (
+            <div className="space-y-1 mt-1">
+              {standings.slice(3).map((e, i) => (
+                <Link
+                  key={e.id}
+                  href={e.me ? '/profile' : `/profile/${e.id}`}
+                  className="flex items-center gap-2 px-2 hover:opacity-80 transition-opacity"
+                >
+                  <span className="text-[10px] font-black w-7 shrink-0 text-right" style={{ color: 'var(--color-text-muted)' }}>
+                    {ordinal(i + 4)}
+                  </span>
+                  <span className="text-[10px] font-extrabold truncate flex-1 min-w-0"
+                    style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
+                    {e.username}
+                  </span>
+                  <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                    {e.pts.toLocaleString()} pts
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
           {!raceStarted && (
             <p className="text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               Race resets Mondays — first daily takes the lead.
@@ -417,8 +498,11 @@ export function FriendsPanel() {
         <div className="space-y-2.5">
           {friends.map((f) => {
             const played = f.playedToday ?? undefined;
-            const record = (f.h2hW ?? 0) + (f.h2hL ?? 0) > 0
-              ? ((f.h2hW ?? 0) >= (f.h2hL ?? 0) ? `${f.h2hW}–${f.h2hL} you` : `${f.h2hL}–${f.h2hW} them`)
+            // §238 (founder: "18–7 you doesn't really make sense"): the
+            // rivalry record now says who's ahead in plain words.
+            const w = f.h2hW ?? 0, l = f.h2hL ?? 0;
+            const record = w + l > 0
+              ? (w === l ? `tied ${w}–${l}` : w > l ? `you lead ${w}–${l}` : `they lead ${l}–${w}`)
               : null;
             return (
               // §225 (founder's dead-tap report): the WHOLE row navigates to

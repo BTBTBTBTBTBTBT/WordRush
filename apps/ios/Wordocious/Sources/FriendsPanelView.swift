@@ -25,6 +25,8 @@ struct FriendsPanelView: View {
     @State private var profileTarget: String?
     // §234: double-tap guard for the weekly-race share card.
     @State private var sharingRace = false
+    // §238: the "Last week" line unfolds into the settled-week history.
+    @State private var showPastWeeks = false
 
     var body: some View {
         let _ = version
@@ -111,10 +113,33 @@ struct FriendsPanelView: View {
                         }
                     }
                     // §232: Monday's answer — last week's settled winner.
+                    // §238: the line unfolds into the settled-week history.
                     if let lw = lastWeekWinner {
-                        Text("Last week: 👑 \(lw.name) · \(lw.pts.formatted()) pts")
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        let history = pastWeeks
+                        Button {
+                            if history.count > 1 { withAnimation(.easeInOut(duration: 0.15)) { showPastWeeks.toggle() } }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text("Last week: 👑 \(lw.name) · \(lw.pts.formatted()) pts")
+                                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                                if history.count > 1 {
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(Theme.textMuted)
+                                        .rotationEffect(.degrees(showPastWeeks ? 180 : 0))
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        if showPastWeeks {
+                            ForEach(history.filter { $0.k > 0 }, id: \.k) { wk in
+                                Text("\(FriendsPanelView.pastWeekLabel(wk.k)): 👑 \(wk.name) · \(wk.pts.formatted()) pts")
+                                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.leading, 4)
+                            }
+                        }
                     }
                     HStack(alignment: .bottom, spacing: 22) {
                         ForEach(podiumOrder, id: \.entry.id) { slot in
@@ -139,6 +164,31 @@ struct FriendsPanelView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
+                    // §238: everyone past the medals, ranked. Score stays
+                    // fixedSize and the name truncates — the §236 lesson.
+                    if standings.count > 3 {
+                        VStack(spacing: 4) {
+                            ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
+                                NavigationLink(value: e.id) {
+                                    HStack(spacing: 8) {
+                                        Text(FriendsPanelView.ordinal(i + 4))
+                                            .font(Brand.font(10, .black)).foregroundStyle(Theme.textMuted)
+                                            .frame(width: 28, alignment: .trailing)
+                                        Text(e.username)
+                                            .font(Brand.font(10, .heavy)).lineLimit(1)
+                                            .foregroundStyle(e.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
+                                        Spacer(minLength: 4)
+                                        Text("\(e.pts.formatted()) pts")
+                                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                                            .fixedSize()
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.top, 2)
+                        .padding(.horizontal, 8)
+                    }
                     if !raceStarted {
                         Text("Race resets Mondays — first daily takes the lead.")
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
@@ -527,21 +577,28 @@ struct FriendsPanelView: View {
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
     }
 
-    /// "5/9 today · 🔥12 · 7–4 you" — the row's engagement digest (§212).
+    /// "5/9 today · 2,116 pts · 🔥12 · you lead 7–4" — the row's engagement
+    /// digest (§212; §238 wording).
     private func statusLine(_ f: FriendsService.FriendProfile, played: Int) -> String {
         var parts: [String] = []
         if played > 0 {
             var lead = "\(played)/9 today"
-            if let s = f.streak, s > 0 { lead += " · 🔥\(s)" }
             // §225: show the score, not just the count — todayPoints already
             // rides the §216 digest. formatted() = grouping separators.
+            // §238: points ride right after the count so "N pts" clearly
+            // belongs to "today"; streak follows.
             if let pts = f.todayPoints, pts > 0 { lead += " · \(pts.formatted()) pts" }
+            if let s = f.streak, s > 0 { lead += " · 🔥\(s)" }
             parts.append(lead)
         } else {
             parts.append("hasn't played today")
         }
+        // §238 (founder: "18–7 you doesn't really make sense"): the rivalry
+        // record now says who's ahead in plain words.
         let w = f.h2hW ?? 0, l = f.h2hL ?? 0
-        if w + l > 0 { parts.append(w >= l ? "\(w)–\(l) you" : "\(l)–\(w) them") }
+        if w + l > 0 {
+            parts.append(w == l ? "tied \(w)–\(l)" : w > l ? "you lead \(w)–\(l)" : "they lead \(l)–\(w)")
+        }
         return parts.joined(separator: " · ")
     }
 
@@ -597,8 +654,8 @@ struct FriendsPanelView: View {
         let avatarEmoji: String?; let pts: Int; let isMe: Bool
     }
 
-    /// Top 3 of me + friends by this week's daily points (§212).
-    private var podium: [PodiumEntry] {
+    /// Me + friends by this week's daily points, best first (§212/§238).
+    private var standings: [PodiumEntry] {
         let friends = FriendsService.friends
         guard !friends.isEmpty else { return [] }
         var entries = friends.map {
@@ -613,10 +670,14 @@ struct FriendsPanelView: View {
         entries.sort { $0.pts > $1.pts }
         // Always on (§216): a Monday-morning zero-point podium still shows
         // the race — medals wait for the first score (see raceStarted).
-        return Array(entries.prefix(3))
+        return entries
     }
 
-    private var raceStarted: Bool { podium.contains { $0.pts > 0 } }
+    /// §238 (founder: "see the rankings of 4th, 5th, 6th"): the podium keeps
+    /// its three medals; everyone else gets a ranked row beneath it.
+    private var podium: [PodiumEntry] { Array(standings.prefix(3)) }
+
+    private var raceStarted: Bool { standings.contains { $0.pts > 0 } }
 
     /// §232: Monday's question — "who won last week?" — answered in place.
     /// lastWeekPoints is the settled previous week (Mon–Sun) from the digest;
@@ -629,6 +690,49 @@ struct FriendsPanelView: View {
         entries.sort { $0.pts > $1.pts }
         guard let top = entries.first, top.pts > 0 else { return nil }
         return top
+    }
+
+    /// §238: winner per settled week — k indexes pastWeekPoints (0 = last
+    /// week, 1 = two weeks ago …); weeks nobody scored in are dropped.
+    private var pastWeeks: [(k: Int, name: String, pts: Int)] {
+        let meArr = FriendsService.meDigest?.pastWeekPoints ?? []
+        let len = max(meArr.count, FriendsService.friends.map { $0.pastWeekPoints?.count ?? 0 }.max() ?? 0)
+        var out: [(k: Int, name: String, pts: Int)] = []
+        for k in 0..<len {
+            var entries = FriendsService.friends.map { f in
+                (name: f.username, pts: (f.pastWeekPoints?.indices.contains(k) == true) ? f.pastWeekPoints![k] : 0)
+            }
+            if AuthService.shared.profile != nil {
+                entries.append((name: "You", pts: k < meArr.count ? meArr[k] : 0))
+            }
+            entries.sort { $0.pts > $1.pts }
+            if let top = entries.first, top.pts > 0 { out.append((k: k, name: top.name, pts: top.pts)) }
+        }
+        return out
+    }
+
+    /// §238: "Aug 10–16" — the local Mon–Sun range k+1 Mondays back (same
+    /// local week boundary as weekStart everywhere else).
+    private static func pastWeekLabel(_ k: Int) -> String {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let dow = (cal.component(.weekday, from: today) + 5) % 7 // 0 Mon … 6 Sun
+        guard let mon = cal.date(byAdding: .day, value: -dow - 7 * (k + 1), to: today),
+              let sun = cal.date(byAdding: .day, value: 6, to: mon) else { return "" }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.dateFormat = "MMM d"
+        return "\(f.string(from: mon))–\(f.string(from: sun))"
+    }
+
+    /// §238: 4th/5th/…/21st/22nd — the ranked rows under the podium.
+    private static func ordinal(_ n: Int) -> String {
+        let v = n % 100
+        if (11...13).contains(v) { return "\(n)th" }
+        switch n % 10 {
+        case 1: return "\(n)st"; case 2: return "\(n)nd"; case 3: return "\(n)rd"
+        default: return "\(n)th"
+        }
     }
 
     /// §218/§226: when the weekly race closes — weeks run Mon–Sun, reset

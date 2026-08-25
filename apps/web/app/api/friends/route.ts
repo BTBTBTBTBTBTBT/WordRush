@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
   const friends: Array<Prof & {
     since: string | null; streak: number;
     playedToday?: number; weekPoints?: number; todayPoints?: number; h2hW?: number; h2hL?: number;
+    lastWeekPoints?: number; pastWeekPoints?: number[];
   }> = [];
   const incoming: Array<Prof & { requestedAt: string }> = [];
   const outgoing: string[] = [];
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest) {
   // Engagement digest (Aug 11): one daily_results sweep answers "who played
   // today", "who's winning the week", and the 90-day head-to-head record —
   // per-day TOTAL points across all modes, me vs each friend.
-  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number } | null = null;
+  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[] } | null = null;
   if (wantDigest && friends.length >= 0) {
     const ids = [me, ...friends.map((f) => f.id)];
     const cutoff = new Date(`${day}T00:00:00Z`);
@@ -100,20 +101,29 @@ export async function GET(req: NextRequest) {
       for (const [d, pts] of totals.get(id) ?? []) if (d >= weekStart) sum += pts;
       return Math.round(sum);
     };
-    // §232: the settled previous week (Mon..Sun before weekStart) — the
-    // Monday-morning "Last week: 👑 …" line. Pure date-string math on the
-    // client's own week boundary; additive field, shipped decoders ignore it.
-    const lastWeekStart = (() => {
+    // §232/§238: the settled weeks before weekStart. pastWeekPoints[k] is
+    // the week starting (k+1) Mondays back — [0] = last week (the Monday
+    // "Last week: 👑 …" line), the rest the history disclosure. 12 weeks
+    // fits the 90-day sweep exactly (day ≤ weekStart+6d, 84+6 = 90). Pure
+    // date-string math on the client's own week boundary; additive fields,
+    // shipped decoders ignore them (lastWeekPoints stays = [0] for §232
+    // clients).
+    const PAST_WEEKS = 12;
+    const pastWeekStarts: string[] = [];
+    for (let k = 1; k <= PAST_WEEKS; k++) {
       const d = new Date(`${weekStart}T00:00:00Z`);
-      d.setUTCDate(d.getUTCDate() - 7);
-      return d.toISOString().slice(0, 10);
-    })();
-    const lastWeekPointsOf = (id: string): number => {
-      let sum = 0;
+      d.setUTCDate(d.getUTCDate() - 7 * k);
+      pastWeekStarts.push(d.toISOString().slice(0, 10));
+    }
+    const pastWeekPointsOf = (id: string): number[] => {
+      const sums = new Array<number>(PAST_WEEKS).fill(0);
       for (const [d, pts] of totals.get(id) ?? []) {
-        if (d >= lastWeekStart && d < weekStart) sum += pts;
+        if (d >= weekStart) continue;
+        for (let k = 0; k < PAST_WEEKS; k++) {
+          if (d >= pastWeekStarts[k]) { sums[k] += pts; break; }
+        }
       }
-      return Math.round(sum);
+      return sums.map((v) => Math.round(v));
     };
     const myDays = totals.get(me) ?? new Map<string, number>();
     for (const f of friends as any[]) {
@@ -129,15 +139,19 @@ export async function GET(req: NextRequest) {
       // ADDITIVE (Aug 17): today's total points, for the "topped N of M
       // friends today" strip. Shipped decoders ignore it.
       f.todayPoints = Math.round(theirDays.get(day) ?? 0);
-      f.lastWeekPoints = lastWeekPointsOf(f.id);
+      const past = pastWeekPointsOf(f.id);
+      f.lastWeekPoints = past[0];
+      f.pastWeekPoints = past;
       f.h2hW = w;
       f.h2hL = l;
     }
+    const myPast = pastWeekPointsOf(me);
     meDigest = {
       playedToday: playedCount.get(me) ?? 0,
       weekPoints: weekPointsOf(me),
       todayPoints: Math.round(myDays.get(day) ?? 0),
-      lastWeekPoints: lastWeekPointsOf(me),
+      lastWeekPoints: myPast[0],
+      pastWeekPoints: myPast,
     };
   }
 

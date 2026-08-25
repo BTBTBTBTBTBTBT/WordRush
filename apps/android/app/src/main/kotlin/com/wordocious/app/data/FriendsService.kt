@@ -44,6 +44,8 @@ object FriendsService {
         // §232 additive: the settled previous week's points — absent on older
         // digests, so nullable with a default (must never break the decode).
         val lastWeekPoints: Int? = null,
+        // §238 additive: settled-week history, [0] = last week, back ~12.
+        val pastWeekPoints: List<Int>? = null,
         val h2hW: Int? = null,
         val h2hL: Int? = null,
         val remindedAt: String? = null,
@@ -56,6 +58,8 @@ object FriendsService {
         val todayPoints: Int? = null,
         // §232 additive: last week's settled points (nullable — absent is fine).
         val lastWeekPoints: Int? = null,
+        // §238 additive: settled-week history, [0] = last week, back ~12.
+        val pastWeekPoints: List<Int>? = null,
     )
 
     /** The caller's own digest for the weekly podium (§212). */

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -29,9 +30,11 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -98,6 +101,8 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     var unfriendTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
     // §234: weekly-race share in flight — one card render/upload at a time.
     var sharingRace by remember { mutableStateOf(false) }
+    // §238: the "Last week" line unfolds into the settled-week history.
+    var showPastWeeks by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(note) { if (note != null) { delay(2_500); note = null } }
@@ -188,8 +193,9 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
             }
         }
 
-        // Weekly race podium (§212) — who owns the week among your circle.
-        val podium = remember(version) {
+        // Weekly race standings (§212/§238) — me + friends by this week's
+        // daily points, best first. Podium wears the medals; 4th+ get rows.
+        val standings = remember(version) {
             val friendEntries = FriendsService.friends.map {
                 PodiumEntry(it.id, it.username, it.avatarUrl, it.avatarEmoji, it.weekPoints ?: 0, isMe = false)
             }
@@ -202,11 +208,12 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
             } else friendEntries
             // Always on (§216): a Monday-morning zero-point podium still
             // shows the race — medals wait for the first score.
-            all.sortedByDescending { it.pts }.take(3)
+            all.sortedByDescending { it.pts }
         }
-        val raceStarted = podium.any { it.pts > 0 }
+        val podium = standings.take(3)
+        val raceStarted = standings.any { it.pts > 0 }
         // §216: the week's leader wears the crown — only once someone scored.
-        val crownId = if (raceStarted) podium.firstOrNull()?.id else null
+        val crownId = if (raceStarted) standings.firstOrNull()?.id else null
         if (podium.isNotEmpty()) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -282,13 +289,53 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                     )
                     entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }
                 }
+                // §238: winner per settled week — index 0 = last week; weeks
+                // nobody scored in are dropped.
+                val pastWeeks = remember(version) {
+                    val meArr = FriendsService.meDigest?.pastWeekPoints ?: emptyList()
+                    val len = maxOf(meArr.size, FriendsService.friends.maxOfOrNull { it.pastWeekPoints?.size ?: 0 } ?: 0)
+                    (0 until len).mapNotNull { k ->
+                        val entries = FriendsService.friends.map {
+                            it.username to (it.pastWeekPoints?.getOrNull(k) ?: 0)
+                        } + listOfNotNull(
+                            com.wordocious.app.data.AuthService.profile.value?.let {
+                                "You" to (meArr.getOrNull(k) ?: 0)
+                            },
+                        )
+                        entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }?.let { Triple(k, it.first, it.second) }
+                    }
+                }
                 lastWeek?.let { (name, pts) ->
-                    Text(
-                        "Last week: 👑 $name · $pts pts", fontSize = 10.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = WTheme.textMuted, fontFamily = Nunito,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickableNoRipple {
+                            if (pastWeeks.size > 1) showPastWeeks = !showPastWeeks
+                        },
+                    ) {
+                        Text(
+                            "Last week: 👑 $name · ${fmtPts(pts)} pts", fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = WTheme.textMuted, fontFamily = Nunito,
+                        )
+                        if (pastWeeks.size > 1) {
+                            Icon(
+                                Icons.Filled.KeyboardArrowDown, "Past weeks",
+                                tint = WTheme.textMuted,
+                                modifier = Modifier.size(14.dp)
+                                    .rotate(if (showPastWeeks) 180f else 0f),
+                            )
+                        }
+                    }
+                }
+                if (showPastWeeks) {
+                    pastWeeks.filter { it.first > 0 }.forEach { (k, name, pts) ->
+                        Text(
+                            "${pastWeekLabel(k)}: 👑 $name · ${fmtPts(pts)} pts", fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = WTheme.textMuted, fontFamily = Nunito,
+                            modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
+                        )
+                    }
                 }
                 Row(
                     verticalAlignment = Alignment.Bottom,
@@ -317,9 +364,45 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                                 modifier = Modifier.widthIn(max = 80.dp),
                             )
                             Text(
-                                "${e.pts} pts", fontSize = 9.sp,
+                                "${fmtPts(e.pts)} pts", fontSize = 9.sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
                             )
+                        }
+                    }
+                }
+                // §238: everyone past the medals, ranked. Score stays
+                // unshrunk and the name truncates — the §236 lesson.
+                if (standings.size > 3) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp, start = 8.dp, end = 8.dp),
+                    ) {
+                        standings.drop(3).forEachIndexed { i, e ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth().clickableNoRipple { onOpenProfile(e.id) },
+                            ) {
+                                Text(
+                                    ordinal(i + 4), fontSize = 10.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                    color = WTheme.textMuted, fontFamily = Nunito,
+                                    modifier = Modifier.width(28.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                )
+                                Text(
+                                    e.username, fontSize = 10.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                                    color = if (e.isMe) Color(0xFF7C3AED) else WTheme.text,
+                                    fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    "${fmtPts(e.pts)} pts", fontSize = 10.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    color = WTheme.textMuted, fontFamily = Nunito,
+                                )
+                            }
                         }
                     }
                 }
@@ -851,18 +934,46 @@ private fun statusLine(f: FriendsService.FriendProfile, played: Int): String {
     val parts = mutableListOf<String>()
     if (played > 0) {
         var lead = "$played/9 today"
-        f.streak?.takeIf { it > 0 }?.let { lead += " · 🔥$it" }
         // §225: played rows show today's score — "5/9 today · 2,116 pts".
         // The digest carries todayPoints since §216; US locale pins the
-        // comma grouping the copy spec shows.
+        // comma grouping the copy spec shows. §238: points ride right after
+        // the count so "N pts" clearly belongs to "today"; streak follows.
         f.todayPoints?.takeIf { it > 0 }?.let { lead += " · ${String.format(java.util.Locale.US, "%,d", it)} pts" }
+        f.streak?.takeIf { it > 0 }?.let { lead += " · 🔥$it" }
         parts.add(lead)
     } else {
         parts.add("hasn't played today")
     }
+    // §238 (founder: "18–7 you doesn't really make sense"): the rivalry
+    // record now says who's ahead in plain words.
     val w = f.h2hW ?: 0; val l = f.h2hL ?: 0
-    if (w + l > 0) parts.add(if (w >= l) "$w–$l you" else "$l–$w them")
+    if (w + l > 0) parts.add(
+        when {
+            w == l -> "tied $w–$l"
+            w > l -> "you lead $w–$l"
+            else -> "they lead $l–$w"
+        },
+    )
     return parts.joinToString(" · ")
+}
+
+/** §238: "1,504" — US-grouped points for the race surfaces. */
+private fun fmtPts(n: Int): String = String.format(java.util.Locale.US, "%,d", n)
+
+/** §238: "Aug 10–16" — the local Mon–Sun range k+1 Mondays back. */
+private fun pastWeekLabel(k: Int): String {
+    val mon = java.time.LocalDate.now()
+        .minusDays(((java.time.LocalDate.now().dayOfWeek.value - 1) + 7L * (k + 1)))
+    val sun = mon.plusDays(6)
+    val f = java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US)
+    return "${mon.format(f)}–${sun.format(f)}"
+}
+
+/** §238: 4th/5th/…/21st/22nd — the ranked rows under the podium. */
+private fun ordinal(n: Int): String {
+    val v = n % 100
+    if (v in 11..13) return "${n}th"
+    return n.toString() + when (n % 10) { 1 -> "st"; 2 -> "nd"; 3 -> "rd"; else -> "th" }
 }
 
 /** "2d" / "5h" / "now" — how long a sent invite has been waiting (§212). */

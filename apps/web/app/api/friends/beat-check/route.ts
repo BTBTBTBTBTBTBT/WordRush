@@ -3,7 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, acceptedFriendIds } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
 import { modeLabel } from '@/lib/mode-labels';
-import { formatScore } from '@/lib/composite-scoring';
+import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,16 +81,23 @@ export async function POST(req: NextRequest) {
   const label = modeLabel(gameMode);
 
   await Promise.allSettled(
-    passed.map((row: { user_id: string; composite_score: number }) =>
-      broadcastPush(
+    passed.map((row: { user_id: string; composite_score: number }) => {
+      // §239 (founder screenshot: "passed you — 1,504 to your 1,504"): scores
+      // are fractional and the .lt() compare is real, but whole-number
+      // truncation made a genuine pass read as a tie. Same cure as the
+      // §220 family incident — reveal the minimal separating decimals for
+      // exactly the colliding pair.
+      const labels = tieAwareScoreLabels([mine.composite_score, row.composite_score]);
+      const fmt = (v: number) => labels.get(v) ?? formatScore(v);
+      return broadcastPush(
         {
           title: `😤 ${myName} just passed you`,
-          body: `${label}: ${formatScore(mine.composite_score)} to your ${formatScore(row.composite_score)}`,
+          body: `${label}: ${fmt(mine.composite_score)} to your ${fmt(row.composite_score)}`,
           url: '/daily',
         },
         new Set([row.user_id]),
-      ),
-    ),
+      );
+    }),
   );
 
   return NextResponse.json({ overtaken: passed.length });
