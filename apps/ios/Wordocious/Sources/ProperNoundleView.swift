@@ -364,6 +364,11 @@ struct ProperNoundleView: View {
                     timeSeconds: vm.finalTimeSeconds ?? vm.elapsed, boardsSolved: vm.status == .won ? 1 : 0,
                     totalBoards: 1, solution: p.display, solutions: [],
                     showDefinition: false,   // proper noun — no dictionary definition (the clue/photo stands in)
+                    // §242: same non-daily + Pro gate as the finished screen's
+                    // Play Again (line below the puzzle meta).
+                    onPlayAgain: (onPlayAgain != nil && !vm.isDaily && !vm.isVersus && AuthService.shared.isProActive)
+                        ? { showVictory = false; onPlayAgain?() }
+                        : nil,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }

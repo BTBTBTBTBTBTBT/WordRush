@@ -188,6 +188,11 @@ struct GameScreen: View {
                     boardsSolved: vm.boards.filter { $0.status == .won }.count, totalBoards: vm.boardCount,
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
+                    // §242: unlimited games offer the next puzzle on the card
+                    // (playAgainAction already carries the non-daily + Pro gate).
+                    onPlayAgain: playAgainAction.map { action in
+                        { showVictory = false; action() }
+                    },
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = false; revealComplete = true } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }

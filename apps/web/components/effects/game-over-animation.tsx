@@ -15,9 +15,11 @@ interface GameOverAnimationProps {
   totalBoards?: number;
   solution?: string;
   solutions?: string[];
+  /** §242: "Try again" button on the card — unlimited games only. */
+  onPlayAgain?: () => void;
 }
 
-export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: GameOverAnimationProps) {
+export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, onPlayAgain }: GameOverAnimationProps) {
   useEffect(() => { haptic('medium'); playGameOver(); }, []);
   const { definition: singleDef } = useWordDefinition(solution || null);
   const multiDefs = useWordDefinitions(solutions || []);
@@ -149,6 +151,16 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
               </div>
             )}
 
+            {/* §242: unlimited games offer another run straight from the card. */}
+            {onPlayAgain && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}
+                className="mt-4 px-7 py-2.5 rounded-full text-sm font-black text-white active:scale-95 transition-transform"
+                style={{ background: '#f87171' }}
+              >
+                Try again
+              </button>
+            )}
             <p className="text-xs font-bold mt-4" style={{ color: '#fca5a5' }}>
               Tap anywhere to continue
             </p>

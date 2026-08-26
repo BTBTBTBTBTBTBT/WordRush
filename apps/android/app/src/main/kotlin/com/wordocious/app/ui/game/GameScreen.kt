@@ -622,6 +622,11 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     elapsedSeconds = if (mode == GameMode.GAUNTLET)
                         state.gauntlet?.stageResults?.lastOrNull()?.let { it.timeMs / 1000 } ?: elapsed
                     else elapsed,
+                    // §242: unlimited games offer the next puzzle on the card
+                    // (same seed-prefix + Pro gate as PostGameScreen's button).
+                    onPlayAgain = if (onPlayAgain != null && seed.startsWith("unlimited-") &&
+                        com.wordocious.app.data.AuthService.isProActive
+                    ) ({ dismissedVictory = true; onPlayAgain() }) else null,
                     onContinue = { dismissedVictory = true },
                 )
                 xpResult?.let { XpToast(it) { xpResult = null } }

@@ -178,8 +178,8 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
+      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}

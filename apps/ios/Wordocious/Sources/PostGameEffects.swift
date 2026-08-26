@@ -82,6 +82,10 @@ struct VictoryOverlay: View {
     /// ProperNoundle answers are proper nouns (not in the dictionary) — its
     /// Wikipedia clue/photo stands in for the definition, so skip the card.
     var showDefinition = true
+    /// §242 (founder: "go right into the next game without going back"): a
+    /// Play/Try-again button on the card itself. Callers pass it ONLY on
+    /// unlimited (non-daily) games — same gate as the finished screen's button.
+    var onPlayAgain: (() -> Void)? = nil
     var onDismiss: () -> Void
 
     private var isMulti: Bool { totalBoards > 1 }
@@ -134,6 +138,18 @@ struct VictoryOverlay: View {
                         (isMulti ? "\(boardsSolved) of \(totalBoards) boards solved. " : "")
                         + "\(guesses)\(maxGuesses > 0 ? " of \(maxGuesses)" : "") guesses. Time \(timeStr)")
 
+                    if let onPlayAgain {
+                        Button(action: onPlayAgain) {
+                            Text(won ? "Play again" : "Try again")
+                                .font(Brand.font(14, .black)).foregroundStyle(.white)
+                                .padding(.horizontal, 28).padding(.vertical, 10)
+                                .background(Capsule().fill(won
+                                    ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                                    : AnyShapeStyle(Color(hex: 0xF87171))))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 6)
+                    }
                     Text("Tap anywhere to continue").font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xC4B5FD)).padding(.top, 4)
                 }
                 .padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 18)

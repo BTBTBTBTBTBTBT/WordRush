@@ -570,6 +570,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       {showVictory && (
         <VictoryAnimation
           onComplete={handleVictoryComplete}
+          onPlayAgain={!isDaily && isPro ? handlePlayAgain : undefined}
           timeSeconds={(() => {
             const last = gauntlet.stageResults[gauntlet.stageResults.length - 1];
             return last ? Math.floor(last.timeMs / 1000) : elapsedTime;

@@ -15,9 +15,12 @@ interface VictoryAnimationProps {
   totalBoards?: number;
   solution?: string;
   solutions?: string[];
+  /** §242: shown as a "Play again" button on the card — pass ONLY on
+   *  unlimited (non-daily) games where the caller's restart handler exists. */
+  onPlayAgain?: () => void;
 }
 
-export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, onPlayAgain }: VictoryAnimationProps) {
   useEffect(() => { haptic('heavy'); playSuccess(); }, []);
   const { definition } = useWordDefinition(solution || null);
 
@@ -160,6 +163,17 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
               </div>
             )}
 
+            {/* §242 (founder: "go right into the next game without going
+                back"): unlimited games offer the next puzzle on the card. */}
+            {onPlayAgain && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}
+                className="mt-4 px-7 py-2.5 rounded-full text-sm font-black text-white active:scale-95 transition-transform"
+                style={{ background: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
+              >
+                Play again
+              </button>
+            )}
             <p className="text-xs font-bold mt-4" style={{ color: '#c4b5fd' }}>
               Tap anywhere to continue
             </p>

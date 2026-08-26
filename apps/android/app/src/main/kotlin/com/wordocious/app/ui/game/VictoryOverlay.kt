@@ -8,6 +8,7 @@ import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,10 @@ fun VictoryOverlay(
     state: GameState,
     mode: GameMode,
     elapsedSeconds: Int,
+    // §242 (founder: "go right into the next game without going back"): a
+    // Play/Try-again button on the card. Callers pass it ONLY on unlimited
+    // games — same non-daily + Pro gate as the post-game screen's button.
+    onPlayAgain: (() -> Unit)? = null,
     onContinue: () -> Unit,
 ) {
     val won = state.status == GameStatus.WON
@@ -169,6 +174,21 @@ fun VictoryOverlay(
                     StatBlock("Time", fmtVTime(elapsedSeconds))
                 }
                 Spacer(Modifier.height(16.dp))
+                if (onPlayAgain != null) {
+                    Text(
+                        if (won) "Play again" else "Try again",
+                        fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))
+                                else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))),
+                            )
+                            .clickable { onPlayAgain() }
+                            .padding(horizontal = 28.dp, vertical = 10.dp),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
                 Text("Tap anywhere to continue", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
         }

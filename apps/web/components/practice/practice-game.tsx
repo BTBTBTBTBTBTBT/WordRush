@@ -355,8 +355,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       className={`h-screen-stable flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
+      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
+      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}

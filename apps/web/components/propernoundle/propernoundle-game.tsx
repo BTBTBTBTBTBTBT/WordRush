@@ -693,8 +693,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
+      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
+      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header — compact, matching other modes */}
