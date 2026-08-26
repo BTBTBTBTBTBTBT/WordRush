@@ -73,7 +73,7 @@ export function VsProperNoundle({
 
   const handleVowelReveal = useCallback(() => {
     if (gameStatus !== 'playing') return;
-    const hintGuess = hints.revealVowel(hintPuzzle);
+    const hintGuess = hints.revealVowel(hintPuzzle, guesses.map(g => g.word));
     if (hintGuess) {
       setGuesses((prev) => {
         const next = [...prev, hintGuess];
@@ -81,11 +81,11 @@ export function VsProperNoundle({
         return next;
       });
     }
-  }, [gameStatus, hints, hintPuzzle]);
+  }, [gameStatus, hints, hintPuzzle, guesses]);
 
   const handleConsonantReveal = useCallback(() => {
     if (gameStatus !== 'playing') return;
-    const hintGuess = hints.revealConsonant(hintPuzzle);
+    const hintGuess = hints.revealConsonant(hintPuzzle, guesses.map(g => g.word));
     if (hintGuess) {
       setGuesses((prev) => {
         const next = [...prev, hintGuess];
@@ -93,7 +93,7 @@ export function VsProperNoundle({
         return next;
       });
     }
-  }, [gameStatus, hints, hintPuzzle]);
+  }, [gameStatus, hints, hintPuzzle, guesses]);
 
   useEffect(() => {
     if (gameStatus === 'playing') {

@@ -565,12 +565,15 @@ class GameViewModel(
         val vset = setOf('A', 'E', 'I', 'O', 'U')
         val solution = board.solution.uppercase()
         val guessed = board.guesses.joinToString("").uppercase().toSet()
-        // iOS ProperNoundleView.reveal() pools EVERY distinct vowel/consonant in
-        // the answer, already-guessed letters included; Six/Seven still skip them.
-        val candidates = solution.filter { c ->
-            c in 'A'..'Z' && (if (vowels) c in vset else c !in vset) &&
-                (mode == GameMode.PROPERNOUNDLE || c !in guessed)
-        }.toSet().toList()
+        // §243: PN now prefers letters not in any prior guess (Six/Seven always
+        // did), falling back to the full class pool when every letter is known —
+        // the position reveal still informs, unlike a dead hint. Six/Seven keep
+        // their strict skip (an all-guessed class hits the sentinel below).
+        val classPool = solution.filter { c ->
+            c in 'A'..'Z' && (if (vowels) c in vset else c !in vset)
+        }.toSet()
+        val unguessed = classPool - guessed
+        val candidates = (if (mode == GameMode.PROPERNOUNDLE) unguessed.ifEmpty { classPool } else unguessed).toList()
 
         val pick = candidates.randomOrNull()
         if (pick == null) {

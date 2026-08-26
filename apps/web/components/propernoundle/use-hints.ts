@@ -85,6 +85,7 @@ export function useHints() {
 
   const revealVowel = useCallback((
     puzzle: Puzzle,
+    guesses: string[] = [],
   ): Guess | null => {
     if (state.vowelUsed) return null;
 
@@ -97,8 +98,16 @@ export function useHints() {
       return null;
     }
 
+    // §243 (founder: the consonant hint "gave me a T" he'd already guessed):
+    // prefer letters the player hasn't guessed yet — Six/Seven always did
+    // (use-classic-hints); PN pooled the whole answer. Fall back to the full
+    // pool only when every letter of the class is known: the position reveal
+    // still carries information, unlike a dead hint.
+    const guessedLetters = new Set(guesses.join('').toUpperCase());
     const uniqueVowels = Array.from(new Set(vowelsInAnswer));
-    const randomVowel = uniqueVowels[Math.floor(Math.random() * uniqueVowels.length)];
+    const fresh = uniqueVowels.filter(c => !guessedLetters.has(c));
+    const pool = fresh.length > 0 ? fresh : uniqueVowels;
+    const randomVowel = pool[Math.floor(Math.random() * pool.length)];
 
     setState(prev => ({ ...prev, vowelRevealed: randomVowel, vowelUsed: true }));
 
@@ -116,6 +125,7 @@ export function useHints() {
 
   const revealConsonant = useCallback((
     puzzle: Puzzle,
+    guesses: string[] = [],
   ): Guess | null => {
     if (state.consonantUsed) return null;
 
@@ -130,8 +140,12 @@ export function useHints() {
       return null;
     }
 
+    // §243: prefer unguessed consonants; full pool only when all are known.
+    const guessedLetters = new Set(guesses.join('').toUpperCase());
     const uniqueConsonants = Array.from(new Set(consonantsInAnswer));
-    const randomConsonant = uniqueConsonants[Math.floor(Math.random() * uniqueConsonants.length)];
+    const fresh = uniqueConsonants.filter(c => !guessedLetters.has(c));
+    const pool = fresh.length > 0 ? fresh : uniqueConsonants;
+    const randomConsonant = pool[Math.floor(Math.random() * pool.length)];
 
     setState(prev => ({ ...prev, consonantRevealed: randomConsonant, consonantUsed: true }));
 

@@ -561,7 +561,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   const handleVowelReveal = useCallback(() => {
     if (!puzzle || gameStatus !== 'playing') return;
-    const hintGuess = hints.revealVowel(puzzle);
+    const hintGuess = hints.revealVowel(puzzle, guesses.map(g => g.word));
     if (hintGuess) {
       const newGuesses = [...guesses, hintGuess];
       setGuesses(newGuesses);
@@ -571,7 +571,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   const handleConsonantReveal = useCallback(() => {
     if (!puzzle || gameStatus !== 'playing') return;
-    const hintGuess = hints.revealConsonant(puzzle);
+    const hintGuess = hints.revealConsonant(puzzle, guesses.map(g => g.word));
     if (hintGuess) {
       const newGuesses = [...guesses, hintGuess];
       setGuesses(newGuesses);

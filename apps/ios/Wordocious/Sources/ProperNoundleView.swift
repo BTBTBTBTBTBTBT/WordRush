@@ -225,7 +225,14 @@ final class ProperNoundleVM: ObservableObject {
         if vowels ? (revealedVowel != nil) : (revealedConsonant != nil) { return }
         let vset = Set("AEIOU")
         let chars = Array(ProperNoundle.normalize(p.answer).uppercased())
-        let pool = Set(chars.filter { c in c >= "A" && c <= "Z" && (vowels ? vset.contains(c) : !vset.contains(c)) })
+        let classPool = Set(chars.filter { c in c >= "A" && c <= "Z" && (vowels ? vset.contains(c) : !vset.contains(c)) })
+        // §243 (founder: the consonant hint "gave me a T" he'd already
+        // guessed): prefer letters not in any prior guess — Six/Seven always
+        // did; PN pooled the whole answer. Full pool only when every letter of
+        // the class is known (the position reveal still informs).
+        let guessedLetters = Set(guesses.flatMap { $0.word.uppercased() })
+        let fresh = classPool.subtracting(guessedLetters)
+        let pool = fresh.isEmpty ? classPool : fresh
         guard let pick = pool.randomElement() else {
             if vowels { revealedVowel = "None" } else { revealedConsonant = "None" }
             persist()
