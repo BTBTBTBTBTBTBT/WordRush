@@ -204,6 +204,12 @@ object AuthService {
 
     /** Restore session from local storage on app start. */
     fun initialize() {
+        // §241 (founder, on iOS but same window here): the profile row lands a
+        // beat after a cold start; paint the last known row immediately and let
+        // the real fetch overwrite it. Reverted below if no session restores.
+        if (hadPersistedSession() && _profile.value == null) {
+            cachedProfileRow()?.let { _profile.value = it; _isAuthenticated.value = true }
+        }
         scope.launch {
             try {
                 client.auth.awaitInitialization()
@@ -212,6 +218,11 @@ object AuthService {
                     // loadProfile claims save ownership for this user.
                     _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
                 } else {
+                    // No session — the optimistic paint (if any) was wrong.
+                    _profile.value = null
+                    _isAuthenticated.value = false
+                    SettingsPref.set(HAD_SESSION, false)
+                    SettingsPref.set(CACHED_PROFILE_JSON, "")
                     discardUnattributedSaves()
                 }
             } catch (_: Exception) {
@@ -471,6 +482,7 @@ object AuthService {
         SettingsPref.set(CACHED_DAILY_STREAK, 0)
         SettingsPref.set(CACHED_SHIELDS, -1)
         SettingsPref.set(CACHED_PRO_UNTIL, "")
+        SettingsPref.set(CACHED_PROFILE_JSON, "")
     }
 
     /** Persisted copy of the profile's daily-login streak (the SnapshotHero
@@ -482,6 +494,16 @@ object AuthService {
     const val CACHED_SHIELDS = "cached-streak-shields"
     /** ISO-8601 expiry of the last known Pro window; "" = not Pro / unknown. */
     const val CACHED_PRO_UNTIL = "cached-pro-until"
+    /** §241: the whole last-known profile row as JSON; "" = never cached. */
+    const val CACHED_PROFILE_JSON = "cached-profile-json"
+    private val profileJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+    /** Last cached profile row, or null when absent/corrupt. */
+    private fun cachedProfileRow(): Profile? {
+        val raw = SettingsPref.get(CACHED_PROFILE_JSON, "")
+        if (raw.isEmpty()) return null
+        return runCatching { profileJson.decodeFromString(Profile.serializer(), raw) }.getOrNull()
+    }
     /** Sentinel expiry for a Pro row with no end date (legacy/lifetime). */
     private const val PRO_NO_EXPIRY = "9999-12-31T00:00:00Z"
 
@@ -546,7 +568,12 @@ object AuthService {
             // account (or a hand-off from guest play) starts clean.
             claimSavesFor(userId)
             _profile.value = result
-            result?.let { cacheHeaderValues(it) }
+            result?.let {
+                cacheHeaderValues(it)
+                // §241: whole-row launch cache, cleared only on sign-out or a
+                // failed restore — never on a null assignment.
+                runCatching { SettingsPref.set(CACHED_PROFILE_JSON, profileJson.encodeToString(Profile.serializer(), it)) }
+            }
             stampPresence(userId)
         } catch (e: Exception) {
             // Profile might not exist yet for new sign-ups — that's fine

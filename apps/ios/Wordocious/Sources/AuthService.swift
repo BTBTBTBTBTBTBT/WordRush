@@ -80,6 +80,7 @@ final class AuthService: ObservableObject {
         didSet {
             AuthService.cacheProEntitlement(from: profile)
             AuthService.cacheHeaderValues(from: profile)
+            AuthService.cacheProfileRow(profile)
         }
     }
     @Published private(set) var isAuthenticated = false
@@ -136,10 +137,28 @@ final class AuthService: ObservableObject {
             isLoading = false
             return
         }
+        // §241 (founder: "my phone goes to Sign in when I return to the app"):
+        // iOS routinely kills the backgrounded app, and every cold launch spent
+        // a beat with profile == nil while the session restored — so the
+        // Profile tab flashed its signed-out state at a signed-in player. Same
+        // cure as the Pro badge / streak pills, applied to the WHOLE row: paint
+        // the last known profile immediately, let the real fetch overwrite it.
+        if AuthService.hadPersistedSession, profile == nil,
+           let cached = AuthService.cachedProfileRow {
+            profile = cached
+            isAuthenticated = true
+        }
         if let session = try? await client.auth.session {
             // handleSignedIn claims save ownership for this user.
             await handleSignedIn(userId: session.user.id.uuidString)
         } else {
+            // No session after all — the optimistic paint (if any) was wrong.
+            // Revert it and drop the hint so the next launch doesn't re-flash
+            // a phantom profile.
+            profile = nil
+            isAuthenticated = false
+            AuthService.hadPersistedSession = false
+            UserDefaults.standard.removeObject(forKey: AuthService.profileCacheKey)
             AuthService.discardUnattributedSaves()
         }
         isLoading = false
@@ -152,8 +171,13 @@ final class AuthService: ObservableObject {
                         await handleSignedIn(userId: userId)
                     }
                 case .signedOut:
-                    profile = nil
-                    isAuthenticated = false
+                    // §241: the listener can emit a transient signedOut during
+                    // launch restore (the build-137 ghost). Only blank the UI
+                    // when the session is truly gone.
+                    if (try? await client.auth.session) == nil {
+                        profile = nil
+                        isAuthenticated = false
+                    }
                 default:
                     break
                 }
@@ -278,6 +302,7 @@ final class AuthService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: AuthService.proCacheKey)
         UserDefaults.standard.removeObject(forKey: AuthService.streakCacheKey)
         UserDefaults.standard.removeObject(forKey: AuthService.shieldsCacheKey)
+        UserDefaults.standard.removeObject(forKey: AuthService.profileCacheKey)
     }
 
     private static let lastOwnerKey = "wordocious.last-save-owner"
@@ -445,6 +470,22 @@ final class AuthService: ObservableObject {
     /// nil and wiped the cache moments before the header read it — so the value
     /// was written every session and destroyed every launch. The cache is
     /// cleared in exactly one place now: an explicit signOut().
+    /// §241: the whole last-known profile row, JSON in UserDefaults. Written on
+    /// every loaded (non-nil) profile; read once at launch for the optimistic
+    /// paint; cleared only by an explicit signOut() or a failed session
+    /// restore — never on a nil assignment (the build-137 rule).
+    fileprivate static let profileCacheKey = "wordocious.profile-cache"
+
+    static var cachedProfileRow: Profile? {
+        guard let data = UserDefaults.standard.data(forKey: profileCacheKey) else { return nil }
+        return try? JSONDecoder().decode(Profile.self, from: data)
+    }
+
+    private static func cacheProfileRow(_ profile: Profile?) {
+        guard let profile, let data = try? JSONEncoder().encode(profile) else { return }
+        UserDefaults.standard.set(data, forKey: profileCacheKey)
+    }
+
     fileprivate static let streakCacheKey = "wordocious.header-streak"
     fileprivate static let shieldsCacheKey = "wordocious.header-shields"
 

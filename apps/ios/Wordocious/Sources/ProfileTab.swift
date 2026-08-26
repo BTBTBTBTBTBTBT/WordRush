@@ -57,7 +57,17 @@ struct ProfileTab: View {
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
                 VStack(spacing: 0) {
                     AppHeaderView()   // shared header (settings now lives here)
-                    if let profile = auth.profile { content(profile) } else { signedOut }
+                    // §241: during the launch-restore window a returning
+                    // player must never see the signed-out pitch — the cached
+                    // profile usually fills this gap; a brief spinner covers a
+                    // cacheless upgrade launch.
+                    if let profile = auth.profile {
+                        content(profile)
+                    } else if auth.isLoading && AuthService.hadPersistedSession {
+                        ProgressView().frame(maxWidth: .infinity, minHeight: 240)
+                    } else {
+                        signedOut
+                    }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
