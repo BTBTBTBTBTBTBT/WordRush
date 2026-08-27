@@ -1218,7 +1218,8 @@ internal fun SweepRow(
             }
             Text(
                 sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                color = WTheme.textMuted, maxLines = 1,
+                // §246: the hints segment fell off the row's end — wrap, never truncate.
+                color = WTheme.textMuted, maxLines = 2,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1463,7 +1464,8 @@ private fun YesterdaySweepRow(
             }
             Text(
                 sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                color = WTheme.textMuted, maxLines = 1,
+                // §246: the hints segment fell off the row's end — wrap, never truncate.
+                color = WTheme.textMuted, maxLines = 2,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,

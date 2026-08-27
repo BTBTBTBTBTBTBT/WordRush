@@ -1348,7 +1348,9 @@ struct LeaderboardTab: View {
                     }
                     Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        .lineLimit(1).minimumScaleFactor(0.8)
+                        // §246 (founder screenshot: "86 guesses ·…"): the hints
+                        // segment fell off the row's end — wrap, never truncate.
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 6) {
                         SweepModeDots(details: ySweepDetails[entry.userId],
                                       day: LeaderboardService.yesterdayLocal())
@@ -1768,7 +1770,9 @@ struct LeaderboardTab: View {
                     }
                     Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        .lineLimit(1).minimumScaleFactor(0.8)
+                        // §246 (founder screenshot: "86 guesses ·…"): the hints
+                        // segment fell off the row's end — wrap, never truncate.
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     // §227: the pill rides the dots row (the dots are ~70pt wide,
                     // so the pill always fits).
                     HStack(spacing: 6) {

@@ -509,7 +509,8 @@ export default function DailyPage() {
                 the ranking — the formula is guess-first, so 9 slow wins can
                 trail 8 sharp ones (founder double-take, Aug 18). */}
             {/* §227: full words — "2h" read as hours, not hints. */}
-            <span className="truncate">
+            {/* §246: wrap, never truncate — the hints segment fell off the end. */}
+            <span className="leading-snug">
               {formatTime(entry.total_time)} · {entry.modes_won}/9
               {det ? ` · ${det.guesses} guess${det.guesses === 1 ? '' : 'es'}` : ''}
               {det && det.hints > 0 ? ` · ${det.hints} hint${det.hints === 1 ? '' : 's'}` : ''}
@@ -934,7 +935,7 @@ export default function DailyPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                          <span className="truncate">
+                          <span className="leading-snug">
                             {formatTime(entry.total_time)} · {entry.modes_won}/9
                             {(() => { const g = ySweepDetails.get(entry.user_id)?.guesses; return g !== undefined ? ` · ${g} guess${g === 1 ? '' : 'es'}` : ''; })()}
                             {(() => { const h = ySweepDetails.get(entry.user_id)?.hints ?? 0; return h > 0 ? ` · ${h} hint${h === 1 ? '' : 's'}` : ''; })()}

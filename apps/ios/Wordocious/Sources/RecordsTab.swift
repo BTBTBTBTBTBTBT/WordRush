@@ -554,7 +554,9 @@ struct DailyRecordsView: View {
                     }
                     Text(sweepStatsLine(e, details: sweepDetails[e.userId]))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        .lineLimit(1).minimumScaleFactor(0.8)
+                        // §246 (founder screenshot: "86 guesses ·…"): the hints
+                        // segment fell off the row's end — wrap, never truncate.
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 6) {
                         SweepModeDots(details: sweepDetails[e.userId],
                                       day: LeaderboardService.todayLocal())

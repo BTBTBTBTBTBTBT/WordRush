@@ -348,7 +348,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
           </div>
           {/* §232: daily-board parity — words-not-codes stats + the dot strip
               with the pill beside it (founder ask, Aug 24). */}
-          <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
+          {/* §246: wrap, never truncate — the hints segment fell off the end. */}
+          <div className="text-[10px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
             {sweepStatsText(entry, det)}
           </div>
           <div className="flex items-center gap-1.5">
