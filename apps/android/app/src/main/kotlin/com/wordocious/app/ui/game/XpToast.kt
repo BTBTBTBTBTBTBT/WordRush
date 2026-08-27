@@ -89,7 +89,11 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
                             if (result.sweepBonus > 0)
                                 Text("+${result.sweepBonus} sweep", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFFBCFE8))
                             if (result.flawlessBonus > 0)
-                                Text("+${result.flawlessBonus} flawless", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047))
+                                // §244: a live streak outranks the raw bonus number.
+                                Text(
+                                    if (result.flawlessStreak >= 2) "FLAWLESS ×${result.flawlessStreak}" else "+${result.flawlessBonus} flawless",
+                                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047),
+                                )
                         }
                     }
                     if (result.leveledUp) {

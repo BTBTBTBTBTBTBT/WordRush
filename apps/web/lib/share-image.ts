@@ -48,7 +48,11 @@ export type ShareMode =
   /** WEEKLY RACE SHARE (§234): the friends weekly-race card — like DailySweep,
    *  not a playable mode (no catalog accent; the chip falls back to the
    *  weeklyRace variant theme). */
-  | 'WeeklyRace';
+  | 'WeeklyRace'
+  /** FLAWLESS STREAK (§244): consecutive all-nine-won days — not a mode. */
+  | 'FlawlessStreak'
+  /** TROPHY CASE (§245): the all-time records a player holds — not a mode. */
+  | 'TrophyCase';
 
 interface ShareBase {
   mode: ShareMode;
@@ -199,7 +203,7 @@ export interface ShareLeaderboardInput {
   /** WEEKLY RACE SHARE (§234): 'weeklyRace' = the friends weekly race — a
    *  timestamped brag card of this week's standings (me + friends by
    *  weekPoints) with how much time is left; `mode` is 'WeeklyRace'. */
-  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium' | 'sweep' | 'sweepPodium' | 'weeklyRace';
+  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium' | 'sweep' | 'sweepPodium' | 'weeklyRace' | 'flawlessStreak' | 'trophyCase';
   /** Mode chip text ("Classic Six", "Classic VS"). */
   modeChip: string;
   /** Date chip text ("Aug 7, 2026 · #123" / "Aug 6, 2026 · Final"). */
@@ -1159,6 +1163,11 @@ const LB_THEME: Record<ShareLeaderboardInput['variant'], {
   // FRIENDS surface, so its brag card wears the same colors (shared verbatim
   // with the iOS/Android cards).
   weeklyRace: { bg: '#eef2ff', label: '#4f46e5', panelBorder: '#6366f155', footer: '#4f46e5' },
+  // Flawless streak + trophy case (§244/§245): the gold family — both cards
+  // are pure brags, so they wear the medal/amber identity (shared verbatim
+  // with the iOS/Android cards).
+  flawlessStreak: { bg: '#fffbeb', label: '#d97706', panelBorder: '#f59e0b55', footer: '#d97706' },
+  trophyCase:     { bg: '#fffbeb', label: '#d97706', panelBorder: '#f59e0b55', footer: '#d97706' },
 };
 const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   solo: 'DAILY LEADERBOARD',
@@ -1169,6 +1178,8 @@ const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   sweep: 'DAILY SWEEP BOARD',
   sweepPodium: 'YESTERDAY’S SWEEP PODIUM',
   weeklyRace: 'FRIENDS WEEKLY RACE',
+  flawlessStreak: 'FLAWLESS STREAK',
+  trophyCase: 'TROPHY CASE',
 };
 
 // Rank iconography — same colors as the in-app RankIcon (crown gold, medal

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/lib/auth-context';
 import { loadCpuProgression } from '@/lib/bot/cpu-progression';
@@ -20,9 +20,13 @@ import {
   TrendingUp,
   Bot,
   Lock,
+  Share,
 } from 'lucide-react';
 import Link from 'next/link';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
+import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
+import { getTodayLocal } from '@/lib/daily-service';
+import { shareFlawlessStreakCard } from '@/lib/leaderboard-share-flow';
 import { WIN_FG } from '@/lib/tile-theme';
 import { ProBadge } from '@/components/ui/pro-badge';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
@@ -544,11 +548,17 @@ export default function ProfilePage() {
                   ))}
                 </div>
                 {allDone && (
-                  <div className="text-center mt-2">
-                    <div className="text-[11px] font-extrabold" style={{ color: flawless ? '#b45309' : '#6d28d9' }}>
-                      {flawless ? `All ${total} dailies won today · +600 XP earned` : `All ${total} dailies completed · +200 XP earned`}
-                    </div>
-                  </div>
+                  flawless
+                    // §244: the flawless banner knows its own streak — and
+                    // carries the share button for the brag card.
+                    ? <FlawlessBannerFooter total={total} />
+                    : (
+                      <div className="text-center mt-2">
+                        <div className="text-[11px] font-extrabold" style={{ color: '#6d28d9' }}>
+                          All {total} dailies completed · +200 XP earned
+                        </div>
+                      </div>
+                    )
                 )}
               </div>
             </>
@@ -1066,3 +1076,58 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+/** §244 (founder: "I just got my third flawless victory in a row and I have
+ *  no way of easily identifying that or even show it off"): the flawless
+ *  banner's footer — streak-aware copy ("3-DAY FLAWLESS STREAK") plus the
+ *  share button for the brag card. Self-contained fetch so the banner IIFE
+ *  stays hook-free. */
+function FlawlessBannerFooter({ total }: { total: number }) {
+  const { profile } = useAuth();
+  const [sweep, setSweep] = useState<DailySweepStats | null>(null);
+  const [sharing, setSharing] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (profile?.id) fetchDailySweepStats(profile.id).then((s) => { if (active) setSweep(s); });
+    return () => { active = false; };
+  }, [profile?.id]);
+  const streak = sweep?.currentFlawlessStreak ?? 0;
+  const share = async () => {
+    if (sharing || streak < 1) return;
+    setSharing(true);
+    try {
+      await shareFlawlessStreakCard({
+        streak,
+        anchorDay: getTodayLocal(),
+        bestStreak: sweep?.bestFlawlessStreak,
+        username: profile?.username,
+      });
+    } finally { setSharing(false); }
+  };
+  return (
+    <div className="text-center mt-2">
+      {streak >= 2 && (
+        <div className="text-sm font-black tracking-wide" style={{ color: '#b45309' }}>
+          🏆 {streak}-DAY FLAWLESS STREAK
+        </div>
+      )}
+      <div className="flex items-center justify-center gap-1.5 mt-0.5">
+        <span className="text-[11px] font-extrabold" style={{ color: '#b45309' }}>
+          All {total} dailies won today · +600 XP earned
+        </span>
+        {streak >= 1 && (
+          <button
+            onClick={share}
+            disabled={sharing}
+            aria-label="Share flawless streak"
+            className="p-0.5 active:scale-95 transition-transform"
+            style={{ color: '#b45309', opacity: sharing ? 0.4 : 1 }}
+          >
+            <Share className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+

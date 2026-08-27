@@ -446,3 +446,116 @@ export function buildWeeklyRaceShareInput(opts: WeeklyRaceShareOpts): ShareLeade
   }
   return input;
 }
+
+/* ═══ FLAWLESS STREAK (§244) + TROPHY CASE (§245) ═══ */
+
+/** Local-day arithmetic for the streak card's day rows. */
+function shiftDay(day: string, delta: number): string {
+  const [y, m, d] = day.split('-').map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+  dt.setDate(dt.getDate() + delta);
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${dt.getFullYear()}-${mm}-${dd}`;
+}
+
+export interface FlawlessStreakShareOpts {
+  /** Consecutive flawless days ending on anchorDay. Must be >= 1. */
+  streak: number;
+  /** The most recent flawless day (today, or yesterday if today isn't done). */
+  anchorDay: string;
+  bestStreak?: number;
+  username?: string;
+  now?: Date;
+}
+
+/**
+ * §244 (founder: "no way of being able to easily identify that or even show
+ * it off"): the flawless-streak brag — one row per consecutive flawless day,
+ * newest first, all 9/9. Null when there is no streak.
+ */
+export function buildFlawlessStreakShareInput(opts: FlawlessStreakShareOpts): ShareLeaderboardInput | null {
+  if (opts.streak < 1) return null;
+  const now = opts.now ?? new Date();
+  const shown = Math.min(opts.streak, 5);
+  const rows: ShareLeaderboardRowInput[] = Array.from({ length: shown }, (_, i) => ({
+    rank: i + 1,
+    name: formatBoardDate(shiftDay(opts.anchorDay, -i)),
+    scoreDisplay: '9/9 won',
+    subline: i === 0 && opts.username ? opts.username : undefined,
+    isYou: i === 0,
+  }));
+  const extra = opts.streak - shown;
+  const best = opts.bestStreak ?? 0;
+  return {
+    layout: 'leaderboard',
+    mode: 'FlawlessStreak',
+    variant: 'flawlessStreak',
+    modeChip: `Flawless ×${opts.streak}`,
+    dateChip: `${formatBoardDate(localDayOf(now))} · as of ${formatClockTime(now)}`,
+    rows,
+    footer: `${opts.streak} straight day${opts.streak === 1 ? '' : 's'} winning all nine`
+      + (extra > 0 ? ` (+${extra} more)` : '')
+      + (best > opts.streak ? ` · best ${best}` : '')
+      + ' · wordocious.com',
+    date: now,
+  };
+}
+
+/** §245: value formatting per record type — mirror of the Records page map
+ *  (icons stay in the UI; the card only needs label + format). */
+const TROPHY_LABELS: Record<string, { label: string; format: (v: number) => string; lowerIsBetter: boolean }> = {
+  fastest_win: { label: 'Fastest Win', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s`, lowerIsBetter: true },
+  fewest_guesses: { label: 'Fewest Guesses', format: (v) => `${v} guesses`, lowerIsBetter: true },
+  most_games_played: { label: 'Most Games Played', format: (v) => `${v} games`, lowerIsBetter: false },
+  longest_streak: { label: 'Longest Streak', format: (v) => `${v} wins`, lowerIsBetter: false },
+  most_gold_medals: { label: 'Most Gold Medals', format: (v) => `${v} golds`, lowerIsBetter: false },
+  highest_level: { label: 'Highest Level', format: (v) => `Level ${v}`, lowerIsBetter: false },
+  most_daily_completions: { label: 'Most Dailies Completed', format: (v) => `${v} dailies`, lowerIsBetter: false },
+};
+const TROPHY_ORDER = ['fastest_win', 'fewest_guesses', 'longest_streak', 'most_gold_medals', 'highest_level', 'most_games_played', 'most_daily_completions'];
+
+export interface TrophyCaseShareOpts {
+  records: Array<{ record_type: string; game_mode: string | null; record_value: number }>;
+  /** dbKey → display title, resolved by the caller (keeps this file catalog-free). */
+  modeTitle: (dbKey: string | null) => string;
+  username?: string;
+  now?: Date;
+}
+
+/**
+ * §245: the trophy-case brag — the player's held all-time records, most
+ * impressive first (fastest times, then fewest guesses, then the rest).
+ * Null when nothing is held.
+ */
+export function buildTrophyCaseShareInput(opts: TrophyCaseShareOpts): ShareLeaderboardInput | null {
+  if (opts.records.length === 0) return null;
+  const now = opts.now ?? new Date();
+  const sorted = [...opts.records].sort((a, b) => {
+    const oa = TROPHY_ORDER.indexOf(a.record_type); const ob = TROPHY_ORDER.indexOf(b.record_type);
+    if (oa !== ob) return (oa === -1 ? 99 : oa) - (ob === -1 ? 99 : ob);
+    const lower = TROPHY_LABELS[a.record_type]?.lowerIsBetter ?? false;
+    return lower ? a.record_value - b.record_value : b.record_value - a.record_value;
+  });
+  const rows: ShareLeaderboardRowInput[] = sorted.slice(0, 5).map((r, i) => {
+    const cfg = TROPHY_LABELS[r.record_type];
+    return {
+      rank: i + 1,
+      name: `${opts.modeTitle(r.game_mode)} · ${cfg?.label ?? r.record_type}`,
+      scoreDisplay: cfg ? cfg.format(r.record_value) : String(r.record_value),
+      isYou: false,
+    };
+  });
+  const extra = opts.records.length - rows.length;
+  return {
+    layout: 'leaderboard',
+    mode: 'TrophyCase',
+    variant: 'trophyCase',
+    modeChip: opts.username ? `${opts.username}'s Records` : 'Trophy Case',
+    dateChip: `${formatBoardDate(localDayOf(now))} · as of ${formatClockTime(now)}`,
+    rows,
+    footer: `${opts.records.length} all-time record${opts.records.length === 1 ? '' : 's'} held`
+      + (extra > 0 ? ` (+${extra} more)` : '') + ' · wordocious.com',
+    date: now,
+  };
+}

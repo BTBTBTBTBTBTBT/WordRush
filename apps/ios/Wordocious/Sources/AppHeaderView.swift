@@ -13,6 +13,7 @@ struct AppHeaderView: View {
     @State private var showSettings = false
     @State private var showStreak = false
     @State private var showShield = false
+    @State private var showFlawless = false
     @State private var showAuth = false
 
     var body: some View {
@@ -64,6 +65,27 @@ struct AppHeaderView: View {
                 .buttonStyle(.plain)
                 .popover(isPresented: $showStreak) {
                     if let p = auth.profile { streakPopover(p).modifier(CompactPopover()) }
+                }
+            }
+            // §244: flawless-streak pill — the day-stamped cache written by
+            // dailySweepStats(), synchronous like the other header values.
+            // Only a live run (>= 2) earns header real estate.
+            if MatchStatsService.cachedFlawlessStreak() >= 2 {
+                Button { showFlawless = true } label: {
+                    HStack(spacing: 4) {
+                        Text("🏆").font(.system(size: 11))
+                        Text("\(MatchStatsService.cachedFlawlessStreak())")
+                            .font(Brand.font(13, .heavy)).foregroundStyle(Color(hex: 0xB45309))
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .fixedSize()
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    .overlay(Capsule().stroke(Color(hex: 0xF59E0B), lineWidth: 1.5))
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showFlawless) {
+                    flawlessPopover(MatchStatsService.cachedFlawlessStreak()).modifier(CompactPopover())
                 }
             }
             if let shields = auth.headerShields {
@@ -128,6 +150,21 @@ struct AppHeaderView: View {
             statRow("Best", "\(p.bestDailyLoginStreak) \(p.bestDailyLoginStreak == 1 ? "day" : "days")")
             Divider().overlay(Theme.divider)
             Text("Play any daily puzzle each day to keep your streak going. Miss a day and it resets — unless you use a streak shield.")
+                .font(Brand.font(11, .medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14).frame(width: 240).background(Theme.surface)
+    }
+
+    /// §244: what the trophy pill means.
+    private func flawlessPopover(_ streak: Int) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Text("🏆").font(.system(size: 15))
+                Text("Flawless Streak").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+            }
+            statRow("Current", "\(streak) \(streak == 1 ? "day" : "days")")
+            Divider().overlay(Theme.divider)
+            Text("Consecutive days winning all 9 dailies. Win every daily today to keep it alive.")
                 .font(Brand.font(11, .medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(14).frame(width: 240).background(Theme.surface)

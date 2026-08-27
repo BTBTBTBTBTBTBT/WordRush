@@ -9,6 +9,9 @@ struct AllTimeRecord: Identifiable, Decodable {
     let playType: String?
     let holderId: String
     let recordValue: Double
+    /// §245: when the record was set — the marquee card's "held since". Optional
+    /// so older cached decodes never break.
+    let achievedAt: String?
     let profiles: Ref
 
     struct Ref: Decodable {
@@ -24,6 +27,7 @@ struct AllTimeRecord: Identifiable, Decodable {
         case playType = "play_type"
         case holderId = "holder_id"
         case recordValue = "record_value"
+        case achievedAt = "achieved_at"
         case profiles
     }
 
@@ -66,7 +70,7 @@ enum RecordsService {
     static func fetchAll() async throws -> [AllTimeRecord] {
         try await AuthService.shared.client
             .from("all_time_records")
-            .select("id, record_type, game_mode, play_type, holder_id, record_value, profiles!inner(username, avatar_url)")
+            .select("id, record_type, game_mode, play_type, holder_id, record_value, achieved_at, profiles!inner(username, avatar_url)")
             .order("record_type")
             .execute()
             .value

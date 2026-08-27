@@ -60,7 +60,8 @@ object LeaderboardShare {
     // ranks carried through verbatim.
     // WEEKLY_RACE (§234): the friends panel's THIS WEEK'S RACE as a card —
     // me + friends ranked by the week's points, countdown on the date chip.
-    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM, SWEEP, SWEEP_PODIUM, WEEKLY_RACE }
+    // §244/§245: FLAWLESS_STREAK + TROPHY_CASE — the personal brag cards.
+    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM, SWEEP, SWEEP_PODIUM, WEEKLY_RACE, FLAWLESS_STREAK, TROPHY_CASE }
 
     private data class Theme(val bg: Int, val label: Int, val panelBorder: Int, val footer: Int)
 
@@ -78,6 +79,9 @@ object LeaderboardShare {
         Variant.SWEEP_PODIUM -> Theme(0xFFFDF2F8.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF7C3AED.toInt())
         // Weekly race: the friends board's indigo — same circle, longer window.
         Variant.WEEKLY_RACE -> Theme(0xFFEEF2FF.toInt(), 0xFF4F46E5.toInt(), 0x556366F1, 0xFF4F46E5.toInt())
+        // §244/§245: the gold family — pure brags wear the medal identity.
+        Variant.FLAWLESS_STREAK, Variant.TROPHY_CASE ->
+            Theme(0xFFFFFBEB.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFFD97706.toInt())
     }
 
     private fun label(v: Variant): String = when (v) {
@@ -89,6 +93,8 @@ object LeaderboardShare {
         Variant.SWEEP -> "DAILY SWEEP BOARD"
         Variant.SWEEP_PODIUM -> "YESTERDAY’S SWEEP PODIUM"
         Variant.WEEKLY_RACE -> "FRIENDS WEEKLY RACE"
+        Variant.FLAWLESS_STREAK -> "FLAWLESS STREAK"
+        Variant.TROPHY_CASE -> "TROPHY CASE"
     }
 
     // ── Card input (web ShareLeaderboardInput) ─────────────────────────────────
@@ -450,6 +456,88 @@ object LeaderboardShare {
         )
     }
 
+    // ── Flawless streak (§244) + trophy case (§245) builders ───────────────────
+
+    /** §244: one row per consecutive flawless day, newest first, all 9/9. */
+    fun buildFlawlessStreakInput(
+        streak: Int, bestStreak: Int, username: String?,
+        now: Calendar = Calendar.getInstance(),
+    ): CardInput? {
+        if (streak < 1) return null
+        val day = todayLocalDate()
+        fun shift(d: String, delta: Long): String =
+            java.time.LocalDate.parse(d).plusDays(delta).toString()
+        val shown = minOf(streak, 5)
+        val rows = (0 until shown).map { i ->
+            RowInput(rank = i + 1, name = formatBoardDate(shift(day, -i.toLong())),
+                     scoreDisplay = "9/9 won",
+                     subline = if (i == 0) username else null, isYou = i == 0)
+        }
+        val extra = streak - shown
+        var footer = "$streak straight day${if (streak == 1) "" else "s"} winning all nine"
+        if (extra > 0) footer += " (+$extra more)"
+        if (bestStreak > streak) footer += " · best $bestStreak"
+        footer += " · wordocious.com"
+        return CardInput(
+            variant = Variant.FLAWLESS_STREAK,
+            shareMode = "FlawlessStreak", gameModeLower = "flawlessstreak",
+            accent = 0xFFD97706.toInt(), modeChip = "Flawless ×$streak",
+            dateChip = "${formatBoardDate(day)} · as of ${formatClockTime(now)}",
+            rows = rows, footer = footer, day = day,
+        )
+    }
+
+    /** §245: held all-time records, most impressive first. */
+    fun buildTrophyCaseInput(
+        records: List<LeaderboardService.AllTimeRecord>, username: String?,
+        now: Calendar = Calendar.getInstance(),
+    ): CardInput? {
+        if (records.isEmpty()) return null
+        val order = listOf("fastest_win", "fewest_guesses", "longest_streak", "most_gold_medals",
+            "highest_level", "most_games_played", "most_daily_completions")
+        val lowerIsBetter = setOf("fastest_win", "fewest_guesses")
+        val labels = mapOf(
+            "fastest_win" to "Fastest Win", "fewest_guesses" to "Fewest Guesses",
+            "most_games_played" to "Most Games Played", "longest_streak" to "Longest Streak",
+            "most_gold_medals" to "Most Gold Medals", "highest_level" to "Highest Level",
+            "most_daily_completions" to "Most Dailies Completed",
+        )
+        fun fmt(type: String, v: Int): String = when (type) {
+            "fastest_win" -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
+            "fewest_guesses" -> "$v guesses"
+            "most_games_played" -> "$v games"
+            "longest_streak" -> "$v wins"
+            "most_gold_medals" -> "$v golds"
+            "highest_level" -> "Level $v"
+            "most_daily_completions" -> "$v dailies"
+            else -> "$v"
+        }
+        val sorted = records.sortedWith(compareBy({ order.indexOf(it.recordType).let { i -> if (i == -1) 99 else i } },
+            { if (it.recordType in lowerIsBetter) it.recordValue else -it.recordValue }))
+        fun title(gm: String?): String = gm?.let { key ->
+            com.wordocious.app.ui.MODE_OPTIONS.firstOrNull { it.first == key }?.second
+        } ?: "Global"
+        val rows = sorted.take(5).mapIndexed { i, r ->
+            RowInput(rank = i + 1,
+                     name = "${title(r.gameMode)} · ${labels[r.recordType] ?: r.recordType}",
+                     scoreDisplay = fmt(r.recordType, r.recordValue.toInt()),
+                     subline = null, isYou = false)
+        }
+        val extra = records.size - rows.size
+        var footer = "${records.size} all-time record${if (records.size == 1) "" else "s"} held"
+        if (extra > 0) footer += " (+$extra more)"
+        footer += " · wordocious.com"
+        val day = todayLocalDate()
+        return CardInput(
+            variant = Variant.TROPHY_CASE,
+            shareMode = "TrophyCase", gameModeLower = "trophycase",
+            accent = 0xFFD97706.toInt(),
+            modeChip = username?.let { "$it's Records" } ?: "Trophy Case",
+            dateChip = "${formatBoardDate(day)} · as of ${formatClockTime(now)}",
+            rows = rows, footer = footer, day = day,
+        )
+    }
+
     // ── Renderer (web drawLeaderboardCard / drawLbRow) ─────────────────────────
 
     private fun nunito(context: Context, weight: Int): Typeface {
@@ -741,6 +829,8 @@ object LeaderboardShare {
         Variant.SWEEP -> "SweepBoard"
         Variant.SWEEP_PODIUM -> "SweepPodium"
         Variant.WEEKLY_RACE -> "WeeklyRace"
+        Variant.FLAWLESS_STREAK -> "FlawlessStreak"
+        Variant.TROPHY_CASE -> "TrophyCase"
     }
 
     /**
@@ -961,6 +1051,18 @@ object LeaderboardShare {
         username: String,
     ) {
         val input = buildWeeklyRaceInput(friends, me, username) ?: return
+        renderAndShare(context, input)
+    }
+
+    /** §244: the flawless-streak brag card. */
+    suspend fun shareFlawlessStreakCard(context: Context, streak: Int, bestStreak: Int, username: String?) {
+        val input = buildFlawlessStreakInput(streak, bestStreak, username) ?: return
+        renderAndShare(context, input)
+    }
+
+    /** §245: the trophy-case brag card. */
+    suspend fun shareTrophyCaseCard(context: Context, records: List<LeaderboardService.AllTimeRecord>, username: String?) {
+        val input = buildTrophyCaseInput(records, username) ?: return
         renderAndShare(context, input)
     }
 }

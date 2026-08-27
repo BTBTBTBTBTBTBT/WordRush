@@ -123,11 +123,19 @@ object NotificationService {
             // All-caps headline voice (FLAWLESS VICTORY!, DAILY SWEEP!) — Android
             // owns the notification chrome, so the branding is the icon plus the
             // voice. Kept in step with iOS NotificationService + the web cron.
-            val title = if (streak >= 3) "STREAK AT RISK! 🔥" else "DAILY CHALLENGE 🧩"
-            val body = if (streak >= 3)
-                "Your $streak-day streak ends at midnight. One quick game keeps it alive."
-            else
-                "Today's nine puzzles are live. Keep the streak going."
+            // §244: a live flawless run outranks the login streak — the harder
+            // thing to lose gets the headline. Cached (day-stamped); 0 when stale.
+            val flawless = MatchStatsService.cachedFlawlessStreak()
+            val title = when {
+                flawless >= 2 -> "FLAWLESS STREAK AT RISK! 🏆"
+                streak >= 3 -> "STREAK AT RISK! 🔥"
+                else -> "DAILY CHALLENGE 🧩"
+            }
+            val body = when {
+                flawless >= 2 -> "$flawless straight days winning all nine. Win them all today to make it ${flawless + 1}."
+                streak >= 3 -> "Your $streak-day streak ends at midnight. One quick game keeps it alive."
+                else -> "Today's nine puzzles are live. Keep the streak going."
+            }
             ensureChannel(applicationContext)
             val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)

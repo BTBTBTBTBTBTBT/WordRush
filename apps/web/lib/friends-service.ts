@@ -27,6 +27,8 @@ export interface FriendProfile {
   lastWeekPoints?: number;
   /** §238: settled-week history — [0] = last week, back ~12 weeks (additive). */
   pastWeekPoints?: number[];
+  /** §244: current flawless-victory streak (consecutive all-nine-won days). */
+  flawlessStreak?: number;
   h2hW?: number;
   h2hL?: number;
   remindedAt?: string | null;
@@ -116,7 +118,7 @@ async function doLoad(): Promise<void> {
 }
 
 /** The caller's own digest (playedToday/weekPoints) for the weekly podium. */
-type MeDigest = { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[] };
+type MeDigest = { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number };
 let meDigest: MeDigest | null = null;
 export const getMeDigest = (): MeDigest | null => meDigest;
 

@@ -111,7 +111,7 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
  *  platform strips the query string (see share-page-copy.parseShareKey). */
 function leaderboardKind(
   input: ShareLeaderboardInput,
-): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' | 'SweepBoard' | 'SweepPodium' | 'WeeklyRace' {
+): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' | 'SweepBoard' | 'SweepPodium' | 'WeeklyRace' | 'FlawlessStreak' | 'TrophyCase' {
   switch (input.variant) {
     case 'vs': return 'VsLeaderboard';
     case 'podium': return 'Podium';
@@ -122,6 +122,9 @@ function leaderboardKind(
     case 'sweepPodium': return 'SweepPodium';
     // WEEKLY RACE (§234): keys read `WeeklyRace-WeeklyRace-<day>`; lm=WEEKLY.
     case 'weeklyRace': return 'WeeklyRace';
+    // §244/§245: the brag cards.
+    case 'flawlessStreak': return 'FlawlessStreak';
+    case 'trophyCase': return 'TrophyCase';
     default: return 'Leaderboard';
   }
 }

@@ -477,6 +477,20 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                                 color = WTheme.text, maxLines = 1,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
+                            // §244: a live flawless streak taunts the row.
+                            if ((f.flawlessStreak ?: 0) >= 2) {
+                                Box(
+                                    Modifier.clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFF59E0B).copy(alpha = 0.13f))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        "🏆 ×${f.flawlessStreak}", fontSize = 8.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                        color = Color(0xFFB45309), fontFamily = Nunito,
+                                    )
+                                }
+                            }
                             // §216: friendversary chip on milestone days.
                             friendversary(f)?.let { days ->
                                 Box(

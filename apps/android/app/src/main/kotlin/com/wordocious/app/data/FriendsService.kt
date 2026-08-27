@@ -46,6 +46,8 @@ object FriendsService {
         val lastWeekPoints: Int? = null,
         // §238 additive: settled-week history, [0] = last week, back ~12.
         val pastWeekPoints: List<Int>? = null,
+        // §244 additive: current all-nine-won day run.
+        val flawlessStreak: Int? = null,
         val h2hW: Int? = null,
         val h2hL: Int? = null,
         val remindedAt: String? = null,
@@ -60,6 +62,8 @@ object FriendsService {
         val lastWeekPoints: Int? = null,
         // §238 additive: settled-week history, [0] = last week, back ~12.
         val pastWeekPoints: List<Int>? = null,
+        // §244 additive: current all-nine-won day run.
+        val flawlessStreak: Int? = null,
     )
 
     /** The caller's own digest for the weekly podium (§212). */

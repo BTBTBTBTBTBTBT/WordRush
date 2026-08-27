@@ -26,6 +26,8 @@ export interface XpResult {
   sweepBonus?: number;
   /** +400 XP additional if every one of those 7 was a win. */
   flawlessBonus?: number;
+  /** §244: consecutive flawless days including today (set on flawless days). */
+  flawlessStreak?: number;
 }
 
 // ============================================================
@@ -514,6 +516,13 @@ export async function recordGameResult(
       ? (sweepResult.flawlessAwarded ? 200 : sweepResult.xpBonus)
       : 0;
     const flawlessBonus = sweepResult?.flawlessAwarded ? 400 : 0;
+    // §244: on the flawless-clinching win, the toast says the STREAK, not just
+    // the bonus. One extra daily_bonuses read, at most once a day — and it
+    // refreshes the header-pill cache at the exact moment the streak grows.
+    let flawlessStreakVal = 0;
+    if (sweepResult?.flawlessAwarded) {
+      try { flawlessStreakVal = (await fetchDailySweepStats(userId)).currentFlawlessStreak; } catch {}
+    }
     const totalXp = xpGain + streakBonusVal + dailyBonusVal + sweepExtraXp;
     return {
       xpGain,
@@ -524,6 +533,7 @@ export async function recordGameResult(
       leveledUp: Math.floor(((profile.xp || 0) + totalXp) / 1000) + 1 > (profile.level || 1),
       sweepBonus: sweepBonus > 0 ? sweepBonus : undefined,
       flawlessBonus: flawlessBonus > 0 ? flawlessBonus : undefined,
+      flawlessStreak: flawlessStreakVal > 0 ? flawlessStreakVal : undefined,
     };
   }
   return null;
@@ -1570,6 +1580,10 @@ export interface DailySweepStats {
   bestSweepSecs: number;
   bestFlawlessSecs: number;
   currentSweepStreak: number;
+  /** §244: consecutive flawless days ending today or yesterday. */
+  currentFlawlessStreak: number;
+  /** §244: best-ever run of consecutive flawless days. */
+  bestFlawlessStreak: number;
 }
 
 export interface DailyPointsPoint {
@@ -1589,10 +1603,23 @@ function dayShift(day: string, delta: number): string {
   return `${dt.getFullYear()}-${mm}-${dd}`;
 }
 
+/** §244: header-pill cache — last computed flawless streak + the local day it
+ *  was computed. The pill (and any synchronous reader) trusts it only when the
+ *  stamp is today or yesterday. Written on every fetchDailySweepStats. */
+export function cachedFlawlessStreak(): { streak: number; day: string } | null {
+  try {
+    const raw = localStorage.getItem('wordocious-flawless-streak');
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    return typeof v?.streak === 'number' && typeof v?.day === 'string' ? v : null;
+  } catch { return null; }
+}
+
 export async function fetchDailySweepStats(userId: string): Promise<DailySweepStats> {
   const empty: DailySweepStats = {
     sweepCount: 0, flawlessCount: 0, avgSweepSecs: 0, avgFlawlessSecs: 0,
     bestSweepSecs: 0, bestFlawlessSecs: 0, currentSweepStreak: 0,
+    currentFlawlessStreak: 0, bestFlawlessStreak: 0,
   };
 
   const { data: bonuses } = await (supabase as any)
@@ -1647,6 +1674,30 @@ export async function fetchDailySweepStats(userId: string): Promise<DailySweepSt
   let streak = 0;
   while (cursor && sweepSet.has(cursor)) { streak += 1; cursor = dayShift(cursor, -1); }
 
+  // §244 (founder: "I just got my third flawless victory in a row and I have
+  // no way of easily identifying that"): the same cursor walk over FLAWLESS
+  // days — current run ending today/yesterday, plus the best run ever.
+  let fCursor: string | null = flawlessDays.has(today)
+    ? today
+    : (flawlessDays.has(dayShift(today, -1)) ? dayShift(today, -1) : null);
+  let flawlessStreak = 0;
+  while (fCursor && flawlessDays.has(fCursor)) { flawlessStreak += 1; fCursor = dayShift(fCursor, -1); }
+  let bestFlawlessStreak = 0;
+  {
+    const sorted = [...flawlessDays].sort();
+    let run = 0; let prev: string | null = null;
+    for (const d of sorted) {
+      run = prev !== null && dayShift(prev, 1) === d ? run + 1 : 1;
+      if (run > bestFlawlessStreak) bestFlawlessStreak = run;
+      prev = d;
+    }
+  }
+
+  try {
+    localStorage.setItem('wordocious-flawless-streak',
+      JSON.stringify({ streak: flawlessStreak, day: today }));
+  } catch {}
+
   return {
     sweepCount: sweepDays.length,
     flawlessCount: flawlessDays.size,
@@ -1655,6 +1706,8 @@ export async function fetchDailySweepStats(userId: string): Promise<DailySweepSt
     bestSweepSecs: min(sweepTimes),
     bestFlawlessSecs: min(flawlessTimes),
     currentSweepStreak: streak,
+    currentFlawlessStreak: flawlessStreak,
+    bestFlawlessStreak,
   };
 }
 

@@ -370,7 +370,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       streakBonus={xpResult.streakBonus}
       dailyBonus={xpResult.dailyBonus}
       sweepBonus={xpResult.sweepBonus}
-      flawlessBonus={xpResult.flawlessBonus}
+      flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak}
       leveledUp={xpResult.leveledUp}
       newLevel={xpResult.newLevel}
     />

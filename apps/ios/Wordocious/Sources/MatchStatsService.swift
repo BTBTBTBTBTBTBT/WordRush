@@ -438,7 +438,22 @@ enum MatchStatsService {
         var bestSweepSecs = 0
         var bestFlawlessSecs = 0
         var currentSweepStreak = 0
+        /// §244: consecutive flawless days ending today or yesterday.
+        var currentFlawlessStreak = 0
+        /// §244: best-ever run of consecutive flawless days.
+        var bestFlawlessStreak = 0
         var hasData: Bool { sweepCount > 0 || flawlessCount > 0 }
+    }
+
+    /// §244: day-stamped cache of the last computed flawless streak — the
+    /// header pill and the 18:00 reminder read it synchronously. Trusted only
+    /// when stamped today or yesterday. Written on every dailySweepStats().
+    static func cachedFlawlessStreak() -> Int {
+        let d = UserDefaults.standard
+        guard let day = d.string(forKey: "wordocious.flawless-streak-day") else { return 0 }
+        let today = LeaderboardService.todayLocal()
+        guard day == today || day == dayShift(today, -1) else { return 0 }
+        return d.integer(forKey: "wordocious.flawless-streak")
     }
 
     struct DailyPointsPoint: Identifiable {
@@ -523,11 +538,29 @@ enum MatchStatsService {
         var streak = 0
         while let c = cursor, sweepSet.contains(c) { streak += 1; cursor = dayShift(c, -1) }
 
+        // §244: the same cursor walk over FLAWLESS days — current run ending
+        // today/yesterday, plus the best run ever.
+        var fCursor: String? = flawlessDays.contains(today) ? today
+            : (flawlessDays.contains(dayShift(today, -1)) ? dayShift(today, -1) : nil)
+        var flawlessStreak = 0
+        while let c = fCursor, flawlessDays.contains(c) { flawlessStreak += 1; fCursor = dayShift(c, -1) }
+        var bestFlawless = 0
+        var run = 0; var prev: String? = nil
+        for d in flawlessDays.sorted() {
+            run = (prev != nil && dayShift(prev!, 1) == d) ? run + 1 : 1
+            bestFlawless = max(bestFlawless, run)
+            prev = d
+        }
+        UserDefaults.standard.set(flawlessStreak, forKey: "wordocious.flawless-streak")
+        UserDefaults.standard.set(today, forKey: "wordocious.flawless-streak-day")
+
         return DailySweepStats(
             sweepCount: sweepDays.count, flawlessCount: flawlessDays.count,
             avgSweepSecs: avg(sweepTimes), avgFlawlessSecs: avg(flawlessTimes),
             bestSweepSecs: best(sweepTimes), bestFlawlessSecs: best(flawlessTimes),
-            currentSweepStreak: streak)
+            currentSweepStreak: streak,
+            currentFlawlessStreak: flawlessStreak,
+            bestFlawlessStreak: bestFlawless)
     }
 
     static func dailyPointsOverTime(days: Int = 30) async -> [DailyPointsPoint] {

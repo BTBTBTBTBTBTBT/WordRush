@@ -41,6 +41,9 @@ export const MODE_ROUTE: Record<string, string> = {
   // WEEKLY RACE (§234): a private race between friends — the CTA sends
   // visitors to the friends surface to start their own.
   WeeklyRace: '/friends',
+  // §244/§245: the personal brag cards.
+  FlawlessStreak: '/daily',
+  TrophyCase: '/records',
 };
 
 /** The daily-leaderboard /s/ kinds (lib/share-utils leaderboardKind).
@@ -48,7 +51,7 @@ export const MODE_ROUTE: Record<string, string> = {
  *  m=<kind> & lm=<Mode> (+ r/tp for the sharer's rank). The Sweep kinds
  *  (§231) are keyed `Sweep*-DailySweep-<day>` with lm=SWEEP; the weekly
  *  race (§234) is keyed `WeeklyRace-WeeklyRace-<day>` with lm=WEEKLY. */
-const LB_KINDS = ['FriendsBoard', 'FriendsPodium', 'SweepBoard', 'SweepPodium', 'WeeklyRace', 'Leaderboard', 'VsLeaderboard', 'Podium'] as const;
+const LB_KINDS = ['FriendsBoard', 'FriendsPodium', 'SweepBoard', 'SweepPodium', 'WeeklyRace', 'FlawlessStreak', 'TrophyCase', 'Leaderboard', 'VsLeaderboard', 'Podium'] as const;
 
 export type LeaderboardShareKind = (typeof LB_KINDS)[number];
 
@@ -216,6 +219,32 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     // 'WEEKLY', not a catalog mode. The sibling voice ("their friends") is
     // deliberate: the recipient isn't in this race yet, catching them is
     // the hook.
+    // §244: the flawless-streak brag — recipient is invited to try a sweep.
+    if (lb.kind === 'FlawlessStreak') {
+      const title = dateDisp ? `Wordocious Flawless Streak — ${dateDisp}` : 'Wordocious Flawless Streak';
+      return {
+        mode: lb.kind,
+        modeDisp: 'Flawless Streak',
+        won: false,
+        stats: dateDisp ?? '',
+        title,
+        description: `Every daily puzzle, won, day after day. Think you could go flawless once? ${PLAY_HOOK}`,
+      };
+    }
+
+    // §245: the trophy case — the records they hold.
+    if (lb.kind === 'TrophyCase') {
+      const title = dateDisp ? `Wordocious Trophy Case — ${dateDisp}` : 'Wordocious Trophy Case';
+      return {
+        mode: lb.kind,
+        modeDisp: 'Trophy Case',
+        won: false,
+        stats: dateDisp ?? '',
+        title,
+        description: `All-time Wordocious records, held. Think one should be yours? ${PLAY_HOOK}`,
+      };
+    }
+
     if (lb.kind === 'WeeklyRace') {
       const title = dateDisp
         ? `Wordocious Friends Weekly Race — ${dateDisp}`

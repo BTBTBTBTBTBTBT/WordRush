@@ -25,6 +25,7 @@ enum FriendsService {
         var todayPoints: Int?   // §216 additive: today's total, for the race strip
         var lastWeekPoints: Int?   // §232 additive: the settled previous week's points
         var pastWeekPoints: [Int]?   // §238 additive: settled weeks, [0] = last week, back ~12
+        var flawlessStreak: Int?   // §244 additive: current all-nine-won day run
         var h2hW: Int?
         var h2hL: Int?
         var remindedAt: String?
@@ -33,6 +34,7 @@ enum FriendsService {
     struct MeDigest: Decodable, Equatable {
         let playedToday: Int; let weekPoints: Int; var todayPoints: Int?; var lastWeekPoints: Int?
         var pastWeekPoints: [Int]?   // §238 additive: settled weeks, [0] = last week
+        var flawlessStreak: Int?   // §244 additive: current all-nine-won day run
     }
     static var meDigest: MeDigest?
 

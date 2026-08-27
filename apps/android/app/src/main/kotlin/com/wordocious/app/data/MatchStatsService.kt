@@ -495,6 +495,10 @@ object MatchStatsService {
         val bestSweepSecs: Int = 0,
         val bestFlawlessSecs: Int = 0,
         val currentSweepStreak: Int = 0,
+        /** §244: consecutive flawless days ending today or yesterday. */
+        val currentFlawlessStreak: Int = 0,
+        /** §244: best-ever run of consecutive flawless days. */
+        val bestFlawlessStreak: Int = 0,
     ) {
         val hasData: Boolean get() = sweepCount > 0 || flawlessCount > 0
     }
@@ -532,6 +536,20 @@ object MatchStatsService {
     private data class DayScoreRow(val day: String, @SerialName("composite_score") val compositeScore: Double = 0.0)
 
     /** Add/subtract days from a YYYY-MM-DD local-day string. */
+    /** §244: day-stamped cache of the last computed flawless streak — the
+     *  header pill and the 18:00 reminder read it synchronously. Trusted only
+     *  when stamped today or yesterday. Written on every dailySweepStats(). */
+    const val CACHED_FLAWLESS_STREAK = "cached-flawless-streak"
+    const val CACHED_FLAWLESS_STREAK_DAY = "cached-flawless-streak-day"
+
+    fun cachedFlawlessStreak(): Int {
+        val day = SettingsPref.get(CACHED_FLAWLESS_STREAK_DAY, "")
+        if (day.isEmpty()) return 0
+        val today = com.wordocious.app.todayLocalDate()
+        if (day != today && day != dayShift(today, -1)) return 0
+        return SettingsPref.get(CACHED_FLAWLESS_STREAK, 0)
+    }
+
     private fun dayShift(day: String, delta: Int): String =
         runCatching { java.time.LocalDate.parse(day).plusDays(delta.toLong()).toString() }.getOrElse { day }
 
@@ -581,11 +599,32 @@ object MatchStatsService {
         var streak = 0
         while (cursor != null && sweepSet.contains(cursor)) { streak++; cursor = dayShift(cursor!!, -1) }
 
+        // §244: the same cursor walk over FLAWLESS days — current run ending
+        // today/yesterday, plus the best run ever.
+        var fCursor: String? = when {
+            flawlessDays.contains(today) -> today
+            flawlessDays.contains(dayShift(today, -1)) -> dayShift(today, -1)
+            else -> null
+        }
+        var flawlessStreak = 0
+        while (fCursor != null && flawlessDays.contains(fCursor)) { flawlessStreak++; fCursor = dayShift(fCursor!!, -1) }
+        var bestFlawless = 0
+        var run = 0; var prev: String? = null
+        for (d in flawlessDays.sorted()) {
+            run = if (prev != null && dayShift(prev!!, 1) == d) run + 1 else 1
+            if (run > bestFlawless) bestFlawless = run
+            prev = d
+        }
+        SettingsPref.set(CACHED_FLAWLESS_STREAK, flawlessStreak)
+        SettingsPref.set(CACHED_FLAWLESS_STREAK_DAY, today)
+
         DailySweepStats(
             sweepCount = sweepDays.size, flawlessCount = flawlessDays.size,
             avgSweepSecs = avg(sweepTimes), avgFlawlessSecs = avg(flawlessTimes),
             bestSweepSecs = best(sweepTimes), bestFlawlessSecs = best(flawlessTimes),
             currentSweepStreak = streak,
+            currentFlawlessStreak = flawlessStreak,
+            bestFlawlessStreak = bestFlawless,
         )
     }.getOrElse { DailySweepStats() }
 

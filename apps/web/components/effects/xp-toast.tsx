@@ -9,6 +9,8 @@ interface XpToastProps {
   dailyBonus?: number;
   sweepBonus?: number;
   flawlessBonus?: number;
+  /** §244: consecutive flawless days including today — shown when >= 2. */
+  flawlessStreak?: number;
   leveledUp?: boolean;
   newLevel?: number;
 }
@@ -18,7 +20,7 @@ interface XpToastProps {
  * Auto-dismisses after 3 seconds — stretch to 5s if the sweep/flawless
  * bonus fired so the player actually reads the celebration.
  */
-export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, flawlessBonus = 0, leveledUp, newLevel }: XpToastProps) {
+export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, flawlessBonus = 0, flawlessStreak = 0, leveledUp, newLevel }: XpToastProps) {
   const [visible, setVisible] = useState(true);
   const [exiting, setExiting] = useState(false);
   const hasSweepBonus = sweepBonus > 0 || flawlessBonus > 0;
@@ -73,7 +75,7 @@ export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, f
             )}
             {flawlessBonus > 0 && (
               <span className="text-[10px] font-black text-yellow-300">
-                +{flawlessBonus} flawless
+                {flawlessStreak >= 2 ? `FLAWLESS ×${flawlessStreak}` : `+${flawlessBonus} flawless`}
               </span>
             )}
           </div>

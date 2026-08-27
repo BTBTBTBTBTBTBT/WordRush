@@ -126,6 +126,7 @@ fun AppHeader(
         var menuOpen by remember { mutableStateOf(false) }
         var streakOpen by remember { mutableStateOf(false) }
         var shieldOpen by remember { mutableStateOf(false) }
+        var flawlessOpen by remember { mutableStateOf(false) }
         CircleIconButton(onClick = { menuOpen = true }) {
             // iOS uses the BARE `questionmark` glyph inside the circle chrome.
             // Material's HelpOutline is itself a circled "?", which stacked a
@@ -171,6 +172,19 @@ fun AppHeader(
                 Text("$streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E))
             }
         }
+        // §244: flawless-streak pill — the day-stamped cache written by
+        // dailySweepStats(), synchronous like the other header values. Only a
+        // live run (>= 2) earns header real estate.
+        val flawlessStreak = com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak()
+        if (flawlessStreak >= 2) {
+            HeaderPill(
+                bg = listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7)), border = Color(0xFFF59E0B),
+                onClick = { flawlessOpen = true },
+            ) {
+                Text("🏆", fontSize = 11.sp)
+                Text("$flawlessStreak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309))
+            }
+        }
         // Shield pill (shown once we have a value, cached or live) — tappable, like iOS.
         val shields = com.wordocious.app.data.AuthService.headerShields
         if (shields != null) {
@@ -199,6 +213,16 @@ fun AppHeader(
                     "Play any daily puzzle each day to keep your streak going. " +
                         "Miss a day and it resets — unless you use a streak shield.",
                 )
+            }
+        }
+        if (flawlessOpen) {
+            HeaderInfoPopover(onDismiss = { flawlessOpen = false }) {
+                PopoverTitle(iconTint = Color(0xFFD97706), title = "Flawless Streak") {
+                    Text("🏆", fontSize = 15.sp)
+                }
+                PopoverStatRow("Current", "$flawlessStreak ${if (flawlessStreak == 1) "day" else "days"}")
+                PopoverDivider()
+                PopoverBody("Consecutive days winning all 9 dailies. Win every daily today to keep it alive.")
             }
         }
         if (shieldOpen && p != null) {

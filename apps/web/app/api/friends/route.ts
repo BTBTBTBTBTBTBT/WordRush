@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   const friends: Array<Prof & {
     since: string | null; streak: number;
     playedToday?: number; weekPoints?: number; todayPoints?: number; h2hW?: number; h2hL?: number;
-    lastWeekPoints?: number; pastWeekPoints?: number[];
+    lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number;
   }> = [];
   const incoming: Array<Prof & { requestedAt: string }> = [];
   const outgoing: string[] = [];
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
   // Engagement digest (Aug 11): one daily_results sweep answers "who played
   // today", "who's winning the week", and the 90-day head-to-head record —
   // per-day TOTAL points across all modes, me vs each friend.
-  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[] } | null = null;
+  let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number } | null = null;
   if (wantDigest && friends.length >= 0) {
     const ids = [me, ...friends.map((f) => f.id)];
     const cutoff = new Date(`${day}T00:00:00Z`);
@@ -125,6 +125,36 @@ export async function GET(req: NextRequest) {
       }
       return sums.map((v) => Math.round(v));
     };
+    // §244 (additive): current flawless streak per person — consecutive
+    // daily_bonuses.flawless_awarded days ending on the client's day or the
+    // day before. One indexed read; shipped decoders ignore the field.
+    const flawlessByUser = new Map<string, Set<string>>();
+    {
+      const { data: fRows } = await admin
+        .from('daily_bonuses')
+        .select('user_id, day')
+        .in('user_id', ids)
+        .eq('flawless_awarded', true)
+        .gte('day', cutoffDay);
+      for (const r of (fRows ?? []) as Array<{ user_id: string; day: string }>) {
+        let set = flawlessByUser.get(r.user_id);
+        if (!set) { set = new Set(); flawlessByUser.set(r.user_id, set); }
+        set.add(r.day);
+      }
+    }
+    const shiftDay = (d: string, delta: number): string => {
+      const dt = new Date(`${d}T00:00:00Z`);
+      dt.setUTCDate(dt.getUTCDate() + delta);
+      return dt.toISOString().slice(0, 10);
+    };
+    const flawlessStreakOf = (id: string): number => {
+      const set = flawlessByUser.get(id);
+      if (!set) return 0;
+      let cursor: string | null = set.has(day) ? day : (set.has(shiftDay(day, -1)) ? shiftDay(day, -1) : null);
+      let n = 0;
+      while (cursor && set.has(cursor)) { n += 1; cursor = shiftDay(cursor, -1); }
+      return n;
+    };
     const myDays = totals.get(me) ?? new Map<string, number>();
     for (const f of friends as any[]) {
       const theirDays = totals.get(f.id) ?? new Map<string, number>();
@@ -144,6 +174,7 @@ export async function GET(req: NextRequest) {
       f.pastWeekPoints = past;
       f.h2hW = w;
       f.h2hL = l;
+      f.flawlessStreak = flawlessStreakOf(f.id);
     }
     const myPast = pastWeekPointsOf(me);
     meDigest = {
@@ -152,6 +183,7 @@ export async function GET(req: NextRequest) {
       todayPoints: Math.round(myDays.get(day) ?? 0),
       lastWeekPoints: myPast[0],
       pastWeekPoints: myPast,
+      flawlessStreak: flawlessStreakOf(me),
     };
   }
 

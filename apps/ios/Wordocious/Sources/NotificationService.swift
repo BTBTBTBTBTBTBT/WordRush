@@ -64,10 +64,19 @@ enum NotificationService {
         // (FLAWLESS VICTORY!, DAILY SWEEP!). Kept in step with the server copy in
         // apps/web/app/api/cron/daily-reminder.
         let streak = AuthService.shared.profile?.dailyLoginStreak ?? 0
-        content.title = streak >= 3 ? "STREAK AT RISK! 🔥" : "DAILY CHALLENGE 🧩"
-        content.body = streak >= 3
-            ? "Your \(streak)-day streak ends at midnight. One quick game keeps it alive."
-            : "Today's nine puzzles are live. Keep the streak going."
+        // §244: a live flawless run outranks the login streak — the harder
+        // thing to lose gets the headline. Cached (day-stamped) so this stays
+        // synchronous; 0 when stale.
+        let flawless = MatchStatsService.cachedFlawlessStreak()
+        if flawless >= 2 {
+            content.title = "FLAWLESS STREAK AT RISK! 🏆"
+            content.body = "\(flawless) straight days winning all nine. Win them all today to make it \(flawless + 1)."
+        } else {
+            content.title = streak >= 3 ? "STREAK AT RISK! 🔥" : "DAILY CHALLENGE 🧩"
+            content.body = streak >= 3
+                ? "Your \(streak)-day streak ends at midnight. One quick game keeps it alive."
+                : "Today's nine puzzles are live. Keep the streak going."
+        }
         content.sound = .default
 
         let cal = Calendar.current

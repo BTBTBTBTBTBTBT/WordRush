@@ -29,7 +29,9 @@ struct XpToastView: View {
                             Text("+\(result.sweepBonus) sweep").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xFBCFE8))
                         }
                         if result.flawlessBonus > 0 {
-                            Text("+\(result.flawlessBonus) flawless").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xFDE047))
+                            // §244: a live streak outranks the raw bonus number.
+                            Text(result.flawlessStreak >= 2 ? "FLAWLESS ×\(result.flawlessStreak)" : "+\(result.flawlessBonus) flawless")
+                                .font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xFDE047))
                         }
                     }
                     if result.leveledUp {

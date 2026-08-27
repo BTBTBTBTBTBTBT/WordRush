@@ -775,6 +775,8 @@ struct YourRecordsView: View {
     // The user's sweep standings (from the sweep rank RPCs) — augment the sweep
     // card with today's + all-time rank. Nil when the user hasn't swept.
     @State private var sweepDailyRank: (rank: Int, total: Int)?
+    // §245: one trophy-case card render/upload at a time.
+    @State private var sharingShelf = false
     @State private var sweepAllTimeRank: (rank: Int, total: Int)?
     @State private var recordsHeld: [AllTimeRecord] = []
     /// Record Chase (restat R2): the top-3 beatable all-time records with the
@@ -882,10 +884,12 @@ struct YourRecordsView: View {
                 meCell("clock.fill", sweep.bestSweepSecs > 0 ? formatShortTime(sweep.bestSweepSecs) : "—", "Best Sweep Time", Color(hex: 0x2563EB), dim: sweep.bestSweepSecs == 0)
             }
             // Your sweep standing on the sweep leaderboards (rank RPCs).
-            if sweepDailyRank != nil || sweepAllTimeRank != nil {
+            // §244: the flawless-streak notation rides the same row.
+            if sweepDailyRank != nil || sweepAllTimeRank != nil || sweep.currentFlawlessStreak > 0 {
                 HStack(spacing: 8) {
                     if let d = sweepDailyRank { sweepRankChip("Today", d) }
                     if let a = sweepAllTimeRank { sweepRankChip("All-Time", a) }
+                    if sweep.currentFlawlessStreak > 0 { flawlessStreakChip }
                     Spacer(minLength: 0)
                 }
             }
@@ -896,6 +900,19 @@ struct YourRecordsView: View {
             }
             .frame(maxWidth: .infinity).padding(.vertical, 24)
         }
+    }
+
+    /// §244: "🏆 Flawless: ×3 · best 5" — the streak notation beside the ranks.
+    private var flawlessStreakChip: some View {
+        HStack(spacing: 4) {
+            Text("🏆").font(.system(size: 10))
+            (Text("Flawless: ").font(Brand.font(9, .bold)).foregroundColor(Theme.textMuted)
+             + Text("×\(sweep.currentFlawlessStreak)").font(Brand.font(11, .black)).foregroundColor(Color(hex: 0xD97706))
+             + Text(sweep.bestFlawlessStreak > sweep.currentFlawlessStreak ? " · best \(sweep.bestFlawlessStreak)" : "")
+                .font(Brand.font(9, .bold)).foregroundColor(Theme.textMuted))
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0xF59E0B).opacity(0.10)))
     }
 
     /// A compact "#rank of total" chip for the sweep card's standing row.
@@ -976,26 +993,53 @@ struct YourRecordsView: View {
         }
     }
 
-    /// Trophy shelf — mode · record label · value for every record held (web
-    /// records/page.tsx "Your Trophy Shelf").
+    /// Trophy shelf (§245, founder: "it is an eyesore as it sits today") —
+    /// marquee jewels up top (most impressive records, auto-picked), then
+    /// type-grouped shelves of mode-accented glyph tiles; the repeated record
+    /// label becomes the shelf header, said once. Web records/page.tsx parity.
     private var trophyShelf: some View {
-        VStack(spacing: 0) {
+        let marquee = marqueeRecords
+        let marqueeIds = Set(marquee.map(\.id))
+        let shelfOrder = ["fastest_win", "fewest_guesses", "longest_streak", "most_games_played",
+                          "most_gold_medals", "highest_level", "most_daily_completions"]
+        let groups = shelfOrder
+            .map { t in (type: t, rows: recordsHeld.filter { $0.recordType == t && !marqueeIds.contains($0.id) }) }
+            .filter { !$0.rows.isEmpty }
+        return VStack(spacing: 0) {
             LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xD97706)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("YOUR TROPHY SHELF").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                VStack(spacing: 6) {
-                    ForEach(recordsHeld) { r in
-                        HStack(spacing: 10) {
-                            Image(systemName: RecordCatalog.labels[r.recordType]?.symbol ?? "star.fill")
-                                .font(.system(size: 14)).foregroundStyle(Color(hex: 0xD97706))
-                            Text("\(r.gameMode.map(modeTitle) ?? "Global") · \(RecordCatalog.labels[r.recordType]?.label ?? r.recordType)")
-                                .font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                                .lineLimit(1).minimumScaleFactor(0.85)
-                            Spacer()
-                            Text(r.formattedValue).font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xD97706))
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("YOUR TROPHY SHELF").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                    Spacer()
+                    Button {
+                        guard !sharingShelf else { return }
+                        sharingShelf = true
+                        LeaderboardShareFlow.shareTrophyCase(records: recordsHeld,
+                                                             username: auth.profile?.username)
+                        sharingShelf = false
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textMuted)
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(sharingShelf ? 0.4 : 1)
+                    .accessibilityLabel("Share trophy shelf")
+                }
+                // Marquee jewels — the records worth a plinth of their own.
+                ForEach(marquee) { r in marqueeCard(r) }
+                // Type-grouped shelves.
+                ForEach(groups, id: \.type) { g in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: RecordCatalog.labels[g.type]?.symbol ?? "star.fill")
+                                .font(.system(size: 9)).foregroundStyle(Color(hex: 0xD97706))
+                            Text((RecordCatalog.labels[g.type]?.label ?? g.type).uppercased())
+                                .font(Brand.font(9, .black)).tracking(0.7).foregroundStyle(Theme.textMuted)
                         }
-                        .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 6)], alignment: .leading, spacing: 6) {
+                            ForEach(g.rows) { r in trophyTile(r) }
+                        }
+                        Rectangle().fill(Color(hex: 0xFDE68A).opacity(0.33)).frame(height: 1)
                     }
                 }
             }
@@ -1004,6 +1048,74 @@ struct YourRecordsView: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// §245: the auto-picked crown jewels — best fastest-win, best fewest-guesses.
+    private var marqueeRecords: [AllTimeRecord] {
+        func bestOf(_ type: String) -> AllTimeRecord? {
+            recordsHeld.filter { $0.recordType == type && $0.gameMode != nil }
+                .min { $0.recordValue < $1.recordValue }
+        }
+        return [bestOf("fastest_win"), bestOf("fewest_guesses")].compactMap { $0 }
+    }
+
+    private func recordAccent(_ gameMode: String?) -> Color {
+        guard let gm = gameMode, let m = homeModes.first(where: { $0.dbKey == gm }) else { return Color(hex: 0xD97706) }
+        return m.accent
+    }
+
+    @ViewBuilder private func recordGlyph(_ gameMode: String?, box: CGFloat) -> some View {
+        if let gm = gameMode, let m = homeModes.first(where: { $0.dbKey == gm }) {
+            ModeIconView(icon: m.icon, accent: m.accent, box: box)
+        } else {
+            RoundedRectangle(cornerRadius: box * 0.27)
+                .fill(Color(hex: 0xD97706).opacity(0.08))
+                .frame(width: box, height: box)
+                .overlay(Image(systemName: "star.fill").font(.system(size: box * 0.42)).foregroundStyle(Color(hex: 0xD97706)))
+        }
+    }
+
+    private func heldSince(_ iso: String?) -> String? {
+        guard let iso else { return nil }
+        let withFrac = ISO8601DateFormatter(); withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let date = withFrac.date(from: iso) ?? plain.date(from: iso) else { return nil }
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "MMM d"
+        return f.string(from: date)
+    }
+
+    private func marqueeCard(_ r: AllTimeRecord) -> some View {
+        HStack(spacing: 12) {
+            recordGlyph(r.gameMode, box: 40)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(r.gameMode.map(modeTitle) ?? "Global") · \(RecordCatalog.labels[r.recordType]?.label ?? r.recordType)")
+                    .font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Text(r.formattedValue).font(Brand.font(22, .black)).foregroundStyle(Color(hex: 0xD97706))
+            }
+            Spacer(minLength: 4)
+            if let since = heldSince(r.achievedAt) {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("held since").font(Brand.font(9, .bold)).foregroundStyle(Color(hex: 0xB45309))
+                    Text(since).font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xB45309))
+                }
+            }
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 12)
+            .fill(LinearGradient(colors: [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFDE68A), lineWidth: 1))
+    }
+
+    private func trophyTile(_ r: AllTimeRecord) -> some View {
+        HStack(spacing: 6) {
+            recordGlyph(r.gameMode, box: 20)
+            Text(r.formattedValue).font(Brand.font(11, .black)).foregroundStyle(recordAccent(r.gameMode))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 6).padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 9).fill(Theme.background))
     }
 
     private func meCell(_ icon: String, _ value: String, _ label: String, _ color: Color, dim: Bool = false) -> some View {

@@ -535,8 +535,13 @@ struct ProfileTab: View {
                 HStack(spacing: 12) { ForEach(Array(dailyTiles.prefix(5))) { m in dailyBadge(m) } }
                 HStack(spacing: 12) { ForEach(Array(dailyTiles.dropFirst(5))) { m in dailyBadge(m) } }
                 if allDone {
-                    Text(flawless ? "All \(total) dailies won today · +600 XP earned" : "All \(total) dailies completed · +200 XP earned")
-                        .font(Brand.font(11, .heavy)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9))
+                    if flawless {
+                        // §244: streak-aware footer + the brag-card share button.
+                        FlawlessBannerFooter(total: total)
+                    } else {
+                        Text("All \(total) dailies completed · +200 XP earned")
+                            .font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x6D28D9))
+                    }
                 }
             }
             .padding(12).frame(maxWidth: .infinity)
@@ -2079,3 +2084,46 @@ func placeholder(icon: String, title: String, subtitle: String) -> some View {
             .multilineTextAlignment(.center).padding(.horizontal, 40)
     }
 }
+
+/// §244 (founder: "I just got my third flawless victory in a row and I have
+/// no way of easily identifying that or even show it off"): the flawless
+/// banner's footer — streak-aware copy ("3-DAY FLAWLESS STREAK") plus the
+/// share button for the brag card. Self-contained fetch so the banner view
+/// builder stays state-free.
+struct FlawlessBannerFooter: View {
+    let total: Int
+    @State private var sweep = MatchStatsService.DailySweepStats()
+    @State private var sharing = false
+
+    var body: some View {
+        VStack(spacing: 2) {
+            if sweep.currentFlawlessStreak >= 2 {
+                Text("🏆 \(sweep.currentFlawlessStreak)-DAY FLAWLESS STREAK")
+                    .font(Brand.font(13, .black)).tracking(0.5).foregroundStyle(Color(hex: 0xB45309))
+            }
+            HStack(spacing: 6) {
+                Text("All \(total) dailies won today · +600 XP earned")
+                    .font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0xB45309))
+                if sweep.currentFlawlessStreak >= 1 {
+                    Button {
+                        guard !sharing else { return }
+                        sharing = true
+                        LeaderboardShareFlow.shareFlawlessStreak(
+                            streak: sweep.currentFlawlessStreak,
+                            bestStreak: sweep.bestFlawlessStreak,
+                            username: AuthService.shared.profile?.username)
+                        sharing = false
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color(hex: 0xB45309))
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(sharing ? 0.4 : 1)
+                    .accessibilityLabel("Share flawless streak")
+                }
+            }
+        }
+        .task { sweep = await MatchStatsService.dailySweepStats() }
+    }
+}
+

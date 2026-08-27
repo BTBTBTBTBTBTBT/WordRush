@@ -8,6 +8,8 @@ import { ProBadge } from '@/components/ui/pro-badge';
 import { MenuModal } from '@/components/modals/menu-modal';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { StatPopover } from '@/components/ui/stat-popover';
+import { cachedFlawlessStreak } from '@/lib/stats-service';
+import { getTodayLocal } from '@/lib/daily-service';
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
@@ -70,6 +72,20 @@ export function AppHeader() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
   const [shieldOpen, setShieldOpen] = useState(false);
+  const [flawlessOpen, setFlawlessOpen] = useState(false);
+
+  // §244: the flawless-streak pill reads the day-stamped cache written by
+  // fetchDailySweepStats — synchronous, no query in the persistent header.
+  // Trusted only when stamped today or yesterday (older = possibly broken).
+  const flawlessStreak = (() => {
+    const c = cachedFlawlessStreak();
+    if (!c || c.streak < 2) return 0;
+    const today = getTodayLocal();
+    const [y, m, d] = today.split('-').map(Number);
+    const yd = new Date(y, (m ?? 1) - 1, (d ?? 1) - 1);
+    const yesterday = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`;
+    return c.day === today || c.day === yesterday ? c.streak : 0;
+  })();
 
   const shields = (profile as any)?.streak_shields ?? 0;
   const streak = profile?.daily_login_streak ?? 0;
@@ -78,12 +94,20 @@ export function AppHeader() {
 
   const openStreak = () => {
     setShieldOpen(false);
+    setFlawlessOpen(false);
     setStreakOpen((prev) => !prev);
   };
 
   const openShield = () => {
     setStreakOpen(false);
+    setFlawlessOpen(false);
     setShieldOpen((prev) => !prev);
+  };
+
+  const openFlawless = () => {
+    setStreakOpen(false);
+    setShieldOpen(false);
+    setFlawlessOpen((prev) => !prev);
   };
 
   return (
@@ -154,6 +178,22 @@ export function AppHeader() {
                   <span>{streak}</span>
                 </button>
               )}
+              {/* §244: flawless-streak pill — only when a live run >= 2. */}
+              {flawlessStreak >= 2 && (
+                <button
+                  onClick={openFlawless}
+                  className="flex items-center gap-1 px-2.5 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+                    border: '1.5px solid #f59e0b',
+                    borderRadius: '20px',
+                    color: '#b45309',
+                  }}
+                >
+                  <span className="text-[13px] leading-none">🏆</span>
+                  <span>{flawlessStreak}</span>
+                </button>
+              )}
               {/* Shield pill */}
               <button
                 onClick={openShield}
@@ -172,6 +212,20 @@ export function AppHeader() {
                 <ShieldIcon className="w-4 h-4" />
                 <span>{shields}</span>
               </button>
+
+              {/* §244: Flawless Popover */}
+              <StatPopover open={flawlessOpen} onClose={() => setFlawlessOpen(false)}>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg leading-none">🏆</span>
+                    <span className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Flawless Streak</span>
+                  </div>
+                  <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    {flawlessStreak} straight day{flawlessStreak === 1 ? '' : 's'} winning all 9 dailies.
+                    Win every daily today to keep it alive.
+                  </p>
+                </div>
+              </StatPopover>
 
               {/* Streak Popover */}
               <StatPopover open={streakOpen} onClose={() => setStreakOpen(false)}>

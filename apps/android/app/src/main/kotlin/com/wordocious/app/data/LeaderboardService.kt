@@ -108,6 +108,8 @@ object LeaderboardService {
         @SerialName("record_value") val recordValue: Double = 0.0,
         @SerialName("game_mode") val gameMode: String? = null,
         @SerialName("play_type") val playType: String? = null,
+        /** §245: when the record was set — the marquee card's "held since". */
+        @SerialName("achieved_at") val achievedAt: String? = null,
     ) {
         val holderUsername: String? get() = profiles?.username
     }
@@ -470,7 +472,7 @@ object LeaderboardService {
 
     suspend fun fetchAllTimeRecords(): List<AllTimeRecord> = runCatching {
         client.postgrest["all_time_records"]
-            .select(Columns.raw("record_type,record_value,game_mode,play_type,holder_id,profiles!inner(username)"))
+            .select(Columns.raw("record_type,record_value,game_mode,play_type,holder_id,achieved_at,profiles!inner(username)"))
             .decodeList<AllTimeRecord>()
     }.getOrElse { emptyList() }
 }

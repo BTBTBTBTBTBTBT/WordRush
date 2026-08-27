@@ -20,6 +20,8 @@ import {
   buildDailyLeaderboardShareInput,
   buildDailySweepShareInput,
   buildWeeklyRaceShareInput,
+  buildFlawlessStreakShareInput,
+  buildTrophyCaseShareInput,
   buildYesterdayPodiumShareInput,
   buildYesterdaySweepPodiumShareInput,
   type RankedEntry,
@@ -235,3 +237,32 @@ export async function shareWeeklyRaceCard(opts: {
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// FLAWLESS STREAK (§244) + TROPHY CASE (§245): the personal brag cards.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Share the current flawless-victory streak (one row per consecutive day). */
+export async function shareFlawlessStreakCard(opts: {
+  streak: number;
+  anchorDay: string;
+  bestStreak?: number;
+  username?: string;
+}): Promise<ShareResultOutcome | null> {
+  const input = buildFlawlessStreakShareInput(opts);
+  if (!input) return null;
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+
+/** Share the trophy case — the all-time records the player holds. */
+export async function shareTrophyCaseCard(opts: {
+  records: Array<{ record_type: string; game_mode: string | null; record_value: number }>;
+  username?: string;
+}): Promise<ShareResultOutcome | null> {
+  const modeTitle = (dbKey: string | null) =>
+    dbKey ? (MODES.find((m) => m.dbKey === dbKey)?.title ?? dbKey) : 'Global';
+  const input = buildTrophyCaseShareInput({ ...opts, modeTitle });
+  if (!input) return null;
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+

@@ -43,6 +43,8 @@ enum LbShareVariant: String {
     // WEEKLY RACE (§234): the friends panel's THIS WEEK'S RACE — me + friends
     // by the week's daily points, indigo identity, live "Nd HH:MM left" chip.
     case weeklyRace
+    // §244/§245: the personal brag cards — gold identity.
+    case flawlessStreak, trophyCase
 
     /// /s/ kind — also the storage-key prefix (web leaderboardKind()).
     var kind: String {
@@ -55,6 +57,8 @@ enum LbShareVariant: String {
         case .sweep: return "SweepBoard"
         case .sweepPodium: return "SweepPodium"
         case .weeklyRace: return "WeeklyRace"
+        case .flawlessStreak: return "FlawlessStreak"
+        case .trophyCase: return "TrophyCase"
         }
     }
 }
@@ -420,6 +424,78 @@ enum LeaderboardShareBuilder {
         }
         return input
     }
+
+    /// §244: the flawless-streak brag — one row per consecutive flawless day,
+    /// newest first, all 9/9. Nil when there is no streak.
+    static func buildFlawlessStreakInput(streak: Int, bestStreak: Int,
+                                         username: String?,
+                                         now: Date = Date()) -> LbShareInput? {
+        guard streak >= 1 else { return nil }
+        let day = LeaderboardService.todayLocal()
+        func shift(_ d: String, _ delta: Int) -> String {
+            let parts = d.split(separator: "-").compactMap { Int($0) }
+            guard parts.count == 3 else { return d }
+            var c = DateComponents(); c.year = parts[0]; c.month = parts[1]; c.day = parts[2]
+            let cal = Calendar.current
+            guard let base = cal.date(from: c),
+                  let s = cal.date(byAdding: .day, value: delta, to: base) else { return d }
+            let f = DateFormatter(); f.calendar = cal; f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: s)
+        }
+        let shown = min(streak, 5)
+        let rows = (0..<shown).map { i in
+            LbShareRow(rank: i + 1, name: formatBoardDate(shift(day, -i)),
+                       scoreDisplay: "9/9 won",
+                       subline: i == 0 ? username : nil, isYou: i == 0)
+        }
+        let extra = streak - shown
+        var footer = "\(streak) straight day\(streak == 1 ? "" : "s") winning all nine"
+        if extra > 0 { footer += " (+\(extra) more)" }
+        if bestStreak > streak { footer += " · best \(bestStreak)" }
+        footer += " · wordocious.com"
+        return LbShareInput(
+            variant: .flawlessStreak,
+            shareMode: "FlawlessStreak", gameModeRaw: "FlawlessStreak",
+            modeAccent: Color(hex: 0xD97706), modeChip: "Flawless ×\(streak)",
+            dateChip: "\(formatBoardDate(day)) · as of \(clockTime(now))",
+            rows: rows, footer: footer, day: day)
+    }
+
+    /// §245: the trophy-case brag — held records, most impressive first.
+    static func buildTrophyCaseInput(records: [AllTimeRecord], username: String?,
+                                     now: Date = Date()) -> LbShareInput? {
+        guard !records.isEmpty else { return nil }
+        let order = ["fastest_win", "fewest_guesses", "longest_streak", "most_gold_medals",
+                     "highest_level", "most_games_played", "most_daily_completions"]
+        let lowerIsBetter: Set<String> = ["fastest_win", "fewest_guesses"]
+        let sorted = records.sorted { a, b in
+            let oa = order.firstIndex(of: a.recordType) ?? 99
+            let ob = order.firstIndex(of: b.recordType) ?? 99
+            if oa != ob { return oa < ob }
+            return lowerIsBetter.contains(a.recordType)
+                ? a.recordValue < b.recordValue : a.recordValue > b.recordValue
+        }
+        func title(_ gm: String?) -> String {
+            gm.flatMap { key in homeModes.first { $0.dbKey == key }?.title } ?? "Global"
+        }
+        let rows = sorted.prefix(5).enumerated().map { i, r in
+            LbShareRow(rank: i + 1,
+                       name: "\(title(r.gameMode)) · \(RecordCatalog.labels[r.recordType]?.label ?? r.recordType)",
+                       scoreDisplay: r.formattedValue, subline: nil, isYou: false)
+        }
+        let extra = records.count - rows.count
+        var footer = "\(records.count) all-time record\(records.count == 1 ? "" : "s") held"
+        if extra > 0 { footer += " (+\(extra) more)" }
+        footer += " · wordocious.com"
+        let day = LeaderboardService.todayLocal()
+        return LbShareInput(
+            variant: .trophyCase,
+            shareMode: "TrophyCase", gameModeRaw: "TrophyCase",
+            modeAccent: Color(hex: 0xD97706),
+            modeChip: username.map { "\($0)'s Records" } ?? "Trophy Case",
+            dateChip: "\(formatBoardDate(day)) · as of \(clockTime(now))",
+            rows: Array(rows), footer: footer, day: day)
+    }
 }
 
 // MARK: - Card renderer (web drawLeaderboardCard parity, 1080×1080)
@@ -465,6 +541,10 @@ struct LeaderboardShareCardView: View {
         case .weeklyRace:
             return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0x4F46E5),
                            panelBorder: Color(hex: 0x6366F1, alpha: 0x55 / 255.0), footer: Color(hex: 0x4F46E5))
+        // §244/§245: the gold family — pure brags wear the medal identity.
+        case .flawlessStreak, .trophyCase:
+            return LbTheme(bg: Color(hex: 0xFFFBEB), label: Color(hex: 0xD97706),
+                           panelBorder: Color(hex: 0xF59E0B, alpha: 0x55 / 255.0), footer: Color(hex: 0xD97706))
         }
     }
     private var labelText: String {
@@ -477,6 +557,8 @@ struct LeaderboardShareCardView: View {
         case .sweep: return "DAILY SWEEP BOARD"
         case .sweepPodium: return "YESTERDAY’S SWEEP PODIUM"
         case .weeklyRace: return "FRIENDS WEEKLY RACE"
+        case .flawlessStreak: return "FLAWLESS STREAK"
+        case .trophyCase: return "TROPHY CASE"
         }
     }
 
@@ -1003,6 +1085,22 @@ enum LeaderboardShareFlow {
             me: username.map { (username: $0,
                                 weekPoints: meDigest?.weekPoints ?? 0,
                                 todayPoints: meDigest?.todayPoints ?? 0) }) else { return }
+        ShareService.shareLeaderboard(input)
+    }
+
+    /// §244: the flawless-streak brag card.
+    @MainActor
+    static func shareFlawlessStreak(streak: Int, bestStreak: Int, username: String?) {
+        guard let input = LeaderboardShareBuilder.buildFlawlessStreakInput(
+            streak: streak, bestStreak: bestStreak, username: username) else { return }
+        ShareService.shareLeaderboard(input)
+    }
+
+    /// §245: the trophy-case brag card.
+    @MainActor
+    static func shareTrophyCase(records: [AllTimeRecord], username: String?) {
+        guard let input = LeaderboardShareBuilder.buildTrophyCaseInput(
+            records: records, username: username) else { return }
         ShareService.shareLeaderboard(input)
     }
 }

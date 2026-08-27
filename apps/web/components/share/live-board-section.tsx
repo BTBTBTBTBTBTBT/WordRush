@@ -177,7 +177,10 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
   // "here's now" refetch of the GLOBAL board would contradict the card. No
   // live section — a friends-flavored invite line renders instead. The weekly
   // race (§234) is the same private-circle situation, so it joins this gate.
-  const friendsKind = kind === 'FriendsBoard' || kind === 'FriendsPodium' || kind === 'WeeklyRace';
+  // §244/§245: the flawless-streak and trophy-case brags are PERSONAL
+  // snapshots, not boards — same no-refetch gate as the friends kinds.
+  const friendsKind = kind === 'FriendsBoard' || kind === 'FriendsPodium' || kind === 'WeeklyRace'
+    || kind === 'FlawlessStreak' || kind === 'TrophyCase';
   // SWEEP SHARE (§231): the Sweep board is global (no mode key) — a live
   // SweepBoard refetches the sweep RPC; SweepPodium is final by definition.
   const sweepKind = kind === 'SweepBoard' || kind === 'SweepPodium';
@@ -207,10 +210,16 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
             ? 'Their friends podium is settled'
             : kind === 'WeeklyRace'
               ? 'A private weekly race between friends'
-              : 'A private race between friends'}
+              : kind === 'FlawlessStreak'
+                ? 'Every daily won, day after day'
+                : kind === 'TrophyCase'
+                  ? 'All-time records, held'
+                  : 'A private race between friends'}
         </p>
         <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
-          Add your friends on Wordocious and start your own
+          {kind === 'FlawlessStreak' || kind === 'TrophyCase'
+            ? 'Think you can take one? Play today\u2019s puzzles'
+            : 'Add your friends on Wordocious and start your own'}
         </p>
       </section>
     );

@@ -714,6 +714,7 @@ private data class RecordChase(val label: String, val gap: String, val pct: Int)
 /** "You" tab — the player's own records: milestone progress + Record Chase,
  *  sweep totals (single home), per-mode personal bests, medals +
  *  global-records-held + Trophy Shelf. Mirrors web YourRecordsView. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun YourRecordsTab() {
     val profile by AuthService.profile.collectAsState()
@@ -867,7 +868,7 @@ private fun YourRecordsTab() {
                         }
                         // Sweep leaderboard standing — today's daily board + all-time
                         // (getUserSweepRank / getUserAllTimeSweepRank).
-                        if (sweepRankToday != null || sweepRankAllTime != null) {
+                        if (sweepRankToday != null || sweepRankAllTime != null || sweep.currentFlawlessStreak > 0) {
                             Spacer(Modifier.height(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = SWEEP_ACCENT, modifier = Modifier.size(13.dp))
@@ -883,6 +884,16 @@ private fun YourRecordsTab() {
                                         Text("All-Time", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                                         Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
                                         Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                    }
+                                }
+                                // §244: the flawless-streak notation rides the same row.
+                                if (sweep.currentFlawlessStreak > 0) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text("🏆 Flawless", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                        Text("×${sweep.currentFlawlessStreak}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                                        if (sweep.bestFlawlessStreak > sweep.currentFlawlessStreak) {
+                                            Text("· best ${sweep.bestFlawlessStreak}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                        }
                                     }
                                 }
                             }
@@ -940,41 +951,146 @@ private fun YourRecordsTab() {
             }
             Spacer(Modifier.height(16.dp))
         }
-        // Trophy shelf — the specific records you hold, spelled out (web parity).
+        // Trophy shelf (§245, founder: "it is an eyesore as it sits today") —
+        // marquee jewels up top (most impressive records, auto-picked), then
+        // type-grouped shelves of mode-accented glyph tiles; the repeated
+        // record label becomes the shelf header, said once (web parity).
         if (recordsHeld.isNotEmpty()) item {
+            val marquee = remember(recordsHeld) {
+                fun bestOf(type: String) = recordsHeld
+                    .filter { it.recordType == type && it.gameMode != null }
+                    .minByOrNull { it.recordValue }
+                listOfNotNull(bestOf("fastest_win"), bestOf("fewest_guesses"))
+            }
+            val marqueeKeys = marquee.map { "${it.recordType}|${it.gameMode}" }.toSet()
+            val shelfOrder = listOf("fastest_win", "fewest_guesses", "longest_streak", "most_games_played",
+                "most_gold_medals", "highest_level", "most_daily_completions")
+            val groups = shelfOrder
+                .map { t -> t to recordsHeld.filter { it.recordType == t && "${it.recordType}|${it.gameMode}" !in marqueeKeys } }
+                .filter { it.second.isNotEmpty() }
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
+            var sharingShelf by remember { mutableStateOf(false) }
             CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))) {
-                Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-                Spacer(Modifier.height(6.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    recordsHeld.forEach { r ->
-                        val cfg = RECORD_CFG[r.recordType]
-                        val modeTitle = r.gameMode?.let { recModeTitle(it) } ?: "Global"
-                        Row(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            if (cfg?.crown == true) {
-                                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
-                            } else {
-                                Icon(cfg?.icon ?: androidx.compose.material.icons.Icons.Filled.Star, null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.Filled.Share, "Share trophy shelf",
+                        tint = WTheme.textMuted.copy(alpha = if (sharingShelf) 0.4f else 1f),
+                        modifier = Modifier.size(15.dp).clickableNoRipple {
+                            if (!sharingShelf) {
+                                sharingShelf = true
+                                scope.launch {
+                                    try {
+                                        com.wordocious.app.data.LeaderboardShare.shareTrophyCaseCard(
+                                            ctx, recordsHeld,
+                                            com.wordocious.app.data.AuthService.profile.value?.username,
+                                        )
+                                    } finally { sharingShelf = false }
+                                }
                             }
+                        },
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                // Marquee jewels — the records worth a plinth of their own.
+                marquee.forEach { r ->
+                    val cfg = RECORD_CFG[r.recordType]
+                    val accent = r.gameMode?.let { gm -> pickerGameModeOrNull(gm)?.let { modeAccent(it) } } ?: Color(0xFFD97706)
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                            .background(Brush.linearGradient(listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7))))
+                            .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        TrophyGlyphBox(r.gameMode, 40.dp)
+                        Column(Modifier.weight(1f)) {
                             Text(
-                                "$modeTitle · ${cfg?.label ?: r.recordType}",
-                                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
-                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f),
+                                "${r.gameMode?.let { recModeTitle(it) } ?: "Global"} · ${cfg?.label ?: r.recordType}".uppercase(),
+                                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E),
+                                letterSpacing = 0.6.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             )
                             Text(
                                 cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
-                                fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706),
+                                fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706),
                             )
                         }
+                        heldSince(r.achievedAt)?.let { since ->
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("held since", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                Text(since, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309))
+                            }
+                        }
                     }
+                    Spacer(Modifier.height(6.dp))
+                }
+                // Type-grouped shelves.
+                groups.forEach { (type, rows) ->
+                    val cfg = RECORD_CFG[type]
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (cfg?.crown == true) {
+                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
+                        } else {
+                            Icon(cfg?.icon ?: androidx.compose.material.icons.Icons.Filled.Star, null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
+                        }
+                        Text((cfg?.label ?: type).uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.7.sp)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    // Wrapping tile row — FlowRow keeps the shelf dense.
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        rows.forEach { r ->
+                            val accent = r.gameMode?.let { gm -> pickerGameModeOrNull(gm)?.let { modeAccent(it) } } ?: Color(0xFFD97706)
+                            Row(
+                                Modifier.clip(RoundedCornerShape(9.dp)).background(WTheme.bg)
+                                    .padding(horizontal = 6.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                TrophyGlyphBox(r.gameMode, 20.dp)
+                                Text(
+                                    cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
+                                    fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent,
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFFDE68A).copy(alpha = 0.33f)))
+                    Spacer(Modifier.height(6.dp))
                 }
             }
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/** §245: mode glyph in an accent-tinted box; global records get a gold star. */
+@Composable
+private fun TrophyGlyphBox(gameMode: String?, box: androidx.compose.ui.unit.Dp) {
+    val engine = gameMode?.let { pickerGameModeOrNull(it) }
+    val accent = engine?.let { modeAccent(it) } ?: Color(0xFFD97706)
+    Box(
+        Modifier.size(box).clip(RoundedCornerShape(box * 0.27f)).background(accent.copy(alpha = 0.08f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (engine != null) ModeGlyph(engine, accent, box = box)
+        else Icon(androidx.compose.material.icons.Icons.Filled.Star, null, tint = accent, modifier = Modifier.size(box * 0.5f))
+    }
+}
+
+/** §245: "Aug 12" from an ISO timestamp — the marquee card's "held since". */
+private fun heldSince(iso: String?): String? {
+    if (iso == null) return null
+    return runCatching {
+        val inst = runCatching { java.time.OffsetDateTime.parse(iso).toInstant() }
+            .recoverCatching { java.time.Instant.parse(iso) }.getOrThrow()
+        java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US)
+            .withZone(java.time.ZoneId.systemDefault()).format(inst)
+    }.getOrNull()
 }
 
 @Composable

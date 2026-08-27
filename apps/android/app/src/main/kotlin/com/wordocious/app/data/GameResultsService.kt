@@ -47,6 +47,8 @@ object GameResultsService {
         val leveledUp: Boolean,
         val sweepBonus: Int = 0,
         val flawlessBonus: Int = 0,
+        /** §244: consecutive flawless days including today (set on flawless days). */
+        val flawlessStreak: Int = 0,
     )
 
     // ── matches insert (solo: player2_id = null) ─────────────────────────────────
@@ -689,17 +691,23 @@ object GameResultsService {
             }
             val (sweep, flawless) = MedalService.awardDailyBonusesIfComplete(userId)
             if (sweep + flawless > 0) {
+                // §244: on the flawless-clinching win, the toast says the
+                // STREAK — one extra daily_bonuses read, at most once a day,
+                // which also refreshes the header-pill cache right as the
+                // streak grows.
+                val streakNow = if (flawless > 0) MatchStatsService.dailySweepStats().currentFlawlessStreak else 0
                 xp = xp?.let {
                     val newTotal = it.totalXp + sweep + flawless
                     it.copy(
                         totalXp = newTotal,
                         sweepBonus = sweep,
                         flawlessBonus = flawless,
+                        flawlessStreak = streakNow,
                     )
                 } ?: XpResult(
                     xpGain = 0, streakBonus = 0, dailyBonus = 0,
                     totalXp = sweep + flawless, newLevel = 1, leveledUp = false,
-                    sweepBonus = sweep, flawlessBonus = flawless,
+                    sweepBonus = sweep, flawlessBonus = flawless, flawlessStreak = streakNow,
                 )
             }
         }

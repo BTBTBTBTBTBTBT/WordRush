@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase-client';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { loadFriends, getFriendIds, onFriendsChange } from '@/lib/friends-service';
-import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
+import { shareDailyLeaderboardCard, shareYesterdayPodiumCard, shareTrophyCaseCard } from '@/lib/leaderboard-share-flow';
 import { SectionHeader } from '@/components/profile/stat-kit';
 import { SweepModeDots, sweepStatsText } from '@/components/leaderboard/sweep-mode-dots';
 import {
@@ -673,6 +673,8 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   const [records, setRecords] = useState<AllTimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState('DUEL');
+  // §245: one trophy-case card render/upload at a time.
+  const [sharingShelf, setSharingShelf] = useState(false);
   const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[]>([]);
   const [sweepLoading, setSweepLoading] = useState(false);
 
@@ -936,6 +938,8 @@ function YourRecordsView({ userId }: { userId?: string }) {
   const [chases, setChases] = useState<Array<{ label: string; gap: string; pct: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState('DUEL');
+  // §245: one trophy-case card render/upload at a time.
+  const [sharingShelf, setSharingShelf] = useState(false);
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
@@ -1073,8 +1077,9 @@ function YourRecordsView({ userId }: { userId?: string }) {
                   <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
                   <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
                 </div>
-                {/* Sweep leaderboard standing — today's daily board + all-time. */}
-                {(sweepRankToday || sweepRankAllTime) && (
+                {/* Sweep leaderboard standing — today's daily board + all-time.
+                    §244: the flawless-streak notation rides the same row. */}
+                {(sweepRankToday || sweepRankAllTime || sweep.currentFlawlessStreak > 0) && (
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
                     {sweepRankToday && (
                       <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -1084,6 +1089,12 @@ function YourRecordsView({ userId }: { userId?: string }) {
                     {sweepRankAllTime && (
                       <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                         All-Time: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankAllTime.rank}</span> of {sweepRankAllTime.totalPlayers}
+                      </span>
+                    )}
+                    {sweep.currentFlawlessStreak > 0 && (
+                      <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                        🏆 Flawless: <span className="font-black" style={{ color: '#d97706' }}>×{sweep.currentFlawlessStreak}</span>
+                        {sweep.bestFlawlessStreak > sweep.currentFlawlessStreak ? ` · best ${sweep.bestFlawlessStreak}` : ''}
                       </span>
                     )}
                   </div>
@@ -1130,33 +1141,124 @@ function YourRecordsView({ userId }: { userId?: string }) {
         </div>
       </div>
 
-      {/* Trophy shelf — the specific records you hold, spelled out. */}
-      {recordsHeld.length > 0 && (
-        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
-          <div className="px-4 pt-2 pb-3">
-            <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Your Trophy Shelf</div>
-            <div className="space-y-1.5">
-              {recordsHeld.map((r) => {
-                const cfg = RECORD_LABELS[r.record_type];
-                const RIcon = cfg?.icon ?? Star;
-                const modeTitle = r.game_mode ? getMode(r.game_mode).title : 'Global';
-                return (
-                  <div key={`${r.record_type}-${r.game_mode ?? 'g'}-${r.play_type ?? 'g'}`} className="flex items-center gap-2.5 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
-                    <RIcon className="w-4 h-4 shrink-0" style={{ color: '#d97706' }} />
-                    <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>
-                      {modeTitle} · {cfg?.label ?? r.record_type}
-                    </span>
-                    <span className="text-xs font-black" style={{ color: '#d97706' }}>
-                      {cfg ? cfg.format(r.record_value) : r.record_value}
-                    </span>
-                  </div>
-                );
-              })}
+      {/* Trophy shelf (§245, founder: "it is an eyesore as it sits today") —
+          marquee jewels up top (your most impressive records, auto-picked),
+          then type-grouped shelves of mode-accented glyph tiles. The repeated
+          "· Fastest Win" label becomes the shelf header, said once. */}
+      {recordsHeld.length > 0 && (() => {
+        const bestOf = (type: string) => recordsHeld
+          .filter((r) => r.record_type === type && r.game_mode)
+          .sort((a, b) => a.record_value - b.record_value)[0];
+        const marquee = [bestOf('fastest_win'), bestOf('fewest_guesses')].filter(Boolean) as AllTimeRecord[];
+        const marqueeKeys = new Set(marquee.map((r) => `${r.record_type}|${r.game_mode}`));
+        const shelfOrder = ['fastest_win', 'fewest_guesses', 'longest_streak', 'most_games_played', 'most_gold_medals', 'highest_level', 'most_daily_completions'];
+        const grouped = shelfOrder
+          .map((t) => ({ type: t, rows: recordsHeld.filter((r) => r.record_type === t && !marqueeKeys.has(`${r.record_type}|${r.game_mode}`)) }))
+          .filter((g) => g.rows.length > 0);
+        const heldSince = (iso?: string) => {
+          if (!iso) return null;
+          const t = Date.parse(iso);
+          if (!Number.isFinite(t)) return null;
+          return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        };
+        const glyph = (gameMode: string | null, boxPx: number) => {
+          if (!gameMode) return <Star style={{ width: boxPx / 2, height: boxPx / 2, color: '#d97706' }} />;
+          const m = getMode(gameMode);
+          const MIcon = m.icon;
+          return m.romanNumeral
+            ? <span className="font-black leading-none" style={{ color: m.accentColor, fontSize: boxPx * 0.34 }}>{m.romanNumeral}</span>
+            : MIcon ? <MIcon style={{ width: boxPx / 2, height: boxPx / 2, color: m.accentColor }} /> : null;
+        };
+        const accentOf = (gameMode: string | null) => (gameMode ? getMode(gameMode).accentColor : '#d97706');
+        const shareShelf = async () => {
+          if (sharingShelf) return;
+          setSharingShelf(true);
+          try {
+            await shareTrophyCaseCard({ records: recordsHeld, username: profile?.username });
+          } finally { setSharingShelf(false); }
+        };
+        return (
+          <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
+            <div className="px-4 pt-2 pb-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Your Trophy Shelf</div>
+                <button
+                  onClick={shareShelf}
+                  disabled={sharingShelf}
+                  aria-label="Share trophy shelf"
+                  className="p-1 -my-1 active:scale-95 transition-transform"
+                  style={{ color: 'var(--color-text-muted)', opacity: sharingShelf ? 0.4 : 1 }}
+                >
+                  <Share className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {/* Marquee jewels — the records worth a plinth of their own. */}
+              {marquee.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  {marquee.map((r) => {
+                    const cfg = RECORD_LABELS[r.record_type];
+                    const since = heldSince(r.achieved_at);
+                    const accent = accentOf(r.game_mode);
+                    return (
+                      <div key={`mq-${r.record_type}-${r.game_mode}`} className="flex items-center gap-3 p-3"
+                        style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: '1px solid #fde68a', borderRadius: '12px' }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${accent}18` }}>
+                          {glyph(r.game_mode, 40)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-black uppercase tracking-wider truncate" style={{ color: '#92400e' }}>
+                            {r.game_mode ? getMode(r.game_mode).title : 'Global'} · {cfg?.label ?? r.record_type}
+                          </div>
+                          <div className="text-2xl font-black leading-tight" style={{ color: '#d97706' }}>
+                            {cfg ? cfg.format(r.record_value) : r.record_value}
+                          </div>
+                        </div>
+                        {since && (
+                          <div className="text-[10px] font-bold shrink-0 text-right" style={{ color: '#b45309' }}>
+                            held since<br />{since}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {/* Type-grouped shelves — mode-accented tiles under one label. */}
+              <div className="space-y-2">
+                {grouped.map((g) => {
+                  const cfg = RECORD_LABELS[g.type];
+                  const GIcon = cfg?.icon ?? Star;
+                  return (
+                    <div key={g.type}>
+                      <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                        <GIcon className="w-3 h-3" style={{ color: '#d97706' }} />
+                        {cfg?.label ?? g.type}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pb-1.5" style={{ borderBottom: '1px solid #fde68a55' }}>
+                        {g.rows.map((r) => {
+                          const accent = accentOf(r.game_mode);
+                          return (
+                            <div key={`${r.record_type}-${r.game_mode ?? 'g'}-${r.play_type ?? 'g'}`}
+                              className="flex items-center gap-1.5 pl-1.5 pr-2 py-1" style={{ background: 'var(--color-bg)', borderRadius: '9px' }}>
+                              <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ background: `${accent}18` }}>
+                                {glyph(r.game_mode, 20)}
+                              </div>
+                              <span className="text-[11px] font-black" style={{ color: accent }}>
+                                {cfg ? cfg.format(r.record_value) : r.record_value}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

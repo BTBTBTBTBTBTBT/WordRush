@@ -524,6 +524,13 @@ export function FriendsPanel() {
                       {f.username}
                       {/* §216: the week's leader wears the crown. */}
                       {f.id === crownId && <span className="ml-1"> 👑</span>}
+                      {/* §244: a live flawless streak taunts the row. */}
+                      {(f.flawlessStreak ?? 0) >= 2 && (
+                        <span className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
+                          style={{ background: '#f59e0b22', color: '#b45309' }}>
+                          🏆 ×{f.flawlessStreak}
+                        </span>
+                      )}
                       {isNewFriend(f) && (
                         <span
                           className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"

@@ -1877,7 +1877,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           keys (and everything else) untouchable until the shared timeline
           completes, matching the un-skipped player exactly. */}
       {sharedInputLock && <div className="fixed inset-0 z-40" aria-hidden="true" />}
-      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
       {/* Match Header. The Home button forfeits the match first so the
           server can end it cleanly and credit the opponent — just navigating
           away mid-VS leaves a dangling match. */}

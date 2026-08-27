@@ -261,6 +261,13 @@ struct FriendsPanelView: View {
                                                 .padding(.horizontal, 4).padding(.vertical, 2)
                                                 .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xEC4899).opacity(0.13)))
                                         }
+                                        // §244: a live flawless streak taunts the row.
+                                        if (f.flawlessStreak ?? 0) >= 2 {
+                                            Text("🏆 ×\(f.flawlessStreak ?? 0)").font(Brand.font(8, .black))
+                                                .foregroundStyle(Color(hex: 0xB45309))
+                                                .padding(.horizontal, 4).padding(.vertical, 2)
+                                                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xF59E0B).opacity(0.13)))
+                                        }
                                     }
                                     // §212: today's progress, streak, rivalry — the live row.
                                     if let played = f.playedToday {

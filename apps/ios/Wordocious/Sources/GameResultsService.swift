@@ -567,12 +567,19 @@ enum GameResultsService {
             // "+200 sweep" / "+400 flawless" chips like web xp-toast.tsx.
             let (sweep, flawless) = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)
             if sweep + flawless > 0, let x = result {
+                // §244: on the flawless-clinching win, the toast says the
+                // STREAK, not just the bonus — one extra daily_bonuses read,
+                // at most once a day, which also refreshes the header-pill
+                // cache at the exact moment the streak grows.
+                let streak = flawless > 0
+                    ? (await MatchStatsService.dailySweepStats()).currentFlawlessStreak : 0
                 let newTotal = x.totalXp + sweep + flawless
                 result = XpResult(xpGain: x.xpGain, streakBonus: x.streakBonus,
                                   dailyBonus: x.dailyBonus, totalXp: newTotal,
                                   newLevel: newTotal / 1000 + 1,
                                   leveledUp: x.leveledUp || (newTotal / 1000 + 1) > x.newLevel,
-                                  sweepBonus: sweep, flawlessBonus: flawless)
+                                  sweepBonus: sweep, flawlessBonus: flawless,
+                                  flawlessStreak: streak)
             }
         }
 
@@ -657,6 +664,8 @@ enum GameResultsService {
         let totalXp: Int, newLevel: Int, leveledUp: Bool
         var sweepBonus: Int = 0
         var flawlessBonus: Int = 0
+        /// §244: consecutive flawless days including today (set on flawless days).
+        var flawlessStreak: Int = 0
     }
 
     @discardableResult

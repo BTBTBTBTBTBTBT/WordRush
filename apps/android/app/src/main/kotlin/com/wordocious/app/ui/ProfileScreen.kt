@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.MatchStatsService
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.data.ProfileService
 import com.wordocious.app.data.SettingsPref
@@ -762,11 +763,60 @@ private fun TodaysDailies(today: Map<String, DailyCompletionsService.Completion>
             }
         }
         if (allDone) {
+            if (flawless) {
+                // §244: streak-aware footer + the brag-card share button.
+                FlawlessBannerFooter(total)
+            } else {
+                Text(
+                    "All $total dailies completed · +200 XP earned",
+                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9),
+                )
+            }
+        }
+    }
+}
+
+/** §244 (founder: "no way of easily identifying that or even show it off"):
+ *  the flawless banner's footer — streak-aware copy plus the brag-card share
+ *  button. Self-contained fetch (dailySweepStats). */
+@Composable
+private fun FlawlessBannerFooter(total: Int) {
+    var sweep by remember { mutableStateOf(MatchStatsService.DailySweepStats()) }
+    var sharing by remember { mutableStateOf(false) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    LaunchedEffect(Unit) { sweep = MatchStatsService.dailySweepStats() }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (sweep.currentFlawlessStreak >= 2) {
             Text(
-                if (flawless) "All $total dailies won today · +600 XP earned" else "All $total dailies completed · +200 XP earned",
-                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                color = if (flawless) Color(0xFFB45309) else Color(0xFF6D28D9),
+                "🏆 ${sweep.currentFlawlessStreak}-DAY FLAWLESS STREAK",
+                fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309), letterSpacing = 0.5.sp,
             )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "All $total dailies won today · +600 XP earned",
+                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFB45309),
+            )
+            if (sweep.currentFlawlessStreak >= 1) {
+                Icon(
+                    Icons.Filled.Share, "Share flawless streak",
+                    tint = Color(0xFFB45309).copy(alpha = if (sharing) 0.4f else 1f),
+                    modifier = Modifier.size(13.dp).clickableNoRipple {
+                        if (!sharing) {
+                            sharing = true
+                            scope.launch {
+                                try {
+                                    com.wordocious.app.data.LeaderboardShare.shareFlawlessStreakCard(
+                                        ctx, sweep.currentFlawlessStreak, sweep.bestFlawlessStreak,
+                                        AuthService.profile.value?.username,
+                                    )
+                                } finally { sharing = false }
+                            }
+                        }
+                    },
+                )
+            }
         }
     }
 }
