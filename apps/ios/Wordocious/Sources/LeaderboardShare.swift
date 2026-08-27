@@ -606,14 +606,21 @@ struct LeaderboardShareCardView: View {
     }
 
     private func tintedImage(_ ctx: GraphicsContext, asset: String, color: Color) -> GraphicsContext.ResolvedImage? {
-        // SwiftUI's Image(uiImage:) IGNORES UIKit's withTintColor — the Aug 10
-        // template+tint attempt still shipped the original black artwork
-        // (founder caught it again Aug 18: ink crown/medals on a shared card).
-        // ResolvedImage.shading is the GraphicsContext-native tint: it fills
-        // template images with the given shading at draw time.
-        var img = ctx.resolve(Image(asset).renderingMode(.template))
-        img.shading = .color(color)
-        return img
+        // §247 (founder: "why does the crown next to my name appear white?"):
+        // ResolvedImage.shading proved unreliable for vector ASSETS on device —
+        // the SF-symbol medals tinted, but the lucide crown rasterized its raw
+        // currentColor (white in the render context). Third strike for the
+        // template machinery on this card (Aug 10 withTintColor, Aug 18 ink
+        // artwork), so tint with no template step at all: rasterize big,
+        // flood-fill the tint, and mask by the artwork's alpha (destinationIn).
+        guard let base = UIImage(named: asset) else { return nil }
+        let target = CGSize(width: 120, height: 120)
+        let ui = UIGraphicsImageRenderer(size: target).image { c in
+            UIColor(color).setFill()
+            c.fill(CGRect(origin: .zero, size: target))
+            base.draw(in: CGRect(origin: .zero, size: target), blendMode: .destinationIn, alpha: 1)
+        }
+        return ctx.resolve(Image(uiImage: ui))
     }
 
     private func tintedSymbol(_ ctx: GraphicsContext, _ name: String, pointSize: CGFloat,
