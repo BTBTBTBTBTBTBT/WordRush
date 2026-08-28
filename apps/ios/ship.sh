@@ -8,7 +8,8 @@ IOS="$(cd "$(dirname "$0")" && pwd)"
 ID=E834629E4D8BE4C07579FAAEDDEFA363F437060B                     # signing identity (cert fingerprint; private key in Keychain)
 KEY="--apiKey C8FRS9T697 --apiIssuer 8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
 BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9]+)".*/\1/')"
-echo "== BUILD $BUILD =="
+MARKETING="$(grep -m1 'MARKETING_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9.]+)".*/\1/')"
+echo "== BUILD $MARKETING ($BUILD) =="
 cd "$IOS"
 rm -rf build/Wordocious.xcarchive build/export build/resign
 
@@ -85,7 +86,9 @@ xcrun altool --upload-app -f Wordocious-resigned.ipa -t ios $KEY 2>&1 | tail -2
 echo "== POLL =="
 for i in $(seq 1 30); do
   sleep 60
-  OUT=$(ruby ~/.appstoreconnect/asc_builds.rb 2>/dev/null | grep -m1 "$BUILD" || true)
+  # §249 postmortem: a stale build with the SAME number on an older version
+  # train once satisfied a bare-number grep instantly — match version+build.
+  OUT=$(ruby ~/.appstoreconnect/asc_builds.rb 2>/dev/null | grep -m1 "v$MARKETING ($BUILD)" || true)
   echo "[$i] $OUT"
   case "$OUT" in *VALID*) echo DONE_VALID; exit 0;; *INVALID*|*FAILED*) echo DONE_BAD; exit 1;; esac
 done
