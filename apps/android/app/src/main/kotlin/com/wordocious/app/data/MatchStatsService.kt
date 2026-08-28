@@ -550,6 +550,9 @@ object MatchStatsService {
         return SettingsPref.get(CACHED_FLAWLESS_STREAK, 0)
     }
 
+    /** §248: non-private mirror for LeaderboardService's streak walk. */
+    fun requiredDailyModes(day: String): Int = requiredDailyModeCount(day)
+
     private fun dayShift(day: String, delta: Int): String =
         runCatching { java.time.LocalDate.parse(day).plusDays(delta.toLong()).toString() }.getOrElse { day }
 

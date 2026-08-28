@@ -175,6 +175,8 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     // §232: dot-strip + guess/hint detail — daily-board parity (founder ask,
     // Aug 24): Records' sweep rows must read like the leaderboard's §223 rows.
     var sweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
+    // §248: current flawless streaks for FLAWLESS rows.
+    var flawlessStreaks by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
 
     // Re-fetch once a daily result row has LANDED on the server (recordedTick)
     // so a finished puzzle appears here immediately, without a tab round-trip
@@ -203,6 +205,9 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
             val details = LeaderboardService.fetchSweepModeDetails(day, rows.map { it.userId })
             ensureActive()
             sweepDetails = details
+            // §248: only rows already FLAWLESS can be on a live streak.
+            flawlessStreaks = LeaderboardService.fetchFlawlessStreaks(day, rows.filter { it.isFlawless }.map { it.userId })
+            ensureActive()
             sweepRank = if (userId != null) LeaderboardService.getUserSweepRank(userId, day) else null
             ensureActive()
             return@LaunchedEffect
@@ -369,6 +374,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                             onOpenProfile = onOpenProfile, scoreLabel = sweepScoreLabels[entry.totalScore],
                             details = sweepDetails[entry.userId],
                             day = com.wordocious.app.todayLocalDate(),
+                            flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
                         )
                         if (i < sweepEntries.size - 1) HorizontalDivider(color = WTheme.border)
                     }

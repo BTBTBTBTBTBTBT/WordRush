@@ -174,7 +174,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     // for today's and yesterday's sweep rows, keyed by user id. A missing entry
     // renders a row without dots or g/h — the detail fetch never blocks a row.
     var sweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
+    // §248: current flawless streaks for FLAWLESS rows.
+    var flawlessStreaks by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var ySweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
+    var yFlawlessStreaks by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     // Reload when mode changes OR once a daily result row has LANDED on the
     // server (recordedTick) so a just-finished puzzle shows on the board
     // without a tab round-trip. The optimistic completionTick fires BEFORE the
@@ -235,6 +238,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             val details = LeaderboardService.fetchSweepModeDetails(day, rows.map { it.userId })
             ensureActive()
             sweepDetails = details
+            // §248: only rows already FLAWLESS can be on a live streak.
+            flawlessStreaks = LeaderboardService.fetchFlawlessStreaks(day, rows.filter { it.isFlawless }.map { it.userId })
+            ensureActive()
             sweepRank = if (userId != null) LeaderboardService.getUserSweepRank(userId, day) else null
             ensureActive()
             LeaderboardService.cacheSweep(sweepKey, LeaderboardService.CachedSweep(rows, sweepRank, details))
@@ -325,6 +331,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         // query is slow (missing details just render plain rows).
         ySweepDetails = if (yesterdaySweep.isNotEmpty()) {
             LeaderboardService.fetchSweepModeDetails(com.wordocious.app.yesterdayLocalDate(), yesterdaySweep.map { it.userId })
+        } else emptyMap()
+        // §248: streaks as they stood at yesterday's settled board.
+        yFlawlessStreaks = if (yesterdaySweep.isNotEmpty()) {
+            LeaderboardService.fetchFlawlessStreaks(com.wordocious.app.yesterdayLocalDate(), yesterdaySweep.filter { it.isFlawless }.map { it.userId })
         } else emptyMap()
     }
 
@@ -602,6 +612,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     scoreLabel = sweepScoreLabels[entry.totalScore],
                                     details = sweepDetails[entry.userId],
                                     day = com.wordocious.app.todayLocalDate(),
+                                    flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
                                 )
                                 if (index < sweepEntries.size - 1) Divider()
                             }
@@ -780,6 +791,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                         onOpenProfile = onOpenProfile,
                                         details = ySweepDetails[e.userId],
                                         day = com.wordocious.app.yesterdayLocalDate(),
+                                        flawlessStreak = yFlawlessStreaks[e.userId] ?: 0,
                                     )
                                     if (i < yesterdaySweep.size - 1) Divider()
                                 }
@@ -1126,7 +1138,7 @@ private fun WinLossPill(completed: Boolean, abbrev: Boolean = false) {
  *  pill — mirrors [WinLossPill]. Gold #d97706 / violet #a78bfa per spec, on a
  *  tinted wash so it reads in both light + dark themes. */
 @Composable
-private fun SweepPill(flawless: Boolean) {
+private fun SweepPill(flawless: Boolean, streak: Int = 0) {
     val fg = if (flawless) Color(0xFFD97706) else Color(0xFFA78BFA)
     Box(
         Modifier.clip(RoundedCornerShape(4.dp))
@@ -1134,7 +1146,8 @@ private fun SweepPill(flawless: Boolean) {
             .padding(horizontal = 5.dp, vertical = 1.dp),
     ) {
         Text(
-            if (flawless) "FLAWLESS" else "SWEEP",
+            // §248: a live streak shows its length on the pill.
+            if (flawless) (if (streak >= 2) "FLAWLESS ×$streak" else "FLAWLESS") else "SWEEP",
             fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = fg,
             // The §223 g/h stats squeezed this pill into wrapping ("FLAWLES\nS"
             // on Doug's phone) — a pill never wraps; the stats text ellipsizes.
@@ -1173,6 +1186,8 @@ internal fun SweepRow(
     // keep compiling: null details render the plain row — never a blocked one.
     details: LeaderboardService.SweepDetails? = null,
     day: String = com.wordocious.app.todayLocalDate(),
+    // §248: current flawless streak — the pill reads "FLAWLESS ×4" when >= 2.
+    flawlessStreak: Int = 0,
 ) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
@@ -1226,7 +1241,7 @@ internal fun SweepRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 SweepModeDots(details, day)
-                SweepPill(entry.isFlawless)
+                SweepPill(entry.isFlawless, flawlessStreak)
             }
         }
     }
@@ -1444,6 +1459,8 @@ private fun YesterdaySweepRow(
     onOpenProfile: (String) -> Unit = {},
     details: LeaderboardService.SweepDetails? = null,
     day: String = com.wordocious.app.yesterdayLocalDate(),
+    // §248: current flawless streak as of this board's day.
+    flawlessStreak: Int = 0,
 ) {
     // Full detail (founder ask, Aug 17): the RPC already returns time + modes
     // for any day — mirror today's SweepRow shape (name over "time · X/9").
@@ -1472,7 +1489,7 @@ private fun YesterdaySweepRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 SweepModeDots(details, day)
-                SweepPill(entry.isFlawless)
+                SweepPill(entry.isFlawless, flawlessStreak)
             }
         }
     }

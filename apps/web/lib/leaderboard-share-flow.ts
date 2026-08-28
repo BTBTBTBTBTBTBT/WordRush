@@ -242,16 +242,51 @@ export async function shareWeeklyRaceCard(opts: {
 // FLAWLESS STREAK (§244) + TROPHY CASE (§245): the personal brag cards.
 // ──────────────────────────────────────────────────────────────────────────
 
-/** Share the current flawless-victory streak (one row per consecutive day). */
+/** Share the current flawless-victory streak — §248: each day carries the
+ *  sweep-row stats (time · guesses · hints · points), fetched here from the
+ *  sharer's own daily_results before the card builds. */
 export async function shareFlawlessStreakCard(opts: {
   streak: number;
   anchorDay: string;
   bestStreak?: number;
   username?: string;
 }): Promise<ShareResultOutcome | null> {
-  const input = buildFlawlessStreakShareInput(opts);
+  const days = await fetchFlawlessStreakDayStats(opts.anchorDay, opts.streak);
+  const input = buildFlawlessStreakShareInput({ ...opts, days });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+
+/** Per-day totals for the sharer over the streak window (own rows only). */
+async function fetchFlawlessStreakDayStats(anchorDay: string, streak: number) {
+  try {
+    const { supabase } = await import('./supabase-client');
+    const { data: session } = await supabase.auth.getSession();
+    const uid = session.session?.user.id;
+    if (!uid) return [];
+    const days: string[] = [];
+    for (let i = 0; i < Math.min(streak, 5); i++) {
+      const [y, m, d] = anchorDay.split('-').map(Number);
+      const dt = new Date(y, (m ?? 1) - 1, (d ?? 1) - i);
+      days.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`);
+    }
+    const { data } = await supabase
+      .from('daily_results')
+      .select('day, time_seconds, guess_count, hints_used, composite_score')
+      .eq('user_id', uid)
+      .eq('play_type', 'solo')
+      .in('day', days);
+    const byDay = new Map<string, { day: string; timeSeconds: number; guesses: number; hints: number; points: number }>();
+    for (const r of (data as any[]) ?? []) {
+      let d = byDay.get(r.day);
+      if (!d) { d = { day: r.day, timeSeconds: 0, guesses: 0, hints: 0, points: 0 }; byDay.set(r.day, d); }
+      d.timeSeconds += r.time_seconds ?? 0;
+      d.guesses += r.guess_count ?? 0;
+      d.hints += r.hints_used ?? 0;
+      d.points += Number(r.composite_score ?? 0);
+    }
+    return [...byDay.values()];
+  } catch { return []; }
 }
 
 /** Share the trophy case — the all-time records the player holds. */

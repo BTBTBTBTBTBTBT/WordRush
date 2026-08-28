@@ -337,8 +337,17 @@ struct HomeView: View {
                     Image(systemName: flawless ? "trophy.fill" : "sparkles")
                         .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
                 }
-                Text(flawless ? "All \(totals.total) won · \(totalTime) · \(score) pts"
-                              : "All \(totals.total) done · \(totalTime) · \(score) pts")
+                // §248 (founder: the main page must "clearly show that I am
+                // on a 4 day win streak" — same footprint, the Daily/Unlimited
+                // toggle depends on it): a live streak replaces the redundant
+                // "All 9 won" (the FLAWLESS headline already says it) — text
+                // swap only, heroHeight untouched.
+                let homeStreak = flawless ? MatchStatsService.cachedFlawlessStreak() : 0
+                Text(flawless
+                        ? (homeStreak >= 2
+                            ? "🏆 \(homeStreak)-day streak · \(totalTime) · \(score) pts"
+                            : "All \(totals.total) won · \(totalTime) · \(score) pts")
+                        : "All \(totals.total) done · \(totalTime) · \(score) pts")
                     .font(Brand.font(11, .heavy)).foregroundStyle(subtitleC)
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     Text("Tap to share · Next in \(countdown())").font(Brand.font(10, .bold))

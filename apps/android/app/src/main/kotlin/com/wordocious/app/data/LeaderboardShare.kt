@@ -1,5 +1,6 @@
 package com.wordocious.app.data
 
+import io.github.jan.supabase.postgrest.postgrest
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -458,24 +459,41 @@ object LeaderboardShare {
 
     // ── Flawless streak (§244) + trophy case (§245) builders ───────────────────
 
-    /** §244: one row per consecutive flawless day, newest first, all 9/9. */
+    /** §248: per-day totals for the streak card's rows. */
+    data class FlawlessDayStats(val day: String, val timeSeconds: Int, val guesses: Int, val hints: Int, val points: Double)
+
+    /** §244/§248 (founder: the first cut "doesn't make sense and looks ugly"):
+     *  one row per streak day, OLDEST FIRST, each carrying the sweep-row stats
+     *  (time · guesses · hints) and the day's points; today rides last with
+     *  the gold you-treatment. Rows numbered by day-of-streak — the renderer
+     *  skips crown/medals for this variant. Null when no streak. */
     fun buildFlawlessStreakInput(
         streak: Int, bestStreak: Int, username: String?,
+        days: List<FlawlessDayStats> = emptyList(),
         now: Calendar = Calendar.getInstance(),
     ): CardInput? {
         if (streak < 1) return null
         val day = todayLocalDate()
-        fun shift(d: String, delta: Long): String =
-            java.time.LocalDate.parse(d).plusDays(delta).toString()
+        val statsByDay = days.associateBy { it.day }
         val shown = minOf(streak, 5)
         val rows = (0 until shown).map { i ->
-            RowInput(rank = i + 1, name = formatBoardDate(shift(day, -i.toLong())),
-                     scoreDisplay = "9/9 won",
-                     subline = if (i == 0) username else null, isYou = i == 0)
+            val dayNumber = streak - shown + i + 1
+            val d = java.time.LocalDate.parse(day).plusDays((dayNumber - streak).toLong()).toString()
+            val st = statsByDay[d]
+            val subline = st?.let {
+                buildString {
+                    append(com.wordocious.app.ui.formatShortTime(it.timeSeconds))
+                    append(" · ${it.guesses} guess${if (it.guesses == 1) "" else "es"}")
+                    if (it.hints > 0) append(" · ${it.hints} hint${if (it.hints == 1) "" else "s"}")
+                }
+            }
+            RowInput(rank = dayNumber, name = formatBoardDate(d),
+                     scoreDisplay = st?.let { String.format(java.util.Locale.US, "%,d pts", Math.round(it.points)) } ?: "9/9 won",
+                     subline = subline, isYou = i == shown - 1)
         }
-        val extra = streak - shown
+        val skipped = streak - shown
         var footer = "$streak straight day${if (streak == 1) "" else "s"} winning all nine"
-        if (extra > 0) footer += " (+$extra more)"
+        if (skipped > 0) footer += " (first $skipped not shown)"
         if (bestStreak > streak) footer += " · best $bestStreak"
         footer += " · wordocious.com"
         return CardInput(
@@ -576,7 +594,16 @@ object LeaderboardShare {
     // silver, medal bronze).
     private val RANK_ICON_COLORS = intArrayOf(0xFFD97706.toInt(), 0xFF9CA3AF.toInt(), 0xFFB45309.toInt())
 
-    private fun drawRankGlyph(context: Context, c: Canvas, p: Paint, black: Typeface, rank: Int, cx: Float, cy: Float) {
+    private fun drawRankGlyph(context: Context, c: Canvas, p: Paint, black: Typeface, rank: Int, cx: Float, cy: Float, forceNumber: Boolean = false) {
+        // §248: flawlessStreak rows are DAYS, not competitors — crown/medals
+        // read as ranking, so that card numbers every row instead.
+        if (forceNumber) {
+            p.typeface = black; p.textSize = 30f; p.color = TEXT_MUTED
+            p.textAlign = Paint.Align.CENTER
+            c.textV("$rank", cx, cy, p)
+            p.textAlign = Paint.Align.LEFT
+            return
+        }
         when (rank) {
             1 -> drawIcon(context, c, R.drawable.ic_crown, cx, cy, 40f, RANK_ICON_COLORS[0])
             2 -> drawIcon(context, c, R.drawable.ic_medal, cx, cy, 40f, RANK_ICON_COLORS[1])
@@ -599,6 +626,8 @@ object LeaderboardShare {
         black: Typeface, w800: Typeface, bold: Typeface,
         rankLine: String? = null, delta: Delta? = null, separator: Boolean = false,
         edgeTop: Boolean = false, edgeBottom: Boolean = false, bleed: Float = 16f,
+        // §248: number every row on the flawless-streak card (days, not ranks).
+        numericRank: Boolean = false,
     ) {
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
         // Gold "you" highlight — full-bleed across the panel with a soft amber
@@ -631,7 +660,7 @@ object LeaderboardShare {
         }
 
         val midY = y + h / 2
-        drawRankGlyph(context, c, p, black, row.rank, x + 56f, midY)
+        drawRankGlyph(context, c, p, black, row.rank, x + 56f, midY, forceNumber = numericRank)
 
         // Right block: bold score, optional subline underneath.
         val rightX = x + w - 30f
@@ -788,6 +817,7 @@ object LeaderboardShare {
             input.rows.forEachIndexed { i, row ->
                 drawRow(
                     context, c, row, panelX, y, panelW, rowH, black, w800, bold,
+                    numericRank = input.variant == Variant.FLAWLESS_STREAK,
                     delta = if (row.isYou) input.delta else null,
                     separator = i < input.rows.size - 1 || input.you != null,
                     edgeTop = i == 0,
@@ -805,6 +835,7 @@ object LeaderboardShare {
                 y += dividerH
                 drawRow(
                     context, c, input.you, panelX, y, panelW, rowH, black, w800, bold,
+                    numericRank = input.variant == Variant.FLAWLESS_STREAK,
                     rankLine = input.youRankLine, delta = input.delta,
                     edgeBottom = true, bleed = pad,
                 )
@@ -1054,11 +1085,38 @@ object LeaderboardShare {
         renderAndShare(context, input)
     }
 
-    /** §244: the flawless-streak brag card. */
+    /** §244/§248: the flawless-streak brag card — fetches the sharer's own
+     *  per-day stats (time · guesses · hints · points) before building. */
     suspend fun shareFlawlessStreakCard(context: Context, streak: Int, bestStreak: Int, username: String?) {
-        val input = buildFlawlessStreakInput(streak, bestStreak, username) ?: return
+        val days = fetchFlawlessDayStats(streak)
+        val input = buildFlawlessStreakInput(streak, bestStreak, username, days) ?: return
         renderAndShare(context, input)
     }
+
+    @kotlinx.serialization.Serializable
+    private data class FlawlessStatRow(
+        val day: String,
+        @kotlinx.serialization.SerialName("time_seconds") val timeSeconds: Int = 0,
+        @kotlinx.serialization.SerialName("guess_count") val guessCount: Int = 0,
+        @kotlinx.serialization.SerialName("hints_used") val hintsUsed: Int = 0,
+        @kotlinx.serialization.SerialName("composite_score") val compositeScore: Double = 0.0,
+    )
+
+    private suspend fun fetchFlawlessDayStats(streak: Int): List<FlawlessDayStats> = runCatching {
+        val uid = AuthService.userId ?: return emptyList()
+        val today = java.time.LocalDate.parse(todayLocalDate())
+        val days = (0 until minOf(streak, 5)).map { today.minusDays(it.toLong()).toString() }
+        val rows = SupabaseConfig.client.postgrest["daily_results"]
+            .select(io.github.jan.supabase.postgrest.query.Columns.raw("day,time_seconds,guess_count,hints_used,composite_score")) {
+                filter { eq("user_id", uid); eq("play_type", "solo"); isIn("day", days) }
+            }
+            .decodeList<FlawlessStatRow>()
+        rows.groupBy { it.day }.map { entry ->
+            val rs = entry.value
+            FlawlessDayStats(entry.key, rs.sumOf { it.timeSeconds }, rs.sumOf { it.guessCount },
+                             rs.sumOf { it.hintsUsed }, rs.sumOf { it.compositeScore })
+        }
+    }.getOrElse { emptyList() }
 
     /** §245: the trophy-case brag card. */
     suspend fun shareTrophyCaseCard(context: Context, records: List<LeaderboardService.AllTimeRecord>, username: String?) {

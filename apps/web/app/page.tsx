@@ -20,6 +20,7 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal, computeDailyTotals, getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
+import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
 import { MODES } from '@/lib/modes.generated';
 import { SOLUTIONS_CUTOVER_DATE, isBlockedWordOfDay } from '@wordle-duel/core';
@@ -425,8 +426,22 @@ export default function HomePage() {
             const titleGradient = flawless
               ? 'linear-gradient(135deg, #d97706, #b45309)'
               : 'linear-gradient(135deg, #a78bfa, #ec4899)';
+            // §248 (founder: the main page must "clearly show that I am on a
+            // 4 day win streak" — same footprint, the toggle depends on it):
+            // a live streak replaces the redundant "All 9 won" (the FLAWLESS
+            // headline already says it) — text swap only, no size change.
+            // Trust the cache only when stamped TODAY (a flawless banner
+            // means today is in the streak, so a fresh stamp exists — the
+            // §244 award hook wrote it at the 9th win).
+            const homeFlawlessStreak = (() => {
+              if (!flawless) return 0;
+              const c = cachedFlawlessStreak();
+              return c && c.day === getTodayLocal() ? c.streak : 0;
+            })();
             const subtitle = flawless
-              ? `All ${total} won · ${totalTime} · ${totals.totalScore.toLocaleString()} pts`
+              ? homeFlawlessStreak >= 2
+                ? `🏆 ${homeFlawlessStreak}-day streak · ${totalTime} · ${totals.totalScore.toLocaleString()} pts`
+                : `All ${total} won · ${totalTime} · ${totals.totalScore.toLocaleString()} pts`
               : `All ${total} done · ${totalTime} · ${totals.totalScore.toLocaleString()} pts`;
             const subtitleColor = flawless ? '#b45309' : '#6d28d9';
             const iconColor = flawless ? '#b45309' : '#7c3aed';

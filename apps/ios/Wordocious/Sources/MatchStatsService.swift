@@ -465,6 +465,10 @@ enum MatchStatsService {
     }
 
     /// Add/subtract days from a YYYY-MM-DD local-day string.
+    /// §248: non-private mirrors for LeaderboardService's streak walk.
+    static func shiftLocalDay(_ day: String, _ delta: Int) -> String { dayShift(day, delta) }
+    static func requiredDailyModes(_ day: String) -> Int { requiredDailyModeCount(day) }
+
     private static func dayShift(_ day: String, _ delta: Int) -> String {
         let parts = day.split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3 else { return day }

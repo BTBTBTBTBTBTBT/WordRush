@@ -265,6 +265,40 @@ enum LeaderboardService {
 
     /// Non-throwing (web parity): the dots and g/h counts are enrichment — a
     /// failed fetch renders the plain sweep rows, never an error state.
+    /// §248: current flawless-victory streaks for board users, ending at `day`.
+    /// Derived from publicly-readable daily_results (daily_bonuses is
+    /// own-rows-only under RLS): a day counts when the user WON the era's full
+    /// mode count. 30-day window. Callers pass only rows already FLAWLESS.
+    static func fetchFlawlessStreaks(day: String, userIds: [String]) async -> [String: Int] {
+        guard !userIds.isEmpty else { return [:] }
+        struct Row: Decodable {
+            let user_id: String; let day: String; let game_mode: String
+        }
+        let from = MatchStatsService.shiftLocalDay(day, -29)
+        let rows: [Row] = (try? await AuthService.shared.client.from("daily_results")
+            .select("user_id, day, game_mode")
+            .eq("play_type", value: "solo")
+            .eq("completed", value: true)
+            .in("user_id", values: userIds)
+            .gte("day", value: from)
+            .lte("day", value: day)
+            .execute().value) ?? []
+        var wonModes: [String: [String: Set<String>]] = [:]
+        for r in rows { wonModes[r.user_id, default: [:]][r.day, default: []].insert(r.game_mode) }
+        var out: [String: Int] = [:]
+        for id in userIds {
+            guard let byDay = wonModes[id] else { out[id] = 0; continue }
+            var streak = 0
+            var cursor = day
+            while (byDay[cursor]?.count ?? 0) >= MatchStatsService.requiredDailyModes(cursor) {
+                streak += 1
+                cursor = MatchStatsService.shiftLocalDay(cursor, -1)
+            }
+            out[id] = streak
+        }
+        return out
+    }
+
     static func fetchSweepModeDetails(day: String, userIds: [String]) async -> [String: SweepDetails] {
         guard !userIds.isEmpty else { return [:] }
         let rows: [SweepDetailRow] = (try? await AuthService.shared.client

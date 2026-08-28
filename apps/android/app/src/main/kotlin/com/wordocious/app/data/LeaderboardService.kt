@@ -219,6 +219,42 @@ object LeaderboardService {
      * shape (web parity). Empty on a network/decode error: a missing entry just
      * renders a row without dots/guess totals, never a blocked board.
      */
+    /** §248: current flawless-victory streaks for board users, ending at [day].
+     *  Derived from publicly-readable daily_results (daily_bonuses is
+     *  own-rows-only under RLS): a day counts when the user WON the era's full
+     *  mode count. 30-day window. Callers pass only rows already FLAWLESS. */
+    @kotlinx.serialization.Serializable
+    private data class WonRow(
+        @SerialName("user_id") val userId: String,
+        val day: String,
+        @SerialName("game_mode") val gameMode: String,
+    )
+
+    suspend fun fetchFlawlessStreaks(day: String, userIds: List<String>): Map<String, Int> = runCatching {
+        if (userIds.isEmpty()) return emptyMap()
+        val from = java.time.LocalDate.parse(day).minusDays(29).toString()
+        val rows = client.postgrest["daily_results"]
+            .select(Columns.raw("user_id,day,game_mode")) {
+                filter {
+                    eq("play_type", "solo"); eq("completed", true)
+                    isIn("user_id", userIds); gte("day", from); lte("day", day)
+                }
+            }
+            .decodeList<WonRow>()
+        val wonModes = HashMap<String, HashMap<String, MutableSet<String>>>()
+        rows.forEach { wonModes.getOrPut(it.userId) { HashMap() }.getOrPut(it.day) { mutableSetOf() }.add(it.gameMode) }
+        userIds.associateWith { id ->
+            val byDay = wonModes[id] ?: return@associateWith 0
+            var streak = 0
+            var cursor = java.time.LocalDate.parse(day)
+            while ((byDay[cursor.toString()]?.size ?: 0) >= MatchStatsService.requiredDailyModes(cursor.toString())) {
+                streak++
+                cursor = cursor.minusDays(1)
+            }
+            streak
+        }
+    }.getOrElse { emptyMap() }
+
     suspend fun fetchSweepModeDetails(day: String, userIds: List<String>): Map<String, SweepDetails> = runCatching {
         if (userIds.isEmpty()) return@runCatching emptyMap<String, SweepDetails>()
         client.postgrest["daily_results"]

@@ -565,8 +565,17 @@ private fun DailyHero(
                     Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFFEC4899), modifier = Modifier.size(16.dp))
                 }
             }
+            // §248 (founder: the main page must "clearly show that I am on a
+            // 4 day win streak" — same footprint, the Daily/Unlimited toggle
+            // depends on it): a live streak replaces the redundant "All 9 won"
+            // — text swap only, HERO_HEIGHT untouched.
+            val homeStreak = if (flawless) com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak() else 0
             Text(
-                if (flawless) "All $total won · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts" else "All $total done · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts",
+                when {
+                    flawless && homeStreak >= 2 -> "🏆 $homeStreak-day streak · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts"
+                    flawless -> "All $total won · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts"
+                    else -> "All $total done · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts"
+                },
                 fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = subColor, modifier = Modifier.padding(top = 2.dp),
             )
             Text("Tap to share · Next in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))

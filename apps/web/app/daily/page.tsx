@@ -20,6 +20,7 @@ import {
   competitionRank,
   fetchDailySweepLeaderboard,
   fetchSweepModeDetails,
+  fetchFlawlessStreaks,
   getUserDailyRank,
   getUserSweepRank,
   getDailyPlayerCount,
@@ -142,6 +143,9 @@ export default function DailyPage() {
   // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
   const [sweepDetails, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
   const [ySweepDetails, setYSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
+  // §248: current flawless streaks for FLAWLESS rows — "FLAWLESS ×4" pills.
+  const [flawlessStreaks, setFlawlessStreaks] = useState<Map<string, number>>(new Map());
+  const [yFlawlessStreaks, setYFlawlessStreaks] = useState<Map<string, number>>(new Map());
 
   const isPro = isProActive;
 
@@ -227,6 +231,9 @@ export default function DailyPage() {
       setLoading(false);
       const details = await fetchSweepModeDetails(day, lb.map((e) => e.user_id));
       if (seq === loadSeq.current) setSweepDetails(details);
+      // §248: only rows already FLAWLESS today can be on a live streak.
+      const streaks = await fetchFlawlessStreaks(day, lb.filter((e) => e.is_flawless).map((e) => e.user_id));
+      if (seq === loadSeq.current) setFlawlessStreaks(streaks);
 
       let rank: { rank: number; totalPlayers: number } | null = null;
       if (user) {
@@ -311,6 +318,8 @@ export default function DailyPage() {
       fetchDailySweepLeaderboard(yesterday, 5).then(async (lb) => {
         setYesterdaySweep(lb);
         setYSweepDetails(await fetchSweepModeDetails(yesterday, lb.map((e) => e.user_id)));
+        // §248: streaks as they stood at yesterday's settled board.
+        setYFlawlessStreaks(await fetchFlawlessStreaks(yesterday, lb.filter((e) => e.is_flawless).map((e) => e.user_id)));
       });
     } else {
       // Friends toggle carries into Yesterday's Winners: podium among friends.
@@ -522,7 +531,10 @@ export default function DailyPage() {
               className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
               style={{ background: `${pillColor}22`, color: pillColor }}
             >
-              {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+              {/* §248: a live streak shows its length on the pill. */}
+              {entry.is_flawless
+                ? ((flawlessStreaks.get(entry.user_id) ?? 0) >= 2 ? `FLAWLESS ×${flawlessStreaks.get(entry.user_id)}` : 'FLAWLESS')
+                : 'SWEEP'}
             </span>
           </div>
         </div>
@@ -950,7 +962,9 @@ export default function DailyPage() {
                               color: entry.is_flawless ? '#d97706' : '#a78bfa',
                             }}
                           >
-                            {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+                            {entry.is_flawless
+                              ? ((yFlawlessStreaks.get(entry.user_id) ?? 0) >= 2 ? `FLAWLESS ×${yFlawlessStreaks.get(entry.user_id)}` : 'FLAWLESS')
+                              : 'SWEEP'}
                           </span>
                         </div>
                       </div>

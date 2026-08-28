@@ -337,6 +337,8 @@ struct DailyRecordsView: View {
     // §232: dot-strip + guess/hint detail — daily-board parity (founder ask,
     // Aug 24: Records' sweep rows must match the leaderboard's sweep section).
     @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
+    // §248: current flawless streaks for FLAWLESS rows — the ×N pills.
+    @State private var flawlessStreaks: [String: Int] = [:]
     // TIE-AWARE score display (web parity): rows sharing a whole number on the
     // same board render the decimals that rank them.
     private var lbScoreLabels: [Double: String] { tieAwareScoreLabels(entries.map(\.compositeScore)) }
@@ -560,7 +562,8 @@ struct DailyRecordsView: View {
                     HStack(spacing: 6) {
                         SweepModeDots(details: sweepDetails[e.userId],
                                       day: LeaderboardService.todayLocal())
-                        sweepPill(isFlawless: e.isFlawless)
+                        sweepPill(isFlawless: e.isFlawless,
+                                  streak: flawlessStreaks[e.userId] ?? 0)
                     }
                 }
             }.buttonStyle(.plain)
@@ -595,6 +598,12 @@ struct DailyRecordsView: View {
             day: LeaderboardService.todayLocal(), userIds: fetched.map(\.userId))
         guard !Task.isCancelled else { return }
         sweepDetails = details
+        // §248: only rows already FLAWLESS can be on a live streak.
+        let streaks = await LeaderboardService.fetchFlawlessStreaks(
+            day: LeaderboardService.todayLocal(),
+            userIds: fetched.filter(\.isFlawless).map(\.userId))
+        guard !Task.isCancelled else { return }
+        flawlessStreaks = streaks
 
         var rank: (rank: Int, total: Int)? = nil
         if let uid = auth.profile?.id {

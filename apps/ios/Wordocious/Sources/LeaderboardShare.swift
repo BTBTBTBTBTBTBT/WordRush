@@ -425,32 +425,44 @@ enum LeaderboardShareBuilder {
         return input
     }
 
-    /// §244: the flawless-streak brag — one row per consecutive flawless day,
-    /// newest first, all 9/9. Nil when there is no streak.
+    /// §248: per-day totals for the streak card's rows.
+    struct FlawlessDayStats {
+        let day: String
+        let timeSeconds: Int
+        let guesses: Int
+        let hints: Int
+        let points: Double
+    }
+
+    /// §244/§248 (founder: the first cut "doesn't make sense and looks ugly"):
+    /// one row per streak day, OLDEST FIRST, each carrying the sweep-row stats
+    /// (time · guesses · hints) and the day's points; today rides last with
+    /// the gold you-treatment. Rows are numbered by day-of-streak — the
+    /// renderer skips crown/medals for this variant. Nil when no streak.
     static func buildFlawlessStreakInput(streak: Int, bestStreak: Int,
                                          username: String?,
+                                         days: [FlawlessDayStats] = [],
                                          now: Date = Date()) -> LbShareInput? {
         guard streak >= 1 else { return nil }
         let day = LeaderboardService.todayLocal()
-        func shift(_ d: String, _ delta: Int) -> String {
-            let parts = d.split(separator: "-").compactMap { Int($0) }
-            guard parts.count == 3 else { return d }
-            var c = DateComponents(); c.year = parts[0]; c.month = parts[1]; c.day = parts[2]
-            let cal = Calendar.current
-            guard let base = cal.date(from: c),
-                  let s = cal.date(byAdding: .day, value: delta, to: base) else { return d }
-            let f = DateFormatter(); f.calendar = cal; f.dateFormat = "yyyy-MM-dd"
-            return f.string(from: s)
-        }
+        let statsByDay = Dictionary(uniqueKeysWithValues: days.map { ($0.day, $0) })
         let shown = min(streak, 5)
-        let rows = (0..<shown).map { i in
-            LbShareRow(rank: i + 1, name: formatBoardDate(shift(day, -i)),
-                       scoreDisplay: "9/9 won",
-                       subline: i == 0 ? username : nil, isYou: i == 0)
+        let rows = (0..<shown).map { i -> LbShareRow in
+            let dayNumber = streak - shown + i + 1
+            let d = MatchStatsService.shiftLocalDay(day, dayNumber - streak)
+            let st = statsByDay[d]
+            var subline: String? = nil
+            if let st {
+                subline = "\(formatShortTime(st.timeSeconds)) · \(st.guesses) guess\(st.guesses == 1 ? "" : "es")"
+                if st.hints > 0 { subline! += " · \(st.hints) hint\(st.hints == 1 ? "" : "s")" }
+            }
+            return LbShareRow(rank: dayNumber, name: formatBoardDate(d),
+                              scoreDisplay: st.map { "\(Int($0.points.rounded()).formatted()) pts" } ?? "9/9 won",
+                              subline: subline, isYou: i == shown - 1)
         }
-        let extra = streak - shown
+        let skipped = streak - shown
         var footer = "\(streak) straight day\(streak == 1 ? "" : "s") winning all nine"
-        if extra > 0 { footer += " (+\(extra) more)" }
+        if skipped > 0 { footer += " (first \(skipped) not shown)" }
         if bestStreak > streak { footer += " · best \(bestStreak)" }
         footer += " · wordocious.com"
         return LbShareInput(
@@ -639,6 +651,13 @@ struct LeaderboardShareCardView: View {
 
     private func drawRankGlyph(_ ctx: GraphicsContext, rank: Int, cx: CGFloat, cy: CGFloat) {
         let gold = Color(hex: 0xD97706), silver = Color(hex: 0x9CA3AF), bronze = Color(hex: 0xB45309)
+        // §248: flawlessStreak rows are DAYS, not competitors — crown/medals
+        // read as ranking, so that card numbers every row instead.
+        if input.variant == .flawlessStreak {
+            let t = resolved(ctx, "\(rank)", 30, .black, textMuted)
+            ctx.draw(t, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
+            return
+        }
         switch rank {
         case 1:
             if let img = tintedImage(ctx, asset: "crown", color: gold) {
@@ -1095,12 +1114,41 @@ enum LeaderboardShareFlow {
         ShareService.shareLeaderboard(input)
     }
 
-    /// §244: the flawless-streak brag card.
+    /// §244/§248: the flawless-streak brag card — fetches the sharer's own
+    /// per-day stats (time · guesses · hints · points) before building.
     @MainActor
     static func shareFlawlessStreak(streak: Int, bestStreak: Int, username: String?) {
-        guard let input = LeaderboardShareBuilder.buildFlawlessStreakInput(
-            streak: streak, bestStreak: bestStreak, username: username) else { return }
-        ShareService.shareLeaderboard(input)
+        Task { @MainActor in
+            let days = await fetchFlawlessDayStats(streak: streak)
+            guard let input = LeaderboardShareBuilder.buildFlawlessStreakInput(
+                streak: streak, bestStreak: bestStreak, username: username, days: days) else { return }
+            ShareService.shareLeaderboard(input)
+        }
+    }
+
+    private static func fetchFlawlessDayStats(streak: Int) async -> [LeaderboardShareBuilder.FlawlessDayStats] {
+        guard let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() else { return [] }
+        let today = LeaderboardService.todayLocal()
+        let days = (0..<min(streak, 5)).map { MatchStatsService.shiftLocalDay(today, -$0) }
+        struct Row: Decodable {
+            let day: String; let time_seconds: Int?; let guess_count: Int?
+            let hints_used: Int?; let composite_score: Double?
+        }
+        let rows: [Row] = (try? await AuthService.shared.client.from("daily_results")
+            .select("day, time_seconds, guess_count, hints_used, composite_score")
+            .eq("user_id", value: uid)
+            .eq("play_type", value: "solo")
+            .in("day", values: days)
+            .execute().value) ?? []
+        var byDay: [String: (t: Int, g: Int, h: Int, p: Double)] = [:]
+        for r in rows {
+            var d = byDay[r.day] ?? (0, 0, 0, 0)
+            d.t += r.time_seconds ?? 0; d.g += r.guess_count ?? 0
+            d.h += r.hints_used ?? 0; d.p += r.composite_score ?? 0
+            byDay[r.day] = d
+        }
+        return byDay.map { .init(day: $0.key, timeSeconds: $0.value.t, guesses: $0.value.g,
+                                 hints: $0.value.h, points: $0.value.p) }
     }
 
     /// §245: the trophy-case brag card.

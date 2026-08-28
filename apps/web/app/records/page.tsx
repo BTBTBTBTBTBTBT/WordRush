@@ -22,6 +22,7 @@ import {
   fetchDailyLeaderboard,
   fetchDailySweepLeaderboard,
   fetchSweepModeDetails,
+  fetchFlawlessStreaks,
   fetchAllTimeSweepLeaderboard,
   getDailyPlayerCount,
   getUserDailyRank,
@@ -196,6 +197,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
   // §232: dot-strip + guess/hint detail — daily-board parity (founder ask).
   const [sweepDetails, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
+  // §248: current flawless streaks for FLAWLESS rows.
+  const [flawlessStreaks, setFlawlessStreaks] = useState<Map<string, number>>(new Map());
   const [playerCount, setPlayerCount] = useState(0);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -218,6 +221,9 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       setLoading(false);
       const details = await fetchSweepModeDetails(today, lb.map((e) => e.user_id));
       if (seq === loadSeq.current) setSweepDetails(details);
+      // §248: only rows already FLAWLESS today can be on a live streak.
+      const streaks = await fetchFlawlessStreaks(today, lb.filter((e) => e.is_flawless).map((e) => e.user_id));
+      if (seq === loadSeq.current) setFlawlessStreaks(streaks);
       let rank: { rank: number; totalPlayers: number } | null = null;
       if (userId) {
         rank = await getUserSweepRank(userId, today);
@@ -358,7 +364,9 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
               style={{ background: `${pillColor}22`, color: pillColor }}
             >
-              {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+              {entry.is_flawless
+                ? ((flawlessStreaks.get(entry.user_id) ?? 0) >= 2 ? `FLAWLESS ×${flawlessStreaks.get(entry.user_id)}` : 'FLAWLESS')
+                : 'SWEEP'}
             </span>
           </div>
         </div>

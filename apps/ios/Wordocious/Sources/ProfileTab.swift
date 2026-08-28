@@ -1017,6 +1017,9 @@ struct LeaderboardTab: View {
     @State private var yesterdaySweep: [SweepEntry] = []
     // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
     @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
+    // §248: current flawless streaks for FLAWLESS rows — the ×N pills.
+    @State private var flawlessStreaks: [String: Int] = [:]
+    @State private var yFlawlessStreaks: [String: Int] = [:]
     @State private var ySweepDetails: [String: LeaderboardService.SweepDetails] = [:]
     @State private var reloadToken = 0
     @State private var userRank: (rank: Int, total: Int)?
@@ -1354,7 +1357,8 @@ struct LeaderboardTab: View {
                     HStack(spacing: 6) {
                         SweepModeDots(details: ySweepDetails[entry.userId],
                                       day: LeaderboardService.yesterdayLocal())
-                        sweepPill(isFlawless: entry.isFlawless)
+                        sweepPill(isFlawless: entry.isFlawless,
+                                  streak: flawlessStreaks[entry.userId] ?? 0)
                     }
                 }
             }.buttonStyle(.plain)
@@ -1778,7 +1782,8 @@ struct LeaderboardTab: View {
                     HStack(spacing: 6) {
                         SweepModeDots(details: sweepDetails[entry.userId],
                                       day: LeaderboardService.todayLocal())
-                        sweepPill(isFlawless: entry.isFlawless)
+                        sweepPill(isFlawless: entry.isFlawless,
+                                  streak: flawlessStreaks[entry.userId] ?? 0)
                     }
                 }
             }.buttonStyle(.plain)
@@ -1873,6 +1878,11 @@ struct LeaderboardTab: View {
                 day: day, userIds: rows.map(\.userId))
             guard !Task.isCancelled else { return }
             ySweepDetails = details
+            // §248: streaks as they stood at yesterday's settled board.
+            let streaks = await LeaderboardService.fetchFlawlessStreaks(
+                day: day, userIds: rows.filter(\.isFlawless).map(\.userId))
+            guard !Task.isCancelled else { return }
+            yFlawlessStreaks = streaks
             return
         }
         // Friends toggle carries into Yesterday's Winners: podium among friends.
@@ -1915,6 +1925,12 @@ struct LeaderboardTab: View {
             day: LeaderboardService.todayLocal(), userIds: fetched.map(\.userId))
         guard !Task.isCancelled else { return }
         sweepDetails = details
+        // §248: only rows already FLAWLESS can be on a live streak.
+        let streaks = await LeaderboardService.fetchFlawlessStreaks(
+            day: LeaderboardService.todayLocal(),
+            userIds: fetched.filter(\.isFlawless).map(\.userId))
+        guard !Task.isCancelled else { return }
+        flawlessStreaks = streaks
 
         var rank: (rank: Int, total: Int)? = nil
         if let uid = auth.profile?.id {
@@ -1990,9 +2006,10 @@ struct SweepModeDots: View {
 /// Sweep-board rank pill — GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP"
 /// (completed all 9 but dropped a board). Mirrors the per-mode Win/Loss pill
 /// shape; the sweep-celebration colors (amber #D97706 / violet #A78BFA).
-@ViewBuilder func sweepPill(isFlawless: Bool) -> some View {
+@ViewBuilder func sweepPill(isFlawless: Bool, streak: Int = 0) -> some View {
     let color = isFlawless ? Color(hex: 0xD97706) : Color(hex: 0xA78BFA)
-    Text(isFlawless ? "FLAWLESS" : "SWEEP").font(Brand.font(9, .heavy))
+    // §248: a live streak shows its length on the pill — "FLAWLESS ×4".
+    Text(isFlawless ? (streak >= 2 ? "FLAWLESS ×\(streak)" : "FLAWLESS") : "SWEEP").font(Brand.font(9, .heavy))
         .foregroundStyle(color)
         // The §223 g/h stats can squeeze this row — the pill never wraps or
         // truncates (the "FLAWLES\nS" lesson from the Android port); the

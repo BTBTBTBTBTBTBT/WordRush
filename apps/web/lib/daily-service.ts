@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client';
+import { requiredDailyModeCount } from './daily-modes';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
 
@@ -632,6 +633,60 @@ export async function fetchSweepModeDetails(
     d.hints += row.hints_used ?? 0;
   }
   return out;
+}
+
+/**
+ * §248: current flawless-victory streaks for a set of board users, ending at
+ * `day`. Same publicly-readable daily_results read the sweep details use
+ * (daily_bonuses is own-rows-only under RLS, so streaks are derived): a day
+ * counts as flawless when the user WON the era's full mode count. 30-day
+ * window — a longer live streak shows as 30 (nobody is there yet). Only rows
+ * already flagged is_flawless can have a live streak, so callers pass just
+ * those users.
+ */
+export async function fetchFlawlessStreaks(
+  day: string,
+  userIds: string[],
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (userIds.length === 0) return out;
+  const from = dayShiftLocal(day, -29);
+  const { data } = await supabase
+    .from('daily_results')
+    .select('user_id, day, game_mode')
+    .eq('play_type', 'solo')
+    .eq('completed', true)
+    .in('user_id', userIds)
+    .gte('day', from)
+    .lte('day', day);
+  const wonModes = new Map<string, Map<string, Set<string>>>();
+  for (const row of (data as any[]) ?? []) {
+    let byDay = wonModes.get(row.user_id);
+    if (!byDay) { byDay = new Map(); wonModes.set(row.user_id, byDay); }
+    let set = byDay.get(row.day);
+    if (!set) { set = new Set(); byDay.set(row.day, set); }
+    set.add(row.game_mode);
+  }
+  for (const id of userIds) {
+    const byDay = wonModes.get(id);
+    if (!byDay) { out.set(id, 0); continue; }
+    let streak = 0;
+    let cursor = day;
+    while ((byDay.get(cursor)?.size ?? 0) >= requiredDailyModeCount(cursor)) {
+      streak += 1;
+      cursor = dayShiftLocal(cursor, -1);
+    }
+    out.set(id, streak);
+  }
+  return out;
+}
+
+/** Local-day string arithmetic for the streak walk. */
+function dayShiftLocal(day: string, delta: number): string {
+  const [y, m, d] = day.split('-').map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+  dt.setDate(dt.getDate() + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
 /**

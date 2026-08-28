@@ -1251,7 +1251,15 @@ function clampText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return t + '…';
 }
 
-function drawLbRankGlyph(ctx: CanvasRenderingContext2D, rank: number, cx: number, cy: number): void {
+function drawLbRankGlyph(ctx: CanvasRenderingContext2D, rank: number, cx: number, cy: number, forceNumber = false): void {
+  if (forceNumber) {
+    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(rank), cx, cy + 1);
+    return;
+  }
   if (rank === 1) drawLucideStroke(ctx, 'crown', cx, cy, 40, RANK_ICON_COLORS[0]);
   else if (rank === 2) drawLucideStroke(ctx, 'medal', cx, cy, 40, RANK_ICON_COLORS[1]);
   else if (rank === 3) drawLucideStroke(ctx, 'medal', cx, cy, 40, RANK_ICON_COLORS[2]);
@@ -1284,6 +1292,9 @@ function drawLbRow(
     edgeBottom?: boolean;
     /** Panel inner padding to consume when bleeding (default 16). */
     bleed?: number;
+    /** §248: flawlessStreak rows are DAYS, not competitors — a crown/medal
+     *  column reads as ranking, so those cards number every row instead. */
+    numericRank?: boolean;
   } = {},
 ): void {
   // Gold "you" highlight — full-bleed across the panel with a soft amber
@@ -1325,7 +1336,7 @@ function drawLbRow(
   }
 
   const midY = y + h / 2;
-  drawLbRankGlyph(ctx, row.rank, x + 56, midY);
+  drawLbRankGlyph(ctx, row.rank, x + 56, midY, opts.numericRank);
 
   // Right block: bold score, optional subline underneath.
   const rightX = x + w - 30;
@@ -1509,6 +1520,7 @@ function drawLeaderboardCard(
 
   input.rows.forEach((row, i) => {
     drawLbRow(ctx, row, panelX, y, panelW, rowH, {
+      numericRank: input.variant === 'flawlessStreak',
       delta: row.isYou ? input.delta : undefined,
       separator: i < input.rows.length - 1 || !!input.you,
       edgeTop: i === 0,
@@ -1527,6 +1539,7 @@ function drawLeaderboardCard(
     ctx.fillText('• • •', width / 2, y + dividerH / 2 + 1);
     y += dividerH;
     drawLbRow(ctx, input.you, panelX, y, panelW, rowH, {
+      numericRank: input.variant === 'flawlessStreak',
       rankLine: input.youRankLine,
       delta: input.delta,
       edgeBottom: true,

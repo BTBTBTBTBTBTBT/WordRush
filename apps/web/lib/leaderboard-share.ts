@@ -459,6 +459,14 @@ function shiftDay(day: string, delta: number): string {
   return `${dt.getFullYear()}-${mm}-${dd}`;
 }
 
+export interface FlawlessStreakDayStats {
+  day: string;
+  timeSeconds: number;
+  guesses: number;
+  hints: number;
+  points: number;
+}
+
 export interface FlawlessStreakShareOpts {
   /** Consecutive flawless days ending on anchorDay. Must be >= 1. */
   streak: number;
@@ -466,26 +474,44 @@ export interface FlawlessStreakShareOpts {
   anchorDay: string;
   bestStreak?: number;
   username?: string;
+  /** §248: per-day stats (chronological not required — matched by day). */
+  days?: FlawlessStreakDayStats[];
   now?: Date;
 }
 
 /**
- * §244 (founder: "no way of being able to easily identify that or even show
- * it off"): the flawless-streak brag — one row per consecutive flawless day,
- * newest first, all 9/9. Null when there is no streak.
+ * §244/§248 (founder: the first cut "doesn't make sense and looks ugly" — he
+ * wants "all of the stats like the sweep leaderboard shows along with the
+ * dates"): one row per streak day, OLDEST FIRST so the run reads as growth,
+ * each carrying the sweep-row stats (time · guesses · hints) and the day's
+ * points; today rides last with the gold you-treatment. Rows are numbered by
+ * day-of-streak (the renderer skips crown/medals for this variant — days
+ * aren't competitors). Null when there is no streak.
  */
 export function buildFlawlessStreakShareInput(opts: FlawlessStreakShareOpts): ShareLeaderboardInput | null {
   if (opts.streak < 1) return null;
   const now = opts.now ?? new Date();
+  const statsByDay = new Map((opts.days ?? []).map((d) => [d.day, d]));
+  // Chronological, capped to the 5 most recent (day-of-streak numbering keeps
+  // the run's true length visible even when early days fall off).
   const shown = Math.min(opts.streak, 5);
-  const rows: ShareLeaderboardRowInput[] = Array.from({ length: shown }, (_, i) => ({
-    rank: i + 1,
-    name: formatBoardDate(shiftDay(opts.anchorDay, -i)),
-    scoreDisplay: '9/9 won',
-    subline: i === 0 && opts.username ? opts.username : undefined,
-    isYou: i === 0,
-  }));
-  const extra = opts.streak - shown;
+  const rows: ShareLeaderboardRowInput[] = Array.from({ length: shown }, (_, i) => {
+    const dayNumber = opts.streak - shown + i + 1;
+    const day = shiftDay(opts.anchorDay, dayNumber - opts.streak);
+    const st = statsByDay.get(day);
+    const subline = st
+      ? `${formatShortTime(st.timeSeconds)} · ${st.guesses} guess${st.guesses === 1 ? '' : 'es'}`
+        + (st.hints > 0 ? ` · ${st.hints} hint${st.hints === 1 ? '' : 's'}` : '')
+      : undefined;
+    return {
+      rank: dayNumber,
+      name: formatBoardDate(day),
+      scoreDisplay: st ? `${Math.round(st.points).toLocaleString('en-US')} pts` : '9/9 won',
+      subline,
+      isYou: i === shown - 1,
+    };
+  });
+  const skipped = opts.streak - shown;
   const best = opts.bestStreak ?? 0;
   return {
     layout: 'leaderboard',
@@ -495,7 +521,7 @@ export function buildFlawlessStreakShareInput(opts: FlawlessStreakShareOpts): Sh
     dateChip: `${formatBoardDate(localDayOf(now))} · as of ${formatClockTime(now)}`,
     rows,
     footer: `${opts.streak} straight day${opts.streak === 1 ? '' : 's'} winning all nine`
-      + (extra > 0 ? ` (+${extra} more)` : '')
+      + (skipped > 0 ? ` (first ${skipped} not shown)` : '')
       + (best > opts.streak ? ` · best ${best}` : '')
       + ' · wordocious.com',
     date: now,
