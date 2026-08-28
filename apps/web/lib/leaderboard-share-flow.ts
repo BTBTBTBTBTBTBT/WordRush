@@ -10,6 +10,7 @@
 
 import { shareResult, type ShareResultOutcome } from './share-utils';
 import { getFriendIds, type FriendProfile } from './friends-service';
+import { fetchSweepModeDetails } from './daily-service';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -22,6 +23,7 @@ import {
   buildWeeklyRaceShareInput,
   buildFlawlessStreakShareInput,
   buildTrophyCaseShareInput,
+  sweepDotValues,
   buildYesterdayPodiumShareInput,
   buildYesterdaySweepPodiumShareInput,
   type RankedEntry,
@@ -205,7 +207,10 @@ export async function shareDailySweepCard(opts: {
   userId: string | null;
   userRank: { rank: number; totalPlayers: number } | null;
 }): Promise<ShareResultOutcome | null> {
-  const input = buildDailySweepShareInput(opts);
+  // §249: one cheap details read for the rows the card will show, so each row
+  // carries the in-app nine-dot mode strip.
+  const details = await fetchCardSweepDetails(opts.day, opts.entries.slice(0, 5), opts.userId);
+  const input = buildDailySweepShareInput({ ...opts, details });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }
@@ -216,9 +221,19 @@ export async function shareYesterdaySweepPodiumCard(opts: {
   entries: SweepEntry[];
   userId: string | null;
 }): Promise<ShareResultOutcome | null> {
-  const input = buildYesterdaySweepPodiumShareInput(opts);
+  const details = await fetchCardSweepDetails(opts.day, opts.entries.slice(0, 3), opts.userId);
+  const input = buildYesterdaySweepPodiumShareInput({ ...opts, details });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
+}
+
+/** §249: mode details for just the users a sweep card will render. */
+async function fetchCardSweepDetails(day: string, top: SweepEntry[], userId: string | null) {
+  try {
+    const ids = new Set(top.map((e) => e.user_id));
+    if (userId) ids.add(userId);
+    return await fetchSweepModeDetails(day, [...ids]);
+  } catch { return undefined; }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -272,20 +287,29 @@ async function fetchFlawlessStreakDayStats(anchorDay: string, streak: number) {
     }
     const { data } = await supabase
       .from('daily_results')
-      .select('day, time_seconds, guess_count, hints_used, composite_score')
+      .select('day, game_mode, completed, time_seconds, guess_count, hints_used, composite_score')
       .eq('user_id', uid)
       .eq('play_type', 'solo')
       .in('day', days);
-    const byDay = new Map<string, { day: string; timeSeconds: number; guesses: number; hints: number; points: number }>();
+    type DayAgg = {
+      day: string; timeSeconds: number; guesses: number; hints: number; points: number;
+      modes: Record<string, { score: number; completed: boolean }>;
+    };
+    const byDay = new Map<string, DayAgg>();
     for (const r of (data as any[]) ?? []) {
       let d = byDay.get(r.day);
-      if (!d) { d = { day: r.day, timeSeconds: 0, guesses: 0, hints: 0, points: 0 }; byDay.set(r.day, d); }
+      if (!d) { d = { day: r.day, timeSeconds: 0, guesses: 0, hints: 0, points: 0, modes: {} }; byDay.set(r.day, d); }
       d.timeSeconds += r.time_seconds ?? 0;
       d.guesses += r.guess_count ?? 0;
       d.hints += r.hints_used ?? 0;
       d.points += Number(r.composite_score ?? 0);
+      d.modes[r.game_mode] = { score: Number(r.composite_score ?? 0), completed: !!r.completed };
     }
-    return [...byDay.values()];
+    // §249: each day-row wears the in-app nine-dot mode strip.
+    return [...byDay.values()].map((d) => ({
+      day: d.day, timeSeconds: d.timeSeconds, guesses: d.guesses, hints: d.hints, points: d.points,
+      dots: sweepDotValues({ modes: d.modes }, d.day),
+    }));
   } catch { return []; }
 }
 

@@ -110,6 +110,9 @@ object LeaderboardShare {
          *  sharer-below-top-5 layout. */
         val subline: String?,
         val isYou: Boolean,
+        /** §249: nine-dot mode strip, SWEEP_DOT_MODES order — null element =
+         *  unplayed (hollow), -1 = loss (red), else 0..1 win intensity t. */
+        val dots: List<Double?>? = null,
     )
 
     /** "▲3 vs yesterday" (green) / "▼2 vs yesterday" (red) pill. */
@@ -329,10 +332,26 @@ object LeaderboardShare {
     private fun sweepSubline(e: LeaderboardService.SweepEntry): String =
         "${com.wordocious.app.ui.formatShortTime(e.totalTime)} · ${e.modesWon}/9 · ${if (e.isFlawless) "Flawless" else "Sweep"}"
 
+    /** §249: the nine-dot strip's fixed order — the in-app SweepModeDots. */
+    private val SWEEP_DOT_ORDER = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
+        "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
+
+    /** §249: per-dot values — null = unplayed, -1 = loss, else win intensity t. */
+    fun sweepDotValues(det: LeaderboardService.SweepDetails?, day: String): List<Double?>? {
+        if (det == null) return null
+        return SWEEP_DOT_ORDER.map { mode ->
+            val d = det.modes[mode] ?: return@map null
+            if (!d.completed) return@map -1.0
+            val ratio = d.score / DailyScoring.modeScoreCeiling(mode, day)
+            ((ratio - 0.35) / 0.55).coerceIn(0.0, 1.0)
+        }
+    }
+
     private fun sweepRow(
         e: LeaderboardService.SweepEntry,
         userId: String?,
         scoreLabels: Map<Double, String>,
+        dots: List<Double?>? = null,
     ): RowInput = RowInput(
         // The RPC already ranks tie-aware (§217) — never re-rank by index.
         rank = e.rank.toInt(),
@@ -340,6 +359,7 @@ object LeaderboardShare {
         scoreDisplay = scoreLabels[e.totalScore] ?: com.wordocious.app.ui.formatScore(e.totalScore),
         subline = sweepSubline(e),
         isYou = userId != null && e.userId == userId,
+        dots = dots,
     )
 
     /**
@@ -356,6 +376,8 @@ object LeaderboardShare {
         userId: String?,
         userRank: LeaderboardService.RankInfo? = null,
         now: Calendar = Calendar.getInstance(),
+        // §249: per-user mode details — rows grow the nine-dot strip.
+        details: Map<String, LeaderboardService.SweepDetails> = emptyMap(),
     ): CardInput? {
         val podium = variant == Variant.SWEEP_PODIUM
         val top = entries.take(if (podium) 3 else 5)
@@ -375,8 +397,8 @@ object LeaderboardShare {
             modeChip = "Daily Sweep",
             dateChip = if (podium) "${formatBoardDate(day)} · Final"
                 else "${formatBoardDate(day)}${if (puzzle != null) " · #$puzzle" else ""} · as of ${formatClockTime(now)}",
-            rows = top.map { sweepRow(it, userId, cardLabels) },
-            you = if (belowTop) sweepRow(userEntry!!, userId, cardLabels) else null,
+            rows = top.map { sweepRow(it, userId, cardLabels, sweepDotValues(details[it.userId], day)) },
+            you = if (belowTop) sweepRow(userEntry!!, userId, cardLabels, sweepDotValues(details[userEntry.userId], day)) else null,
             youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank.totalPlayers}" else null,
             footer = "Can you sweep all nine? Play free at wordocious.com",
             day = day,
@@ -460,7 +482,11 @@ object LeaderboardShare {
     // ── Flawless streak (§244) + trophy case (§245) builders ───────────────────
 
     /** §248: per-day totals for the streak card's rows. */
-    data class FlawlessDayStats(val day: String, val timeSeconds: Int, val guesses: Int, val hints: Int, val points: Double)
+    data class FlawlessDayStats(
+        val day: String, val timeSeconds: Int, val guesses: Int, val hints: Int, val points: Double,
+        /** §249: per-dot values for the row's mode strip. */
+        val dots: List<Double?>? = null,
+    )
 
     /** §244/§248 (founder: the first cut "doesn't make sense and looks ugly"):
      *  one row per streak day, OLDEST FIRST, each carrying the sweep-row stats
@@ -489,7 +515,7 @@ object LeaderboardShare {
             }
             RowInput(rank = dayNumber, name = formatBoardDate(d),
                      scoreDisplay = st?.let { String.format(java.util.Locale.US, "%,d pts", Math.round(it.points)) } ?: "9/9 won",
-                     subline = subline, isYou = i == shown - 1)
+                     subline = subline, isYou = i == shown - 1, dots = st?.dots)
         }
         val skipped = streak - shown
         var footer = "$streak straight day${if (streak == 1) "" else "s"} winning all nine"
@@ -677,7 +703,9 @@ object LeaderboardShare {
         // Left block: name (+ YOU label + delta pill), optional "#R of TOTAL".
         val nameX = x + 96f
         val nameMaxW = w - 96f - 30f - rightBlockW - 24f
-        val nameY = if (rankLine != null) midY - 14f else midY
+        // §249: a dot strip claims the second line — name rides high.
+        val hasDots = !row.dots.isNullOrEmpty()
+        val nameY = if (rankLine != null || hasDots) midY - 14f else midY
         p.textAlign = Paint.Align.LEFT
         var reserved = 0f
         if (row.isYou) {
@@ -694,11 +722,39 @@ object LeaderboardShare {
             cursorX += p.measureText(" · YOU")
         }
 
+        // §249: the nine-dot mode strip beneath the name — in-app
+        // SweepModeDots rules verbatim (violet win intensity, red loss,
+        // hollow unplayed).
+        var dotsEndX = nameX
+        if (hasDots) {
+            val cy = midY + 18f
+            val r = 7f
+            row.dots!!.forEachIndexed { i, d ->
+                val cx = nameX + r + i * 20f
+                when {
+                    d == null -> {
+                        p.style = Paint.Style.STROKE; p.strokeWidth = 2f; p.color = 0xFFE5E7EB.toInt()
+                        c.drawCircle(cx, cy, r, p)
+                        p.style = Paint.Style.FILL
+                    }
+                    d < 0 -> { p.color = 0xFFEF4444.toInt(); c.drawCircle(cx, cy, r, p) }
+                    else -> {
+                        p.color = 0xFF7C3AED.toInt()
+                        p.alpha = ((0.18 + 0.82 * d) * 255).toInt().coerceIn(0, 255)
+                        c.drawCircle(cx, cy, r, p)
+                        p.alpha = 255
+                    }
+                }
+            }
+            dotsEndX = nameX + r + (row.dots.size - 1) * 20f + r + 14f
+        }
+
         // Rank-delta pill on the sharer's row — under the name when the
-        // "#R of TOTAL" line isn't there, sharing the second line otherwise.
+        // "#R of TOTAL" line isn't there, sharing the second line otherwise
+        // (after the dots, §249).
         if (row.isYou && (delta != null || rankLine != null)) {
             val lineY = midY + 17f
-            var lx = nameX
+            var lx = if (hasDots) dotsEndX else nameX
             if (rankLine != null) {
                 p.typeface = w800; p.textSize = 21f; p.color = 0xFFB45309.toInt()
                 c.textV(rankLine, lx, lineY, p)
@@ -1052,8 +1108,21 @@ object LeaderboardShare {
         userId: String?,
         userRank: LeaderboardService.RankInfo?,
     ) {
-        val input = buildSweepInput(Variant.SWEEP, todayLocalDate(), entries, userId, userRank) ?: return
+        val day = todayLocalDate()
+        // §249: one cheap details read for the rows the card shows.
+        val details = cardSweepDetails(day, entries.take(5), userId)
+        val input = buildSweepInput(Variant.SWEEP, day, entries, userId, userRank, details = details) ?: return
         renderAndShare(context, input)
+    }
+
+    /** §249: mode details for just the users a sweep card will render. */
+    private suspend fun cardSweepDetails(
+        day: String,
+        top: List<LeaderboardService.SweepEntry>,
+        userId: String?,
+    ): Map<String, LeaderboardService.SweepDetails> {
+        val ids = (top.map { it.userId } + listOfNotNull(userId)).distinct()
+        return LeaderboardService.fetchSweepModeDetails(day, ids)
     }
 
     /** Share yesterday's settled sweep podium (§231): top 3, "· Final" chip,
@@ -1066,7 +1135,8 @@ object LeaderboardShare {
         val day = yesterdayLocalDate()
         val userRank = if (userId != null && entries.take(3).none { it.userId == userId })
             LeaderboardService.getUserSweepRank(userId, day) else null
-        val input = buildSweepInput(Variant.SWEEP_PODIUM, day, entries, userId, userRank) ?: return
+        val details = cardSweepDetails(day, entries.take(3), userId)
+        val input = buildSweepInput(Variant.SWEEP_PODIUM, day, entries, userId, userRank, details = details) ?: return
         renderAndShare(context, input)
     }
 
@@ -1096,6 +1166,8 @@ object LeaderboardShare {
     @kotlinx.serialization.Serializable
     private data class FlawlessStatRow(
         val day: String,
+        @kotlinx.serialization.SerialName("game_mode") val gameMode: String = "",
+        val completed: Boolean = false,
         @kotlinx.serialization.SerialName("time_seconds") val timeSeconds: Int = 0,
         @kotlinx.serialization.SerialName("guess_count") val guessCount: Int = 0,
         @kotlinx.serialization.SerialName("hints_used") val hintsUsed: Int = 0,
@@ -1107,14 +1179,20 @@ object LeaderboardShare {
         val today = java.time.LocalDate.parse(todayLocalDate())
         val days = (0 until minOf(streak, 5)).map { today.minusDays(it.toLong()).toString() }
         val rows = SupabaseConfig.client.postgrest["daily_results"]
-            .select(io.github.jan.supabase.postgrest.query.Columns.raw("day,time_seconds,guess_count,hints_used,composite_score")) {
+            .select(io.github.jan.supabase.postgrest.query.Columns.raw("day,game_mode,completed,time_seconds,guess_count,hints_used,composite_score")) {
                 filter { eq("user_id", uid); eq("play_type", "solo"); isIn("day", days) }
             }
             .decodeList<FlawlessStatRow>()
         rows.groupBy { it.day }.map { entry ->
             val rs = entry.value
+            // §249: each day-row wears the in-app nine-dot mode strip.
+            val det = LeaderboardService.SweepDetails(
+                modes = rs.associate { it.gameMode to LeaderboardService.SweepModeDetail(it.compositeScore, it.completed) },
+                guesses = rs.sumOf { it.guessCount }, hints = rs.sumOf { it.hintsUsed },
+            )
             FlawlessDayStats(entry.key, rs.sumOf { it.timeSeconds }, rs.sumOf { it.guessCount },
-                             rs.sumOf { it.hintsUsed }, rs.sumOf { it.compositeScore })
+                             rs.sumOf { it.hintsUsed }, rs.sumOf { it.compositeScore },
+                             dots = sweepDotValues(det, entry.key))
         }
     }.getOrElse { emptyList() }
 

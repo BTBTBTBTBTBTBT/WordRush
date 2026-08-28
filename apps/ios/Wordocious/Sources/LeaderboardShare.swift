@@ -24,6 +24,9 @@ struct LbShareRow {
     var subline: String? = nil
     /// Sharer's own row — gold "you" highlight + "· YOU" label.
     var isYou: Bool = false
+    /// §249: the nine-dot mode strip, SWEEP_DOT_MODES order — nil element =
+    /// unplayed (hollow), -1 = loss (red), else 0..1 win intensity t.
+    var dots: [Double?]? = nil
 }
 
 struct LbShareDelta {
@@ -289,14 +292,32 @@ enum LeaderboardShareBuilder {
         "\(formatShortTime(e.totalTime)) · \(e.modesWon)/9 · \(e.isFlawless ? "Flawless" : "Sweep")"
     }
 
+
+    /// §249: the nine-dot strip's fixed order — the in-app SweepModeDots.
+    static let sweepDotOrder = ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
+                                "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE"]
+
+    /// §249: per-dot values — nil = unplayed, -1 = loss, else win intensity t.
+    static func sweepDotValues(_ det: LeaderboardService.SweepDetails?, day: String) -> [Double?]? {
+        guard let det else { return nil }
+        return sweepDotOrder.map { mode -> Double? in
+            guard let d = det.modes[mode] else { return nil }
+            if !d.completed { return -1 }
+            let ratio = d.score / DailyScoring.modeScoreCeiling(gameMode: mode, dateKey: day)
+            return min(1, max(0, (ratio - 0.35) / 0.55))
+        }
+    }
+
     private static func sweepRow(_ e: SweepEntry, userId: String?,
-                                 scoreLabels: [Double: String]) -> LbShareRow {
+                                 scoreLabels: [Double: String],
+                                 dots: [Double?]? = nil) -> LbShareRow {
         // Sublines stay on every row (web parity) — a sweep card is at most
         // 5 + 1 rows, so there's room without the daily card's compression.
         LbShareRow(rank: e.rank, name: e.username,
                    scoreDisplay: scoreLabels[e.totalScore] ?? formatScore(e.totalScore),
                    subline: sweepSubline(e),
-                   isYou: userId != nil && e.userId == userId)
+                   isYou: userId != nil && e.userId == userId,
+                   dots: dots)
     }
 
     /// Sweep board / sweep podium card from the page's SweepEntry rows. Ranks
@@ -311,7 +332,8 @@ enum LeaderboardShareBuilder {
     static func buildSweepInput(
         podium: Bool, day: String, now: Date = Date(),
         entries: [SweepEntry], userId: String?,
-        userRank: (rank: Int, total: Int)?
+        userRank: (rank: Int, total: Int)?,
+        details: [String: LeaderboardService.SweepDetails] = [:]
     ) -> LbShareInput? {
         let top = Array(entries.prefix(podium ? 3 : 5))
         guard !top.isEmpty else { return nil }
@@ -330,13 +352,15 @@ enum LeaderboardShareBuilder {
             shareMode: sweepShareMode, gameModeRaw: sweepGameModeRaw,
             modeAccent: sweepAccent, modeChip: sweepModeChip,
             dateChip: dateChip,
-            rows: top.map { sweepRow($0, userId: userId, scoreLabels: cardLabels) },
+            rows: top.map { sweepRow($0, userId: userId, scoreLabels: cardLabels,
+                                     dots: sweepDotValues(details[$0.userId], day: day)) },
             footer: "Can you sweep all nine? Play free at wordocious.com",
             day: day)
         input.shareRank = userRank?.rank
         input.sharePlayers = userRank?.total
         if belowTop, let r = userRank, let e = userEntry {
-            input.you = sweepRow(e, userId: userId, scoreLabels: cardLabels)
+            input.you = sweepRow(e, userId: userId, scoreLabels: cardLabels,
+                                 dots: sweepDotValues(details[e.userId], day: day))
             input.youRankLine = "#\(r.rank) of \(r.total)"
         }
         return input
@@ -432,6 +456,8 @@ enum LeaderboardShareBuilder {
         let guesses: Int
         let hints: Int
         let points: Double
+        /// §249: per-dot values for the row's mode strip.
+        var dots: [Double?]? = nil
     }
 
     /// §244/§248 (founder: the first cut "doesn't make sense and looks ugly"):
@@ -458,7 +484,8 @@ enum LeaderboardShareBuilder {
             }
             return LbShareRow(rank: dayNumber, name: formatBoardDate(d),
                               scoreDisplay: st.map { "\(Int($0.points.rounded()).formatted()) pts" } ?? "9/9 won",
-                              subline: subline, isYou: i == shown - 1)
+                              subline: subline, isYou: i == shown - 1,
+                              dots: st?.dots)
         }
         let skipped = streak - shown
         var footer = "\(streak) straight day\(streak == 1 ? "" : "s") winning all nine"
@@ -751,7 +778,9 @@ struct LeaderboardShareCardView: View {
         // Left block: name (+ YOU label + delta pill), optional "#R of TOTAL".
         let nameX = x + 96
         let nameMaxW = w - 96 - 30 - rightBlockW - 24
-        let nameY = opts.rankLine != nil ? midY - 14 : midY
+        // §249: a dot strip claims the second line — name rides high.
+        let hasDots = !(row.dots?.isEmpty ?? true)
+        let nameY = (opts.rankLine != nil || hasDots) ? midY - 14 : midY
         var reserved: CGFloat = 0
         if row.isYou {
             reserved = width(of: resolved(ctx, " · YOU", 24, .black, textDark))
@@ -766,12 +795,36 @@ struct LeaderboardShareCardView: View {
             cursorX += width(of: youT)
         }
 
+        // §249: the nine-dot mode strip beneath the name — in-app
+        // SweepModeDots rules verbatim (violet win intensity, red loss,
+        // hollow unplayed).
+        var dotsEndX = nameX
+        if hasDots, let dots = row.dots {
+            let cy = midY + 18
+            let r: CGFloat = 7
+            for (i, d) in dots.enumerated() {
+                let cx = nameX + r + CGFloat(i) * 20
+                let rect = CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2)
+                if let d {
+                    if d < 0 {
+                        ctx.fill(Path(ellipseIn: rect), with: .color(Color(hex: 0xEF4444)))
+                    } else {
+                        ctx.fill(Path(ellipseIn: rect),
+                                 with: .color(Color(hex: 0x7C3AED, alpha: 0.18 + 0.82 * d)))
+                    }
+                } else {
+                    ctx.stroke(Path(ellipseIn: rect), with: .color(Color(hex: 0xE5E7EB)), lineWidth: 2)
+                }
+            }
+            dotsEndX = nameX + r + CGFloat(dots.count - 1) * 20 + r + 14
+        }
+
         // Rank-delta pill ("▲3 vs yesterday" green / "▼2 vs yesterday" red) —
         // under the name when the "#R of TOTAL" line isn't there, sharing the
-        // second line with it otherwise.
+        // second line with it otherwise (after the dots, §249).
         if row.isYou, opts.delta != nil || opts.rankLine != nil {
             let lineY = midY + 17
-            var lx = nameX
+            var lx = hasDots ? dotsEndX : nameX
             if let rankLine = opts.rankLine {
                 let t = resolved(ctx, rankLine, 21, .heavy, Color(hex: 0xB45309))
                 ctx.draw(t, at: CGPoint(x: lx, y: lineY), anchor: .leading)
@@ -1091,11 +1144,19 @@ enum LeaderboardShareFlow {
     @MainActor
     static func shareSweep(podium: Bool, entries: [SweepEntry],
                            userId: String?, userRank: (rank: Int, total: Int)? = nil) {
-        guard let input = LeaderboardShareBuilder.buildSweepInput(
-            podium: podium,
-            day: podium ? LeaderboardService.yesterdayLocal() : LeaderboardService.todayLocal(),
-            entries: entries, userId: userId, userRank: userRank) else { return }
-        ShareService.shareLeaderboard(input)
+        Task { @MainActor in
+            let day = podium ? LeaderboardService.yesterdayLocal() : LeaderboardService.todayLocal()
+            // §249: one cheap details read for the rows the card shows, so
+            // each row carries the in-app nine-dot mode strip.
+            var ids = Set(entries.prefix(podium ? 3 : 5).map(\.userId))
+            if let userId { ids.insert(userId) }
+            let details = await LeaderboardService.fetchSweepModeDetails(day: day, userIds: Array(ids))
+            guard let input = LeaderboardShareBuilder.buildSweepInput(
+                podium: podium, day: day,
+                entries: entries, userId: userId, userRank: userRank,
+                details: details) else { return }
+            ShareService.shareLeaderboard(input)
+        }
     }
 
     /// WEEKLY RACE (§234): share the friends panel's THIS WEEK'S RACE. The
@@ -1131,24 +1192,32 @@ enum LeaderboardShareFlow {
         let today = LeaderboardService.todayLocal()
         let days = (0..<min(streak, 5)).map { MatchStatsService.shiftLocalDay(today, -$0) }
         struct Row: Decodable {
-            let day: String; let time_seconds: Int?; let guess_count: Int?
+            let day: String; let game_mode: String?; let completed: Bool?
+            let time_seconds: Int?; let guess_count: Int?
             let hints_used: Int?; let composite_score: Double?
         }
         let rows: [Row] = (try? await AuthService.shared.client.from("daily_results")
-            .select("day, time_seconds, guess_count, hints_used, composite_score")
+            .select("day, game_mode, completed, time_seconds, guess_count, hints_used, composite_score")
             .eq("user_id", value: uid)
             .eq("play_type", value: "solo")
             .in("day", values: days)
             .execute().value) ?? []
         var byDay: [String: (t: Int, g: Int, h: Int, p: Double)] = [:]
+        var modesByDay: [String: LeaderboardService.SweepDetails] = [:]
         for r in rows {
             var d = byDay[r.day] ?? (0, 0, 0, 0)
             d.t += r.time_seconds ?? 0; d.g += r.guess_count ?? 0
             d.h += r.hints_used ?? 0; d.p += r.composite_score ?? 0
             byDay[r.day] = d
+            var det = modesByDay[r.day] ?? LeaderboardService.SweepDetails()
+            det.modes[r.game_mode ?? ""] = .init(score: r.composite_score ?? 0,
+                                                 completed: r.completed ?? false)
+            modesByDay[r.day] = det
         }
+        // §249: each day-row wears the in-app nine-dot mode strip.
         return byDay.map { .init(day: $0.key, timeSeconds: $0.value.t, guesses: $0.value.g,
-                                 hints: $0.value.h, points: $0.value.p) }
+                                 hints: $0.value.h, points: $0.value.p,
+                                 dots: LeaderboardShareBuilder.sweepDotValues(modesByDay[$0.key], day: $0.key)) }
     }
 
     /// §245: the trophy-case brag card.

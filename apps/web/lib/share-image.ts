@@ -176,6 +176,10 @@ export interface ShareProfileInput {
  *  by the pure builder (lib/leaderboard-share.ts) so the renderer stays a dumb
  *  layout pass and the formatting logic stays unit-testable. */
 export interface ShareLeaderboardRowInput {
+  /** §249: the nine-dot mode strip, SWEEP_DOT_MODES order. null = unplayed
+   *  (hollow), -1 = loss (red), else 0..1 = win intensity (pre-remapped t —
+   *  the renderer draws violet at alpha 0.18 + 0.82t, in-app rules verbatim). */
+  dots?: Array<number | null>;
   rank: number;
   name: string;
   scoreDisplay: string;
@@ -1356,7 +1360,10 @@ function drawLbRow(
   // Left block: name (+ YOU label + delta pill), optional "#R of TOTAL" line.
   const nameX = x + 96;
   const nameMaxW = w - 96 - 30 - rightBlockW - 24;
-  const nameY = opts.rankLine ? midY - 14 : midY;
+  // §249: a dot strip claims the second line — the name rides high like the
+  // rankLine case does.
+  const hasDots = !!row.dots && row.dots.length > 0;
+  const nameY = opts.rankLine || hasDots ? midY - 14 : midY;
   ctx.textAlign = 'left';
   ctx.font = `900 30px ${SHARE_FONT_STACK}`;
   let reserved = 0;
@@ -1376,12 +1383,39 @@ function drawLbRow(
     cursorX += ctx.measureText(' · YOU').width;
   }
 
+  // §249: the nine-dot mode strip beneath the name — in-app SweepModeDots
+  // rules verbatim (violet win intensity, red loss, hollow unplayed).
+  let dotsEndX = nameX;
+  if (hasDots) {
+    const cy = midY + 18;
+    const r = 7;
+    row.dots!.forEach((d, i) => {
+      const cx = nameX + r + i * 20;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      if (d === null) {
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else if (d < 0) {
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+      } else {
+        ctx.globalAlpha = 0.18 + 0.82 * d;
+        ctx.fillStyle = '#7c3aed';
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    });
+    dotsEndX = nameX + r + (row.dots!.length - 1) * 20 + r + 14;
+  }
+
   // Rank-delta pill ("▲3 vs yesterday" green / "▼2 vs yesterday" red) on the
   // sharer's row — under the name when the "#R of TOTAL" line isn't there,
-  // sharing the second line with it otherwise.
+  // sharing the second line with it otherwise (after the dots, §249).
   if (row.isYou && (opts.delta || opts.rankLine)) {
     const lineY = midY + 17;
-    let lx = nameX;
+    let lx = hasDots ? dotsEndX : nameX;
     if (opts.rankLine) {
       ctx.font = `800 21px ${SHARE_FONT_STACK}`;
       ctx.fillStyle = '#b45309';
