@@ -82,5 +82,14 @@ for (const word of todo) {
 }
 fs.writeFileSync(OUT, JSON.stringify(db));
 
+// §250: the natives bundle the same dataset — keep the copies in step.
+const NATIVE_COPIES = [
+  path.join(ROOT, '..', 'ios', 'Wordocious', 'Resources', 'word-definitions.json'),
+  path.join(ROOT, '..', 'android', 'app', 'src', 'main', 'assets', 'word-definitions.json'),
+];
+for (const dest of NATIVE_COPIES) {
+  try { fs.copyFileSync(OUT, dest); console.log(`synced ${dest}`); } catch (e) { console.log(`sync failed: ${dest}: ${e.message}`); }
+}
+
 const misses = Object.values(db).filter((v) => v.miss).length;
 console.log(`finished: ${Object.keys(db).length} recorded (${misses} misses), wrote ${OUT}`);

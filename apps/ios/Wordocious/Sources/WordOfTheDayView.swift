@@ -254,7 +254,29 @@ struct WordOfTheDayView: View {
     private func lookup(_ word: String) async -> WordInfo? { await Self.definition(for: word) }
 
     /// Shared dictionaryapi.dev lookup (used by Word of the Day + post-game).
+    /// §250: the committed local dictionary (bundled word-definitions.json —
+    /// the same dataset the web ships). Loaded once, off the main thread on
+    /// first use. Covers the 5-letter solution lists today; the API below is
+    /// only the fallback for words outside it, so a dictionaryapi.dev outage
+    /// (founder, Aug 29: blank EQUAL on Home, blank ERMINE on the win card)
+    /// can no longer blank covered words.
+    private struct LocalSense: Decodable { let pos: String?; let def: String? }
+    private struct LocalRecord: Decodable { let miss: Bool?; let phonetic: String?; let senses: [LocalSense]? }
+    private static let localDict: [String: LocalRecord] = {
+        guard let url = Bundle.main.url(forResource: "word-definitions", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let dict = try? JSONDecoder().decode([String: LocalRecord].self, from: data) else { return [:] }
+        return dict
+    }()
+
+    static func localDefinition(for word: String) -> WordInfo? {
+        guard let rec = localDict[word.lowercased()], rec.miss != true,
+              let sense = rec.senses?.first, let def = sense.def, !def.isEmpty else { return nil }
+        return WordInfo(word: word, phonetic: rec.phonetic, partOfSpeech: sense.pos, definition: def)
+    }
+
     static func definition(for word: String) async -> WordInfo? {
+        if let local = localDefinition(for: word) { return local }
         guard let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/\(word.lowercased())") else { return nil }
         guard let (data, resp) = try? await URLSession.shared.data(from: url),
               (resp as? HTTPURLResponse)?.statusCode == 200,
