@@ -14,6 +14,10 @@ interface ReferralRow {
   status: 'pending' | 'redeemed' | 'converted' | 'expired' | 'revoked';
   created_at: string;
   expires_at: string;
+  /** §251: who redeemed it — resolved to a username for settled rows. */
+  invitee_id?: string | null;
+  converted_plan?: string | null;
+  inviteeName?: string | null;
 }
 
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
@@ -50,11 +54,22 @@ export function InvitePanel() {
     async () => {
       const { data } = await (supabase as any)
         .from('referrals')
-        .select('id, code, status, created_at, expires_at')
+        .select('id, code, status, created_at, expires_at, invitee_id, converted_plan')
         .eq('inviter_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(20);
-      return (data ?? []) as ReferralRow[];
+      const rows = (data ?? []) as ReferralRow[];
+      // §251 (founder's sister: "she should be able to see what friends
+      // correspond to those invites"): resolve redeemers to usernames —
+      // profiles is world-readable, so one batched read names every row.
+      const ids = [...new Set(rows.map((r) => r.invitee_id).filter(Boolean))] as string[];
+      if (ids.length > 0) {
+        const { data: profs } = await (supabase as any)
+          .from('profiles').select('id, username').in('id', ids);
+        const names = new Map((profs ?? []).map((p: { id: string; username: string }) => [p.id, p.username]));
+        for (const r of rows) r.inviteeName = r.invitee_id ? (names.get(r.invitee_id) as string | undefined) ?? null : null;
+      }
+      return rows;
     },
   );
 
@@ -182,11 +197,18 @@ export function InvitePanel() {
           {visibleInvites.slice(0, 6).map((inv) => {
             const label = STATUS_LABEL[inv.status] ?? STATUS_LABEL.pending;
             const open = inv.status === 'pending';
+            // §251: settled rows lead with WHO — the code is noise once spent.
+            const name = inv.inviteeName;
+            const settledText = inv.status === 'converted'
+              ? `${name ?? 'A friend'} subscribed! ${inv.converted_plan === 'annual' ? '+3 free months' : inv.converted_plan === 'monthly' ? '+1 free month' : 'Reward earned'}`
+              : inv.status === 'redeemed'
+                ? `${name ?? 'A friend'} joined! +3 days`
+                : null;
             return (
               <div key={inv.id} className="flex items-center gap-2 text-xs font-bold">
-                <span className="font-mono tracking-widest" style={{ color: 'var(--color-text)' }}>{inv.code}</span>
+                {open && <span className="font-mono tracking-widest" style={{ color: 'var(--color-text)' }}>{inv.code}</span>}
                 <span className="flex-1" style={{ color: label.color }}>
-                  {label.text}
+                  {settledText ?? label.text}
                   {open && (
                     <span style={{ color: 'var(--color-text-muted)' }}> · {timeLeft(inv.expires_at)}</span>
                   )}

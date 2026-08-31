@@ -25,6 +25,9 @@ object ReferralService {
         val status: String,
         @SerialName("created_at") val createdAt: String,
         @SerialName("expires_at") val expiresAt: String,
+        // §251: who redeemed it (resolved to a username for settled rows).
+        @SerialName("invitee_id") val inviteeId: String? = null,
+        @SerialName("converted_plan") val convertedPlan: String? = null,
     )
 
     @Serializable
@@ -36,13 +39,26 @@ object ReferralService {
     suspend fun myInvites(): List<ReferralRow> = runCatching {
         val userId = AuthService.userId ?: return emptyList()
         client.postgrest["referrals"]
-            .select(Columns.raw("id, code, status, created_at, expires_at")) {
+            .select(Columns.raw("id, code, status, created_at, expires_at, invitee_id, converted_plan")) {
                 filter { eq("inviter_id", userId) }
                 order("created_at", Order.DESCENDING)
                 limit(20)
             }
             .decodeList<ReferralRow>()
     }.getOrDefault(emptyList())
+
+    /** §251: invitee_id → username — profiles is world-readable, one batch. */
+    @Serializable
+    private data class NameRow(val id: String, val username: String? = null)
+
+    suspend fun inviteeNames(ids: List<String>): Map<String, String> = runCatching {
+        if (ids.isEmpty()) return emptyMap()
+        client.postgrest["profiles"]
+            .select(Columns.raw("id, username")) { filter { isIn("id", ids) } }
+            .decodeList<NameRow>()
+            .mapNotNull { r -> r.username?.let { r.id to it } }
+            .toMap()
+    }.getOrDefault(emptyMap())
 
     suspend fun leaderboard(): List<Leader> =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {

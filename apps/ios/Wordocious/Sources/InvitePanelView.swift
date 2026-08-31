@@ -13,6 +13,9 @@ struct InvitePanelView: View {
         let status: String
         let created_at: String
         let expires_at: String
+        // §251: who redeemed it (resolved to a username for settled rows).
+        var invitee_id: String?
+        var converted_plan: String?
     }
     struct Leader: Decodable, Identifiable {
         var id: String { username }
@@ -23,6 +26,8 @@ struct InvitePanelView: View {
     private struct CreateResponse: Decodable { let code: String?; let error: String? }
 
     @State private var invites: [ReferralRow] = []
+    // §251: invitee_id → username for the settled rows.
+    @State private var inviteeNames: [String: String] = [:]
     @State private var leaders: [Leader] = []
     @State private var creating = false
     @State private var error: String?
@@ -96,17 +101,24 @@ struct InvitePanelView: View {
             }
 
             ForEach(visibleInvites.prefix(6)) { inv in
+                // §251: settled rows lead with WHO — the code is noise once spent.
+                let name = inv.invitee_id.flatMap { inviteeNames[$0] } ?? "A friend"
                 HStack(spacing: 8) {
-                    Text(inv.code).font(.system(size: 12, weight: .bold, design: .monospaced)).tracking(2)
-                        .foregroundStyle(Theme.textPrimary)
+                    if inv.status == "pending" {
+                        Text(inv.code).font(.system(size: 12, weight: .bold, design: .monospaced)).tracking(2)
+                            .foregroundStyle(Theme.textPrimary)
+                    }
                     Group {
                         switch inv.status {
-                        case "redeemed": Text("Friend joined! +3 days").foregroundStyle(Color(hex: 0x059669))
-                        case "converted": Text("Subscribed! Reward earned").foregroundStyle(Color(hex: 0xD97706))
+                        case "redeemed": Text("\(name) joined! +3 days").foregroundStyle(Color(hex: 0x059669))
+                        case "converted":
+                            Text("\(name) subscribed! \(inv.converted_plan == "annual" ? "+3 free months" : inv.converted_plan == "monthly" ? "+1 free month" : "Reward earned")")
+                                .foregroundStyle(Color(hex: 0xD97706))
                         default: Text("Waiting · \(timeLeft(inv))").foregroundStyle(Theme.textMuted)
                         }
                     }
                     .font(Brand.font(11, .bold))
+                    .lineLimit(1).minimumScaleFactor(0.8)
                     Spacer()
                     if inv.status == "pending" {
                         Button { share(code: inv.code) } label: {
@@ -177,12 +189,16 @@ struct InvitePanelView: View {
     private func load() async {
         guard let userId = auth.profile?.id else { return }
         let rows: [ReferralRow]? = try? await auth.client.from("referrals")
-            .select("id, code, status, created_at, expires_at")
+            .select("id, code, status, created_at, expires_at, invitee_id, converted_plan")
             .eq("inviter_id", value: userId)
             .order("created_at", ascending: false)
             .limit(20)
             .execute().value
         if let rows { invites = rows }
+        // §251 (founder's sister: "what friends correspond to those invites"):
+        // resolve redeemers — profiles is world-readable, one batched read.
+        let ids = Array(Set((rows ?? []).compactMap(\.invitee_id)))
+        if !ids.isEmpty { inviteeNames = await PublicProfileService.usernames(ids: ids) }
 
         if let url = URL(string: "https://wordocious.com/api/referrals/leaderboard"),
            let (data, _) = try? await URLSession.shared.data(from: url),

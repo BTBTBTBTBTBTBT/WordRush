@@ -66,6 +66,8 @@ fun InvitePanel() {
     if (proProfile == null || !AuthService.isProActive) return
 
     var invites by remember { mutableStateOf<List<ReferralService.ReferralRow>>(emptyList()) }
+    // §251: invitee_id → username for the settled rows.
+    var inviteeNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var leaders by remember { mutableStateOf<List<ReferralService.Leader>>(emptyList()) }
     var creating by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -76,6 +78,8 @@ fun InvitePanel() {
 
     LaunchedEffect(reload) {
         invites = ReferralService.myInvites()
+        // §251 (founder's sister: "what friends correspond to those invites").
+        inviteeNames = ReferralService.inviteeNames(invites.mapNotNull { it.inviteeId }.distinct())
         leaders = ReferralService.leaderboard()
     }
 
@@ -172,8 +176,12 @@ fun InvitePanel() {
         error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
 
         visible.take(6).forEach { inv ->
+            // §251: settled rows lead with WHO — the code is noise once spent.
+            val inviteeName = inv.inviteeId?.let { inviteeNames[it] } ?: "A friend"
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(inv.code, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = WTheme.text)
+                if (inv.status == "pending") {
+                    Text(inv.code, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = WTheme.text)
+                }
                 // Days → hours → "expired" ladder (iOS timeLeft): the last day of an
                 // invite's life read "0d left" before.
                 val msLeft = expiryMs(inv) - now
@@ -183,8 +191,13 @@ fun InvitePanel() {
                     else -> "${maxOf(1L, msLeft / 3_600_000L)}h left"
                 }
                 when (inv.status) {
-                    "redeemed" -> Text("Friend joined! +3 days", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
-                    "converted" -> Text("Subscribed! Reward earned", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
+                    "redeemed" -> Text("$inviteeName joined! +3 days", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    "converted" -> Text(
+                        "$inviteeName subscribed! " + when (inv.convertedPlan) {
+                            "annual" -> "+3 free months"; "monthly" -> "+1 free month"; else -> "Reward earned"
+                        },
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
                     else -> Text("Waiting · $timeLeft", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
                 Spacer(Modifier.weight(1f))
