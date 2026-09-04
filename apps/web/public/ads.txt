@@ -1,1 +1,12 @@
-google.com, pub-6632322515624356, DIRECT, f08c47fec0942fa0
+# Authorized sellers of wordocious.com WEB inventory.
+#
+# §252: deliberately empty. The Google line that used to live here
+# (google.com, pub-6632322515624356) authorized an AdSense account Google
+# terminated on 2026-09-01; the ban is entity-level and permanent, so that
+# authorization can never be valid again.
+#
+# No web ads run today, and none are planned near-term: the traffic floors at
+# Mediavine (50k sessions/mo) and Raptive (100k pageviews/mo) are out of reach,
+# and the /daily and /words archive pages earn better as SEO feeding Pro
+# signups than they would as ad inventory. If a web network is ever added, its
+# authorization line goes here.

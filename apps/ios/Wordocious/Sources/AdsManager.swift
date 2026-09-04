@@ -1,229 +1,189 @@
 import Foundation
 import SwiftUI
-import GoogleMobileAds
-import AppTrackingTransparency
-import UserMessagingPlatform
+import AppLovinSDK
 
-/// AdMob configuration. Defaults to Google's TEST ad unit IDs so test ads render
-/// in the simulator without an AdMob account. Replace with the real unit IDs
-/// (and the GADApplicationIdentifier in Info.plist) before release — see
-/// ADMOB_SETUP.md. Ads only show for non-Pro users (mirrors the web AdGate).
+/// AppLovin MAX configuration (§252).
+///
+/// Replaces AdMob, which died with the publisher account: Google disabled
+/// pub-3015 on 2026-08-22, swept the ShowLoud LLC account pub-6632 on 08-25,
+/// and denied the appeal on 09-01 with "not eligible for further participation
+/// in our publisher programs, and may not create new accounts". That is an
+/// entity-level ban across AdSense/AdMob/Ad Manager and there is no route back.
+/// AppLovin is a separate company with its own policy and does not inherit it.
+///
+/// Ads stay DORMANT until both dashboard IDs below are filled in, so this ships
+/// safely before the AppLovin account exists — nothing requests, nothing draws.
 enum AdsConfig {
-    /// Master switch. Real unit IDs + flipping the app ID is all that's needed for prod.
-    static let enabled = true
+    /// AppLovin dashboard → Account > General > Keys.
+    static let sdkKey = ""
+    /// AppLovin dashboard → MAX > Ad Units → the iOS *interstitial* unit.
+    static let interstitialUnitID = ""
 
-    // Real AdMob unit IDs — ShowLoud LLC publisher (pub-6632322515624356), created
-    // 2026-08-23 (§230) after the personal publisher was disabled.
-    // §228: DEBUG builds use Google's sample units — a developer's own device
-    // must never touch live inventory (the untested-device beta traffic is what
-    // got the publisher account disabled on 2026-08-22).
-    #if DEBUG
-    static let bannerUnitID = "ca-app-pub-3940256099942544/2934735716"
-    #else
-    static let bannerUnitID = "ca-app-pub-6632322515624356/4366752811"
-    #endif
-    /// STANDARD interstitial shown on game start ("Game Start Interstitial").
+    /// Dormant until someone pastes the dashboard values in above.
+    static var configured: Bool { !sdkKey.isEmpty && !interstitialUnitID.isEmpty }
+
+    /// §228, hardened for MAX.
     ///
-    /// This was a *rewarded* interstitial, which is the wrong format here: the
-    /// rewarded contract requires the user to watch the whole thing to earn
-    /// something, so AdMob suppresses the close button for the full ~30s — and
-    /// we granted nothing for watching. A standard interstitial shows ✕ after a
-    /// few seconds, which is what players expect from a game-start gate. (The
-    /// old rewarded unit .../6909445311 still exists in AdMob, unused.)
+    /// Under AdMob a DEBUG build could point at Google's *sample unit IDs* and
+    /// serve harmless fake ads. MAX has no such thing — test traffic there is
+    /// identified by DEVICE, not by ad unit. So the gate is now absolute:
+    /// DEBUG builds request no inventory whatsoever, and any device that should
+    /// see real (non-billable) test ads is registered by IDFA below.
+    ///
+    /// Three months of unregistered family-beta devices hitting live inventory
+    /// is precisely what cost us the AdMob account. This closes that door.
     #if DEBUG
-    static let interstitialUnitID = "ca-app-pub-3940256099942544/4411468910"
+    static let requestsAds = false
     #else
-    static let interstitialUnitID = "ca-app-pub-6632322515624356/1740589475"
+    static let requestsAds = true
     #endif
 
-    /// Whether ads should be shown right now (enabled + not Pro + not an
-    /// admin/tester account — §228).
+    /// IDFAs flagged to AppLovin as test devices: their impressions are
+    /// non-billable and are never counted as invalid activity. Add a device
+    /// HERE before installing a TestFlight build on it.
+    static let testDeviceIDFAs: [String] = []
+
+    /// Whether an ad may be shown right now (configured + a build that may
+    /// request + not Pro + not an admin/tester account — §228).
     @MainActor static var active: Bool {
-        enabled && !AuthService.shared.isProActive && !AuthService.shared.isAdsExempt
+        configured && requestsAds
+            && !AuthService.shared.isProActive
+            && !AuthService.shared.isAdsExempt
     }
 }
 
-/// Owns AdMob SDK lifecycle + the interstitial shown on game start.
+/// Owns the AppLovin MAX SDK lifecycle and the game-start interstitial.
+///
+/// Format note: this is a STANDARD interstitial, deliberately. It was briefly a
+/// *rewarded* unit under AdMob, which is the wrong contract for a game-start
+/// gate — rewarded suppresses the close button for the full ~30s because the
+/// user is nominally earning something, and we granted nothing for watching.
+/// A real rewarded placement needs a real perk to hand out; that is a product
+/// decision, not an ad-plumbing one.
 @MainActor
 final class AdsManager: NSObject, ObservableObject {
     static let shared = AdsManager()
 
-    private var interstitial: GADInterstitialAd?
+    private var interstitial: MAInterstitialAd?
     private var started = false
+    private var retryAttempt = 0.0
+    private var onDismiss: (() -> Void)?
+    /// Set from the init callback; drives whether the Settings privacy row shows.
+    private var inGDPRRegion = false
 
-    /// Call once the app is foreground-active. Resolves Google UMP consent, then
-    /// reliably presents the Apple ATT prompt, then initializes the Mobile Ads SDK.
+    /// Call once the app is foreground-active.
     ///
-    /// IMPORTANT (App Review 5.1.2i): the ATT prompt only displays when the app is
-    /// `.active`. Requesting it during cold-launch `.task` (app still `.inactive`)
-    /// makes iOS silently return `.denied` WITHOUT showing the prompt — which is
-    /// why the reviewer never saw it. We now drive this from the first `.active`
-    /// scene phase, and a watchdog guarantees ATT is requested even if the UMP
-    /// network round-trip stalls or never calls back.
-    /// Set once the UMP requestConsentInfoUpdate callback has arrived. The ATT
-    /// watchdog only fires while this is false.
-    private var umpCallbackArrived = false
-    /// Set when the watchdog had to request ATT because UMP stalled. From that
-    /// point the GDPR form is SUPPRESSED for this session — App Review
-    /// 5.1.1(iv) (build 129 rejection): a GDPR/consent prompt must never be
-    /// shown after the user already answered the ATT request. Consent is
-    /// simply re-attempted on the next launch, before ATT (which by then is
-    /// already determined and never re-prompts).
-    private var attFallbackFired = false
-
+    /// AppLovin's CMP owns the ENTIRE consent sequence: the GDPR form where
+    /// required, then Apple's ATT prompt. We deliberately do not race it with
+    /// an ATT request of our own the way the old UMP path had to. App Review
+    /// rejected build 8 for an ATT prompt that never appeared and build 129 for
+    /// a GDPR form shown *after* ATT (5.1.1(iv)); the only way to guarantee the
+    /// ordering is to let a single component own both ends of it.
     func start() {
-        guard AdsConfig.enabled, !started else { return }
+        guard AdsConfig.configured, AdsConfig.requestsAds, !started else { return }
         started = true
-        // Gather GDPR / Google UMP consent first (required to serve ads in EEA/UK).
-        // Order per BOTH Google and Apple 5.1.1(iv): consent form → (Apple) ATT →
-        // init Mobile Ads SDK. Apple explicitly blesses GDPR-before-ATT and
-        // rejects GDPR-after-ATT-denial.
-        let params = UMPRequestParameters()
-        params.tagForUnderAgeOfConsent = false
-        UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: params) { [weak self] _ in
-            Task { @MainActor in self?.presentConsentFormThenStart() }
+
+        // Consent settings must be configured BEFORE initialize().
+        let settings = ALSdk.shared().settings
+        settings.termsAndPrivacyPolicyFlowSettings.isEnabled = true
+        settings.termsAndPrivacyPolicyFlowSettings.privacyPolicyURL =
+            URL(string: "https://wordocious.com/privacy")
+        settings.termsAndPrivacyPolicyFlowSettings.termsOfServiceURL =
+            URL(string: "https://wordocious.com/terms")
+
+        let config = ALSdkInitializationConfiguration(sdkKey: AdsConfig.sdkKey) { builder in
+            builder.mediationProvider = ALMediationProviderMAX
+            builder.testDeviceAdvertisingIdentifiers = AdsConfig.testDeviceIDFAs
         }
-        // Watchdog: if the UMP callback never fires (offline / unreachable during
-        // review), still present ATT so we never silently skip the prompt
-        // (App Review 5.1.2i, build 8 rejection). 8s — long enough that any
-        // working network resolves UMP first, so the ATT-before-GDPR inversion
-        // (build 129 rejection) can only happen when UMP is truly unreachable,
-        // and then the form is suppressed for the session anyway.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) { [weak self] in
-            guard let self, !self.umpCallbackArrived else { return }
-            self.attFallbackFired = true
-            self.requestATTOnce()
+        ALSdk.shared().initialize(with: config) { [weak self] sdkConfig in
+            Task { @MainActor in
+                self?.inGDPRRegion = sdkConfig.consentFlowUserGeography == .GDPR
+                self?.preloadInterstitial()
+            }
         }
     }
 
-    /// Show the consent form if the user's region requires one, then continue.
-    private func presentConsentFormThenStart() {
-        umpCallbackArrived = true
-        if attFallbackFired {
-            // UMP resolved only AFTER the watchdog already presented ATT.
-            // Never show the GDPR form post-ATT (5.1.1(iv)) — skip it this
-            // session; non-consent regions can still init ads below, consent
-            // regions retry the form (pre-ATT) next launch.
-            afterConsent()
-            return
-        }
-        guard let vc = Self.rootViewController() else { afterConsent(); return }
-        UMPConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
-            Task { @MainActor in self?.afterConsent() }
-        }
-    }
+    /// True when the user is in a region whose consent choice must stay
+    /// revisitable. GDPR requires a withdrawal path, and our own privacy policy
+    /// promises one; outside those regions the CMP would present nothing, so
+    /// the Settings row stays hidden rather than becoming a dead end.
+    var privacyOptionsRequired: Bool { AdsConfig.configured && inGDPRRegion }
 
-    /// True when Google says a privacy-options entry point must be offered.
-    ///
-    /// UMP requires a PERSISTENT way to change an ad-consent choice; a form
-    /// shown once at first launch is a one-shot, not a choice, and our own
-    /// privacy policy promised users one they could revisit. Gates the
-    /// Settings row so it stays hidden outside consent regions, where Google's
-    /// form would present nothing and the row would be a dead end.
-    var privacyOptionsRequired: Bool {
-        UMPConsentInformation.sharedInstance.privacyOptionsRequirementStatus == .required
-    }
-
-    /// Re-present the consent form so a user can withdraw or change consent.
+    /// Re-present the consent flow so a user can change or withdraw consent.
     /// Completion carries nil on success, or a message worth showing.
     func showPrivacyOptions(_ completion: @escaping (String?) -> Void) {
-        guard let vc = Self.rootViewController() else {
-            completion("Could not open ad privacy settings.")
-            return
-        }
-        UMPConsentForm.presentPrivacyOptionsForm(from: vc) { error in
-            Task { @MainActor in completion(error?.localizedDescription) }
-        }
-    }
-
-    /// After consent is resolved: request ATT, then (if we may request ads)
-    /// initialize the Mobile Ads SDK and preload the interstitial.
-    private func afterConsent() {
-        requestATTOnce { [weak self] in
-            guard UMPConsentInformation.sharedInstance.canRequestAds else { return }
-            GADMobileAds.sharedInstance().start(completionHandler: nil)
-            self?.preloadInterstitial()
-        }
-    }
-
-    private var attRequested = false
-
-    /// Presents the system ATT prompt exactly once. No-ops if already requested or
-    /// already determined. Guarantees the app is `.active` first (the prompt is
-    /// silently suppressed otherwise), retrying shortly if not yet active.
-    func requestATTOnce(then completion: (@MainActor () -> Void)? = nil) {
-        guard !attRequested else { completion?(); return }
-        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
-            attRequested = true; completion?(); return
-        }
-        guard UIApplication.shared.applicationState == .active else {
-            // Not active yet — try again shortly so the prompt actually shows.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-                self?.requestATTOnce(then: completion)
+        ALSdk.shared().cmpService.showCMPForExistingUser { error in
+            Task { @MainActor in
+                completion(error == nil ? nil : "Could not open ad privacy settings.")
             }
-            return
-        }
-        attRequested = true
-        ATTrackingManager.requestTrackingAuthorization { _ in
-            Task { @MainActor in completion?() }
         }
     }
 
+    /// One long-lived interstitial instance, reloaded after each show — the
+    /// pattern MAX documents (unlike AdMob, where each show consumed the object).
     private func preloadInterstitial() {
-        guard AdsConfig.enabled else { return }
-        GADInterstitialAd.load(withAdUnitID: AdsConfig.interstitialUnitID, request: GADRequest()) { [weak self] ad, _ in
-            // GoogleMobileAds delivers the load completion on the main thread, so
-            // touching main-actor state here is safe — assumeIsolated makes that
-            // contract explicit without deferring onto a later runloop turn.
-            MainActor.assumeIsolated {
-                self?.interstitial = ad
-                ad?.fullScreenContentDelegate = self
-            }
+        guard AdsConfig.configured else { return }
+        if interstitial == nil {
+            let ad = MAInterstitialAd(adUnitIdentifier: AdsConfig.interstitialUnitID)
+            ad.delegate = self
+            interstitial = ad
         }
+        interstitial?.load()
     }
 
     /// Present the game-start interstitial for free users. Calls `completion`
-    /// when the ad is dismissed (or immediately if no ad / Pro / disabled), so
-    /// the game can proceed either way. Mirrors the web AdGate.
+    /// when the ad is dismissed — or immediately when Pro / dormant / nothing
+    /// loaded — so the game proceeds either way. Mirrors the web AdGate.
     func showGameStartInterstitial(completion: @escaping () -> Void) {
-        guard AdsConfig.active, let ad = interstitial, let vc = Self.rootViewController() else {
+        guard AdsConfig.active, let ad = interstitial, ad.isReady else {
             completion(); return
         }
         onDismiss = completion
-        // No reward handler — standard interstitial. Dismissal (delegate) drives
-        // the completion, same as before.
-        ad.present(fromRootViewController: vc)
+        ad.show()
     }
 
-    private var onDismiss: (() -> Void)?
-
-    static func rootViewController() -> UIViewController? {
-        let scene = UIApplication.shared.connectedScenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
-        let keyWindow = scene?.windows.first { $0.isKeyWindow } ?? scene?.windows.first
-        var top = keyWindow?.rootViewController
-        while let presented = top?.presentedViewController { top = presented }
-        return top
+    /// Fires the pending completion exactly once, whatever the outcome, so a
+    /// failed or dismissed ad can never strand the player on a blank screen.
+    private func finish() {
+        let done = onDismiss
+        onDismiss = nil
+        done?()
     }
 }
 
-// GADFullScreenContentDelegate is an Obj-C protocol whose requirements are
-// nonisolated, but GoogleMobileAds documents (and guarantees) that these
-// callbacks fire on the main thread. We therefore satisfy them with nonisolated
-// methods (so the conformance no longer crosses actor isolation) and hop onto
-// the main actor via assumeIsolated to touch AdsManager's main-actor state.
-extension AdsManager: GADFullScreenContentDelegate {
-    nonisolated func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+// MAAdDelegate callbacks arrive on the main thread. They are nonisolated so the
+// conformance does not cross actor isolation, hopping on via assumeIsolated to
+// touch AdsManager's main-actor state — same shape as the old GADFullScreen path.
+extension AdsManager: MAAdDelegate {
+    nonisolated func didLoad(_ ad: MAAd) {
+        MainActor.assumeIsolated { retryAttempt = 0 }
+    }
+
+    /// Exponential backoff, capped at 64s, per AppLovin's documented pattern.
+    nonisolated func didFailToLoadAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
         MainActor.assumeIsolated {
-            interstitial = nil
-            preloadInterstitial()   // load the next one
-            onDismiss?(); onDismiss = nil
+            retryAttempt += 1
+            let delay = pow(2.0, min(6.0, retryAttempt))
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                MainActor.assumeIsolated { self?.interstitial?.load() }
+            }
         }
     }
-    nonisolated func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
+
+    nonisolated func didDisplay(_ ad: MAAd) {}
+    nonisolated func didClick(_ ad: MAAd) {}
+
+    nonisolated func didHide(_ ad: MAAd) {
         MainActor.assumeIsolated {
-            interstitial = nil
+            finish()
+            preloadInterstitial()   // load the next one
+        }
+    }
+
+    nonisolated func didFail(toDisplay ad: MAAd, withError error: MAError) {
+        MainActor.assumeIsolated {
+            finish()
             preloadInterstitial()
-            onDismiss?(); onDismiss = nil
         }
     }
 }

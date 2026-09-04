@@ -96,16 +96,13 @@ struct RootTabView: View {
         // so it's full-screen like the web — it otherwise bleeds onto pushed
         // views and steals the height the keyboard/boards need.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            // Banner + nav share ONE inset: a second safeAreaInset applied
-            // inside a TabView page (the old per-tab .adBanner()) never
-            // rendered — SwiftUI drops bottom insets declared within tab
-            // content when the tab bar area is already inset at this level.
-            // Mounting the banner here (directly above the nav) is the web
-            // layout exactly: AdBanner sits above BottomNav on every tab, and
-            // both hide together for immersive game screens.
+            // §252: the ad banner that used to sit above the nav in this inset
+            // is gone. Banner RPM is pennies and it taxed every screen of a
+            // daily-habit game; the game-start interstitial carries the free
+            // tier instead. The VStack stays — the height measurement below
+            // still has to report the nav's own height to pushed screens.
             if !chrome.bottomNavHidden {
                 VStack(spacing: 0) {
-                    AdBannerContainer()
                     BottomNav(selection: tabSelection)
                 }
                 // Report the banner+nav height: this safeAreaInset only pads

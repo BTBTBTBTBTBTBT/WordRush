@@ -46,7 +46,7 @@ struct VSLobbyView: View {
             // Generous bottom inset so the last create-match row clears the
             // tab bar (the lobby is pushed inside the Home tab's nav stack).
             // Adds the ad banner height too when it's mounted (free accounts).
-            .padding(.horizontal, 16).bottomChromeClearance(base: 100)
+            .padding(.horizontal, 16).padding(.bottom, 100)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: kbInset) }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in

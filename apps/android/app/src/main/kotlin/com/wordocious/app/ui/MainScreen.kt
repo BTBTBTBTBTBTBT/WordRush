@@ -454,11 +454,10 @@ fun MainScreen() {
     Scaffold(
         containerColor = WTheme.bg,
         bottomBar = {
-            // iOS mounts the ad banner and the nav in ONE bottom inset so the
-            // banner always sits directly above the nav on every tab and both
-            // disappear together on immersive game screens (RootTabView.swift).
+            // §252: the ad banner that used to sit above the nav is gone. Banner
+            // RPM is pennies and it taxed every screen of a daily-habit game;
+            // the game-start interstitial carries the free tier instead.
             Column(Modifier.fillMaxWidth()) {
-                AdBannerContainer()
                 // Switching tabs pops the public-profile push, mirroring iOS's
                 // per-tab path reset (RootTabView.swift:38-47).
                 BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showFriends = false; selectedTab = it })

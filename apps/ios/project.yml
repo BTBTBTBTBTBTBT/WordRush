@@ -14,9 +14,13 @@ packages:
   SocketIO:
     url: https://github.com/socketio/socket.io-client-swift
     from: 16.1.0
-  GoogleMobileAds:
-    url: https://github.com/googleads/swift-package-manager-google-mobile-ads
-    from: 11.0.0
+  # §252: AdMob is gone for good — Google banned the publisher entity on
+  # 2026-09-01. AppLovin MAX is the replacement (separate company, separate
+  # policy). Its SPM package also links AppTrackingTransparency for us, since
+  # AppLovin's CMP presents the ATT prompt as part of its consent flow.
+  AppLovinSDK:
+    url: https://github.com/AppLovin/AppLovin-MAX-Swift-Package
+    from: 13.6.0
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 7.1.0
@@ -40,8 +44,8 @@ targets:
         product: Supabase
       - package: SocketIO
         product: SocketIO
-      - package: GoogleMobileAds
-        product: GoogleMobileAds
+      - package: AppLovinSDK
+        product: AppLovinSDK
       - package: GoogleSignIn
         product: GoogleSignIn
       - package: Sentry
@@ -77,14 +81,20 @@ targets:
           - CFBundleURLName: com.wordocious.app.google
             CFBundleURLSchemes:
               - com.googleusercontent.apps.193086095286-4ftdf92g8cnsur8kd7odqq0jueqq5oog
-        # AdMob app ID — real Wordocious AdMob app (created 2026-06-03).
-        GADApplicationIdentifier: ca-app-pub-6632322515624356~7373908732
-        # App Tracking Transparency prompt copy (shown before requesting IDFA).
+        # (§252: GADApplicationIdentifier removed with AdMob. The AppLovin SDK
+        # key is NOT a plist key — it is passed to ALSdkInitializationConfiguration
+        # in AdsManager.swift.)
+        # App Tracking Transparency prompt copy. AppLovin's CMP presents this
+        # prompt itself as the last step of its consent flow.
         NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
         # Camera permission — used only when taking a new profile photo.
         NSCameraUsageDescription: Take a photo for your Wordocious profile picture.
+        # SKAdNetwork attribution. ludvb6z3bs is AppLovin's own; every mediated
+        # network needs its own entry or its installs go unattributed. Paste the
+        # full current list from AppLovin's dashboard once mediation is live —
+        # MAX > Networks publishes a ready-made plist block.
         SKAdNetworkItems:
-          - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
+          - SKAdNetworkIdentifier: ludvb6z3bs.skadnetwork
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wordocious.app

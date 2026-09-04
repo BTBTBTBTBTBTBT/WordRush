@@ -19,7 +19,7 @@ android {
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
         targetSdk = 35       // Play requires new apps target API 35 (Android 15) as of 2025-08
 
-        versionCode = 107
+        versionCode = 108
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -121,8 +121,11 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     // AdMob (Google Mobile Ads + UMP consent) — game-start interstitial for free users
-    implementation("com.google.android.gms:play-services-ads:23.5.0")
-    implementation("com.google.android.ump:user-messaging-platform:3.1.0")
+    // §252: AdMob + Google's UMP consent SDK removed together — the publisher
+    // entity is permanently banned, and UMP's consent forms are configured
+    // inside the (dead) AdMob console, so it could not serve them anyway.
+    // AppLovin MAX brings its own CMP. Pinned, not "+", so builds reproduce.
+    implementation("com.applovin:applovin-sdk:13.6.4")
 
     // Google sign-in (Credential Manager -> Supabase signInWithIdToken)
     implementation("androidx.credentials:credentials:1.6.0")

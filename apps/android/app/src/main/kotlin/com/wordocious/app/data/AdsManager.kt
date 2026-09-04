@@ -2,151 +2,191 @@ package com.wordocious.app.data
 
 import android.app.Activity
 import android.content.Context
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import com.google.android.ump.ConsentInformation
-import com.google.android.ump.ConsentRequestParameters
-import com.google.android.ump.UserMessagingPlatform
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import com.applovin.mediation.MaxAd
+import com.applovin.mediation.MaxAdListener
+import com.applovin.mediation.MaxError
+import com.applovin.mediation.ads.MaxInterstitialAd
+import com.applovin.sdk.AppLovinMediationProvider
+import com.applovin.sdk.AppLovinSdk
+import com.applovin.sdk.AppLovinSdkConfiguration
+import com.applovin.sdk.AppLovinSdkInitializationConfiguration
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
- * AdMob lifecycle + the game-start interstitial — Android port of iOS
+ * AppLovin MAX lifecycle + the game-start interstitial — Android port of iOS
  * AdsManager (which mirrors the web AdGate). Ads only show for non-Pro users.
  *
- * Flow per Google: UMP consent (GDPR/UK/EEA form when required) → initialize
- * the Mobile Ads SDK (gated on canRequestAds) → preload the interstitial.
+ * §252: replaces AdMob, which died with the publisher account. Google disabled
+ * pub-3015 on 2026-08-22, swept the ShowLoud LLC account pub-6632 on 08-25, and
+ * denied the appeal on 09-01 — "not eligible for further participation in our
+ * publisher programs, and may not create new accounts". Entity-level, no route
+ * back. AppLovin is a separate company and does not inherit that ban.
  *
- * IDs: the REAL Wordocious Android AdMob app, created 2026-07-30 under the same
- * ShowLoud LLC publisher (pub-6632322515624356, §230 — the personal pub-3015 was disabled 2026-08-22). App ~3517539727 is Android; iOS is ~7373908732;
- * the separate ~8393761846. Both are declared by the single app-ads.txt on
- * wordocious.com, which is per-publisher, not per-app.
+ * Ads stay DORMANT until both dashboard IDs below are filled in, so this ships
+ * safely before the AppLovin account exists — nothing requests, nothing draws.
  *
- * The app shows "Requires review" until it is live on Play and the store link
- * is added — ad serving is LIMITED, not off, until then (same review the iOS
- * app just cleared).
+ * Flow: configure the CMP → initialize (AppLovin's consent flow runs itself,
+ * GDPR form where required) → preload the interstitial.
  */
 object AdsManager {
-    private const val ENABLED = true
+    /** AppLovin dashboard → Account > General > Keys. */
+    private const val SDK_KEY = ""
+    /** AppLovin dashboard → MAX > Ad Units → the Android *interstitial* unit. */
+    private const val INTERSTITIAL_UNIT = ""
 
-    // STANDARD interstitial, not rewarded. A rewarded interstitial forces the
-    // full ~30s watch because the user is nominally earning something — and we
-    // granted nothing, so free players sat through the whole ad for no benefit.
-    // Standard interstitials show a close button after a few seconds, which is
-    // the normal pattern for a game-start gate. (Old rewarded unit
-    // .../6697119876 left in AdMob, unused.)
-    // §228: debug builds use Google's sample units — a developer's own device
-    // must never touch live inventory (three months of family beta traffic on
-    // live units is what got the publisher account disabled on 2026-08-22).
-    private val INTERSTITIAL_UNIT = if (com.wordocious.app.BuildConfig.DEBUG)
-        "ca-app-pub-3940256099942544/1033173712" else "ca-app-pub-6632322515624356/1003941509"
-
-    val BANNER_UNIT: String = if (com.wordocious.app.BuildConfig.DEBUG)
-        "ca-app-pub-3940256099942544/6300978111" else "ca-app-pub-6632322515624356/8114426132"
-
-    /** Whether ads should show right now (enabled + not Pro + not an
-     *  admin/tester account — §228) — web AdGate gate. */
-    val active: Boolean get() = ENABLED && !AuthService.isProActive && !AuthService.isAdsExempt
+    /** Dormant until someone pastes the dashboard values in above. */
+    private val configured: Boolean get() = SDK_KEY.isNotEmpty() && INTERSTITIAL_UNIT.isNotEmpty()
 
     /**
-     * True once the Mobile Ads SDK has actually initialized (consent resolved).
-     * The banner must not build an AdView before this or the request is dropped
-     * and the slot renders empty for the rest of the session.
+     * §228, hardened for MAX.
+     *
+     * Under AdMob a debug build could point at Google's *sample unit IDs* and
+     * serve harmless fake ads. MAX has no such thing — test traffic there is
+     * identified by DEVICE, not by ad unit. So the gate is now absolute: debug
+     * builds request no inventory whatsoever, and any device that should see
+     * real (non-billable) test ads is registered by GAID below.
+     *
+     * Three months of unregistered family-beta devices hitting live inventory
+     * is precisely what cost us the AdMob account. This closes that door.
      */
-    var initialized by androidx.compose.runtime.mutableStateOf(false)
+    private val requestsAds: Boolean get() = !com.wordocious.app.BuildConfig.DEBUG
+
+    /**
+     * Google Advertising IDs flagged to AppLovin as test devices: their
+     * impressions are non-billable and are never counted as invalid activity.
+     * Add a device HERE before installing an internal-track build on it.
+     */
+    private val TEST_DEVICE_GAIDS = emptyList<String>()
+
+    /**
+     * Whether ads should show right now (configured + a build that may request
+     * + not Pro + not an admin/tester account — §228) — web AdGate gate.
+     */
+    val active: Boolean
+        get() = configured && requestsAds && !AuthService.isProActive && !AuthService.isAdsExempt
 
     private var started = false
-    private var interstitial: InterstitialAd? = null
+    private var interstitial: MaxInterstitialAd? = null
+    private var retryAttempt = 0.0
+    private var onDone: (() -> Unit)? = null
+    /** Set from the init callback; drives whether the Settings privacy row shows. */
+    private var inGdprRegion = false
 
-    /** Call once from the launcher activity. Consent → init → preload. */
+    /**
+     * Call once from the launcher activity.
+     *
+     * AppLovin's CMP owns the entire consent sequence — the GDPR form where
+     * required — so there is no separate UMP round-trip to coordinate with.
+     */
     fun start(activity: Activity) {
-        if (!ENABLED || started) return
+        if (!configured || !requestsAds || started) return
         started = true
         runCatching {
-            val params = ConsentRequestParameters.Builder()
-                .setTagForUnderAgeOfConsent(false)
+            // Consent settings must be configured BEFORE initialize().
+            val settings = AppLovinSdk.getInstance(activity).settings
+            settings.termsAndPrivacyPolicyFlowSettings.isEnabled = true
+            settings.termsAndPrivacyPolicyFlowSettings.privacyPolicyUri =
+                Uri.parse("https://wordocious.com/privacy")
+            settings.termsAndPrivacyPolicyFlowSettings.termsOfServiceUri =
+                Uri.parse("https://wordocious.com/terms")
+
+            val initConfig = AppLovinSdkInitializationConfiguration.builder(SDK_KEY)
+                .setMediationProvider(AppLovinMediationProvider.MAX)
+                .setTestDeviceAdvertisingIds(TEST_DEVICE_GAIDS)
                 .build()
-            val consentInfo = UserMessagingPlatform.getConsentInformation(activity)
-            consentInfo.requestConsentInfoUpdate(
-                activity, params,
-                {
-                    UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { _ ->
-                        if (consentInfo.canRequestAds()) initAds(activity)
-                    }
-                },
-                {
-                    // Consent fetch failed (offline etc.) — initialize anyway if allowed.
-                    if (consentInfo.canRequestAds()) initAds(activity)
-                },
-            )
-        }
-    }
 
-    /**
-     * True when Google says a privacy-options entry point must be offered.
-     *
-     * UMP requires a PERSISTENT way to change an ad-consent choice — a form
-     * shown once at first launch is not compliance, it's a one-shot. Our
-     * in-app policy promised users a choice they had no way to revisit.
-     * Drives the visibility of the Settings row so it doesn't appear for
-     * users outside a consent region, where Google would show nothing.
-     */
-    fun privacyOptionsRequired(activity: Activity): Boolean = runCatching {
-        UserMessagingPlatform.getConsentInformation(activity)
-            .privacyOptionsRequirementStatus ==
-            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
-    }.getOrDefault(false)
-
-    /**
-     * Re-present the consent form so a user can WITHDRAW or change consent.
-     * onDone reports null on success or a message to surface on failure.
-     */
-    fun showPrivacyOptions(activity: Activity, onDone: (String?) -> Unit) {
-        runCatching {
-            UserMessagingPlatform.showPrivacyOptionsForm(activity) { error ->
-                onDone(error?.message)
+            AppLovinSdk.getInstance(activity).initialize(initConfig) { sdkConfig ->
+                inGdprRegion = sdkConfig.consentFlowUserGeography ==
+                    AppLovinSdkConfiguration.ConsentFlowUserGeography.GDPR
+                preload(activity)
             }
-        }.onFailure { onDone(it.message ?: "Could not open privacy options.") }
-    }
-
-    private fun initAds(context: Context) {
-        runCatching {
-            MobileAds.initialize(context) { initialized = true }
-            preload(context)
-        }
-    }
-
-    private fun preload(context: Context) {
-        runCatching {
-            InterstitialAd.load(
-                context, INTERSTITIAL_UNIT, AdRequest.Builder().build(),
-                object : InterstitialAdLoadCallback() {
-                    override fun onAdLoaded(ad: InterstitialAd) { interstitial = ad }
-                    override fun onAdFailedToLoad(error: LoadAdError) { interstitial = null }
-                },
-            )
         }
     }
 
     /**
-     * Present the game-start interstitial for free users. Calls [onDone] when
-     * dismissed — or immediately when Pro / disabled / nothing loaded — so the
-     * game proceeds either way (web AdGate semantics).
+     * True when the user is in a region whose consent choice must stay
+     * revisitable. GDPR requires a withdrawal path and our in-app policy
+     * promises one; outside those regions the CMP would present nothing, so
+     * the Settings row stays hidden rather than becoming a dead end.
      */
-    fun showGameStartInterstitial(activity: Activity, onDone: () -> Unit) {
-        val ad = interstitial
-        if (!active || ad == null) { onDone(); return }
-        interstitial = null
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() { preload(activity); onDone() }
-            override fun onAdFailedToShowFullScreenContent(error: AdError) { preload(activity); onDone() }
+    @Suppress("UNUSED_PARAMETER")
+    fun privacyOptionsRequired(activity: Activity): Boolean = configured && inGdprRegion
+
+    /**
+     * Re-present the consent flow so a user can WITHDRAW or change consent.
+     * [onResult] reports null on success or a message to surface on failure.
+     */
+    fun showPrivacyOptions(activity: Activity, onResult: (String?) -> Unit) {
+        runCatching {
+            AppLovinSdk.getInstance(activity).cmpService.showCmpForExistingUser(activity) { error ->
+                onResult(if (error == null) null else "Could not open ad privacy settings.")
+            }
+        }.onFailure { onResult(it.message ?: "Could not open privacy options.") }
+    }
+
+    /**
+     * One long-lived interstitial instance, reloaded after each show — the
+     * pattern MAX documents (unlike AdMob, where each show consumed the object).
+     */
+    private fun preload(context: Context) {
+        if (!configured) return
+        runCatching {
+            if (interstitial == null) {
+                interstitial = MaxInterstitialAd(INTERSTITIAL_UNIT, context.applicationContext).apply {
+                    setListener(listener)
+                }
+            }
+            interstitial?.loadAd()
         }
-        // Standard interstitial: no reward callback, dismissal drives onDone.
-        runCatching { ad.show(activity) }.onFailure { onDone() }
+    }
+
+    private val listener = object : MaxAdListener {
+        override fun onAdLoaded(ad: MaxAd) { retryAttempt = 0.0 }
+
+        /** Exponential backoff, capped at 64s, per AppLovin's documented pattern. */
+        override fun onAdLoadFailed(adUnitId: String, error: MaxError) {
+            retryAttempt += 1
+            val delayMs = (2.0.pow(min(6.0, retryAttempt)) * 1000).toLong()
+            Handler(Looper.getMainLooper()).postDelayed({ interstitial?.loadAd() }, delayMs)
+        }
+
+        override fun onAdDisplayed(ad: MaxAd) {}
+        override fun onAdClicked(ad: MaxAd) {}
+
+        override fun onAdHidden(ad: MaxAd) {
+            finish()
+            interstitial?.loadAd()   // load the next one
+        }
+
+        override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
+            finish()
+            interstitial?.loadAd()
+        }
+    }
+
+    /**
+     * Fires the pending completion exactly once, whatever the outcome, so a
+     * failed or dismissed ad can never strand the player on a blank screen.
+     */
+    private fun finish() {
+        val done = onDone
+        onDone = null
+        done?.invoke()
+    }
+
+    /**
+     * Present the game-start interstitial for free users. Calls [onDismissed]
+     * when dismissed — or immediately when Pro / dormant / nothing loaded — so
+     * the game proceeds either way (web AdGate semantics).
+     */
+    fun showGameStartInterstitial(activity: Activity, onDismissed: () -> Unit) {
+        val ad = interstitial
+        if (!active || ad == null || !ad.isReady) { onDismissed(); return }
+        onDone = onDismissed
+        runCatching { ad.showAd(activity) }.onFailure { finish() }
     }
 }

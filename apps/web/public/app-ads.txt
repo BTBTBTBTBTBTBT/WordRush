@@ -1,4 +1,13 @@
-# AdMob app inventory — ShowLoud LLC publisher only (§229). The personal
-# publisher pub-3015627373086578 was disabled 2026-08-22 and nothing may
-# reference it; the apps move to ShowLoud AdMob unit IDs in their next builds.
-google.com, pub-6632322515624356, DIRECT, f08c47fec0942fa0
+# Authorized sellers of Wordocious APP inventory (iOS + Android).
+#
+# §252: deliberately empty. The Google line that used to live here
+# (google.com, pub-6632322515624356) authorized a publisher account Google
+# terminated on 2026-09-01 — the appeal was denied and the ban is entity-level,
+# so that authorization can never be valid again. Leaving it would vouch for a
+# seller who cannot sell.
+#
+# AppLovin MAX replaces it. Once the AppLovin account exists, add:
+#   applovin.com, «applovin-account-id», DIRECT, b28bcabb4ecabeb9
+# with the account ID from the AppLovin dashboard. Until that line is present,
+# buyers treat our app inventory as unauthorized and bids will not clear — see
+# apps/ios/APPLOVIN_SETUP.md.

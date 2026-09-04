@@ -63,7 +63,7 @@ struct RecordsTab: View {
                 // Nav clearance + the ad banner's height when it's mounted
                 // (free accounts) — without the banner share, "Your Trophy
                 // Shelf"'s last rows hid under the ad and couldn't scroll up.
-                .bottomChromeClearance(base: 80)
+                .padding(.bottom, 80)
             }
         }
     }

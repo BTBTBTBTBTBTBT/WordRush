@@ -57,12 +57,10 @@ export const metadata: Metadata = {
   itunes: {
     appId: '6775966055',
   },
-  other: {
-    // ShowLoud LLC AdSense account (organization payments profile 1182-9434-2368).
-    // NOT the old personal pub-3015627373086578 — that one still owns AdMob for
-    // the native apps (see public/app-ads.txt) until AdMob migrates post-launch.
-    'google-adsense-account': 'ca-pub-6632322515624356',
-  },
+  // §252: the google-adsense-account verification tag is gone. It claimed
+  // ca-pub-6632322515624356, an account Google terminated on 2026-09-01 with an
+  // entity-level ban — publicly asserting ownership of a dead publisher does
+  // nothing but misrepresent the site.
   openGraph: {
     title: 'Wordocious — Epic Word Battles',
     description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',

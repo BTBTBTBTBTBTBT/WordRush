@@ -145,7 +145,7 @@ struct HomeView: View {
                         // footer) always sit above the custom bottom nav and stay
                         // tappable, regardless of safe-area-inset propagation.
                         // Adds the ad banner height too when it's mounted (free).
-                        .bottomChromeClearance(base: 72)
+                        .padding(.bottom, 72)
                     }
                 }
 
