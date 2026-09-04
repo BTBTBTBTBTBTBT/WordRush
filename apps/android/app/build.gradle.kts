@@ -12,14 +12,20 @@ plugins {
 
 android {
     namespace = "com.wordocious.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.wordocious.app"
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
-        targetSdk = 35       // Play requires new apps target API 35 (Android 15) as of 2025-08
+        // Play's annual bar moved to API 36 (Android 16) on 2026-08-31 — an
+        // upload targeting 35 is rejected outright with "Target SDK of artifact
+        // is too low", which is what killed the first §252 upload. Targeting 36
+        // opts us into Android 16 behavior: edge-to-edge is enforced with no
+        // opt-out, and predictive back is on by default. Both are worth eyeing
+        // on a real device.
+        targetSdk = 36
 
-        versionCode = 108
+        versionCode = 109
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
