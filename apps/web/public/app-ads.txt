@@ -6,8 +6,12 @@
 # so that authorization can never be valid again. Leaving it would vouch for a
 # seller who cannot sell.
 #
-# AppLovin MAX replaces it. Once the AppLovin account exists, add:
-#   applovin.com, «applovin-account-id», DIRECT, b28bcabb4ecabeb9
-# with the account ID from the AppLovin dashboard. Until that line is present,
-# buyers treat our app inventory as unauthorized and bids will not clear — see
-# apps/ios/APPLOVIN_SETUP.md.
+# AppLovin MAX replaces it. Do NOT hand-write the replacement lines: the
+# AppLovin dashboard generates them, already populated with our account ID and
+# with a line for every mediated network in the stack (each network has to be
+# authorized separately or its demand will not bid). Copy the whole block from
+#
+#   AppLovin dashboard → Account > General > App-ads.txt Info
+#
+# Until those lines are here, buyers treat our app inventory as unauthorized
+# and bids will not clear. See apps/ios/APPLOVIN_SETUP.md.

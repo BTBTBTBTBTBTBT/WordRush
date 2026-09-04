@@ -28,14 +28,18 @@ values below are pasted in.
    in its store and linked, serving is *limited*, not off (same as AdMob).
 3. Under **MAX > Ad Units**, create one **Interstitial** unit per platform.
    (Not rewarded — see the format note below.)
-4. Collect four values:
+4. Collect these values:
    - SDK key — **Account > General > Keys** (one key, shared by both apps)
    - iOS interstitial ad-unit ID
    - Android interstitial ad-unit ID
    - The **advertising ID of every device you or family will install on**
      (iOS = IDFA, Android = GAID)
+   - The whole `app-ads.txt` block from **Account > General > App-ads.txt
+     Info** — do not hand-write it. That page emits our account ID *and* a
+     separate line per mediated network; every network has to be authorized
+     or its demand will not bid.
 
-Hand those over and the wiring is a four-line change.
+Hand those over and the wiring is a few lines.
 
 ## Where each value goes
 
