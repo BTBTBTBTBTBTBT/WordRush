@@ -25,7 +25,7 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 109
+        versionCode = 110
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -126,7 +126,7 @@ dependencies {
     // Avatar image loading (profile + leaderboard avatars from avatar_url).
     implementation("io.coil-kt:coil-compose:2.7.0")
 
-    // AdMob (Google Mobile Ads + UMP consent) — game-start interstitial for free users
+    // AppLovin MAX — game-start interstitial for free users.
     // §252: AdMob + Google's UMP consent SDK removed together — the publisher
     // entity is permanently banned, and UMP's consent forms are configured
     // inside the (dead) AdMob console, so it could not serve them anyway.
