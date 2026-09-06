@@ -205,6 +205,33 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         val remove = FriendsService.addListener { friendsVersion = FriendsService.version }
         onDispose { remove() }
     }
+    // §253: warm the modes the user has NOT opened yet today, so a chip tap
+    // paints instantly instead of starting a fresh round trip.
+    //
+    // Persisting the cache fixed cold starts, but only for boards already
+    // visited that day — with nine modes each was still a skeleton the first
+    // time it was opened. This fills those slots ahead of the tap.
+    //
+    // Deliberately a trickle, not a burst: it waits for the visible board to
+    // land, goes one mode at a time with a gap, and SKIPS anything already
+    // cached (the revalidate below owns freshness). Rank/window are left null —
+    // the real load fills those, and they are not part of first paint anyway.
+    LaunchedEffect(userId, friendsOnly) {
+        if (friendsOnly) return@LaunchedEffect
+        kotlinx.coroutines.delay(1200)
+        val day = com.wordocious.app.todayLocalDate()
+        for ((id, _) in MODE_OPTIONS) {
+            if (id == SWEEP_ID || id == selectedMode) continue
+            val key = LeaderboardService.cacheKey(id, day, userId)
+            if (LeaderboardService.cachedBoard(key) != null) continue
+            val rows = LeaderboardService.fetchDailyLeaderboardOrNull(id, day = day) ?: continue
+            ensureActive()
+            val count = LeaderboardService.playerCount(id)
+            ensureActive()
+            LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(rows, count, null, null))
+            kotlinx.coroutines.delay(300)
+        }
+    }
     LaunchedEffect(selectedMode, tick, friendsOnly, friendsVersion) {
         val mode = selectedMode
         val day = com.wordocious.app.todayLocalDate()

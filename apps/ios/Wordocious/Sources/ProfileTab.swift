@@ -1208,6 +1208,10 @@ struct LeaderboardTab: View {
         }
         .task(id: "\(mode.rawValue)-\(reloadToken)-\(friendsOnly)-\(friendsVersion)") { await load() }
         .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
+        // Warms the modes the user has NOT opened yet today (§253). Keyed on
+        // the tab's reload token, not the selected mode, so switching chips
+        // does not restart the sweep from the top.
+        .task(id: "prefetch-\(reloadToken)-\(friendsOnly)") { await prefetchOtherBoards() }
         // Yesterday's Winners keys on the MODE too (web/Android parity) — it
         // used to fetch only on toggle-open, so switching chips while the
         // dropdown was expanded kept showing the previous mode's podium until
@@ -1790,6 +1794,40 @@ struct LeaderboardTab: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+    }
+
+    /// §253: warm the OTHER modes' boards in the background so a chip tap
+    /// paints instantly instead of starting a fresh round trip.
+    ///
+    /// Persisting the cache fixed cold starts, but only for boards already
+    /// visited that day — with nine modes, each one was still a skeleton the
+    /// first time it was opened. This fills those slots ahead of the tap.
+    ///
+    /// Deliberately a trickle, not a burst: it starts only after the visible
+    /// board has had a moment, runs one mode at a time with a gap between, and
+    /// SKIPS anything already cached (load()'s revalidate owns freshness). Rank
+    /// and window are left nil — load() fills those when the mode is opened for
+    /// real, and they are the part nobody sees on first paint anyway.
+    private func prefetchOtherBoards() async {
+        guard !friendsOnly else { return }
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        guard !Task.isCancelled else { return }
+        let uid = auth.profile?.id
+        let others = homeModes.compactMap(\.dbKey).compactMap { GameMode(rawValue: $0) }
+        for m in others where m != mode {
+            guard !Task.isCancelled else { return }
+            let key = LeaderboardCache.key(mode: m, userId: uid)
+            if LeaderboardCache.shared[key] != nil { continue }
+            async let rowsOpt = try? LeaderboardService.fetch(gameMode: m)
+            async let countV = LeaderboardService.playerCount(gameMode: m)
+            let rows = await rowsOpt
+            let count = await countV
+            guard !Task.isCancelled else { return }
+            guard let rows else { continue }
+            LeaderboardCache.shared[key] = .init(
+                entries: rows, playerCount: count, userRank: nil, rankWindow: nil)
+            try? await Task.sleep(nanoseconds: 300_000_000)
+        }
     }
 
     private func load() async {
