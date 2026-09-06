@@ -6,13 +6,22 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
+import android.content.Context
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.io.File
 
 /**
  * Daily leaderboard + all-time records, mirroring iOS LeaderboardService.swift
@@ -32,11 +41,13 @@ object LeaderboardService {
         getOrElse { if (it is CancellationException) throw it else fallback(it) }
 
     /** User's rank + total for the rank banner (web getUserDailyRank parity). */
+    @Serializable
     data class RankInfo(val rank: Int, val totalPlayers: Int)
 
     /** Session-lived stale-while-revalidate cache, keyed "mode:day:userId".
      *  A mode-chip tap or a screen re-entry paints the last-known rows
      *  instantly (no skeleton) while a fresh fetch swaps in silently. */
+    @Serializable
     data class CachedBoard(
         val entries: List<LeaderboardEntry>,
         val playerCount: Int,
@@ -46,15 +57,17 @@ object LeaderboardService {
         val rankWindow: RankWindow? = null,
     )
 
+    @Serializable
     data class RankWindow(val startRank: Int, val entries: List<LeaderboardEntry>)
     private val boardCache = mutableMapOf<String, CachedBoard>()
     fun cacheKey(gameMode: String, day: String, userId: String?, playType: String = "solo") =
         "$gameMode:$day:$playType:${userId ?: "anon"}"
-    fun cachedBoard(key: String): CachedBoard? = boardCache[key]
-    fun cacheBoard(key: String, board: CachedBoard) { boardCache[key] = board }
+    fun cachedBoard(key: String): CachedBoard? { loadDisk(); return boardCache[key] }
+    fun cacheBoard(key: String, board: CachedBoard) { loadDisk(); boardCache[key] = board; persist() }
 
     /** Same stale-while-revalidate treatment for the Daily Sweep board (iOS
      *  SweepCache). Keyed "sweep:<local-day>" so it self-invalidates at midnight. */
+    @Serializable
     data class CachedSweep(
         val entries: List<SweepEntry>,
         val rank: RankInfo?,
@@ -65,8 +78,62 @@ object LeaderboardService {
     )
     private val sweepCache = mutableMapOf<String, CachedSweep>()
     fun sweepCacheKey(day: String) = "sweep:$day"
-    fun cachedSweep(key: String): CachedSweep? = sweepCache[key]
-    fun cacheSweep(key: String, board: CachedSweep) { sweepCache[key] = board }
+    fun cachedSweep(key: String): CachedSweep? { loadDisk(); return sweepCache[key] }
+    fun cacheSweep(key: String, board: CachedSweep) { loadDisk(); sweepCache[key] = board; persist() }
+
+    // ---- disk-backed stale-while-revalidate (§253) -------------------------
+    //
+    // The two maps above used to be session-lived, which meant the instant
+    // repaint only ever happened WITHIN a launch: every cold start dropped to
+    // the skeleton and sat on a network round trip, which is what "the
+    // leaderboard takes a long time sometimes" actually was. Mirroring both
+    // maps to one small JSON file makes a cold launch paint the last-known
+    // board immediately and refresh underneath.
+    //
+    // cacheDir, not filesDir: this is a cache, and the OS reclaiming it under
+    // storage pressure is correct — the worst case is the old behaviour.
+    @Serializable
+    private data class DiskSnapshot(
+        val day: String,
+        val boards: Map<String, CachedBoard> = emptyMap(),
+        val sweeps: Map<String, CachedSweep> = emptyMap(),
+    )
+
+    private const val DISK_FILE = "leaderboard-cache.json"
+    private val diskJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val diskScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var diskLoaded = false
+    private var persistJob: Job? = null
+
+    private fun cacheFile(): File = File(com.wordocious.app.App.instance.cacheDir, DISK_FILE)
+
+    /** Reads the file once per process. A snapshot from an earlier day is
+     *  dropped rather than shown — yesterday's board under today's header
+     *  would be worse than a skeleton. */
+    private fun loadDisk() {
+        if (diskLoaded) return
+        diskLoaded = true
+        runCatching {
+            val f = cacheFile()
+            if (!f.exists()) return
+            val snap = diskJson.decodeFromString(DiskSnapshot.serializer(), f.readText())
+            if (snap.day != todayLocalDate()) { f.delete(); return }
+            boardCache.putAll(snap.boards)
+            sweepCache.putAll(snap.sweeps)
+        }.onFailure { runCatching { cacheFile().delete() } }
+    }
+
+    /** Serializes on the CALLER's thread (the maps are main-thread state) and
+     *  writes on IO, coalescing the burst of cacheBoard calls a single board
+     *  load produces into one write. */
+    private fun persist() {
+        val snap = DiskSnapshot(todayLocalDate(), boardCache.toMap(), sweepCache.toMap())
+        persistJob?.cancel()
+        persistJob = diskScope.launch {
+            delay(500)
+            runCatching { cacheFile().writeText(diskJson.encodeToString(DiskSnapshot.serializer(), snap)) }
+        }
+    }
 
     @Serializable
     data class ProfileRef(
@@ -198,6 +265,7 @@ object LeaderboardService {
     )
 
     /** One mode's result inside [SweepDetails]. */
+    @Serializable
     data class SweepModeDetail(val score: Double, val completed: Boolean)
 
     /**
@@ -206,6 +274,7 @@ object LeaderboardService {
      * a 9/9 FLAWLESS below an 8/9 row with no visible reason (founder
      * double-take, Aug 18) — these are the numbers that explain the ranking.
      */
+    @Serializable
     data class SweepDetails(
         val modes: Map<String, SweepModeDetail>,
         val guesses: Int,

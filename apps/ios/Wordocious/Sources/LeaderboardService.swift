@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 import WordociousCore
 
-struct LeaderboardEntry: Identifiable, Decodable {
+struct LeaderboardEntry: Identifiable, Codable {
     var id: String { userId }
     let userId: String
     let compositeScore: Double
@@ -19,7 +19,7 @@ struct LeaderboardEntry: Identifiable, Decodable {
     let completed: Bool
     let profiles: ProfileRef
 
-    struct ProfileRef: Decodable {
+    struct ProfileRef: Codable {
         let username: String
         let avatarUrl: String?
         var avatarEmoji: String?   // §212: emoji avatar beats the initial on rows
@@ -63,7 +63,71 @@ final class LeaderboardCache {
         var rankWindow: (startRank: Int, entries: [LeaderboardEntry])? = nil
     }
     private var store: [String: Snapshot] = [:]
+    private var diskLoaded = false
+    private var persistTask: Task<Void, Never>?
     private init() {}
+
+    // ---- disk-backed stale-while-revalidate (§253) ------------------------
+    //
+    // This cache used to be session-lived, so the instant repaint only ever
+    // happened WITHIN a launch: every cold start dropped to the skeleton and
+    // sat on a network round trip. That is what "the leaderboard takes a long
+    // time sometimes" actually was. Mirroring the store to one small JSON file
+    // lets a cold launch paint the last-known board and refresh underneath.
+    //
+    // Caches directory, not Documents: this is a cache, and iOS reclaiming it
+    // under storage pressure just restores the old behaviour.
+    private struct DiskRank: Codable { let rank: Int; let total: Int }
+    private struct DiskWindow: Codable { let startRank: Int; let entries: [LeaderboardEntry] }
+    private struct DiskSnapshot: Codable {
+        let entries: [LeaderboardEntry]
+        let playerCount: Int
+        let userRank: DiskRank?
+        let rankWindow: DiskWindow?
+    }
+    private struct DiskFile: Codable { let day: String; let boards: [String: DiskSnapshot] }
+
+    private static var fileURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+            .first?.appendingPathComponent("leaderboard-cache.json")
+    }
+
+    /// Reads the file once per process. A snapshot from an earlier day is
+    /// discarded rather than shown — yesterday's rows under today's header
+    /// would be worse than a skeleton.
+    private func loadDisk() {
+        guard !diskLoaded else { return }
+        diskLoaded = true
+        guard let url = Self.fileURL, let data = try? Data(contentsOf: url),
+              let file = try? JSONDecoder().decode(DiskFile.self, from: data) else { return }
+        guard file.day == LeaderboardService.todayLocal() else {
+            try? FileManager.default.removeItem(at: url); return
+        }
+        for (k, d) in file.boards {
+            store[k] = Snapshot(
+                entries: d.entries, playerCount: d.playerCount,
+                userRank: d.userRank.map { ($0.rank, $0.total) },
+                rankWindow: d.rankWindow.map { ($0.startRank, $0.entries) })
+        }
+    }
+
+    /// Encodes on the main actor (the store is main-actor state) and writes off
+    /// it, coalescing the burst of writes one board load produces.
+    private func persist() {
+        let file = DiskFile(day: LeaderboardService.todayLocal(),
+                            boards: store.mapValues { s in
+                                DiskSnapshot(entries: s.entries, playerCount: s.playerCount,
+                                             userRank: s.userRank.map { DiskRank(rank: $0.rank, total: $0.total) },
+                                             rankWindow: s.rankWindow.map { DiskWindow(startRank: $0.startRank, entries: $0.entries) })
+                            })
+        persistTask?.cancel()
+        persistTask = Task.detached(priority: .utility) {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled, let url = await Self.fileURL,
+                  let data = try? JSONEncoder().encode(file) else { return }
+            try? data.write(to: url, options: .atomic)
+        }
+    }
 
     static func key(mode: GameMode, userId: String?, playType: String = "solo") -> String {
         // playType defaults to "solo" so the daily-leaderboard call sites keep
@@ -73,8 +137,8 @@ final class LeaderboardCache {
     }
 
     subscript(key: String) -> Snapshot? {
-        get { store[key] }
-        set { store[key] = newValue }
+        get { loadDisk(); return store[key] }
+        set { loadDisk(); store[key] = newValue; persist() }
     }
 }
 
@@ -236,11 +300,11 @@ enum LeaderboardService {
     // same publicly-readable table the per-mode boards already query), so the
     // sweep RPCs never had to change shape. Mirrors fetchSweepModeDetails in
     // lib/daily-service.ts.
-    struct SweepModeDetail {
+    struct SweepModeDetail: Codable {
         let score: Double
         let completed: Bool
     }
-    struct SweepDetails {
+    struct SweepDetails: Codable {
         var modes: [String: SweepModeDetail] = [:]
         var guesses = 0
         var hints = 0
