@@ -44,3 +44,6 @@ apps/web/android/
 
 # Play Developer API service-account key (should live in ~/.android-keys, never here)
 play-publisher*.json
+
+# Generated report from validate-propernoundle.mjs — regenerate, do not edit.
+apps/web/scripts/propernoundle-validation.json

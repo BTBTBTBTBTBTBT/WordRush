@@ -31,6 +31,13 @@ enum WikipediaHint {
             guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode),
                   let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let extract = obj["extract"] as? String, !extract.isEmpty else { return nil }
+            // §253: a DISAMBIGUATION page's extract is literally "X may refer
+            // to:", which redacts to "______ may refer to:" — a clue carrying
+            // zero information (reported live on #980/Stellaris). Reject it so
+            // the UI shows no clue at all rather than a confusing one; the
+            // per-puzzle wikiTitle override is the real fix.
+            if (obj["type"] as? String) == "disambiguation" { return nil }
+            if extract.range(of: "may (also )?refer to:?$", options: [.regularExpression, .caseInsensitive]) != nil { return nil }
             return sanitize(extract, displayName: displayName, redact: redact)
         } catch {
             return nil
@@ -75,15 +82,42 @@ enum WikipediaHint {
             let escaped = NSRegularExpression.escapedPattern(for: abbr)
             s = protectDots(s, pattern: "\\b\(escaped)\\.", options: [.caseInsensitive])
         }
-        // First 2 sentences.
         var sentences = matches(in: s, pattern: "[^.!?]+[.!?]+")
         if sentences.isEmpty { sentences = [s] }
-        var hint = sentences.prefix(2).joined(separator: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        // Restore protected periods.
-        hint = hint.replacingOccurrences(of: "###", with: ".")
+        func build(_ n: Int) -> String {
+            sentences.prefix(n).joined(separator: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "###", with: ".")
+        }
+        // Two sentences is the house length. But some articles open with
+        // fragments that survive segmentation and say nothing — Rafael Nadal's
+        // begins with the honorific "Excmo. Sr. D.", Confucius's with
+        // "(c. 551 - c. 479 BCE)" — leaving the player a clue like
+        // "______(c.  551 - c." (§253). Keep absorbing sentences until what
+        // reaches the screen is substantive, rather than chasing abbreviations.
+        var take = min(2, sentences.count)
+        if redact {
+            while take < sentences.count,
+                  informativeLength(redactAnswer(build(take), displayName: displayName)) < 60 {
+                take += 1
+            }
+        }
+        let hint = build(take)
         // Post-game (redact=false) keeps the answer in the text.
         guard redact else { return hint }
+        return redactAnswer(hint, displayName: displayName)
+    }
+
+    /// Characters a player can actually read, once the blanks are taken out.
+    private static func informativeLength(_ clue: String) -> Int {
+        regexReplace(clue, "______", " ")
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines).count
+    }
+
+    /// Replaces the answer (and each of its words) with blanks.
+    private static func redactAnswer(_ input: String, displayName: String) -> String {
+        var hint = input
         // Redact the full name, then each word > 2 chars. Match diacritic-
         // insensitively: the display name is plain ASCII ("Shogun") but the
         // Wikipedia extract often carries the accented spelling ("Shōgun") — a

@@ -54,7 +54,15 @@ object WikipediaHint {
             }
             if (conn.responseCode !in 200..299) return@runCatching null
             val body = conn.inputStream.bufferedReader().use { it.readText() }
-            val extract = json.parseToJsonElement(body).jsonObject["extract"]?.jsonPrimitive?.content
+            val obj = json.parseToJsonElement(body).jsonObject
+            val extract = obj["extract"]?.jsonPrimitive?.content
+            // §253: a DISAMBIGUATION page's extract is literally "X may refer
+            // to:", which redacts to "______ may refer to:" — zero information
+            // (reported live on #980/Stellaris). The real fix is the per-puzzle
+            // wikiTitle override plus the bank validator; this is the net.
+            val type = obj["type"]?.jsonPrimitive?.content
+            if (type == "disambiguation") return@runCatching null
+            if (extract != null && Regex("may (also )?refer to:?\\s*$", RegexOption.IGNORE_CASE).containsMatchIn(extract)) return@runCatching null
             if (extract.isNullOrEmpty()) null else sanitize(extract, displayName, redact)
         }.getOrNull()
     }
@@ -89,13 +97,32 @@ object WikipediaHint {
         for (abbr in abbreviations) {
             s = protectDots(s, "\\b${Regex.escape(abbr)}\\.", RegexOption.IGNORE_CASE)
         }
-        // First 2 sentences.
         var sentences = Regex("[^.!?]+[.!?]+").findAll(s).map { it.value }.toList()
         if (sentences.isEmpty()) sentences = listOf(s)
-        var hint = sentences.take(2).joinToString(" ").trim()
-        hint = hint.replace("###", ".")
+        fun build(n: Int) = sentences.take(n).joinToString(" ").trim().replace("###", ".")
+        // Two sentences is the house length. But some articles open with
+        // fragments that survive segmentation and say nothing — Rafael Nadal's
+        // begins with the honorific "Excmo. Sr. D.", Confucius's with
+        // "(c. 551 - c. 479 BCE)" — leaving the player a clue like
+        // "______(c.  551 - c." (§253). Keep absorbing sentences until what
+        // reaches the screen is substantive, rather than chasing abbreviations.
+        var take = minOf(2, sentences.size)
+        if (redact) {
+            while (take < sentences.size && informativeLength(redactAnswer(build(take), displayName)) < 60) take++
+        }
+        val hint0 = build(take)
         // Post-game (redact=false) keeps the answer in the text.
-        if (!redact) return hint
+        if (!redact) return hint0
+        return redactAnswer(hint0, displayName)
+    }
+
+    /** Characters a player can actually read, once the blanks are taken out. */
+    private fun informativeLength(clue: String): Int =
+        clue.replace("______", " ").replace(Regex("\\s+"), " ").trim().length
+
+    /** Replaces the answer (and each of its words) with blanks. */
+    private fun redactAnswer(input: String, displayName: String): String {
+        var hint = input
         // Redact full name, then each word > 2 chars. Match diacritic-
         // insensitively: the display name is plain ASCII ("Shogun") but the
         // Wikipedia extract often carries the accented spelling ("Shōgun") — a

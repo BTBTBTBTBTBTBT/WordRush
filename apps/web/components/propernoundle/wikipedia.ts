@@ -3,6 +3,8 @@ const WIKI_API = 'https://en.wikipedia.org/api/rest_v1/page/summary';
 interface WikiSummary {
   extract: string;
   title: string;
+  /** "standard" | "disambiguation" | "no-extract" — see the §253 guard below. */
+  type?: string;
   description?: string;
   thumbnail?: { source: string; width: number; height: number };
   originalimage?: { source: string; width: number; height: number };
@@ -29,6 +31,14 @@ export async function fetchWikipediaHint(
 
   if (!data.extract) {
     throw new Error('No summary available');
+  }
+
+  // §253: a DISAMBIGUATION page's extract is literally "X may refer to:", which
+  // redacts to "______ may refer to:" — a clue with zero information (reported
+  // live on #980/Stellaris). Treat it as no clue at all; the per-puzzle
+  // wikiTitle override is the real fix.
+  if (data.type === 'disambiguation' || /may (also )?refer to:?\s*$/i.test(data.extract)) {
+    throw new Error('Disambiguation page — no usable clue');
   }
 
   // redact=false keeps the answer name in the text — used on the post-game
@@ -87,17 +97,35 @@ function sanitizeHint(extract: string, displayName: string, redact = true): stri
     protected_ = protected_.replace(re, (m) => m.replace(/\./g, '###'));
   }
 
-  // Get first 2 sentences
   const sentences = protected_.match(/[^.!?]+[.!?]+/g) || [protected_];
-  let hint = sentences.slice(0, 2).join(' ').trim();
+  const build = (n: number) => sentences.slice(0, n).join(' ').trim().replace(/###/g, '.');
 
-  // Restore abbreviation periods
-  hint = hint.replace(/###/g, '.');
+  // Two sentences is the house length. But some articles open with fragments
+  // that survive segmentation and carry nothing — Rafael Nadal's begins with
+  // the honorific "Excmo. Sr. D.", Confucius's with "(c. 551 - c. 479 BCE)" —
+  // and after redaction the player is left with a clue like "______(c.  551 -
+  // c." (§253). So keep absorbing sentences until what actually reaches the
+  // screen is substantive, instead of chasing each new abbreviation.
+  let take = Math.min(2, sentences.length);
+  if (redact) {
+    while (take < sentences.length && informativeLength(redactAnswer(build(take), displayName)) < 60) take++;
+  }
+  let hint = build(take);
 
   // Post-game (redact=false) keeps the answer in the text — the full clue is
   // shown as the "definition" once the puzzle is over.
   if (!redact) return hint;
 
+  return redactAnswer(hint, displayName);
+}
+
+/** Characters a player can actually read, once the blanks are taken out. */
+function informativeLength(clue: string): number {
+  return clue.replace(/______/g, ' ').replace(/\s+/g, ' ').trim().length;
+}
+
+/** Replaces the answer (and each of its words) with blanks. */
+function redactAnswer(hint: string, displayName: string): string {
   // Build patterns to redact: full name first, then each individual word (>2 chars)
   const nameParts = displayName.split(/\s+/).filter(p => p.length > 2);
   const patterns = [displayName, ...nameParts];
