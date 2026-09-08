@@ -16,7 +16,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
-  const { user, session, signOut } = useAuth();
+  const { user, session, signOut, profile } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const [kbLayout, setKbLayout] = useState<KeyboardLayout>(() => getKeyboardLayout());
   const [portalLoading, setPortalLoading] = useState(false);
