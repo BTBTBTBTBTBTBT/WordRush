@@ -2641,12 +2641,11 @@
     "wikiTitle": ""
   },
   {
-    "id": "geo048",
-    "answer": "bereal",
-    "display": "BeReal",
+    "id": "cur122",
+    "answer": "starbucks",
+    "display": "Starbucks",
     "category": "other",
-    "themeCategory": "currentevents",
-    "wikiTitle": ""
+    "themeCategory": "currentevents"
   },
   {
     "id": "geo050",
@@ -2833,12 +2832,12 @@
     "wikiTitle": ""
   },
   {
-    "id": "geo079",
-    "answer": "glastonbury",
-    "display": "Glastonbury",
+    "id": "cur123",
+    "answer": "nike",
+    "display": "Nike",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": "Glastonbury_Festival"
+    "wikiTitle": "Nike, Inc."
   },
   {
     "id": "geo080",
@@ -3521,28 +3520,26 @@
     "wikiTitle": ""
   },
   {
-    "id": "spo098",
-    "answer": "viniciusjunior",
-    "display": "Vinicius Junior",
+    "id": "spo144",
+    "answer": "floydmayweather",
+    "display": "Floyd Mayweather",
     "category": "sports",
     "themeCategory": "sports",
-    "wikiTitle": ""
+    "wikiTitle": "Floyd Mayweather Jr."
   },
   {
-    "id": "spo099",
-    "answer": "bukayosaka",
-    "display": "Bukayo Saka",
+    "id": "spo143",
+    "answer": "johncena",
+    "display": "John Cena",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": ""
+    "themeCategory": "sports"
   },
   {
-    "id": "spo100",
-    "answer": "philfoden",
-    "display": "Phil Foden",
+    "id": "spo140",
+    "answer": "derekjeter",
+    "display": "Derek Jeter",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": ""
+    "themeCategory": "sports"
   },
   {
     "id": "vg045",
@@ -3553,12 +3550,11 @@
     "wikiTitle": "Helldivers_2"
   },
   {
-    "id": "vg046",
-    "answer": "lethalcompany",
-    "display": "Lethal Company",
+    "id": "vg102",
+    "answer": "pikachu",
+    "display": "Pikachu",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": ""
+    "themeCategory": "videogames"
   },
   {
     "id": "vg047",
@@ -3617,12 +3613,11 @@
     "wikiTitle": ""
   },
   {
-    "id": "vg061",
-    "answer": "celeste",
-    "display": "Celeste",
+    "id": "vg108",
+    "answer": "crashbandicoot",
+    "display": "Crash Bandicoot",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": "Celeste_(video_game)"
+    "themeCategory": "videogames"
   },
   {
     "id": "vg062",
@@ -4265,12 +4260,11 @@
     "wikiTitle": ""
   },
   {
-    "id": "geo095",
-    "answer": "peloton",
-    "display": "Peloton",
+    "id": "cur120",
+    "answer": "walmart",
+    "display": "Walmart",
     "category": "other",
-    "themeCategory": "currentevents",
-    "wikiTitle": "Peloton Interactive"
+    "themeCategory": "currentevents"
   },
   {
     "id": "geo096",
@@ -4689,20 +4683,18 @@
     "wikiTitle": ""
   },
   {
-    "id": "spo122",
-    "answer": "ronaldacunajr",
-    "display": "Ronald Acuna Jr",
+    "id": "spo137",
+    "answer": "jackierobinson",
+    "display": "Jackie Robinson",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": "Ronald Acuña Jr."
+    "themeCategory": "sports"
   },
   {
-    "id": "spo123",
-    "answer": "juliorodriguez",
-    "display": "Julio Rodriguez",
+    "id": "spo136",
+    "answer": "baberuth",
+    "display": "Babe Ruth",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": "Julio_Rodríguez_(baseball)"
+    "themeCategory": "sports"
   },
   {
     "id": "spo125",
@@ -4713,36 +4705,32 @@
     "wikiTitle": ""
   },
   {
-    "id": "spo126",
-    "answer": "alyssathomas",
-    "display": "Alyssa Thomas",
+    "id": "spo138",
+    "answer": "magicjohnson",
+    "display": "Magic Johnson",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": ""
+    "themeCategory": "sports"
   },
   {
-    "id": "spo127",
-    "answer": "florianwirtz",
-    "display": "Florian Wirtz",
+    "id": "spo139",
+    "answer": "larrybird",
+    "display": "Larry Bird",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": ""
+    "themeCategory": "sports"
   },
   {
-    "id": "spo128",
-    "answer": "declanrice",
-    "display": "Declan Rice",
+    "id": "spo142",
+    "answer": "venuswilliams",
+    "display": "Venus Williams",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": ""
+    "themeCategory": "sports"
   },
   {
-    "id": "spo129",
-    "answer": "martinodegaard",
-    "display": "Martin Odegaard",
+    "id": "spo141",
+    "answer": "aaronrodgers",
+    "display": "Aaron Rodgers",
     "category": "sports",
-    "themeCategory": "sports",
-    "wikiTitle": ""
+    "themeCategory": "sports"
   },
   {
     "id": "spo130",
@@ -4777,12 +4765,11 @@
     "wikiTitle": "Warhammer_(franchise)"
   },
   {
-    "id": "vg082",
-    "answer": "stellaris",
-    "display": "Stellaris",
+    "id": "vg104",
+    "answer": "pacman",
+    "display": "Pac-Man",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": "Stellaris (video game)"
+    "themeCategory": "videogames"
   },
   {
     "id": "vg083",
@@ -4793,44 +4780,40 @@
     "wikiTitle": "Civilization_(series)"
   },
   {
-    "id": "vg084",
-    "answer": "factorio",
-    "display": "Factorio",
+    "id": "vg105",
+    "answer": "streetfighter",
+    "display": "Street Fighter",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": ""
+    "themeCategory": "videogames"
   },
   {
-    "id": "vg085",
-    "answer": "satisfactory",
-    "display": "Satisfactory",
+    "id": "vg103",
+    "answer": "kingdomhearts",
+    "display": "Kingdom Hearts",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": ""
+    "themeCategory": "videogames"
   },
   {
-    "id": "vg086",
-    "answer": "manorlords",
-    "display": "Manor Lords",
+    "id": "vg100",
+    "answer": "fallout",
+    "display": "Fallout",
     "category": "other",
     "themeCategory": "videogames",
-    "wikiTitle": ""
+    "wikiTitle": "Fallout (franchise)"
   },
   {
-    "id": "vg087",
-    "answer": "enshrouded",
-    "display": "Enshrouded",
+    "id": "vg101",
+    "answer": "tombraider",
+    "display": "Tomb Raider",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": ""
+    "themeCategory": "videogames"
   },
   {
-    "id": "vg088",
-    "answer": "liesofp",
-    "display": "Lies of P",
+    "id": "vg109",
+    "answer": "flappybird",
+    "display": "Flappy Bird",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": ""
+    "themeCategory": "videogames"
   },
   {
     "id": "vg089",
@@ -4841,12 +4824,12 @@
     "wikiTitle": ""
   },
   {
-    "id": "vg090",
-    "answer": "armoredcore",
-    "display": "Armored Core",
+    "id": "vg106",
+    "answer": "skyrim",
+    "display": "Skyrim",
     "category": "other",
     "themeCategory": "videogames",
-    "wikiTitle": ""
+    "wikiTitle": "The Elder Scrolls V: Skyrim"
   },
   {
     "id": "vg091",
@@ -4857,12 +4840,11 @@
     "wikiTitle": "Dead_Space_(2023_video_game)"
   },
   {
-    "id": "vg092",
-    "answer": "remnant",
-    "display": "Remnant",
+    "id": "vg099",
+    "answer": "mortalkombat",
+    "display": "Mortal Kombat",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": "Remnant_II"
+    "themeCategory": "videogames"
   },
   {
     "id": "vg093",
@@ -4889,12 +4871,12 @@
     "wikiTitle": ""
   },
   {
-    "id": "vg096",
-    "answer": "slaythespire",
-    "display": "Slay the Spire",
+    "id": "vg107",
+    "answer": "doom",
+    "display": "Doom",
     "category": "other",
     "themeCategory": "videogames",
-    "wikiTitle": ""
+    "wikiTitle": "Doom (franchise)"
   },
   {
     "id": "his061",
@@ -5057,12 +5039,11 @@
     "wikiTitle": ""
   },
   {
-    "id": "geo100",
-    "answer": "depop",
-    "display": "Depop",
+    "id": "cur121",
+    "answer": "costco",
+    "display": "Costco",
     "category": "other",
-    "themeCategory": "currentevents",
-    "wikiTitle": ""
+    "themeCategory": "currentevents"
   },
   {
     "id": "cur119",
@@ -5105,11 +5086,10 @@
     "wikiTitle": ""
   },
   {
-    "id": "vg098",
-    "answer": "cuphead",
-    "display": "Cuphead",
+    "id": "vg110",
+    "answer": "angrybirds",
+    "display": "Angry Birds",
     "category": "other",
-    "themeCategory": "videogames",
-    "wikiTitle": ""
+    "themeCategory": "videogames"
   }
 ]
