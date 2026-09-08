@@ -68,8 +68,11 @@ function QuadrantKey({
     <button
       onClick={() => { haptic('light'); playKeyTap(); onClick(); }}
       className={cn(
-        'relative w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
-        compact ? 'h-10 sm:h-12' : 'h-12 sm:h-14',
+        // §255: the sm sizes are thumb keys; from lg (desktop / iPad landscape)
+        // they were eating a third of the viewport and squeezing the boards.
+        // 44px keeps Apple's touch minimum while giving the height back.
+        'relative w-10 sm:w-12 lg:w-11 rounded-md font-black text-base sm:text-lg overflow-hidden',
+        compact ? 'h-10 sm:h-12 lg:h-10' : 'h-12 sm:h-14 lg:h-11',
         'transition-all duration-150 select-none',
         allAbsent
           ? 'text-white'
@@ -124,10 +127,10 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
   const rows = LAYOUT_ROWS[layout];
   // Michael Keyboard is a row taller — shorter keys keep total height close
   // to the 3-row layouts so tight boards (OctoWord, Gauntlet) don't squeeze.
-  const keyH = layout === 'michael' ? 'h-10 sm:h-12' : 'h-12 sm:h-14';
+  const keyH = layout === 'michael' ? 'h-10 sm:h-12 lg:h-10' : 'h-12 sm:h-14 lg:h-11';   // §255: see Key
 
   return (
-    <div className="flex flex-col gap-1.5 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
+    <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
       {rows.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
           {row.map((key, ki) => {
@@ -157,7 +160,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   disabled={isBlackedOut}
                   aria-label={key === 'BACK' ? 'Backspace' : 'Submit guess'}
                   className={cn(
-                    keyH, 'px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
+                    keyH, 'px-3 sm:px-4 lg:px-3 rounded-md font-black text-base sm:text-lg',
                     'transition-all duration-150 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
@@ -182,7 +185,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   key={key}
                   disabled
                   aria-label={`${key}, unavailable`}
-                  className={cn(keyH, 'w-10 sm:w-12 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none')}
+                  className={cn(keyH, 'w-10 sm:w-12 lg:w-11 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none')}
                   style={{
                     backgroundColor: 'rgba(220,38,38,0.15)',
                     border: '1.5px solid rgba(220,38,38,0.2)',
