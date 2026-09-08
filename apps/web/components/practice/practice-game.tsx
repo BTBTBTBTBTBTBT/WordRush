@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, getDailySeedDate, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
@@ -355,6 +355,30 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
+  // §255 (founder screenshot: the bottom row of tiles drawn over the Q-W-E-R-T
+  // row): the board was sized by width alone with a percentage max-height,
+  // which iOS Safari does not honor on aspect-ratio boxes inside flex chains —
+  // so on a short viewport six rows simply ran into the keyboard. Same cure
+  // VS Classic already had: measure the area left between the header and the
+  // keyboard and hand the board exact pixels that fit both dimensions.
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const [boardSize, setBoardSize] = useState<{ w: number; h: number } | null>(null);
+  const boardCols = currentBoard.solution.length;
+  useLayoutEffect(() => {
+    const el = boardAreaRef.current;
+    if (!el) return;
+    const fit = () => {
+      const r = el.getBoundingClientRect();
+      const availW = Math.min(400, Math.max(0, r.width - 32));
+      const availH = Math.max(0, r.height - 8);
+      const w = Math.min(availW, (availH * boardCols) / maxGuesses);
+      if (w > 40) setBoardSize({ w, h: (w * maxGuesses) / boardCols });
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [boardCols, maxGuesses]);
   const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
 
   return (
@@ -415,9 +439,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       </div>
 
       {/* Board + Post-game summary */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4" ref={boardAreaRef}>
         <div className={`flex flex-col items-center ${gameComplete ? 'justify-start pt-2' : 'justify-center h-full'}`}>
           <Board
+            sizePx={boardSize ?? undefined}
             guesses={currentBoard.guesses}
             currentGuess={currentGuess}
             maxGuesses={currentBoard.maxGuesses}
