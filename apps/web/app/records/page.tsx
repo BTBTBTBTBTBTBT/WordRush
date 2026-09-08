@@ -500,11 +500,6 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                   : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
               </span>
             </div>
-            {/* §254: the completed-daily dropdown, exactly where the daily
-                leaderboard mounts it (above the rank banner) — the founder
-                wants Records to mirror that page. */}
-            {!isSweep && <CompletedDailyBoard modeId={selectedMode} />}
-
             {userRank && (
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
@@ -517,6 +512,16 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               </div>
             )}
           </div>
+
+          {/* §254/§255: the completed-daily dropdown — a full-width block
+              beneath the count/rank row, as on the daily leaderboard page.
+              (First cut mounted it INSIDE that flex row, where it was squeezed
+              between "7 players today" and "Your rank" — founder screenshot.) */}
+          {!isSweep && (
+            <div className="mt-2">
+              <CompletedDailyBoard modeId={selectedMode} />
+            </div>
+          )}
         </div>
 
         {/* Leaderboard rows */}
