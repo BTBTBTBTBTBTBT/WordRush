@@ -1,6 +1,7 @@
 'use client';
 
 import { useReducer, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import {
   gameReducer,
   initializeGame,
@@ -114,6 +115,14 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const currentStageConfig = gauntlet.stages[gauntlet.currentStage];
   const isSequential = currentStageConfig.sequential;
   const isSingleBoard = currentStageConfig.boardCount === 1;
+  // §255 (founder: "succession was not adjusted in gauntlet"): the Succession
+  // STAGE inside Gauntlet renders its own mini board through a stretched 2x2
+  // grid — the same flat-tile defect Succession proper just lost. Same shared
+  // fit: measure the stage area, one square tile, best arrangement, centred.
+  // boardCount is 0 when the stage isn't sequential so the effect re-runs (and
+  // re-attaches to the ref) the moment a Succession stage begins.
+  const seqAreaRef = useRef<HTMLDivElement>(null);
+  const seqFit = useSquareBoardFit(seqAreaRef, isSequential ? state.boards.length : 0, state.boards[0]?.maxGuesses ?? 10, 18);
 
   // For sequence stages, track the active board (first unsolved in order)
   const sequenceActiveBoardIndex = useMemo(() => {
@@ -450,9 +459,14 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     } else if (isSequential) {
       // Sequence-style 2x2 grid with sequential board unlocking
       return (
-        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full h-full max-w-lg mx-auto">
+        <div ref={seqAreaRef} className="w-full h-full">
+        <div
+          className={seqFit ? 'grid gap-2 w-full h-full justify-center content-center' : 'grid grid-cols-2 grid-rows-2 gap-2 w-full h-full max-w-lg mx-auto'}
+          style={seqFit ? { gridTemplateColumns: `repeat(${seqFit.cols}, ${seqFit.boardW}px)` } : undefined}
+        >
           {state.boards.map((board, idx) => (
             <GauntletSequenceMiniBoard
+              tileSize={seqFit?.tile}
               key={idx}
               board={board}
               boardIndex={idx}
@@ -465,6 +479,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
               isInvalidWord={idx === sequenceActiveBoardIndex && currentGuess.length === 5 && !isValidWord(currentGuess)}
             />
           ))}
+        </div>
         </div>
       );
     } else {
@@ -594,8 +609,11 @@ function GauntletSequenceMiniBoard({
   currentGuess,
   isShaking,
   isInvalidWord,
+  tileSize,
 }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
+  /** §255: explicit square tile edge from the measured stage area. */
+  tileSize?: number;
   boardIndex: number;
   isActive: boolean;
   isCompleted: boolean;
@@ -642,7 +660,7 @@ function GauntletSequenceMiniBoard({
 
   return (
     <div
-      className={`relative p-1 rounded-lg border-2 h-full flex flex-col transition-colors duration-300 overflow-hidden ${
+      className={`relative p-1 rounded-lg border-2 ${tileSize ? '' : 'h-full'} flex flex-col transition-colors duration-300 overflow-hidden ${
         isCompleted
           ? 'border-violet-400 bg-violet-50'
           : isFailed
@@ -652,7 +670,7 @@ function GauntletSequenceMiniBoard({
           : 'border-gray-200 bg-gray-50 opacity-60'
       }`}
     >
-      <div className="grid gap-[2px] flex-1" style={{ gridTemplateRows: `repeat(${board.maxGuesses}, 1fr)` }}>
+      <div className={tileSize ? 'grid gap-[2px]' : 'grid gap-[2px] flex-1'} style={{ gridTemplateRows: `repeat(${board.maxGuesses}, ${tileSize ? `${tileSize}px` : '1fr'})` }}>
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
           const guess = allGuesses[rowIndex] || '';
           const isPastGuess = rowIndex < board.guesses.length;
@@ -663,7 +681,7 @@ function GauntletSequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}>
+            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`} style={tileSize ? { gridTemplateColumns: `repeat(5, ${tileSize}px)` } : undefined}>
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];
@@ -682,7 +700,7 @@ function GauntletSequenceMiniBoard({
                         ? 'bg-white border-gray-400 text-gray-800'
                         : 'bg-white border-gray-200'
                     } ${isLastSubmitted ? 'animate-tile-flip-mini' : ''}`}
-                    style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
+                    style={{ ...(isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : {}), ...(tileSize ? { width: tileSize, height: tileSize, fontSize: Math.max(8, Math.round(tileSize * 0.45)) } : {}) }}
                   >
                     {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
                   </div>
