@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useReducer, useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import {
   gameReducer,
@@ -123,6 +123,35 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // re-attaches to the ref) the moment a Succession stage begins.
   const seqAreaRef = useRef<HTMLDivElement>(null);
   const seqFit = useSquareBoardFit(seqAreaRef, isSequential ? state.boards.length : 0, state.boards[0]?.maxGuesses ?? 10, 18);
+
+  // §255: the single-board (Classic) stage was the last Gauntlet stage still
+  // sizing its Board by width alone — `max-h-full` on an aspect-ratio box,
+  // which iOS Safari ignores inside a flex chain, so on a short phone the
+  // bottom rows slid under the keyboard. Same cure the standalone daily game
+  // and VS Classic use: measure the area between the stage header and the
+  // keyboard and hand the Board exact pixels that fit BOTH dimensions.
+  // Deps include isSingleBoard so the observer re-attaches when a Classic
+  // stage begins (the ref's div only exists during one).
+  const classicAreaRef = useRef<HTMLDivElement>(null);
+  const [classicSize, setClassicSize] = useState<{ w: number; h: number } | null>(null);
+  const classicBoard = isSingleBoard ? state.boards[state.currentBoardIndex] : undefined;
+  const classicCols = classicBoard?.solution.length ?? 5;
+  const classicRows = classicBoard?.maxGuesses ?? 6;
+  useLayoutEffect(() => {
+    const el = classicAreaRef.current;
+    if (!el || !isSingleBoard) return;
+    const fit = () => {
+      const r = el.getBoundingClientRect();
+      const availW = Math.min(400, Math.max(0, r.width - 8));
+      const availH = Math.max(0, r.height - 8);
+      const w = Math.min(availW, (availH * classicCols) / classicRows);
+      if (w > 40) setClassicSize({ w, h: (w * classicRows) / classicCols });
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isSingleBoard, classicCols, classicRows, gauntlet.currentStage]);
 
   // For sequence stages, track the active board (first unsolved in order)
   const sequenceActiveBoardIndex = useMemo(() => {
@@ -442,8 +471,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       if (!board) return null;
 
       return (
-        <div className="flex flex-col items-center gap-1 w-full h-full justify-center">
+        <div ref={classicAreaRef} className="flex flex-col items-center gap-1 w-full h-full justify-center">
           <Board
+            sizePx={classicSize ?? undefined}
             guesses={board.guesses}
             currentGuess={currentGuess}
             maxGuesses={board.maxGuesses}
