@@ -20,6 +20,7 @@ import { chooseShareVariant } from '@/components/share/share-variant-modal';
 import { boardToGrid, boardToLetters } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
@@ -231,6 +232,14 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
   const guessesUsed = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
+  // §255 (founder: "Succession needs to be formatted more like quadword, it
+  // still looks bad"): this screen has its own mini board and never went
+  // through MultiBoard, so it kept the stretched 2x2 grid — flat tiles on a
+  // wide window. Same fit as MultiBoard: measure, one square tile size, the
+  // arrangement with the biggest tile, centred. 18px reserved under each
+  // board for the failed-board solution line.
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const boardFit = useSquareBoardFit(boardAreaRef, 4, maxGuesses, 18);
 
   const handleShare = useCallback(async () => {
     const variant = await chooseShareVariant();
@@ -299,14 +308,17 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       </div>
 
       {/* 2x2 Board Grid (scrolls post-game so the ScoreBreakdownCard fits). */}
-      <div className={`flex-1 min-h-0 px-2 pb-2 ${state.status === GameStatus.PLAYING ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <div ref={boardAreaRef} className={`flex-1 min-h-0 px-2 pb-2 ${state.status === GameStatus.PLAYING ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {state.status !== GameStatus.PLAYING ? (
           /* Finished: compact uniform recap (completed-daily-board sizing) —
              the in-play 2x2 layout rendered zoomed huge post-game (iOS
              build-87 parity: all multi-board modes share the clean recap). */
           <CompletedBoardsRecap boards={toRecapBoards(state.boards)} />
         ) : (
-        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto" style={{ height: '100%' }}>
+        <div
+          className={boardFit ? 'grid gap-2 w-full h-full justify-center content-center' : 'grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto h-full'}
+          style={boardFit ? { gridTemplateColumns: `repeat(${boardFit.cols}, ${boardFit.boardW}px)` } : undefined}
+        >
 
             {BOARD_ORDER.map((boardIdx) => {
               const board = state.boards[boardIdx];
@@ -330,6 +342,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
                   currentGuess={isActive ? currentGuess : ''}
                   isShaking={isActive && isShaking}
                   isInvalidWord={isActive && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
+                  tileSize={boardFit?.tile}
                 />
               );
             })}
@@ -371,8 +384,7 @@ function SequenceMiniBoard({
   isLocked,
   currentGuess,
   isShaking,
-  isInvalidWord,
-}: {
+  isInvalidWord, tileSize }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
   boardIndex: number;
   isActive: boolean;
@@ -382,6 +394,8 @@ function SequenceMiniBoard({
   currentGuess: string;
   isShaking?: boolean;
   isInvalidWord?: boolean;
+  /** §255: explicit square tile edge from the measured container (see useSquareBoardFit). */
+  tileSize?: number;
 }) {
   const evalGuess = (guess: string, solution: string): TileState[] => {
     const result: TileState[] = Array(5).fill(TileState.EMPTY);
@@ -430,7 +444,7 @@ function SequenceMiniBoard({
 
   return (
     <div
-      className={`relative p-1 rounded-lg border-2 transition-colors duration-300 h-full flex flex-col overflow-hidden ${
+      className={`relative p-1 rounded-lg border-2 transition-colors duration-300 ${tileSize ? '' : 'h-full'} flex flex-col overflow-hidden ${
         isCompleted
           ? 'border-violet-400 bg-violet-50 shadow-lg shadow-violet-500/20'
           : isFailed
@@ -447,7 +461,7 @@ function SequenceMiniBoard({
         </div>
       )}
 
-      <div className="grid gap-[2px] flex-1" style={{ gridTemplateRows: `repeat(${board.maxGuesses}, 1fr)` }}>
+      <div className={tileSize ? 'grid gap-[2px]' : 'grid gap-[2px] flex-1'} style={{ gridTemplateRows: `repeat(${board.maxGuesses}, ${tileSize ? `${tileSize}px` : '1fr'})` }}>
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
           const guess = allGuesses[rowIndex] || '';
           const isPastGuess = rowIndex < board.guesses.length;
@@ -458,7 +472,7 @@ function SequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}>
+            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`} style={tileSize ? { gridTemplateColumns: `repeat(5, ${tileSize}px)` } : undefined}>
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];
@@ -482,7 +496,7 @@ function SequenceMiniBoard({
                       }
                       ${isLastSubmitted ? 'animate-tile-flip-mini' : ''}
                     `}
-                    style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
+                    style={{ ...(isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : {}), ...(tileSize ? { width: tileSize, height: tileSize, fontSize: Math.max(8, Math.round(tileSize * 0.45)) } : {}) }}
                   >
                     {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
                   </div>

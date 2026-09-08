@@ -1,6 +1,7 @@
 'use client';
 
-import { memo, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
+import { memo, useState, useCallback, useRef, useMemo } from 'react';
+import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
 
 interface MultiBoardProps {
@@ -240,39 +241,12 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
   // dimensions — capped so desktop doesn't balloon — then lay the boards out
   // at that size, centred. Falls back to the stretch layout until measured.
   const maxRows = boards.reduce((m, b) => Math.max(m, (b.prefilledGuesses?.length ?? 0) + b.maxGuesses), 1);
-  // Founder, second pass: "the keyboards look so much bigger and the puzzles
-  // all look very small." On a wide window the 2x2 QuadWord layout stacks 18
-  // tile-rows into the height while leaving the width empty. So try every
-  // sensible arrangement (2-across, 4-across, all-in-a-row) and keep whichever
-  // yields the LARGEST square tile — QuadWord goes 4x1 on a desktop, 2x2 on a
-  // phone; OctoWord stays 4x2 (8-across would need ~1900px).
-  const [fitState, setFitState] = useState<{ tile: number; cols: number } | null>(null);
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const GAP = 8, PAD = 12, TG = 2, CAP = 56;   // board gap, p-1+border-2 both sides, tile gap, max tile
-    const n = boards.length;
-    const candidates = [...new Set([2, 4, n].filter((c) => c >= 1 && c <= n))];
-    const fit = () => {
-      const r = el.getBoundingClientRect();
-      let best: { tile: number; cols: number } | null = null;
-      for (const c of candidates) {
-        const rows = Math.ceil(n / c);
-        const byW = ((r.width - (c - 1) * GAP) / c - PAD - 4 * TG) / 5;
-        const byH = ((r.height - (rows - 1) * GAP) / rows - PAD - (maxRows - 1) * TG) / maxRows;
-        const t = Math.floor(Math.min(byW, byH, CAP));
-        if (t >= 10 && (!best || t > best.tile)) best = { tile: t, cols: c };
-      }
-      setFitState(best);
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [boards.length, maxRows]);
+  // Square tiles fitted to the measured container, best arrangement wins —
+  // see hooks/use-square-board-fit.ts (shared with Succession).
+  const fitState = useSquareBoardFit(containerRef, boards.length, maxRows);
   const tile = fitState?.tile ?? null;
   const gridCols = fitState?.cols ?? (isOctordle ? 4 : 2);
-  const boardW = tile ? tile * 5 + 4 * 2 + 12 : 0;
+  const boardW = fitState?.boardW ?? 0;
 
   const handleBoardClick = useCallback((index: number) => {
     if (!isOctordle) return;
