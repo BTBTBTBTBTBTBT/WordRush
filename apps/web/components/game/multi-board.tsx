@@ -166,7 +166,12 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                   prefill.evaluation.tiles.map((t) => t.letter).join(String()),
                   prefill.evaluation.tiles.map((t) => t.state),
                 )}`}
-                className="grid grid-cols-5 gap-[2px] min-h-0 opacity-75"
+                // §255 (founder: "why does this look faded?"): the given clue rows
+                // rendered at 75% opacity — a web-only choice; the natives draw
+                // them at full strength — so a fresh Deliverance board, which is
+                // ALL clue rows plus empties, looked washed out. Full opacity now;
+                // the clue rows are already distinct by sitting above the player's.
+                className="grid grid-cols-5 gap-[2px] min-h-0"
                 style={rowStyle}
               >
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
