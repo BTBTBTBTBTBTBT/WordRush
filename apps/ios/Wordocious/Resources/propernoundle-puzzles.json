@@ -1379,9 +1379,9 @@
     "wikiTitle": "Ja_Morant"
   },
   {
-    "id": "spo049",
-    "answer": "sachintendulkar",
-    "display": "Sachin Tendulkar",
+    "id": "spo135",
+    "answer": "peytonmanning",
+    "display": "Peyton Manning",
     "category": "sports",
     "themeCategory": "sports"
   },
@@ -3214,7 +3214,7 @@
     "display": "Guardians of the Galaxy",
     "category": "other",
     "themeCategory": "movies",
-    "wikiTitle": ""
+    "wikiTitle": "Guardians of the Galaxy (film)"
   },
   {
     "id": "mov075",
@@ -3254,7 +3254,7 @@
     "display": "Pirates of the Caribbean",
     "category": "other",
     "themeCategory": "movies",
-    "wikiTitle": ""
+    "wikiTitle": "Pirates of the Caribbean (film series)"
   },
   {
     "id": "mov081",
@@ -3310,7 +3310,7 @@
     "display": "Ratatouille",
     "category": "other",
     "themeCategory": "movies",
-    "wikiTitle": ""
+    "wikiTitle": "Ratatouille (film)"
   },
   {
     "id": "mov090",
@@ -4174,7 +4174,7 @@
     "display": "Perplexity",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": ""
+    "wikiTitle": "Perplexity AI"
   },
   {
     "id": "geo082",
@@ -4270,7 +4270,7 @@
     "display": "Peloton",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": ""
+    "wikiTitle": "Peloton Interactive"
   },
   {
     "id": "geo096",
