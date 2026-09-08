@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, Lightbulb, BarChart3, Shuffle, Swords } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, Lightbulb, BarChart3, Shuffle, Swords, X } from 'lucide-react';
 import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
 import { wordInsights, ordinal, BANK_SIZE } from '@/lib/word-insights';
 
@@ -80,9 +80,23 @@ export default async function WordOfDayPage({ params }: Props) {
   return (
     <div className="min-h-screen pb-16" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="max-w-2xl mx-auto px-4 pt-6">
-        <Link href="/words" className="inline-flex items-center gap-1 text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
-          <ArrowLeft className="w-4 h-4" /> All words
-        </Link>
+        {/* §255 (founder: "there is no way to go home on the word of the day
+            screen... on the native versions there is an X to close the window"):
+            the back link only went up to the archive index. An X on the right
+            returns to the home screen, as the natives do. */}
+        <div className="flex items-center justify-between mb-6">
+          <Link href="/words" className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <ArrowLeft className="w-4 h-4" /> All words
+          </Link>
+          <Link
+            href="/"
+            aria-label="Close and return home"
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-80"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+          >
+            <X className="w-4 h-4" />
+          </Link>
+        </div>
 
         {/* Hero band — white tiles on a purple→pink gradient (matches native). */}
         <div className="rounded-2xl px-6 py-7 mb-6 text-center" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
