@@ -637,7 +637,15 @@ export default function HomePage() {
                     }
                   </div>
                   <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{mode.title}</div>
-                  <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  {/* §255: fixed two-line box. In Unlimited this line is mode.desc,
+                      which wraps on several cards; in Daily it's "4 guesses · 27s"
+                      on one line — so the cards changed height and the whole grid
+                      reflowed on every Daily/Unlimited toggle (founder). */}
+                  <div
+                    className="text-[10px] font-bold"
+                    style={{ color: 'var(--color-text-muted)', height: '28px', lineHeight: '14px', overflow: 'hidden',
+                             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                  >
                     {isDailyDone
                       ? (dailyResult
                           ? `${dailyResult.guesses} ${dailyResult.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult.timeSeconds)}`

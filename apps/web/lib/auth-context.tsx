@@ -101,6 +101,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const PROFILE_RETRY_DELAYS_MS = [1000, 4000, 15000];
 
+  // §255 (founder: "when reloading the page, it takes a second to notice that
+  // it is my account that is logged in"): Supabase keeps the SESSION in
+  // localStorage, so `user` is known almost at once — but Pro, admin, the
+  // username and everything else live on the PROFILE row, which was a network
+  // fetch on every reload. Until it landed the header rendered the free tier,
+  // then flipped. Keep the last good profile per user id on disk and seed from
+  // it synchronously; the real fetch then reconciles underneath. Wrong only if
+  // Pro lapsed since the last visit, and then only for that one second.
+  const PROFILE_CACHE_KEY = 'wordocious-profile-cache';
+  const readCachedProfile = (userId: string): Profile | null => {
+    try {
+      const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+      if (!raw) return null;
+      const c = JSON.parse(raw) as { id: string; profile: Profile };
+      return c.id === userId && c.profile ? c.profile : null;
+    } catch { return null; }
+  };
+  const writeCachedProfile = (p: Profile) => {
+    try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({ id: p.id, profile: p })); } catch {}
+  };
+  const clearCachedProfile = () => { try { localStorage.removeItem(PROFILE_CACHE_KEY); } catch {} };
+
   const fetchProfile = async (userId: string, userData?: User, attempt: number = 0) => {
     const { data, error } = await supabase
       .from('profiles')
@@ -113,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (profile) {
       if (profile.is_banned) {
         // Banned users get signed out immediately
+        clearCachedProfile();
         await supabase.auth.signOut();
         setUser(null);
         setProfile(null);
@@ -121,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setProfileError(false);
       setProfile(profile);
+      writeCachedProfile(profile);
       return;
     }
 
@@ -247,6 +271,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const wasGuest = (() => { try { return localStorage.getItem('wordocious-guest') === '1'; } catch { return false; } })();
           try { localStorage.removeItem('wordocious-guest'); } catch {}
           stampPresence(session.user.id, wasGuest);
+          const cached = readCachedProfile(session.user.id);
+          if (cached) {
+            // Cold start: paint the real account immediately; reconcile underneath.
+            setProfile(cached);
+            setLoading(false);
+            void fetchProfile(session.user.id, session.user);
+            return;
+          }
           await fetchProfile(session.user.id, session.user);
         } else {
           // Restore a prior "Play without an account" choice across refreshes.
@@ -427,6 +459,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // signed-out user's completions leaked into guest mode.
     try {
       sessionStorage.removeItem('wordocious-daily-completions');
+      localStorage.removeItem('wordocious-daily-completions');   // §255: the cache moved to localStorage
+      clearCachedProfile();
       localStorage.removeItem('wordocious-propernoundle-daily');
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
