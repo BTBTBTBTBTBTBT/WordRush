@@ -44,7 +44,17 @@ export async function POST(req: NextRequest) {
     const result = await provider.createPortalSession(customerId, returnUrl);
     return NextResponse.json(result);
   } catch (error: any) {
+    // §255 (founder clicked "Manage web subscription" and got Stripe's raw
+    // "No such customer: 'cus_…'" printed in Settings): a customer id on the
+    // profile that this Stripe account doesn't know is the same situation as
+    // no id at all — typically a test-mode customer left over from development.
+    // Answer 404 so the client shows the friendly "no web subscription" copy,
+    // and never surface Stripe's own message to the user.
+    if (error?.code === 'resource_missing' || /No such customer/i.test(String(error?.message))) {
+      console.warn('Stripe portal: customer id on profile is unknown to this Stripe account', error?.message);
+      return NextResponse.json({ error: 'No web subscription found.' }, { status: 404 });
+    }
     console.error('Stripe portal error:', error);
-    return NextResponse.json({ error: error.message || 'Could not open billing portal.' }, { status: 500 });
+    return NextResponse.json({ error: 'Could not open billing portal.' }, { status: 500 });
   }
 }

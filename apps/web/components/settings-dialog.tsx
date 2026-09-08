@@ -83,9 +83,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       if (data.url) {
         window.location.href = data.url;
       } else if (res.status === 404) {
-        setPortalError('No web subscription found — if you subscribed on a phone, use the store links below.');
+        setPortalError('No web subscription found for this account — if you subscribed on a phone, use the store links below.');
       } else {
-        setPortalError(data.error || 'Could not open billing.');
+        setPortalError('Could not open billing right now. Please try again later.');
       }
     } catch {
       setPortalError('Could not open billing.');
@@ -179,7 +179,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 portal row below appears once web billing is live and opens
                 Stripe's self-serve manage/cancel. */}
             <div className="space-y-1.5">
-              {process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && (
+              {/* §255: only offer the web portal when a web purchase is on file —
+                  the row was appearing for every account, including ones that
+                  subscribed on a phone or were granted Pro. */}
+              {process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && !!(profile as any)?.stripe_customer_id && (
                 <button
                   onClick={handleManageWebBilling}
                   disabled={portalLoading}
