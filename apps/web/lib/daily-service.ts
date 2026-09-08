@@ -920,6 +920,9 @@ export interface AllTimeRecord {
   holder_avatar_url?: string | null;
   record_value: number;
   achieved_at: string;
+  /** §254: resolved at read time from the record-setting matches row — the
+   *  table stores no hint count. null/undefined = not applicable or unknown. */
+  hints_used?: number | null;
 }
 
 /**
@@ -1009,7 +1012,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
   if (!data) return [];
 
   // Banned users can't hold visible records — excluded client-side.
-  return data.filter((row: any) => !row.profiles?.is_banned).map((row: any) => ({
+  const records: AllTimeRecord[] = data.filter((row: any) => !row.profiles?.is_banned).map((row: any) => ({
     id: row.id,
     record_type: row.record_type,
     game_mode: row.game_mode,
@@ -1020,7 +1023,32 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
     record_value: row.record_value,
     achieved_at: row.achieved_at,
   }));
+
+  // §254: the founder wants hints on the All-Time and You tabs too, but
+  // all_time_records stores no hint count and adding a column needs a prod
+  // migration. For the six cells where hints apply (fewest guesses / fastest
+  // win in the hint modes) read it off the record-setting matches row — the
+  // same table the Completed-Today card reads. Value-matched, newest first;
+  // best effort, and a miss leaves the cell exactly as it was.
+  await Promise.all(records
+    .filter((r) => (r.record_type === 'fewest_guesses' || r.record_type === 'fastest_win')
+      && !!r.game_mode && HINT_RECORD_MODES.has(r.game_mode))
+    .map(async (r) => {
+      try {
+        const field = r.record_type === 'fewest_guesses' ? 'player1_score' : 'player1_time';
+        const { data: m } = await (supabase as any)
+          .from('matches').select('hints_used')
+          .eq('player1_id', r.holder_id).eq('game_mode', r.game_mode).eq(field, Math.round(r.record_value))
+          .order('created_at', { ascending: false }).limit(1);
+        r.hints_used = m?.[0]?.hints_used ?? null;
+      } catch { r.hints_used = null; }
+    }));
+  return records;
 }
+
+/** Modes whose rows carry a hints segment — mirrors composite-scoring's
+ *  HINT_BEARING_MODES without importing it (that module imports this one). */
+const HINT_RECORD_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE']);
 
 // ============================================================
 // Time Helpers

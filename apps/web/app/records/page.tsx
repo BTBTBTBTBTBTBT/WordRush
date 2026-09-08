@@ -1,10 +1,12 @@
 'use client';
 
+import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
+
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star, Share } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
+import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES, SWEEP_MODE } from '@/components/profile/mode-picker';
@@ -124,6 +126,11 @@ function StatCell({
           style={{ color: hasRecord ? 'var(--color-text)' : 'var(--color-text-muted)' }}
         >
           {hasRecord ? config.format(record!.record_value) : '—'}
+          {/* §254: hints on the record cell, same wording as the leaderboard rows. */}
+          {hasRecord && record!.hints_used != null && record!.game_mode && (() => {
+            const h = formatHintsLabel(record!.game_mode, record!.hints_used!);
+            return h ? <span className="font-bold text-xs" style={{ color: 'var(--color-text-muted)' }}> · {h}</span> : null;
+          })()}
         </div>
         <div
           className="text-[10px] font-bold leading-tight mt-0.5"
@@ -493,6 +500,11 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                   : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
               </span>
             </div>
+            {/* §254: the completed-daily dropdown, exactly where the daily
+                leaderboard mounts it (above the rank banner) — the founder
+                wants Records to mirror that page. */}
+            {!isSweep && <CompletedDailyBoard modeId={selectedMode} />}
+
             {userRank && (
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
@@ -560,8 +572,14 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                       {playType === 'solo' ? (
                         <>
                           <span>
-                            {entry.guess_count}G · {formatTime(entry.time_seconds)}
+                            {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
                             {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
+                            {/* §254: hints ride this row exactly as on the daily
+                                leaderboard — the founder wants the two pages to match. */}
+                            {(() => {
+                              const h = formatHintsLabel(selectedMode, entry.hints_used);
+                              return h ? ` · ${h}` : '';
+                            })()}
                           </span>
                           <span
                             className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"

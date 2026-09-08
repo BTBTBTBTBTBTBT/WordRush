@@ -165,7 +165,8 @@ enum MatchStatsService {
         return (0..<24).map { HourBucket(hour: $0, played: played[$0] ?? 0, won: won[$0] ?? 0) }
     }
 
-    struct SolvedDaily { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int; let hintsUsed: Int }
+    // Codable so CompletedDailyCard can keep a day-keyed disk copy (§254).
+    struct SolvedDaily: Codable { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int; let hintsUsed: Int }
 
     /// Server-persisted Gauntlet per-stage breakdown (matches.gauntlet_stages),
     /// so the results screen renders cross-device when there's no local session.

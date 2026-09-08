@@ -307,6 +307,26 @@ function GauntletCompletedCard({
   );
 }
 
+// §254: day-keyed copy of the last cross-device reconstruction (the recorded
+// matches row), so a revisit paints the card at once instead of re-fetching.
+// The other half of the pop-in cure is the completions context moving off
+// sessionStorage. A recorded daily never changes for a given day, so the copy
+// is exact until the date rolls.
+const rowCacheKey = (modeId: string) => `wordocious-completed-row:${modeId}`;
+function readRowCache(modeId: string): { guesses: string[]; time: number } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(rowCacheKey(modeId));
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (p.date !== getTodayLocal() || !Array.isArray(p.guesses)) return null;
+    return { guesses: p.guesses, time: Number(p.time) || 0 };
+  } catch { return null; }
+}
+function writeRowCache(modeId: string, guesses: string[], time: number) {
+  try { localStorage.setItem(rowCacheKey(modeId), JSON.stringify({ date: getTodayLocal(), guesses, time })); } catch {}
+}
+
 export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   ensureDictionaryInitialized();
 
@@ -323,7 +343,13 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   // replay the game pages use) so "Completed Today" shows everywhere. Gauntlet
   // has its own server fallback below; ProperNoundle is handled separately.
   const [serverSession, setServerSession] = useState<{ state: GameState; elapsedTime: number } | null>(null);
-  const session = localSession ?? serverSession;
+  const cachedRow = useMemo(() => readRowCache(modeId), [modeId]);
+  const cachedSession = useMemo(() => {
+    if (!cachedRow || isGauntlet || isProperNoundle) return null;
+    const state = replayRecordedGuesses(modeId as GameMode, generateDailySeed(getTodayLocal(), modeId), cachedRow.guesses);
+    return state ? { state, elapsedTime: cachedRow.time } : null;
+  }, [cachedRow, modeId, isGauntlet, isProperNoundle]);
+  const session = localSession ?? serverSession ?? cachedSession;
   const pnSaved = useMemo(() => isProperNoundle ? loadCompletedProperNoundle() : null, [isProperNoundle]);
   const pnPuzzle = useMemo(() => isProperNoundle ? getDailyPuzzle() : null, [isProperNoundle]);
   // ProperNoundle cross-device: a daily finished on the native app (or another
@@ -331,6 +357,12 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   // the guesses from the recorded matches row — same fallback the standard modes
   // already have — so "Completed Today" shows the real board everywhere.
   const [pnServerGuesses, setPnServerGuesses] = useState<ProperNoundleGuess[] | null>(null);
+  // §254: the day-keyed row cache, re-derived against today's answer — the
+  // ProperNoundle twin of cachedSession above.
+  const pnCachedRows = useMemo<ProperNoundleGuess[] | null>(() => {
+    if (!cachedRow || !isProperNoundle || !pnPuzzle || cachedRow.guesses.length === 0) return null;
+    return cachedRow.guesses.map((w) => rebuildPNRow(w, pnPuzzle.answer));
+  }, [cachedRow, isProperNoundle, pnPuzzle]);
 
   const boards = session?.state.boards ?? [];
   const solution = boards[0]?.solution || null;
@@ -393,6 +425,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     // board under the new mode's header (the "everything shows Classic" bug).
     setServerSession(null);
     if (isGauntlet || isProperNoundle || localSession || !profile || !recorded) return;
+    if (readRowCache(modeId)) return;   // §254: already reconstructed today
     let cancelled = false;
     const seed = generateDailySeed(getTodayLocal(), modeId);
     (async () => {
@@ -408,6 +441,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         if (cancelled || !row) return;
         const guesses: string[] = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
         if (guesses.length === 0) return;
+        writeRowCache(modeId, guesses, Math.max(0, Math.round(Number(row.player1_time) || 0)));
         const state = replayRecordedGuesses(modeId as GameMode, seed, guesses);
         if (cancelled || !state) return;
         setServerSession({ state, elapsedTime: Math.max(0, Math.round(Number(row.player1_time) || 0)) });
@@ -423,6 +457,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     setPnServerGuesses(null);
     const localValid = !!pnSaved && !!pnPuzzle && pnSaved.puzzleId === pnPuzzle.id;
     if (!isProperNoundle || !pnPuzzle || localValid || !profile || !recorded) return;
+    if (readRowCache(modeId)) return;   // §254: already reconstructed today
     let cancelled = false;
     const seed = generateDailySeed(getTodayLocal(), 'PROPERNOUNDLE');
     (async () => {
@@ -438,6 +473,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         if (cancelled || !row) return;
         const words: string[] = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
         if (words.length === 0) return;
+        writeRowCache(modeId, words, 0);
         const rebuilt: ProperNoundleGuess[] = words.map((w) => rebuildPNRow(w, pnPuzzle.answer));
         if (!cancelled) setPnServerGuesses(rebuilt);
       } catch { /* offline / RLS — leave the card hidden, no worse than before */ }
@@ -479,8 +515,17 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     const localValid = !!pnSaved && pnSaved.puzzleId === pnPuzzle.id;
     const pnGuessRows: ProperNoundleGuess[] | null = localValid
       ? pnSaved!.guesses
-      : pnServerGuesses;
-    if (!pnGuessRows || pnGuessRows.length === 0) return null;
+      : (pnServerGuesses ?? pnCachedRows);
+    if (!pnGuessRows || pnGuessRows.length === 0) {
+      // §254: header at its final height while the board reconstructs (see the
+      // standard-mode fallback below for the reasoning).
+      if (!recorded) return null;
+      return (
+        <CollapsibleCompletedCard won={recorded.won} summaryLabel={`${recorded.guesses}g · ${formatTime(recorded.timeSeconds)}`}>
+          <div className="text-[10px] font-bold px-4 pb-3" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>
+        </CollapsibleCompletedCard>
+      );
+    }
 
     // Won = the final row is all-correct (works for both the local save and the
     // reconstructed rows); the recorded daily_results.won wins when present.
@@ -561,6 +606,18 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           bestCorrectLetters={pnBestCorrect}
           day={getTodayLocal()}
         />
+      </CollapsibleCompletedCard>
+    );
+  }
+
+  // §254: while a cross-device board is still reconstructing, show the header
+  // at its final height from the (instant, cached) completion record instead
+  // of nothing — so the rank banner and the board below never jump when the
+  // real card lands a moment later.
+  if (!session && recorded) {
+    return (
+      <CollapsibleCompletedCard won={recorded.won} summaryLabel={`${recorded.guesses}g · ${formatTime(recorded.timeSeconds)}`}>
+        <div className="text-[10px] font-bold px-4 pb-3" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>
       </CollapsibleCompletedCard>
     );
   }

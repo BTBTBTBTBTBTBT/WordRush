@@ -171,8 +171,31 @@ object GameResultsService {
     private val prefetchRequested: MutableSet<String> =
         java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
 
-    /** Cached recorded-match row for [seed], if the prefetch already landed. */
-    fun prefetchedDailyMatch(seed: String): RecordedDailyMatch? = prefetchedMatches[seed]
+    // §254: the session cache above dies with the process, so a cold launch
+    // still rendered the Completed-Today card zero-height until the network
+    // answered. Mirror rows to SharedPreferences, day-stamped, so the card can
+    // seed itself synchronously. A recorded daily row never changes for a seed.
+    private val diskPrefs by lazy {
+        com.wordocious.app.App.instance.getSharedPreferences("wordocious_recorded_matches", android.content.Context.MODE_PRIVATE)
+    }
+    private fun diskRead(seed: String): RecordedDailyMatch? = runCatching {
+        if (diskPrefs.getString("day", null) != com.wordocious.app.todayLocalDate()) return null
+        diskPrefs.getString("m:$seed", null)?.let {
+            kotlinx.serialization.json.Json.decodeFromString(RecordedDailyMatch.serializer(), it)
+        }
+    }.getOrNull()
+    private fun diskWrite(seed: String, row: RecordedDailyMatch) {
+        runCatching {
+            val today = com.wordocious.app.todayLocalDate()
+            val e = diskPrefs.edit()
+            if (diskPrefs.getString("day", null) != today) e.clear().putString("day", today)
+            e.putString("m:$seed", kotlinx.serialization.json.Json.encodeToString(RecordedDailyMatch.serializer(), row)).apply()
+        }
+    }
+
+    /** Cached recorded-match row for [seed] — session cache first, then disk. */
+    fun prefetchedDailyMatch(seed: String): RecordedDailyMatch? =
+        prefetchedMatches[seed] ?: diskRead(seed)?.also { prefetchedMatches[seed] = it }
 
     /** Warm the recorded-match row for [seed] (idempotent; retries on failure). */
     suspend fun prefetchRecordedDailyMatch(seed: String) {
@@ -186,6 +209,7 @@ object GameResultsService {
     fun clearPrefetchedDailyMatches() {
         prefetchedMatches.clear()
         prefetchRequested.clear()
+        runCatching { diskPrefs.edit().clear().apply() }
     }
 
     /** Newest `matches` row this user recorded for [seed] (null if none / signed out). */
@@ -200,6 +224,7 @@ object GameResultsService {
                 }
                 .decodeList<RecordedDailyMatch>()
                 .firstOrNull()
+                ?.also { prefetchedMatches[seed] = it; diskWrite(seed, it) }
         }.getOrNull()
     }
 

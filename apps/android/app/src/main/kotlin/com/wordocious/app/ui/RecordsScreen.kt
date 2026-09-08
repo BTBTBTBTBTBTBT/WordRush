@@ -270,6 +270,14 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ModePickerRow(selectedMode) { selectedMode = it }
         Spacer(Modifier.height(8.dp))
+        // §254: the completed-daily dropdown, mounted exactly as the Leaderboard
+        // tab mounts it — the founder wants Records to mirror that page. The
+        // card renders nothing for a mode not yet played, so no guard beyond
+        // Sweep (which has no board).
+        if (selectedMode != SWEEP_ID) {
+            com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
+            Spacer(Modifier.height(8.dp))
+        }
         // One bordered leaderboard card (iOS DailyRecordsView): accent bar →
         // mode header (+ Solo|VS toggle) → count/your-rank row → rows.
         Column(
@@ -396,7 +404,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     entries.map { it.compositeScore } + (rankWindow?.entries?.map { it.compositeScore } ?: emptyList()),
                 )
                 entries.forEachIndexed { i, entry ->
-                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false, scoreLabel = lbScoreLabels[entry.compositeScore])
+                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = true, scoreLabel = lbScoreLabels[entry.compositeScore])
                     if (i < entries.size - 1) HorizontalDivider(color = WTheme.border)
                 }
                 // "Your neighborhood" — rows around the user's rank when they
@@ -411,7 +419,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     )
                     HorizontalDivider(color = WTheme.border)
                     win.entries.forEachIndexed { i, entry ->
-                        LeaderboardRow(rank = win.startRank + i, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false, scoreLabel = lbScoreLabels[entry.compositeScore])
+                        LeaderboardRow(rank = win.startRank + i, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = true, scoreLabel = lbScoreLabels[entry.compositeScore])
                         if (i < win.entries.size - 1) HorizontalDivider(color = WTheme.border)
                     }
                 }
@@ -1147,6 +1155,14 @@ private fun MedalCount(icon: androidx.compose.ui.graphics.vector.ImageVector, ti
     }
 }
 
+/** §254: " · N hints" / " · No hints" on a hint-mode record cell — the exact
+ *  wording the leaderboard rows use, so All-Time and You match them. */
+private fun recordHintSuffix(r: LeaderboardService.AllTimeRecord): String {
+    val h = r.hintsUsed ?: return ""
+    if (r.gameMode?.let { it in setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE") } != true) return ""
+    return if (h > 0) " · $h hint${if (h == 1) "" else "s"}" else " · No hints"
+}
+
 /** Record stat cell — icon + formatted value + label + holder (me-highlight). Mirrors web StatCell. */
 @Composable
 private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
@@ -1169,7 +1185,7 @@ private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecor
         } else cfg.icon?.let { Icon(it, null, tint = tint, modifier = Modifier.size(16.dp)) }
         Column(Modifier.weight(1f)) {
             Text(
-                if (hasRecord) cfg.format(record!!.recordValue.toInt()) else "—",
+                if (hasRecord) cfg.format(record!!.recordValue.toInt()) + recordHintSuffix(record) else "—",
                 fontSize = 16.sp, fontWeight = FontWeight.Black,
                 color = if (hasRecord) WTheme.text else WTheme.textMuted, lineHeight = 18.sp,
             )

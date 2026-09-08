@@ -55,6 +55,58 @@ import com.wordocious.core.createInitialState
 import com.wordocious.core.gameReducer
 
 /**
+ * §254: replays a recorded matches row through the engine into a finished
+ * GameState — lifted out of the card's effect so the card can ALSO run it
+ * synchronously on first composition against the disk-backed cache, instead of
+ * rendering nothing until the network answered. null = nothing usable.
+ */
+private fun replayRecordedRow(mode: GameMode, seed: String, row: com.wordocious.app.data.GameResultsService.RecordedDailyMatch): GameState? {
+    if (row.player1Guesses.isEmpty()) return null
+    var replayed = createInitialState(seed, mode)
+    val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
+    for (g in row.player1Guesses.take(200)) {
+        if (replayed.status != GameStatus.PLAYING) break
+        replayed = if (g.any { !it.isLetter() }) {
+            // Hint row (Six/Seven): a space-padded string SubmitGuess would
+            // reject as an invalid word (dropping the row). Rebuild the
+            // stored hint evaluation instead — deriving the revealed
+            // POSITIONS from the solution rather than trusting the recorded
+            // string's padding, so a row recorded left-aligned ("A     ")
+            // can't replay a CORRECT tile at slot 0 and render the hint in
+            // the wrong column. Mirrors how the row is built in-game (every
+            // occurrence of the revealed letter is CORRECT) — web
+            // use-game-snapshot parity.
+            val solution = replayed.boards[replayed.currentBoardIndex].solution.uppercase()
+            val revealed = g.uppercase().filter { it.isLetter() }.toSet()
+            val usable = solution.isNotEmpty() && solution.any { it in revealed }
+            val tiles = if (usable) {
+                solution.map { ch ->
+                    if (ch in revealed) com.wordocious.core.TileResult(ch.toString(), com.wordocious.core.TileState.CORRECT)
+                    else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
+                }
+            } else {
+                // Unmatchable row (corrupt — a real hint only reveals a
+                // letter that IS in the answer): keep what was recorded.
+                g.map { ch ->
+                    if (ch.isLetter()) com.wordocious.core.TileResult(ch.uppercase(), com.wordocious.core.TileState.CORRECT)
+                    else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
+                }
+            }
+            // Re-derive the stored word too, so guesses agree with tiles.
+            val hintWord = tiles.joinToString("") { if (it.state == com.wordocious.core.TileState.CORRECT) it.letter else " " }
+            gameReducer(replayed, GameAction.SubmitHint(hintWord, com.wordocious.core.GuessResult(tiles, false)))
+        } else if (mode == GameMode.SEQUENCE) {
+            val idx = replayed.boards.indexOfFirst { it.status == GameStatus.PLAYING }
+            if (idx < 0) break
+            gameReducer(replayed, GameAction.SubmitGuess(g, boardIndex = idx, applyToAll = false))
+        } else {
+            gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
+        }
+    }
+    return replayed.takeIf { it.status != GameStatus.PLAYING }
+}
+
+/**
  * Completed-daily "dropdown" shown above the leaderboard for the selected mode —
  * ports the web CompletedDailyBoard / CollapsibleCompletedCard. Reads the local
  * finished daily session (GamePersistence) for today's seed; collapsed by
@@ -74,8 +126,15 @@ fun CompletedDailyBoard(modeId: String) {
     // save, so this card used to render nothing. Replay the recorded matches row
     // through the engine (same loop GameScreen uses) so "Completed Today" shows
     // everywhere. Gauntlet is excluded (its replay needs stage advancement).
-    var serverState by remember(modeId) { mutableStateOf<GameState?>(null) }
-    var serverTime by remember(modeId) { mutableStateOf(0) }
+    // §254: seed synchronously from the disk-backed recorded-match cache, so a
+    // cold launch paints the card at once; the effect below only fetches on a
+    // miss. This was the last thing on every page to appear, and it shoved the
+    // rank banner and the whole leaderboard down when it did.
+    val cachedRow = remember(modeId, tick) { com.wordocious.app.data.GameResultsService.prefetchedDailyMatch(seed) }
+    var serverState by remember(modeId, tick) {
+        mutableStateOf(cachedRow?.takeIf { mode != GameMode.PROPERNOUNDLE && mode != GameMode.GAUNTLET }?.let { replayRecordedRow(mode, seed, it) })
+    }
+    var serverTime by remember(modeId, tick) { mutableStateOf(cachedRow?.player1Time ?: 0) }
     // Gauntlet has no flat guess-replay (player1_guesses holds only the final
     // stage), so the cross-device card rebuilds from the persisted per-stage
     // breakdown (matches.gauntlet_stages) — iOS CompletedDailyCard parity.
@@ -83,9 +142,10 @@ fun CompletedDailyBoard(modeId: String) {
     // ProperNoundle: the generic engine replay can't rebuild a multi-word proper-
     // noun board, so capture the raw recorded guesses and render a dedicated card
     // (tiles re-derived against today's answer, laid out in word groups).
-    var pnGuesses by remember(modeId) { mutableStateOf<List<String>?>(null) }
+    var pnGuesses by remember(modeId, tick) { mutableStateOf(cachedRow?.player1Guesses?.takeIf { mode == GameMode.PROPERNOUNDLE && it.isNotEmpty() }) }
     LaunchedEffect(modeId, tick) {
         if (mode == GameMode.PROPERNOUNDLE) {
+            if (pnGuesses != null) return@LaunchedEffect   // §254: seeded from the disk cache
             val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)
             if (row != null && row.player1Guesses.isNotEmpty()) {
                 pnGuesses = row.player1Guesses
@@ -99,50 +159,9 @@ fun CompletedDailyBoard(modeId: String) {
             serverTime = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)?.player1Time ?: 0
             return@LaunchedEffect
         }
+        if (serverState != null) return@LaunchedEffect   // §254: seeded from the disk cache
         val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
-        if (row.player1Guesses.isEmpty()) return@LaunchedEffect
-        var replayed = createInitialState(seed, mode)
-        val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
-        for (g in row.player1Guesses.take(200)) {
-            if (replayed.status != GameStatus.PLAYING) break
-            replayed = if (g.any { !it.isLetter() }) {
-                // Hint row (Six/Seven): a space-padded string SubmitGuess would
-                // reject as an invalid word (dropping the row). Rebuild the
-                // stored hint evaluation instead — deriving the revealed
-                // POSITIONS from the solution rather than trusting the recorded
-                // string's padding, so a row recorded left-aligned ("A     ")
-                // can't replay a CORRECT tile at slot 0 and render the hint in
-                // the wrong column. Mirrors how the row is built in-game (every
-                // occurrence of the revealed letter is CORRECT) — web
-                // use-game-snapshot parity.
-                val solution = replayed.boards[replayed.currentBoardIndex].solution.uppercase()
-                val revealed = g.uppercase().filter { it.isLetter() }.toSet()
-                val usable = solution.isNotEmpty() && solution.any { it in revealed }
-                val tiles = if (usable) {
-                    solution.map { ch ->
-                        if (ch in revealed) com.wordocious.core.TileResult(ch.toString(), com.wordocious.core.TileState.CORRECT)
-                        else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
-                    }
-                } else {
-                    // Unmatchable row (corrupt — a real hint only reveals a
-                    // letter that IS in the answer): keep what was recorded.
-                    g.map { ch ->
-                        if (ch.isLetter()) com.wordocious.core.TileResult(ch.uppercase(), com.wordocious.core.TileState.CORRECT)
-                        else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
-                    }
-                }
-                // Re-derive the stored word too, so guesses agree with tiles.
-                val hintWord = tiles.joinToString("") { if (it.state == com.wordocious.core.TileState.CORRECT) it.letter else " " }
-                gameReducer(replayed, GameAction.SubmitHint(hintWord, com.wordocious.core.GuessResult(tiles, false)))
-            } else if (mode == GameMode.SEQUENCE) {
-                val idx = replayed.boards.indexOfFirst { it.status == GameStatus.PLAYING }
-                if (idx < 0) break
-                gameReducer(replayed, GameAction.SubmitGuess(g, boardIndex = idx, applyToAll = false))
-            } else {
-                gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
-            }
-        }
-        if (replayed.status != GameStatus.PLAYING) { serverState = replayed; serverTime = row.player1Time }
+        replayRecordedRow(mode, seed, row)?.let { serverState = it; serverTime = row.player1Time }
     }
 
     // Gauntlet: dedicated stage-breakdown card (3-stat summary + per-stage rows +
@@ -170,6 +189,15 @@ fun CompletedDailyBoard(modeId: String) {
         return
     }
 
+    // §254: while a cross-device board is still reconstructing, show the header
+    // at its final height from the (instant, cached) completion record instead
+    // of nothing — so the rank banner and the board below never jump when the
+    // real card lands a moment later.
+    if (localState == null && serverState == null) {
+        val c = remember(modeId, tick) { com.wordocious.app.data.DailyCompletionsService.readCache()[modeId] }
+        if (c != null) CompletedHeaderOnlyCard(won = c.completed, summary = "${c.guessCount}g · ${fmt(c.timeSeconds)}")
+        return
+    }
     val state = localState ?: serverState ?: return
     if (state.status == GameStatus.PLAYING) return
 
@@ -343,6 +371,43 @@ private fun StatsRow(stats: List<Pair<String, String>>) {
                 Text(value, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = WTheme.textMuted, textAlign = TextAlign.Center)
             }
+        }
+    }
+}
+
+/** §254: the card's header row at its final height, no body — what shows while
+ *  a cross-device board reconstructs, so nothing below it moves. */
+@Composable
+private fun CompletedHeaderOnlyCard(won: Boolean, summary: String) {
+    Column(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(4.dp).background(
+                Brush.horizontalGradient(
+                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
+                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
+                ),
+            ),
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
+                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(summary, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Spacer(Modifier.width(6.dp))
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp))
         }
     }
 }

@@ -13,6 +13,10 @@ struct AllTimeRecord: Identifiable, Decodable {
     /// so older cached decodes never break.
     let achievedAt: String?
     let profiles: Ref
+    /// §254: resolved at read time from the record-setting matches row —
+    /// all_time_records stores no hint count. Not a CodingKey, so decoding
+    /// leaves it nil; fetchAll fills it for the six cells where it applies.
+    var hintsUsed: Int? = nil
 
     struct Ref: Decodable {
         let username: String
@@ -33,12 +37,19 @@ struct AllTimeRecord: Identifiable, Decodable {
 
     var holderUsername: String { profiles.username }
 
+    /// §254: " · N hints" / " · No hints" on a hint-mode record — the exact
+    /// wording the leaderboard rows use, so All-Time and You match them.
+    private var hintsSuffix: String {
+        guard let h = hintsUsed, let m = gameMode, HINT_MODES.contains(m) else { return "" }
+        return h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
+    }
+
     /// Formats the value per type — ported from RECORD_LABELS in app/records/page.tsx.
     var formattedValue: String {
         let v = Int(recordValue)
         switch recordType {
-        case "fastest_win": return v < 60 ? "\(v)s" : "\(v / 60)m \(v % 60)s"
-        case "fewest_guesses": return "\(v) guesses"
+        case "fastest_win": return (v < 60 ? "\(v)s" : "\(v / 60)m \(v % 60)s") + hintsSuffix
+        case "fewest_guesses": return "\(v) guesses" + hintsSuffix
         case "most_games_played": return "\(v) games"
         case "longest_streak": return "\(v) wins"
         case "most_gold_medals": return "\(v) golds"
@@ -68,12 +79,38 @@ enum RecordCatalog {
 /// fetchAllTimeRecords (all_time_records + profiles!inner join, ordered by type).
 enum RecordsService {
     static func fetchAll() async throws -> [AllTimeRecord] {
-        try await AuthService.shared.client
+        var records: [AllTimeRecord] = try await AuthService.shared.client
             .from("all_time_records")
             .select("id, record_type, game_mode, play_type, holder_id, record_value, achieved_at, profiles!inner(username, avatar_url)")
             .order("record_type")
             .execute()
             .value
+        // §254: the founder wants hints on the All-Time and You tabs too, but
+        // all_time_records stores no hint count and adding a column needs a
+        // prod migration. For the six cells where hints apply (fewest guesses /
+        // fastest win in the hint modes) read it off the record-setting matches
+        // row — the same table the Completed-Today card reads. Value-matched,
+        // newest first; best effort, and a miss leaves the cell as it was.
+        struct HintRow: Decodable { let hints_used: Int? }
+        await withTaskGroup(of: (Int, Int?).self) { group in
+            for (i, r) in records.enumerated() {
+                guard r.recordType == "fewest_guesses" || r.recordType == "fastest_win",
+                      let m = r.gameMode, HINT_MODES.contains(m) else { continue }
+                let field = r.recordType == "fewest_guesses" ? "player1_score" : "player1_time"
+                let value = Int(r.recordValue.rounded())
+                let holder = r.holderId
+                group.addTask {
+                    let rows: [HintRow] = (try? await AuthService.shared.client.from("matches")
+                        .select("hints_used")
+                        .eq("player1_id", value: holder).eq("game_mode", value: m).eq(field, value: value)
+                        .order("created_at", ascending: false).limit(1)
+                        .execute().value) ?? []
+                    return (i, rows.first?.hints_used)
+                }
+            }
+            for await (i, h) in group { records[i].hintsUsed = h }
+        }
+        return records
     }
 
     // MARK: - Writing all-time records (web parity — previously deferred, bible §7)

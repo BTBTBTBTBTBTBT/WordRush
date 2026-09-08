@@ -28,14 +28,17 @@ const DailyCompletionsContext = createContext<DailyCompletionsContextValue>({
   refreshDailies: async () => {},
 });
 
-// ---- sessionStorage cache ----
-// Survives React remounts and soft navigations so the sweep banner
-// never flashes on return to the home screen.
+// ---- localStorage cache (day-keyed) ----
+// Was localStorage, which dies with the tab — so every fresh visit refetched
+// and the "Completed Today" card popped in last, shoving the rank banner and
+// the board down (§254). localStorage survives across visits; the day stamp
+// below is what keeps it honest, so yesterday's completions never show under
+// today's header.
 const CACHE_KEY = 'wordocious-daily-completions';
 
 function readCache(): Map<string, DailyCompletion> {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return new Map();
     const parsed = JSON.parse(raw);
     // Invalidate if the cached day doesn't match today
@@ -50,19 +53,19 @@ function writeCache(map: Map<string, DailyCompletion>) {
   try {
     const obj: Record<string, DailyCompletion> = {};
     map.forEach((v, k) => { obj[k] = v; });
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ day: getTodayLocal(), data: obj }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ day: getTodayLocal(), data: obj }));
   } catch {}
 }
 
 export function DailyCompletionsProvider({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  // Initialise from sessionStorage so the very first render already has data
+  // Initialise from localStorage so the very first render already has data
   const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => readCache());
   // readCache() is day-guarded, so whatever seeded the initial state is today's.
   const [dailiesDay, setDailiesDay] = useState<string>(() => getTodayLocal());
   const fetchedRef = useRef<string | null>(null);
 
-  // Keep sessionStorage in sync whenever state changes
+  // Keep localStorage in sync whenever state changes
   const setAndCache = useCallback((mapOrFn: Map<string, DailyCompletion> | ((prev: Map<string, DailyCompletion>) => Map<string, DailyCompletion>)) => {
     setTodayDailies((prev) => {
       const next = typeof mapOrFn === 'function' ? mapOrFn(prev) : mapOrFn;
@@ -85,7 +88,7 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   }, [user, setAndCache]);
 
   // Fetch on mount / user change — but only once per user.
-  // If we already have cached data (from sessionStorage), skip the fetch
+  // If we already have cached data (from localStorage), skip the fetch
   // and just mark the user as fetched so we don't re-fetch on navigation.
   useEffect(() => {
     if (!user) {
@@ -96,12 +99,12 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
       // is also null but `loading` is true, so we keep the cache then (no flicker).
       if (!loading) {
         setTodayDailies((prev) => (prev.size > 0 ? new Map() : prev));
-        try { sessionStorage.removeItem(CACHE_KEY); } catch {}
+        try { localStorage.removeItem(CACHE_KEY); } catch {}
       }
       return;
     }
     if (fetchedRef.current === user.id) return;
-    // If sessionStorage already has today's data, use it immediately
+    // If localStorage already has today's data, use it immediately
     // and do a silent background refresh.
     const cached = readCache();
     if (cached.size > 0) {

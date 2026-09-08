@@ -178,6 +178,10 @@ object LeaderboardService {
         /** §245: when the record was set — the marquee card's "held since". */
         @SerialName("achieved_at") val achievedAt: String? = null,
     ) {
+        /** §254: resolved at read time from the record-setting matches row —
+         *  all_time_records itself stores no hint count. null = not applicable
+         *  or not found; the cell then renders exactly as before. */
+        @kotlinx.serialization.Transient var hintsUsed: Int? = null
         val holderUsername: String? get() = profiles?.username
     }
 
@@ -579,5 +583,40 @@ object LeaderboardService {
         client.postgrest["all_time_records"]
             .select(Columns.raw("record_type,record_value,game_mode,play_type,holder_id,achieved_at,profiles!inner(username)"))
             .decodeList<AllTimeRecord>()
+            .also { attachRecordHints(it) }
     }.getOrElse { emptyList() }
+
+    private val HINT_RECORD_MODES = setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE")
+    @Serializable private data class HintRow(@SerialName("hints_used") val hintsUsed: Int? = null)
+
+    /**
+     * §254: the founder wants hints on the All-Time and You tabs too, but
+     * all_time_records stores no hint count and adding a column needs a prod
+     * migration. For the six cells where hints apply (fewest guesses / fastest
+     * win in the hint modes) read it off the record-setting matches row — the
+     * same table the Completed-Today card reads. Value-matched, newest first;
+     * best effort, and a miss leaves the cell as it was.
+     */
+    private suspend fun attachRecordHints(records: List<AllTimeRecord>) = coroutineScope {
+        records.filter { r ->
+            r.holderId != null && r.gameMode?.let { it in HINT_RECORD_MODES } == true &&
+                (r.recordType == "fewest_guesses" || r.recordType == "fastest_win")
+        }.map { r ->
+            async {
+                r.hintsUsed = runCatching {
+                    client.postgrest["matches"]
+                        .select(Columns.raw("hints_used")) {
+                            filter {
+                                eq("player1_id", r.holderId!!)
+                                eq("game_mode", r.gameMode!!)
+                                eq(if (r.recordType == "fewest_guesses") "player1_score" else "player1_time", r.recordValue.toInt())
+                            }
+                            order("created_at", Order.DESCENDING)
+                            limit(1)
+                        }
+                        .decodeList<HintRow>().firstOrNull()?.hintsUsed
+                }.getOrNull()
+            }
+        }.forEach { it.await() }
+    }
 }

@@ -160,15 +160,39 @@ struct CompletedDailyCard: View {
             // under Classic.
             localBoards = nil; gauntlet = nil; data = nil
             let seed = DailySeed.today(mode: mode)
+            var localStatus: GameStatus? = nil
             if let state = GamePersistence.shared.load(seed: seed, mode: mode),
                state.status == .won || state.status == .lost {
                 localBoards = state.boards
                 gauntlet = state.gauntlet
+                localStatus = state.status
             }
-            data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
             maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 6
             let savedMs = Int(GamePersistence.shared.loadElapsed(seed: seed, mode: mode))
+            // §254: paint IMMEDIATELY. This card used to render zero height until
+            // the network answered — even when the game was played on this very
+            // device and the board was already on disk — so it was the last
+            // thing on every page to appear, and it shoved the rank banner and
+            // the whole leaderboard down when it did. Two instant sources, in
+            // order: the day-keyed disk copy of the last server answer, else a
+            // provisional record built from the local save. The fetch below
+            // then refreshes silently; a failed fetch no longer blanks the card.
+            if let cached = Self.readCache(mode: mode, seed: seed) {
+                data = cached
+            } else if let bs = localBoards, let st = localStatus {
+                data = MatchStatsService.SolvedDaily(
+                    guesses: bs.flatMap(\.guesses), solutions: bs.map(\.solution),
+                    won: st == .won,
+                    guessCount: bs.map(\.guesses.count).max() ?? 0,
+                    timeSeconds: savedMs / 1000,
+                    hintsUsed: bs.first?.hintEvaluations?.count ?? 0)
+            }
             elapsedMs = savedMs > 0 ? savedMs : (data?.timeSeconds ?? 0) * 1000
+            if let fresh = await MatchStatsService.solvedDaily(mode: mode, seed: seed) {
+                data = fresh
+                Self.writeCache(fresh, mode: mode, seed: seed)
+                if savedMs <= 0 { elapsedMs = fresh.timeSeconds * 1000 }
+            }
             // Gauntlet played on another device → rebuild stage breakdown from
             // the server-persisted matches.gauntlet_stages.
             if mode == .gauntlet, gauntlet == nil, let sg = await MatchStatsService.gauntletStages(seed: seed) {
@@ -185,6 +209,21 @@ struct CompletedDailyCard: View {
                 gauntlet = r.progress
             }
             expanded = false
+        }
+    }
+
+    // §254: day-keyed disk copy of the last server answer, one slot per mode.
+    // The seed embeds the date, so a stale slot simply misses — no pruning.
+    private struct CacheEntry: Codable { let seed: String; let solved: MatchStatsService.SolvedDaily }
+    private static func cacheKey(_ mode: GameMode) -> String { "completed-daily-cache-\(mode.rawValue)" }
+    private static func readCache(mode: GameMode, seed: String) -> MatchStatsService.SolvedDaily? {
+        guard let d = UserDefaults.standard.data(forKey: cacheKey(mode)),
+              let e = try? JSONDecoder().decode(CacheEntry.self, from: d), e.seed == seed else { return nil }
+        return e.solved
+    }
+    private static func writeCache(_ solved: MatchStatsService.SolvedDaily, mode: GameMode, seed: String) {
+        if let d = try? JSONEncoder().encode(CacheEntry(seed: seed, solved: solved)) {
+            UserDefaults.standard.set(d, forKey: cacheKey(mode))
         }
     }
 

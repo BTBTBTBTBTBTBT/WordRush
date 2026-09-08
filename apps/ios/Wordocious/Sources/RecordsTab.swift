@@ -400,6 +400,12 @@ struct DailyRecordsView: View {
         return VStack(spacing: 10) {
             HModePicker(selected: $mode, isSweep: $isSweep)
 
+            // §254: the completed-daily dropdown, mounted exactly as the daily
+            // leaderboard (ProfileTab) mounts it — the founder wants Records to
+            // mirror that page. .id(mode) → a fresh card per mode, same reason
+            // as there: never the previous mode's board under a new header.
+            if !isSweep { CompletedDailyCard(mode: mode).id(mode) }
+
             if isSweep {
                 sweepCard
             } else {
@@ -629,6 +635,11 @@ struct DailyRecordsView: View {
         let t = formatShortTime(Int(e.timeSeconds))
         var line = "\(e.guessCount) Guesses · \(t)"
         if e.totalBoards > 1 { line += " · \(e.boardsSolved)/\(e.totalBoards)" }
+        // §254: hints ride this row exactly as on the daily leaderboard row
+        // (ProfileTab) — the founder wants the two pages to match.
+        if HINT_MODES.contains(mode.rawValue), let h = e.hintsUsed {
+            line += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
+        }
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
             NavigationLink(value: e.userId) {
