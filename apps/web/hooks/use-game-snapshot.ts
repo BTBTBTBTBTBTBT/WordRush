@@ -64,10 +64,11 @@ export interface RestoredSession {
  * - Daily: save is from a different UTC day
  * - Practice: save is older than the 24h TTL
  *
- * Terminal saves (WON/LOST/ABANDONED) ARE returned so that navigating
- * back to a completed daily shows the finished board instead of a fresh
- * one. Callers check `isCompleted` to gate re-triggering animations and
- * stat recording.
+ * Terminal saves (WON/LOST/ABANDONED) ARE returned for the DAILY so that
+ * navigating back to a completed daily shows the finished board instead of a
+ * fresh one; callers check `isCompleted` to gate re-triggering animations and
+ * stat recording. For PRACTICE (unlimited) a terminal save is discarded — a
+ * finished puzzle has nothing to resume, and the next visit deals a new one.
  *
  * Daily and practice have separate storage keys so a mid-game practice
  * session can't leak into daily and vice versa.
@@ -112,6 +113,17 @@ export function loadGameSession(mode: GameMode, isDaily: boolean): RestoredSessi
       }
     } else {
       if (Date.now() - parsed.savedAt > PRACTICE_TTL_MS) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      // §255 (founder: "the last completed puzzle persists when going back to
+      // the menu and clicking the classic game again — it should only persist
+      // if the puzzle wasn't completed"): a finished UNLIMITED save has nothing
+      // to resume. Restoring it re-showed the solved board on every visit until
+      // the 24h TTL. Only in-progress practice sessions come back; a completed
+      // one is dropped so the next visit deals a fresh puzzle. Daily is the
+      // opposite on purpose — you can't replay it, so its finished board stays.
+      if (parsed.state.status !== GameStatus.PLAYING) {
         localStorage.removeItem(key);
         return null;
       }
