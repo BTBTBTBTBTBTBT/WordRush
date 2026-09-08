@@ -61,7 +61,7 @@ export function PlayModeToggle({ value, onChange }: Props) {
 export function UnlimitedHero() {
   return (
     <div
-      className="w-full flex flex-col items-center py-2.5 relative"
+      className="w-full h-full flex flex-col items-center justify-center py-2.5 relative"
       style={{
         background: 'linear-gradient(135deg, #fce7f3, #ede9fe)',
         border: '1.5px solid #c4b5fd',

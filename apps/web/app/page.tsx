@@ -394,6 +394,13 @@ export default function HomePage() {
             never see the pill (playMode is forced to 'daily' above). */}
         {isPro && <PlayModeToggle value={playMode} onChange={setPlayMode} />}
 
+        {/* §255 (founder: toggling Daily/Unlimited "shouldn't shift any of the
+            games around — the Daily Sweep window is what's causing that"):
+            the three hero variants differed by a few px of font metrics and
+            the swept card ran a line taller, so the mode grid below jumped on
+            every toggle. Same cure as native §248 — the slot is ONE fixed
+            height and every variant fills it, content centred. */}
+        <div className="h-[88px] flex flex-col">
         {playMode === 'unlimited' ? (
           <UnlimitedHero />
         ) : (() => {
@@ -442,7 +449,7 @@ export default function HomePage() {
             return (
               <button
                 onClick={() => { shareDailySweep(todayDailies); }}
-                className="w-full shrink-0 btn-3d flex flex-col items-center py-2.5 font-black relative overflow-hidden transition-transform active:scale-[0.98]"
+                className="w-full h-full shrink-0 btn-3d flex flex-col items-center justify-center py-2.5 font-black relative overflow-hidden transition-transform active:scale-[0.98]"
                 style={{ background: bg, border, borderRadius: '14px' }}
               >
                 {/* Subtle foil shimmer sweep */}
@@ -488,9 +495,9 @@ export default function HomePage() {
           // leans cool (violet→indigo) so the two modes are still visually
           // distinct — Unlimited runs warm (pink→violet).
           return (
-            <Link href="/daily">
+            <Link href="/daily" className="block h-full">
               <button
-                className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
+                className="w-full h-full btn-3d flex flex-col items-center justify-center py-2.5 font-black relative"
                 style={{
                   background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
                   border: '1.5px solid #a78bfa',
@@ -517,6 +524,7 @@ export default function HomePage() {
             </Link>
           );
         })()}
+        </div>
 
         {/* Word of the Day */}
         <WordOfTheDay />
