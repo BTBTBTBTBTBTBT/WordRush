@@ -257,6 +257,12 @@
     min-height: 100vh;
     min-height: 100dvh;
   }
+  /* §255: modal/dialog panels — never taller than the VISIBLE viewport, so a
+     centered panel can't be cut off at the top with nothing to scroll. */
+  .max-h-modal {
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+  }
 
   /* 3D button push-down */
   .btn-3d {

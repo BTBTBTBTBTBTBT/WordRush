@@ -252,6 +252,12 @@ export async function recordGameResult(
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
+  // §255: a WIN with zero guesses is impossible in every mode — it can only be
+  // a UI bug (the stale victory overlay after "Play again" made one LOOK real).
+  // Refuse it here, before the pending-record write, so nothing of the kind
+  // can ever reach user_stats, XP, streaks or all_time_records.
+  if (won && guessCount <= 0) return null;
+
   // Crash-protection: persist the args locally BEFORE any network call so a
   // tab closed mid-flight can re-run this via drainPendingRecords(). Solo
   // only — VS results are recorded server-coordinated and must not retry.
@@ -614,6 +620,8 @@ export async function recordSoloMatch(data: {
    */
   hintsUsed?: number;
 }) {
+  // §255: same impossible-win guard as recordGameResult — no 0-guess win rows.
+  if (data.won && data.score <= 0) return;
   // Crash-protection: persist the args locally BEFORE the network call so a
   // tab closed mid-flight can re-run this via drainPendingRecords().
   const trackPending = typeof window !== 'undefined';

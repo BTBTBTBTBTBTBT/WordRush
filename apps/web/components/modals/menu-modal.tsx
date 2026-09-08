@@ -63,14 +63,16 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
     >
       <div
         ref={focusRef}
-        className="relative w-full max-w-sm animate-modal-content"
+        // §255: max-h-modal (dvh with a vh fallback) instead of an inline
+        // calc(100vh - 60px) — on iOS Safari 100vh includes the collapsed
+        // toolbar, so the panel's top sat under the browser chrome.
+        className="relative w-full max-w-sm animate-modal-content max-h-modal"
         style={{
           background: 'var(--color-surface)',
           border: '1.5px solid var(--color-border)',
           borderRadius: '20px',
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
-          maxHeight: 'calc(100vh - 60px)',
           display: 'flex',
           flexDirection: 'column',
         }}

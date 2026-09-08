@@ -23,7 +23,7 @@ import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
 import { MODES } from '@/lib/modes.generated';
-import { SOLUTIONS_CUTOVER_DATE, isBlockedWordOfDay } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -50,56 +50,48 @@ function WordOfTheDay() {
     const displayedKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const useLegacy = displayedKey < SOLUTIONS_CUTOVER_DATE;
 
-    // H1: the word only changes at midnight, but this used to re-run the
-    // definition scan (up to 20 serial external API calls) on EVERY home
-    // visit. Cache the day's result — including the no-definition fallback,
-    // so a flaky API day doesn't retrigger the scan per visit.
+    // Day-keyed cache: the word only changes at midnight, so one good answer
+    // serves every home visit that day. Only a result WITH a definition is
+    // cached — a miss is now a single cheap request, worth retrying next visit.
     const cacheKey = `wordocious-wotd-${daysSinceEpoch}`;
     try {
       const cached = localStorage.getItem(cacheKey);
-      if (cached) { setInfo(JSON.parse(cached)); return; }
-    } catch {}
-    const saveAndSet = (v: WordDefinition) => {
-      setInfo(v);
-      try { localStorage.setItem(cacheKey, JSON.stringify(v)); } catch {}
-    };
-
-    async function findWordWithDefinition() {
-      // Lazy-load the governing list (shared chunk with game pages).
-      const solutions = useLegacy
-        ? (await import('@/data/solutions-legacy.json')).default
-        : (await import('@/data/solutions.json')).default;
-      // Try up to 20 words starting from today's index until we find one with a definition
-      for (let offset = 0; offset < 20; offset++) {
-        const word = solutions[(daysSinceEpoch + offset) % solutions.length];
-        // Never FEATURE a blocked word (anatomical/excretory/drug definitions).
-        // It stays a valid puzzle answer; it just isn't printed on the home card
-        // under a dictionary definition. See core/wotd-blocklist.
-        if (isBlockedWordOfDay(word)) continue;
-        try {
-          const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data[0]) {
-              const entry = data[0];
-              const phonetic = entry.phonetics?.find((p: any) => p.text)?.text || entry.phonetic || '';
-              const meaning = entry.meanings?.[0];
-              const partOfSpeech = meaning?.partOfSpeech || '';
-              const definition = meaning?.definitions?.[0]?.definition || '';
-              if (definition) {
-                saveAndSet({ word, phonetic, partOfSpeech, definition });
-                return;
-              }
-            }
-          }
-        } catch {}
+      if (cached) {
+        const v = JSON.parse(cached) as WordDefinition;
+        if (v?.word && v.definition) { setInfo(v); return; }
       }
-      // Fallback: show the original daily word without definition
-      const fallback = solutions[daysSinceEpoch % solutions.length];
-      saveAndSet({ word: fallback });
-    }
+    } catch {}
 
-    findWordWithDefinition();
+    // §255 (founder: "the main screen didn't populate the word of the day or
+    // definition, it was blank"): this card used to walk up to TWENTY serial
+    // requests to dictionaryapi.dev from the browser — the one surface §250
+    // missed — so an API outage left it on its skeleton. One request to our
+    // own /api/wotd now answers from the committed local dataset, instantly.
+    let cancelled = false;
+    fetch(`/api/wotd?date=${displayedKey}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(async (v: WordDefinition | null) => {
+        if (cancelled) return;
+        if (v?.word) {
+          setInfo(v);
+          if (v.definition) { try { localStorage.setItem(cacheKey, JSON.stringify(v)); } catch {} }
+          return;
+        }
+        // Route unreachable: still show the day's word, computed locally, so
+        // the card is never blank. (Lazy import — shared chunk with the games.)
+        const solutions = useLegacy
+          ? (await import('@/data/solutions-legacy.json')).default
+          : (await import('@/data/solutions.json')).default;
+        if (!cancelled) setInfo({ word: solutions[daysSinceEpoch % solutions.length] });
+      })
+      .catch(async () => {
+        if (cancelled) return;
+        const solutions = useLegacy
+          ? (await import('@/data/solutions-legacy.json')).default
+          : (await import('@/data/solutions.json')).default;
+        if (!cancelled) setInfo({ word: solutions[daysSinceEpoch % solutions.length] });
+      });
+    return () => { cancelled = true; };
   }, []);
 
   if (!info) return (

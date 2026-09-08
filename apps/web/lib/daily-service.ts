@@ -140,6 +140,9 @@ export async function recordDailyResult(
   stagesCompleted?: number,
   bestCorrectLetters?: number,
 ) {
+  // §255: a completed daily with zero guesses is impossible — refuse it, same
+  // guard as recordGameResult, so no UI bug can ever write one.
+  if (completed && guessCount <= 0) return null as any;
   const targetDay = day || getTodayLocal();
   // The puzzle's day also picks the scoring formula (pre-cutover days keep
   // the frozen V1 formula so a day's leaderboard never mixes formulas).

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Flame, HelpCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -8,7 +9,7 @@ import { ProBadge } from '@/components/ui/pro-badge';
 import { MenuModal } from '@/components/modals/menu-modal';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { StatPopover } from '@/components/ui/stat-popover';
-import { cachedFlawlessStreak } from '@/lib/stats-service';
+import { cachedFlawlessStreak, fetchDailySweepStats } from '@/lib/stats-service';
 import { getTodayLocal } from '@/lib/daily-service';
 
 function ShieldIcon({ className }: { className?: string }) {
@@ -75,9 +76,9 @@ export function AppHeader() {
   const [flawlessOpen, setFlawlessOpen] = useState(false);
 
   // §244: the flawless-streak pill reads the day-stamped cache written by
-  // fetchDailySweepStats — synchronous, no query in the persistent header.
+  // fetchDailySweepStats — synchronous, no query on the render path.
   // Trusted only when stamped today or yesterday (older = possibly broken).
-  const flawlessStreak = (() => {
+  const readFlawlessStreak = () => {
     const c = cachedFlawlessStreak();
     if (!c || c.streak < 2) return 0;
     const today = getTodayLocal();
@@ -85,7 +86,26 @@ export function AppHeader() {
     const yd = new Date(y, (m ?? 1) - 1, (d ?? 1) - 1);
     const yesterday = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`;
     return c.day === today || c.day === yesterday ? c.streak : 0;
-  })();
+  };
+  const [flawlessStreak, setFlawlessStreak] = useState(readFlawlessStreak);
+  const pathname = usePathname();
+  // §255 (founder: "the web version is missing the flawless streak button at
+  // the top"): that cache was written ONLY by the Records and Profile pages, so
+  // on the home screen — or any fresh browser — the pill stayed hidden until
+  // one of them had been visited that day. The header now refreshes the cache
+  // itself once per day per sign-in, and re-reads it on every navigation so a
+  // sweep finished on /daily shows up here without a reload.
+  useEffect(() => {
+    setFlawlessStreak(readFlawlessStreak());
+    if (!profile?.id) return;
+    if (cachedFlawlessStreak()?.day === getTodayLocal()) return;
+    let cancelled = false;
+    fetchDailySweepStats(profile.id)
+      .then(() => { if (!cancelled) setFlawlessStreak(readFlawlessStreak()); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, pathname]);
 
   const shields = (profile as any)?.streak_shields ?? 0;
   const streak = profile?.daily_login_streak ?? 0;

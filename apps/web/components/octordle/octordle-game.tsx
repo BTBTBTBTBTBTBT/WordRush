@@ -164,6 +164,13 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
     const newSeed = Date.now().toString();
     setGameSeed(newSeed);
     dispatch({ type: 'RESET', seed: newSeed, mode: GameMode.OCTORDLE });
+    // §255: dismiss the celebration overlays. §242 wired "Play again" on the
+    // victory card to this handler, which reset the board but left the card
+    // mounted — so it kept showing, now with the NEW word and 0/6 guesses,
+    // an "auto victory" (founder report). Nothing was ever recorded (the
+    // recording effect only fires on WON/LOST), but it looked exactly like it.
+    setShowVictory(false);
+    setShowGameOver(false);
     setCurrentGuess(''); setError(''); resetTimer(0);
     isRestoredCompleted.current = false;
   };
