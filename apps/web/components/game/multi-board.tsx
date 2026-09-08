@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useCallback, useRef, useMemo } from 'react';
+import { memo, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
 import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
 
 interface MultiBoardProps {
@@ -78,8 +78,14 @@ function describeBoard(board: { status: string; guesses: string[]; maxGuesses: n
 }
 
 // Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
-const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking, ariaLabel }: {
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking, ariaLabel, tileSize }: {
   board: BoardState;
+  /** §255: explicit SQUARE tile size in px (from the measured container).
+   *  Without it the board stretches to fill its grid cell, and on a wide
+   *  viewport the tiles turn into flat bars — the "compressed looking mess"
+   *  the founder saw on QuadWord/OctoWord. The expanded OctoWord overlay
+   *  omits it and keeps the stretch behaviour. */
+  tileSize?: number;
   index: number;
   currentGuess?: string;
   colorBlind?: boolean;
@@ -109,6 +115,9 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
 
   // In expanded mode, show larger text
   const textSize = isExpanded ? 'text-base sm:text-lg' : 'text-[10px] sm:text-xs';
+  const fixed = tileSize != null;
+  const tileStyle = fixed ? { width: tileSize, height: tileSize, fontSize: Math.max(8, Math.round(tileSize! * 0.45)) } : undefined;
+  const rowStyle = fixed ? { gridTemplateColumns: `repeat(5, ${tileSize}px)` } : undefined;
 
   return (
     <div
@@ -123,7 +132,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); }
       } : undefined}
       aria-label={ariaLabel}
-      className={`relative p-1 rounded-lg border-2 h-full flex flex-col ${
+      className={`relative p-1 rounded-lg border-2 ${fixed ? '' : 'h-full'} flex flex-col ${
         onClick ? 'cursor-pointer' : ''
       } ${
         invisible ? 'invisible' : ''
@@ -141,7 +150,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         </div>
       )}
 
-      <div className="grid gap-[2px] flex-1" style={{ gridTemplateRows: `repeat(${totalRows}, 1fr)` }}>
+      <div className={fixed ? 'grid gap-[2px]' : 'grid gap-[2px] flex-1'} style={{ gridTemplateRows: `repeat(${totalRows}, ${fixed ? `${tileSize}px` : '1fr'})` }}>
         {Array.from({ length: totalRows }).map((_, rowIndex) => {
           const isPrefillRow = rowIndex < prefillCount;
           const playerRowIndex = rowIndex - prefillCount;
@@ -157,11 +166,13 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                   prefill.evaluation.tiles.map((t) => t.state),
                 )}`}
                 className="grid grid-cols-5 gap-[2px] min-h-0 opacity-75"
+                style={rowStyle}
               >
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
                   <div
                     key={letterIndex}
                     className={`flex items-center justify-center min-h-0 border rounded font-bold ${textSize} ${tile.state === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tile.state, colorBlind)}`}
+                    style={tileStyle}
                   >
                     {tile.letter.toUpperCase()}
                   </div>
@@ -182,6 +193,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
               role={isPastGuess ? 'img' : undefined}
               aria-label={isPastGuess ? describeRow(guess, tiles as TileState[]) : undefined}
               className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}
+              style={rowStyle}
             >
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
@@ -198,7 +210,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                     } ${!isInvalidTile ? getTileColor(tileState, colorBlind) : ''} ${
                       isLastSubmitted ? 'animate-tile-flip-mini' : ''
                     }`}
-                    style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
+                    style={{ ...(isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : {}), ...(tileStyle ?? {}) }}
                   >
                     {letter.toUpperCase()}
                   </div>
@@ -219,6 +231,35 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
   const containerRef = useRef<HTMLDivElement>(null);
   const isOctordle = boards.length > 4;
   const cols = isOctordle ? 'grid-cols-4' : 'grid-cols-2';
+
+  // §255 (founder: "the quadword board looks awful… not this compressed
+  // looking mess"; "octoword needs work too"): each MiniBoard filled its grid
+  // cell and its tiles split that cell 5-across, so on a wide viewport the
+  // tiles became long flat bars. The natives size SQUARE tiles to fit the
+  // space. Measure the container and derive one tile size that fits both
+  // dimensions — capped so desktop doesn't balloon — then lay the boards out
+  // at that size, centred. Falls back to the stretch layout until measured.
+  const gridCols = isOctordle ? 4 : 2;
+  const gridRows = Math.ceil(boards.length / gridCols);
+  const maxRows = boards.reduce((m, b) => Math.max(m, (b.prefilledGuesses?.length ?? 0) + b.maxGuesses), 1);
+  const [tile, setTile] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const GAP = 8, PAD = 12, TG = 2, CAP = 44;   // board gap, p-1+border-2 both sides, tile gap
+    const fit = () => {
+      const r = el.getBoundingClientRect();
+      const byW = ((r.width - (gridCols - 1) * GAP) / gridCols - PAD - 4 * TG) / 5;
+      const byH = ((r.height - (gridRows - 1) * GAP) / gridRows - PAD - (maxRows - 1) * TG) / maxRows;
+      const t = Math.floor(Math.min(byW, byH, CAP));
+      setTile(t >= 10 ? t : null);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [gridCols, gridRows, maxRows]);
+  const boardW = tile ? tile * 5 + 4 * 2 + 12 : 0;
 
   const handleBoardClick = useCallback((index: number) => {
     if (!isOctordle) return;
@@ -290,14 +331,18 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
           phones makes the 2-row OctoWord layout overflow the parent flex
           cell and slide under the keyboard. With it, both rows split the
           available height equally and tiles shrink to fit. */}
-      <div className={`grid ${cols} gap-2 w-full h-full auto-rows-fr`}>
+      <div
+        className={tile ? 'grid gap-2 w-full h-full justify-center content-center' : `grid ${cols} gap-2 w-full h-full auto-rows-fr`}
+        style={tile ? { gridTemplateColumns: `repeat(${gridCols}, ${boardW}px)` } : undefined}
+      >
         {boards.map((board, index) => (
           <div
             key={index}
             ref={(el) => { boardRefs.current[index] = el; }}
-            className="h-full min-h-0"
+            className={tile ? 'min-h-0' : 'h-full min-h-0'}
           >
             <MiniBoard
+              tileSize={tile ?? undefined}
               ariaLabel={describeBoard(board, index, boards.length)}
               board={board}
               index={index}
