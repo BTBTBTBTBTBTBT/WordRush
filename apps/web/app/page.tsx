@@ -399,8 +399,12 @@ export default function HomePage() {
             the three hero variants differed by a few px of font metrics and
             the swept card ran a line taller, so the mode grid below jumped on
             every toggle. Same cure as native §248 — the slot is ONE fixed
-            height and every variant fills it, content centred. */}
-        <div className="h-[88px] flex flex-col">
+            height and every variant fills it, content centred.
+            Measured live after the first cut: the h-[88px] rule applied yet the
+            box came out 82.5px / 68px — this is a flex item in a column whose
+            parent overflows, so the browser SHRANK it to its content. shrink-0
+            is what actually pins it; the inline height is belt-and-braces. */}
+        <div className="flex flex-col shrink-0" style={{ height: 88 }}>
         {playMode === 'unlimited' ? (
           <UnlimitedHero />
         ) : (() => {
