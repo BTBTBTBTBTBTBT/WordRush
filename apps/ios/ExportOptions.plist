@@ -2,17 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Used by apps/ios/ship.sh (xcodebuild -exportArchive). §256.
+	     MANUAL signing on purpose. The archive is built unsigned, so export is
+	     where profiles enter the IPA. Both profiles named here are API-created
+	     (POST /v1/profiles) and decode to TeamName "Showloud, LLC" — Apple's
+	     Individual→Organization conversion never rewrites existing profiles,
+	     and the old Xcode-managed widget profile still read the individual
+	     name. ship.sh fetches + installs these by name every run and verifies
+	     the IPA's embedded TeamName before upload. Names are not secrets.
+	     Replaces the machine-local ~/.appstoreconnect/wr_export_manual.plist. -->
 	<key>method</key>
-	<string>app-store-connect</string>
-	<key>teamID</key>
-	<string>Q32F6GRDYG</string>
-	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>app-store</string>
 	<key>destination</key>
 	<string>export</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+	<key>teamID</key>
+	<string>Q32F6GRDYG</string>
 	<key>uploadSymbols</key>
 	<true/>
-	<key>stripSwiftSymbols</key>
-	<true/>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.wordocious.app</key>
+		<string>Wordocious AppStore w/ groups</string>
+		<key>com.wordocious.app.widgets</key>
+		<string>Wordocious Widgets App Store LLC</string>
+	</dict>
 </dict>
 </plist>

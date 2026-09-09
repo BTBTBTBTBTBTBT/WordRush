@@ -7,11 +7,45 @@ set -e
 IOS="$(cd "$(dirname "$0")" && pwd)"
 ID=E834629E4D8BE4C07579FAAEDDEFA363F437060B                     # signing identity (cert fingerprint; private key in Keychain)
 KEY="--apiKey C8FRS9T697 --apiIssuer 8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
+KEY_ID=C8FRS9T697; ISSUER=8bdd3f73-0d8b-427d-95c7-8097b77dfb7a
+P8="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"
+EXPECTED_TEAM_NAME="Showloud, LLC"   # what Apple names team Q32F6GRDYG post-conversion
+# The two App Store profiles the export signs with (ExportOptions.plist names
+# the same two). Both API-created, both decode to TeamName "Showloud, LLC".
+LLC_PROFILES=("Wordocious AppStore w/ groups" "Wordocious Widgets App Store LLC")
+[ -f "$P8" ] || { echo "Missing App Store Connect API key: $P8" >&2; exit 1; }
 BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9]+)".*/\1/')"
 MARKETING="$(grep -m1 'MARKETING_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9.]+)".*/\1/')"
 echo "== BUILD $MARKETING ($BUILD) =="
 cd "$IOS"
 rm -rf build/Wordocious.xcarchive build/export build/resign
+
+# §256: install the LLC profiles fresh from App Store Connect, by NAME, every
+# run. Apple's Individual→Organization conversion kept team Q32F6GRDYG but never
+# rewrites existing profiles — TeamName is frozen at generation — and the old
+# Xcode-managed widget profile ("Wordocious Widgets AppStore") still embedded
+# "BRIAN MAXWELL TERCHIN" in every shipped IPA through 1.25 (170). Deleting the
+# cached copies does nothing; Xcode re-fetches them by name. Fetching OUR named
+# profiles from the API each run means a cleared cache or a fresh Mac can never
+# reintroduce a stale one. Mirrors ShowLoud's ios/scripts/ship.sh step 1b.
+echo "== INSTALL LLC PROFILES =="
+ruby - "$P8" "$KEY_ID" "$ISSUER" "$HOME/Library/MobileDevice/Provisioning Profiles" "${LLC_PROFILES[@]}" <<'RUBY'
+require "jwt"; require "json"; require "net/http"; require "openssl"; require "base64"; require "fileutils"
+p8, kid, iss, dest, *names = ARGV
+tok = JWT.encode({ iss: iss, exp: Time.now.to_i + 1200, aud: "appstoreconnect-v1" },
+                 OpenSSL::PKey::EC.new(File.read(p8)), "ES256", { kid: kid, typ: "JWT" })
+FileUtils.mkdir_p(dest)
+names.each do |name|
+  uri = URI("https://api.appstoreconnect.apple.com/v1/profiles?filter[name]=#{URI.encode_www_form_component(name)}&limit=1")
+  r = Net::HTTP::Get.new(uri); r["Authorization"] = "Bearer #{tok}"
+  d = JSON.parse(Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(r) }.body)
+  p = (d["data"] || []).first or abort("  profile not found on ASC: #{name}")
+  a = p["attributes"]
+  abort("  profile #{name} is #{a["profileState"]}, not ACTIVE") unless a["profileState"] == "ACTIVE"
+  File.binwrite(File.join(dest, "#{a["uuid"]}.mobileprovision"), Base64.decode64(a["profileContent"]))
+  puts "  installed #{name} (#{a["uuid"]})"
+end
+RUBY
 
 echo "== ARCHIVE =="
 xcodebuild -scheme Wordocious -destination 'generic/platform=iOS' -archivePath build/Wordocious.xcarchive archive CODE_SIGNING_ALLOWED=NO -quiet
@@ -28,7 +62,7 @@ fi
 
 echo "== EXPORT =="
 xcodebuild -exportArchive -archivePath build/Wordocious.xcarchive -exportPath build/export \
-  -exportOptionsPlist ~/.appstoreconnect/wr_export_manual.plist -allowProvisioningUpdates \
+  -exportOptionsPlist "$IOS/ExportOptions.plist" -allowProvisioningUpdates \
   -authenticationKeyID C8FRS9T697 -authenticationKeyIssuerID 8bdd3f73-0d8b-427d-95c7-8097b77dfb7a \
   -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_C8FRS9T697.p8 > /dev/null
 
@@ -73,6 +107,25 @@ for k in "com.apple.developer.associated-domains" "aps-environment" \
     echo "  ok: $k"
   else
     echo "  MISSING: $k — aborting before upload"; exit 1
+  fi
+done
+
+# §256 TEAM NAME tripwire — on the payload that actually ships (re-signing
+# with codesign leaves embedded.mobileprovision exactly as export wrote it).
+# Covers the app AND every embedded extension. A profile's TeamName is frozen
+# at generation; refuse to upload anything still carrying the individual name.
+echo "== TEAM NAME CHECK (IPA) =="
+for bundle in "$APP" "$APP"/PlugIns/*.appex; do
+  [ -d "$bundle" ] || continue
+  if ! security cms -D -i "$bundle/embedded.mobileprovision" > ipaprof.plist 2>/dev/null; then
+    echo "  no embedded profile in $(basename "$bundle") — aborting" >&2; exit 1
+  fi
+  tn="$(/usr/libexec/PlistBuddy -c 'Print :TeamName' ipaprof.plist 2>/dev/null || true)"
+  pn="$(/usr/libexec/PlistBuddy -c 'Print :Name' ipaprof.plist 2>/dev/null || true)"
+  echo "  $(basename "$bundle"): $pn  (TeamName: $tn)"
+  if [ "$tn" != "$EXPECTED_TEAM_NAME" ]; then
+    echo "  WRONG TEAM NAME in $(basename "$bundle") (expected '$EXPECTED_TEAM_NAME') — aborting before upload" >&2
+    exit 1
   fi
 done
 
