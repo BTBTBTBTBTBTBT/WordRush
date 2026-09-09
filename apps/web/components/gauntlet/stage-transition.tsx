@@ -2,7 +2,7 @@
 
 import { Check, Zap } from 'lucide-react';
 import { GauntletStageConfig } from '@wordle-duel/core';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface StageTransitionProps {
   completedStage: GauntletStageConfig;
@@ -14,15 +14,38 @@ interface StageTransitionProps {
 }
 
 export function StageTransition({ completedStage, nextStage, isVersus = false, onComplete }: StageTransitionProps) {
+  // onComplete dispatches NEXT_STAGE, so it must fire exactly once however the
+  // overlay is dismissed — timer, tap, or key. A second call would skip a stage.
+  const fired = useRef(false);
+  const finish = useCallback(() => {
+    if (fired.current) return;
+    fired.current = true;
+    onComplete();
+  }, [onComplete]);
+
   useEffect(() => {
-    const timer = setTimeout(onComplete, isVersus ? 1000 : 2500);
+    const timer = setTimeout(finish, isVersus ? 1000 : 2500);
     return () => clearTimeout(timer);
-  }, [onComplete, isVersus]);
+  }, [finish, isVersus]);
+
+  // §256 (founder: "when I hit enter on tap to continue, it does nothing").
+  // The overlay was click-to-skip only; the game's own key listener ignores
+  // every key while the transition shows, so Enter fell on the floor and the
+  // player sat out the timer. Enter and Space now dismiss it — same as a tap.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      finish();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [finish]);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-      onClick={onComplete}
+      onClick={finish}
     >
       <div className="text-center space-y-8">
         <div
