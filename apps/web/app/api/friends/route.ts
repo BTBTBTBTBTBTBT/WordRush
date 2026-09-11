@@ -10,6 +10,23 @@ export const dynamic = 'force-dynamic';
  * outgoing pending ids. friends-service caches this per session on all
  * three platforms (the moderation-service pattern).
  */
+/** Drain a PostgREST select past the silent 1,000-row cap: fetch fixed-size
+ *  pages (caller adds a stable .order + the .range we hand it) until a short
+ *  page comes back. */
+async function sweepAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<T[]> {
+  const PAGE = 1000;
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data } = await page(from, from + PAGE - 1);
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if ('response' in auth) return auth.response;
@@ -80,17 +97,27 @@ export async function GET(req: NextRequest) {
     const cutoff = new Date(`${day}T00:00:00Z`);
     cutoff.setUTCDate(cutoff.getUTCDate() - 90);
     const cutoffDay = cutoff.toISOString().slice(0, 10);
-    const { data: results } = await admin
-      .from('daily_results')
-      .select('user_id, day, composite_score')
-      .in('user_id', ids)
-      .eq('play_type', 'solo')
-      .gte('day', cutoffDay)
-      .lte('day', day);
+    // §257 (founder: "why isn't my mom showing any points for the weekly?
+    // she has played this week"): PostgREST caps any un-ranged select at
+    // 1,000 rows and says nothing. Seven people over 90 days was 1,410 rows,
+    // so whole users fell off the end — Oliver and Michael had ZERO rows in
+    // the answer (0 pts, "hasn't played today"), and the founder's own week
+    // was undercounted. Page through the sweep until a short page comes back.
+    const results = await sweepAll<{ user_id: string; day: string; composite_score: number }>((from, to) =>
+      admin
+        .from('daily_results')
+        .select('user_id, day, composite_score')
+        .in('user_id', ids)
+        .eq('play_type', 'solo')
+        .gte('day', cutoffDay)
+        .lte('day', day)
+        .order('id', { ascending: true })
+        .range(from, to),
+    );
     // per-user per-day totals
     const totals = new Map<string, Map<string, number>>();
     const playedCount = new Map<string, number>();
-    for (const r of (results ?? []) as Array<{ user_id: string; day: string; composite_score: number }>) {
+    for (const r of results) {
       let byDay = totals.get(r.user_id);
       if (!byDay) { byDay = new Map(); totals.set(r.user_id, byDay); }
       byDay.set(r.day, (byDay.get(r.day) ?? 0) + (r.composite_score ?? 0));
@@ -130,13 +157,17 @@ export async function GET(req: NextRequest) {
     // day before. One indexed read; shipped decoders ignore the field.
     const flawlessByUser = new Map<string, Set<string>>();
     {
-      const { data: fRows } = await admin
-        .from('daily_bonuses')
-        .select('user_id, day')
-        .in('user_id', ids)
-        .eq('flawless_awarded', true)
-        .gte('day', cutoffDay);
-      for (const r of (fRows ?? []) as Array<{ user_id: string; day: string }>) {
+      const fRows = await sweepAll<{ user_id: string; day: string }>((from, to) =>
+        admin
+          .from('daily_bonuses')
+          .select('user_id, day')
+          .in('user_id', ids)
+          .eq('flawless_awarded', true)
+          .gte('day', cutoffDay)
+          .order('id', { ascending: true })
+          .range(from, to),
+      );
+      for (const r of fRows) {
         let set = flawlessByUser.get(r.user_id);
         if (!set) { set = new Set(); flawlessByUser.set(r.user_id, set); }
         set.add(r.day);
