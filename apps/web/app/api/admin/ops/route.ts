@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       .or(
         `and(play_type.eq.solo,composite_score.gt.${SOLO_LEGIT_MAX}),` +
         `and(play_type.eq.vs,composite_score.gt.${VS_LEGIT_MAX}),` +
-        'guess_count.gte.200,total_boards.gte.21,time_seconds.gte.172800,vs_games.gte.1000',
+        'guess_count.gte.200,total_boards.gte.22,time_seconds.gte.172800,vs_games.gte.1000', // §260: Gauntlet is 21 boards — 21 was flagging every Gauntlet run
       )
       .order('composite_score', { ascending: false })
       .limit(50),

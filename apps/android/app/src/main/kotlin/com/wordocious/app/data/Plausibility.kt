@@ -11,7 +11,7 @@ object Plausibility {
     const val MIN_SECONDS_PER_EXTRA_GUESS = 1
     const val MAX_TIME_SECONDS = 172_800
     const val MAX_GUESSES = 200
-    const val MAX_BOARDS = 20
+    const val MAX_BOARDS = 21 // Gauntlet: 1 + 4 + 8 + 4 + 4 across its five stages
 
     fun isPlausibleDailyResult(completed: Boolean, guessCount: Int, timeSeconds: Int, totalBoards: Int): Boolean {
         if (guessCount < 0 || timeSeconds < 0) return false

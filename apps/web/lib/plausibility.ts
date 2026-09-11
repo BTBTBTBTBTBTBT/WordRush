@@ -12,7 +12,7 @@
 export const MIN_SECONDS_PER_EXTRA_GUESS = 1;
 export const MAX_TIME_SECONDS = 172_800; // two days
 export const MAX_GUESSES = 200;
-export const MAX_BOARDS = 20;
+export const MAX_BOARDS = 21; // Gauntlet: 1 + 4 + 8 + 4 + 4 across its five stages
 
 export function isPlausibleDailyResult(completed: boolean, guessCount: number, timeSeconds: number, totalBoards: number): boolean {
   if (guessCount < 0 || timeSeconds < 0) return false;

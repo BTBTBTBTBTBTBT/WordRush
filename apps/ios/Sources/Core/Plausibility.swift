@@ -9,7 +9,7 @@ public enum Plausibility {
     public static let minSecondsPerExtraGuess = 1
     public static let maxTimeSeconds = 172_800
     public static let maxGuesses = 200
-    public static let maxBoards = 20
+    public static let maxBoards = 21 // Gauntlet: 1 + 4 + 8 + 4 + 4 across its five stages
 
     public static func isPlausibleDailyResult(completed: Bool, guessCount: Int, timeSeconds: Int, totalBoards: Int) -> Bool {
         if guessCount < 0 || timeSeconds < 0 { return false }

@@ -16,7 +16,7 @@ begin
   if new.guess_count < 0 or new.time_seconds < 0 then
     raise exception 'daily_results: negative guess_count/time_seconds' using errcode = '23514';
   end if;
-  if new.guess_count >= 200 or new.time_seconds >= 172800 or new.total_boards > 20 or new.total_boards < 1 then
+  if new.guess_count >= 200 or new.time_seconds >= 172800 or new.total_boards > 21 or new.total_boards < 1 then
     raise exception 'daily_results: out-of-range guess_count/time_seconds/total_boards' using errcode = '23514';
   end if;
   if new.completed then
