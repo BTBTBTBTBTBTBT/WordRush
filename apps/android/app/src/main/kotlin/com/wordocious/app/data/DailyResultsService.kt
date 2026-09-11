@@ -183,6 +183,12 @@ object DailyResultsService {
         val userId = AuthService.userId
             ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
             ?: return false
+        // §260: refuse what no human can do (zero-guess wins, six guesses in
+        // three seconds) — same floor as web, iOS and the DB trigger.
+        if (!Plausibility.isPlausibleDailyResult(completed, guessCount, elapsedSeconds, totalBoards)) {
+            android.util.Log.w("DailyResults", "rejected implausible result ${mode.name} guesses=$guessCount time=${elapsedSeconds}s")
+            return false
+        }
         val day = seed?.let { com.wordocious.core.getDailySeedDate(it) } ?: todayLocalDate()
         val gameModeStr = mode.name
         // The puzzle's day also picks the scoring formula (pre-cutover days keep

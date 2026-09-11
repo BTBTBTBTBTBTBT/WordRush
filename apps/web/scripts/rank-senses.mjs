@@ -67,6 +67,28 @@ export function isStub(def) {
   return /^(see\b|alternative (form|spelling|letter-case form|case form) of|misspelling of|obsolete (form|spelling) of|archaic (form|spelling) of|dated (form|spelling) of|initialism of|abbreviation of|acronym of|synonym of|eye dialect (spelling )?of|clipping of|short for\b)/i.test(d);
 }
 
+/** §260: player-facing text. Wiktionary's grammar and editorial labels are
+ *  lexicographer notation — "(notcomp)", "(ditransitive)", "(heading)",
+ *  "(Can we verify this sense?)" — and a leading usage note like "Preceded by
+ *  the:" is a grammar hint, not meaning. Both are stripped. Labels that carry
+ *  MEANING stay: "(of a person)", "(of a bird)", "(sometimes derogatory)",
+ *  "(usually in the plural)", register labels like "(informal)". Applied to
+ *  the stored dataset by rerank-word-defs.mjs; the ranker itself scores the
+ *  raw text. */
+const GRAMMAR_LABEL = /^\((?:not ?comp(?:arable)?|comparable|uncountable|countable|transitive|intransitive|ditransitive|ambitransitive|reflexive|auxiliary|modal[^)]*|stative|copulative|impersonal|interrogative|predicative|attributive|heading[^)]*|physical|grammar|collective|in combination|sometimes in combination|only used attributively|usually used predicatively[^)]*|used after a noun[^)]*|with infinitive|with person as subject|often in the passive|can we [^)]*\?|should we [^)]*\?|rfv[^)]*|rfd[^)]*|rfc[^)]*|rfdef[^)]*)\)\s*/i;
+const USAGE_NOTE = /^(?:preceded|followed|often followed|usually followed|sometimes followed|used) (?:by|with) [^:]{1,30}:\s*/i;
+export function cleanDefinition(def) {
+  let d = (def || '').trim();
+  for (let i = 0; i < 3; i++) {
+    const before = d;
+    d = d.replace(GRAMMAR_LABEL, '').replace(USAGE_NOTE, '').trim();
+    if (d === before) break;
+  }
+  // A stripped note can leave a lowercase start ("happy people as a group") — capitalise.
+  if (d && d !== def && /^[a-z]/.test(d)) d = d[0].toUpperCase() + d.slice(1);
+  return d || (def || '').trim();
+}
+
 export function senseScore(word, sense) {
   const def = sense?.def || '';
   if (isCircular(word, def)) return 3;

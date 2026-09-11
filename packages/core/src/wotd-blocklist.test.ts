@@ -30,7 +30,10 @@ describe('blocklist mirrors', () => {
   // here but not there would still be featured on that platform, which is the
   // whole failure this list exists to prevent.
   const mirrors: [string, string][] = [
-    ['web home card', 'apps/web/app/page.tsx'],
+    // §255 moved the home card's lookup server-side: it fetches /api/wotd,
+    // which goes through lib/word-of-day.ts (asserted below to consult the
+    // blocklist). The route is the call site now, not the page.
+    ['web home card (via /api/wotd)', 'apps/web/app/api/wotd/route.ts'],
     ['iOS', 'apps/ios/Wordocious/Sources/WordOfTheDayView.swift'],
     ['Android', 'apps/android/app/src/main/kotlin/com/wordocious/app/ui/HomeScreen.kt'],
   ];
@@ -45,7 +48,7 @@ describe('blocklist mirrors', () => {
   });
 
   it('every call site actually consults a blocklist', () => {
-    expect(read(mirrors[0][1])).toContain('isBlockedWordOfDay');
+    expect(read(mirrors[0][1])).toContain('wordOfDay(');
     expect(read('apps/web/lib/word-of-day.ts')).toContain('isBlockedWordOfDay');
     expect(read(mirrors[1][1])).toContain('Self.blocked.contains');
     expect(read(mirrors[2][1])).toContain('WOTD_BLOCKED');

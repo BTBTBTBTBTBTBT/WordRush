@@ -18,7 +18,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'data', 'word-definitions.json');
+// §260 flags: --out <file> writes elsewhere (a fresh file re-crawls every word,
+// since resume keys off the output); --senses N keeps the top N definitions
+// per part of speech instead of one, so the sense ranker has something to
+// choose from (FUNNY led with the noun "A joke" because its adjective was
+// never stored).
+const argv = process.argv.slice(2);
+const flag = (name, dflt) => { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] ? argv[i + 1] : dflt; };
+const OUT = path.resolve(ROOT, flag('--out', path.join('data', 'word-definitions.json')));
+const SENSES_PER_POS = Math.max(1, Number(flag('--senses', '1')) || 1);
+const SYNC_NATIVES = !argv.includes('--no-sync');
 
 // §250: victory cards show definitions in EVERY daily length — cover the
 // Six/Seven pools (and their legacies) too, not just the 5-letter lists.
@@ -39,6 +48,13 @@ const done = new Set(Object.keys(db));
 const todo = words.filter((w) => !done.has(w));
 console.log(`total ${words.length}, done ${done.size}, todo ${todo.length}`);
 
+const stripHtml = (s) => (s || '')
+  .replace(/<[^>]*>/g, '')
+  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+  .replace(/\s*\.mw-parser-output[\s\S]*$/, '') // leaked CSS rule (".mw-parser-output .defdate{…}")
+  .replace(/\s+/g, ' ')
+  .trim();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const timed = (ms) => AbortSignal.timeout(ms);
 
@@ -60,13 +76,13 @@ async function fetchPrimary(word, attempt = 1) {
     const phonetic = entry.phonetics?.find((p) => p.text)?.text || entry.phonetic || '';
     const senses = (entry.meanings || [])
       .slice(0, 4)
-      .map((m) => ({
+      .flatMap((m) => (m.definitions || []).slice(0, SENSES_PER_POS).map((d) => ({
         pos: m.partOfSpeech || '',
-        def: m.definitions?.[0]?.definition || '',
-        example: m.definitions?.[0]?.example || '',
+        def: stripHtml(d?.definition || ''),
+        example: d?.example || '',
         syn: (m.synonyms || []).slice(0, 6),
         ant: (m.antonyms || []).slice(0, 4),
-      }))
+      })))
       .filter((s) => s.def);
     if (!senses.length) return { miss: true };
     return { phonetic, senses };
@@ -80,13 +96,7 @@ async function fetchPrimary(word, attempt = 1) {
 // 2026-08/09 outage when the aggregator was down for days). Definitions arrive
 // as HTML; no phonetics/synonyms on this endpoint, which our page logic treats
 // as optional anyway.
-const stripHtml = (s) => (s || '')
-  .replace(/<[^>]*>/g, '')
-  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-  .replace(/\s*\.mw-parser-output[\s\S]*$/, '') // leaked CSS rule (".mw-parser-output .defdate{…}")
-  .replace(/\s+/g, ' ')
-  .trim();
+
 
 async function fetchWiktionary(word, attempt = 1) {
   try {
@@ -99,16 +109,16 @@ async function fetchWiktionary(word, attempt = 1) {
     const data = await res.json();
     const senses = (data?.en || [])
       .slice(0, 4)
-      .map((m) => {
-        const d = m.definitions?.find((x) => stripHtml(x.definition));
-        return {
+      .flatMap((m) => (m.definitions || [])
+        .filter((x) => stripHtml(x.definition))
+        .slice(0, SENSES_PER_POS)
+        .map((d) => ({
           pos: (m.partOfSpeech || '').toLowerCase(),
           def: stripHtml(d?.definition),
           example: stripHtml(d?.parsedExamples?.[0]?.example || d?.examples?.[0] || ''),
           syn: [],
           ant: [],
-        };
-      })
+        })))
       .filter((s) => s.def);
     if (!senses.length) return { miss: true };
     return { phonetic: '', senses };
@@ -151,7 +161,7 @@ const NATIVE_COPIES = [
   path.join(ROOT, '..', 'ios', 'Wordocious', 'Resources', 'word-definitions.json'),
   path.join(ROOT, '..', 'android', 'app', 'src', 'main', 'assets', 'word-definitions.json'),
 ];
-for (const dest of NATIVE_COPIES) {
+for (const dest of SYNC_NATIVES ? NATIVE_COPIES : []) {
   try { fs.copyFileSync(OUT, dest); console.log(`synced ${dest}`); } catch (e) { console.log(`sync failed: ${dest}: ${e.message}`); }
 }
 

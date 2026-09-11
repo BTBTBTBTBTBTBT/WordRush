@@ -1,0 +1,36 @@
+# §260: CI. Typecheck + unit tests on every push to main and every PR. Both
+# the auto-victory bug and a pushed type error (e07baba) would have failed
+# here instead of reaching production. Native builds are NOT run here: the
+# Android bundle and iOS archive are cut from the founder's Mac by the ship
+# scripts, which already compile them.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web:
+    name: Typecheck + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck (apps/web)
+        run: pnpm -C apps/web exec tsc --noEmit -p tsconfig.json
+      - name: Unit tests (packages/core)
+        run: pnpm -C packages/core exec vitest run
+      - name: Unit tests (apps/web)
+        run: pnpm -C apps/web exec vitest run
+      - name: Composite scoring check
+        run: pnpm -C apps/web run test:scoring

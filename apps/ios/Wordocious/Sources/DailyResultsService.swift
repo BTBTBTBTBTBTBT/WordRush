@@ -159,6 +159,12 @@ enum DailyResultsService {
         bestCorrectLetters: Int? = nil
     ) async -> Double? {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
+        // §260: refuse what no human can do (zero-guess wins, six guesses in
+        // three seconds) — same floor as web, Android and the DB trigger.
+        guard Plausibility.isPlausibleDailyResult(completed: completed, guessCount: guessCount, timeSeconds: timeSeconds, totalBoards: totalBoards) else {
+            print("[DailyResults] rejected implausible result \(gameMode.rawValue) guesses=\(guessCount) time=\(timeSeconds)s")
+            return nil
+        }
         // The puzzle's calendar day comes from the seed, NOT the finish time.
         let day = seed.flatMap(getDailySeedDate) ?? LeaderboardService.todayLocal()
         // The puzzle's day also picks the scoring formula (pre-cutover days keep

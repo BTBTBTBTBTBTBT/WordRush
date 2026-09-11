@@ -2,6 +2,7 @@ import { supabase } from './supabase-client';
 import { requiredDailyModeCount } from './daily-modes';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
+import { isPlausibleDailyResult } from '@/lib/plausibility';
 
 // ============================================================
 // Composite Score Calculation
@@ -143,6 +144,12 @@ export async function recordDailyResult(
   // §255: a completed daily with zero guesses is impossible — refuse it, same
   // guard as recordGameResult, so no UI bug can ever write one.
   if (completed && guessCount <= 0) return null as any;
+  // §260: and nothing else no human can do — six guesses in three seconds,
+  // two-day timers, 200 guesses. Same floor as iOS, Android and the DB trigger.
+  if (!isPlausibleDailyResult(completed, guessCount, timeSeconds, totalBoards)) {
+    console.warn(`[daily] rejected implausible result ${gameMode}: guesses=${guessCount} time=${timeSeconds}s boards=${totalBoards}`);
+    return null as any;
+  }
   const targetDay = day || getTodayLocal();
   // The puzzle's day also picks the scoring formula (pre-cutover days keep
   // the frozen V1 formula so a day's leaderboard never mixes formulas).

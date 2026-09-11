@@ -1,6 +1,7 @@
 import Foundation
 
-/// §259: which sense a word LEADS with. Line-for-line port of the web's
+/// §259: which sense a word LEADS with. Lives in the Core package so `swift
+/// test` can pin it against the shared fixtures. Line-for-line port of the web's
 /// lib/sense-rank.ts (and scripts/rank-senses.mjs, which pre-ranks the bundled
 /// word-definitions.json). Wiktionary orders parts of speech historically, so
 /// NASTY led with "Something nasty." The dataset is pre-ranked; this is the
@@ -9,7 +10,7 @@ import Foundation
 ///
 /// Rank: circular (3) > cross-reference stub (2) > defined through the word (1)
 /// > clean (0); ties keep source order.
-enum SenseRank {
+public enum SenseRank {
     private static func test(_ pattern: String, _ text: String, caseInsensitive: Bool = false) -> Bool {
         guard let re = try? NSRegularExpression(pattern: pattern, options: caseInsensitive ? [.caseInsensitive] : []) else { return false }
         return re.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
@@ -20,7 +21,7 @@ enum SenseRank {
     }
 
     /// The headword or an inflection of it, in LOWERCASE (a capitalised mention is a name).
-    static func mentions(_ word: String, _ def: String) -> Bool {
+    public static func mentions(_ word: String, _ def: String) -> Bool {
         let w = word.lowercased()
         if w.count < 3 { return false }
         let stem = (w.hasSuffix("e") || w.hasSuffix("y")) ? String(w.dropLast()) : w
@@ -29,7 +30,7 @@ enum SenseRank {
     }
 
     /// Labels stripped: "(obsolete)", and a leading usage note "Preceded by the:".
-    static func core(_ def: String) -> String {
+    public static func core(_ def: String) -> String {
         var s = replace("\\([^)]*\\)", in: def, with: "")
         s = replace("^[^:.;]{0,40}:\\s*", in: s, with: "")
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -37,18 +38,18 @@ enum SenseRank {
 
     private static let frames = "^(something|someone|somebody|anything|one who|one that|those who|that which|the (act|action|state|quality|condition|result|process|sound|instance|manner|fact|practice) of|an? (\\w+ )?(act|action|instance|state|quality|result|sound|process|bout|fit) of|a person who|a thing that|an? \\w+ (thing|things|person|people|event|one|ones)\\b|in an? \\w+ (manner|way)\\b|to (make|become|be|render) \\w+ )"
 
-    static func isCircular(_ word: String, _ def: String) -> Bool {
+    public static func isCircular(_ word: String, _ def: String) -> Bool {
         let c = core(def)
         return !c.isEmpty && mentions(word, c) && test(frames, c, caseInsensitive: true)
     }
 
-    static func isStub(_ def: String) -> Bool {
+    public static func isStub(_ def: String) -> Bool {
         let d = def.trimmingCharacters(in: .whitespacesAndNewlines)
         if d.count < 4 { return true }
         return test("^(see\\b|alternative (form|spelling|letter-case form|case form) of|misspelling of|obsolete (form|spelling) of|archaic (form|spelling) of|dated (form|spelling) of|initialism of|abbreviation of|acronym of|synonym of|eye dialect (spelling )?of|clipping of|short for\\b)", d, caseInsensitive: true)
     }
 
-    static func isDerived(_ word: String, _ def: String) -> Bool {
+    public static func isDerived(_ word: String, _ def: String) -> Bool {
         let c = core(def)
         if c.isEmpty || !mentions(word, c) { return false }
         let words = c.split(whereSeparator: { $0.isWhitespace }).map(String.init)
@@ -61,7 +62,7 @@ enum SenseRank {
         return false
     }
 
-    static func score(_ word: String, _ def: String?) -> Int {
+    public static func score(_ word: String, _ def: String?) -> Int {
         let d = def ?? ""
         if isCircular(word, d) { return 3 }
         if isStub(d) { return 2 }
@@ -69,7 +70,7 @@ enum SenseRank {
     }
 
     /// Best score first, source order within a score (stable).
-    static func rank<S>(_ word: String, _ senses: [S], def: (S) -> String?) -> [S] {
+    public static func rank<S>(_ word: String, _ senses: [S], def: (S) -> String?) -> [S] {
         return senses.enumerated()
             .map { (i: $0.offset, s: $0.element, score: score(word, def($0.element))) }
             .sorted { $0.score != $1.score ? $0.score < $1.score : $0.i < $1.i }

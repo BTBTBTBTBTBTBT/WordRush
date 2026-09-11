@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { rankSenses } from './rank-senses.mjs';
+import { rankSenses, cleanDefinition } from './rank-senses.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const web = path.join(here, '..', 'data', 'word-definitions.json');
@@ -19,8 +19,9 @@ for (const [word, rec] of Object.entries(db)) {
   if (!rec?.senses?.length) continue;
   // Wiktionary's HTML occasionally leaks a CSS rule into the text
   // (".mw-parser-output .defdate{font-size:…}"); cut it and anything after.
+  // §260: then drop grammar/editorial labels and usage-note prefixes.
   for (const s of rec.senses) {
-    const cut = (s.def || '').replace(/\s*\.mw-parser-output[\s\S]*$/, '').trim();
+    const cut = cleanDefinition((s.def || '').replace(/\s*\.mw-parser-output[\s\S]*$/, '').trim());
     if (cut !== s.def) { s.def = cut; cleaned++; }
   }
   const ranked = rankSenses(word, rec.senses);

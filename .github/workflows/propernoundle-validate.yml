@@ -1,0 +1,38 @@
+# §260: ProperNoundle's clues come from live Wikipedia, which moves under us —
+# articles get renamed, turned into disambiguation pages, or rewritten so the
+# redacted clue goes blank or leaks the answer. The validator (the §253 bank
+# gate) runs on the 1st of every month and on demand; a failure opens a
+# GitHub issue listing the entries, so nobody has to remember to run it.
+name: ProperNoundle bank validation
+on:
+  schedule:
+    - cron: '0 12 1 * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate every answer against Wikipedia
+        id: validate
+        run: node apps/web/scripts/validate-propernoundle.mjs 2>&1 | tee validate.log
+      - name: Open an issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "The monthly ProperNoundle validation failed on $(date -u +%F). Entries below need a fresh wikiTitle or an in-place replacement (never delete — deletion shifts the day→puzzle schedule and the VS hash). Run: \`node apps/web/scripts/validate-propernoundle.mjs\`"
+            echo
+            echo '```'
+            tail -80 validate.log
+            echo '```'
+          } > body.md
+          gh issue create --title "ProperNoundle validation failed ($(date -u +%F))" --body-file body.md --label bug || gh issue create --title "ProperNoundle validation failed ($(date -u +%F))" --body-file body.md
