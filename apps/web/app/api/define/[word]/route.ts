@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { dictEntry } from '@/lib/word-of-day';
+import { pickPrimarySense } from '@/lib/sense-rank';
 
 /**
  * One word's dictionary entry, for the client-side victory / post-game cards.
@@ -23,9 +24,10 @@ export async function GET(_req: Request, { params }: { params: { word: string } 
   if (!word || word.length > 20) return NextResponse.json(null, { status: 400 });
 
   const local = dictEntry(word);
-  if (local && local.senses.length > 0) {
+  const primary = local ? pickPrimarySense(word, local.senses) : undefined;
+  if (local && primary) {
     return NextResponse.json(
-      { phonetic: local.phonetic, partOfSpeech: local.senses[0].pos, definition: local.senses[0].def },
+      { phonetic: local.phonetic, partOfSpeech: primary.pos, definition: primary.def },
       { headers: CACHE },
     );
   }

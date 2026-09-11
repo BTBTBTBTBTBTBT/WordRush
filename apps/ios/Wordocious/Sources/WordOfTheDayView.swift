@@ -270,8 +270,11 @@ struct WordOfTheDayView: View {
     }()
 
     static func localDefinition(for word: String) -> WordInfo? {
+        // §259: lead with the best sense, not the file's first (NASTY led with
+        // "Something nasty."). The dataset is pre-ranked; this is the read-time guard.
         guard let rec = localDict[word.lowercased()], rec.miss != true,
-              let sense = rec.senses?.first, let def = sense.def, !def.isEmpty else { return nil }
+              let sense = SenseRank.rank(word, rec.senses ?? [], def: { $0.def }).first,
+              let def = sense.def, !def.isEmpty else { return nil }
         return WordInfo(word: word, phonetic: rec.phonetic, partOfSpeech: sense.pos, definition: def)
     }
 

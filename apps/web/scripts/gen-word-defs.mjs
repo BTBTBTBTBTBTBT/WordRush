@@ -84,6 +84,7 @@ const stripHtml = (s) => (s || '')
   .replace(/<[^>]*>/g, '')
   .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
   .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+  .replace(/\s*\.mw-parser-output[\s\S]*$/, '') // leaked CSS rule (".mw-parser-output .defdate{…}")
   .replace(/\s+/g, ' ')
   .trim();
 

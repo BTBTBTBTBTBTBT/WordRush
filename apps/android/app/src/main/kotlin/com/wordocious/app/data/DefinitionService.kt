@@ -88,7 +88,9 @@ object DefinitionService {
     fun localDefinition(word: String): WordDefinition? {
         val rec = localDict[word.lowercase()] ?: return null
         if (rec.miss == true) return null
-        val sense = rec.senses?.firstOrNull() ?: return null
+        // §259: lead with the best sense, not the file's first (NASTY led with
+        // "Something nasty."). The dataset is pre-ranked; this is the read-time guard.
+        val sense = SenseRank.rank(word, rec.senses ?: emptyList()) { it.def }.firstOrNull() ?: return null
         val def = sense.def ?: return null
         if (def.isBlank()) return null
         return WordDefinition(phonetic = rec.phonetic ?: "", partOfSpeech = sense.pos ?: "", definition = def)

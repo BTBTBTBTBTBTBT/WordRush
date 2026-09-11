@@ -2,6 +2,7 @@ import { SOLUTIONS_CUTOVER_DATE, isBlockedWordOfDay } from '@wordle-duel/core';
 import solutions from '@/data/solutions.json';
 import legacySolutions from '@/data/solutions-legacy.json';
 import definitions from '@/data/word-definitions.json';
+import { rankSenses } from '@/lib/sense-rank';
 
 /**
  * Word of the Day — the deterministic daily word (from the shared solutions list,
@@ -116,7 +117,9 @@ export async function wordOfDay(date: Date): Promise<WordEntry> {
   for (const word of candidateWords(date)) {
     const entry = dictEntry(word);
     if (!entry) continue;
-    const [primary, ...rest] = entry.senses;
+    // §259: lead with the best sense, not Wiktionary's first (NASTY led with
+    // "Something nasty."); the dataset is pre-ranked, this is the read-time guard.
+    const [primary, ...rest] = rankSenses(word, entry.senses);
     const synonyms = [...new Set(entry.senses.flatMap((s) => s.syn ?? []))].slice(0, 8);
     const antonyms = [...new Set(entry.senses.flatMap((s) => s.ant ?? []))].slice(0, 6);
     return {
