@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { broadcastPush } from '@/lib/push/broadcast';
 import { stampHeartbeat } from '@/lib/heartbeat';
+import { sweepAll } from '@/lib/supabase-sweep';
 
 // Monday-morning friends recap (§216, founder ask Aug 17): "who won last
 // week's race" — one push per user with friends, sent as the new week opens.
@@ -54,12 +55,18 @@ export async function GET(req: NextRequest) {
 
   const everyone = [...new Set([...circles.keys(), ...[...circles.values()].flatMap((s) => [...s])])];
   const [{ data: results }, { data: profiles }] = await Promise.all([
-    sb.from('daily_results')
-      .select('user_id, composite_score')
-      .in('user_id', everyone)
-      .eq('play_type', 'solo')
-      .gte('day', from)
-      .lte('day', to),
+    // §257: paged — the friends digest lost whole users to the 1,000-row cap;
+    // the weekly recap reads the same rows for everyone with a friend.
+    sweepAll<{ user_id: string; composite_score: number }>((f, t) =>
+      sb.from('daily_results')
+        .select('user_id, composite_score')
+        .in('user_id', everyone)
+        .eq('play_type', 'solo')
+        .gte('day', from)
+        .lte('day', to)
+        .order('id')
+        .range(f, t),
+    ).then((data) => ({ data })),
     sb.from('profiles').select('id, username').in('id', everyone),
   ]);
 

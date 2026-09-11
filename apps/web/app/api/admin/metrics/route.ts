@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { sweepAll, listAllUsers } from '@/lib/supabase-sweep';
 
 // The Weekly Five (distribution memo §14) as an API — DAU, retention cohorts,
 // share rate, Pro conversion, reports — plus the auth-provider mix and
@@ -21,19 +22,30 @@ export async function GET(request: NextRequest) {
   const since35 = new Date(now.getTime() - 35 * 86400000).toISOString();
 
   const [dailyRes, matchesRes, sharesRes, profilesRes, reportsRes, usersRes, historyRes] = await Promise.all([
-    admin.from('daily_results').select('user_id, day, play_type, created_at').gte('created_at', since35),
-    admin.from('matches').select('player1_id, player2_id, created_at').gte('created_at', since14),
-    admin.from('share_events').select('kind, game_mode, surface, created_at').gte('created_at', since14),
+    // §257: every read here pages past PostgREST's silent 1,000-row cap —
+    // daily_results and matches are both past it already, so DAU, share rate
+    // and the cohorts were all quietly undercounted.
+    sweepAll<{ user_id: string; day: string; play_type: string; created_at: string }>((f, t) =>
+      admin.from('daily_results').select('user_id, day, play_type, created_at').gte('created_at', since35).order('id').range(f, t),
+    ).then((data) => ({ data })),
+    sweepAll<{ player1_id: string | null; player2_id: string | null; created_at: string }>((f, t) =>
+      admin.from('matches').select('player1_id, player2_id, created_at').gte('created_at', since14).order('id').range(f, t),
+    ).then((data) => ({ data })),
+    sweepAll<{ kind: string | null; game_mode: string | null; surface: string | null; created_at: string }>((f, t) =>
+      admin.from('share_events').select('kind, game_mode, surface, created_at').gte('created_at', since14).order('id').range(f, t),
+    ).then((data) => ({ data })),
     // select * so the route works before AND after the converted_from_guest
     // migration lands — a named missing column would error the whole query.
-    admin.from('profiles').select('*'),
-    admin.from('reports').select('created_at').gte('created_at', new Date(now.getTime() - 30 * 86400000).toISOString()),
-    admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    sweepAll<Record<string, any>>((f, t) => admin.from('profiles').select('*').order('id').range(f, t)).then((data) => ({ data })),
+    sweepAll<{ created_at: string }>((f, t) =>
+      admin.from('reports').select('created_at').gte('created_at', new Date(now.getTime() - 30 * 86400000).toISOString()).order('id').range(f, t),
+    ).then((data) => ({ data })),
+    listAllUsers(admin).then((users) => ({ data: { users } })),
     // FULL history (user_id + day only) for retention cohorts. The windowed
     // fetch above miscohorted anyone whose real first play predates the
     // window and made D30 structurally impossible — and disagreed with the
     // cohort drill-down, which always used full history.
-    admin.from('daily_results').select('user_id, day'),
+    sweepAll<{ user_id: string; day: string }>((f, t) => admin.from('daily_results').select('user_id, day').order('id').range(f, t)).then((data) => ({ data })),
   ]);
 
   const daily = dailyRes.data ?? [];

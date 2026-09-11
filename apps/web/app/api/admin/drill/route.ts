@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { sweepAll, listAllUsers } from '@/lib/supabase-sweep';
 import { modeLabel } from '@/lib/mode-labels';
 
 // Drill-down behind every number in the admin portal: "5.1% share rate" is
@@ -49,8 +50,13 @@ export async function GET(request: NextRequest) {
   if (metric === 'dau') {
     const d = day ?? iso(now).slice(0, 10);
     const [drRes, mRes] = await Promise.all([
-      admin.from('daily_results').select('user_id, game_mode, play_type, completed, composite_score').eq('day', d),
-      admin.from('matches').select('player1_id, player2_id, created_at').gte('created_at', dayStart(d)).lte('created_at', dayEnd(d)),
+      // §257: paged — a busy day can pass PostgREST's silent 1,000-row cap.
+      sweepAll<{ user_id: string; game_mode: string; play_type: string; completed: boolean | null; composite_score: number | null }>((f, t) =>
+        admin.from('daily_results').select('user_id, game_mode, play_type, completed, composite_score').eq('day', d).order('id').range(f, t),
+      ).then((data) => ({ data })),
+      sweepAll<{ player1_id: string | null; player2_id: string | null; created_at: string }>((f, t) =>
+        admin.from('matches').select('player1_id, player2_id, created_at').gte('created_at', dayStart(d)).lte('created_at', dayEnd(d)).order('id').range(f, t),
+      ).then((data) => ({ data })),
     ]);
     const per = new Map<string, { modes: Set<string>; wins: number; games: number; vs: number }>();
     for (const r of drRes.data ?? []) {
@@ -159,7 +165,7 @@ export async function GET(request: NextRequest) {
     const since = iso(new Date(now.getTime() - 7 * 86400000));
     const [{ data: profs }, usersRes] = await Promise.all([
       admin.from('profiles').select('*').gte('created_at', since).order('created_at', { ascending: false }),
-      admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      listAllUsers(admin).then((users) => ({ data: { users } })),
     ]);
     const authById = new Map((usersRes.data?.users ?? []).map((u) => [u.id, u]));
     const rows = (profs ?? []).map((r) => {
@@ -209,7 +215,8 @@ export async function GET(request: NextRequest) {
   if (metric === 'cohort' && day) {
     // Everyone whose FIRST recorded day is `day`, with the return days that
     // produced the D1/D7/D30 percentages on the summary table.
-    const { data } = await admin.from('daily_results').select('user_id, day');
+    // §257: whole-table read — paged, or the oldest cohorts silently vanish.
+    const data = await sweepAll<{ user_id: string; day: string }>((f, t) => admin.from('daily_results').select('user_id, day').order('id').range(f, t));
     const first = new Map<string, string>();
     const active = new Map<string, Set<string>>();
     for (const r of data ?? []) {
@@ -247,7 +254,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (metric === 'provider' && key) {
-    const usersRes = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const usersRes = await listAllUsers(admin).then((users) => ({ data: { users } }));
     const matching = (usersRes.data?.users ?? []).filter((u) =>
       (u.app_metadata?.providers ?? [u.app_metadata?.provider].filter(Boolean)).includes(key),
     );

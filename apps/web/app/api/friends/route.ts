@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
+import { sweepAll } from '@/lib/supabase-sweep';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,23 +11,6 @@ export const dynamic = 'force-dynamic';
  * outgoing pending ids. friends-service caches this per session on all
  * three platforms (the moderation-service pattern).
  */
-/** Drain a PostgREST select past the silent 1,000-row cap: fetch fixed-size
- *  pages (caller adds a stable .order + the .range we hand it) until a short
- *  page comes back. */
-async function sweepAll<T>(
-  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
-): Promise<T[]> {
-  const PAGE = 1000;
-  const out: T[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data } = await page(from, from + PAGE - 1);
-    const rows = data ?? [];
-    out.push(...rows);
-    if (rows.length < PAGE) break;
-  }
-  return out;
-}
-
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if ('response' in auth) return auth.response;

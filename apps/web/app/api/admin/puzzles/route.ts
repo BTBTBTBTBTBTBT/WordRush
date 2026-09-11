@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { sweepAll } from '@/lib/supabase-sweep';
 
 // Puzzle analytics: per-day per-mode difficulty (win rate, avg guesses), mode
 // popularity, sweep/flawless rates, and the streak/shield economy — all
@@ -16,10 +17,15 @@ export async function GET(request: NextRequest) {
   const since = new Date(now.getTime() - days * 86400000).toISOString().slice(0, 10);
 
   const [resultsRes, profilesRes] = await Promise.all([
-    admin
-      .from('daily_results')
-      .select('day, game_mode, play_type, completed, guess_count, boards_solved, total_boards')
-      .gte('day', since),
+    // §257: paged — 60 days of results is well past PostgREST's silent 1,000-row cap.
+    sweepAll<{ day: string; game_mode: string; play_type: string; completed: boolean | null; guess_count: number; boards_solved: number; total_boards: number }>((f, t) =>
+      admin
+        .from('daily_results')
+        .select('day, game_mode, play_type, completed, guess_count, boards_solved, total_boards')
+        .gte('day', since)
+        .order('id')
+        .range(f, t),
+    ).then((data) => ({ data })),
     admin.from('profiles').select('daily_login_streak, best_daily_login_streak, streak_shields, is_pro'),
   ]);
   const results = resultsRes.data ?? [];

@@ -4,6 +4,7 @@ import { sendApns, isApnsConfigured, type ApnsMessage } from '@/lib/push/apns';
 import { sendFcm, isFcmConfigured, type FcmMessage } from '@/lib/push/fcm';
 import webpush from 'web-push';
 import { stampHeartbeat } from '@/lib/heartbeat';
+import { sweepAll } from '@/lib/supabase-sweep';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
@@ -65,10 +66,10 @@ export async function GET(req: NextRequest) {
   }
 
   // Get users who already played today so we don't nag them
-  const { data: playedToday } = await sb
-    .from('daily_results')
-    .select('user_id')
-    .eq('day', today);
+  // §257: paged — an un-ranged read stops at 1,000 rows and would nag
+  // people who DID play.
+  const playedToday = await sweepAll<{ user_id: string }>((f, t) =>
+    sb.from('daily_results').select('user_id').eq('day', today).order('id').range(f, t));
 
   const playedSet = new Set((playedToday ?? []).map((r: any) => r.user_id));
 
@@ -80,10 +81,8 @@ export async function GET(req: NextRequest) {
   // foregrounded or a daily is completed.
   const lapsedCutoff = new Date(Date.now() - (LAPSED_AFTER_DAYS - 1) * 86_400_000)
     .toISOString().slice(0, 10);
-  const { data: playedRecently } = await sb
-    .from('daily_results')
-    .select('user_id')
-    .gte('day', lapsedCutoff);
+  const playedRecently = await sweepAll<{ user_id: string }>((f, t) =>
+    sb.from('daily_results').select('user_id').gte('day', lapsedCutoff).order('id').range(f, t));
 
   const recentSet = new Set((playedRecently ?? []).map((r: any) => r.user_id));
 

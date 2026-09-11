@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { sweepAll } from '@/lib/supabase-sweep';
 
 // Operational health: webhook ledger, anti-cheat watchlist, VS match health,
 // and cron heartbeats.
@@ -46,7 +47,10 @@ export async function GET(request: NextRequest) {
       )
       .order('composite_score', { ascending: false })
       .limit(50),
-    admin.from('matches').select('created_at, started_at, completed_at, forfeit, player1_id, player2_id, winner_id').gte('created_at', since14),
+    // §257: paged — matches is already past PostgREST's silent 1,000-row cap.
+    sweepAll<{ created_at: string; started_at: string; completed_at: string; forfeit: boolean | null; player1_id: string | null; player2_id: string | null; winner_id: string | null }>((f, t) =>
+      admin.from('matches').select('created_at, started_at, completed_at, forfeit, player1_id, player2_id, winner_id').gte('created_at', since14).order('id').range(f, t),
+    ).then((data) => ({ data })),
     admin.from('system_heartbeats').select('*'),
   ]);
 
