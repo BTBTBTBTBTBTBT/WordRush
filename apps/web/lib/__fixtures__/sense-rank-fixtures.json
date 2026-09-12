@@ -2,6 +2,136 @@
  "generatedBy": "apps/web/scripts/gen-sense-rank-fixtures.mjs",
  "cases": [
   {
+   "word": "aback",
+   "senses": [
+    {
+     "pos": "adverb",
+     "def": "Towards the back or rear; backwards."
+    },
+    {
+     "pos": "adverb",
+     "def": "In the rear; a distance behind."
+    },
+    {
+     "pos": "adverb",
+     "def": "By surprise; startled; dumbfounded. (see usage)"
+    },
+    {
+     "pos": "noun",
+     "def": "An inscribed stone square."
+    }
+   ],
+   "expectedFirst": "Towards the back or rear; backwards.",
+   "scores": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "accent",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A higher-pitched or stronger (louder or&nbsp;longer) articulation of a particular syllable of a word or phrase in order to distinguish it from the others or to emphasize it."
+    },
+    {
+     "pos": "noun",
+     "def": "Emphasis or importance in general."
+    },
+    {
+     "pos": "noun",
+     "def": "A mark used in writing, in order to indicate the place of the spoken stress."
+    },
+    {
+     "pos": "verb",
+     "def": "To mark emphatically; to emphasize; to accentuate; to make prominent."
+    },
+    {
+     "pos": "verb",
+     "def": "To express the accent of vocally; to utter with accent."
+    },
+    {
+     "pos": "verb",
+     "def": "To mark with written accents."
+    }
+   ],
+   "expectedFirst": "A higher-pitched or stronger (louder or&nbsp;longer) articulation of a particular syllable of a word or phrase in order to distinguish it from the others or to emphasize it.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "word": "adding",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "present participle and gerund of add"
+    },
+    {
+     "pos": "noun",
+     "def": "An act of addition."
+    }
+   ],
+   "expectedFirst": "present participle and gerund of add",
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
+   "word": "afford",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To incur, stand, or bear without serious detriment, as an act which might under other circumstances be injurious; to be able or rich enough; to spare."
+    },
+    {
+     "pos": "verb",
+     "def": "To offer, provide, or supply, as in selling, granting or expending, with profit, or without too great a loss."
+    },
+    {
+     "pos": "verb",
+     "def": "To give forth; to supply, yield, or produce as the natural result, fruit, or issue."
+    }
+   ],
+   "expectedFirst": "To incur, stand, or bear without serious detriment, as an act which might under other circumstances be injurious; to be able or rich enough; to spare.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "airway",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "The trachea."
+    },
+    {
+     "pos": "noun",
+     "def": "The trachea and bronchial tree."
+    },
+    {
+     "pos": "noun",
+     "def": "A flight path used by aeroplanes."
+    }
+   ],
+   "expectedFirst": "The trachea.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
    "word": "almond",
    "senses": [
     {
@@ -9,12 +139,83 @@
      "def": "The seed within the drupe of a small deciduous tree in family Rosaceae, Prunus amygdalus, considered a culinary nut."
     },
     {
+     "pos": "noun",
+     "def": "Other plants that produce almond-like nuts: bitter almond. of variety Prunus amygdalus var. amara, (syn. Prunus dulcis var. amara), that only produces bitter fruits flowering almond (Prunus japonica), an ornamental shrub in family Rosaceae desert almond (Prunus andersonii), a North American shrub in family Rosaceae desert range almond or wild almond (Prunus fasciculata), North American shrub in family Rosaceae Indian almond or tropical almond (Terminalia catappa), in family Combretaceae bitter almond (Brabejum stellatifolium), in family Proteaceae"
+    },
+    {
      "pos": "adjective",
      "def": "Brownish, resembling the colour of an almond nut."
+    },
+    {
+     "pos": "noun",
+     "def": "The tree that produces almonds."
     }
    ],
    "expectedFirst": "The seed within the drupe of a small deciduous tree in family Rosaceae, Prunus amygdalus, considered a culinary nut.",
    "scores": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "word": "amour",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Courtship; flirtation."
+    },
+    {
+     "pos": "noun",
+     "def": "A love affair."
+    },
+    {
+     "pos": "noun",
+     "def": "A lover."
+    }
+   ],
+   "expectedFirst": "Courtship; flirtation.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "annex",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "An addition, an extension."
+    },
+    {
+     "pos": "noun",
+     "def": "An appendix to a book or document."
+    },
+    {
+     "pos": "noun",
+     "def": "An addition or extension to a building."
+    },
+    {
+     "pos": "verb",
+     "def": "To add something to another thing, especially territory; to incorporate."
+    },
+    {
+     "pos": "verb",
+     "def": "To attach or connect, as a consequence, condition, etc."
+    },
+    {
+     "pos": "verb",
+     "def": "To join; to be united."
+    }
+   ],
+   "expectedFirst": "An addition, an extension.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -23,16 +224,26 @@
    "word": "applaud",
    "senses": [
     {
+     "pos": "noun",
+     "def": "Plaudit."
+    },
+    {
      "pos": "verb",
      "def": "To express approval (of something) by clapping the hands."
+    },
+    {
+     "pos": "verb",
+     "def": "To praise, or express approval for something or someone."
     },
     {
      "pos": "noun",
      "def": "Applause; applauding."
     }
    ],
-   "expectedFirst": "To express approval (of something) by clapping the hands.",
+   "expectedFirst": "Plaudit.",
    "scores": [
+    0,
+    0,
     0,
     1
    ]
@@ -45,16 +256,41 @@
      "def": "Forming a circle or closed curve containing (something)."
     },
     {
+     "pos": "preposition",
+     "def": "Centred upon; surrounding; regarding."
+    },
+    {
+     "pos": "preposition",
+     "def": "Following the perimeter of a specified area and returning to the starting point."
+    },
+    {
      "pos": "adjective",
      "def": "Present in the vicinity."
     },
     {
+     "pos": "adjective",
+     "def": "Alive; existing."
+    },
+    {
      "pos": "adverb",
      "def": "So as to form a circle or trace a circular path, or approximation thereof."
+    },
+    {
+     "pos": "adverb",
+     "def": "So as to surround or be near."
+    },
+    {
+     "pos": "adverb",
+     "def": "Nearly; approximately; about."
     }
    ],
    "expectedFirst": "Forming a circle or closed curve containing (something).",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -70,10 +306,15 @@
     {
      "pos": "noun",
      "def": "Agreement; act of agreeing."
+    },
+    {
+     "pos": "noun",
+     "def": "A legal instrument that conveys real estate to an heir under the terms of a will."
     }
    ],
    "expectedFirst": "To agree to a proposal.",
    "scores": [
+    0,
     0,
     0
    ]
@@ -86,12 +327,32 @@
      "def": "To increase; to make larger or supplement."
     },
     {
+     "pos": "verb",
+     "def": "To grow; to increase; to become greater."
+    },
+    {
+     "pos": "verb",
+     "def": "To slow the tempo or meter, e.g. for a dramatic or stately passage."
+    },
+    {
      "pos": "noun",
      "def": "A grammatical prefix In some languages, a prefix *é- (अ- (a-) in Sanskrit, ἐ- (e-) in Greek) indicating a past tense of a verb."
+    },
+    {
+     "pos": "noun",
+     "def": "In some languages, a prefix *é- (अ- (a-) in Sanskrit, ἐ- (e-) in Greek) indicating a past tense of a verb."
+    },
+    {
+     "pos": "noun",
+     "def": "Especially Old Irish, a preverb, usually ro-, used to give a verb a resultative or potential meaning."
     }
    ],
    "expectedFirst": "To increase; to make larger or supplement.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -104,12 +365,22 @@
      "def": "Lacking dexterity in the use of the hands or of tools."
     },
     {
+     "pos": "adjective",
+     "def": "Not easily managed; embarrassing."
+    },
+    {
+     "pos": "adjective",
+     "def": "Lacking social skills, or uncomfortable with social interaction."
+    },
+    {
      "pos": "noun",
      "def": "Someone or something that is awkward."
     }
    ],
    "expectedFirst": "Lacking dexterity in the use of the hands or of tools.",
    "scores": [
+    0,
+    0,
     0,
     3
    ]
@@ -119,15 +390,20 @@
    "senses": [
     {
      "pos": "adjective",
-     "def": "Bloody (used as a mild intensifier)."
+     "def": "Bloody ."
     },
     {
      "pos": "adverb",
      "def": "Very."
+    },
+    {
+     "pos": "noun",
+     "def": "A balaclava."
     }
    ],
-   "expectedFirst": "Bloody (used as a mild intensifier).",
+   "expectedFirst": "Bloody .",
    "scores": [
+    0,
     0,
     0
    ]
@@ -144,12 +420,22 @@
      "def": "Having bars; striped."
     },
     {
+     "pos": "adjective",
+     "def": "Prevented, either by a physical barrier or by conditions."
+    },
+    {
+     "pos": "adjective",
+     "def": "Indicating the start and end of words using thicker lines instead of black squares."
+    },
+    {
      "pos": "verb",
      "def": "simple past and past participle of barr"
     }
    ],
    "expectedFirst": "simple past and past participle of bar",
    "scores": [
+    0,
+    0,
     0,
     0,
     0
@@ -163,13 +449,23 @@
      "def": "A blade mounted to the end of a long gun, originally with a handle inserted into the bore, now usually attached underbarrel."
     },
     {
+     "pos": "noun",
+     "def": "A pin which plays in and out of holes made to receive it, and which thus serves to engage or disengage parts of the machinery."
+    },
+    {
      "pos": "verb",
      "def": "To stab with a bayonet."
+    },
+    {
+     "pos": "verb",
+     "def": "To compel or drive by the bayonet."
     }
    ],
    "expectedFirst": "A blade mounted to the end of a long gun, originally with a handle inserted into the bore, now usually attached underbarrel.",
    "scores": [
     0,
+    0,
+    1,
     1
    ]
   },
@@ -181,6 +477,18 @@
      "def": "A person who begs."
     },
     {
+     "pos": "noun",
+     "def": "A person suffering from extreme poverty."
+    },
+    {
+     "pos": "noun",
+     "def": "A mean or wretched person; a scoundrel."
+    },
+    {
+     "pos": "verb",
+     "def": "To exhaust the resources of; to outdo or go beyond."
+    },
+    {
      "pos": "verb",
      "def": "To make a beggar of someone; impoverish."
     }
@@ -188,7 +496,33 @@
    "expectedFirst": "A person who begs.",
    "scores": [
     0,
+    0,
+    0,
+    0,
     3
+   ]
+  },
+  {
+   "word": "beset",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "Senses relating to surrounding. To assail or attack (someone) from all sides; to set about."
+    },
+    {
+     "pos": "verb",
+     "def": "To assail or attack (someone) from all sides; to set about."
+    },
+    {
+     "pos": "verb",
+     "def": "To occupy and block (an entrance, a passage, etc.), especially to prevent people from passing."
+    }
+   ],
+   "expectedFirst": "Senses relating to surrounding. To assail or attack (someone) from all sides; to set about.",
+   "scores": [
+    0,
+    0,
+    0
    ]
   },
   {
@@ -199,12 +533,17 @@
      "def": "A short period of excessive consumption, especially of food, alcohol, narcotics, etc."
     },
     {
+     "pos": "noun",
+     "def": "A compressed period of an activity done in excess, such as watching a television show."
+    },
+    {
      "pos": "verb",
-     "def": "To engage in a short period of excessive consumption, especially of excessive alcohol consumption."
+     "def": "To engage in a short period of excessive consumption, especially of excessive alcohol or media consumption."
     }
    ],
    "expectedFirst": "A short period of excessive consumption, especially of food, alcohol, narcotics, etc.",
    "scores": [
+    0,
     0,
     0
    ]
@@ -221,12 +560,22 @@
      "def": "Very fast."
     },
     {
+     "pos": "adjective",
+     "def": "Sexually attractive."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of tremendous intensity, heat (thermal energy) or fervor; white-hot."
+    },
+    {
      "pos": "noun",
      "def": "The act of something that blazes or burns."
     }
    ],
    "expectedFirst": "present participle and gerund of blaze",
    "scores": [
+    0,
+    0,
     0,
     0,
     0
@@ -265,10 +614,20 @@
     {
      "pos": "noun",
      "def": "The act by which something is bonded or joined together."
+    },
+    {
+     "pos": "noun",
+     "def": "A relationship between a parent and offspring that establishes the basis for an ongoing mutual attachment."
+    },
+    {
+     "pos": "noun",
+     "def": "A close friendship that develops between people, often as a result of intense experiences, as those shared in military combat."
     }
    ],
    "expectedFirst": "present participle and gerund of bond",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -295,18 +654,58 @@
    "word": "braid",
    "senses": [
     {
+     "pos": "verb",
+     "def": "To make a sudden movement with, to jerk."
+    },
+    {
+     "pos": "verb",
+     "def": "To start into motion."
+    },
+    {
      "pos": "noun",
      "def": "A sudden movement; a jerk, a wrench."
     },
     {
+     "pos": "noun",
+     "def": "A weave of three or more strands of fibers, ribbons, cords or hair often for decoration."
+    },
+    {
+     "pos": "noun",
+     "def": "A stranded wire composed of a number of smaller wires twisted together."
+    },
+    {
+     "pos": "adjective",
+     "def": "Crafty, deceitful."
+    },
+    {
+     "pos": "noun",
+     "def": "A shelf or board for holding objects."
+    },
+    {
+     "pos": "noun",
+     "def": "A board to press curd for cheese."
+    },
+    {
+     "pos": "noun",
+     "def": "A flat board attached to a beam, used for weighing."
+    },
+    {
      "pos": "verb",
-     "def": "To make a sudden movement with, to jerk."
+     "def": "To weave together, intertwine (strands of fibers, ribbons, etc.); to arrange (hair) in braids."
     }
    ],
-   "expectedFirst": "A sudden movement; a jerk, a wrench.",
+   "expectedFirst": "To make a sudden movement with, to jerk.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -317,15 +716,99 @@
      "def": "The young of certain animals, especially a group of young birds or fowl hatched at one time by the same mother."
     },
     {
+     "pos": "noun",
+     "def": "The young of any egg-laying creature, especially if produced at the same time."
+    },
+    {
+     "pos": "noun",
+     "def": "The eggs and larvae of social insects such as bees, ants and some wasps, especially when gathered together in special brood chambers or combs within the colony."
+    },
+    {
+     "pos": "adjective",
+     "def": "Kept or reared for breeding."
+    },
+    {
      "pos": "verb",
      "def": "To keep an egg warm to make it hatch."
     },
     {
-     "pos": "adjective",
-     "def": "Kept or reared for breeding, said of animals."
+     "pos": "verb",
+     "def": "To protect (something that is gradually maturing); to foster."
+    },
+    {
+     "pos": "verb",
+     "def": "(typically with over, on or about) To dwell upon one's thoughts moodily and at length, mainly alone."
     }
    ],
    "expectedFirst": "The young of certain animals, especially a group of young birds or fowl hatched at one time by the same mother.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "buildup",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "An accumulation; an increase; a gradual development."
+    },
+    {
+     "pos": "noun",
+     "def": "The construction of a composite core to repair a damaged tooth."
+    }
+   ],
+   "expectedFirst": "An accumulation; an increase; a gradual development.",
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
+   "word": "burner",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Someone or something that physically burns or causes something else to burn. An element on a kitchen stove, hob, or cooktop that generates localized heat for cooking."
+    },
+    {
+     "pos": "noun",
+     "def": "An element on a kitchen stove, hob, or cooktop that generates localized heat for cooking."
+    },
+    {
+     "pos": "noun",
+     "def": "A device that generates localized heat for experiments; a Bunsen burner."
+    }
+   ],
+   "expectedFirst": "Someone or something that physically burns or causes something else to burn. An element on a kitchen stove, hob, or cooktop that generates localized heat for cooking.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "cabinet",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A storage closet either separate from, or built into, a wall."
+    },
+    {
+     "pos": "noun",
+     "def": "A cupboard."
+    },
+    {
+     "pos": "noun",
+     "def": "A museum display case."
+    }
+   ],
+   "expectedFirst": "A storage closet either separate from, or built into, a wall.",
    "scores": [
     0,
     0,
@@ -340,16 +823,36 @@
      "def": "A small, usually yellow, finch (genus Serinus), a songbird native to the Canary Islands."
     },
     {
+     "pos": "noun",
+     "def": "Any of various small birds of different countries, most of which are largely yellow in colour."
+    },
+    {
+     "pos": "noun",
+     "def": "A female singer, soprano, a coloratura singer."
+    },
+    {
      "pos": "adjective",
      "def": "Of a light yellow colour."
     },
     {
      "pos": "verb",
      "def": "To dance nimbly (as in the canary dance)."
+    },
+    {
+     "pos": "verb",
+     "def": "To inform or snitch, to betray secrets, especially about illegal activities."
+    },
+    {
+     "pos": "verb",
+     "def": "To test a software change by rolling out to a small set of machines or users before making it available to all."
     }
    ],
    "expectedFirst": "A small, usually yellow, finch (genus Serinus), a songbird native to the Canary Islands.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -363,12 +866,50 @@
      "def": "Pertaining to the heart."
     },
     {
+     "pos": "adjective",
+     "def": "Pertaining to the cardia of the stomach; cardial (cardial is the usual adjective in this sense)."
+    },
+    {
+     "pos": "adjective",
+     "def": "Exciting action in the heart, through the medium of the stomach; cordial; stimulant."
+    },
+    {
      "pos": "noun",
      "def": "A person with heart disease."
+    },
+    {
+     "pos": "noun",
+     "def": "Heart disease."
     }
    ],
    "expectedFirst": "Pertaining to the heart.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "catcher",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Someone or something that catches."
+    },
+    {
+     "pos": "noun",
+     "def": "The player who squats behind home plate and receives the pitches from the pitcher."
+    },
+    {
+     "pos": "noun",
+     "def": "The bottom partner in a homosexual relationship or sexual encounter between two men."
+    }
+   ],
+   "expectedFirst": "Someone or something that catches.",
+   "scores": [
+    0,
     0,
     0
    ]
@@ -379,6 +920,14 @@
     {
      "pos": "adjective",
      "def": "Sure in one's mind, positive; absolutely confident in the truth of something."
+    },
+    {
+     "pos": "adjective",
+     "def": "Not to be doubted or denied; established as a fact."
+    },
+    {
+     "pos": "adjective",
+     "def": "Sure to happen, inevitable; assured."
     },
     {
      "pos": "determiner",
@@ -393,6 +942,8 @@
    "scores": [
     0,
     0,
+    0,
+    0,
     0
    ]
   },
@@ -401,17 +952,27 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A person who has not yet reached adulthood, whether natural (puberty), cultural (initiation), or legal (majority)"
+     "def": "A person who has not yet reached adulthood, whether natural (puberty), cultural (initiation), or legal (majority)."
     },
     {
      "pos": "noun",
-     "def": "A child of noble birth."
+     "def": "A youth aged 1 to 9 years, whereas neonates are aged 0 to 1 month, infants are aged 1 to 12 months, and adolescents are aged 10 to 20 years."
+    },
+    {
+     "pos": "noun",
+     "def": "One's direct descendant by birth, regardless of age; one's offspring; a son or daughter."
+    },
+    {
+     "pos": "verb",
+     "def": "To give birth; to beget or procreate."
     }
    ],
-   "expectedFirst": "A person who has not yet reached adulthood, whether natural (puberty), cultural (initiation), or legal (majority)",
+   "expectedFirst": "A person who has not yet reached adulthood, whether natural (puberty), cultural (initiation), or legal (majority).",
    "scores": [
     0,
-    1
+    0,
+    0,
+    0
    ]
   },
   {
@@ -419,17 +980,42 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A part of something that has been separated."
+     "def": "A part of something that has been separated; a generally squat, thick, irregular piece of something, e.g. wood or stone."
+    },
+    {
+     "pos": "noun",
+     "def": "A large or substantial portion of something."
+    },
+    {
+     "pos": "noun",
+     "def": "A sequence of two or more words that occur in language with high frequency but are not idiomatic."
+    },
+    {
+     "pos": "verb",
+     "def": "To break down (language, etc.) into conceptual pieces of manageable size."
+    },
+    {
+     "pos": "verb",
+     "def": "To throw."
     },
     {
      "pos": "verb",
      "def": "To break into large pieces or chunks."
+    },
+    {
+     "pos": "noun",
+     "def": "Archaic form of chank (“type of spiral shell”)."
     }
    ],
-   "expectedFirst": "A part of something that has been separated.",
+   "expectedFirst": "A part of something that has been separated; a generally squat, thick, irregular piece of something, e.g. wood or stone.",
    "scores": [
     0,
-    1
+    0,
+    0,
+    0,
+    0,
+    1,
+    2
    ]
   },
   {
@@ -437,17 +1023,37 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A fastener or holder, particularly one that clasps."
+     "def": "A device with interlocking parts used for fastening things together, such as a fastener or a holder."
+    },
+    {
+     "pos": "noun",
+     "def": "A bar or insignia on a medal ribbon, to either indicate an additional award of the medal, or the action or service for which it was awarded."
+    },
+    {
+     "pos": "noun",
+     "def": "An embrace, a grasp, or handshake."
     },
     {
      "pos": "verb",
-     "def": "To take hold of; to grasp; to grab tightly."
+     "def": "To take hold of; to grasp."
+    },
+    {
+     "pos": "verb",
+     "def": "To cling."
+    },
+    {
+     "pos": "verb",
+     "def": "To shut or fasten together with, or as if with, a clasp."
     }
    ],
-   "expectedFirst": "A fastener or holder, particularly one that clasps.",
+   "expectedFirst": "A device with interlocking parts used for fastening things together, such as a fastener or a holder.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -458,6 +1064,22 @@
      "def": "The sound of metal on metal, or glass on glass."
     },
     {
+     "pos": "noun",
+     "def": "Stress cracks produced in metal ingots as they cool after being cast."
+    },
+    {
+     "pos": "verb",
+     "def": "To rhyme."
+    },
+    {
+     "pos": "noun",
+     "def": "A prison."
+    },
+    {
+     "pos": "verb",
+     "def": "To clinch; to rivet."
+    },
+    {
      "pos": "verb",
      "def": "To make a clinking sound; to make a sound of metal on metal or glass on glass; to strike materials such as metal or glass against one another."
     }
@@ -465,7 +1087,80 @@
    "expectedFirst": "The sound of metal on metal, or glass on glass.",
    "scores": [
     0,
+    0,
+    0,
+    0,
+    0,
     3
+   ]
+  },
+  {
+   "word": "collier",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A person in the business or occupation of producing or distributing coal (any of several types of carbon fuel). A person who produces (e.g., digs, mines, gathers) or sells coal (the fossil fuel type), or transports it from underground, from the soil, or from a seashore."
+    },
+    {
+     "pos": "noun",
+     "def": "A person who produces (e.g., digs, mines, gathers) or sells coal (the fossil fuel type), or transports it from underground, from the soil, or from a seashore."
+    },
+    {
+     "pos": "noun",
+     "def": "A person in the business or occupation of producing (and selling) charcoal."
+    }
+   ],
+   "expectedFirst": "A person in the business or occupation of producing or distributing coal (any of several types of carbon fuel). A person who produces (e.g., digs, mines, gathers) or sells coal (the fossil fuel type), or transports it from underground, from the soil, or from a seashore.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "compose",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To make something by merging parts."
+    },
+    {
+     "pos": "verb",
+     "def": "To make up the whole; to constitute."
+    },
+    {
+     "pos": "verb",
+     "def": "To comprise."
+    }
+   ],
+   "expectedFirst": "To make something by merging parts.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "consume",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To use up."
+    },
+    {
+     "pos": "verb",
+     "def": "To eat."
+    },
+    {
+     "pos": "verb",
+     "def": "To completely occupy the thoughts or attention of."
+    }
+   ],
+   "expectedFirst": "To use up.",
+   "scores": [
+    0,
+    0,
+    0
    ]
   },
   {
@@ -477,7 +1172,19 @@
     },
     {
      "pos": "noun",
+     "def": "An upper or crownlike portion of certain parts of the body. A region of the skull located along the coronal suture, at the junction between the frontal bone and the two parietal bones. The external (supragingival) portion of the tooth, covered by enamel; the crown. The circumference of the base of the glans penis in human males."
+    },
+    {
+     "pos": "noun",
+     "def": "A region of the skull located along the coronal suture, at the junction between the frontal bone and the two parietal bones."
+    },
+    {
+     "pos": "noun",
      "def": "A coronavirus, especially SARS-CoV-2."
+    },
+    {
+     "pos": "noun",
+     "def": "A disease caused by a coronavirus, especially COVID-19."
     },
     {
      "pos": "noun",
@@ -493,6 +1200,9 @@
     0,
     0,
     0,
+    0,
+    0,
+    0,
     1
    ]
   },
@@ -504,13 +1214,33 @@
      "def": "Chiefly with a qualifying word: Any relation (especially a distant one) who is not a direct ancestor or descendant but part of a person's extended family; a kinsman or kinswoman. Preceded by an ordinal number, as first, second, third, etc.: a person descended from a common ancestor by the same number of generations as another person. When used without a qualifying word: the child of a person's parent's brother (that is, an uncle) or sister (an aunt); a cousin-german, a first cousin."
     },
     {
+     "pos": "noun",
+     "def": "Preceded by an ordinal number, as first, second, third, etc.: a person descended from a common ancestor by the same number of generations as another person."
+    },
+    {
+     "pos": "noun",
+     "def": "When used without a qualifying word: the child of a person's parent's brother (that is, an uncle) or sister (an aunt); a cousin-german, a first cousin."
+    },
+    {
+     "pos": "verb",
+     "def": "To regard (oneself or someone) as a cousin to another person."
+    },
+    {
      "pos": "verb",
      "def": "To address (someone) as \"cousin\". To regard (oneself or someone) as a cousin to another person."
+    },
+    {
+     "pos": "verb",
+     "def": "To address (someone) as \"cousin\"."
     }
    ],
    "expectedFirst": "Chiefly with a qualifying word: Any relation (especially a distant one) who is not a direct ancestor or descendant but part of a person's extended family; a kinsman or kinswoman. Preceded by an ordinal number, as first, second, third, etc.: a person descended from a common ancestor by the same number of generations as another person. When used without a qualifying word: the child of a person's parent's brother (that is, an uncle) or sister (an aunt); a cousin-german, a first cousin.",
    "scores": [
     0,
+    0,
+    0,
+    0,
+    1,
     1
    ]
   },
@@ -518,23 +1248,38 @@
    "word": "crazy",
    "senses": [
     {
-     "pos": "noun",
-     "def": "An insane or eccentric person; a crackpot."
+     "pos": "adjective",
+     "def": "Of unsound mind; insane; demented."
     },
     {
      "pos": "adjective",
-     "def": "Flawed or damaged; unsound, liable to break apart; ramshackle."
+     "def": "Out of control."
+    },
+    {
+     "pos": "adjective",
+     "def": "Very excited or enthusiastic."
     },
     {
      "pos": "adverb",
      "def": "Very, extremely."
+    },
+    {
+     "pos": "noun",
+     "def": "An insane or eccentric person; a crackpot."
+    },
+    {
+     "pos": "noun",
+     "def": "Eccentric behaviour; lunacy; craziness."
     }
    ],
-   "expectedFirst": "An insane or eccentric person; a crackpot.",
+   "expectedFirst": "Of unsound mind; insane; demented.",
    "scores": [
     0,
     0,
-    0
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -545,12 +1290,47 @@
      "def": "A bend; turn; curve; curvature; a flexure."
     },
     {
+     "pos": "noun",
+     "def": "A bending of the knee; a genuflection."
+    },
+    {
+     "pos": "noun",
+     "def": "A bent or curved part; a curving piece or portion (of anything)."
+    },
+    {
      "pos": "verb",
      "def": "To bend, or form into a hook."
+    },
+    {
+     "pos": "verb",
+     "def": "To become bent or hooked."
+    },
+    {
+     "pos": "verb",
+     "def": "To turn from the path of rectitude; to pervert; to misapply; to twist."
+    },
+    {
+     "pos": "adjective",
+     "def": "Bad, unsatisfactory, not up to standard."
+    },
+    {
+     "pos": "adjective",
+     "def": "Ill, sick."
+    },
+    {
+     "pos": "adjective",
+     "def": "Annoyed, angry; upset."
     }
    ],
    "expectedFirst": "A bend; turn; curve; curvature; a flexure.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -563,12 +1343,27 @@
      "def": "An intimate physical embrace, typically while lying (or sitting): a snuggle, an instance of lying together snugly, as one might with a partner (more intimate than a hug, and typically of longer duration)."
     },
     {
+     "pos": "noun",
+     "def": "An affectionate embrace, a hug, such as is given to family members and close friends (less intimate than a snuggle, and typically of shorter duration)."
+    },
+    {
      "pos": "verb",
      "def": "To lie together snugly (with someone), in an intimate physical embrace; to snuggle."
+    },
+    {
+     "pos": "verb",
+     "def": "To embrace (someone) affectionately; to hug (someone) closely."
+    },
+    {
+     "pos": "verb",
+     "def": "To cradle (e.g. a baby) in one's arms so as to give comfort, warmth."
     }
    ],
    "expectedFirst": "An intimate physical embrace, typically while lying (or sitting): a snuggle, an instance of lying together snugly, as one might with a partner (more intimate than a hug, and typically of longer duration).",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -582,14 +1377,139 @@
     },
     {
      "pos": "noun",
+     "def": "The government department or agency that is authorised to collect the taxes imposed on imported goods."
+    },
+    {
+     "pos": "noun",
      "def": "plural of custom"
     },
     {
      "pos": "verb",
      "def": "third-person singular simple present indicative of custom"
+    },
+    {
+     "pos": "noun",
+     "def": "The process of going through customs checks at a border checkpoint."
     }
    ],
    "expectedFirst": "The duties or taxes imposed on imported or exported goods.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    3
+   ]
+  },
+  {
+   "word": "dancer",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A person who dances, usually as a hobby, an occupation, or a profession."
+    },
+    {
+     "pos": "noun",
+     "def": "A stripper."
+    },
+    {
+     "pos": "noun",
+     "def": "Synonym of garreter (“a thief who used housetops to enter by garret windows”)."
+    }
+   ],
+   "expectedFirst": "A person who dances, usually as a hobby, an occupation, or a profession.",
+   "scores": [
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "word": "decade",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A group, set, or series of ten"
+    },
+    {
+     "pos": "noun",
+     "def": "A period of ten years , particularly such a period beginning with a year ending in 0 and ending with a year ending in 9."
+    },
+    {
+     "pos": "noun",
+     "def": "A period of ten days, particularly those in the ancient Egyptian, Coptic, and French Revolutionary calendars."
+    }
+   ],
+   "expectedFirst": "A group, set, or series of ten",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "deflate",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To remove air or some other gas from within an elastic container, e.g. a balloon or tyre."
+    },
+    {
+     "pos": "verb",
+     "def": "To cause an object to decrease or become smaller in some parameter, e.g. to shrink"
+    },
+    {
+     "pos": "verb",
+     "def": "To reduce the amount of available currency or credit and thus lower prices."
+    }
+   ],
+   "expectedFirst": "To remove air or some other gas from within an elastic container, e.g. a balloon or tyre.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "density",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "The amount of a certain phenomenon (such as stuff, things, energy, or otherwise) in a given area (surface area) or volume (amount of space)."
+    },
+    {
+     "pos": "noun",
+     "def": "A measure of the mass of matter contained by a unit volume."
+    },
+    {
+     "pos": "noun",
+     "def": "The ratio of one quantity, representing something of interest, to another quantity representing space, area, or extent in which the thing of interest is distributed."
+    }
+   ],
+   "expectedFirst": "The amount of a certain phenomenon (such as stuff, things, energy, or otherwise) in a given area (surface area) or volume (amount of space).",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "detain",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To keep something from proceeding or coming to completion; to delay."
+    },
+    {
+     "pos": "verb",
+     "def": "To keep someone from proceeding by holding them back or making claims on their attention."
+    },
+    {
+     "pos": "verb",
+     "def": "To keep back or from; to withhold."
+    }
+   ],
+   "expectedFirst": "To keep something from proceeding or coming to completion; to delay.",
    "scores": [
     0,
     0,
@@ -604,12 +1524,22 @@
      "def": "A regulated diet that excludes or constrains certain types of food, especially for health reasons; also, a book or similar setting out such regulations."
     },
     {
+     "pos": "noun",
+     "def": "A prescribed meal plan setting out how the inhabitants of an institution (such as a prison, hospital etc.) should be fed, and on what foods."
+    },
+    {
      "pos": "adjective",
      "def": "Pertaining to a prescribed diet; , relating to what a person or animal eats."
+    },
+    {
+     "pos": "adjective",
+     "def": "Comprising a food source."
     }
    ],
    "expectedFirst": "A regulated diet that excludes or constrains certain types of food, especially for health reasons; also, a book or similar setting out such regulations.",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -622,14 +1552,29 @@
      "def": "A feeling of contempt or scorn."
     },
     {
+     "pos": "noun",
+     "def": "The state of being despised; shame."
+    },
+    {
      "pos": "verb",
      "def": "To regard (someone or something) with strong contempt."
+    },
+    {
+     "pos": "verb",
+     "def": "To be indignant or offended."
+    },
+    {
+     "pos": "noun",
+     "def": "That which is worthy to be disdained or regarded with contempt and aversion."
     }
    ],
    "expectedFirst": "A feeling of contempt or scorn.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    3
    ]
   },
   {
@@ -641,11 +1586,26 @@
     },
     {
      "pos": "noun",
+     "def": "An instrument for augmenting a very small quantity of electricity, so as to render it manifest by sparks or the electroscope."
+    },
+    {
+     "pos": "noun",
+     "def": "A metal plate riveted or welded over a preexisting metal structural component to reinforce it and relieve the stress on the preexisting component, or to serve as a patch where part of the original structure has failed or been removed."
+    },
+    {
+     "pos": "noun",
      "def": "A tenement house having two families on each floor."
+    },
+    {
+     "pos": "noun",
+     "def": "A biplane aeroplane or kite."
     }
    ],
    "expectedFirst": "One who doubles.",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -687,6 +1647,24 @@
    ]
   },
   {
+   "word": "duvet",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A quilt or usually flat cloth bag with a filling (traditionally down) and usually an additional washable cover, used instead of blankets; often called a comforter or quilt, especially in US English."
+    },
+    {
+     "pos": "noun",
+     "def": "Short for duvet cover."
+    }
+   ],
+   "expectedFirst": "A quilt or usually flat cloth bag with a filling (traditionally down) and usually an additional washable cover, used instead of blankets; often called a comforter or quilt, especially in US English.",
+   "scores": [
+    0,
+    2
+   ]
+  },
+  {
    "word": "ecstasy",
    "senses": [
     {
@@ -694,12 +1672,50 @@
      "def": "Intense pleasure."
     },
     {
+     "pos": "noun",
+     "def": "A state of emotion so intense that a person is carried beyond rational thought and self-control."
+    },
+    {
+     "pos": "noun",
+     "def": "A trance, frenzy, or rapture associated with mystic or prophetic exaltation."
+    },
+    {
      "pos": "verb",
      "def": "To experience intense pleasure."
+    },
+    {
+     "pos": "verb",
+     "def": "To cause intense pleasure in."
     }
    ],
    "expectedFirst": "Intense pleasure.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "elixir",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A liquid which converts lead to gold."
+    },
+    {
+     "pos": "noun",
+     "def": "A substance or liquid which is believed to cure all ills and give eternal life."
+    },
+    {
+     "pos": "noun",
+     "def": "The alleged cure for all ailments; cure-all, panacea."
+    }
+   ],
+   "expectedFirst": "A liquid which converts lead to gold.",
+   "scores": [
+    0,
     0,
     0
    ]
@@ -723,11 +1739,83 @@
    ]
   },
   {
+   "word": "erode",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To wear away by abrasion, corrosion, or chemical reaction."
+    },
+    {
+     "pos": "verb",
+     "def": "To destroy gradually by an ongoing process."
+    }
+   ],
+   "expectedFirst": "To wear away by abrasion, corrosion, or chemical reaction.",
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
+   "word": "evert",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To turn inside out (like a pocket being emptied) or outwards."
+    },
+    {
+     "pos": "verb",
+     "def": "To move (someone or something) out of the way."
+    },
+    {
+     "pos": "verb",
+     "def": "To turn upside down; to overturn."
+    }
+   ],
+   "expectedFirst": "To turn inside out (like a pocket being emptied) or outwards.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "expand",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To change (something) from a smaller form or size to a larger one; to spread out or lay open."
+    },
+    {
+     "pos": "verb",
+     "def": "To increase the extent, number, volume or scope of (something)."
+    },
+    {
+     "pos": "verb",
+     "def": "To express (something) at length and/or in detail."
+    }
+   ],
+   "expectedFirst": "To change (something) from a smaller form or size to a larger one; to spread out or lay open.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
    "word": "factory",
    "senses": [
     {
      "pos": "noun",
      "def": "A building or other place where manufacturing takes place."
+    },
+    {
+     "pos": "noun",
+     "def": "A police station."
+    },
+    {
+     "pos": "noun",
+     "def": "A device or process that produces or manufactures something."
     },
     {
      "pos": "adjective",
@@ -736,6 +1824,8 @@
    ],
    "expectedFirst": "A building or other place where manufacturing takes place.",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -748,8 +1838,20 @@
      "def": "Emotionally sensitive."
     },
     {
+     "pos": "adjective",
+     "def": "Expressive of great sensibility; attended by, or evincing, sensibility."
+    },
+    {
      "pos": "noun",
      "def": "Sensation, particularly through the skin."
+    },
+    {
+     "pos": "noun",
+     "def": "Emotion; impression."
+    },
+    {
+     "pos": "noun",
+     "def": "Emotional state or well-being."
     },
     {
      "pos": "verb",
@@ -758,6 +1860,9 @@
    ],
    "expectedFirst": "Emotionally sensitive.",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -771,8 +1876,24 @@
      "def": "A violin, a small unfretted stringed instrument with four strings tuned (lowest to highest) G-D-A-E, usually held against the chin, shoulder, chest or on the upper thigh and played with a bow (see also usage notes below)."
     },
     {
+     "pos": "noun",
+     "def": "Any of various other bowed stringed instruments, particularly those of the violin family when played non-classically."
+    },
+    {
+     "pos": "verb",
+     "def": "To fraudulently manipulate (records, accounts, etc.) in order to cheat or swindle."
+    },
+    {
+     "pos": "noun",
+     "def": "A violinist, or fiddler, in a band."
+    },
+    {
      "pos": "verb",
      "def": "To play the fiddle or violin, particularly in a folk or country style."
+    },
+    {
+     "pos": "verb",
+     "def": "To fidget or play; to fuss; to idly amuse oneself, to act aimlessly, idly, or frivolously, particularly out of nervousness or restlessness; see also fiddle with."
     },
     {
      "pos": "interjection",
@@ -782,6 +1903,10 @@
    "expectedFirst": "A violin, a small unfretted stringed instrument with four strings tuned (lowest to highest) G-D-A-E, usually held against the chin, shoulder, chest or on the upper thigh and played with a bow (see also usage notes below).",
    "scores": [
     0,
+    0,
+    0,
+    1,
+    1,
     1,
     2
    ]
@@ -796,10 +1921,15 @@
     {
      "pos": "noun",
      "def": "Police officers."
+    },
+    {
+     "pos": "noun",
+     "def": "Members of the military."
     }
    ],
    "expectedFirst": "superlative form of fine: most fine",
    "scores": [
+    0,
     0,
     0
    ]
@@ -812,12 +1942,57 @@
      "def": "A loose filmy mass or a thin chiplike layer of anything"
     },
     {
+     "pos": "noun",
+     "def": "A scale of a fish or similar animal"
+    },
+    {
+     "pos": "noun",
+     "def": "A prehistoric tool chipped out of stone."
+    },
+    {
+     "pos": "verb",
+     "def": "To prove unreliable or impractical; to abandon or desert, to fail to follow through."
+    },
+    {
+     "pos": "verb",
+     "def": "To store an item such as rope or sail in layers"
+    },
+    {
+     "pos": "noun",
+     "def": "Dogfish."
+    },
+    {
+     "pos": "noun",
+     "def": "The meat of the gummy shark."
+    },
+    {
+     "pos": "noun",
+     "def": "A paling; a hurdle."
+    },
+    {
+     "pos": "noun",
+     "def": "A platform of hurdles, or small sticks made fast or interwoven, supported by stanchions, for drying codfish and other things."
+    },
+    {
+     "pos": "noun",
+     "def": "A small stage hung over a vessel's side, for workmen to stand on while calking, etc."
+    },
+    {
      "pos": "verb",
      "def": "To break or chip off in a flake."
     }
    ],
    "expectedFirst": "A loose filmy mass or a thin chiplike layer of anything",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     1
    ]
@@ -834,15 +2009,35 @@
      "def": "To throw (something) with a jerk or sudden movement; to fling."
     },
     {
+     "pos": "verb",
+     "def": "To jeer at; to mock."
+    },
+    {
+     "pos": "verb",
+     "def": "To dart about; to move with quick, jerky motions."
+    },
+    {
      "pos": "adjective",
-     "def": "Pert; wanton"
+     "def": "Flirtatious."
+    },
+    {
+     "pos": "noun",
+     "def": "Someone who flirts a lot or enjoys flirting; a flirtatious person."
+    },
+    {
+     "pos": "noun",
+     "def": "An act of flirting."
     }
    ],
    "expectedFirst": "A sudden jerk; a quick throw or cast; a darting motion",
    "scores": [
     0,
     0,
-    0
+    0,
+    0,
+    0,
+    3,
+    3
    ]
   },
   {
@@ -851,6 +2046,14 @@
     {
      "pos": "adjective",
      "def": "Designed to fold"
+    },
+    {
+     "pos": "noun",
+     "def": "The keeping of sheep in enclosures on arable land, etc."
+    },
+    {
+     "pos": "noun",
+     "def": "Code folding: a source code display technique that can hide the contents of methods, classes, etc. for easier navigation."
     },
     {
      "pos": "verb",
@@ -865,6 +2068,8 @@
    "scores": [
     0,
     0,
+    0,
+    0,
     3
    ]
   },
@@ -876,12 +2081,32 @@
      "def": "The layout of a publication or document."
     },
     {
+     "pos": "noun",
+     "def": "The form of presentation of something."
+    },
+    {
+     "pos": "noun",
+     "def": "The type of programming that a radio station broadcasts; such as a certain genre of music, news, sports, talk, etc."
+    },
+    {
      "pos": "verb",
      "def": "To create or edit the layout of a document."
+    },
+    {
+     "pos": "verb",
+     "def": "Change a document so it will fit onto a different type of page."
+    },
+    {
+     "pos": "verb",
+     "def": "To prepare a mass storage medium for initial use, erasing any existing data in the process."
     }
    ],
    "expectedFirst": "The layout of a publication or document.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -894,11 +2119,39 @@
      "def": "Having undergone the process of freezing; in ice form."
     },
     {
+     "pos": "adjective",
+     "def": "Immobilized."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of an account or assets, in a state such that transactions are not allowed."
+    },
+    {
      "pos": "verb",
      "def": "past participle of freeze"
     }
    ],
    "expectedFirst": "Having undergone the process of freezing; in ice form.",
+   "scores": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "futile",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "Incapable of producing results, useless; doomed not to be successful; not worth attempting."
+    },
+    {
+     "pos": "adjective",
+     "def": "Insignificant; frivolous."
+    }
+   ],
+   "expectedFirst": "Incapable of producing results, useless; doomed not to be successful; not worth attempting.",
    "scores": [
     0,
     0
@@ -909,27 +2162,35 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "Matter in a state intermediate between liquid and plasma that can be contained only if it is fully surrounded by a solid (or in a bubble of liquid) (or held together by gravitational pull); it can condense into a liquid, or can (rarely) become a solid directly."
+     "def": "plural of gas"
     },
     {
      "pos": "verb",
-     "def": "To kill with poisonous gas."
-    },
-    {
-     "pos": "noun",
-     "def": "Gasoline; a derivative of petroleum used as fuel."
-    },
-    {
-     "pos": "verb",
-     "def": "To give a vehicle more fuel in order to accelerate it."
+     "def": "third-person singular simple present indicative of gas"
     }
    ],
-   "expectedFirst": "Matter in a state intermediate between liquid and plasma that can be contained only if it is fully surrounded by a solid (or in a bubble of liquid) (or held together by gravitational pull); it can condense into a liquid, or can (rarely) become a solid directly.",
+   "expectedFirst": "plural of gas",
    "scores": [
     0,
-    0,
-    0,
     0
+   ]
+  },
+  {
+   "word": "genre",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A kind; a stylistic category or sort, especially of literature or other artworks."
+    },
+    {
+     "pos": "verb",
+     "def": "To assign or conform to a genre, to make genre-specific."
+    }
+   ],
+   "expectedFirst": "A kind; a stylistic category or sort, especially of literature or other artworks.",
+   "scores": [
+    0,
+    1
    ]
   },
   {
@@ -940,12 +2201,27 @@
      "def": "Originally, enchantment; magic charm; especially, the effect of a spell that causes one to see objects in a form that differs from reality, typically to make filthy, ugly, or repulsive things seem beauteous."
     },
     {
+     "pos": "noun",
+     "def": "Alluring beauty or charm (often with sex appeal)."
+    },
+    {
+     "pos": "noun",
+     "def": "Any excitement, appeal, or attractiveness associated with a person, place, or thing; that which makes something appealing."
+    },
+    {
      "pos": "verb",
      "def": "To enchant; to bewitch."
+    },
+    {
+     "pos": "verb",
+     "def": "↑ Postrel, Virginia (5 November 2013), “One: The Magic of Glamour”, in The Power of Glamour: Longing and the Art of Visual Persuasion, Simon & Schuster, →ISBN: “Reflecting this sense of the word, by 1902 Webster's included two new definitions: “a kind of haze in the air, causing things to appear different from what they really are”…”"
     }
    ],
    "expectedFirst": "Originally, enchantment; magic charm; especially, the effect of a spell that causes one to see objects in a form that differs from reality, typically to make filthy, ugly, or repulsive things seem beauteous.",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -962,8 +2238,20 @@
      "def": "Fellatio; a blowjob."
     },
     {
+     "pos": "noun",
+     "def": "An act of eating hastily or greedily."
+    },
+    {
+     "pos": "noun",
+     "def": "A rapid straight putt so strongly played that, if the ball had not gone into the hole, it would have gone a long way past."
+    },
+    {
      "pos": "verb",
      "def": "Of a turkey, to make its characteristic vocalisation; also, used of certain other birds."
+    },
+    {
+     "pos": "verb",
+     "def": "To make the sound of a turkey."
     },
     {
      "pos": "noun",
@@ -972,6 +2260,9 @@
    ],
    "expectedFirst": "To eat hastily or greedily; to scoff or scarf",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -988,10 +2279,38 @@
     {
      "pos": "noun",
      "def": "An antiphon or responsory after the epistle, in the Mass, which was sung on the steps, or while the deacon ascended the steps."
+    },
+    {
+     "pos": "noun",
+     "def": "A service book containing the musical portions of the Mass."
     }
    ],
    "expectedFirst": "Proceeding or advancing by small, slow, regular steps or degrees",
    "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "greedy",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "Having greed; consumed by selfish desires."
+    },
+    {
+     "pos": "adjective",
+     "def": "Prone to overeat."
+    },
+    {
+     "pos": "adjective",
+     "def": "Tending to match as much text as possible."
+    }
+   ],
+   "expectedFirst": "Having greed; consumed by selfish desires.",
+   "scores": [
+    0,
     0,
     0
    ]
@@ -1004,12 +2323,32 @@
      "def": "The surface of the Earth, as opposed to the sky or water or underground."
     },
     {
+     "pos": "noun",
+     "def": "Terrain."
+    },
+    {
+     "pos": "noun",
+     "def": "Soil, earth."
+    },
+    {
+     "pos": "verb",
+     "def": "To electrocute."
+    },
+    {
+     "pos": "verb",
+     "def": "To punish, especially a child or teenager, by forcing them to stay at home and/or give up certain privileges."
+    },
+    {
      "pos": "verb",
      "def": "simple past and past participle of grind"
     },
     {
      "pos": "adjective",
      "def": "Crushed, or reduced to small particles."
+    },
+    {
+     "pos": "adjective",
+     "def": "Processed by grinding."
     },
     {
      "pos": "verb",
@@ -1021,6 +2360,11 @@
     0,
     0,
     0,
+    0,
+    0,
+    0,
+    0,
+    0,
     1
    ]
   },
@@ -1028,23 +2372,43 @@
    "word": "gummy",
    "senses": [
     {
-     "pos": "noun",
-     "def": "A sheep that is losing or has lost its teeth."
-    },
-    {
      "pos": "adjective",
      "def": "Showing the gums."
     },
     {
      "pos": "noun",
-     "def": "A species of shark, Mustelus antarcticus, endemic to southern and south-eastern Australia, the meat of which is sold as flake."
+     "def": "A sheep that is losing or has lost its teeth."
+    },
+    {
+     "pos": "adjective",
+     "def": "Resembling gum (the substance)."
+    },
+    {
+     "pos": "adjective",
+     "def": "Covered with gum or a substance resembling gum."
+    },
+    {
+     "pos": "adjective",
+     "def": "Thick; fat."
+    },
+    {
+     "pos": "noun",
+     "def": "A gummi candy."
+    },
+    {
+     "pos": "noun",
+     "def": "Clipping of gummy shark."
     }
    ],
-   "expectedFirst": "A sheep that is losing or has lost its teeth.",
+   "expectedFirst": "Showing the gums.",
    "scores": [
     0,
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    2
    ]
   },
   {
@@ -1055,12 +2419,78 @@
      "def": "A tool with a heavy head and a handle used for pounding."
     },
     {
+     "pos": "noun",
+     "def": "The malleus, a small bone of the middle ear."
+    },
+    {
      "pos": "verb",
      "def": "To strike repeatedly with a hammer, some other implement, the fist, etc."
+    },
+    {
+     "pos": "verb",
+     "def": "To form or forge with a hammer; to shape by beating."
+    },
+    {
+     "pos": "verb",
+     "def": "To emphasize a point repeatedly."
+    },
+    {
+     "pos": "noun",
+     "def": "The act of using a hammer to hit something."
     }
    ],
    "expectedFirst": "A tool with a heavy head and a handle used for pounding.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    3
+   ]
+  },
+  {
+   "word": "harem",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "The private section of a Muslim household forbidden to male strangers."
+    },
+    {
+     "pos": "noun",
+     "def": "A group of someone's girlfriends, wives and/or concubines in a polygamous household."
+    },
+    {
+     "pos": "noun",
+     "def": "A group of female animals (cows) herded and controlled by a male animal (bull) of that species for breeding purposes. Such behaviour is exhibited by bovids including cattle and buffalo as well as moose, elephants, seals (including elephant seals), sea lions, and baboons."
+    }
+   ],
+   "expectedFirst": "The private section of a Muslim household forbidden to male strangers.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "headway",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A movement ahead or forward."
+    },
+    {
+     "pos": "noun",
+     "def": "Forward motion, or its rate."
+    },
+    {
+     "pos": "noun",
+     "def": "The interval of time or distance between the fronts of two vehicles (e.g. buses) moving in succession in the same direction, especially along the same predetermined route."
+    }
+   ],
+   "expectedFirst": "A movement ahead or forward.",
+   "scores": [
+    0,
     0,
     0
    ]
@@ -1073,6 +2503,14 @@
      "def": "The act of giving aid or assistance (to)."
     },
     {
+     "pos": "noun",
+     "def": "A portion or serving, especially of food that one takes for oneself, or to which one helps oneself."
+    },
+    {
+     "pos": "noun",
+     "def": "An amount or quantity."
+    },
+    {
      "pos": "verb",
      "def": "present participle and gerund of help"
     }
@@ -1080,7 +2518,83 @@
    "expectedFirst": "The act of giving aid or assistance (to).",
    "scores": [
     0,
+    0,
+    0,
     0
+   ]
+  },
+  {
+   "word": "himself",
+   "senses": [
+    {
+     "pos": "pronoun",
+     "def": "Him; the male object of a verb or preposition that also appears as the subject"
+    },
+    {
+     "pos": "pronoun",
+     "def": "He; used as an intensifier, often to emphasize that the referent is the exclusive participant in the predicate"
+    },
+    {
+     "pos": "pronoun",
+     "def": "The subject or non-reflexive object of a predicate; he himself."
+    }
+   ],
+   "expectedFirst": "Him; the male object of a verb or preposition that also appears as the subject",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "honesty",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "The act, quality, or condition of being honest."
+    },
+    {
+     "pos": "noun",
+     "def": "Honor; decency, propriety."
+    },
+    {
+     "pos": "noun",
+     "def": "Chastity."
+    }
+   ],
+   "expectedFirst": "The act, quality, or condition of being honest.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "hotel",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A large town house or mansion; a grand private residence, especially in France."
+    },
+    {
+     "pos": "noun",
+     "def": "An establishment that provides accommodation and other services for paying guests; normally larger than a guesthouse, and often one of a chain."
+    },
+    {
+     "pos": "noun",
+     "def": "A public house or pub."
+    },
+    {
+     "pos": "noun",
+     "def": "Alternative letter-case form of Hotel of the ICAO/NATO radiotelephony alphabet."
+    }
+   ],
+   "expectedFirst": "A large town house or mansion; a grand private residence, especially in France.",
+   "scores": [
+    0,
+    0,
+    0,
+    2
    ]
   },
   {
@@ -1091,11 +2605,39 @@
      "def": "The act of finding and killing a wild animal, either for sport or with the intention of using its parts to make food, clothes, etc."
     },
     {
+     "pos": "noun",
+     "def": "The act of looking for something, especially for a job or flat."
+    },
+    {
+     "pos": "noun",
+     "def": "Fluctuation or oscillation that does not stabilize."
+    },
+    {
      "pos": "verb",
      "def": "present participle and gerund of hunt"
     }
    ],
    "expectedFirst": "The act of finding and killing a wild animal, either for sport or with the intention of using its parts to make food, clothes, etc.",
+   "scores": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "illness",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "An instance (episode) of a disease or poor health."
+    },
+    {
+     "pos": "noun",
+     "def": "A state of bad health or disease."
+    }
+   ],
+   "expectedFirst": "An instance (episode) of a disease or poor health.",
    "scores": [
     0,
     0
@@ -1127,12 +2669,22 @@
      "def": "Inborn; existing or having existed since birth."
     },
     {
+     "pos": "adjective",
+     "def": "Originating in, or derived from, the constitution of the intellect, as opposed to acquired from experience."
+    },
+    {
+     "pos": "adjective",
+     "def": "Instinctive; coming from instinct."
+    },
+    {
      "pos": "verb",
      "def": "To cause to exist; to call into being."
     }
    ],
    "expectedFirst": "Inborn; existing or having existed since birth.",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -1145,12 +2697,27 @@
      "def": "Any of certain types of outerwear. A piece of clothing worn on the upper body outside a shirt or blouse, often waist length to thigh length. A piece of a person's suit, beside trousers and, sometimes, waistcoat; coat . An outer garment (usually white) intended for chefs and which may be taken to signify status. A vest ; a waistcoat . A letter jacket."
     },
     {
+     "pos": "noun",
+     "def": "A piece of clothing worn on the upper body outside a shirt or blouse, often waist length to thigh length."
+    },
+    {
+     "pos": "noun",
+     "def": "A piece of a person's suit, beside trousers and, sometimes, waistcoat; coat ."
+    },
+    {
      "pos": "verb",
      "def": "To confine (someone) to a straitjacket."
+    },
+    {
+     "pos": "verb",
+     "def": "To enclose or encase in a jacket or other covering."
     }
    ],
    "expectedFirst": "Any of certain types of outerwear. A piece of clothing worn on the upper body outside a shirt or blouse, often waist length to thigh length. A piece of a person's suit, beside trousers and, sometimes, waistcoat; coat . An outer garment (usually white) intended for chefs and which may be taken to signify status. A vest ; a waistcoat . A letter jacket.",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1185,12 +2752,17 @@
      "def": "That kisses; engaged in a kiss or kissing."
     },
     {
+     "pos": "adjective",
+     "def": "Just touching."
+    },
+    {
      "pos": "noun",
      "def": "The act of giving a kiss or making out."
     }
    ],
    "expectedFirst": "present participle and gerund of kiss",
    "scores": [
+    0,
     0,
     0,
     0
@@ -1227,12 +2799,17 @@
      "def": "A long rope with a sliding loop on one end, generally used in ranching to catch cattle and horses."
     },
     {
+     "pos": "noun",
+     "def": "An image-editing function allowing the user to capture an irregularly-shaped object by drawing an approximate outline."
+    },
+    {
      "pos": "verb",
      "def": "To catch with a lasso."
     }
    ],
    "expectedFirst": "A long rope with a sliding loop on one end, generally used in ranching to catch cattle and horses.",
    "scores": [
+    0,
     0,
     1
    ]
@@ -1245,6 +2822,10 @@
      "def": "A group or association of cooperating members."
     },
     {
+     "pos": "noun",
+     "def": "An organization of sports teams which play against one another for a championship."
+    },
+    {
      "pos": "verb",
      "def": "To form an association; to unite in a league or confederacy; to combine for mutual support."
     },
@@ -1255,11 +2836,50 @@
     {
      "pos": "noun",
      "def": "A unit of itinerary distance varying with country, in Britain commonly about three statute miles (or five kilometres). Perhaps representing an hour's walking. Three nautical miles."
+    },
+    {
+     "pos": "noun",
+     "def": "Three nautical miles."
+    },
+    {
+     "pos": "noun",
+     "def": "A stone erected near a public road to mark the distance of a league."
+    },
+    {
+     "pos": "noun",
+     "def": "Ellipsis of rugby league."
     }
    ],
    "expectedFirst": "A group or association of cooperating members.",
    "scores": [
     0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "word": "lemur",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Any strepsirrhine primate of the superfamily Lemuroidea, native only to Madagascar and some surrounding islands."
+    },
+    {
+     "pos": "noun",
+     "def": "Any of the genus Lemur, represented by the ring-tailed lemur (Lemur catta)."
+    },
+    {
+     "pos": "noun",
+     "def": "A loris (Lemur tardigradus, now Loris tardigradus), predating the 10th edition of Systema Naturæ."
+    }
+   ],
+   "expectedFirst": "Any strepsirrhine primate of the superfamily Lemuroidea, native only to Madagascar and some surrounding islands.",
+   "scores": [
     0,
     0,
     0
@@ -1273,12 +2893,32 @@
      "def": "A free and independent person; specifically, a lord paramount; a sovereign."
     },
     {
+     "pos": "noun",
+     "def": "A king or lord."
+    },
+    {
+     "pos": "noun",
+     "def": "The subject of a sovereign or lord; a liegeman."
+    },
+    {
      "pos": "adjective",
      "def": "Sovereign; independent; having authority or right to allegiance."
+    },
+    {
+     "pos": "adjective",
+     "def": "Serving an independent sovereign or master; bound by a feudal tenure; obliged to be faithful and loyal to a superior, such as a vassal to his lord; faithful."
+    },
+    {
+     "pos": "adjective",
+     "def": "Full; perfect; complete; pure."
     }
    ],
    "expectedFirst": "A free and independent person; specifically, a lord paramount; a sovereign.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1289,6 +2929,14 @@
     {
      "pos": "noun",
      "def": "One who, or that which, lists or produces a listing."
+    },
+    {
+     "pos": "noun",
+     "def": "A person or organisation that creates or maintains lists."
+    },
+    {
+     "pos": "noun",
+     "def": "A birdwatcher who keeps track of birds using different checklists."
     },
     {
      "pos": "noun",
@@ -1303,6 +2951,8 @@
    "scores": [
     0,
     0,
+    0,
+    0,
     2
    ]
   },
@@ -1314,12 +2964,22 @@
      "def": "Any of the grasshoppers, often polyphenic and usually swarming, in the family Acrididae that are very destructive to crops and other vegetation, especially migratory locusts (Locusta migratoria)."
     },
     {
+     "pos": "noun",
+     "def": "A fruit or pod of a carob tree ."
+    },
+    {
+     "pos": "noun",
+     "def": "Any of various often leguminous trees and shrubs, especially of the genera Robinia and Gleditsia; locust tree."
+    },
+    {
      "pos": "verb",
      "def": "To come in a swarm."
     }
    ],
    "expectedFirst": "Any of the grasshoppers, often polyphenic and usually swarming, in the family Acrididae that are very destructive to crops and other vegetation, especially migratory locusts (Locusta migratoria).",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -1332,6 +2992,10 @@
      "def": "A sword-like tool used for cutting large plants with a chopping motion, or used as a weapon."
     },
     {
+     "pos": "noun",
+     "def": "A small stringed instrument from Madeira, Portugal, having a double bulged body, traditionally of wood, with a small rib and four metallic strings, sometimes attached by wooden pegs."
+    },
+    {
      "pos": "verb",
      "def": "To cut or chop with a machete."
     }
@@ -1339,7 +3003,82 @@
    "expectedFirst": "A sword-like tool used for cutting large plants with a chopping motion, or used as a weapon.",
    "scores": [
     0,
+    0,
     1
+   ]
+  },
+  {
+   "word": "mammal",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A vertebrate animal of the class Mammalia, characterized by being warm-blooded, having fur or hair and producing milk with which to feed their young."
+    },
+    {
+     "pos": "noun",
+     "def": "A vertebrate with three bones in the inner ear and one in the jaw."
+    }
+   ],
+   "expectedFirst": "A vertebrate animal of the class Mammalia, characterized by being warm-blooded, having fur or hair and producing milk with which to feed their young.",
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
+   "word": "marge",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Margin; edge; brink or verge."
+    },
+    {
+     "pos": "verb",
+     "def": "To add margarine to."
+    },
+    {
+     "pos": "noun",
+     "def": "Mother."
+    },
+    {
+     "pos": "noun",
+     "def": "Clipping of margarine."
+    }
+   ],
+   "expectedFirst": "Margin; edge; brink or verge.",
+   "scores": [
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "word": "mater",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Mother."
+    },
+    {
+     "pos": "noun",
+     "def": "A meninx; the dura mater, arachnoid mater, or pia mater of the brain."
+    },
+    {
+     "pos": "noun",
+     "def": "Someone or something that mates."
+    },
+    {
+     "pos": "noun",
+     "def": "Alternative form of 'mater (“tomato”)."
+    }
+   ],
+   "expectedFirst": "Mother.",
+   "scores": [
+    0,
+    0,
+    0,
+    2
    ]
   },
   {
@@ -1350,8 +3089,32 @@
      "def": "Soft or tender by reason of ripeness; having a tender pulp."
     },
     {
+     "pos": "adjective",
+     "def": "Matured and smooth, and not acidic, harsh, or sharp."
+    },
+    {
+     "pos": "adjective",
+     "def": "Soft and easily penetrated or worked; not hard or rigid; loamy."
+    },
+    {
+     "pos": "noun",
+     "def": "A comfortable or relaxed mood."
+    },
+    {
+     "pos": "noun",
+     "def": "Also main mellow: a close friend or lover."
+    },
+    {
      "pos": "verb",
      "def": "To cause (fruit) to become soft or tender, specifically by ripening. To cause (food or drink, for example, cheese or wine, or its flavour) to become matured and smooth, and not acidic, harsh, or sharp. To soften (land or soil) and make it suitable for planting in. To reduce or remove the harshness or roughness from (something); to soften, to subdue, to tone down. To cause (a person) to become calmer, gentler, and more understanding, particularly from age or experience."
+    },
+    {
+     "pos": "verb",
+     "def": "To cause (fruit) to become soft or tender, specifically by ripening."
+    },
+    {
+     "pos": "verb",
+     "def": "To cause (food or drink, for example, cheese or wine, or its flavour) to become matured and smooth, and not acidic, harsh, or sharp."
     },
     {
      "pos": "noun",
@@ -1360,6 +3123,12 @@
    ],
    "expectedFirst": "Soft or tender by reason of ripeness; having a tender pulp.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     1
@@ -1373,18 +3142,48 @@
      "def": "A centre, midpoint."
     },
     {
+     "pos": "noun",
+     "def": "The part between the beginning and the end."
+    },
+    {
      "pos": "adjective",
      "def": "Located in the middle; in between."
     },
     {
+     "pos": "adjective",
+     "def": "Central."
+    },
+    {
+     "pos": "verb",
+     "def": "To strike (the ball) with the middle portion of the face of the bat."
+    },
+    {
+     "pos": "noun",
+     "def": "The middle stump."
+    },
+    {
+     "pos": "adjective",
+     "def": "Pertaining to the middle voice."
+    },
+    {
      "pos": "verb",
      "def": "To take a middle view of."
+    },
+    {
+     "pos": "verb",
+     "def": "To double (a rope) into two equal portions; to fold in the middle."
     }
    ],
    "expectedFirst": "A centre, midpoint.",
    "scores": [
     0,
     0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
     1
    ]
   },
@@ -1396,6 +3195,10 @@
      "def": "An optical phenomenon in which light is refracted through a layer of hot air close to the ground, often giving the illusion of a body of water."
     },
     {
+     "pos": "noun",
+     "def": "An illusion."
+    },
+    {
      "pos": "verb",
      "def": "To cause to appear as or like a mirage."
     }
@@ -1403,7 +3206,49 @@
    "expectedFirst": "An optical phenomenon in which light is refracted through a layer of hot air close to the ground, often giving the illusion of a body of water.",
    "scores": [
     0,
+    0,
     1
+   ]
+  },
+  {
+   "word": "modify",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To change part of."
+    },
+    {
+     "pos": "verb",
+     "def": "To set bounds to; to moderate."
+    },
+    {
+     "pos": "verb",
+     "def": "To be or become modified."
+    }
+   ],
+   "expectedFirst": "To change part of.",
+   "scores": [
+    0,
+    0,
+    3
+   ]
+  },
+  {
+   "word": "morse",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A clasp or fastening used to fasten a cope in the front, usually decorative."
+    },
+    {
+     "pos": "noun",
+     "def": "Synonym of walrus.&nbsp;"
+    }
+   ],
+   "expectedFirst": "A clasp or fastening used to fasten a cope in the front, usually decorative.",
+   "scores": [
+    0,
+    2
    ]
   },
   {
@@ -1460,14 +3305,34 @@
      "def": "A long, thin, sharp implement usually for piercing as in sewing, embroidery, acupuncture, tattooing, body piercing, medical injections, sutures, etc; or a blunt but otherwise similar implement used for forming loops or knots in crafts such as darning, knitting, tatting, etc."
     },
     {
+     "pos": "noun",
+     "def": "Any slender, pointed object resembling a needle, such as a pointed crystal, a sharp pinnacle of rock, an obelisk, etc."
+    },
+    {
+     "pos": "noun",
+     "def": "A fine measurement indicator on a dial or graph."
+    },
+    {
      "pos": "verb",
      "def": "To pierce with a needle, especially for sewing or acupuncture."
+    },
+    {
+     "pos": "verb",
+     "def": "To tease in order to provoke; to poke fun at."
+    },
+    {
+     "pos": "verb",
+     "def": "To form, or be formed, in the shape of a needle."
     }
    ],
    "expectedFirst": "A long, thin, sharp implement usually for piercing as in sewing, embroidery, acupuncture, tattooing, body piercing, medical injections, sutures, etc; or a blunt but otherwise similar implement used for forming loops or knots in crafts such as darning, knitting, tatting, etc.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -1475,22 +3340,78 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "The period between sunset and sunrise, when a location faces far away from the sun, thus when the sky is dark."
+     "def": "The time when the Sun is below the horizon when the sky is dark."
+    },
+    {
+     "pos": "noun",
+     "def": "The period of darkness beginning at the end of evening astronomical twilight when the sun is 18 degrees below the horizon, and ending at the beginning of morning astronomical twilight."
+    },
+    {
+     "pos": "noun",
+     "def": "A period of time often defined in the legal system as beginning 30 minutes after sunset, and ending 30 minutes before sunrise."
+    },
+    {
+     "pos": "interjection",
+     "def": "Ellipsis of good night."
     },
     {
      "pos": "verb",
      "def": "To spend a night (in a place), to overnight."
-    },
-    {
-     "pos": "interjection",
-     "def": "Ellipsis of good night"
     }
    ],
-   "expectedFirst": "The period between sunset and sunrise, when a location faces far away from the sun, thus when the sky is dark.",
+   "expectedFirst": "The time when the Sun is below the horizon when the sky is dark.",
    "scores": [
+    0,
+    0,
     0,
     1,
     1
+   ]
+  },
+  {
+   "word": "notify",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To give (someone) notice (of some event)."
+    },
+    {
+     "pos": "verb",
+     "def": "To make (something) known."
+    },
+    {
+     "pos": "verb",
+     "def": "To make note of (something)."
+    }
+   ],
+   "expectedFirst": "To give (someone) notice (of some event).",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "obtain",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To get hold of; to gain possession of, to procure; to acquire, in any way."
+    },
+    {
+     "pos": "verb",
+     "def": "To secure (that) a specific objective or state of affairs be reached."
+    },
+    {
+     "pos": "verb",
+     "def": "To prevail, be victorious; to succeed."
+    }
+   ],
+   "expectedFirst": "To get hold of; to gain possession of, to procure; to acquire, in any way.",
+   "scores": [
+    0,
+    0,
+    0
    ]
   },
   {
@@ -1499,6 +3420,14 @@
     {
      "pos": "adjective",
      "def": "Of a system: connected (generally electrically) to a larger network. Of a generator or power plant: connected to the grid. Of a computer: actively connected to the Internet or to some other communications service."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of a generator or power plant: connected to the grid."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of a computer: actively connected to the Internet or to some other communications service."
     },
     {
      "pos": "adverb",
@@ -1513,6 +3442,8 @@
    "scores": [
     0,
     0,
+    0,
+    0,
     1
    ]
   },
@@ -1524,12 +3455,22 @@
      "def": "Elaborately ornamented, often to excess."
     },
     {
+     "pos": "adjective",
+     "def": "Flashy, flowery or showy."
+    },
+    {
+     "pos": "adjective",
+     "def": "Finely finished, as a style of composition."
+    },
+    {
      "pos": "verb",
      "def": "To adorn or honour (someone or something)."
     }
    ],
    "expectedFirst": "Elaborately ornamented, often to excess.",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -1546,11 +3487,44 @@
      "def": "Generally; in general."
     },
     {
+     "pos": "adverb",
+     "def": "Considering or taking into account everything."
+    },
+    {
      "pos": "noun",
      "def": "A garment worn over other clothing to protect it; a coverall or boiler suit. A garment, for manual labor or for casual wear, often made of a single piece of fabric, with long legs and a bib upper, supported from the shoulders with straps, and having several large pockets and loops for carrying tools."
+    },
+    {
+     "pos": "noun",
+     "def": "A garment, worn for manual labor, with an integral covering extending to the chest, supported by straps."
     }
    ],
    "expectedFirst": "All-encompassing, all around.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "painful",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "Causing pain or distress, either physical or mental."
+    },
+    {
+     "pos": "adjective",
+     "def": "Afflicted or suffering with pain (of a body part or, formerly, of a person)."
+    },
+    {
+     "pos": "adjective",
+     "def": "Requiring effort or labor; difficult, laborious."
+    }
+   ],
+   "expectedFirst": "Causing pain or distress, either physical or mental.",
    "scores": [
     0,
     0,
@@ -1565,18 +3539,33 @@
      "def": "An administrative part of a diocese that has its own church."
     },
     {
+     "pos": "noun",
+     "def": "The community attending that church; the members of the parish."
+    },
+    {
+     "pos": "noun",
+     "def": "An ecclesiastical society, usually not bounded by territorial limits, but composed of those persons who choose to unite under the charge of a particular priest, clergyman, or minister; also, loosely, the territory in which the members of a congregation live."
+    },
+    {
      "pos": "verb",
      "def": "Pronunciation spelling of perish, representing Mary–marry–merry merger English."
     },
     {
      "pos": "verb",
      "def": "To place (an area, or rarely a person) into one or more parishes."
+    },
+    {
+     "pos": "verb",
+     "def": "To visit residents of a parish."
     }
    ],
    "expectedFirst": "An administrative part of a diocese that has its own church.",
    "scores": [
     0,
     0,
+    0,
+    0,
+    1,
     1
    ]
   },
@@ -1588,15 +3577,91 @@
      "def": "An official document granting an appointment, privilege, or right, or some property or title; letters patent. A grant of a monopoly over the manufacture, sale, and use of goods. A declaration issued by a government agency that the inventor of a new invention has the sole privilege of making, selling, or using the claimed invention for a specified period. A specific grant of ownership of a piece of real property; a land patent."
     },
     {
+     "pos": "noun",
+     "def": "An official document granting an appointment, privilege, or right, or some property or title; letters patent."
+    },
+    {
+     "pos": "noun",
+     "def": "A grant of a monopoly over the manufacture, sale, and use of goods. A declaration issued by a government agency that the inventor of a new invention has the sole privilege of making, selling, or using the claimed invention for a specified period."
+    },
+    {
      "pos": "verb",
      "def": "To (successfully) register (a new invention) with a government agency to obtain the sole privilege of its manufacture, sale, and use for a specified period. To obtain (over a piece of real property) a specific grant of ownership."
     },
     {
+     "pos": "verb",
+     "def": "To (successfully) register (a new invention) with a government agency to obtain the sole privilege of its manufacture, sale, and use for a specified period."
+    },
+    {
+     "pos": "verb",
+     "def": "To obtain (over a piece of real property) a specific grant of ownership."
+    },
+    {
      "pos": "adjective",
      "def": "Conspicuous; open; unconcealed."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of flour: fine, and consisting mostly of the inner part of the endosperm of the grain from which it is milled."
+    },
+    {
+     "pos": "adjective",
+     "def": "Open, unobstructed; specifically, especially of the ductus arteriosus or foramen ovale in the heart, having not closed as would have happened in normal development."
     }
    ],
    "expectedFirst": "An official document granting an appointment, privilege, or right, or some property or title; letters patent. A grant of a monopoly over the manufacture, sale, and use of goods. A declaration issued by a government agency that the inventor of a new invention has the sole privilege of making, selling, or using the claimed invention for a specified period. A specific grant of ownership of a piece of real property; a land patent.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "peddle",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To sell things, especially door to door or in insignificant quantities."
+    },
+    {
+     "pos": "verb",
+     "def": "To sell illegal narcotics."
+    },
+    {
+     "pos": "verb",
+     "def": "To spread or cause to spread."
+    }
+   ],
+   "expectedFirst": "To sell things, especially door to door or in insignificant quantities.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "persist",
+   "senses": [
+    {
+     "pos": "verb",
+     "def": "To go on stubbornly or resolutely."
+    },
+    {
+     "pos": "verb",
+     "def": "To repeat an utterance."
+    },
+    {
+     "pos": "verb",
+     "def": "To continue to exist."
+    }
+   ],
+   "expectedFirst": "To go on stubbornly or resolutely.",
    "scores": [
     0,
     0,
@@ -1611,12 +3676,32 @@
      "def": "A part of a larger whole, usually in such a form that it is able to be separated from other parts."
     },
     {
+     "pos": "noun",
+     "def": "A single item belonging to a class of similar items."
+    },
+    {
+     "pos": "noun",
+     "def": "One of the figures used in playing chess, specifically a higher-value figure as distinguished from a pawn; those with which draughts, backgammon, and other similar board games are played."
+    },
+    {
      "pos": "verb",
-     "def": "(usually with together) To assemble (something real or figurative)."
+     "def": "To assemble (something real or figurative)."
+    },
+    {
+     "pos": "verb",
+     "def": "To make, enlarge, or repair, by the addition of a piece or pieces; to patch; often with out."
+    },
+    {
+     "pos": "verb",
+     "def": "To produce a work of graffiti more complex than a tag."
     }
    ],
    "expectedFirst": "A part of a larger whole, usually in such a form that it is able to be separated from other parts.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1629,12 +3714,32 @@
      "def": "A thing on which something turns; specifically a metal pointed pin or short shaft in machinery, such as the end of an axle or spindle."
     },
     {
+     "pos": "noun",
+     "def": "Something or someone having a paramount significance in a certain situation."
+    },
+    {
+     "pos": "noun",
+     "def": "Act of turning on one foot."
+    },
+    {
      "pos": "verb",
      "def": "To turn on an exact spot."
+    },
+    {
+     "pos": "verb",
+     "def": "To make a sudden or swift change in strategy, policy, etc. To change the direction of a business, usually in response to changes in the market. To shift a political candidate's messaging during a general election to reflect plans and values more moderate than those advocated during the primary."
+    },
+    {
+     "pos": "verb",
+     "def": "To change the direction of a business, usually in response to changes in the market."
     }
    ],
    "expectedFirst": "A thing on which something turns; specifically a metal pointed pin or short shaft in machinery, such as the end of an axle or spindle.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1658,6 +3763,65 @@
    ]
   },
   {
+   "word": "pointer",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "One who points."
+    },
+    {
+     "pos": "noun",
+     "def": "A teacher's pointer, pointing stick, a rod with an arrow."
+    },
+    {
+     "pos": "noun",
+     "def": "Anything that points or is used for pointing. One who points. A teacher's pointer, pointing stick, a rod with an arrow."
+    }
+   ],
+   "expectedFirst": "One who points.",
+   "scores": [
+    0,
+    1,
+    3
+   ]
+  },
+  {
+   "word": "porgy",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Any of several fish of the family Sparidae of seabreams. In particular, the scup (paugie, Stenotomus chrysops)."
+    },
+    {
+     "pos": "noun",
+     "def": "In particular, the scup (paugie, Stenotomus chrysops)."
+    }
+   ],
+   "expectedFirst": "Any of several fish of the family Sparidae of seabreams. In particular, the scup (paugie, Stenotomus chrysops).",
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
+   "word": "poverty",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "The quality or state of being poor; lack of money"
+    },
+    {
+     "pos": "noun",
+     "def": "A deficiency of something needed or desired"
+    }
+   ],
+   "expectedFirst": "The quality or state of being poor; lack of money",
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
    "word": "pricing",
    "senses": [
     {
@@ -1667,10 +3831,38 @@
     {
      "pos": "noun",
      "def": "The act of setting a price."
+    },
+    {
+     "pos": "noun",
+     "def": "The level at which a price is set."
     }
    ],
    "expectedFirst": "present participle and gerund of price",
    "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "progeny",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "Offspring or descendants considered as a group."
+    },
+    {
+     "pos": "noun",
+     "def": "Descent, lineage, ancestry."
+    },
+    {
+     "pos": "noun",
+     "def": "A result of a creative effort."
+    }
+   ],
+   "expectedFirst": "Offspring or descendants considered as a group.",
+   "scores": [
+    0,
     0,
     0
    ]
@@ -1683,14 +3875,24 @@
      "def": "A removal of excess material from a tree or shrub."
     },
     {
+     "pos": "noun",
+     "def": "A method of enumeration that allows the cutting out of parts of a decision tree."
+    },
+    {
      "pos": "verb",
      "def": "present participle and gerund of prune"
+    },
+    {
+     "pos": "noun",
+     "def": "Something obtained by pruning, as a twig."
     }
    ],
    "expectedFirst": "A removal of excess material from a tree or shrub.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    3
    ]
   },
   {
@@ -1698,15 +3900,35 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A question, an inquiry (US), an enquiry (UK)."
+     "def": "A question, an inquiry , an enquiry ."
+    },
+    {
+     "pos": "noun",
+     "def": "A question mark."
+    },
+    {
+     "pos": "noun",
+     "def": "A set of instructions passed to a database."
     },
     {
      "pos": "verb",
      "def": "To ask a question."
+    },
+    {
+     "pos": "verb",
+     "def": "To ask, inquire."
+    },
+    {
+     "pos": "verb",
+     "def": "To question or call into doubt."
     }
    ],
-   "expectedFirst": "A question, an inquiry (US), an enquiry (UK).",
+   "expectedFirst": "A question, an inquiry , an enquiry .",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1716,15 +3938,25 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A method of detecting distant objects and determining their position, velocity, or other characteristics by analysis of sent radio waves (usually microwaves) reflected from their surfaces"
+     "def": "In full primary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analysing radio waves (usually microwaves) which are sent towards the object and which reflect off its surfaces; also, the field of study of this method."
+    },
+    {
+     "pos": "noun",
+     "def": "In full secondary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analysing signals transmitted by the object in response to radio waves sent towards the object."
+    },
+    {
+     "pos": "noun",
+     "def": "Often preceded by a descriptive word: a system using one of the above detection methods, differentiated by configuration or platform, frequency, power, and other technical attributes."
     },
     {
      "pos": "verb",
-     "def": "To scan with radar, or as if with radar."
+     "def": "To use a radar apparatus (noun senses 1, 1.1, or 2) on (someone or something); to scan (someone or something) with, or as if with, radar."
     }
    ],
-   "expectedFirst": "A method of detecting distant objects and determining their position, velocity, or other characteristics by analysis of sent radio waves (usually microwaves) reflected from their surfaces",
+   "expectedFirst": "In full primary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analysing radio waves (usually microwaves) which are sent towards the object and which reflect off its surfaces; also, the field of study of this method.",
    "scores": [
+    0,
+    0,
     0,
     1
    ]
@@ -1737,8 +3969,24 @@
      "def": "A roving motion; course without definite direction; lack of rule or method; chance."
     },
     {
+     "pos": "noun",
+     "def": "Speed, full speed; impetuosity, force."
+    },
+    {
+     "pos": "noun",
+     "def": "The full range of a bullet or other projectile; hence, the angle at which a weapon is tilted to allow the greatest range."
+    },
+    {
      "pos": "adjective",
      "def": "Occurring for no particular reason; haphazard, unpredictable."
+    },
+    {
+     "pos": "adjective",
+     "def": "Involving an outcome which is impossible to predict, but which may be represented by a probability distribution; in the ideal case, involving outcomes which are equally likely."
+    },
+    {
+     "pos": "adjective",
+     "def": "Pseudorandom; mimicking the result of random selection."
     },
     {
      "pos": "verb",
@@ -1747,6 +3995,10 @@
    ],
    "expectedFirst": "A roving motion; course without definite direction; lack of rule or method; chance.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -1761,11 +4013,21 @@
     },
     {
      "pos": "verb",
+     "def": "To list or enumerate something."
+    },
+    {
+     "pos": "verb",
+     "def": "To deliver a recitation."
+    },
+    {
+     "pos": "verb",
      "def": "Alternative spelling of re-cite ."
     }
    ],
    "expectedFirst": "To repeat aloud (some passage, poem or other text previously memorized, or in front of one's eyes), often before an audience.",
    "scores": [
+    0,
+    0,
     0,
     2
    ]
@@ -1786,12 +4048,22 @@
      "def": "To decline (a request or demand)."
     },
     {
+     "pos": "verb",
+     "def": "To decline a request or demand, forbear; to withhold permission."
+    },
+    {
+     "pos": "verb",
+     "def": "To withhold (something) from (someone); to not give it to them or to bar them from having it."
+    },
+    {
      "pos": "noun",
      "def": "refusal"
     }
    ],
    "expectedFirst": "Discarded, rejected.",
    "scores": [
+    0,
+    0,
     0,
     0,
     0,
@@ -1806,12 +4078,27 @@
      "def": "To play again."
     },
     {
+     "pos": "verb",
+     "def": "To display a recording of a previous event, especially multiple times."
+    },
+    {
      "pos": "noun",
      "def": "An act or instance of replaying (of playing something, such as a game, again); a replaying of (something)."
+    },
+    {
+     "pos": "noun",
+     "def": "A repeat or subsequent playing of some or all of something which was previously broadcast or performed, or a playing of something which was recorded, such as a live event or a television broadcast, the gameplay of a computer game, etc."
+    },
+    {
+     "pos": "noun",
+     "def": "A (video or audio) recording of an action or event that is or can be replayed after being recorded; saved video footage (which is, or can be, replayed) of the gameplay of a computer game, a (portion of a) televised sports match, etc."
     }
    ],
    "expectedFirst": "To play again.",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1824,12 +4111,27 @@
      "def": "To take something again."
     },
     {
+     "pos": "verb",
+     "def": "To take something back."
+    },
+    {
+     "pos": "verb",
+     "def": "To capture or occupy somewhere again."
+    },
+    {
      "pos": "noun",
      "def": "a scene that is filmed again, or a picture that is photographed again"
+    },
+    {
+     "pos": "noun",
+     "def": "an instance of resitting an examination"
     }
    ],
    "expectedFirst": "To take something again.",
    "scores": [
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -1842,12 +4144,22 @@
      "def": "The variation of strong and weak elements (such as duration, accent) of sounds, notably in speech or music, over time; a beat or meter."
     },
     {
+     "pos": "noun",
+     "def": "A specifically defined pattern of such variation."
+    },
+    {
+     "pos": "noun",
+     "def": "A flow, repetition or regularity."
+    },
+    {
      "pos": "verb",
      "def": "To impart a (particular) rhythm to."
     }
    ],
    "expectedFirst": "The variation of strong and weak elements (such as duration, accent) of sounds, notably in speech or music, over time; a beat or meter.",
    "scores": [
+    0,
+    0,
     0,
     1
    ]
@@ -1878,14 +4190,44 @@
      "def": "The place where a bird sleeps (usually its nest or a branch)."
     },
     {
+     "pos": "noun",
+     "def": "A bedroom."
+    },
+    {
      "pos": "verb",
-     "def": "(of birds or bats) To settle on a perch in order to sleep or rest"
+     "def": "To settle on a perch in order to sleep or rest."
+    },
+    {
+     "pos": "verb",
+     "def": "To spend the night."
+    },
+    {
+     "pos": "verb",
+     "def": "To kick (a ball) a long distance."
+    },
+    {
+     "pos": "noun",
+     "def": "A group of birds roosting together."
+    },
+    {
+     "pos": "noun",
+     "def": "Alternative form of roust (“a strong tide or current”)."
+    },
+    {
+     "pos": "verb",
+     "def": "Alternative form of roust."
     }
    ],
    "expectedFirst": "The place where a bird sleeps (usually its nest or a branch).",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    2
    ]
   },
   {
@@ -1916,12 +4258,55 @@
     {
      "pos": "adjective",
      "def": "Having been smoothed through any process."
+    },
+    {
+     "pos": "adjective",
+     "def": "Covered with sand."
     }
    ],
    "expectedFirst": "simple past and past participle of sand",
    "scores": [
     0,
+    0,
     0
+   ]
+  },
+  {
+   "word": "scare",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A minor fright."
+    },
+    {
+     "pos": "noun",
+     "def": "A cause of terror or alarm; a panic; something that inspires fear or dread."
+    },
+    {
+     "pos": "noun",
+     "def": "A device or object used to frighten."
+    },
+    {
+     "pos": "verb",
+     "def": "To frighten, terrify, startle, especially in a minor way."
+    },
+    {
+     "pos": "adjective",
+     "def": "lean; scanty"
+    },
+    {
+     "pos": "verb",
+     "def": "(To be able) to be scared."
+    }
+   ],
+   "expectedFirst": "A minor fright.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -1932,14 +4317,57 @@
      "def": "The wrinkling of the brows or face in frowning; the expression of displeasure, sullenness, or discontent in the countenance; an angry frown."
     },
     {
+     "pos": "noun",
+     "def": "Gloom; dark or threatening aspect."
+    },
+    {
      "pos": "verb",
      "def": "To wrinkle the brows, as in frowning or displeasure; to put on a frowning look; to look sour, sullen, severe, or angry."
+    },
+    {
+     "pos": "verb",
+     "def": "To look gloomy, dark, or threatening; to lower."
+    },
+    {
+     "pos": "verb",
+     "def": "To look at or repel with a scowl or a frown."
+    },
+    {
+     "pos": "noun",
+     "def": "Old workings of iron ore."
     }
    ],
    "expectedFirst": "The wrinkling of the brows or face in frowning; the expression of displeasure, sullenness, or discontent in the countenance; an angry frown.",
    "scores": [
     0,
+    0,
+    0,
+    0,
+    0,
     0
+   ]
+  },
+  {
+   "word": "sequel",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "The events, collectively, which follow a previously mentioned event; the aftermath."
+    },
+    {
+     "pos": "noun",
+     "def": "A narrative that is written after another narrative set in the same universe, especially a narrative that is chronologically set after its predecessors, or (perhaps improper usage) any narrative that has a preceding narrative of its own. Synonym of postquel; a narrative work that follows-on and is set after an prior existing work."
+    },
+    {
+     "pos": "noun",
+     "def": "Synonym of postquel; a narrative work that follows-on and is set after an prior existing work."
+    }
+   ],
+   "expectedFirst": "The events, collectively, which follow a previously mentioned event; the aftermath.",
+   "scores": [
+    0,
+    0,
+    2
    ]
   },
   {
@@ -1950,12 +4378,17 @@
      "def": "Being in the shade, not in direct light."
     },
     {
+     "pos": "adjective",
+     "def": "Having a slight colour added (of a diagram or picture) or being slightly darkened as if in the shade."
+    },
+    {
      "pos": "verb",
      "def": "simple past and past participle of shade"
     }
    ],
    "expectedFirst": "Being in the shade, not in direct light.",
    "scores": [
+    0,
     0,
     0
    ]
@@ -1964,18 +4397,43 @@
    "word": "shear",
    "senses": [
     {
+     "pos": "verb",
+     "def": "To remove the fleece from (a sheep, llama, etc.) by clipping."
+    },
+    {
+     "pos": "verb",
+     "def": "To cut the hair of (a person)."
+    },
+    {
      "pos": "noun",
      "def": "A cutting tool similar to scissors, but often larger."
     },
     {
+     "pos": "noun",
+     "def": "A large machine use for cutting sheet metal."
+    },
+    {
      "pos": "verb",
      "def": "To cut, originally with a sword or other bladed weapon, now usually with shears, or as if using shears."
+    },
+    {
+     "pos": "adjective",
+     "def": "Misspelling of sheer."
+    },
+    {
+     "pos": "noun",
+     "def": "The act of shearing, or something removed by shearing."
     }
    ],
-   "expectedFirst": "A cutting tool similar to scissors, but often larger.",
+   "expectedFirst": "To remove the fleece from (a sheep, llama, etc.) by clipping.",
    "scores": [
     0,
-    1
+    0,
+    0,
+    0,
+    1,
+    2,
+    3
    ]
   },
   {
@@ -1986,12 +4444,32 @@
      "def": "Of poor quality or construction."
     },
     {
+     "pos": "adjective",
+     "def": "Poor; low."
+    },
+    {
+     "pos": "adjective",
+     "def": "Pretentious, sham, counterfeit."
+    },
+    {
      "pos": "noun",
      "def": "A low-grade cloth made from by-products of wool processing, or from recycled wool."
+    },
+    {
+     "pos": "noun",
+     "def": "Worthless goods."
+    },
+    {
+     "pos": "noun",
+     "def": "Vulgar pretence or sham."
     }
    ],
    "expectedFirst": "Of poor quality or construction.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -2005,15 +4483,35 @@
     },
     {
      "pos": "preposition",
-     "def": "From: referring to a period of time ending in the present and defining it by the point in time at which it started, or the period in which its starting point occurred."
+     "def": "From: referring to a period of time ending in the present and defining it by the point in time at which it started, or the period in which its starting point occurred. Continuously during that period of time."
+    },
+    {
+     "pos": "preposition",
+     "def": "Continuously during that period of time."
+    },
+    {
+     "pos": "preposition",
+     "def": "At certain points during that period of time."
     },
     {
      "pos": "conjunction",
      "def": "From the time that."
+    },
+    {
+     "pos": "conjunction",
+     "def": "Because."
+    },
+    {
+     "pos": "conjunction",
+     "def": "When or that."
     }
    ],
    "expectedFirst": "From a specified time in the past.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -2027,12 +4525,17 @@
      "def": "Twisted at an angle."
     },
     {
+     "pos": "adjective",
+     "def": "Biased, distorted"
+    },
+    {
      "pos": "verb",
      "def": "simple past and past participle of skew"
     }
    ],
    "expectedFirst": "Twisted at an angle.",
    "scores": [
+    0,
     0,
     0
    ]
@@ -2041,24 +4544,44 @@
    "word": "sleek",
    "senses": [
     {
-     "pos": "noun",
-     "def": "That which makes smooth; varnish."
-    },
-    {
-     "pos": "verb",
-     "def": "To make smooth or glossy; to polish or cause to be attractive."
-    },
-    {
      "pos": "adjective",
      "def": "Having an even, smooth surface; smooth"
     },
     {
+     "pos": "adjective",
+     "def": "Glossy."
+    },
+    {
+     "pos": "adjective",
+     "def": "Not rough or harsh."
+    },
+    {
      "pos": "adverb",
      "def": "With ease and dexterity."
+    },
+    {
+     "pos": "verb",
+     "def": "To make smooth or glossy; to polish."
+    },
+    {
+     "pos": "verb",
+     "def": "To calm or soothe."
+    },
+    {
+     "pos": "verb",
+     "def": "To glide."
+    },
+    {
+     "pos": "noun",
+     "def": "That which makes smooth; varnish."
     }
    ],
-   "expectedFirst": "That which makes smooth; varnish.",
+   "expectedFirst": "Having an even, smooth surface; smooth",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -2073,16 +4596,36 @@
      "def": "One who, or that which, snaps."
     },
     {
+     "pos": "noun",
+     "def": "Any of approximately 100 different species of fish. The fish Chrysophrys auratus, especially an adult of the species. Any of the family Lutjanidae of percoid fishes, especially the red snapper. A small bluefish."
+    },
+    {
+     "pos": "noun",
+     "def": "The fish Chrysophrys auratus, especially an adult of the species."
+    },
+    {
      "pos": "verb",
      "def": "To stumble, to trip."
     },
     {
+     "pos": "verb",
+     "def": "To fall into error; to make a mistake, and especially to stumble morally."
+    },
+    {
      "pos": "noun",
      "def": "A stumble, a trip."
+    },
+    {
+     "pos": "noun",
+     "def": "An error, a blunder, especially a moral slip-up."
     }
    ],
    "expectedFirst": "One who, or that which, snaps.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -2096,14 +4639,34 @@
      "def": "Being extroverted or outgoing."
     },
     {
+     "pos": "adjective",
+     "def": "Of or relating to society."
+    },
+    {
+     "pos": "adjective",
+     "def": "Relating to social media or social networks."
+    },
+    {
      "pos": "noun",
      "def": "A festive gathering to foster introductions."
+    },
+    {
+     "pos": "noun",
+     "def": "A dance held to raise money, often held for a couple to be married."
+    },
+    {
+     "pos": "noun",
+     "def": "Ellipsis of social security."
     }
    ],
    "expectedFirst": "Being extroverted or outgoing.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -2111,22 +4674,70 @@
    "senses": [
     {
      "pos": "adjective",
-     "def": "(of a person) Regretful for an action; grieved or saddened, especially by the loss of something or someone."
+     "def": "Regretful or apologetic for one's actions."
+    },
+    {
+     "pos": "adjective",
+     "def": "Grieved or saddened, especially by the loss of something or someone."
+    },
+    {
+     "pos": "adjective",
+     "def": "Poor, pitifully sad or regrettable."
     },
     {
      "pos": "interjection",
      "def": "Expresses regret, remorse, or sorrow."
     },
     {
+     "pos": "interjection",
+     "def": "Said as a request to excuse one's unintentional behaviors."
+    },
+    {
+     "pos": "interjection",
+     "def": "Said as a request to pass somebody."
+    },
+    {
+     "pos": "verb",
+     "def": "To feel sorry (for someone)."
+    },
+    {
      "pos": "noun",
      "def": "The act of saying sorry; an apology."
     }
    ],
-   "expectedFirst": "(of a person) Regretful for an action; grieved or saddened, especially by the loss of something or someone.",
+   "expectedFirst": "Regretful or apologetic for one's actions.",
    "scores": [
     0,
     0,
+    0,
+    0,
+    0,
+    0,
+    1,
     3
+   ]
+  },
+  {
+   "word": "specter",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A ghostly apparition, a phantom."
+    },
+    {
+     "pos": "noun",
+     "def": "A threatening mental image; an unpleasant prospect"
+    },
+    {
+     "pos": "noun",
+     "def": "Any of certain species of dragonfly of the genus Boyeria, family Aeshnidae."
+    }
+   ],
+   "expectedFirst": "A ghostly apparition, a phantom.",
+   "scores": [
+    0,
+    0,
+    0
    ]
   },
   {
@@ -2137,12 +4748,32 @@
      "def": "The sound made by an object hitting a liquid."
     },
     {
+     "pos": "noun",
+     "def": "A small amount of liquid."
+    },
+    {
+     "pos": "noun",
+     "def": "A small amount (of color)."
+    },
+    {
      "pos": "verb",
      "def": "To hit or agitate liquid so that part of it separates from the principal liquid mass."
+    },
+    {
+     "pos": "verb",
+     "def": "To disperse suddenly as a result of an impulse; to splatter."
+    },
+    {
+     "pos": "verb",
+     "def": "To hit or agitate (liquid) so that part of it separates from the principal liquid mass."
     }
    ],
    "expectedFirst": "The sound made by an object hitting a liquid.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -2151,34 +4782,89 @@
    "word": "spurt",
    "senses": [
     {
+     "pos": "verb",
+     "def": "To cause to gush out suddenly or violently in a stream or jet."
+    },
+    {
+     "pos": "verb",
+     "def": "To rush from a confined place in a small stream or jet."
+    },
+    {
      "pos": "noun",
      "def": "A brief gush, as of liquid spurting from an orifice or a cut/wound."
     },
     {
+     "pos": "noun",
+     "def": "Ejaculation of semen."
+    },
+    {
+     "pos": "noun",
+     "def": "A shoot; a bud."
+    },
+    {
+     "pos": "noun",
+     "def": "A moment, a short period of time."
+    },
+    {
+     "pos": "noun",
+     "def": "A sudden brief burst of, or increase in, speed, effort, activity, emotion or development."
+    },
+    {
      "pos": "verb",
-     "def": "To cause to gush out suddenly or violently in a stream or jet."
+     "def": "To make a strong effort for a short period of time."
+    },
+    {
+     "pos": "noun",
+     "def": "The act of spurting, or something spurted"
     }
    ],
-   "expectedFirst": "A brief gush, as of liquid spurting from an orifice or a cut/wound.",
+   "expectedFirst": "To cause to gush out suddenly or violently in a stream or jet.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    3
    ]
   },
   {
    "word": "stamp",
    "senses": [
     {
+     "pos": "noun",
+     "def": "An indentation, imprint, or mark made by stamping."
+    },
+    {
+     "pos": "noun",
+     "def": "A device for imprinting designs."
+    },
+    {
      "pos": "verb",
      "def": "To step quickly and heavily, once or repeatedly."
+    },
+    {
+     "pos": "verb",
+     "def": "To move (the foot or feet) quickly and heavily, once or repeatedly."
+    },
+    {
+     "pos": "verb",
+     "def": "To strike, beat, or press forcibly with the bottom of the foot, or by thrusting the foot downward."
     },
     {
      "pos": "noun",
      "def": "An act of stamping the foot, paw or hoof."
     }
    ],
-   "expectedFirst": "To step quickly and heavily, once or repeatedly.",
+   "expectedFirst": "An indentation, imprint, or mark made by stamping.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     3
    ]
@@ -2188,37 +4874,77 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A place, or spot, in general."
+     "def": "The position or function (of someone or something), as taken on by a successor."
+    },
+    {
+     "pos": "noun",
+     "def": "A place as it relates to a role, service, or ability; capacity."
+    },
+    {
+     "pos": "noun",
+     "def": "A relational or circumstantial position; standing."
     },
     {
      "pos": "verb",
-     "def": "To help, support, benefit or assist; to be helpful or noteful."
+     "def": "To help, support, benefit or assist; to be helpful."
+    },
+    {
+     "pos": "noun",
+     "def": "One's partner in a romantic relationship."
+    },
+    {
+     "pos": "verb",
+     "def": "To fill the stead or place of something."
     }
    ],
-   "expectedFirst": "A place, or spot, in general.",
+   "expectedFirst": "The position or function (of someone or something), as taken on by a successor.",
    "scores": [
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
    "word": "stink",
    "senses": [
     {
-     "pos": "noun",
-     "def": "A strong bad smell."
-    },
-    {
      "pos": "verb",
      "def": "To have a strong bad smell."
     },
     {
+     "pos": "verb",
+     "def": "To be greatly inferior; to perform badly."
+    },
+    {
+     "pos": "verb",
+     "def": "To give an impression of dishonesty, untruth, or sin."
+    },
+    {
+     "pos": "noun",
+     "def": "A strong bad smell."
+    },
+    {
+     "pos": "noun",
+     "def": "A complaint or objection."
+    },
+    {
      "pos": "adjective",
      "def": "Bad; inferior; worthless."
+    },
+    {
+     "pos": "adjective",
+     "def": "Bad-smelling, stinky."
     }
    ],
-   "expectedFirst": "A strong bad smell.",
+   "expectedFirst": "To have a strong bad smell.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -2232,19 +4958,44 @@
      "def": "Not normal; odd, unusual, surprising, out of the ordinary, often with a negative connotation."
     },
     {
+     "pos": "adjective",
+     "def": "Unfamiliar, not yet part of one's experience."
+    },
+    {
+     "pos": "adjective",
+     "def": "Outside of one's current relationship; unfamiliar."
+    },
+    {
      "pos": "verb",
      "def": "To alienate; to estrange."
     },
     {
+     "pos": "verb",
+     "def": "To be estranged or alienated."
+    },
+    {
+     "pos": "verb",
+     "def": "To wonder; to be astonished at (something)."
+    },
+    {
      "pos": "noun",
      "def": "Sex outside of one's current relationship."
+    },
+    {
+     "pos": "noun",
+     "def": "A strange quark."
     }
    ],
    "expectedFirst": "Not normal; odd, unusual, surprising, out of the ordinary, often with a negative connotation.",
    "scores": [
     0,
     0,
-    0
+    0,
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -2255,12 +5006,32 @@
      "def": "The remains of something that has been cut off; especially the remains of a tree, the remains of a limb."
     },
     {
+     "pos": "noun",
+     "def": "The place or occasion at which a campaign takes place; the husting."
+    },
+    {
+     "pos": "noun",
+     "def": "A place or occasion at which a person harangues or otherwise addresses a group in a manner suggesting political oration."
+    },
+    {
      "pos": "verb",
      "def": "To stop, confuse, or puzzle."
+    },
+    {
+     "pos": "verb",
+     "def": "To baffle; to make unable to find an answer to a question or problem."
+    },
+    {
+     "pos": "verb",
+     "def": "To campaign."
     }
    ],
    "expectedFirst": "The remains of something that has been cut off; especially the remains of a tree, the remains of a limb.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -2270,21 +5041,41 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "Sucrose in the form of small crystals, obtained from sugar cane or sugar beet and used to sweeten food and drink."
+     "def": "A food consisting of small, sweet crystals, principally of sucrose, obtained from sugar cane or sugar beet and used as sweetener and preservative."
+    },
+    {
+     "pos": "noun",
+     "def": "Any of various small, water-soluble carbohydrates such as are used by organisms for energy and various other purposes."
+    },
+    {
+     "pos": "verb",
+     "def": "To make (something unpleasant) seem less so."
+    },
+    {
+     "pos": "verb",
+     "def": "In making maple sugar, to complete the process of boiling down the syrup till it is thick enough to crystallize; to approach or reach the state of granulation; with the preposition off."
     },
     {
      "pos": "interjection",
-     "def": "Used in place of shit!"
+     "def": "Minced oath of shit."
+    },
+    {
+     "pos": "noun",
+     "def": "Any specific variety of sugar."
     },
     {
      "pos": "verb",
      "def": "To add sugar to; to sweeten with sugar."
     }
    ],
-   "expectedFirst": "Sucrose in the form of small crystals, obtained from sugar cane or sugar beet and used to sweeten food and drink.",
+   "expectedFirst": "A food consisting of small, sweet crystals, principally of sucrose, obtained from sugar cane or sugar beet and used as sweetener and preservative.",
    "scores": [
     0,
     0,
+    0,
+    0,
+    0,
+    1,
     1
    ]
   },
@@ -2296,12 +5087,50 @@
      "def": "Irritated, bad-tempered, unfriendly."
     },
     {
+     "pos": "adjective",
+     "def": "Threatening, menacing, gloomy."
+    },
+    {
+     "pos": "adjective",
+     "def": "Lordly, arrogant, supercilious."
+    },
+    {
      "pos": "adverb",
      "def": "In an arrogant or supercilious manner."
     }
    ],
    "expectedFirst": "Irritated, bad-tempered, unfriendly.",
    "scores": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "swine",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A pig, an animal of family Suidae, especially in agricultural contexts."
+    },
+    {
+     "pos": "noun",
+     "def": "Pig, pork, the meat of pigs."
+    },
+    {
+     "pos": "noun",
+     "def": "A \"pig\", variously A contemptible person, particularly one imbued with negative piglike characteristics, a greedy, lazy, dirty, and/or lecherous person."
+    },
+    {
+     "pos": "noun",
+     "def": "plural of sow"
+    }
+   ],
+   "expectedFirst": "A pig, an animal of family Suidae, especially in agricultural contexts.",
+   "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -2316,10 +5145,15 @@
     {
      "pos": "adjective",
      "def": "Having a tail."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of certain butterflies, having one or more filamentous projections on the tornal section of each hind wing."
     }
    ],
    "expectedFirst": "simple past and past participle of tail",
    "scores": [
+    0,
     0,
     0
    ]
@@ -2332,12 +5166,22 @@
      "def": "A system of government-imposed duties levied on imported or exported goods; a list of such duties, or the duties themselves."
     },
     {
+     "pos": "noun",
+     "def": "A schedule of rates, fees or prices."
+    },
+    {
+     "pos": "noun",
+     "def": "A sentence determined according to a scale of standard penalties for certain categories of crime."
+    },
+    {
      "pos": "verb",
      "def": "To levy a duty on (something)."
     }
    ],
    "expectedFirst": "A system of government-imposed duties levied on imported or exported goods; a list of such duties, or the duties themselves.",
    "scores": [
+    0,
+    0,
     0,
     0
    ]
@@ -2350,12 +5194,55 @@
      "def": "A general tendency or orientation towards a certain type of mood, a volatile state; a habitual way of thinking, behaving or reacting."
     },
     {
+     "pos": "noun",
+     "def": "State of mind; mood."
+    },
+    {
+     "pos": "noun",
+     "def": "A tendency to become angry."
+    },
+    {
      "pos": "verb",
      "def": "To moderate or control."
+    },
+    {
+     "pos": "verb",
+     "def": "To strengthen or toughen a material, especially metal, by heat treatment; anneal."
+    },
+    {
+     "pos": "verb",
+     "def": "To adjust the temperature of an ingredient (e.g. eggs or chocolate) gradually so that it remains smooth and pleasing."
     }
    ],
    "expectedFirst": "A general tendency or orientation towards a certain type of mood, a volatile state; a habitual way of thinking, behaving or reacting.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "textual",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "Of or pertaining to text. Of or pertaining to textuality."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of or pertaining to textuality."
+    },
+    {
+     "pos": "adjective",
+     "def": "Of or pertaining to text as opposed to other document elements."
+    }
+   ],
+   "expectedFirst": "Of or pertaining to text. Of or pertaining to textuality.",
+   "scores": [
+    0,
     0,
     0
    ]
@@ -2369,11 +5256,16 @@
     },
     {
      "pos": "noun",
+     "def": "A commercial lasting 30 seconds."
+    },
+    {
+     "pos": "noun",
      "def": "A rack of thirty beers."
     }
    ],
    "expectedFirst": "The cardinal number occurring after twenty-nine and before thirty-one, represented in Arabic numerals as 30.",
    "scores": [
+    0,
     0,
     1
    ]
@@ -2388,12 +5280,55 @@
     {
      "pos": "adjective",
      "def": "Having or made of tiers."
+    },
+    {
+     "pos": "adjective",
+     "def": "Having or made of a certain number of tiers."
     }
    ],
    "expectedFirst": "simple past and past participle of tier",
    "scores": [
     0,
+    0,
     0
+   ]
+  },
+  {
+   "word": "toast",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A proposed salutation (e.g. saying \"cheers\") while drinking alcohol."
+    },
+    {
+     "pos": "noun",
+     "def": "A person, group, or notable object to which a salutation with alcohol is made; a person or group held in similar esteem."
+    },
+    {
+     "pos": "verb",
+     "def": "To cook lightly by browning by means of direct exposure to a fire or other heat source."
+    },
+    {
+     "pos": "verb",
+     "def": "To cook lightly by browning under a grill or in a toaster; to grill."
+    },
+    {
+     "pos": "verb",
+     "def": "To engage in a salutation, often with raising of the drinking vessel, while drinking an alcoholic beverage in honor of someone or something."
+    },
+    {
+     "pos": "noun",
+     "def": "Bread that has been toasted (cooked lightly by browning)."
+    }
+   ],
+   "expectedFirst": "A proposed salutation (e.g. saying \"cheers\") while drinking alcohol.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1
    ]
   },
   {
@@ -2422,12 +5357,17 @@
      "def": "Having undergone a course of training (sometimes in combination)."
     },
     {
+     "pos": "adjective",
+     "def": "Manipulated in shape or habit."
+    },
+    {
      "pos": "verb",
      "def": "simple past and past participle of train"
     }
    ],
    "expectedFirst": "Having undergone a course of training (sometimes in combination).",
    "scores": [
+    0,
     0,
     0
    ]
@@ -2440,8 +5380,24 @@
      "def": "A finger-operated lever used to fire a gun."
     },
     {
+     "pos": "noun",
+     "def": "A similar device used to activate any mechanism."
+    },
+    {
+     "pos": "noun",
+     "def": "An event that initiates others, or incites a response."
+    },
+    {
      "pos": "verb",
      "def": "To fire (a weapon); to set off or trip (a mechanism or function of a device)."
+    },
+    {
+     "pos": "verb",
+     "def": "To cause, to precipitate, to bring (something) about in response or as a result."
+    },
+    {
+     "pos": "verb",
+     "def": "To spark a response, especially a negative emotional response, in (a person)."
     },
     {
      "pos": "adjective",
@@ -2450,6 +5406,10 @@
    ],
    "expectedFirst": "A finger-operated lever used to fire a gun.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -2477,16 +5437,36 @@
    "word": "tweak",
    "senses": [
     {
+     "pos": "verb",
+     "def": "To pinch and pull with a sudden jerk and twist; to twitch."
+    },
+    {
+     "pos": "verb",
+     "def": "To adjust slightly; to fine-tune."
+    },
+    {
+     "pos": "verb",
+     "def": "To tease, to annoy; to get under the skin of (someone, typically so as to irritate them, or by extension to enamor, frighten, etc)."
+    },
+    {
      "pos": "noun",
      "def": "A sharp pinch or jerk; a twist or twitch."
     },
     {
-     "pos": "verb",
-     "def": "To pinch and pull with a sudden jerk and twist; to twitch."
+     "pos": "noun",
+     "def": "A slight adjustment or modification."
+    },
+    {
+     "pos": "noun",
+     "def": "Trouble; distress; tweag."
     }
    ],
-   "expectedFirst": "A sharp pinch or jerk; a twist or twitch.",
+   "expectedFirst": "To pinch and pull with a sudden jerk and twist; to twitch.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
     0,
     0
    ]
@@ -2499,6 +5479,18 @@
      "def": "Not yet born; yet to come; future."
     },
     {
+     "pos": "adjective",
+     "def": "Not yet delivered; still existing in the mother's womb."
+    },
+    {
+     "pos": "adjective",
+     "def": "Existing without birth or beginning."
+    },
+    {
+     "pos": "noun",
+     "def": "Unborn offspring collectively."
+    },
+    {
      "pos": "noun",
      "def": "A single unborn offspring at any stage of gestation."
     }
@@ -2506,7 +5498,51 @@
    "expectedFirst": "Not yet born; yet to come; future.",
    "scores": [
     0,
+    0,
+    0,
+    0,
     1
+   ]
+  },
+  {
+   "word": "unkempt",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "uncombed, dishevelled."
+    },
+    {
+     "pos": "adjective",
+     "def": "Disorderly; untidy; messy; not kept up."
+    },
+    {
+     "pos": "adjective",
+     "def": "Rough; unpolished."
+    }
+   ],
+   "expectedFirst": "uncombed, dishevelled.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "uterus",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A reproductive organ of therian mammals in which the young are conceived and develop until birth."
+    },
+    {
+     "pos": "noun",
+     "def": "A similar part in some non-mammals."
+    }
+   ],
+   "expectedFirst": "A reproductive organ of therian mammals in which the young are conceived and develop until birth.",
+   "scores": [
+    0,
+    0
    ]
   },
   {
@@ -2517,13 +5553,33 @@
      "def": "A clear or translucent liquid coating composed of resin dissolved in a solvent, which dries by evaporation to form a hard, protective, and typically glossy finish."
     },
     {
+     "pos": "noun",
+     "def": "Anything resembling such a coating; a glossy appearance."
+    },
+    {
+     "pos": "noun",
+     "def": "A deceptively showy appearance."
+    },
+    {
+     "pos": "verb",
+     "def": "To make something superficially or deceptively attractive"
+    },
+    {
      "pos": "verb",
      "def": "To apply varnish."
+    },
+    {
+     "pos": "verb",
+     "def": "To cover up with varnish."
     }
    ],
    "expectedFirst": "A clear or translucent liquid coating composed of resin dissolved in a solvent, which dries by evaporation to form a hard, protective, and typically glossy finish.",
    "scores": [
     0,
+    0,
+    0,
+    0,
+    1,
     1
    ]
   },
@@ -2533,6 +5589,14 @@
     {
      "pos": "verb",
      "def": "To shake with small, rapid movements to and fro."
+    },
+    {
+     "pos": "verb",
+     "def": "To resonate."
+    },
+    {
+     "pos": "verb",
+     "def": "To brandish; to swing to and fro."
     },
     {
      "pos": "noun",
@@ -2547,6 +5611,54 @@
    "scores": [
     0,
     0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "vital",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "Relating to or characteristic of life."
+    },
+    {
+     "pos": "adjective",
+     "def": "Necessary to the continuation of life; being the seat of life; being that on which life depends."
+    },
+    {
+     "pos": "adjective",
+     "def": "Invigorating or life-giving."
+    }
+   ],
+   "expectedFirst": "Relating to or characteristic of life.",
+   "scores": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "word": "warmth",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A moderate degree of heat; the sensation of being warm."
+    },
+    {
+     "pos": "noun",
+     "def": "Friendliness, kindness or affection."
+    },
+    {
+     "pos": "noun",
+     "def": "Fervor, intensity of emotion or expression."
+    }
+   ],
+   "expectedFirst": "A moderate degree of heat; the sensation of being warm.",
+   "scores": [
+    0,
+    0,
     0
    ]
   },
@@ -2558,12 +5670,42 @@
      "def": "To form something by passing lengths or strands of material over and under one another."
     },
     {
+     "pos": "verb",
+     "def": "To spin a cocoon or a web."
+    },
+    {
+     "pos": "verb",
+     "def": "To unite by close connection or intermixture."
+    },
+    {
+     "pos": "noun",
+     "def": "Human or artificial hair worn to alter one's appearance, either to supplement or to cover the natural hair."
+    },
+    {
+     "pos": "verb",
+     "def": "To move by turning and twisting."
+    },
+    {
+     "pos": "verb",
+     "def": "To make (a path or way) by winding in and out or from side to side."
+    },
+    {
+     "pos": "verb",
+     "def": "To move the head back and forth in a stereotyped pattern, typically as a symptom of stress."
+    },
+    {
      "pos": "noun",
      "def": "A type or way of weaving."
     }
    ],
    "expectedFirst": "To form something by passing lengths or strands of material over and under one another.",
    "scores": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
     1
    ]
@@ -2587,11 +5729,48 @@
    ]
   },
   {
+   "word": "wight",
+   "senses": [
+    {
+     "pos": "noun",
+     "def": "A living creature, especially a human being."
+    },
+    {
+     "pos": "noun",
+     "def": "A supernatural being, often used in compounds such as the land-vættr which guard the land, especially the four guardians of Iceland."
+    },
+    {
+     "pos": "noun",
+     "def": "A ghost, deity or other supernatural entity."
+    },
+    {
+     "pos": "adjective",
+     "def": "Brave, valorous, strong."
+    },
+    {
+     "pos": "adjective",
+     "def": "Strong; stout; active."
+    }
+   ],
+   "expectedFirst": "A living creature, especially a human being.",
+   "scores": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
    "word": "wobbly",
    "senses": [
     {
      "pos": "adjective",
      "def": "Unsteady and tending to wobble."
+    },
+    {
+     "pos": "noun",
+     "def": "A wobbler; a fit of rage; a tantrum."
     },
     {
      "pos": "noun",
@@ -2601,6 +5780,7 @@
    "expectedFirst": "Unsteady and tending to wobble.",
    "scores": [
     0,
+    1,
     2
    ]
   },
@@ -2612,12 +5792,22 @@
      "def": "Something twisted, intertwined, or curled."
     },
     {
+     "pos": "noun",
+     "def": "An ornamental circular band made, for example, of plaited flowers and leaves, and used as decoration; a garland or chaplet, especially one given to a victor."
+    },
+    {
+     "pos": "noun",
+     "def": "A defect in glass."
+    },
+    {
      "pos": "verb",
      "def": "Alternative spelling of wreathe."
     }
    ],
    "expectedFirst": "Something twisted, intertwined, or curled.",
    "scores": [
+    0,
+    0,
     0,
     2
    ]
