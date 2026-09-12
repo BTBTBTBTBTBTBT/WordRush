@@ -125,7 +125,7 @@ function informativeLength(clue: string): number {
 }
 
 /** Replaces the answer (and each of its words) with blanks. */
-function redactAnswer(hint: string, displayName: string): string {
+export function redactAnswer(hint: string, displayName: string): string {
   // Build patterns to redact: full name first, then each individual word (>2 chars)
   const nameParts = displayName.split(/\s+/).filter(p => p.length > 2);
   const patterns = [displayName, ...nameParts];
@@ -138,14 +138,26 @@ function redactAnswer(hint: string, displayName: string): string {
   // matches "Sho\u0304gun".
   const COMBINING = '[\u0300-\u036f]*';
   hint = hint.normalize('NFD');
+  const build = (pattern: string) => pattern
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')       // strip any accents from the pattern itself
+    .split('')
+    .map(ch => (/\s/.test(ch) ? '\\s+' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + COMBINING))
+    .join('');
   for (const pattern of patterns) {
-    const re = pattern
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')       // strip any accents from the pattern itself
-      .split('')
-      .map(ch => (/\s/.test(ch) ? '\\s+' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + COMBINING))
-      .join('');
-    hint = hint.replace(new RegExp(re, 'gi'), '______');
+    hint = hint.replace(new RegExp(build(pattern), 'gi'), '______');
+  }
+  // §262 (founder: OLYMPICS' clue read "The modern Olympic Games…"): an exact
+  // match misses the answer's own inflections. For every word of five letters
+  // or more, also redact its stem plus up to three trailing letters — Olympic,
+  // Olympics, Olympian, Olympiad all go (long stems lose one more letter so the
+  // -ian/-iad forms are caught). iOS/Android mirror.
+  for (const part of nameParts) {
+    if (part.length < 5) continue;
+    let stem = /s$/i.test(part) && part.length > 4 ? part.slice(0, -1) : part;
+    let tail = '[a-z]{0,3}';
+    if (stem.length >= 6) { stem = stem.slice(0, -1); tail = '[a-z]{0,4}'; } // Olympi- → Olympian, Olympiad
+    hint = hint.replace(new RegExp(build(stem) + tail, 'gi'), '______');
   }
   hint = hint.normalize('NFC');
 

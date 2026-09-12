@@ -129,6 +129,14 @@ enum WikipediaHint {
         for pattern in ([displayName] + parts) {
             hint = regexReplace(hint, diacriticTolerantPattern(pattern), "______", options: [.caseInsensitive])
         }
+        // §262: inflections of each word ≥5 letters (Olympic/Olympics/Olympian)
+        // — stem = word minus a trailing "s", plus up to three letters. Web parity.
+        for part in parts where part.count >= 5 {
+            var stem = (part.lowercased().hasSuffix("s") && part.count > 4) ? String(part.dropLast()) : part
+            var tail = "[a-z]{0,3}"
+            if stem.count >= 6 { stem = String(stem.dropLast()); tail = "[a-z]{0,4}" } // Olympi- → Olympian, Olympiad
+            hint = regexReplace(hint, diacriticTolerantPattern(stem) + tail, "______", options: [.caseInsensitive])
+        }
         hint = hint.precomposedStringWithCanonicalMapping  // NFC
         // Collapse consecutive redactions, then re-space a redaction glued to a word.
         hint = regexReplace(hint, "(______\\s*)+", "______")

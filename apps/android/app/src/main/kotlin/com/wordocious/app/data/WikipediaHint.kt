@@ -134,6 +134,15 @@ object WikipediaHint {
         for (pattern in listOf(displayName) + parts) {
             hint = Regex(diacriticTolerantPattern(pattern), RegexOption.IGNORE_CASE).replace(hint, "______")
         }
+        // §262: inflections of each word ≥5 letters (Olympic/Olympics/Olympian)
+        // — stem = word minus a trailing "s", plus up to three letters. Web parity.
+        for (part in parts) {
+            if (part.length < 5) continue
+            var stem = if (part.endsWith("s", ignoreCase = true) && part.length > 4) part.dropLast(1) else part
+            var tail = "[a-z]{0,3}"
+            if (stem.length >= 6) { stem = stem.dropLast(1); tail = "[a-z]{0,4}" } // Olympi- → Olympian, Olympiad
+            hint = Regex(diacriticTolerantPattern(stem) + tail, RegexOption.IGNORE_CASE).replace(hint, "______")
+        }
         hint = java.text.Normalizer.normalize(hint, java.text.Normalizer.Form.NFC)
         hint = Regex("(______\\s*)+").replace(hint, "______")
         hint = Regex("______(\\w)").replace(hint, "______ $1")

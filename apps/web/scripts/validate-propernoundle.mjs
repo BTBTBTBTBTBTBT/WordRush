@@ -55,10 +55,16 @@ function redactAnswer(hint, displayName) {
   const parts = displayName.split(/\s+/).filter((x) => x.length > 2);
   const COMBINING = '[̀-ͯ]*';
   hint = hint.normalize('NFD');
-  for (const pattern of [displayName, ...parts]) {
-    const re = pattern.normalize('NFD').replace(/[̀-ͯ]/g, '').split('')
-      .map((ch) => (/\s/.test(ch) ? '\\s+' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + COMBINING)).join('');
-    hint = hint.replace(new RegExp(re, 'gi'), '______');
+  const build = (pattern) => pattern.normalize('NFD').replace(/[̀-ͯ]/g, '').split('')
+    .map((ch) => (/\s/.test(ch) ? '\\s+' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + COMBINING)).join('');
+  for (const pattern of [displayName, ...parts]) hint = hint.replace(new RegExp(build(pattern), 'gi'), '______');
+  // §262: inflections of each word ≥5 letters (Olympic/Olympics/Olympian) — stem = word minus a trailing "s".
+  for (const part of parts) {
+    if (part.length < 5) continue;
+    let stem = /s$/i.test(part) && part.length > 4 ? part.slice(0, -1) : part;
+    let tail = '[a-z]{0,3}';
+    if (stem.length >= 6) { stem = stem.slice(0, -1); tail = '[a-z]{0,4}'; }
+    hint = hint.replace(new RegExp(build(stem) + tail, 'gi'), '______');
   }
   return hint.normalize('NFC').replace(/(______\s*)+/g, '______').replace(/______(\w)/g, '______ $1');
 }
@@ -109,6 +115,17 @@ const results = puzzles.map((p) => {
   else if (!i.extract) reason = 'PAGE HAS NO INTRO TEXT';
   else if (/may (also )?refer to:?\s*$/i.test(clue)) reason = 'STUB "may refer to"';
   else if (informative.length < 40) reason = `CLUE TOO THIN AFTER REDACTION (${informative.length} chars)`;
+  else {
+    // §262 LEAK check: no word of the answer (≥4 letters, accents folded) may
+    // survive as the start of a token — "Olympic Games" gave OLYMPICS away.
+    const folded = clue.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    for (const part of p.display.split(/\s+/).filter((x) => x.length >= 4)) {
+      let stem = (/s$/i.test(part) && part.length > 4 ? part.slice(0, -1) : part).toLowerCase();
+      if (stem.length >= 6) stem = stem.slice(0, -1);
+      const m = folded.match(new RegExp('(^|[^a-z])(' + stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[a-z]*)'));
+      if (m) { reason = `ANSWER LEAK: "${m[2]}"`; break; }
+    }
+  }
   return { id: p.id, display: p.display, theme: p.themeCategory, wikiTitle: p.wikiTitle || null, clue, reason };
 });
 
