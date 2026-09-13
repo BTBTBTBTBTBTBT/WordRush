@@ -69,7 +69,22 @@ struct RootTabView: View {
     /// cover) is still on screen — immediately if already clear, otherwise the
     /// moment ChromeVisibility reports the all-clear (see onChange below).
     private func presentAfterCoverClears(_ present: @escaping () -> Void) {
-        if chrome.bottomNavHidden { pendingRootPresent = present } else { present() }
+        if chrome.bottomNavHidden {
+            pendingRootPresent = present
+            // §263 failsafe: a pushed view whose onDisappear never fired once
+            // left the chrome "hidden" forever — the bottom nav vanished and this
+            // present waited for an all-clear that never came. If the exiting
+            // cover hasn't reported out within 1.5s (dismissal takes ~0.4s),
+            // assume the gate is stale: clear it and present anyway.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                guard let p = pendingRootPresent else { return }
+                pendingRootPresent = nil
+                chrome.reset()
+                p()
+            }
+        } else {
+            present()
+        }
     }
 
     /// Tab selection with stack-reset side effects (web-like tab behavior).
@@ -154,6 +169,11 @@ struct RootTabView: View {
             // §214: LeaderboardTab preselects the mode itself (same note);
             // the root just lands the player on the Leaderboard tab.
             tab = .leaderboard
+            // §263 failsafe: landing on a tab root with the nav still hidden
+            // means a dismissed game never reported out — clear the gate.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                if chrome.bottomNavHidden { chrome.reset() }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
             guard let key = note.object as? String,
@@ -234,6 +254,9 @@ final class ChromeVisibility: ObservableObject {
     var bottomNavHidden: Bool { !activeIDs.isEmpty }
     func enter(_ id: UUID) { activeIDs.insert(id) }
     func exit(_ id: UUID) { activeIDs.remove(id) }
+    /// §263: drop every registration — for the failsafes in RootTabView when a
+    /// view that hid the nav has demonstrably left without reporting out.
+    func reset() { activeIDs.removeAll() }
 }
 
 private struct ImmersiveChrome: ViewModifier {

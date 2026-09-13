@@ -31,6 +31,14 @@ struct ProfileTab: View {
     @State private var opponentNames: [String: String] = [:]
     @State private var recentLoading = true
     @State private var showEditProfile = false
+    /// §263: the daily badges present games FULL-SCREEN (like Home and the
+    /// Leaderboard Play CTA), not pushed onto this tab's NavigationStack. A
+    /// pushed game's `dismiss()` + the results screen's tab switch left the
+    /// bottom nav hidden and the "Next Daily" hand-off waiting forever
+    /// (founder, Sep 13: no footer on Leaderboard, Next Daily went nowhere).
+    @State private var badgeGame: LeaderboardTab.LbGame?
+    @State private var badgeSolved: LeaderboardTab.LbGame?
+    @State private var badgePN = false
     // Account section (web parity): notification toggle + Delete Account flow.
     @AppStorage("pref-daily-reminder") private var dailyReminder = false
     @State private var reminderDenied = false
@@ -71,6 +79,15 @@ struct ProfileTab: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .fullScreenCover(item: $badgeGame) { g in
+                NavigationStack { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+            }
+            .fullScreenCover(item: $badgeSolved) { g in
+                NavigationStack { SolvedPuzzleView(mode: g.mode, title: g.title) }
+            }
+            .fullScreenCover(isPresented: $badgePN) {
+                NavigationStack { ProperNoundleView() }
+            }
             .onDailyRecorded { reloadToken += 1 }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
                 // P1: every independent fetch runs concurrently (was 8+ serial
@@ -559,14 +576,15 @@ struct ProfileTab: View {
         let bg: Color = !played ? Theme.background : won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)
         let border: Color = !played ? Theme.border : won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)
         // Tappable like the web: played → read-only solved board; not played → play it.
-        return NavigationLink {
+        // §263: presented as a full-screen cover (see badgeGame), never pushed.
+        return Button {
             if let gm = m.mode {
-                if played { SolvedPuzzleView(mode: gm, title: m.title) }
-                else { GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title) }
+                if played { badgeSolved = LeaderboardTab.LbGame(mode: gm, title: m.title) }
+                else { badgeGame = LeaderboardTab.LbGame(mode: gm, title: m.title) }
             } else if m.id == "propernoundle" {
                 // ProperNoundle has its own engine (no GameMode); the view
                 // restores the completed daily board when already played.
-                ProperNoundleView()
+                badgePN = true
             }
         } label: {
             VStack(spacing: 3) {
