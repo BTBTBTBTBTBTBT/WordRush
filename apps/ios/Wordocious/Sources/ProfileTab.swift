@@ -1126,8 +1126,18 @@ struct LeaderboardTab: View {
             // here with its mode preselected (root switches the tab).
             .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
                 guard let key = note.object as? String, let gm = GameMode(rawValue: key) else { return }
+                NextDailyCTA.pendingLeaderboardMode = nil
                 isSweep = false
                 mode = gm
+            }
+            // §264: the tab may not have EXISTED when the note was posted (TabView
+            // builds tabs lazily) — pick the requested mode up on appear instead.
+            .onAppear {
+                if let key = NextDailyCTA.pendingLeaderboardMode, let gm = GameMode(rawValue: key) {
+                    NextDailyCTA.pendingLeaderboardMode = nil
+                    isSweep = false
+                    mode = gm
+                }
             }
         }
     }

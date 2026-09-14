@@ -270,6 +270,14 @@ struct NextDailyCTA: View {
     /// "View Leaderboard" on a finished daily. RootTabView switches to the
     /// Leaderboard tab; LeaderboardTab preselects the mode.
     static let openLeaderboard = Notification.Name("wordocious.open-leaderboard")
+    /// §264: the mode the Leaderboard tab should show when it next appears.
+    /// TabView builds a tab's view LAZILY, on first selection — so when the
+    /// player had not opened the Leaderboard tab yet this session, nobody was
+    /// listening for `openLeaderboard` and the tab came up on its default
+    /// (Classic). Founder: "I just beat Deliverance and clicked to view the
+    /// Deliverance leaderboard and it brought me to the Classic leaderboard."
+    /// Set before the note is posted; LeaderboardTab consumes it on appear.
+    static var pendingLeaderboardMode: String?
 
     /// The dbKey of the game THIS results screen belongs to. Excluded
     /// explicitly (web parity): its own recording can lag the render —
@@ -338,6 +346,7 @@ struct NextDailyCTA: View {
                 dismiss()
                 // Same choreography as playNextDaily: let this cover's dismiss
                 // finish before the root switches tabs.
+                Self.pendingLeaderboardMode = key
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     NotificationCenter.default.post(name: Self.openLeaderboard, object: key)
                 }
