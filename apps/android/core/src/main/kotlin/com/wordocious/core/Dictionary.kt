@@ -39,6 +39,17 @@ object GameDictionary {
     /** Bank sizes the day before the §222 growth shipped — frozen prefix lengths. */
     private val preGrowthPoolSizes = mapOf(6 to 1681, 7 to 1181)
     private val frozenPrefixes = HashMap<Int, List<String>>()
+    /** §265 swap gate: cached swapped copies of the curated pools, by length. */
+    private val swappedPools = HashMap<Int, Pair<List<String>, List<String>>>()
+
+    private fun swapped(length: Int, source: List<String>, dateKey: String?): List<String> {
+        if ((dateKey ?: todayUtc()) < SOLUTION_SWAP_CUTOVER_DATE) return source
+        val hit = swappedPools[length]
+        if (hit != null && hit.first === source) return hit.second
+        val out = applySolutionSwaps(source)
+        swappedPools[length] = source to out
+        return out
+    }
 
     /** Parity tests pin "today" so undated-seed fixtures don't change meaning
      *  on the growth cutover day. Production never sets this. */
@@ -66,7 +77,7 @@ object GameDictionary {
             }
             return legacySolutionWords
         }
-        return solutionWords
+        return swapped(5, solutionWords, dateKey)
     }
 
     /** Ordered allowed-words list (uppercased) — prefill indexes into it. */
@@ -97,7 +108,7 @@ object GameDictionary {
         ) {
             return frozenPrefixes.getOrPut(length) { dict.second.subList(0, frozen) }
         }
-        return dict.second
+        return swapped(length, dict.second, dateKey)
     }
 
     private val lengthAllowedLists = HashMap<Int, List<String>>()

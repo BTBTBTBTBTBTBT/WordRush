@@ -306,6 +306,12 @@ def grow_length(n, threshold):
     names = load_wordset(os.path.join(SCRIPT_DATA, 'names-blocklist.txt'))
     name_ok = load_wordset(os.path.join(SCRIPT_DATA, 'name-word-allowlist.txt'))
     blocked = load_wordset(os.path.join(SCRIPT_DATA, 'proper-noun-blocklist.txt')) - name_ok
+    # §265: words with a real lowercase sense that still READ as proper nouns
+    # (JAPAN the lacquer, ASPEN the tree, TURKEY is fine). Guessable, never
+    # promoted to answers. The ones already in the order-locked pools are
+    # handled by the dated swap table (packages/core/src/solution-swaps.ts),
+    # never by deleting them here.
+    blocked |= load_wordset(os.path.join(SCRIPT_DATA, 'answer-proper-nouns.txt'))
     pat = re.compile(rf'^[A-Z]{{{n}}}$')
     cur_set = set(current)
 

@@ -1,3 +1,4 @@
+import { SOLUTION_SWAP_CUTOVER_DATE, applySolutionSwaps } from './solution-swaps';
 let allowedWords: Set<string> = new Set();
 let allowedWordsArray: string[] = [];
 let solutionWords: string[] = [];
@@ -29,6 +30,17 @@ export const SOLUTIONS_CUTOVER_DATE = '2026-07-08';
 export const SOLUTIONS_GROWTH_CUTOVER_DATE = '2026-08-24';
 // Bank sizes the day before the growth shipped — the frozen prefix lengths.
 const PRE_GROWTH_POOL_SIZES = new Map<number, number>([[6, 1681], [7, 1181]]);
+
+// §265 swap gate: cached swapped copies of the curated pools (keyed by length).
+const swappedPools = new Map<number, { source: string[]; swapped: string[] }>();
+function swappedFor(length: number, source: string[], dateKey: string | null): string[] {
+  if ((dateKey ?? todayUTC()) < SOLUTION_SWAP_CUTOVER_DATE) return source;
+  const hit = swappedPools.get(length);
+  if (hit && hit.source === source) return hit.swapped;
+  const swapped = applySolutionSwaps(source);
+  swappedPools.set(length, { source, swapped });
+  return swapped;
+}
 
 let todayOverride: string | null = null;
 /** Parity tests pin "today" so undated-seed fixtures don't change meaning on
@@ -69,7 +81,7 @@ export function getSolutionPoolForDate(dateKey: string | null): string[] {
     }
     return legacySolutionWords;
   }
-  return solutionWords;
+  return swappedFor(5, solutionWords, dateKey);
 }
 
 export function initDictionaryForLength(length: number, allowed: string[], solutions: string[], legacySolutions?: string[]): void {
@@ -106,7 +118,7 @@ export function getSolutionPoolForLengthAndDate(length: number, dateKey: string 
     dict.frozenPrefix ??= dict.solutions.slice(0, frozen);
     return dict.frozenPrefix;
   }
-  return dict.solutions;
+  return swappedFor(length, dict.solutions, dateKey);
 }
 
 export function getAllowedWords(): string[] {

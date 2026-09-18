@@ -30,6 +30,17 @@ public final class GameDictionary {
     private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String], legacySolutions: [String])] = [:]
     private var lengthAllowedArrays: [Int: [String]] = [:]
     private var frozenPrefixes: [Int: [String]] = [:]
+    /// §265 swap gate: cached swapped copies of the curated pools, by length.
+    /// Invalidated by the init functions (arrays are values — no identity check).
+    private var swappedPools: [Int: [String]] = [:]
+
+    private func swapped(_ length: Int, _ source: [String], dateKey: String?) -> [String] {
+        if (dateKey ?? todayUTC()) < SOLUTION_SWAP_CUTOVER_DATE { return source }
+        if let hit = swappedPools[length] { return hit }
+        let out = applySolutionSwaps(source)
+        swappedPools[length] = out
+        return out
+    }
 
     /// Parity tests pin "today" so undated-seed fixtures don't change meaning
     /// on the growth cutover day. Production never sets this.
@@ -49,6 +60,7 @@ public final class GameDictionary {
         allowedWordsArray = allowed.map { $0.uppercased() }
         solutionWords = solutions.map { $0.uppercased() }
         legacySolutionWords = legacySolutions.map { $0.uppercased() }
+        swappedPools[5] = nil
     }
 
     /// 5-letter answer pool for a daily date (or nil for non-daily seeds).
@@ -61,7 +73,7 @@ public final class GameDictionary {
                          "Legacy solutions not initialized — pre-cutover seed cannot be resolved")
             return legacySolutionWords
         }
-        return solutionWords
+        return swapped(5, solutionWords, dateKey: dateKey)
     }
 
     public func initDictionaryForLength(_ length: Int, allowed: [String], solutions: [String], legacySolutions: [String] = []) {
@@ -73,6 +85,7 @@ public final class GameDictionary {
         )
         lengthAllowedArrays[length] = upper
         frozenPrefixes[length] = nil
+        swappedPools[length] = nil
     }
 
     /// Length-keyed analogue of solutionPool(forDateKey:) — pre-cutover daily
@@ -95,7 +108,7 @@ public final class GameDictionary {
             }
             return frozenPrefixes[length]!
         }
-        return dict.solutions
+        return swapped(length, dict.solutions, dateKey: dateKey)
     }
 
     public func isValidWord(_ word: String) -> Bool {

@@ -23,7 +23,14 @@ import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
 import { MODES } from '@/lib/modes.generated';
-import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAPS } from '@wordle-duel/core';
+
+/** Offline Word-of-the-Day fallback: same index math as lib/word-of-day.ts,
+ *  including the §265 answer swaps from their cutover date on. */
+function offlineWotd(list: string[], dayIndex: number, dayKey: string): string {
+  const w = list[dayIndex % list.length];
+  return dayKey >= SOLUTION_SWAP_CUTOVER_DATE ? (SOLUTION_SWAPS[w.toUpperCase()] ?? w) : w;
+}
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -82,14 +89,14 @@ function WordOfTheDay() {
         const solutions = useLegacy
           ? (await import('@/data/solutions-legacy.json')).default
           : (await import('@/data/solutions.json')).default;
-        if (!cancelled) setInfo({ word: solutions[daysSinceEpoch % solutions.length] });
+        if (!cancelled) setInfo({ word: offlineWotd(solutions, daysSinceEpoch, displayedKey) });
       })
       .catch(async () => {
         if (cancelled) return;
         const solutions = useLegacy
           ? (await import('@/data/solutions-legacy.json')).default
           : (await import('@/data/solutions.json')).default;
-        if (!cancelled) setInfo({ word: solutions[daysSinceEpoch % solutions.length] });
+        if (!cancelled) setInfo({ word: offlineWotd(solutions, daysSinceEpoch, displayedKey) });
       });
     return () => { cancelled = true; };
   }, []);

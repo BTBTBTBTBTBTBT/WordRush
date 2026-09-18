@@ -1,4 +1,4 @@
-import { SOLUTIONS_CUTOVER_DATE, isBlockedWordOfDay } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, applySolutionSwaps, isBlockedWordOfDay } from '@wordle-duel/core';
 import solutions from '@/data/solutions.json';
 import legacySolutions from '@/data/solutions-legacy.json';
 import definitions from '@/data/word-definitions.json';
@@ -82,8 +82,14 @@ export function parseDateKey(key: string): Date | null {
  * cutover (so Past Words keeps showing what was actually played), curated
  * after. Keyed on the same LOCAL dateKey the archive uses.
  */
+// §265: from the swap cutover on, the natives' Word of the Day reads the
+// swapped pool (they go through the core pool function); this list must match
+// or web and apps would feature different words on a swapped index.
+const swappedSolutions: string[] = applySolutionSwaps(solutions);  // lists are stored uppercase, like the swap table
 export function solutionsForDate(date: Date): string[] {
-  return dateKey(date) < SOLUTIONS_CUTOVER_DATE ? legacySolutions : solutions;
+  const key = dateKey(date);
+  if (key < SOLUTIONS_CUTOVER_DATE) return legacySolutions;
+  return key < SOLUTION_SWAP_CUTOVER_DATE ? solutions : swappedSolutions;
 }
 
 /** Deterministic candidate words for a date: today's index + the next 19 offsets. */
