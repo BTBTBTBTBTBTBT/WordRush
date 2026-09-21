@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Shared all-lengths lexicon for the OFFLINE More Games generators (Hubbub,
-Crosswise, future games). Never bundled into a client — games ship pre-generated
+Crosswordocious, future games). Never bundled into a client — games ship pre-generated
 banks — so size is free and a later rule change can never rewrite a played day.
 
 Generalises the G-rules of curate-solutions.py (whose helpers are imported, not

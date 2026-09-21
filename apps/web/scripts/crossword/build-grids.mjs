@@ -1,4 +1,4 @@
-// Crosswise (themed fill-in sayings crossword) — screens phrase/answer pairs
+// Crosswordocious (themed fill-in sayings crossword) — screens phrase/answer pairs
 // and constructs sparse criss-cross grids. Every entry crosses another, no two
 // entries touch side by side (no accidental words), the grid is connected by
 // construction, bounding box <= 10 wide x 11 tall, >= 60% of entries on-theme,
@@ -98,4 +98,4 @@ const p = out[0];
 if (p) { const g = Array.from({ length: p.h }, () => Array(p.w).fill('·')); for (const e of p.entries) for (let k = 0; k < e.answer.length; k++) g[e.r + (e.dir === 'D' ? k : 0)][e.c + (e.dir === 'A' ? k : 0)] = e.answer[k];
   console.log(`\n${p.title} — ${p.entries.length} entries, ${p.crossings} crossings, ${p.w}×${p.h}`); for (const row of g) console.log('  ' + row.join(' ')); for (const e of p.entries) console.log(`  ${e.n}${e.dir} ${e.clue}`); }
 console.log(`\nbuilt ${out.length} grids: ` + out.map((x) => `${x.id}(${x.entries.length}e/${x.crossings}x ${x.w}×${x.h})`).join(' '));
-console.log('wrote', writeSample('crosswise.json', { generatedBy: 'apps/web/scripts/crossword/build-grids.mjs', accepted: pairs.length, rejected, puzzles: out }));
+console.log('wrote', writeSample('crossword.json', { generatedBy: 'apps/web/scripts/crossword/build-grids.mjs', accepted: pairs.length, rejected, puzzles: out }));
