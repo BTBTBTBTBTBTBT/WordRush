@@ -1,1 +1,18 @@
 # §Phase0: founder overrides for scripts/build-lexicon.py — one UPPERCASE word per line.
+# Modern / borrowed everyday words the 1934 source dictionary lacks (found by the Kindred sample validator).
+NAAN
+PENNE
+ORZO
+ZITI
+FUSILLI
+LATTE
+ESPRESSO
+CORTADO
+BACKHOE
+FORKLIFT
+PONYTAIL
+MARTINI
+COLLIE
+PAVER
+MUFFIN
+JOEY

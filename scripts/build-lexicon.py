@@ -9,8 +9,10 @@ copied) from one length to 3..12 (+ up to 15 for pangram candidates):
   L1 shape        A-Z, length 3..15
   L2 candidates   web2 lowercase lemmas + modern-words.txt + regular inflections
   L3 proper nouns web2 capitalisation split, proper-noun-blocklist, the §265
-                  answer-proper-nouns list, NLTK first names at every length,
-                  WordNet instance-only senses; name-word-allowlist wins
+                  answer-proper-nouns list, WordNet instance-only senses;
+                  name-word-allowlist wins. First names are demoted to the
+                  `extended` tier unless SemCor saw them as everyday words
+                  (keeps LION, ROCK, CHIP; demotes AMELIA, ANNA, COLLEEN)
   L4 known word   WordNet knows it (morphy resolves inflections) or it is in
                   modern-words.txt
   L5 exclusions   offensive + manual blocklists AND the app-wide profanity terms
@@ -48,8 +50,19 @@ def build():
     ws = lambda f: curate.load_wordset(os.path.join(SD, f))
     modern, name_ok = ws('modern-words.txt'), ws('name-word-allowlist.txt')
     offensive, manual = ws('offensive-blocklist.txt'), ws('manual-blocklist.txt')
-    blocked = (ws('proper-noun-blocklist.txt') | ws('answer-proper-nouns.txt')
-               | {n.upper() for n in nltk_names.words()} | proper) - name_ok
+    # Proper nouns: web2's capitalised-only entries, the curated blocklists, and
+    # WordNet instance-only senses (below). The NLTK first-names corpus is NOT a
+    # hard block here — it removes LION, BEE, ROCK, CHIP, JADE, TAB, STERN, and an
+    # accept-list that rejects LION is wrong. See everyday() for how it is used.
+    blocked = (ws('proper-noun-blocklist.txt') | ws('answer-proper-nouns.txt') | proper) - name_ok
+    first_names = {n.upper() for n in nltk_names.words()} - name_ok
+
+    def everyday(w):
+        """A word that is ALSO a first name counts as an everyday word only if
+        the SemCor-tagged corpus actually saw it used as a common word (LION,
+        ROCK, CHIP, BILL, ART do; AMELIA, ANNA, BENJAMIN, COLLEEN do not)."""
+        return sum(l.count() for syn in wn.synsets(w.lower()) for l in syn.lemmas()
+                   if l.name().lower() == w.lower() and not syn.instance_hypernyms()) >= 2
     accept, reject = ws('lexicon-accept.txt'), ws('lexicon-reject.txt')
     # The app-wide profanity vocabulary (usernames, PN guesses, WOTD) exported
     # from packages/core as EXACT words — one filter for the whole product.
@@ -69,7 +82,7 @@ def build():
         syns = wn.synsets(w.lower())
         return bool(syns) and all(s.instance_hypernyms() for s in syns)
 
-    bases = common_lemmas | modern
+    bases = common_lemmas | modern | accept
     cands = {}
     for b in bases:
         if not b.isalpha():
@@ -96,6 +109,10 @@ def build():
         if tainted(taste):
             if f >= EXT_Z:
                 accept_only.append(w)
+        elif w in first_names and w not in accept and not everyday(w):
+            # Name-first words: accepted if typed (bonus), never dealt or required.
+            if f >= EXT_Z:
+                extended.append(w)
         elif w in accept or f >= COMMON_Z:
             common.append(w)
         elif f >= EXT_Z:

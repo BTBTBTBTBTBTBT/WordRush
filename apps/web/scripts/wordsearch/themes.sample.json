@@ -1,0 +1,8 @@
+{
+ "kitchen": {"title": "In the Kitchen", "words": ["WHISK","LADLE","SPATULA","SKILLET","TOASTER","BLENDER","GRATER","TEAPOT","APRON","PANTRY","KETTLE","COLANDER","OVEN","SPOON","PLATE"]},
+ "garden": {"title": "Garden Party", "words": ["TULIP","DAISY","SHOVEL","TROWEL","COMPOST","SPROUT","PETAL","ORCHID","WEEDS","HEDGE","PLANTER","BLOSSOM","ROSE","FERN","SOIL"]},
+ "weather": {"title": "Weather Report", "words": ["THUNDER","DRIZZLE","BREEZE","FROST","RAINBOW","SLEET","HUMID","CLOUDY","STORM","SUNNY","BLIZZARD","FOGGY","HAIL","GUST","MIST"]},
+ "music": {"title": "Strike Up the Band", "words": ["GUITAR","VIOLIN","TRUMPET","MELODY","RHYTHM","CHORUS","PIANO","DRUMS","FLUTE","TEMPO","HARMONY","BALLAD","CELLO","HARP","TUNE"]},
+ "beach": {"title": "Beach Day", "words": ["SEASHELL","SANDALS","TOWEL","UMBRELLA","SEAGULL","STARFISH","WAVES","SUNSCREEN","BUCKET","SURF","TIDE","CORAL","DUNE","PIER","CRAB"]},
+ "bakery": {"title": "Fresh from the Bakery", "words": ["MUFFIN","BAGEL","PRETZEL","CUSTARD","FROSTING","DOUGH","SCONE","PASTRY","ECLAIR","CRUMB","BISCUIT","COOKIE","TART","LOAF","ROLL"]}
+}
