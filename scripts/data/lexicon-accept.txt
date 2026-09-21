@@ -1,0 +1,1 @@
+# §Phase0: founder overrides for scripts/build-lexicon.py — one UPPERCASE word per line.
