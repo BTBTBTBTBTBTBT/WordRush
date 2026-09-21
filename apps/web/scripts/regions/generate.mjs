@@ -1,5 +1,5 @@
 // Region-placement logic puzzle, sample generator (Phase 0). Generic id
-// `regions` / `REGIONS`; the display name is still to be chosen.
+// `regions` / `REGIONS`; display name Starsweep (founder, 2026-09-21).
 // Rules: an N×N board split into N coloured regions. Place exactly one marker
 // in every row, every column and every region; no two markers may touch, not
 // even diagonally. Fully generated, zero content review:
