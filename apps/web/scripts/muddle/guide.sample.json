@@ -1,0 +1,57 @@
+{
+  "_note": "Phase 0 sample of the in-game '?' sheet and the public /guides/muddle page, in the exact ModeGuide shape used by lib/guide-content.ts. Numbers come from the PROPOSED score config (maxGuesses 13, guessWeight 150, timeCap 480, totalBoards 5, hintCost 75); at build a test pins the text to the real config.",
+  "slug": "muddle",
+  "title": "Muddle",
+  "accent": "#f97316",
+  "gradient": "linear-gradient(135deg, #f97316, #fbbf24)",
+  "tagline": "Four scrambled words, one cartoon, one groan-worthy punchline",
+  "metaDescription": "Wordocious Muddle guide: how the scrambled words and circled letters work, the exact scoring formula, and the unscrambling habits that solve the cartoon punchline faster.",
+  "facts": [
+    { "label": "Scrambled words", "value": "4 (five or six letters)" },
+    { "label": "Final answer", "value": "Built from the circled letters" },
+    { "label": "Checks", "value": "13 (5 is perfect)" },
+    { "label": "Time bonus cap", "value": "8:00" },
+    { "label": "Hints", "value": "Letter −75 · Word −150" },
+    { "label": "Daily", "value": "One free puzzle, same for everyone" }
+  ],
+  "rules": [
+    "New here? This is the whole idea. You get four everyday words with their letters mixed up, and a cartoon with a caption that is missing its punchline. Unscramble each word by tapping its letters into the empty boxes underneath (on a computer you can also type). When a word's boxes are full it is checked straight away. If it is right, the word locks in purple. If it is wrong, the boxes shake and empty out so you can try again.",
+    "Some boxes in each word have a ring around them. Those are the circled letters. Every time you solve a word, its circled letters fly down to the bottom of the screen. Once all four words are solved, the circled letters are everything you need, and nothing more, to spell the punchline. Rearrange them into the gold boxes to finish the caption. The gaps between the gold boxes show how many words the punchline has and how long each one is.",
+    "The punchline is always a play on words that fits the cartoon, so look at the picture and read the caption before you start shuffling letters. A word in quotation marks in the caption is a nudge that the answer is a pun. Each scrambled word has exactly one answer, so you will never be marked wrong for finding a different real word.",
+    "A check happens each time a full word, or the full punchline, is tested. A perfect game uses five checks: one for each word and one for the punchline. You have 13 checks in total, so there is room for eight wrong ones. Use the thirteenth without finishing and the game ends, and the answers are shown.",
+    "Stuck? There are two hints. Reveal a letter places one correct letter in the word you are working on and costs 75 points. Solve this word fills in the whole word and costs 150. Hints never use up a check. The ? button you used to open this page pauses the clock, so take your time reading."
+  ],
+  "scoring": [
+    "A win is worth a 1,000-point base. Then every check you did not need is worth 150 points. A perfect game leaves eight of your thirteen checks unused, which banks 1,200. Each wrong check takes 150 of that away, so accuracy is what separates players.",
+    "Speed is only the tiebreaker: up to 120 points, scaled by how far under the eight-minute cap you finish. Because the most the clock can ever give you is less than the value of a single check, a faster player can never outrank a more accurate one. Finishing adds a flat 200. The best possible Muddle score is 2,520: five checks, no hints, and a very quick finish.",
+    "Hints come straight off the total: 75 for a revealed letter, 150 for a solved word. A solved-word hint costs exactly the same as one wrong check, so if you are truly stuck it is never worse than guessing badly twice.",
+    "If the game ends before you finish, you still score for what you solved: 40 points for each of the five parts (four words and the punchline) you completed, with a sliver of time credit to break ties. The Perfect medal goes to a five-check game with no hints. On the daily leaderboard everyone in the world has the same four words and the same cartoon."
+  ],
+  "tips": [
+    {
+      "heading": "Pull out the common pairs first",
+      "body": "Scrambled letters hide the chunks your eye normally reads in one go. Before trying whole words, look for pairs that travel together: TH, CH, SH, CK, QU, ST, and endings like ER, LY, ED and ING. Set the pair aside in your head and the three or four letters that remain usually fall into place around it."
+    },
+    {
+      "heading": "Find the vowels, then build around them",
+      "body": "Most five- and six-letter words have two vowels, rarely side by side at the very start. Count the vowels, picture them in the second and fourth boxes, and try consonants around them. A word with a single vowel almost always has it in the middle, with a consonant cluster on one side."
+    },
+    {
+      "heading": "Do not fill the last box until you believe it",
+      "body": "A word is checked the moment its boxes are full, and a wrong check costs 150 points, more than the whole speed bonus. Place the letters you are sure of, leave one box empty, and say the word to yourself before you drop the last tile in. Emptying a box costs nothing."
+    },
+    {
+      "heading": "Let the cartoon work backwards for you",
+      "body": "You do not have to solve all four words blind. After two or three, look at the circled letters you have collected, the shape of the gold boxes, and the picture. If you can guess the punchline early, you know exactly which letters the unsolved words must still supply, and that often cracks the word you were stuck on."
+    },
+    {
+      "heading": "Think of the pun, not the dictionary",
+      "body": "The punchline is a familiar phrase bent to fit the picture. A baker is going to involve dough, rolls or loaves; a fisherman will involve bass, scales or a line. Say the caption out loud and listen for the everyday saying it is reaching for. Short words in the pattern, two or three boxes, are nearly always THE, AND, OF, IT, IN or TO."
+    },
+    {
+      "heading": "Spend a hint on the word, not the punchline",
+      "body": "If one scrambled word has eaten two minutes, a revealed letter at 75 points is cheaper than one wrong check and usually enough to see it. Save your own thinking for the punchline, where the cartoon gives you help that the single words never do."
+    }
+  ],
+  "related": ["classic", "six", "rungs"]
+}
