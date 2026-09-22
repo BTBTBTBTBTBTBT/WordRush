@@ -11,6 +11,8 @@ import WordociousCore
 /// through `onSelect` and HomeView routes it once the sheet has dismissed, so
 /// a fullScreenCover never fights a dismissing sheet.
 struct MoreGamesSheet: View {
+    /// The More Games titles visible to this viewer (catalog ∩ remote flags).
+    var modes: [HomeMode] = moreModes
     let completions: [String: DailyCompletion]
     let playMode: PlayMode
     let isPro: Bool
@@ -26,7 +28,7 @@ struct MoreGamesSheet: View {
                     Text(playMode == .daily ? "One free daily each · not part of the Daily Sweep" : "Unlimited play")
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                         .padding(.horizontal, 2)
-                    let sections = moreSections()
+                    let sections = moreSections(modes)
                     if sections.isEmpty {
                         Text("New games are on the way.")
                             .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
@@ -66,12 +68,13 @@ struct MoreGamesSheet: View {
 struct MoreModePickerSheet: View {
     let onPick: (GameMode) -> Void
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var flags = FlagsService.shared
 
     var body: some View {
         MenuScaffold("More Games") {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(moreSections(moreModes.filter { $0.dailyEligible })) { section in
+                    ForEach(moreSections(moreModes.filter { $0.dailyEligible && flags.isOn($0.flagKey) })) { section in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(section.title.uppercased())
                                 .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted).tracking(1)

@@ -17,6 +17,11 @@ struct HomeView: View {
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
     @State private var showInvite = false
     @StateObject private var livePlayers = LivePlayerCount()
+    /// Remote flags (Stage 7): the More tile and every More Games title are
+    /// shown only when their app_flags row says so for this viewer.
+    @ObservedObject private var flags = FlagsService.shared
+    private var visibleHomeModes: [HomeMode] { homeModes.filter { flags.isOn($0.flagKey) } }
+    private var visibleMoreModes: [HomeMode] { moreModes.filter { flags.isOn($0.flagKey) } }
     @State private var pendingInvites: [InviteService.PendingInvite] = []
     @State private var inviterNames: [String: String] = [:]
 
@@ -135,7 +140,7 @@ struct HomeView: View {
                             if showFirstGameCard { firstGameCard }
                             sectionHeader
                             LazyVGrid(columns: columns, spacing: 8) {
-                                ForEach(homeModes) { mode in
+                                ForEach(visibleHomeModes) { mode in
                                     card(mode)
                                 }
                             }
@@ -219,7 +224,7 @@ struct HomeView: View {
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
-                MoreGamesSheet(completions: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive) { pendingMorePick = $0 }
+                MoreGamesSheet(modes: visibleMoreModes, completions: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive) { pendingMorePick = $0 }
                     .presentationDetents([.large])
             }
             .fullScreenCover(item: $solvedMode) { m in
@@ -769,7 +774,7 @@ struct HomeView: View {
         // The More Games tile: "N of M played" over the More Games dailies in
         // Daily mode, its description in Unlimited. Never locks, never tints.
         let subtitle: String? = isMore
-            ? (effectiveMode == .daily ? morePlayedText(completedKeys: Set(completions.byMode.keys)) : mode.desc)
+            ? (effectiveMode == .daily ? morePlayedText(completedKeys: Set(completions.byMode.keys), modes: visibleMoreModes) : mode.desc)
             : nil
         return ModeCardView(mode: mode, done: done, vsWon: vsWon, locked: locked, subtitleOverride: subtitle)
     }

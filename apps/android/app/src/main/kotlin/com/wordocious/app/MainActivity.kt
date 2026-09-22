@@ -230,6 +230,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         com.wordocious.app.data.PresenceService.start()
+        // Remote flags (More Games §7): refresh at launch and on every
+        // foreground return, so a kill switch lands within one resume.
+        com.wordocious.app.data.FlagsService.load()
     }
 
     override fun onPause() {

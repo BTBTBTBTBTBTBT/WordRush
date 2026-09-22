@@ -1062,7 +1062,9 @@ internal fun ModePickerRow(
     // layout, so the non-sweep dailies sit behind ONE "More" chip that opens the
     // sectioned More Games list. Today every daily mode is in the sweep, so the
     // chip is hidden and the grid is unchanged (5-over-5).
-    val morePicker = MORE_CARDS.filter { it.dailyEligible && it.dbKey != null }
+    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+    val morePicker = MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
     val ids = MODE_OPTIONS.map { it.first } + (if (morePicker.isNotEmpty()) listOf(MORE_ID) else emptyList())
     var showMore by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(

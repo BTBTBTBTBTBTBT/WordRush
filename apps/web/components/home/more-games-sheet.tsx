@@ -7,7 +7,7 @@ import { useFocusTrap } from '@/hooks/use-focus-trap';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { moreSections } from '@/lib/more-games';
-import { MORE_GAME_MODES } from '@/lib/modes.generated';
+import { MORE_GAME_MODES, type ModeMeta } from '@/lib/modes.generated';
 import { buildHomeCard, type HomeCard } from './mode-chrome';
 import { ModeCard, modeCardState } from './mode-card';
 
@@ -52,6 +52,8 @@ export function useMoreSheetUrl(): { open: boolean; openSheet: () => void; close
 interface MoreGamesSheetProps {
   open: boolean;
   onClose: () => void;
+  /** The More Games titles visible to this viewer (catalog ∩ remote flags). */
+  modes?: ModeMeta[];
   playMode: 'daily' | 'unlimited';
   todayDailies: Map<string, DailyCompletion>;
   isPro: boolean;
@@ -61,7 +63,7 @@ interface MoreGamesSheetProps {
   onLocked: (card: HomeCard, href: string) => void;
 }
 
-export function MoreGamesSheet({ open, onClose, playMode, todayDailies, isPro, signedIn, resetCountdownText, onLocked }: MoreGamesSheetProps) {
+export function MoreGamesSheet({ open, onClose, modes = MORE_GAME_MODES, playMode, todayDailies, isPro, signedIn, resetCountdownText, onLocked }: MoreGamesSheetProps) {
   const focusRef = useRef<HTMLDivElement>(null);
   useFocusTrap(focusRef, open);
 
@@ -74,7 +76,7 @@ export function MoreGamesSheet({ open, onClose, playMode, todayDailies, isPro, s
 
   if (!open) return null;
 
-  const sections = moreSections(MORE_GAME_MODES);
+  const sections = moreSections(modes);
 
   return (
     <div

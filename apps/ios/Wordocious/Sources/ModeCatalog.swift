@@ -27,6 +27,8 @@ struct HomeMode: Identifiable {
     let category: String?
     let guessSemantics: String
     let guessBase: Int
+    /// Remote gate (app_flags key); nil = never gated. Filter lists with FlagsService.isOn.
+    let flagKey: String?
 
     /// Title/desc/accent/dbKey come from the single-source catalog (modes.json →
     /// ModeCatalog.generated.swift); only icon + engine mode stay native here.
@@ -43,6 +45,7 @@ struct HomeMode: Identifiable {
         self.category = g.category
         self.guessSemantics = g.guessSemantics
         self.guessBase = g.guessBase
+        self.flagKey = g.flagKey
     }
 
     init(genId: String, icon: ModeIconKind, mode: GameMode?) {

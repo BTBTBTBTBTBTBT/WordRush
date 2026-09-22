@@ -7,6 +7,7 @@ import { MODE_CARDS } from '@/components/home/mode-chrome';
 import { ModeCard, modeCardState } from '@/components/home/mode-card';
 import { MoreGamesSheet, useMoreSheetUrl } from '@/components/home/more-games-sheet';
 import { morePlayedCount, morePlayedText } from '@/lib/more-games';
+import { useFlags } from '@/hooks/use-flags';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
@@ -23,7 +24,7 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
-import { SWEEP_MODES } from '@/lib/modes.generated';
+import { SWEEP_MODES, MORE_GAME_MODES } from '@/lib/modes.generated';
 
 // The Daily Sweep set, from the catalog (More Games Stage 4). Every count on
 // this page is taken over these keys only, so a More Games result on the
@@ -227,6 +228,11 @@ export default function HomePage() {
   const router = useRouter();
   // More Games sheet (Stage 5) — open state lives in the URL (/?more=1).
   const { open: moreOpen, openSheet: openMoreSheet, closeSheet: closeMoreSheet } = useMoreSheetUrl();
+  // Remote flags (Stage 7): the More tile and every More Games title are
+  // shown only when their app_flags row says so for this viewer.
+  const { isOn: flagOn } = useFlags();
+  const visibleCards = MODE_CARDS.filter((c) => flagOn(c.flagKey));
+  const visibleMore = MORE_GAME_MODES.filter((m) => flagOn(m.flagKey));
 
   const isPro = isProActive;
 
@@ -516,7 +522,7 @@ export default function HomePage() {
         {/* Game Mode Cards - 2 column grid */}
         <div className="section-header mt-1 mb-0.5">GAME MODES</div>
         <div className="grid grid-cols-2 gap-2">
-          {MODE_CARDS.map((mode) => {
+          {visibleCards.map((mode) => {
             // Today's daily result for this mode, if played (Daily mode only).
             // Keyed by the DB game_mode string (DUEL/QUORDLE/…). The VS Battle
             // card has no daily row; the More Games tile has no puzzle at all.
@@ -524,7 +530,7 @@ export default function HomePage() {
             const dailyResult = playMode === 'daily' && mode.dbKey ? todayDailies.get(mode.dbKey) : undefined;
             // The More Games tile: "N of M played" over the More Games dailies in
             // Daily mode, its description in Unlimited. Never locks, never tints.
-            const morePlayed = morePlayedCount(todayDailies.keys());
+            const morePlayed = morePlayedCount(todayDailies.keys(), visibleMore);
             const state = modeCardState({
               card: mode,
               playMode,
@@ -645,6 +651,7 @@ export default function HomePage() {
       <MoreGamesSheet
         open={moreOpen}
         onClose={closeMoreSheet}
+        modes={visibleMore}
         playMode={playMode}
         todayDailies={todayDailies}
         isPro={isPro}

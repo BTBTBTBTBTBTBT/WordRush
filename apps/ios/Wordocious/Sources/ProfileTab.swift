@@ -2104,7 +2104,8 @@ struct HModePicker: View {
     // that opens the sectioned More Games list. Today every daily mode is in
     // the sweep, so the chip is hidden and the grid is unchanged (5-over-5).
     private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.sweep }
-    private let morePickerModes: [HomeMode] = moreModes.filter { $0.dailyEligible && $0.dbKey != nil }
+    @ObservedObject private var flags = FlagsService.shared
+    private var morePickerModes: [HomeMode] { moreModes.filter { $0.dailyEligible && $0.dbKey != nil && flags.isOn($0.flagKey) } }
     private let spacing: CGFloat = 8
     // Sweep tile accent — indigo, used ONLY here (leaderboard/records sweep board).
     private let sweepAccent = Color(hex: 0x4F46E5)

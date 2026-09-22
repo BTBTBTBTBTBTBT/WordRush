@@ -57,6 +57,8 @@ export interface HomeCard {
   guessBase: number;
   dailyEligible: boolean;
   category: string | null;
+  /** Remote gate (app_flags key); null = never gated. Filter lists with useFlags().isOn. */
+  flagKey: string | null;
 }
 
 export function buildHomeCard(m: ModeMeta): HomeCard {
@@ -74,6 +76,7 @@ export function buildHomeCard(m: ModeMeta): HomeCard {
     guessBase: m.guessBase,
     dailyEligible: m.dailyEligible,
     category: m.category,
+    flagKey: m.flagKey,
   };
 }
 

@@ -33,6 +33,7 @@ export interface Database {
           stripe_subscription_id: string | null
           pro_prompt_shown: boolean
           role: string
+          is_admin: boolean | null
           is_banned: boolean
           ban_reason: string | null
           has_onboarded: boolean
@@ -63,6 +64,7 @@ export interface Database {
           stripe_subscription_id?: string | null
           pro_prompt_shown?: boolean
           role?: string
+          is_admin?: boolean | null
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean
@@ -93,6 +95,7 @@ export interface Database {
           stripe_subscription_id?: string | null
           pro_prompt_shown?: boolean
           role?: string
+          is_admin?: boolean | null
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean
@@ -134,6 +137,29 @@ export interface Database {
           expires_at?: string | null
           created_by?: string | null
           created_at?: string
+        }
+      }
+      app_flags: {
+        Row: {
+          key: string
+          enabled: boolean
+          audience: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          enabled?: boolean
+          audience?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          enabled?: boolean
+          audience?: string
+          note?: string | null
+          updated_at?: string
         }
       }
       admin_audit_log: {

@@ -24,6 +24,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ModeGen
 import com.wordocious.app.data.DailyCompletionsService
+import com.wordocious.app.data.FlagsService
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 
@@ -70,6 +73,8 @@ fun morePlayedText(completedKeys: Set<String>, modes: List<ModeCard> = MORE_CARD
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreGamesSheet(
+    /** The More Games titles visible to this viewer (catalog ∩ remote flags). */
+    modes: List<ModeCard> = MORE_CARDS,
     completions: Map<String, DailyCompletionsService.Completion>,
     unlimitedMode: Boolean,
     isPro: Boolean,
@@ -100,7 +105,7 @@ fun MoreGamesSheet(
                     modifier = Modifier.clickableNoRipple(onDismiss).padding(4.dp),
                 )
             }
-            val sections = moreSections()
+            val sections = moreSections(modes)
             if (sections.isEmpty()) {
                 Text(
                     "New games are on the way.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
@@ -159,7 +164,9 @@ fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
                     modifier = Modifier.clickableNoRipple(onDismiss).padding(4.dp),
                 )
             }
-            moreSections(MORE_CARDS.filter { it.dailyEligible && it.dbKey != null }).forEach { section ->
+            val flagTable by FlagsService.flags.collectAsState()
+            val flagsLoaded by FlagsService.loaded.collectAsState()
+            moreSections(MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }).forEach { section ->
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         section.title.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,

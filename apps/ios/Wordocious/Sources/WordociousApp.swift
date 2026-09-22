@@ -55,6 +55,9 @@ struct WordociousApp: App {
                 .task {
                     GamePersistence.shared.cleanupStaleDailyGames()
                     await auth.bootstrap()
+                    // Remote flags (More Games §7): the kill switch + tester
+                    // gate for the More Games titles, refreshed on foreground.
+                    await FlagsService.shared.load()
                     StoreManager.shared.start()
                     AdsManager.shared.start()
                     PresenceService.shared.start()
@@ -88,6 +91,7 @@ struct WordociousApp: App {
                             NotificationCenter.default.post(name: .dayRolledOver, object: nil)
                         }
                         PresenceService.shared.start()
+                        Task { await FlagsService.shared.load() }
                         // Recompute the daily reminder: if today's 9 dailies are
                         // done (or it's past 18:00) it rolls to tomorrow, so a
                         // finished day never gets tonight's nudge.

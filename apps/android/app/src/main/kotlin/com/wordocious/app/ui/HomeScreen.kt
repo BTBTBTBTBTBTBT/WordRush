@@ -278,7 +278,13 @@ fun HomeScreen(
             )
 
             // 2-column grid (web grid-cols-2 gap-2)
-            MODE_CARDS.chunked(2).forEach { rowCards ->
+            // Remote flags (Stage 7): the More tile and every More Games title
+            // are shown only when their app_flags row says so for this viewer.
+            val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+            val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+            val visibleCards = MODE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+            val visibleMore = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+            visibleCards.chunked(2).forEach { rowCards ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     rowCards.forEach { card ->
                         val isVsCard = card.id == "vs"
@@ -301,7 +307,7 @@ fun HomeScreen(
                         // locks, never tints — it opens the sheet.
                         val isMore = card.id == "more"
                         val moreSubtitle = if (isMore) {
-                            if (unlimitedMode) card.desc else morePlayedText(completions.keys)
+                            if (unlimitedMode) card.desc else morePlayedText(completions.keys, visibleMore)
                         } else null
                         val isLocked = !isPro && !isMore && (completion != null || vsUsed)
                         // Per-card VS swords shortcut removed (redundant) — VS is
@@ -362,7 +368,10 @@ fun HomeScreen(
         // through onSelectMode exactly like a grid tap; a locked card opens the
         // same ModeLimitModal above.
         if (showMore) {
+            val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+            val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
             MoreGamesSheet(
+                modes = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) },
                 completions = completions,
                 unlimitedMode = unlimitedMode,
                 isPro = isPro,

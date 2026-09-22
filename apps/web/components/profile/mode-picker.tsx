@@ -5,6 +5,7 @@ import { BarChart3, LayoutGrid } from 'lucide-react';
 import { BroomIcon } from '@/components/ui/broom-icon';
 import { DAILY_MODES, MORE_CATEGORIES } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
+import { useFlags } from '@/hooks/use-flags';
 
 export interface ModeConfig {
   id: string;
@@ -18,6 +19,8 @@ export interface ModeConfig {
   sweep: boolean;
   /** More Games sheet section (null for the sweep modes). */
   category: string | null;
+  /** Remote gate (app_flags key); null = never gated. */
+  flagKey: string | null;
 }
 
 // Icons come from the home chrome table (one icon map for the whole app);
@@ -32,6 +35,7 @@ export const PROFILE_MODES: ModeConfig[] = DAILY_MODES.map((m) => ({
   accentColor: m.accentHex,
   sweep: m.sweep,
   category: m.category,
+  flagKey: m.flagKey,
 }));
 
 // Synthetic 10th tile — the Daily Sweep leaderboard. Deliberately NOT in
@@ -50,6 +54,7 @@ export const SWEEP_MODE: ModeConfig = {
   accentColor: '#4f46e5',
   sweep: false,
   category: null,
+  flagKey: null,
 };
 
 // Tolerance (More Games Stage 1): a mode key this bundle does not know — a
@@ -66,6 +71,7 @@ export const UNKNOWN_MODE: ModeConfig = {
   accentColor: '#9ca3af',
   sweep: false,
   category: null,
+  flagKey: null,
 };
 
 /** Look a mode up by dbKey, falling back to UNKNOWN_MODE instead of throwing. */
@@ -102,6 +108,10 @@ interface ModePickerProps {
 
 export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll = true, grid = false, includeSweep = false }: ModePickerProps) {
   const [moreOpen, setMoreOpen] = useState(false);
+  // Remote flags (Stage 7): a More Games mode sits behind the chip only when
+  // its app_flags row says so for this viewer.
+  const { isOn: flagOn } = useFlags();
+  const morePicker = MORE_PICKER_MODES.filter((m) => flagOn(m.flagKey));
   const modes = includeSweep ? [...PROFILE_MODES, SWEEP_MODE] : PROFILE_MODES;
   const modeButton = (mode: ModeConfig, fullWidth = false) => {
     const isActive = selectedMode === mode.dbKey;
@@ -147,7 +157,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
   // selected the chip wears that mode's icon, title and accent so the grid
   // still shows what the page is filtered to.
   const moreButton = () => {
-    const selectedMore = MORE_PICKER_MODES.find((m) => m.dbKey === selectedMode) ?? null;
+    const selectedMore = morePicker.find((m) => m.dbKey === selectedMode) ?? null;
     const accent = selectedMore?.accentColor ?? MORE_ACCENT;
     const active = !!selectedMore || moreOpen;
     const Icon = selectedMore?.icon ?? LayoutGrid;
@@ -187,7 +197,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
     const cells: React.ReactNode[] = modes.filter((m) => m.sweep || m.id === 'SWEEP').map((m) => (
       <div key={m.id} style={{ width: cellWidth }}>{modeButton(m, true)}</div>
     ));
-    if (MORE_PICKER_MODES.length > 0) cells.push(<div key="MORE" style={{ width: cellWidth }}>{moreButton()}</div>);
+    if (morePicker.length > 0) cells.push(<div key="MORE" style={{ width: cellWidth }}>{moreButton()}</div>);
     const rows: React.ReactNode[][] = [];
     for (let i = 0; i < cells.length; i += 5) rows.push(cells.slice(i, i + 5));
     return (
@@ -195,14 +205,14 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
         {rows.map((row, i) => (
           <div key={i} className="flex justify-center gap-2">{row}</div>
         ))}
-        {moreOpen && MORE_PICKER_MODES.length > 0 && (
+        {moreOpen && morePicker.length > 0 && (
           <div
             className="p-3 space-y-2 animate-fade-in-up"
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}
             role="group"
             aria-label="More Games"
           >
-            {morePickerSections().map((s) => (
+            {morePickerSections(morePicker).map((s) => (
               <div key={s.key}>
                 <div className="section-header mb-1">{s.title.toUpperCase()}</div>
                 <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>

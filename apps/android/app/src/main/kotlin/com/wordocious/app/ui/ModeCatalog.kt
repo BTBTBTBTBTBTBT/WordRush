@@ -49,6 +49,8 @@ data class ModeCard(
     val category: String? = null,
     val guessSemantics: String = "guesses",
     val guessBase: Int = 1,
+    /** Remote gate (app_flags key); null = never gated. Filter lists with FlagsService.isOn. */
+    val flagKey: String? = null,
 )
 
 /** In-game uppercase mode title — single-sourced uppercased shareLabel from ModeGen. */
@@ -104,7 +106,7 @@ private fun toCard(m: com.wordocious.app.GenMode): ModeCard {
     return ModeCard(
         m.id, m.title, m.desc, m.accent, engine, glyph = chrome?.glyph, lucide = chrome?.lucide, hand = chrome?.hand,
         dbKey = m.dbKey, sweep = m.sweep, dailyEligible = m.dailyEligible, category = m.category,
-        guessSemantics = m.guessSemantics, guessBase = m.guessBase,
+        guessSemantics = m.guessSemantics, guessBase = m.guessBase, flagKey = m.flagKey,
     )
 }
 
