@@ -84,6 +84,10 @@ struct VictoryOverlay: View {
     /// ProperNoundle answers are proper nouns (not in the dictionary) — its
     /// Wikipedia clue/photo stands in for the definition, so skip the card.
     var showDefinition = true
+    /// The stat under the count — "GUESSES" for word modes; mistake-scored
+    /// modes (Sudoku, Starsweep) pass "MISTAKES" (founder: "1 guesses is
+    /// confusing" on the first Sudoku win, 2026-09-22).
+    var statLabel = "GUESSES"
     /// §242 (founder: "go right into the next game without going back"): a
     /// Play/Try-again button on the card itself. Callers pass it ONLY on
     /// unlimited (non-daily) games — same gate as the finished screen's button.
@@ -131,7 +135,7 @@ struct VictoryOverlay: View {
                         if isMulti {
                             statBlock("\(boardsSolved)/\(totalBoards)", "BOARDS")
                         }
-                        statBlock(maxGuesses > 0 ? "\(guesses)/\(maxGuesses)" : "\(guesses)", "GUESSES")
+                        statBlock(maxGuesses > 0 ? "\(guesses)/\(maxGuesses)" : "\(guesses)", statLabel)
                         statBlock(timeStr, "TIME")
                     }
                     .padding(.top, 4)

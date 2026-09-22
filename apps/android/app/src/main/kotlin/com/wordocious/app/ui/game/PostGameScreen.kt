@@ -745,7 +745,15 @@ internal fun ScoreBreakdownCard(
             Text("${b.total.toInt()} pts", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         }
         ScoreRow(if (won) "Win bonus" else "Did not finish", if (won) "" else "no win bonus", b.basePoints)
-        if (won && b.guessBonusApplies) ScoreRow("Guess bonus", "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
+        // The row reads through the mode's guess semantics (More Games §11):
+        // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
+        val bonusLabel = when (com.wordocious.app.ModeGen.byDbKey(mode.name)?.guessSemantics) {
+            "mistakes" -> "Mistake bonus"
+            "checks" -> "Check bonus"
+            "misses" -> "Miss bonus"
+            else -> "Guess bonus"
+        }
+        if (won && b.guessBonusApplies) ScoreRow(bonusLabel, "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
         if (won) ScoreRow("Speed bonus", "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
         if (b.completionBonus > 0) {
             val (compLabel, compDetail) = when {

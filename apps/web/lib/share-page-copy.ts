@@ -6,6 +6,8 @@
 // Spoiler rule: titles and descriptions must never contain puzzle letters —
 // only mode names, guess counts, times, and scores (all colors-only safe).
 
+import { MODES } from './modes.generated';
+
 export const MODE_DISPLAY: Record<string, string> = {
   Six: 'Classic Six',
   Seven: 'Classic Seven',
@@ -17,6 +19,9 @@ export const MODE_DISPLAY: Record<string, string> = {
 // Map a share mode back to its play route so the CTA sends visitors to it.
 export const MODE_ROUTE: Record<string, string> = {
   Classic: '/practice',
+  // More Games titles (§18d) — keyed by shareLabel like every other mode.
+  Sudoku: '/sudoku',
+  Starsweep: '/starsweep',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',
@@ -329,6 +334,30 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
   const g = Number(str(sp.g)) || 0;
   const mg = Number(str(sp.mg)) || 0;
   const t = Number(str(sp.t)) || 0;
+
+  // Mistake-scored modes (Sudoku, Starsweep — catalog guessSemantics
+  // "mistakes"): "Solved 2/4" means nothing to a reader, so the unfurl lists
+  // each figure by name — score, time, mistakes — and the puzzle number.
+  // Founder, 2026-09-22: "populate the points and total time, and list it
+  // clearly what is what". Points (pts) and number (n) ride the share URL.
+  const meta = MODES.find((m) => m.shareLabel === mode);
+  if (meta?.guessSemantics === 'mistakes') {
+    const pts = Number(str(sp.pts)) || 0;
+    const n = Number(str(sp.n)) || 0;
+    const mistakes = Math.max(0, g - meta.guessBase);
+    const name = n > 0 ? `${modeDisp} #${n}` : modeDisp;
+    const bits: string[] = [];
+    if (pts > 0) bits.push(`Score ${pts.toLocaleString()} pts`);
+    bits.push(`Time ${fmtTime(t)}`);
+    bits.push(won ? `${mistakes} mistake${mistakes === 1 ? '' : 's'}` : 'Out of mistakes');
+    const stats = bits.join(' · ');
+    const title = `Wordocious ${name} — ${stats}`;
+    const description = won
+      ? `I solved ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
+      : `I played ${name} on Wordocious — ${stats}. Think you can solve it? ${PLAY_HOOK}`;
+    return { mode, modeDisp: name, won, stats, title, description };
+  }
+
   const guessDisp = won ? `${g}/${mg}` : `X/${mg}`;
   const statsBits: string[] = [];
   if (str(sp.bs) && str(sp.tb)) statsBits.push(`${str(sp.bs)}/${str(sp.tb)} boards`);

@@ -32,6 +32,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
+import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
 // Starsweep (More Games §18b): place one star in every row, column and colour
 // region, no two stars touching. Daily 7 × 7 Monday–Wednesday, 8 × 8
@@ -215,6 +216,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
       mistakes: state.mistakes,
       sizeLabel: REGIONS_SIZE_LABEL[state.n] ?? `${state.n} × ${state.n}`,
       puzzleNumber: mode === 'daily' ? regionsDailyNumber(getTodayLocal()) : undefined,
+      points: computeScoreBreakdown('REGIONS', state.status === 'won', state.mistakes + 1, elapsedSeconds, state.status === 'won' ? 1 : 0, 1, state.hintsUsed).total,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, elapsedSeconds, mode]);

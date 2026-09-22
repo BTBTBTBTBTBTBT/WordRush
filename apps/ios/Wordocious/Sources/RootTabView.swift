@@ -58,7 +58,14 @@ struct RootTabView: View {
     /// mid-game (PN keys its own saves off the seed, no marker needed).
     private func mintUnlimitedSeed(_ m: HomeMode) -> String {
         guard let gm = m.mode else {
-            return "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
+            // Custom engines mint the same seeds HomeView does: Sudoku's carries
+            // its difficulty, Starsweep's its board size (read back by the engine).
+            let ts = Int(Date().timeIntervalSince1970)
+            switch m.id {
+            case "sudoku": return "unlimited-SUDOKU-\(ts)-medium"
+            case "regions": return "unlimited-REGIONS-\(ts)-8"
+            default: return "unlimited-PROPERNOUNDLE-\(ts)"
+            }
         }
         let fresh = "unlimited-\(gm.rawValue)-\(Int(Date().timeIntervalSince1970))"
         UserDefaults.standard.set(fresh, forKey: "unlimited-current-\(gm.rawValue)")
@@ -177,7 +184,7 @@ struct RootTabView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
             guard let key = note.object as? String,
-                  let m = homeModes.first(where: { $0.dbKey == key }) else { return }
+                  let m = (homeModes + moreModes).first(where: { $0.dbKey == key }) else { return }
             presentAfterCoverClears { unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m)) }
         }
         // Flush a deferred root present the moment the exiting game cover has
@@ -197,6 +204,18 @@ struct RootTabView: View {
                     })
                     // Item swaps don't rebuild the @StateObject — key on the
                     // seed so Play Again gets a fresh board (HomeView parity).
+                    .id(g.seed)
+                } else if g.mode.id == "sudoku" {
+                    // Sudoku unlimited from "Keep playing": explicit seed = non-daily run;
+                    // Play Again / difficulty switch mints a fresh seed carrying the pick.
+                    SudokuView(seed: g.seed, onPlayAgain: { d in
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: "unlimited-SUDOKU-\(Int(Date().timeIntervalSince1970))-\(d.rawValue)")
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "regions" {
+                    RegionsView(seed: g.seed, onPlayAgain: { n in
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: "unlimited-REGIONS-\(Int(Date().timeIntervalSince1970))-\(n)")
+                    })
                     .id(g.seed)
                 } else {
                     // ProperNoundle unlimited: explicit seed = non-daily run.

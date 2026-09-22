@@ -39,6 +39,18 @@ describe('buildCopy', () => {
     expect(c.won).toBe(true);
   });
 
+  it('lists score, time and mistakes by name for mistake-scored modes (Sudoku, Starsweep)', () => {
+    const c = buildCopy({ m: 'Sudoku', won: '1', g: '2', mg: '4', t: '976', pts: '1909', n: '1' }, ['u', 'Sudoku-2026-09-22']);
+    expect(c.title).toBe('Wordocious Sudoku #1 — Score 1,909 pts · Time 16:16 · 1 mistake');
+    expect(c.description).toBe(
+      'I solved Sudoku #1 on Wordocious — Score 1,909 pts · Time 16:16 · 1 mistake. Can you beat it? Play today’s puzzles free at wordocious.com.',
+    );
+    const lost = buildCopy({ m: 'Starsweep', won: '0', g: '4', mg: '4', t: '130', n: '3' }, ['u', 'Starsweep-2026-09-22']);
+    expect(lost.title).toBe('Wordocious Starsweep #3 — Time 2:10 · Out of mistakes');
+    const noPts = buildCopy({ m: 'Sudoku', won: '1', g: '1', mg: '4', t: '60' }, ['u', 'Sudoku-2026-09-22']);
+    expect(noPts.title).toBe('Wordocious Sudoku — Time 1:00 · 0 mistakes');
+  });
+
   it('builds a multi-board card with boards solved', () => {
     const c = buildCopy(
       { m: 'OctoWord', won: '1', g: '12', mg: '13', t: '600', bs: '8', tb: '8' },

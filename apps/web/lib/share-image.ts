@@ -71,6 +71,11 @@ interface ShareBase {
    * treatment. Off by default — the default output stays byte-identical.
    */
   reveal?: boolean;
+  /**
+   * Composite score of the result, for the hosted share page's unfurl copy
+   * (mistake-scored modes list "Score · Time · Mistakes" by name, §18d).
+   */
+  points?: number;
 }
 
 export interface ShareSingleInput extends ShareBase {

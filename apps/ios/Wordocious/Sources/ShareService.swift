@@ -36,7 +36,10 @@ enum ShareService {
         kind: ShareCardView.Kind, mode: GameMode, modeLabel: String, accent: Color, won: Bool,
         guesses: Int, maxGuesses: Int, timeSeconds: Int,
         category: String? = nil, wordGroups: [Int]? = nil,
-        reveal: Bool = false, letters: [[String]]? = nil, solutionDisplay: String? = nil
+        reveal: Bool = false, letters: [[String]]? = nil, solutionDisplay: String? = nil,
+        /// Mistake-scored modes (§18d): the composite score + puzzle number ride
+        /// the hosted URL so the unfurl names score, time and mistakes.
+        points: Int? = nil, puzzleNumber: Int? = nil
     ) {
         #if canImport(UIKit)
         let card = ShareCardView(
@@ -57,7 +60,8 @@ enum ShareService {
         Task {
             let url = await uploadAndBuildURL(png: png, kind: kind, mode: mode,
                                               won: won, guesses: guesses, maxGuesses: maxGuesses,
-                                              timeSeconds: timeSeconds, reveal: reveal)
+                                              timeSeconds: timeSeconds, reveal: reveal,
+                                              points: points, puzzleNumber: puzzleNumber)
             await MainActor.run {
                 var items: [Any] = [image]
                 if let url { items.append(url) }
@@ -73,7 +77,7 @@ enum ShareService {
     private static func uploadAndBuildURL(
         png: Data, kind: ShareCardView.Kind, mode: GameMode,
         won: Bool, guesses: Int, maxGuesses: Int, timeSeconds: Int,
-        reveal: Bool = false
+        reveal: Bool = false, points: Int? = nil, puzzleNumber: Int? = nil
     ) async -> URL? {
         let client = AuthService.shared.client
         // RLS keys the folder on auth.uid()::text, which is lowercase.
@@ -111,7 +115,11 @@ enum ShareService {
             q["bs"] = "\(boardsSolved)"; q["tb"] = "\(totalBoards)"
         case let .gauntlet(_, stagesCompleted, totalStages):
             q["sc"] = "\(stagesCompleted)"; q["ts"] = "\(totalStages)"
-        case .single, .sudoku, .regions:
+        case .sudoku, .regions:
+            // Mistake-scored modes: the unfurl names score, time and mistakes (§18d).
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+        case .single:
             break
         }
 

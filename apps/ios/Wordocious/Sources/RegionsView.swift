@@ -181,7 +181,7 @@ struct RegionsView: View {
                 VictoryOverlay(
                     won: vm.state.status == .won, guesses: vm.mistakes, maxGuesses: 0,
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
-                    solution: nil, solutions: [], showDefinition: false,
+                    solution: nil, solutions: [], showDefinition: false, statLabel: "MISTAKES",
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?(vm.n) } : nil,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
@@ -307,7 +307,12 @@ struct RegionsView: View {
                                           mistakes: vm.mistakes, sizeLabel: vm.sizeLabel,
                                           puzzleNumber: vm.isDaily ? vm.dailyNumber : nil),
                            mode: .regions, modeLabel: "STARSWEEP", accent: regionsAccent, won: vm.state.status == .won,
-                           guesses: vm.mistakes + 1, maxGuesses: REGIONS_MAX_MISTAKES + 1, timeSeconds: vm.elapsed)
+                           guesses: vm.mistakes + 1, maxGuesses: REGIONS_MAX_MISTAKES + 1, timeSeconds: vm.elapsed,
+                           points: Int(DailyScoring.breakdown(gameMode: GameMode.regions.rawValue, completed: vm.state.status == .won,
+                                                              guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
+                                                              boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
+                                                              hintsUsed: vm.hintsUsed).total),
+                           puzzleNumber: vm.isDaily ? vm.dailyNumber : nil)
     }
 }
 

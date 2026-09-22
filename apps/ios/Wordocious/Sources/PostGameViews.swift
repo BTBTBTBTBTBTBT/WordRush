@@ -197,7 +197,17 @@ struct ScoreBreakdownView: View {
             }
             .padding(.bottom, 4)
             row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints)
-            if completed && b.guessBonusApplies { row("Guess bonus", "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
+            // The row reads through the mode's guess semantics (More Games §11):
+            // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
+            let bonusLabel: String = {
+                switch ModeGen.byDbKey(gameMode)?.guessSemantics {
+                case "mistakes": return "Mistake bonus"
+                case "checks": return "Check bonus"
+                case "misses": return "Miss bonus"
+                default: return "Guess bonus"
+                }
+            }()
+            if completed && b.guessBonusApplies { row(bonusLabel, "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
             if completed { row("Speed bonus", "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
             if b.completionBonus > 0 { completionRow(b.completionBonus) }
             if b.hasHints {
@@ -342,7 +352,7 @@ struct NextDailyCTA: View {
     /// capsule in the mode's accent that lands on this mode's daily board.
     @ViewBuilder private var viewLeaderboard: some View {
         if let key = currentMode,
-           let mode = homeModes.first(where: { $0.dbKey == key }) {
+           let mode = (homeModes + moreModes).first(where: { $0.dbKey == key }) {
             Button {
                 dismiss()
                 // Same choreography as playNextDaily: let this cover's dismiss
@@ -374,7 +384,7 @@ struct NextDailyCTA: View {
     @ViewBuilder private var keepPlayingUnlimited: some View {
         if AuthService.shared.isProActive,
            let key = currentMode,
-           let mode = homeModes.first(where: { $0.dbKey == key }) {
+           let mode = (homeModes + moreModes).first(where: { $0.dbKey == key }) {
             Button {
                 dismiss()
                 // Same choreography as playNextDaily: let this cover's dismiss

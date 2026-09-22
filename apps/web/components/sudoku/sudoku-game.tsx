@@ -31,6 +31,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
+import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
 // Daily Sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
 // device from the daily seed; Pro Unlimited picks Easy / Medium / Hard. Three
@@ -227,6 +228,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
       mistakes: state.mistakes,
       difficulty: DIFFICULTY_LABEL[state.difficulty],
       puzzleNumber: mode === 'daily' ? sudokuDailyNumber(getTodayLocal()) : undefined,
+      points: computeScoreBreakdown('SUDOKU', state.status === 'won', state.mistakes + 1, elapsedSeconds, state.status === 'won' ? 1 : 0, 1, state.hintsUsed).total,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, elapsedSeconds, mode]);

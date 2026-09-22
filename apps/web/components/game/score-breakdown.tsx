@@ -1,6 +1,18 @@
 'use client';
 
 import { computeScoreBreakdown } from '@/lib/daily-service';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+
+/** "Guess bonus" reads through the mode's guess semantics (More Games §11):
+ *  Sudoku and Starsweep count mistakes, so their row says "Mistake bonus". */
+export function guessBonusLabel(gameMode: string): string {
+  switch (MODE_BY_DBKEY[gameMode]?.guessSemantics) {
+    case 'mistakes': return 'Mistake bonus';
+    case 'checks': return 'Check bonus';
+    case 'misses': return 'Miss bonus';
+    default: return 'Guess bonus';
+  }
+}
 
 interface ScoreBreakdownCardProps {
   gameMode: string;
@@ -73,7 +85,7 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
       />
       {completed && b.guessBonusApplies && (
         <Row
-          label="Guess bonus"
+          label={guessBonusLabel(gameMode)}
           detail={`${guessesLeft} unused × ${b.guessWeight}`}
           value={b.guessBonus}
         />

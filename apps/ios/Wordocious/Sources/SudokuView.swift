@@ -175,7 +175,7 @@ struct SudokuView: View {
                 VictoryOverlay(
                     won: vm.state.status == .won, guesses: vm.mistakes, maxGuesses: 0,
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
-                    solution: nil, solutions: [], showDefinition: false,
+                    solution: nil, solutions: [], showDefinition: false, statLabel: "MISTAKES",
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?(vm.state.difficulty) } : nil,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
@@ -302,7 +302,12 @@ struct SudokuView: View {
                                          mistakes: vm.mistakes, difficulty: difficultyLabel[vm.state.difficulty] ?? "Medium",
                                          puzzleNumber: vm.isDaily ? vm.dailyNumber : nil),
                            mode: .sudoku, modeLabel: "SUDOKU", accent: sudokuAccent, won: vm.state.status == .won,
-                           guesses: vm.mistakes + 1, maxGuesses: SUDOKU_MAX_MISTAKES + 1, timeSeconds: vm.elapsed)
+                           guesses: vm.mistakes + 1, maxGuesses: SUDOKU_MAX_MISTAKES + 1, timeSeconds: vm.elapsed,
+                           points: Int(DailyScoring.breakdown(gameMode: GameMode.sudoku.rawValue, completed: vm.state.status == .won,
+                                                              guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
+                                                              boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
+                                                              hintsUsed: vm.hintsUsed).total),
+                           puzzleNumber: vm.isDaily ? vm.dailyNumber : nil)
     }
 }
 

@@ -488,7 +488,9 @@ private fun RegionsResult(
             ResultAction(Icons.Filled.Share, "Share", REGIONS_ACCENT) {
                 val num = if (session.isDaily) session.dailyNumber else null
                 val meta = "${num?.let { "#$it · " } ?: ""}${session.sizeLabel} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · ${timeText(secs)}"
-                val text = "Wordocious Starsweep${num?.let { " #$it" } ?: ""} · $meta · wordocious.com/starsweep"
+                // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
+                val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
+                val text = "Wordocious Starsweep${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/starsweep"
                 val bmp = ShareImage.renderRegions(context, s.n, s.regions, s.board, s.hintMask, won, meta)
                 ShareImage.shareBitmap(context, bmp, text)
             }
