@@ -114,6 +114,10 @@ struct HomeView: View {
     struct LadderGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
     @State private var ladderGame: LadderGame?
     private func freshLadderSeed() -> String { "unlimited-LADDER-\(Int(Date().timeIntervalSince1970))" }
+    /// A Spyglass run (own view): nil seed = today's daily.
+    struct SpyglassGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var spyglassGame: SpyglassGame?
+    private func freshSpyglassSeed() -> String { "unlimited-WORDSEARCH-\(Int(Date().timeIntervalSince1970))" }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -255,6 +259,12 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
+            .fullScreenCover(item: $spyglassGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    SpyglassView(seed: g.seed, onPlayAgain: { spyglassGame = SpyglassGame(seed: freshSpyglassSeed()) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -276,6 +286,8 @@ struct HomeView: View {
                         RegionsView()
                     } else if m.id == "ladder" {
                         LadderView()
+                    } else if m.id == "wordsearch" {
+                        SpyglassView()
                     }
                 }
             }
@@ -837,6 +849,8 @@ struct HomeView: View {
             regionsGame = RegionsGame(seed: effectiveMode == .unlimited ? freshRegionsSeed(8) : nil)
         } else if mode.id == "ladder" {
             ladderGame = LadderGame(seed: effectiveMode == .unlimited ? freshLadderSeed() : nil)
+        } else if mode.id == "wordsearch" {
+            spyglassGame = SpyglassGame(seed: effectiveMode == .unlimited ? freshSpyglassSeed() : nil)
         } else {
             comingSoon = mode.title
         }

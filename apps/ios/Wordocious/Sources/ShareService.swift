@@ -123,6 +123,10 @@ enum ShareService {
             if let points { q["pts"] = "\(points)" }
             if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
             q["par"] = "\(par)"
+        case let .wordsearch(_, words, found, _, _, _):
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+            q["bs"] = "\(found.count)"; q["tb"] = "\(words.count)"
         case .single:
             break
         }

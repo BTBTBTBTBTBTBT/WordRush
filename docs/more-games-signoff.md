@@ -33,7 +33,7 @@ Tick a cell only after checking, in order:
 | **Starsweep** | ☐ | ☐ | ☐ |
 | **Letter Ladder** | ☐ | ☐ | ☐ |
 | Muddle | ☐ | ☐ | ☐ |
-| Spyglass | ☐ | ☐ | ☐ |
+| **Spyglass** | ☐ | ☐ | ☐ |
 | Crosswordocious | ☐ | ☐ | ☐ |
 | Codebreaker | ☐ | ☐ | ☐ |
 | Kindred | ☐ | ☐ | ☐ |
@@ -87,6 +87,28 @@ Tick a cell only after checking, in order:
 - Share card: START and END spelled out, rungs blank except the changed tile; caption/unfurl
   "Score · Time · Par 5 · +1 over par". Pro "Keep playing: Unlimited Letter Ladder" appears on all
   three.
+
+## Spyglass — what to look for (built overnight 2026-09-22 → 23)
+
+- Daily "#N" counts from 2026-09-23; the first grid is "Picnic Basket". Same grid everywhere on a
+  date (bank bundled on both natives, sha-guarded). Ten words, 10 × 10, hidden across, down and on
+  the two upward/downward-right diagonals — never backwards.
+- **Theme bank needs your review.** 180 themes × ~24 everyday nouns in
+  `apps/web/data/wordsearch-themes.json` were authored for the tester build. Skim it for anything
+  you would not want on a grid; the builder already drops blocklisted words and 3-letter words.
+  Changing a theme changes future dailies only after the bank is rebuilt (append-only once live).
+- Select by tapping the first letter then the last (the first tap highlights), or by dragging.
+  A found word gets a green capsule under it and is struck through in the list. A straight drag
+  of 4+ letters that is not a word is a miss (toast "Not one of the words"); crooked or short
+  drags cost nothing.
+- **Hint** rings the first letter of the next unfound word (60 points, never a miss). **Reveal**
+  unlocks at 5:00 (the capsule shows the countdown), ends the grid as a loss and shows the missing
+  words as dashed red capsules.
+- Finished screen: "Clean clear" / "Grid cleared" / "Revealed", then found · misses · time. Victory
+  card shows MISSES · TIME · POINTS (Android also FOUND). Score row reads "Miss bonus".
+- Share card: dot grid with the found words as capsules, no letters. Pro "Keep playing: Unlimited
+  Spyglass" on all three.
+- Not built yet: the Pro "Hard" variant with all eight directions (the bank only lays words forwards).
 
 ## Known gaps to close before the gate closes
 

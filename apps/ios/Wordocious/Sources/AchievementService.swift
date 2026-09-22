@@ -73,6 +73,12 @@ enum AchievementService {
         // Perfectionist is a WORD-mode feat: every mode whose guess_count means
         // something else (mistakes, par, checks…) is excluded through the catalog.
         if won && guessCount == 1 && (ModeGen.byDbKey(gameMode)?.guessSemantics ?? "guesses") == "guesses" { await tryUnlock("perfectionist") }
+        // Spyglass (More Games §18c): first clear, eagle eye (no misses), swift.
+        if gameMode == "WORDSEARCH" && won {
+            await tryUnlock("wordsearch_first")
+            if guessCount <= 10 { await tryUnlock("wordsearch_eagle_eye") }
+            if timeSeconds < 120 { await tryUnlock("wordsearch_swift") }
+        }
         // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
         if gameMode == "LADDER" && won {
             await tryUnlock("ladder_first")
@@ -153,7 +159,7 @@ enum AchievementService {
                 ("quad_king","QUORDLE",50), ("octo_boss","OCTORDLE",50), ("sequence_ace","SEQUENCE",50),
                 ("rescue_hero","RESCUE",50), ("six_shooter","DUEL_6",50), ("lucky_seven","DUEL_7",50),
                 ("proper_scholar","PROPERNOUNDLE",50), ("classic_master","DUEL",100), ("sudoku_scholar","SUDOKU",50),
-                ("regions_regular","REGIONS",50), ("ladder_regular","LADDER",50),
+                ("regions_regular","REGIONS",50), ("ladder_regular","LADDER",50), ("wordsearch_regular","WORDSEARCH",50),
             ]
             for (key, mode, thresh) in mastery where soloWinsByMode(mode) >= thresh { await tryUnlock(key) }
 
@@ -198,9 +204,9 @@ enum AchievementService {
         }
 
         // Pure ladder (matches counts) — only after a hintless win in a pure mode.
-        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER"]
+        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER","WORDSEARCH"]
         if won && hintsUsed == 0 && pureModes.contains(gameMode) {
-            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : "proper"
+            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : gameMode == "WORDSEARCH" ? "wordsearch" : "proper"
             let c = await count("matches") { $0.eq("player1_id", value: userId).is("player2_id", value: nil)
                 .eq("winner_id", value: userId).eq("game_mode", value: gameMode).eq("hints_used", value: 0) }
             if c >= 1 { await tryUnlock("pure_\(slug)_initiate") }

@@ -28,6 +28,8 @@ struct ShareCardView: View {
         /// Letter Ladder (More Games §18d): START and END spelled out, every rung
         /// between them blank except the changed position (accent; violet for a hint).
         case ladder(start: String, end: String, words: [String], hintMask: String, par: Int, moves: Int, puzzleNumber: Int?)
+        /// Spyglass (More Games §18d): a dot grid with the found words as accent capsules — no letters.
+        case wordsearch(n: Int, words: [WordsearchPlacement], found: [String], misses: Int, title: String, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -62,7 +64,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder, .wordsearch: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -123,6 +125,9 @@ struct ShareCardView: View {
             let over = moves - par
             let num = number.map { "#\($0) · " } ?? ""
             return "\(num)Par \(par) · \(won ? (over <= 0 ? "On par" : "+\(over)") : "Out of moves") · \(t) · \(dateStr)"
+        case .wordsearch(_, let words, let found, let misses, _, let number):
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)\(found.count)/\(words.count) · \(misses) miss\(misses == 1 ? "" : "es") · \(t) · \(dateStr)"
         }
     }
 
@@ -157,7 +162,33 @@ struct ShareCardView: View {
             regionsCard(n: n, regions: regions, board: board, hintMask: hintMask)
         case .ladder(let start, let end, let words, let hintMask, _, _, _):
             ladderCard(start: start, end: end, words: words, hintMask: hintMask)
+        case .wordsearch(let n, let words, let found, _, _, _):
+            wordsearchCard(n: n, words: words, found: found)
         }
+    }
+
+    /// Web drawWordsearch parity: 720pt card, a dot grid with the found words as
+    /// accent capsules laid along their lines. No letters.
+    private func wordsearchCard(n: Int, words: [WordsearchPlacement], found: [String]) -> some View {
+        let side: CGFloat = 720, pad: CGFloat = 24
+        let count = max(1, n)
+        let cell = (side - pad * 2) / CGFloat(count)
+        let accent = Color(hex: 0x4D7C0F)
+        return Canvas { ctx, _ in
+            func center(_ r: Int, _ c: Int) -> CGPoint { CGPoint(x: pad + (CGFloat(c) + 0.5) * cell, y: pad + (CGFloat(r) + 0.5) * cell) }
+            for w in words where found.contains(w.w) {
+                let (dr, dc) = WORDSEARCH_DIRS[w.d] ?? (0, 1)
+                var p = Path(); p.move(to: center(w.r, w.c)); p.addLine(to: center(w.r + dr * (w.w.count - 1), w.c + dc * (w.w.count - 1)))
+                ctx.stroke(p, with: .color(accent.opacity(0.4)), style: StrokeStyle(lineWidth: cell * 0.72, lineCap: .round))
+            }
+            for r in 0..<count { for c in 0..<count {
+                let ce = center(r, c)
+                ctx.fill(Path(ellipseIn: CGRect(x: ce.x - cell * 0.12, y: ce.y - cell * 0.12, width: cell * 0.24, height: cell * 0.24)), with: .color(Color(hex: 0xC4B5FD)))
+            } }
+        }
+        .frame(width: side, height: side)
+        .background(RoundedRectangle(cornerRadius: 28).fill(won ? boardWinTint : boardLossTint))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(won ? winFG : lossFG, lineWidth: 3))
     }
 
     /// Web drawLadder parity: START purple with letters, END dashed in the accent

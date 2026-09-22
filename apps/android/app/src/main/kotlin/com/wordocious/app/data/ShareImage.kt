@@ -657,6 +657,69 @@ object ShareImage {
         return bmp
     }
 
+    // ── Spyglass card (More Games §18d) ───────────────────────────────────────
+
+    /** A dot grid with the found words as accent capsules laid along their
+     *  lines — no letters. `meta` is the stats line ("#12 · 10/10 · 0 misses · 2:45"). */
+    fun renderWordsearch(context: Context, n: Int, words: List<com.wordocious.core.WordsearchPlacement>, found: List<String>, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFF4D7C0F.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("SPYGLASS", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+        val count = maxOf(1, n)
+        val side = 720f; val pad = 24f
+        val cell = (side - pad * 2) / count
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val x0 = cx - side / 2f; val y0 = areaTop + (areaBottom - areaTop - side) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        fill.color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
+        c.drawRoundRect(RectF(x0, y0, x0 + side, y0 + side), 28f, 28f, fill)
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt() }
+        c.drawRoundRect(RectF(x0, y0, x0 + side, y0 + side), 28f, 28f, stroke)
+        val capsule = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = cell * 0.72f; strokeCap = Paint.Cap.ROUND; color = 0x664D7C0F }
+        fun center(r: Int, col: Int) = Pair(x0 + pad + (col + 0.5f) * cell, y0 + pad + (r + 0.5f) * cell)
+        for (w in words) if (w.w in found) {
+            val (dr, dc) = com.wordocious.core.WORDSEARCH_DIRS[w.d] ?: (0 to 1)
+            val (ax, ay) = center(w.r, w.c); val (bx, by) = center(w.r + dr * (w.w.length - 1), w.c + dc * (w.w.length - 1))
+            c.drawLine(ax, ay, bx, by, capsule)
+        }
+        fill.color = 0xFFC4B5FD.toInt()
+        for (r in 0 until count) for (col in 0 until count) { val (px, py) = center(r, col); c.drawCircle(px, py, cell * 0.12f, fill) }
+        p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {

@@ -183,6 +183,13 @@ object AchievementService {
         // something else (mistakes, par, checks…) is excluded through the catalog.
         if (won && guessCount == 1 && (com.wordocious.app.ModeGen.byDbKey(gameMode)?.guessSemantics ?: "guesses") == "guesses") tryUnlock("perfectionist")
 
+        // Spyglass (More Games §18c): first clear, eagle eye (no misses), swift.
+        if (gameMode == "WORDSEARCH" && won) {
+            tryUnlock("wordsearch_first")
+            if (guessCount <= 10) tryUnlock("wordsearch_eagle_eye")
+            if (timeSeconds < 120) tryUnlock("wordsearch_swift")
+        }
+
         // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
         if (gameMode == "LADDER" && won) {
             tryUnlock("ladder_first")
@@ -329,6 +336,7 @@ object AchievementService {
             Triple("sudoku_scholar", "SUDOKU", 50),
             Triple("regions_regular", "REGIONS", 50),
             Triple("ladder_regular", "LADDER", 50),
+            Triple("wordsearch_regular", "WORDSEARCH", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -638,7 +646,7 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
@@ -646,6 +654,7 @@ object AchievementService {
                 "SUDOKU" -> "sudoku"
                 "REGIONS" -> "regions"
                 "LADDER" -> "ladder"
+                "WORDSEARCH" -> "wordsearch"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"
