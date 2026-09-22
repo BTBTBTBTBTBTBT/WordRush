@@ -404,7 +404,7 @@ struct DailyRecordsView: View {
             // leaderboard (ProfileTab) mounts it — the founder wants Records to
             // mirror that page. .id(mode) → a fresh card per mode, same reason
             // as there: never the previous mode's board under a new header.
-            if !isSweep { CompletedDailyCard(mode: mode).id(mode) }
+            if !isSweep { if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) } }
 
             if isSweep {
                 sweepCard

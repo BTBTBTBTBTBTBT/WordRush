@@ -191,6 +191,14 @@ public func sudokuDifficultyForSeed(_ seed: String) -> SudokuDifficulty {
     return d
 }
 
+/// The first daily Sudoku's local date — "#1". Purely cosmetic numbering.
+public let SUDOKU_DAILY_EPOCH = "2026-09-23"
+/// "#N" for the daily on `day` (YYYY-MM-DD local); 1 on the epoch day, never below 1.
+public func sudokuDailyNumber(_ day: String) -> Int {
+    guard let idx = Bank.dayIndex(day, epoch: SUDOKU_DAILY_EPOCH) else { return 1 }
+    return max(1, idx + 1)
+}
+
 // MARK: - Reducer
 
 public enum SudokuStatus: String, Codable { case playing, won, lost }

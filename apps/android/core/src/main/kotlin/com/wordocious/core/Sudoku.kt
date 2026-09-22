@@ -191,6 +191,14 @@ fun generateSudoku(seed: String, difficulty: SudokuDifficulty = SUDOKU_DAILY_DIF
 fun sudokuDifficultyForSeed(seed: String): SudokuDifficulty =
     SudokuDifficulty.fromKey(seed.split("-").lastOrNull()) ?: SUDOKU_DAILY_DIFFICULTY
 
+/** The first daily Sudoku's local date — "#1". Purely cosmetic numbering. */
+const val SUDOKU_DAILY_EPOCH = "2026-09-23"
+/** "#N" for the daily on [day] (YYYY-MM-DD local); 1 on the epoch day, never below 1. */
+fun sudokuDailyNumber(day: String): Int {
+    val idx = Bank.dayIndex(day, SUDOKU_DAILY_EPOCH) ?: return 1
+    return maxOf(1, idx + 1)
+}
+
 // ── Reducer ──────────────────────────────────────────────────────────────
 
 enum class SudokuStatus(val key: String) { PLAYING("playing"), WON("won"), LOST("lost") }

@@ -19,6 +19,9 @@ struct ShareCardView: View {
         case single(grid: [[TileState]])
         case multi(boards: [ShareBoard], boardsSolved: Int, totalBoards: Int)
         case gauntlet(stages: [GauntletStageShare], stagesCompleted: Int, totalStages: Int)
+        /// Sudoku (More Games §18d): the 9 × 9 as squares — givens dark, the
+        /// player's cells purple, hint cells violet — no digits.
+        case sudoku(givens: String, board: String, hintMask: String, mistakes: Int, difficulty: String, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -53,7 +56,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -101,6 +104,11 @@ struct ShareCardView: View {
         case .single: return "\(g)/\(maxGuesses) · \(t) · \(dateStr)"
         case .multi(_, let solved, let total): return "\(solved)/\(total) boards · \(g)/\(maxGuesses) · \(t) · \(dateStr)"
         case .gauntlet(_, let done, let total): return "\(done)/\(total) stages · \(guesses) guesses · \(t) · \(dateStr)"
+        case .sudoku(_, _, _, let mistakes, let difficulty, let number):
+            // Semantics-aware (More Games §11): mistakes, never "guesses".
+            let m = "\(mistakes) mistake\(mistakes == 1 ? "" : "s")"
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)\(difficulty) · \(won ? m : "Out of mistakes") · \(t) · \(dateStr)"
         }
     }
 
@@ -129,7 +137,35 @@ struct ShareCardView: View {
                 ForEach(0..<stages.count, id: \.self) { i in gauntletChip(i + 1, stages[i]) }
             }
             .padding(.horizontal, 60)
+        case .sudoku(let givens, let board, let hintMask, _, _, _):
+            sudokuCard(givens: givens, board: board, hintMask: hintMask)
         }
+    }
+
+    /// Web drawSudoku parity: 720pt card, squares gapped 4 with a wider 12 gap
+    /// between boxes, inside the win/loss-bordered frame the word boards use.
+    private func sudokuCard(givens: String, board: String, hintMask: String) -> some View {
+        let side: CGFloat = 720, pad: CGFloat = 16, gap: CGFloat = 4, boxGap: CGFloat = 12
+        let cell = (side - pad * 2 - gap * 6 - boxGap * 2) / 9
+        let g = Array(givens), b = Array(board), h = Array(hintMask)
+        return VStack(spacing: 0) {
+            ForEach(0..<9, id: \.self) { r in
+                HStack(spacing: 0) {
+                    ForEach(0..<9, id: \.self) { c in
+                        let i = r * 9 + c
+                        let color: Color = (g.count == 81 && g[i] != "0") ? Color(hex: 0x1A1A2E)
+                            : (h.count == 81 && h[i] == "1") ? Color(hex: 0x8B5CF6)
+                            : (b.count == 81 && b[i] != "0") ? Color(hex: 0x7C3AED) : Color(hex: 0xE9E5F5)
+                        RoundedRectangle(cornerRadius: max(4, cell * 0.18)).fill(color).frame(width: cell, height: cell)
+                        if c < 8 { Spacer().frame(width: c % 3 == 2 ? boxGap : gap) }
+                    }
+                }
+                if r < 8 { Spacer().frame(height: r % 3 == 2 ? boxGap : gap) }
+            }
+        }
+        .padding(pad)
+        .background(RoundedRectangle(cornerRadius: 28).fill(won ? boardWinTint : boardLossTint))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(won ? winFG : lossFG, lineWidth: 3))
     }
 
     private func boardCard(grid: [[TileState]], letters: [[String]]? = nil, won: Bool,

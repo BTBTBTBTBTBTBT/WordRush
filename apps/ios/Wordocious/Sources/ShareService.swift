@@ -111,7 +111,7 @@ enum ShareService {
             q["bs"] = "\(boardsSolved)"; q["tb"] = "\(totalBoards)"
         case let .gauntlet(_, stagesCompleted, totalStages):
             q["sc"] = "\(stagesCompleted)"; q["ts"] = "\(totalStages)"
-        case .single:
+        case .single, .sudoku:
             break
         }
 

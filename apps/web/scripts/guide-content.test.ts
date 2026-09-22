@@ -63,3 +63,15 @@ describe('guide content', () => {
     }
   });
 });
+
+describe('bundled native guide copies', () => {
+  it('iOS and Android carry the current guide JSON (regenerate: tsx scripts/gen-guides-json.ts)', async () => {
+    const fs = await import('node:fs');
+    const { renderGuidesJson, GUIDE_JSON_TARGETS } = await import('./gen-guides-json');
+    const expected = renderGuidesJson();
+    for (const t of GUIDE_JSON_TARGETS) {
+      expect(fs.existsSync(t), t).toBe(true);
+      expect(fs.readFileSync(t, 'utf8'), t).toBe(expected);
+    }
+  });
+});

@@ -13,10 +13,13 @@ struct ModeGuide: Decodable, Identifiable {
     let rules: [String]
     let scoring: [String]
     let tips: [Tip]
+    /// "The buttons" card (More Games §19): one row per on-screen control.
+    var controls: [Control]? = nil
 
     var id: String { slug }
     struct Fact: Decodable { let label: String; let value: String }
     struct Tip: Decodable { let heading: String; let body: String }
+    struct Control: Decodable { let icon: String; let label: String; let body: String }
 
     var accentColor: Color {
         let hex = accent.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
@@ -33,29 +36,35 @@ final class GuideService: ObservableObject {
     @Published private(set) var guides: [String: ModeGuide] = [:]
     private var loaded = false
 
-    /// GameMode → guide slug (matches lib/guide-content.ts).
+    /// GameMode → guide slug — from the catalog (modes.json guideSlug), so a new
+    /// game can never fall back to Classic's rules (More Games §19).
     static func slug(for mode: GameMode) -> String {
-        switch mode {
-        case .duel: return "classic"
-        case .duel6: return "six"
-        case .duel7: return "seven"
-        case .quordle: return "quadword"
-        case .octordle: return "octoword"
-        case .sequence: return "succession"
-        case .rescue: return "deliverance"
-        case .gauntlet: return "gauntlet"
-        case .propernoundle: return "propernoundle"
-        default: return "classic"
-        }
+        ModeGen.byDbKey(mode.rawValue)?.guideSlug ?? mode.rawValue.lowercased()
+    }
+
+    private struct Payload: Decodable { let guides: [ModeGuide] }
+
+    /// The guides bundled with this build (guides.generated.json, written by
+    /// apps/web/scripts/gen-guides-json.ts from lib/guide-content.ts) — the
+    /// in-game "?" renders immediately and never depends on production having
+    /// the entry yet; the network copy replaces it when it arrives.
+    private func loadBundled() {
+        guard guides.isEmpty,
+              let url = Bundle.main.url(forResource: "guides.generated", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
+        guides = Dictionary(uniqueKeysWithValues: payload.guides.map { ($0.slug, $0) })
     }
 
     func load() async {
+        loadBundled()
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/guides") else { return }
-        struct Payload: Decodable { let guides: [ModeGuide] }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
-        guides = Dictionary(uniqueKeysWithValues: payload.guides.map { ($0.slug, $0) })
+        // Merge: the network copy wins per slug; bundled-only entries (a game
+        // production has not published yet) stay.
+        for g in payload.guides { guides[g.slug] = g }
         loaded = true
     }
 
@@ -114,6 +123,25 @@ struct GuideSheet: View {
                 }
 
                 section("How it works") { paragraphs(g.rules) }
+                // "The buttons" (founder round 13): every on-screen control, with
+                // the SAME icon the button carries, its label, and what it costs.
+                if let controls = g.controls, !controls.isEmpty {
+                    section("The buttons") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(controls.indices, id: \.self) { i in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: Self.symbol(controls[i].icon)).font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(g.accentColor).frame(width: 28, height: 28)
+                                        .background(RoundedRectangle(cornerRadius: 8).fill(g.accentColor.opacity(0.1)))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(controls[i].label).font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+                                        Text(controls[i].body).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(2)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 section("How scoring works") { paragraphs(g.scoring) }
                 section("Strategy") {
                     VStack(alignment: .leading, spacing: 14) {
@@ -150,5 +178,22 @@ struct GuideSheet: View {
     private var card: some View {
         RoundedRectangle(cornerRadius: 14).fill(Theme.surface)
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    /// lucide icon name (as written in guide-content.ts) → the SF Symbol the
+    /// game's button actually carries, so the sheet shows the SAME icon.
+    static func symbol(_ lucide: String) -> String {
+        switch lucide {
+        case "undo-2": return "arrow.uturn.backward"
+        case "eraser": return "eraser"
+        case "pencil": return "pencil"
+        case "lightbulb": return "lightbulb"
+        case "shuffle": return "shuffle"
+        case "check": return "checkmark"
+        case "delete": return "delete.left"
+        case "eye": return "eye"
+        case "corner-down-left": return "return"
+        default: return "circle"
+        }
     }
 }

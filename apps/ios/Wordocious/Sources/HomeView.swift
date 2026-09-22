@@ -98,6 +98,12 @@ struct HomeView: View {
     /// More Games sheet (Stage 5) + the pick it hands back on dismiss.
     @State private var showMoreGames = false
     @State private var pendingMorePick: HomeMode?
+    /// A Sudoku run (own view, not GameScreen): nil seed = today's daily.
+    struct SudokuGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var sudokuGame: SudokuGame?
+    private func freshSudokuSeed(_ d: SudokuDifficulty) -> String {
+        "unlimited-SUDOKU-\(Int(Date().timeIntervalSince1970))-\(d.rawValue)"
+    }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -221,6 +227,12 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $pnDaily, onDismiss: { reloadDaily() }) {
                 NavigationStack { ProperNoundleView() }
             }
+            .fullScreenCover(item: $sudokuGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    SudokuView(seed: g.seed, onPlayAgain: { d in sudokuGame = SudokuGame(seed: freshSudokuSeed(d)) })
+                        .id(g.id)   // a new seed = a new view + view model
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -235,6 +247,9 @@ struct HomeView: View {
                         SolvedPuzzleView(mode: gm, title: m.title)
                     } else if m.id == "propernoundle" {
                         ProperNoundleView()
+                    } else if m.id == "sudoku" {
+                        // Restores today's finished board from its save (the daily seed).
+                        SudokuView()
                     }
                 }
             }
@@ -790,6 +805,8 @@ struct HomeView: View {
                 mode: gameMode, title: mode.title)
         } else if mode.id == "propernoundle" {
             if effectiveMode == .unlimited { pnGame = PNGame(seed: freshPNSeed()) } else { pnDaily = true }
+        } else if mode.id == "sudoku" {
+            sudokuGame = SudokuGame(seed: effectiveMode == .unlimited ? freshSudokuSeed(.medium) : nil)
         } else {
             comingSoon = mode.title
         }

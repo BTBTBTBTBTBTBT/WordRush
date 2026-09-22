@@ -1407,7 +1407,7 @@ struct LeaderboardTab: View {
                 // .id(mode) → a fresh card per mode so switching away from one mode
                 // can't render the previous mode's board data (which trapped when a
                 // board mode rendered stale ProperNoundle data mid-transition).
-                CompletedDailyCard(mode: mode).id(mode)
+                if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
                 if let r = userRank { rankBanner(r) }
 
                 HStack(alignment: .center) {
