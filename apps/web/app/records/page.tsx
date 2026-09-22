@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { ModePicker, PROFILE_MODES, SWEEP_MODE } from '@/components/profile/mode-picker';
+import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
@@ -39,7 +39,7 @@ import {
   type AllTimeSweepEntry,
 } from '@/lib/daily-service';
 
-const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
+const getMode = modeByKey;
 
 // Session-lived stale-while-revalidate cache for the Daily records view —
 // same pattern as lbCache on /daily, with playType in the key (this view has

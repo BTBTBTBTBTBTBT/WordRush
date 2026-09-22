@@ -11,7 +11,7 @@ import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
-import { ModePicker, PROFILE_MODES, SWEEP_MODE } from '@/components/profile/mode-picker';
+import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
@@ -53,7 +53,7 @@ import {
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 import { SweepModeDots } from '@/components/leaderboard/sweep-mode-dots';
 
-const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
+const getMode = modeByKey;
 
 // Session-lived stale-while-revalidate cache, keyed mode:day:user. A mode-chip
 // tap or a return visit paints the last-known rows instantly while the fresh

@@ -28,6 +28,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Typecheck (apps/web)
         run: pnpm -C apps/web exec tsc --noEmit -p tsconfig.json
+      - name: Typecheck (apps/server)
+        run: pnpm -C apps/server run typecheck
       - name: Unit tests (packages/core)
         run: pnpm -C packages/core exec vitest run
       - name: Unit tests (apps/web)

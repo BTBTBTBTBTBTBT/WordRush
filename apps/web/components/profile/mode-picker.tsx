@@ -49,6 +49,26 @@ export const SWEEP_MODE: ModeConfig = {
   accentColor: '#4f46e5',
 };
 
+// Tolerance (More Games Stage 1): a mode key this bundle does not know — a
+// row written by a newer client for a mode this deploy has not shipped yet.
+// The old `find(...)!` threw and blanked /daily and /records for everyone;
+// now it renders a neutral tile instead. Never shown in pickers.
+export const UNKNOWN_MODE: ModeConfig = {
+  id: 'UNKNOWN',
+  dbKey: 'UNKNOWN',
+  title: 'Game',
+  shortTitle: 'Game',
+  icon: BarChart3,
+  romanNumeral: undefined,
+  accentColor: '#9ca3af',
+};
+
+/** Look a mode up by dbKey, falling back to UNKNOWN_MODE instead of throwing. */
+export function modeByKey(dbKey: string): ModeConfig {
+  if (dbKey === 'SWEEP') return SWEEP_MODE;
+  return PROFILE_MODES.find((m) => m.dbKey === dbKey) ?? UNKNOWN_MODE;
+}
+
 interface ModePickerProps {
   selectedMode: string | null;
   onSelectMode: (dbKey: string | null) => void;
