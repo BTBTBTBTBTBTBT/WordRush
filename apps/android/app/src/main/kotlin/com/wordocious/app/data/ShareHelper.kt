@@ -2,6 +2,7 @@ package com.wordocious.app.data
 
 import android.content.Context
 import android.content.Intent
+import com.wordocious.app.ModeGen
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
@@ -108,5 +109,7 @@ object ShareHelper {
         GameMode.GAUNTLET -> "Gauntlet"
         GameMode.PROPERNOUNDLE -> "ProperNoundle"
         GameMode.TOURNAMENT -> "Tournament"
+        // More Games titles come from the catalog, never a second hand-typed list.
+        else -> ModeGen.byDbKey(mode.name)?.title ?: mode.name
     }
 }

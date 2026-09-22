@@ -11,7 +11,18 @@ import kotlinx.serialization.Serializable
  */
 /** Enum constant names == wire/raw values (DUEL_6, MULTI_DUEL, …). */
 @Serializable
-enum class GameMode { DUEL, MULTI_DUEL, GAUNTLET, QUORDLE, OCTORDLE, SEQUENCE, RESCUE, TOURNAMENT, PROPERNOUNDLE, DUEL_6, DUEL_7 }
+enum class GameMode {
+    DUEL, MULTI_DUEL, GAUNTLET, QUORDLE, OCTORDLE, SEQUENCE, RESCUE, TOURNAMENT, PROPERNOUNDLE, DUEL_6, DUEL_7,
+    // More Games (Stage 3): custom-engine modes. Generic keys, never brand names.
+    SUDOKU, SCRAMBLE, HUB, CROSSWORD, GROUPS, LADDER, CRYPTOGRAM, WORDSEARCH, REGIONS;
+
+    /** Modes that run on their own engine (not the shared word reducer). */
+    val isCustomEngine: Boolean get() = this in CUSTOM_ENGINE
+
+    companion object {
+        val CUSTOM_ENGINE = setOf(SUDOKU, SCRAMBLE, HUB, CROSSWORD, GROUPS, LADDER, CRYPTOGRAM, WORDSEARCH, REGIONS)
+    }
+}
 
 @Serializable
 enum class TileState { CORRECT, PRESENT, ABSENT, EMPTY, HINT_USED }

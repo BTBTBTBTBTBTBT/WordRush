@@ -45,6 +45,12 @@ interface ScoreConfig {
    * means hints don't apply and the breakdown UI omits the row.
    */
   hintCost?: number;
+  /**
+   * The guess_count of a perfect run when it is NOT one guess per board.
+   * Hubbub records its rank position (1 = Pandemonium) as guess_count over 20
+   * "boards", so its ceiling is guess_count 1, not 20. Undefined = totalBoards.
+   */
+  perfectGuesses?: number;
 }
 
 /** V2 config (current). guessWeight = V1 × 3; speed max = 0.8 × guessWeight. */
@@ -58,6 +64,18 @@ export const MODE_SCORE_CONFIG: Record<string, ScoreConfig> = {
   PROPERNOUNDLE: { maxGuesses: 6,  guessWeight: 300, timeCap: 300,  totalBoards: 1, hintCost: 60 },
   DUEL_6:        { maxGuesses: 7,  guessWeight: 270, timeCap: 360,  totalBoards: 1, hintCost: 75 },
   DUEL_7:        { maxGuesses: 8,  guessWeight: 240, timeCap: 420,  totalBoards: 1, hintCost: 75 },
+  // More Games (Stage 3). Semantics per mode: SUDOKU/REGIONS guess_count = mistakes+1; SCRAMBLE = checks;
+  // HUB = rank position (1 best) over 20 score-fraction boards; CROSSWORD/CRYPTOGRAM = checks+1;
+  // GROUPS = submissions; LADDER = moves−par+1; WORDSEARCH = 10+misses over 10 word-boards.
+  SUDOKU:        { maxGuesses: 4,  guessWeight: 300, timeCap: 1800, totalBoards: 1,  hintCost: 100 },
+  SCRAMBLE:      { maxGuesses: 13, guessWeight: 150, timeCap: 480,  totalBoards: 5,  hintCost: 75 },
+  HUB:           { maxGuesses: 5,  guessWeight: 300, timeCap: 1800, totalBoards: 20, hintCost: 50, perfectGuesses: 1 },
+  CROSSWORD:     { maxGuesses: 6,  guessWeight: 200, timeCap: 900,  totalBoards: 1,  hintCost: 60 },
+  GROUPS:        { maxGuesses: 7,  guessWeight: 250, timeCap: 600,  totalBoards: 4,  hintCost: 100 },
+  LADDER:        { maxGuesses: 6,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100 },
+  CRYPTOGRAM:    { maxGuesses: 4,  guessWeight: 250, timeCap: 1200, totalBoards: 1,  hintCost: 100 },
+  WORDSEARCH:    { maxGuesses: 15, guessWeight: 120, timeCap: 900,  totalBoards: 10, hintCost: 60 },
+  REGIONS:       { maxGuesses: 4,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100 },
 };
 
 /** V1 config (frozen forever — pre-cutover replays/breakdowns only). */
@@ -71,6 +89,16 @@ export const MODE_SCORE_CONFIG_V1: Record<string, ScoreConfig> = {
   PROPERNOUNDLE: { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1, hintCost: 120 },
   DUEL_6:        { maxGuesses: 7,  guessWeight: 90,  timeCap: 360,  totalBoards: 1, hintCost: 150 },
   DUEL_7:        { maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150 },
+  // More Games never existed under V1; rows identical to V2 so a pre-cutover dateKey can never reach an undefined config.
+  SUDOKU:        { maxGuesses: 4,  guessWeight: 300, timeCap: 1800, totalBoards: 1,  hintCost: 100 },
+  SCRAMBLE:      { maxGuesses: 13, guessWeight: 150, timeCap: 480,  totalBoards: 5,  hintCost: 75 },
+  HUB:           { maxGuesses: 5,  guessWeight: 300, timeCap: 1800, totalBoards: 20, hintCost: 50, perfectGuesses: 1 },
+  CROSSWORD:     { maxGuesses: 6,  guessWeight: 200, timeCap: 900,  totalBoards: 1,  hintCost: 60 },
+  GROUPS:        { maxGuesses: 7,  guessWeight: 250, timeCap: 600,  totalBoards: 4,  hintCost: 100 },
+  LADDER:        { maxGuesses: 6,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100 },
+  CRYPTOGRAM:    { maxGuesses: 4,  guessWeight: 250, timeCap: 1200, totalBoards: 1,  hintCost: 100 },
+  WORDSEARCH:    { maxGuesses: 15, guessWeight: 120, timeCap: 900,  totalBoards: 10, hintCost: 60 },
+  REGIONS:       { maxGuesses: 4,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100 },
 };
 
 /** Fraction of one guess-step the speed bonus can reach (V2). Strictly < 1 so
@@ -303,7 +331,7 @@ export function modeScoreCeiling(gameMode: string, dateKey: string): number {
   const config = MODE_SCORE_CONFIG[gameMode] ?? MODE_SCORE_CONFIG.DUEL;
   const stages = gameMode === 'GAUNTLET' ? 5 : undefined;
   const ceiling = calculateCompositeScore(
-    gameMode, true, config.totalBoards, 0, config.totalBoards, config.totalBoards, 0,
+    gameMode, true, config.perfectGuesses ?? config.totalBoards, 0, config.totalBoards, config.totalBoards, 0,
     stages, undefined, dateKey,
   );
   ceilingCache.set(key, ceiling);

@@ -112,6 +112,374 @@
     "expectedTotal": 2400
   },
   {
+    "name": "sudoku win, 0 mistakes [v1]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 238,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 3662
+  },
+  {
+    "name": "sudoku win, 2 mistakes, hint [v1]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 900,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2300
+  },
+  {
+    "name": "sudoku loss (3 mistakes) [v1]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": false,
+      "guessCount": 4,
+      "timeSeconds": 600,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 0,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 0
+  },
+  {
+    "name": "muddle perfect (5 checks) [v1]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": true,
+      "guessCount": 5,
+      "timeSeconds": 112,
+      "boardsSolved": 5,
+      "totalBoards": 5,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2768
+  },
+  {
+    "name": "muddle win, 8 checks, hint [v1]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": true,
+      "guessCount": 8,
+      "timeSeconds": 300,
+      "boardsSolved": 5,
+      "totalBoards": 5,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2055
+  },
+  {
+    "name": "muddle loss 3/5 [v1]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 480,
+      "boardsSolved": 3,
+      "totalBoards": 5,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 120
+  },
+  {
+    "name": "hubbub pandemonium [v1]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 1500,
+      "boardsSolved": 20,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2700
+  },
+  {
+    "name": "hubbub rank 4 (Hubbub) [v1]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 600,
+      "boardsSolved": 10,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2600
+  },
+  {
+    "name": "hubbub loss (gave up) [v1]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": false,
+      "guessCount": 8,
+      "timeSeconds": 300,
+      "boardsSolved": 4,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 40
+  },
+  {
+    "name": "crossword clean [v1]",
+    "input": {
+      "gameMode": "CROSSWORD",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 200,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2900
+  },
+  {
+    "name": "crossword 2 checks 1 hint [v1]",
+    "input": {
+      "gameMode": "CROSSWORD",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 500,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2140
+  },
+  {
+    "name": "kindred perfect [v1]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 90,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2460
+  },
+  {
+    "name": "kindred 2 mistakes, hint [v1]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": true,
+      "guessCount": 6,
+      "timeSeconds": 240,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 1710
+  },
+  {
+    "name": "kindred loss 2/4 [v1]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 300,
+      "boardsSolved": 2,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 100
+  },
+  {
+    "name": "ladder on par [v1]",
+    "input": {
+      "gameMode": "LADDER",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 75,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 3225
+  },
+  {
+    "name": "ladder +2 over par, hint [v1]",
+    "input": {
+      "gameMode": "LADDER",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 240,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2360
+  },
+  {
+    "name": "codebreaker no checks [v1]",
+    "input": {
+      "gameMode": "CRYPTOGRAM",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 125,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 3025
+  },
+  {
+    "name": "codebreaker 1 check 1 hint [v1]",
+    "input": {
+      "gameMode": "CRYPTOGRAM",
+      "completed": true,
+      "guessCount": 2,
+      "timeSeconds": 400,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2400
+  },
+  {
+    "name": "spyglass clean [v1]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": true,
+      "guessCount": 10,
+      "timeSeconds": 165,
+      "boardsSolved": 10,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2535
+  },
+  {
+    "name": "spyglass 3 misses [v1]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": true,
+      "guessCount": 13,
+      "timeSeconds": 400,
+      "boardsSolved": 10,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 1940
+  },
+  {
+    "name": "spyglass loss 7/10 [v1]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": false,
+      "guessCount": 12,
+      "timeSeconds": 300,
+      "boardsSolved": 7,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 140
+  },
+  {
+    "name": "starsweep 0 mistakes [v1]",
+    "input": {
+      "gameMode": "REGIONS",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 130,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2570
+  },
+  {
+    "name": "starsweep 1 mistake [v1]",
+    "input": {
+      "gameMode": "REGIONS",
+      "completed": true,
+      "guessCount": 2,
+      "timeSeconds": 200,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 2200
+  },
+  {
     "name": "quadword loss 2/4 [v1]",
     "input": {
       "gameMode": "QUORDLE",
@@ -464,6 +832,374 @@
     "expectedTotal": 2072
   },
   {
+    "name": "sudoku win, 0 mistakes [v2]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 238,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2308.27
+  },
+  {
+    "name": "sudoku win, 2 mistakes, hint [v2]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 900,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1520
+  },
+  {
+    "name": "sudoku loss (3 mistakes) [v2]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": false,
+      "guessCount": 4,
+      "timeSeconds": 600,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 0,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 0
+  },
+  {
+    "name": "muddle perfect (5 checks) [v2]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": true,
+      "guessCount": 5,
+      "timeSeconds": 112,
+      "boardsSolved": 5,
+      "totalBoards": 5,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2492
+  },
+  {
+    "name": "muddle win, 8 checks, hint [v2]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": true,
+      "guessCount": 8,
+      "timeSeconds": 300,
+      "boardsSolved": 5,
+      "totalBoards": 5,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1920
+  },
+  {
+    "name": "muddle loss 3/5 [v2]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 480,
+      "boardsSolved": 3,
+      "totalBoards": 5,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 120
+  },
+  {
+    "name": "hubbub pandemonium [v2]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 1500,
+      "boardsSolved": 20,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2440
+  },
+  {
+    "name": "hubbub rank 4 (Hubbub) [v2]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 600,
+      "boardsSolved": 10,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1560
+  },
+  {
+    "name": "hubbub loss (gave up) [v2]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": false,
+      "guessCount": 8,
+      "timeSeconds": 300,
+      "boardsSolved": 4,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 40
+  },
+  {
+    "name": "crossword clean [v2]",
+    "input": {
+      "gameMode": "CROSSWORD",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 200,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2324.44
+  },
+  {
+    "name": "crossword 2 checks 1 hint [v2]",
+    "input": {
+      "gameMode": "CROSSWORD",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 500,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1811.11
+  },
+  {
+    "name": "kindred perfect [v2]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 90,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2120
+  },
+  {
+    "name": "kindred 2 mistakes, hint [v2]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": true,
+      "guessCount": 6,
+      "timeSeconds": 240,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1470
+  },
+  {
+    "name": "kindred loss 2/4 [v2]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 300,
+      "boardsSolved": 2,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 100
+  },
+  {
+    "name": "ladder on par [v2]",
+    "input": {
+      "gameMode": "LADDER",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 75,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2910
+  },
+  {
+    "name": "ladder +2 over par, hint [v2]",
+    "input": {
+      "gameMode": "LADDER",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 240,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2144
+  },
+  {
+    "name": "codebreaker no checks [v2]",
+    "input": {
+      "gameMode": "CRYPTOGRAM",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 125,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2129.17
+  },
+  {
+    "name": "codebreaker 1 check 1 hint [v2]",
+    "input": {
+      "gameMode": "CRYPTOGRAM",
+      "completed": true,
+      "guessCount": 2,
+      "timeSeconds": 400,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1733.33
+  },
+  {
+    "name": "spyglass clean [v2]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": true,
+      "guessCount": 10,
+      "timeSeconds": 165,
+      "boardsSolved": 10,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1878.4
+  },
+  {
+    "name": "spyglass 3 misses [v2]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": true,
+      "guessCount": 13,
+      "timeSeconds": 400,
+      "boardsSolved": 10,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1493.33
+  },
+  {
+    "name": "spyglass loss 7/10 [v2]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": false,
+      "guessCount": 12,
+      "timeSeconds": 300,
+      "boardsSolved": 7,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 140
+  },
+  {
+    "name": "starsweep 0 mistakes [v2]",
+    "input": {
+      "gameMode": "REGIONS",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 130,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2288
+  },
+  {
+    "name": "starsweep 1 mistake [v2]",
+    "input": {
+      "gameMode": "REGIONS",
+      "completed": true,
+      "guessCount": 2,
+      "timeSeconds": 200,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1960
+  },
+  {
     "name": "quadword loss 2/4 [v2]",
     "input": {
       "gameMode": "QUORDLE",
@@ -814,6 +1550,374 @@
       "dateKey": "2026-08-24"
     },
     "expectedTotal": 2072
+  },
+  {
+    "name": "sudoku win, 0 mistakes [loss-time]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 238,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2308.27
+  },
+  {
+    "name": "sudoku win, 2 mistakes, hint [loss-time]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 900,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1520
+  },
+  {
+    "name": "sudoku loss (3 mistakes) [loss-time]",
+    "input": {
+      "gameMode": "SUDOKU",
+      "completed": false,
+      "guessCount": 4,
+      "timeSeconds": 600,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 0,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 0.66
+  },
+  {
+    "name": "muddle perfect (5 checks) [loss-time]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": true,
+      "guessCount": 5,
+      "timeSeconds": 112,
+      "boardsSolved": 5,
+      "totalBoards": 5,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2492
+  },
+  {
+    "name": "muddle win, 8 checks, hint [loss-time]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": true,
+      "guessCount": 8,
+      "timeSeconds": 300,
+      "boardsSolved": 5,
+      "totalBoards": 5,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1920
+  },
+  {
+    "name": "muddle loss 3/5 [loss-time]",
+    "input": {
+      "gameMode": "SCRAMBLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 480,
+      "boardsSolved": 3,
+      "totalBoards": 5,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 120
+  },
+  {
+    "name": "hubbub pandemonium [loss-time]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 1500,
+      "boardsSolved": 20,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2440
+  },
+  {
+    "name": "hubbub rank 4 (Hubbub) [loss-time]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 600,
+      "boardsSolved": 10,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1560
+  },
+  {
+    "name": "hubbub loss (gave up) [loss-time]",
+    "input": {
+      "gameMode": "HUB",
+      "completed": false,
+      "guessCount": 8,
+      "timeSeconds": 300,
+      "boardsSolved": 4,
+      "totalBoards": 20,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 40.83
+  },
+  {
+    "name": "crossword clean [loss-time]",
+    "input": {
+      "gameMode": "CROSSWORD",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 200,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2324.44
+  },
+  {
+    "name": "crossword 2 checks 1 hint [loss-time]",
+    "input": {
+      "gameMode": "CROSSWORD",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 500,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1811.11
+  },
+  {
+    "name": "kindred perfect [loss-time]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 90,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2120
+  },
+  {
+    "name": "kindred 2 mistakes, hint [loss-time]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": true,
+      "guessCount": 6,
+      "timeSeconds": 240,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1470
+  },
+  {
+    "name": "kindred loss 2/4 [loss-time]",
+    "input": {
+      "gameMode": "GROUPS",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 300,
+      "boardsSolved": 2,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 100.5
+  },
+  {
+    "name": "ladder on par [loss-time]",
+    "input": {
+      "gameMode": "LADDER",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 75,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2910
+  },
+  {
+    "name": "ladder +2 over par, hint [loss-time]",
+    "input": {
+      "gameMode": "LADDER",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 240,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2144
+  },
+  {
+    "name": "codebreaker no checks [loss-time]",
+    "input": {
+      "gameMode": "CRYPTOGRAM",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 125,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2129.17
+  },
+  {
+    "name": "codebreaker 1 check 1 hint [loss-time]",
+    "input": {
+      "gameMode": "CRYPTOGRAM",
+      "completed": true,
+      "guessCount": 2,
+      "timeSeconds": 400,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1733.33
+  },
+  {
+    "name": "spyglass clean [loss-time]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": true,
+      "guessCount": 10,
+      "timeSeconds": 165,
+      "boardsSolved": 10,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1878.4
+  },
+  {
+    "name": "spyglass 3 misses [loss-time]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": true,
+      "guessCount": 13,
+      "timeSeconds": 400,
+      "boardsSolved": 10,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1493.33
+  },
+  {
+    "name": "spyglass loss 7/10 [loss-time]",
+    "input": {
+      "gameMode": "WORDSEARCH",
+      "completed": false,
+      "guessCount": 12,
+      "timeSeconds": 300,
+      "boardsSolved": 7,
+      "totalBoards": 10,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 140.66
+  },
+  {
+    "name": "starsweep 0 mistakes [loss-time]",
+    "input": {
+      "gameMode": "REGIONS",
+      "completed": true,
+      "guessCount": 1,
+      "timeSeconds": 130,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 2288
+  },
+  {
+    "name": "starsweep 1 mistake [loss-time]",
+    "input": {
+      "gameMode": "REGIONS",
+      "completed": true,
+      "guessCount": 2,
+      "timeSeconds": 200,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-08-24"
+    },
+    "expectedTotal": 1960
   },
   {
     "name": "quadword loss 2/4 [loss-time]",

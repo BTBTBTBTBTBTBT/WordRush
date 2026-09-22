@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client';
 import { requiredDailyModeCount } from './daily-modes';
+import { MODE_BY_DBKEY } from './modes.generated';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
 import { isPlausibleDailyResult } from '@/lib/plausibility';
@@ -889,7 +890,11 @@ export async function checkAndAwardPerfectMedal(
     GAUNTLET: () => boardsSolved === 21,
   };
 
-  const check = perfectCriteria[gameMode];
+  // More Games (Stage 3): a perfect run is guess_count at the catalog's guessBase
+  // with every board solved — the same rule the explicit rows above encode.
+  const meta = MODE_BY_DBKEY[gameMode];
+  const check = perfectCriteria[gameMode]
+    ?? (meta?.group === 'more' ? () => guessCount <= meta.guessBase && boardsSolved >= totalBoards : undefined);
   if (!check || !check()) return;
 
   // Check if they already have a perfect medal for this day+mode

@@ -32,6 +32,8 @@ public enum DailyScoring {
         let timeCap: Int
         let totalBoards: Int
         let hintCost: Int?
+        /// The guess_count of a perfect run when it is not one guess per board (Hubbub: rank 1 over 20 boards). nil = totalBoards.
+        var perfectGuesses: Int? = nil
     }
 
     /// V2 config (current). guessWeight = V1 × 3; speed max = 0.8 × guessWeight.
@@ -45,6 +47,16 @@ public enum DailyScoring {
         "PROPERNOUNDLE": Config(maxGuesses: 6,  guessWeight: 300, timeCap: 300,  totalBoards: 1, hintCost: 60),
         "DUEL_6":        Config(maxGuesses: 7,  guessWeight: 270, timeCap: 360,  totalBoards: 1, hintCost: 75),
         "DUEL_7":        Config(maxGuesses: 8,  guessWeight: 240, timeCap: 420,  totalBoards: 1, hintCost: 75),
+        // More Games (Stage 3) — identical to MODE_SCORE_CONFIG in lib/composite-scoring.ts.
+        "SUDOKU":        Config(maxGuesses: 4,  guessWeight: 300, timeCap: 1800, totalBoards: 1,  hintCost: 100),
+        "SCRAMBLE":      Config(maxGuesses: 13, guessWeight: 150, timeCap: 480,  totalBoards: 5,  hintCost: 75),
+        "HUB":           Config(maxGuesses: 5,  guessWeight: 300, timeCap: 1800, totalBoards: 20, hintCost: 50, perfectGuesses: 1),
+        "CROSSWORD":     Config(maxGuesses: 6,  guessWeight: 200, timeCap: 900,  totalBoards: 1,  hintCost: 60),
+        "GROUPS":        Config(maxGuesses: 7,  guessWeight: 250, timeCap: 600,  totalBoards: 4,  hintCost: 100),
+        "LADDER":        Config(maxGuesses: 6,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100),
+        "CRYPTOGRAM":    Config(maxGuesses: 4,  guessWeight: 250, timeCap: 1200, totalBoards: 1,  hintCost: 100),
+        "WORDSEARCH":    Config(maxGuesses: 15, guessWeight: 120, timeCap: 900,  totalBoards: 10, hintCost: 60),
+        "REGIONS":       Config(maxGuesses: 4,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100),
     ]
 
     /// V1 config (frozen forever — pre-cutover replays/breakdowns only).
@@ -58,6 +70,16 @@ public enum DailyScoring {
         "PROPERNOUNDLE": Config(maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1, hintCost: 120),
         "DUEL_6":        Config(maxGuesses: 7,  guessWeight: 90,  timeCap: 360,  totalBoards: 1, hintCost: 150),
         "DUEL_7":        Config(maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150),
+        // More Games never existed under V1; rows identical to V2 so a pre-cutover dateKey can never reach an undefined config.
+        "SUDOKU":        Config(maxGuesses: 4,  guessWeight: 300, timeCap: 1800, totalBoards: 1,  hintCost: 100),
+        "SCRAMBLE":      Config(maxGuesses: 13, guessWeight: 150, timeCap: 480,  totalBoards: 5,  hintCost: 75),
+        "HUB":           Config(maxGuesses: 5,  guessWeight: 300, timeCap: 1800, totalBoards: 20, hintCost: 50, perfectGuesses: 1),
+        "CROSSWORD":     Config(maxGuesses: 6,  guessWeight: 200, timeCap: 900,  totalBoards: 1,  hintCost: 60),
+        "GROUPS":        Config(maxGuesses: 7,  guessWeight: 250, timeCap: 600,  totalBoards: 4,  hintCost: 100),
+        "LADDER":        Config(maxGuesses: 6,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100),
+        "CRYPTOGRAM":    Config(maxGuesses: 4,  guessWeight: 250, timeCap: 1200, totalBoards: 1,  hintCost: 100),
+        "WORDSEARCH":    Config(maxGuesses: 15, guessWeight: 120, timeCap: 900,  totalBoards: 10, hintCost: 60),
+        "REGIONS":       Config(maxGuesses: 4,  guessWeight: 300, timeCap: 600,  totalBoards: 1,  hintCost: 100),
     ]
 
     /// Fraction of one guess-step the speed bonus can reach (V2). Strictly < 1.
@@ -173,7 +195,7 @@ public enum DailyScoring {
         if let cached = ceilingCache[key] { return cached }
         let c = config[gameMode] ?? config["DUEL"]!
         let ceiling = compositeScore(
-            gameMode: gameMode, completed: true, guessCount: c.totalBoards, timeSeconds: 0,
+            gameMode: gameMode, completed: true, guessCount: c.perfectGuesses ?? c.totalBoards, timeSeconds: 0,
             boardsSolved: c.totalBoards, totalBoards: c.totalBoards, hintsUsed: 0,
             stagesCompleted: gameMode == "GAUNTLET" ? 5 : nil, dateKey: dateKey)
         ceilingCache[key] = ceiling

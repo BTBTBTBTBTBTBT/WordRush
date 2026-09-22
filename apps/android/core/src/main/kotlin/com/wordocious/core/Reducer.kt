@@ -55,6 +55,10 @@ fun createInitialState(seed: String, mode: GameMode): GameState {
         }
         GameMode.DUEL_6 -> simpleLen(1, 7, 6)
         GameMode.DUEL_7 -> simpleLen(1, 8, 7)
+        // Custom-engine modes never run through the word reducer; a harmless
+        // single-board placeholder keeps the `when` exhaustive without a trap.
+        GameMode.SUDOKU, GameMode.SCRAMBLE, GameMode.HUB, GameMode.CROSSWORD, GameMode.GROUPS,
+        GameMode.LADDER, GameMode.CRYPTOGRAM, GameMode.WORDSEARCH, GameMode.REGIONS -> simple(1, 6)
         GameMode.RESCUE -> {
             val solutions = generateSolutionsFromSeed(seed, 4)
             val prefillWords = generatePrefillWords(seed, solutions, GameDictionary.solutionPool(null))
@@ -123,7 +127,9 @@ private fun reduceSubmitGuess(state: GameState, a: GameAction.SubmitGuess): Game
 
     var gameStatus = state.status
     when (state.mode) {
-        GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7, GameMode.PROPERNOUNDLE ->
+        GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7, GameMode.PROPERNOUNDLE,
+        GameMode.SUDOKU, GameMode.SCRAMBLE, GameMode.HUB, GameMode.CROSSWORD, GameMode.GROUPS,
+        GameMode.LADDER, GameMode.CRYPTOGRAM, GameMode.WORDSEARCH, GameMode.REGIONS ->
             gameStatus = newBoards[0].status
 
         GameMode.MULTI_DUEL ->

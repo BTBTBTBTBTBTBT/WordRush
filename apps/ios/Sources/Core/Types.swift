@@ -14,6 +14,24 @@ public enum GameMode: String, Codable {
     case propernoundle = "PROPERNOUNDLE"
     case duel6 = "DUEL_6"
     case duel7 = "DUEL_7"
+    // More Games (Stage 3): custom-engine modes. Generic keys, never brand names.
+    case sudoku = "SUDOKU"
+    case scramble = "SCRAMBLE"
+    case hub = "HUB"
+    case crossword = "CROSSWORD"
+    case groups = "GROUPS"
+    case ladder = "LADDER"
+    case cryptogram = "CRYPTOGRAM"
+    case wordsearch = "WORDSEARCH"
+    case regions = "REGIONS"
+
+    /// Modes that run on their own engine (not the shared word reducer).
+    public var isCustomEngine: Bool {
+        switch self {
+        case .sudoku, .scramble, .hub, .crossword, .groups, .ladder, .cryptogram, .wordsearch, .regions: return true
+        default: return false
+        }
+    }
 }
 
 public enum TileState: String, Codable {

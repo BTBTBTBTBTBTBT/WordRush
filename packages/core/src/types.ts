@@ -9,7 +9,17 @@ export enum GameMode {
   TOURNAMENT = 'TOURNAMENT',
   PROPERNOUNDLE = 'PROPERNOUNDLE',
   DUEL_6 = 'DUEL_6',
-  DUEL_7 = 'DUEL_7'
+  DUEL_7 = 'DUEL_7',
+  // More Games (Stage 3): custom-engine modes. Generic keys, never brand names.
+  SUDOKU = 'SUDOKU',
+  SCRAMBLE = 'SCRAMBLE',
+  HUB = 'HUB',
+  CROSSWORD = 'CROSSWORD',
+  GROUPS = 'GROUPS',
+  LADDER = 'LADDER',
+  CRYPTOGRAM = 'CRYPTOGRAM',
+  WORDSEARCH = 'WORDSEARCH',
+  REGIONS = 'REGIONS'
 }
 
 export enum TileState {

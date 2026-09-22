@@ -42,6 +42,8 @@ object DailyScoring {
         val timeCap: Int,
         val totalBoards: Int,
         val hintCost: Int? = null,
+        /** The guess_count of a perfect run when it is not one guess per board (Hubbub: rank 1 over 20 boards). null = totalBoards. */
+        val perfectGuesses: Int? = null,
     )
 
     /** V2 config (current). guessWeight = V1 × 3; speed max = 0.8 × guessWeight. */
@@ -55,6 +57,16 @@ object DailyScoring {
         "PROPERNOUNDLE" to Config(6, 300, 300, 1, hintCost = 60),
         "DUEL_6" to Config(7, 270, 360, 1, hintCost = 75),
         "DUEL_7" to Config(8, 240, 420, 1, hintCost = 75),
+        // More Games (Stage 3) — identical to MODE_SCORE_CONFIG in lib/composite-scoring.ts.
+        "SUDOKU" to Config(4, 300, 1800, 1, hintCost = 100),
+        "SCRAMBLE" to Config(13, 150, 480, 5, hintCost = 75),
+        "HUB" to Config(5, 300, 1800, 20, hintCost = 50, perfectGuesses = 1),
+        "CROSSWORD" to Config(6, 200, 900, 1, hintCost = 60),
+        "GROUPS" to Config(7, 250, 600, 4, hintCost = 100),
+        "LADDER" to Config(6, 300, 600, 1, hintCost = 100),
+        "CRYPTOGRAM" to Config(4, 250, 1200, 1, hintCost = 100),
+        "WORDSEARCH" to Config(15, 120, 900, 10, hintCost = 60),
+        "REGIONS" to Config(4, 300, 600, 1, hintCost = 100),
         // TOURNAMENT shares the DUEL config (single-word, 6 guesses).
         "TOURNAMENT" to Config(6, 300, 300, 1),
     )
@@ -70,6 +82,16 @@ object DailyScoring {
         "PROPERNOUNDLE" to Config(6, 100, 300, 1, hintCost = 120),
         "DUEL_6" to Config(7, 90, 360, 1, hintCost = 150),
         "DUEL_7" to Config(8, 80, 420, 1, hintCost = 150),
+        // More Games never existed under V1; rows identical to V2 so a pre-cutover dateKey can never reach an undefined config.
+        "SUDOKU" to Config(4, 300, 1800, 1, hintCost = 100),
+        "SCRAMBLE" to Config(13, 150, 480, 5, hintCost = 75),
+        "HUB" to Config(5, 300, 1800, 20, hintCost = 50, perfectGuesses = 1),
+        "CROSSWORD" to Config(6, 200, 900, 1, hintCost = 60),
+        "GROUPS" to Config(7, 250, 600, 4, hintCost = 100),
+        "LADDER" to Config(6, 300, 600, 1, hintCost = 100),
+        "CRYPTOGRAM" to Config(4, 250, 1200, 1, hintCost = 100),
+        "WORDSEARCH" to Config(15, 120, 900, 10, hintCost = 60),
+        "REGIONS" to Config(4, 300, 600, 1, hintCost = 100),
         "TOURNAMENT" to Config(6, 100, 300, 1),
     )
 
@@ -169,7 +191,7 @@ object DailyScoring {
         ceilingCache.getOrPut("$gameMode:$dateKey") {
             val c = config[gameMode] ?: config.getValue("DUEL")
             compositeScore(
-                gameMode, completed = true, guessCount = c.totalBoards, timeSeconds = 0,
+                gameMode, completed = true, guessCount = c.perfectGuesses ?: c.totalBoards, timeSeconds = 0,
                 boardsSolved = c.totalBoards, totalBoards = c.totalBoards, hintsUsed = 0,
                 stagesCompleted = if (gameMode == "GAUNTLET") 5 else null,
                 dateKey = dateKey,

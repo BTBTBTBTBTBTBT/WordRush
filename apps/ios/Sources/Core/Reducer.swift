@@ -116,6 +116,13 @@ public func createInitialState(seed: String, mode: GameMode) -> GameState {
         let solutions = generateSolutionsFromSeedForLength(seed, count: 1, wordLength: 7)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 8) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
+
+    case .sudoku, .scramble, .hub, .crossword, .groups, .ladder, .cryptogram, .wordsearch, .regions:
+        // Custom-engine modes never run through the word reducer. A harmless
+        // single-board placeholder keeps the switch exhaustive without a trap.
+        let solutions = generateSolutionsFromSeed(seed, count: 1)
+        let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
+        return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
     }
 }
 
@@ -212,7 +219,7 @@ public func gameReducer(state: GameState, action: GameAction) -> GameState {
                 gameStatus = .lost
             }
 
-        case .propernoundle:
+        case .propernoundle, .sudoku, .scramble, .hub, .crossword, .groups, .ladder, .cryptogram, .wordsearch, .regions:
             gameStatus = newBoards[0].status
         }
 
