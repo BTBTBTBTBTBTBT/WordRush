@@ -124,3 +124,17 @@ ${screensCss}
 <h4 style="margin-top:28px">Vintage public-domain route: what the search found</h4><p class="note">Honest result: Wikimedia's public-domain cartoons are mostly political satire, not domestic gag panels. Only ${vint.candidates.length} of the files collected passed the first screen, and few would suit a family word game. More exist inside scanned issues of Judge and Life at the Library of Congress and Internet Archive, but each panel would need cropping from a page scan by hand.</p><ul class="vint">${secVint}</ul></section>
 </main>`;
 const out = path.join(SAMPLES, 'index.html'); fs.writeFileSync(out, html); console.log('wrote', out, Math.round(html.length / 1024), 'KB');
+
+// Overview: one representative card per game, light theme pinned, for a single side-by-side look (founder, 2026-09-22).
+const first = (s) => { const cards = s.split(/(?=<div class="card)/).filter(Boolean); return cards[0]; };
+const OV = [['Sudoku', '#1e40af', first(secSud)], ['Starsweep', '#ca8a04', first(secRg)], ['Letter Ladder', '#0284c7', first(secRungs)], ['Hubbub', '#c026d3', hubMock.replace(/<div class="hubnotes">[\s\S]*?<\/div><\/div>$/, '</div>')], ['Spyglass', '#4d7c0f', first(secSpy)], ['Codebreaker', '#92400e', first(secDec)], ['Kindred', '#9f1239', first(secKin)], ['Crosswordocious', '#475569', first(secCw)], ['Muddle', '#f97316', first(secMud)]];
+const styleBlock = html.match(/<style>[\s\S]*?<\/style>/)[0];
+const overview = `<title>More Games Overview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+${styleBlock}
+<style>.ovg{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:18px;align-items:start}.ovg .hubmock{display:block}.ovg .hubphone{max-width:none}.ovg .wide{grid-column:auto}.ovg .kick{margin-bottom:6px}.ovg .card{height:100%}.ovg .cwwrap,.ovg .mudwrap{padding:0}.ovg .cw{width:100%}.ovg .clues{grid-template-columns:1fr 1fr;gap:2px 14px}.ovg .clues ul{font-size:12px;gap:4px}.ovg .art{max-width:300px}</style>
+<main>
+<header><div class="kick" style="color:#4f46e5">Wordocious · More Games · Phase 0</div><h1>All ten games, side by side</h1><p class="lede">One sample from each game in the regular (light) look, exactly as it stands after your feedback rounds. ProperNoundle is the tenth and already exists. The full gallery has every sample.</p></header>
+<div class="ovg">${OV.map(([n, c, card]) => `<div><div class="kick" style="color:${c}">${n}</div>${card}</div>`).join('')}</div>
+</main>`;
+const out2 = path.join(SAMPLES, 'overview.html'); fs.writeFileSync(out2, overview); console.log('wrote', out2, Math.round(overview.length / 1024), 'KB');
