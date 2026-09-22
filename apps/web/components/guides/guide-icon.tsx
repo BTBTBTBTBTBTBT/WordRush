@@ -1,4 +1,5 @@
-import { TrendingUp, Shield, Skull, Crown } from 'lucide-react';
+import { TrendingUp, Shield, Skull, Crown, Grid3x3, Shuffle, Hexagon, Quote, Group, KeyRound, TextSearch, Star } from 'lucide-react';
+import { LadderIcon } from '@/components/ui/ladder-icon';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
@@ -14,6 +15,9 @@ const ICONS: Record<string, IconCmp> = {
   deliverance: Shield,
   gauntlet: Skull,
   propernoundle: Crown,
+  // More Games titles (same icons as the home chrome).
+  sudoku: Grid3x3, muddle: Shuffle, hubbub: Hexagon, crosswordocious: Quote, kindred: Group,
+  'letter-ladder': LadderIcon, codebreaker: KeyRound, spyglass: TextSearch, starsweep: Star,
 };
 const ROMAN: Record<string, string> = { quadword: 'IV', octoword: 'VIII' };
 

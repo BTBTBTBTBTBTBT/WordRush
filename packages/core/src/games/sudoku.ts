@@ -12,6 +12,15 @@
 // Board strings are 81 chars, row-major, '0' = empty, '1'..'9' = digit.
 
 import { mulberry32, simpleHash } from '../seed';
+import { bankDayIndex } from '../bank';
+
+/** The first daily Sudoku's local date — "#1". Purely cosmetic numbering. */
+export const SUDOKU_DAILY_EPOCH = '2026-09-23';
+/** "#N" for the daily on `day` (YYYY-MM-DD local); 1 on the epoch day, never below 1. */
+export function sudokuDailyNumber(day: string): number {
+  const idx = bankDayIndex(day, SUDOKU_DAILY_EPOCH);
+  return idx === null ? 1 : Math.max(1, idx + 1);
+}
 
 export type SudokuDifficulty = 'easy' | 'medium' | 'hard';
 

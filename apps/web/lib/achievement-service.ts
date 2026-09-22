@@ -135,6 +135,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // The cross-mode capstone unlocks at 50 hintless wins summed
   // across all three modes for players who never lean on a hint.
   // ────────────────────────────────────────────────────────────
+  // More Games §18c — Sudoku (ids use the catalog id; names the display name).
+  { key: 'sudoku_first',   name: 'First Sudoku',     description: 'Solve a Sudoku',                                   category: 'beginner', icon: 'grid' },
+  { key: 'sudoku_scholar', name: 'Sudoku Scholar',   description: 'Solve 50 Sudoku puzzles',                          category: 'skill',    icon: 'grid' },
+  { key: 'clean_sheet',    name: 'Clean Sheet',      description: 'Solve a Sudoku with no mistakes and no hints',     category: 'skill',    icon: 'star' },
+  { key: 'sudoku_sprint',  name: 'Sudoku Sprint',    description: 'Solve a Sudoku in under 5 minutes',                category: 'skill',    icon: 'zap' },
+  { key: 'pure_sudoku_initiate', name: 'Pure Sudoku',        description: 'Solve a Sudoku without using any hints',    category: 'skill', icon: 'star' },
+  { key: 'pure_sudoku_adept',    name: 'Pure Sudoku Adept',  description: 'Solve 10 Sudoku puzzles without hints',     category: 'skill', icon: 'star' },
+  { key: 'pure_sudoku_master',   name: 'Pure Sudoku Master', description: 'Solve 50 Sudoku puzzles without hints',     category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -221,9 +229,17 @@ export async function checkAchievements(
     await tryUnlock('speed_demon');
   }
 
-  // Perfectionist (1 guess)
-  if (won && guessCount === 1) {
+  // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
+  // mistakes + 1, so a clean solve would read as a one-guess word solve.
+  if (won && guessCount === 1 && gameMode !== 'SUDOKU') {
     await tryUnlock('perfectionist');
+  }
+
+  // Sudoku (More Games §18c): first solve, clean sheet (0 mistakes, 0 hints), sprint.
+  if (gameMode === 'SUDOKU' && won) {
+    await tryUnlock('sudoku_first');
+    if (guessCount === 1 && hintsUsed === 0) await tryUnlock('clean_sheet');
+    if (timeSeconds < 300) await tryUnlock('sudoku_sprint');
   }
 
   // Gauntlet Master
@@ -362,6 +378,7 @@ export async function checkAchievements(
     ['six_shooter', 'DUEL_6', 50],
     ['lucky_seven', 'DUEL_7', 50],
     ['proper_scholar', 'PROPERNOUNDLE', 50],
+    ['sudoku_scholar', 'SUDOKU', 50],
     ['classic_master', 'DUEL', 100],
   ];
   for (const [key, mode, threshold] of modeMasteryChecks) {
@@ -715,10 +732,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

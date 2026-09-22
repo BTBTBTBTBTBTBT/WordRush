@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { MODE_GUIDES } from '@/lib/guide-content';
+import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 
 // Per-mode guide content for the native in-game "?" help sheet (iOS + Android
 // fetch this so the prose stays single-sourced in guide-content.ts). Only the

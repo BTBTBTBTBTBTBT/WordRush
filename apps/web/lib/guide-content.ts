@@ -5,6 +5,8 @@
  * strategy. These pages are crawlable while gameplay sits behind sign-in.
  */
 
+import { MODES } from './modes.generated';
+
 export interface ModeGuide {
   slug: string;
   title: string;
@@ -20,6 +22,13 @@ export interface ModeGuide {
   /** Strategy tips — the meat of the page. */
   tips: { heading: string; body: string }[];
   related: string[];
+  /**
+   * "The buttons" card (More Games §19, founder round 13): one row per
+   * on-screen control — the SAME icon the button carries (lucide name), its
+   * label, and in plain words what it does, what it costs, and whether it can
+   * count against you. Required for every More Games title.
+   */
+  controls?: { icon: string; label: string; body: string }[];
 }
 
 export const MODE_GUIDES: ModeGuide[] = [
@@ -396,8 +405,79 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['classic', 'six', 'seven'],
   },
+  // ── More Games (§4) ──────────────────────────────────────────────────────
+  {
+    slug: 'sudoku',
+    title: 'Sudoku',
+    accent: '#1e40af',
+    tagline: 'One Medium puzzle a day, three mistakes, pencil notes — the classic number grid, the Wordocious way',
+    metaDescription:
+      'Wordocious Sudoku guide: the daily Medium puzzle, the three-mistake rule, how Notes and Hints work, the exact scoring formula, and the scanning strategy that solves without guessing.',
+    facts: [
+      { label: 'Board', value: '9 × 9, one puzzle a day' },
+      { label: 'Daily difficulty', value: 'Medium (Pro Unlimited: Easy · Medium · Hard)' },
+      { label: 'Mistakes allowed', value: '2 — the third ends the game' },
+      { label: 'Time bonus cap', value: '30:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'Fill the grid so every row, every column and every 3 × 3 box contains the digits 1 to 9 exactly once. The puzzle starts with about a third of the cells filled in (the givens, in dark ink); those never change. Tap an empty cell, then tap a number on the pad. A correct digit turns purple and stays. A wrong digit turns red and counts as a mistake — you can erase it or overwrite it, but the mistake stands. Make three mistakes and the puzzle is over.',
+      'Every puzzle has exactly one solution and is generated on your device from the day\'s seed, so everyone plays the same grid and nobody has to download anything. The daily is always Medium: solvable with careful scanning and a little pencil work, never guessing. Pro Unlimited lets you pick Easy (solvable by singles alone), Medium or Hard (you will need pencil marks).',
+      'Notes are for thinking, not answering. Turn Notes on and tapping a number pencils that small candidate into the corner grid of the selected cell instead of placing it; tap again to remove it. Pencil marks are never judged and never count as mistakes. When you place a correct digit, that digit is cleared from the pencil marks in its row, column and box automatically. Undo steps back through placements and notes alike; it never refunds a mistake or a hint.',
+      'The daily is the same for everyone and counts once on the leaderboard. Sudoku lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A solve is worth a 1,000-point base plus a flat 200 for finishing. Mistakes are what separate players: the game treats your finish as mistakes + 1 out of a budget of 4, and every unused step is worth 300 points, so a clean solve banks 900 in mistake bonus, one mistake 600, two mistakes 300. Speed is the tiebreaker: up to 240 points scaled by how far under the 30-minute cap you finish, which can never outweigh a single mistake — a cleaner solve always outranks a faster one.',
+      'Each Hint costs 100 points and fills the selected cell (or the first empty one) with the right digit. Hints never count as mistakes, but a solve with any hint is not a Perfect run and does not count toward the Pure Sudoku achievements. A lost puzzle still earns credit for the time spent and the cells you filled correctly, so it is always worth playing on.',
+    ],
+    controls: [
+      { icon: 'undo-2', label: 'Undo', body: 'Steps back one action — a placement, an erase or a pencil mark. Free, unlimited, and it never gives a mistake or a hint back.' },
+      { icon: 'eraser', label: 'Erase', body: 'Clears the selected cell: the digit you placed and any pencil marks. Givens cannot be erased. Free.' },
+      { icon: 'pencil', label: 'Notes', body: 'A toggle. While it is filled in, the number pad writes small candidate marks into the selected cell instead of answers. Marks are never judged and never cost anything.' },
+      { icon: 'lightbulb', label: 'Hint', body: 'Fills the selected cell (or the first empty one) with the correct digit. Costs 100 points of score, never a mistake, and rules out a Perfect run.' },
+    ],
+    tips: [
+      {
+        heading: 'Scan by box before you scan by cell',
+        body: 'For each digit 1–9, look at where it already sits and cross-hatch the rows and columns it occupies. Any 3 × 3 box with only one open cell for that digit is a free placement. Working digit-by-digit is far faster than staring at one empty cell wondering what goes there.',
+      },
+      {
+        heading: 'Hunt the row or column with the fewest gaps',
+        body: 'A row with seven digits filled has two candidates for two cells. Check which of the two is blocked by a column or box and the other falls into place. Rows and columns near completion are the cheapest points on the board.',
+      },
+      {
+        heading: 'Pencil marks only where they earn their keep',
+        body: 'You do not need candidates in every cell. When a cell is down to two possibilities, mark both; when a digit has two possible homes in a box, mark both. A pair like that is exactly what the next placement will resolve — and the auto-clear will do the bookkeeping for you.',
+      },
+      {
+        heading: 'Never place a digit you cannot justify',
+        body: 'Three mistakes end the game and each one costs 300 points. If two digits both seem possible, that is a Notes moment, not a placement. The daily is built to be solved with logic alone, so a guess is never required — it is only ever a shortcut with a price.',
+      },
+      {
+        heading: 'Use the highlight',
+        body: 'Tapping a filled cell lights every copy of that digit on the board. With eight of a digit placed, the ninth is usually obvious; with six, the highlight shows exactly which boxes still owe one. The selected row, column and box are tinted for the same reason.',
+      },
+    ],
+    related: ['classic', 'gauntlet', 'quadword'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {
   return MODE_GUIDES.find((g) => g.slug === slug);
+}
+
+/**
+ * The guides the PUBLIC surfaces list (/guides, /guides/[slug], sitemap,
+ * mode landings, /api/guides): a mode's guide is public once its catalog
+ * record is compiled in AND no longer remote-gated (More Games §19: nothing
+ * leaks a game before the founder releases it). The in-game "?" sheet uses
+ * getGuide() and sees every guide, gated or not.
+ */
+export const PUBLIC_MODE_GUIDES: ModeGuide[] = MODE_GUIDES.filter((g) => {
+  const mode = MODES.find((m) => m.guideSlug === g.slug);
+  return !mode || (mode.enabled && !mode.flagKey);
+});
+
+export function getPublicGuide(slug: string): ModeGuide | undefined {
+  return PUBLIC_MODE_GUIDES.find((g) => g.slug === slug);
 }

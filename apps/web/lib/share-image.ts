@@ -41,6 +41,8 @@ export type ShareMode =
   | 'ProperNoundle'
   | 'Six'
   | 'Seven'
+  /** More Games (§18d): one board drawing per title inside the same card frame. */
+  | 'Sudoku'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -89,6 +91,22 @@ export interface ShareSingleInput extends ShareBase {
    * row, which is the right default for every other mode.
    */
   wordGroups?: number[];
+}
+
+/**
+ * Sudoku (More Games §18d): the 9 × 9 ruled board with given cells as dark
+ * squares and the player's cells as purple squares — no digits, so the card
+ * spoils nothing and invites a try. Stat line reads "0 mistakes · 3:58".
+ */
+export interface ShareSudokuInput extends ShareBase {
+  layout: 'sudoku';
+  /** 81 chars, '0' = empty. */
+  givens: string;
+  board: string;
+  hintMask: string;
+  mistakes: number;
+  difficulty: string;
+  puzzleNumber?: number;
 }
 
 export interface ShareMultiBoard {
@@ -231,6 +249,7 @@ export interface ShareLeaderboardInput {
 
 export type ShareImageInput =
   | ShareSingleInput
+  | ShareSudokuInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -590,7 +609,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -631,6 +650,11 @@ function drawHeader(
   } else if (input.layout === 'multi') {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${input.boardsSolved}/${input.totalBoards} boards · ${guessDisplay} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'sudoku') {
+    // Semantics-aware (More Games §11): mistakes, never "guesses".
+    const m = `${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'}`;
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}${input.difficulty} · ${input.won ? m : 'Out of mistakes'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -724,6 +748,46 @@ function drawSingle(
       }
     : undefined;
   drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won, input.wordGroups, reveal);
+}
+
+// Sudoku (More Games §18d): the ruled 9 × 9 as squares — givens dark, the
+// player's correct digits purple, hint cells violet, everything else light —
+// inside the same win/loss-bordered card the word boards use. No digits, so
+// the card spoils nothing.
+function drawSudoku(
+  ctx: CanvasRenderingContext2D,
+  input: ShareSudokuInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const areaHeight = footerTop - headerBottom;
+  const size = Math.min(width - 200, areaHeight - 80);
+  const cardPad = 16, borderWidth = 3;
+  const inner = size - cardPad * 2;
+  const gap = 4, boxGap = 12;
+  const cell = (inner - gap * 6 - boxGap * 2) / 9;
+  const x0 = (width - size) / 2, y0 = headerBottom + (areaHeight - size) / 2;
+  ctx.save();
+  ctx.fillStyle = input.won ? WIN_BG : BOARD_LOSS_TINT;
+  drawRoundRect(ctx, x0, y0, size, size, 28);
+  ctx.fill();
+  ctx.lineWidth = borderWidth;
+  ctx.strokeStyle = input.won ? WIN_FG : LOSS_FG;
+  ctx.stroke();
+  const PLAYER = '#7c3aed', HINTC = '#8b5cf6', EMPTY = '#e9e5f5';
+  for (let i = 0; i < 81; i++) {
+    const r = Math.floor(i / 9), c = i % 9;
+    const x = x0 + cardPad + c * (cell + gap) + Math.floor(c / 3) * (boxGap - gap);
+    const y = y0 + cardPad + r * (cell + gap) + Math.floor(r / 3) * (boxGap - gap);
+    const given = input.givens[i] !== '0';
+    const filled = input.board[i] !== '0';
+    const hinted = input.hintMask[i] === '1';
+    ctx.fillStyle = given ? TEXT_DARK : hinted ? HINTC : filled ? PLAYER : EMPTY;
+    drawRoundRect(ctx, x, y, cell, cell, Math.max(4, cell * 0.18));
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawMulti(
@@ -1662,6 +1726,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawMulti(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'gauntlet') {
     drawGauntlet(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'sudoku') {
+    drawSudoku(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

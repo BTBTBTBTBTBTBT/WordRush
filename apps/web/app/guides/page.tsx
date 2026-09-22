@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { MODE_GUIDES } from '@/lib/guide-content';
+import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 

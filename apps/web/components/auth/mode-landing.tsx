@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { LoginScreen } from './login-screen';
 import { useAuth } from '@/lib/auth-context';
-import { getGuide, MODE_GUIDES } from '@/lib/guide-content';
+import { getGuide, PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 
 /**
  * Public per-mode landing shown to signed-out visitors (and crawlers) on a

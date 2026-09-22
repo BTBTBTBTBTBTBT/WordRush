@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { MODE_GUIDES, getGuide } from '@/lib/guide-content';
+import { PUBLIC_MODE_GUIDES as MODE_GUIDES, getPublicGuide as getGuide } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 
