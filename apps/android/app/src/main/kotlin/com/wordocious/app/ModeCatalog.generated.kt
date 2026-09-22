@@ -15,25 +15,75 @@ data class GenMode(
     val glyph: String?,
     val romanNumeral: String?,
     val dailyEligible: Boolean,
+    /** "core" = home grid tile, "more" = More Games sheet. */
+    val group: String,
+    /** Counts toward the Daily Sweep / Flawless. */
+    val sweep: Boolean,
+    /** "word" = shared reducer, "custom" = the mode's own view. */
+    val engine: String,
+    /** What guess_count means: guesses, mistakes, checks, overPar, misses, rank. */
+    val guessSemantics: String,
+    /** The perfect guess_count; display shows guess_count − guessBase. */
+    val guessBase: Int,
+    /** Compiled in and visible (remote flag may still hide it). */
+    val enabled: Boolean,
+    val flagKey: String?,
+    /** More Games sheet section key. */
+    val category: String?,
+    val guideSlug: String?,
 ) {
     val accent: Color get() = Color(("ff" + accentHex.removePrefix("#")).toLong(16))
     val accentInt: Int get() = ("ff" + accentHex.removePrefix("#")).toLong(16).toInt()
 }
 
+data class GenSweepEra(val since: String, val modes: List<String>)
+data class GenCategory(val key: String, val title: String)
+
 object ModeGen {
     val all: List<GenMode> = listOf(
-        GenMode("practice", "DUEL", "Classic", "Classic", "Classic", "1 word, 6 tries", "#7c3aed", "C", null, true),
-        GenMode("vs", null, "VS Battle", "VS", "VS Battle", "Real-time PvP", "#0d9488", null, null, false),
-        GenMode("quordle", "QUORDLE", "QuadWord", "Quad", "QuadWord", "4 words at once", "#ec4899", "IV", "IV", true),
-        GenMode("octordle", "OCTORDLE", "OctoWord", "Octo", "OctoWord", "8 boards, 13 tries", "#7e22ce", "VIII", "VIII", true),
-        GenMode("sequence", "SEQUENCE", "Succession", "Succ.", "Succession", "4 words, one by one", "#2563eb", "S", null, true),
-        GenMode("rescue", "RESCUE", "Deliverance", "Deliv.", "Deliverance", "4 prefilled boards", "#059669", "D", null, true),
-        GenMode("six", "DUEL_6", "Six", "Six", "Classic Six", "6 letters, 7 tries", "#06b6d4", "6", null, true),
-        GenMode("seven", "DUEL_7", "Seven", "Seven", "Classic Seven", "7 letters, 8 tries", "#84cc16", "7", null, true),
-        GenMode("gauntlet", "GAUNTLET", "Gauntlet", "Gauntlet", "Gauntlet", "5 escalating stages", "#d97706", "G", null, true),
-        GenMode("propernoundle", "PROPERNOUNDLE", "ProperNoundle", "Proper", "ProperNoundle", "Guess famous names", "#dc2626", "P", null, true),
+        GenMode("practice", "DUEL", "Classic", "Classic", "Classic", "1 word, 6 tries", "#7c3aed", "C", null, true, "core", true, "word", "guesses", 1, true, null, null, "classic"),
+        GenMode("vs", null, "VS Battle", "VS", "VS Battle", "Real-time PvP", "#0d9488", null, null, false, "core", false, "word", "guesses", 1, true, null, null, null),
+        GenMode("quordle", "QUORDLE", "QuadWord", "Quad", "QuadWord", "4 words at once", "#ec4899", "IV", "IV", true, "core", true, "word", "guesses", 4, true, null, null, "quadword"),
+        GenMode("octordle", "OCTORDLE", "OctoWord", "Octo", "OctoWord", "8 boards, 13 tries", "#7e22ce", "VIII", "VIII", true, "core", true, "word", "guesses", 8, true, null, null, "octoword"),
+        GenMode("sequence", "SEQUENCE", "Succession", "Succ.", "Succession", "4 words, one by one", "#2563eb", "S", null, true, "core", true, "word", "guesses", 4, true, null, null, "succession"),
+        GenMode("rescue", "RESCUE", "Deliverance", "Deliv.", "Deliverance", "4 prefilled boards", "#059669", "D", null, true, "core", true, "word", "guesses", 4, true, null, null, "deliverance"),
+        GenMode("six", "DUEL_6", "Six", "Six", "Classic Six", "6 letters, 7 tries", "#06b6d4", "6", null, true, "core", true, "word", "guesses", 1, true, null, null, "six"),
+        GenMode("seven", "DUEL_7", "Seven", "Seven", "Classic Seven", "7 letters, 8 tries", "#84cc16", "7", null, true, "core", true, "word", "guesses", 1, true, null, null, "seven"),
+        GenMode("gauntlet", "GAUNTLET", "Gauntlet", "Gauntlet", "Gauntlet", "5 escalating stages", "#d97706", "G", null, true, "core", true, "word", "guesses", 21, true, null, null, "gauntlet"),
+        GenMode("propernoundle", "PROPERNOUNDLE", "ProperNoundle", "Proper", "ProperNoundle", "Guess famous names", "#dc2626", "P", null, true, "core", true, "custom", "guesses", 1, true, null, "trivia", "propernoundle"),
+        GenMode("more", null, "More Games", "More", "More Games", "Sudoku, Muddle and more", "#4f46e5", "+", null, false, "core", false, "custom", "guesses", 1, false, "menu.more", null, null),
+        GenMode("sudoku", "SUDOKU", "Sudoku", "Sudoku", "Sudoku", "Daily number logic", "#1e40af", "9", null, true, "more", false, "custom", "mistakes", 1, false, "mode.sudoku", "logic", "sudoku"),
+        GenMode("scramble", "SCRAMBLE", "Muddle", "Muddle", "Muddle", "Unscramble the punchline", "#f97316", "M", null, true, "more", false, "custom", "checks", 5, false, "mode.scramble", "word", "muddle"),
+        GenMode("hub", "HUB", "Hubbub", "Hubbub", "Hubbub", "Seven letters, one hub", "#c026d3", "H", null, true, "more", false, "custom", "rank", 1, false, "mode.hub", "word", "hubbub"),
+        GenMode("crossword", "CROSSWORD", "Crosswordocious", "Crossword", "Crosswordocious", "Fill-in sayings crossword", "#475569", "X", null, true, "more", false, "custom", "checks", 1, false, "mode.crossword", "trivia", "crosswordocious"),
+        GenMode("groups", "GROUPS", "Kindred", "Kindred", "Kindred", "Four groups of four", "#9f1239", "K", null, true, "more", false, "custom", "guesses", 4, false, "mode.groups", "logic", "kindred"),
+        GenMode("ladder", "LADDER", "Letter Ladder", "Ladder", "Letter Ladder", "One letter at a time", "#0284c7", "L", null, true, "more", false, "custom", "overPar", 1, false, "mode.ladder", "word", "letter-ladder"),
+        GenMode("cryptogram", "CRYPTOGRAM", "Codebreaker", "Code", "Codebreaker", "Crack the coded saying", "#92400e", "?", null, true, "more", false, "custom", "checks", 1, false, "mode.cryptogram", "logic", "codebreaker"),
+        GenMode("wordsearch", "WORDSEARCH", "Spyglass", "Spyglass", "Spyglass", "Themed word search", "#4d7c0f", "W", null, true, "more", false, "custom", "misses", 10, false, "mode.wordsearch", "word", "spyglass"),
+        GenMode("regions", "REGIONS", "Starsweep", "Stars", "Starsweep", "One star per colour region", "#ca8a04", "*", null, true, "more", false, "custom", "mistakes", 1, false, "mode.regions", "logic", "starsweep"),
     )
     fun byDbKey(k: String): GenMode? = all.firstOrNull { it.dbKey == k }
     fun byId(i: String): GenMode? = all.firstOrNull { it.id == i }
-    val daily: List<GenMode> get() = all.filter { it.dailyEligible && it.dbKey != null }
+    /** Enabled modes only — what this build shows anywhere. */
+    val enabled: List<GenMode> get() = all.filter { it.enabled }
+    /** Daily modes (VS excluded), canonical order — every daily-recordable mode this build knows. */
+    val daily: List<GenMode> get() = enabled.filter { it.dailyEligible && it.dbKey != null }
+    /** The current required Daily Sweep set, canonical order. */
+    val sweep: List<GenMode> get() = daily.filter { it.sweep }
+    /** Home grid tiles. */
+    val core: List<GenMode> get() = enabled.filter { it.group == "core" }
+    /** More Games sheet entries. */
+    val more: List<GenMode> get() = enabled.filter { it.group == "more" }
+    val moreCategories: List<GenCategory> = listOf(
+        GenCategory("word", "Word"),
+        GenCategory("trivia", "Trivia"),
+        GenCategory("logic", "Logic"),
+    )
+    /** Sweep eras, newest first. Which dbKeys formed the required sweep on a given local day. */
+    val sweepEras: List<GenSweepEra> = listOf(
+        GenSweepEra("2026-05-21", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7")),
+        GenSweepEra("0000-00-00", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE")),
+    )
+    fun sweepModesFor(day: String): List<String> = sweepEras.firstOrNull { day >= it.since }?.modes ?: sweepEras.last().modes
+    fun requiredSweepCount(day: String): Int = sweepModesFor(day).size
 }

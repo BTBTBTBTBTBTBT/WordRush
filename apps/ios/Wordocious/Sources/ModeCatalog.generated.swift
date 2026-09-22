@@ -13,24 +13,76 @@ struct GenMode: Identifiable {
     let glyph: String?
     let romanNumeral: String?
     let dailyEligible: Bool
+    /// "core" = home grid tile, "more" = More Games sheet.
+    let group: String
+    /// Counts toward the Daily Sweep / Flawless.
+    let sweep: Bool
+    /// "word" = shared reducer, "custom" = the mode's own view.
+    let engine: String
+    /// What guess_count means: guesses, mistakes, checks, overPar, misses, rank.
+    let guessSemantics: String
+    /// The perfect guess_count; display shows guess_count − guessBase.
+    let guessBase: Int
+    /// Compiled in and visible (remote flag may still hide it).
+    let enabled: Bool
+    let flagKey: String?
+    /// More Games sheet section key.
+    let category: String?
+    let guideSlug: String?
     var accent: Color { Color(hexString: accentHex) ?? .purple }
 }
 
+struct GenSweepEra { let since: String; let modes: [String] }
+struct GenCategory { let key: String; let title: String }
+
 enum ModeGen {
     static let all: [GenMode] = [
-        GenMode(id: "practice", dbKey: "DUEL", title: "Classic", shortTitle: "Classic", shareLabel: "Classic", desc: "1 word, 6 tries", accentHex: "#7c3aed", glyph: "C", romanNumeral: nil, dailyEligible: true),
-        GenMode(id: "vs", dbKey: nil, title: "VS Battle", shortTitle: "VS", shareLabel: "VS Battle", desc: "Real-time PvP", accentHex: "#0d9488", glyph: nil, romanNumeral: nil, dailyEligible: false),
-        GenMode(id: "quordle", dbKey: "QUORDLE", title: "QuadWord", shortTitle: "Quad", shareLabel: "QuadWord", desc: "4 words at once", accentHex: "#ec4899", glyph: "IV", romanNumeral: "IV", dailyEligible: true),
-        GenMode(id: "octordle", dbKey: "OCTORDLE", title: "OctoWord", shortTitle: "Octo", shareLabel: "OctoWord", desc: "8 boards, 13 tries", accentHex: "#7e22ce", glyph: "VIII", romanNumeral: "VIII", dailyEligible: true),
-        GenMode(id: "sequence", dbKey: "SEQUENCE", title: "Succession", shortTitle: "Succ.", shareLabel: "Succession", desc: "4 words, one by one", accentHex: "#2563eb", glyph: "S", romanNumeral: nil, dailyEligible: true),
-        GenMode(id: "rescue", dbKey: "RESCUE", title: "Deliverance", shortTitle: "Deliv.", shareLabel: "Deliverance", desc: "4 prefilled boards", accentHex: "#059669", glyph: "D", romanNumeral: nil, dailyEligible: true),
-        GenMode(id: "six", dbKey: "DUEL_6", title: "Six", shortTitle: "Six", shareLabel: "Classic Six", desc: "6 letters, 7 tries", accentHex: "#06b6d4", glyph: "6", romanNumeral: nil, dailyEligible: true),
-        GenMode(id: "seven", dbKey: "DUEL_7", title: "Seven", shortTitle: "Seven", shareLabel: "Classic Seven", desc: "7 letters, 8 tries", accentHex: "#84cc16", glyph: "7", romanNumeral: nil, dailyEligible: true),
-        GenMode(id: "gauntlet", dbKey: "GAUNTLET", title: "Gauntlet", shortTitle: "Gauntlet", shareLabel: "Gauntlet", desc: "5 escalating stages", accentHex: "#d97706", glyph: "G", romanNumeral: nil, dailyEligible: true),
-        GenMode(id: "propernoundle", dbKey: "PROPERNOUNDLE", title: "ProperNoundle", shortTitle: "Proper", shareLabel: "ProperNoundle", desc: "Guess famous names", accentHex: "#dc2626", glyph: "P", romanNumeral: nil, dailyEligible: true),
+        GenMode(id: "practice", dbKey: "DUEL", title: "Classic", shortTitle: "Classic", shareLabel: "Classic", desc: "1 word, 6 tries", accentHex: "#7c3aed", glyph: "C", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 1, enabled: true, flagKey: nil, category: nil, guideSlug: "classic"),
+        GenMode(id: "vs", dbKey: nil, title: "VS Battle", shortTitle: "VS", shareLabel: "VS Battle", desc: "Real-time PvP", accentHex: "#0d9488", glyph: nil, romanNumeral: nil, dailyEligible: false, group: "core", sweep: false, engine: "word", guessSemantics: "guesses", guessBase: 1, enabled: true, flagKey: nil, category: nil, guideSlug: nil),
+        GenMode(id: "quordle", dbKey: "QUORDLE", title: "QuadWord", shortTitle: "Quad", shareLabel: "QuadWord", desc: "4 words at once", accentHex: "#ec4899", glyph: "IV", romanNumeral: "IV", dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 4, enabled: true, flagKey: nil, category: nil, guideSlug: "quadword"),
+        GenMode(id: "octordle", dbKey: "OCTORDLE", title: "OctoWord", shortTitle: "Octo", shareLabel: "OctoWord", desc: "8 boards, 13 tries", accentHex: "#7e22ce", glyph: "VIII", romanNumeral: "VIII", dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 8, enabled: true, flagKey: nil, category: nil, guideSlug: "octoword"),
+        GenMode(id: "sequence", dbKey: "SEQUENCE", title: "Succession", shortTitle: "Succ.", shareLabel: "Succession", desc: "4 words, one by one", accentHex: "#2563eb", glyph: "S", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 4, enabled: true, flagKey: nil, category: nil, guideSlug: "succession"),
+        GenMode(id: "rescue", dbKey: "RESCUE", title: "Deliverance", shortTitle: "Deliv.", shareLabel: "Deliverance", desc: "4 prefilled boards", accentHex: "#059669", glyph: "D", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 4, enabled: true, flagKey: nil, category: nil, guideSlug: "deliverance"),
+        GenMode(id: "six", dbKey: "DUEL_6", title: "Six", shortTitle: "Six", shareLabel: "Classic Six", desc: "6 letters, 7 tries", accentHex: "#06b6d4", glyph: "6", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 1, enabled: true, flagKey: nil, category: nil, guideSlug: "six"),
+        GenMode(id: "seven", dbKey: "DUEL_7", title: "Seven", shortTitle: "Seven", shareLabel: "Classic Seven", desc: "7 letters, 8 tries", accentHex: "#84cc16", glyph: "7", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 1, enabled: true, flagKey: nil, category: nil, guideSlug: "seven"),
+        GenMode(id: "gauntlet", dbKey: "GAUNTLET", title: "Gauntlet", shortTitle: "Gauntlet", shareLabel: "Gauntlet", desc: "5 escalating stages", accentHex: "#d97706", glyph: "G", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "word", guessSemantics: "guesses", guessBase: 21, enabled: true, flagKey: nil, category: nil, guideSlug: "gauntlet"),
+        GenMode(id: "propernoundle", dbKey: "PROPERNOUNDLE", title: "ProperNoundle", shortTitle: "Proper", shareLabel: "ProperNoundle", desc: "Guess famous names", accentHex: "#dc2626", glyph: "P", romanNumeral: nil, dailyEligible: true, group: "core", sweep: true, engine: "custom", guessSemantics: "guesses", guessBase: 1, enabled: true, flagKey: nil, category: "trivia", guideSlug: "propernoundle"),
+        GenMode(id: "more", dbKey: nil, title: "More Games", shortTitle: "More", shareLabel: "More Games", desc: "Sudoku, Muddle and more", accentHex: "#4f46e5", glyph: "+", romanNumeral: nil, dailyEligible: false, group: "core", sweep: false, engine: "custom", guessSemantics: "guesses", guessBase: 1, enabled: false, flagKey: "menu.more", category: nil, guideSlug: nil),
+        GenMode(id: "sudoku", dbKey: "SUDOKU", title: "Sudoku", shortTitle: "Sudoku", shareLabel: "Sudoku", desc: "Daily number logic", accentHex: "#1e40af", glyph: "9", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "mistakes", guessBase: 1, enabled: false, flagKey: "mode.sudoku", category: "logic", guideSlug: "sudoku"),
+        GenMode(id: "scramble", dbKey: "SCRAMBLE", title: "Muddle", shortTitle: "Muddle", shareLabel: "Muddle", desc: "Unscramble the punchline", accentHex: "#f97316", glyph: "M", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "checks", guessBase: 5, enabled: false, flagKey: "mode.scramble", category: "word", guideSlug: "muddle"),
+        GenMode(id: "hub", dbKey: "HUB", title: "Hubbub", shortTitle: "Hubbub", shareLabel: "Hubbub", desc: "Seven letters, one hub", accentHex: "#c026d3", glyph: "H", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "rank", guessBase: 1, enabled: false, flagKey: "mode.hub", category: "word", guideSlug: "hubbub"),
+        GenMode(id: "crossword", dbKey: "CROSSWORD", title: "Crosswordocious", shortTitle: "Crossword", shareLabel: "Crosswordocious", desc: "Fill-in sayings crossword", accentHex: "#475569", glyph: "X", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "checks", guessBase: 1, enabled: false, flagKey: "mode.crossword", category: "trivia", guideSlug: "crosswordocious"),
+        GenMode(id: "groups", dbKey: "GROUPS", title: "Kindred", shortTitle: "Kindred", shareLabel: "Kindred", desc: "Four groups of four", accentHex: "#9f1239", glyph: "K", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "guesses", guessBase: 4, enabled: false, flagKey: "mode.groups", category: "logic", guideSlug: "kindred"),
+        GenMode(id: "ladder", dbKey: "LADDER", title: "Letter Ladder", shortTitle: "Ladder", shareLabel: "Letter Ladder", desc: "One letter at a time", accentHex: "#0284c7", glyph: "L", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "overPar", guessBase: 1, enabled: false, flagKey: "mode.ladder", category: "word", guideSlug: "letter-ladder"),
+        GenMode(id: "cryptogram", dbKey: "CRYPTOGRAM", title: "Codebreaker", shortTitle: "Code", shareLabel: "Codebreaker", desc: "Crack the coded saying", accentHex: "#92400e", glyph: "?", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "checks", guessBase: 1, enabled: false, flagKey: "mode.cryptogram", category: "logic", guideSlug: "codebreaker"),
+        GenMode(id: "wordsearch", dbKey: "WORDSEARCH", title: "Spyglass", shortTitle: "Spyglass", shareLabel: "Spyglass", desc: "Themed word search", accentHex: "#4d7c0f", glyph: "W", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "misses", guessBase: 10, enabled: false, flagKey: "mode.wordsearch", category: "word", guideSlug: "spyglass"),
+        GenMode(id: "regions", dbKey: "REGIONS", title: "Starsweep", shortTitle: "Stars", shareLabel: "Starsweep", desc: "One star per colour region", accentHex: "#ca8a04", glyph: "*", romanNumeral: nil, dailyEligible: true, group: "more", sweep: false, engine: "custom", guessSemantics: "mistakes", guessBase: 1, enabled: false, flagKey: "mode.regions", category: "logic", guideSlug: "starsweep"),
     ]
     static func byDbKey(_ k: String) -> GenMode? { all.first { $0.dbKey == k } }
     static func byId(_ i: String) -> GenMode? { all.first { $0.id == i } }
-    /// Daily modes (VS excluded), in canonical order — used by the all-dailies card.
-    static var daily: [GenMode] { all.filter { $0.dailyEligible && $0.dbKey != nil } }
+    /// Enabled modes only — what this build shows anywhere.
+    static var enabled: [GenMode] { all.filter { $0.enabled } }
+    /// Daily modes (VS excluded), canonical order — every daily-recordable mode this build knows.
+    static var daily: [GenMode] { enabled.filter { $0.dailyEligible && $0.dbKey != nil } }
+    /// The current required Daily Sweep set, canonical order.
+    static var sweep: [GenMode] { daily.filter { $0.sweep } }
+    /// Home grid tiles.
+    static var core: [GenMode] { enabled.filter { $0.group == "core" } }
+    /// More Games sheet entries.
+    static var more: [GenMode] { enabled.filter { $0.group == "more" } }
+    static let moreCategories: [GenCategory] = [
+        GenCategory(key: "word", title: "Word"),
+        GenCategory(key: "trivia", title: "Trivia"),
+        GenCategory(key: "logic", title: "Logic"),
+    ]
+    /// Sweep eras, newest first. Which dbKeys formed the required sweep on a given local day.
+    static let sweepEras: [GenSweepEra] = [
+        GenSweepEra(since: "2026-05-21", modes: ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7"]),
+        GenSweepEra(since: "0000-00-00", modes: ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE"]),
+    ]
+    static func sweepModes(for day: String) -> [String] {
+        for era in sweepEras where day >= era.since { return era.modes }
+        return sweepEras.last?.modes ?? []
+    }
+    static func requiredSweepCount(for day: String) -> Int { sweepModes(for: day).count }
 }

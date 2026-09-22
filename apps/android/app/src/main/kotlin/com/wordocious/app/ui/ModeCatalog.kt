@@ -79,7 +79,7 @@ private val MODE_CHROME: Map<String, ModeChrome> = mapOf(
     "propernoundle" to ModeChrome(null, "Crown"),
 )
 
-val MODE_CARDS: List<ModeCard> = ModeGen.all.map { m ->
+val MODE_CARDS: List<ModeCard> = ModeGen.core.map { m ->
     val chrome = MODE_CHROME[m.id]
     val engine = m.dbKey?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
     ModeCard(m.id, m.title, m.desc, m.accent, engine, glyph = chrome?.glyph, lucide = chrome?.lucide, hand = chrome?.hand)
