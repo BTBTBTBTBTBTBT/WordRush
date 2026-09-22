@@ -1,4 +1,4 @@
-// Decipher (cryptogram): validates candidate quotations and assigns each a
+// Codebreaker (cryptogram): validates candidate quotations and assigns each a
 // STORED substitution key (a derangement: no letter maps to itself), so parity
 // across platforms is "read a string". Sample input: quotes.sample.json.
 // Every quote carries `verified: false` until a human checks it against a
@@ -40,6 +40,6 @@ quotes.forEach((q, i) => {
   const given = Object.keys(freq).sort((a, b) => freq[b] - freq[a] || a.localeCompare(b)).slice(0, CLASSIC ? 0 : 3);
   out.push({ id, ...q, kind: CLASSIC ? 'quotation' : 'saying', verified: !CLASSIC, key, given, cipher: encipher(t, key), distinctLetters: letters.size });
 });
-const file = writeSample('decipher.json', { generatedBy: 'apps/web/scripts/cryptogram/make-and-validate.mjs', puzzles: out, rejects });
+const file = writeSample('cryptogram.json', { generatedBy: 'apps/web/scripts/cryptogram/make-and-validate.mjs', puzzles: out, rejects });
 console.log(`${out.length} valid, ${rejects.length} rejected`); for (const r of rejects) console.log('  REJECT', r.id, r.author, '—', r.problems.join('; '));
 console.log('sample:', out[0].cipher); console.log('wrote', file);

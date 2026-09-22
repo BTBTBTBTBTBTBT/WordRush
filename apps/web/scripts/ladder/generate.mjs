@@ -1,4 +1,4 @@
-// Rungs (word ladder) bank generator — fully generated, no content review.
+// Letter Ladder (word ladder) bank generator — fully generated, no content review.
 // Endpoints are common 5-letter ANSWER words; every step may be any guessable
 // word. A pair qualifies when its shortest path is 4–7, there are >= 2 distinct
 // shortest paths using only answer words (so it never needs an obscure step),
@@ -66,6 +66,6 @@ for (let i = 0; out.length < COUNT; i++) {
   for (const w of [start, end]) used.set(w, (used.get(w) || 0) + 1);
   out.push({ id: `ld${String(out.length + 1).padStart(4, '0')}`, start, end, par, routes: p.routes, path: onePath(gCommon, start, end) });
 }
-const file = writeSample('rungs.json', { generatedBy: 'apps/web/scripts/ladder/generate.mjs', totalQualifying: pairs.length, puzzles: out });
+const file = writeSample('ladder.json', { generatedBy: 'apps/web/scripts/ladder/generate.mjs', totalQualifying: pairs.length, puzzles: out });
 for (const p of out) console.log(`  ${p.id} par ${p.par} (${p.routes} routes)  ${p.path.join(' → ')}`);
 console.log('wrote', file);
