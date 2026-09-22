@@ -51,6 +51,15 @@ describe('buildCopy', () => {
     expect(noPts.title).toBe('Wordocious Sudoku — Time 1:00 · 0 mistakes');
   });
 
+  it('names score, time and par for Letter Ladder', () => {
+    const c = buildCopy({ m: 'Letter Ladder', won: '1', g: '2', mg: '6', t: '130', pts: '1850', n: '4', par: '5' }, ['u', 'Letter Ladder-2026-09-26']);
+    expect(c.title).toBe('Wordocious Letter Ladder #4 — Score 1,850 pts · Time 2:10 · Par 5 · +1 over par');
+    const par = buildCopy({ m: 'Letter Ladder', won: '1', g: '1', mg: '6', t: '90', par: '4' }, ['u', 'Letter Ladder-2026-09-26']);
+    expect(par.title).toBe('Wordocious Letter Ladder — Time 1:30 · Par 4 · On par');
+    const lost = buildCopy({ m: 'Letter Ladder', won: '0', g: '6', mg: '6', t: '300', n: '2', par: '5' }, ['u', 'Letter Ladder-2026-09-26']);
+    expect(lost.title).toBe('Wordocious Letter Ladder #2 — Time 5:00 · Par 5 · Out of moves');
+  });
+
   it('builds a multi-board card with boards solved', () => {
     const c = buildCopy(
       { m: 'OctoWord', won: '1', g: '12', mg: '13', t: '600', bs: '8', tb: '8' },

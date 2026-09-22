@@ -22,6 +22,7 @@ export const MODE_ROUTE: Record<string, string> = {
   // More Games titles (§18d) — keyed by shareLabel like every other mode.
   Sudoku: '/sudoku',
   Starsweep: '/starsweep',
+  'Letter Ladder': '/letter-ladder',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',
@@ -355,6 +356,26 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const description = won
       ? `I solved ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
       : `I played ${name} on Wordocious — ${stats}. Think you can solve it? ${PLAY_HOOK}`;
+    return { mode, modeDisp: name, won, stats, title, description };
+  }
+
+  // Par-scored modes (Letter Ladder — guessSemantics "overPar"): g = moves − par + 1,
+  // so par reads as "On par" and 2 as "+1". Par itself rides the URL (par=).
+  if (meta?.guessSemantics === 'overPar') {
+    const pts = Number(str(sp.pts)) || 0;
+    const n = Number(str(sp.n)) || 0;
+    const par = Number(str(sp.par)) || 0;
+    const name = n > 0 ? `${modeDisp} #${n}` : modeDisp;
+    const bits: string[] = [];
+    if (pts > 0) bits.push(`Score ${pts.toLocaleString()} pts`);
+    bits.push(`Time ${fmtTime(t)}`);
+    if (par > 0) bits.push(`Par ${par}`);
+    bits.push(won ? (g <= 1 ? 'On par' : `+${g - 1} over par`) : 'Out of moves');
+    const stats = bits.join(' · ');
+    const title = `Wordocious ${name} — ${stats}`;
+    const description = won
+      ? `I climbed ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
+      : `I played ${name} on Wordocious — ${stats}. Think you can climb it? ${PLAY_HOOK}`;
     return { mode, modeDisp: name, won, stats, title, description };
   }
 

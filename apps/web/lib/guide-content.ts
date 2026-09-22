@@ -516,6 +516,61 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['sudoku', 'classic', 'gauntlet'],
   },
+  // ── More Games (§15) — Letter Ladder ─────────────────────────────────────
+  {
+    slug: 'letter-ladder',
+    title: 'Letter Ladder',
+    accent: '#0284c7',
+    tagline: 'Change one letter at a time from the start word to the end word — in as few moves as par',
+    metaDescription:
+      'Wordocious Letter Ladder guide: the one-letter rule, what par means, why rejected words are free, how Undo and Hint work, the exact scoring formula, and the strategy that finds the shortest route.',
+    facts: [
+      { label: 'Words', value: '5 letters, one rung at a time' },
+      { label: 'Par', value: '4 on Monday–Tuesday, rising to 7 on Sunday' },
+      { label: 'Moves allowed', value: 'Par + 5 — run out and the ladder is lost' },
+      { label: 'Time bonus cap', value: '10:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'You start on one five-letter word and must reach another. Every rung is a real word that differs from the rung below it by exactly one letter, in one position: STONE to STORE, STORE to STARE. Type a word and press Enter; if it is accepted it joins the ladder and the next rung starts from it.',
+      'Three things get a word turned away, and none of them costs you anything: it is not in the word list, it changes more than one letter (or none), or it is already on your ladder. Every ACCEPTED word is a move. Par is the shortest possible route through common words — the puzzle is built so that no obscure word can beat it — and you have par plus five moves before the ladder is lost.',
+      'Undo takes the last rung off so you can try a different route. It is free, but the move you spent stays spent, so a wrong turn still costs you. Hint places the next word on a shortest route from where you stand; it counts as a move and never as a mistake. On a loss the board shows one shortest route so you can see how it was done.',
+      'The daily is the same for everyone and counts once on the leaderboard. Letter Ladder lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A climb is worth a 1,000-point base plus a flat 200 for finishing. Moves over par are what separate players: the game treats your finish as (moves − par + 1) out of a budget of 6, and every unused step is worth 300 points, so a climb exactly on par banks 1,500 in par bonus, one over par 1,200, two over 900. Speed is the tiebreaker: up to 240 points scaled by how far under the 10-minute cap you finish, which can never outweigh a single extra move — a shorter climb always outranks a faster one.',
+      'Each Hint costs 100 points and counts as a move. Hints never lose you the ladder, but a climb with any hint is not a Perfect run and does not count toward the Pure Ladder achievements. A lost ladder still earns credit for the time spent, so it is always worth playing on.',
+    ],
+    controls: [
+      { icon: 'undo-2', label: 'Undo', body: 'Takes the last rung off the ladder so you can go another way. Free — but the move you already spent stays spent.' },
+      { icon: 'lightbulb', label: 'Hint', body: 'Places the next word on a shortest route from your current rung. Costs 100 points of score and one move, never a mistake, and rules out a Perfect run.' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Submits the word you typed. If it is turned away (not a word, more than one letter changed, already used) nothing is spent.' },
+      { icon: 'delete', label: 'Delete', body: 'Removes the last letter you typed on the current rung. Free.' },
+    ],
+    tips: [
+      {
+        heading: 'Count the letters that must change',
+        body: 'Compare START and END position by position. If three letters differ, par is at least three and every move should change one of them unless it has to make a detour. A move that changes a letter already matching END is a step backwards.',
+      },
+      {
+        heading: 'Look for the pivot vowel',
+        body: 'Most ladders turn on a vowel swap in the middle: STONE to STANE is not a word, but STONE to STORE to STARE is. When a direct change is blocked, change a consonant first to open up the vowel you need.',
+      },
+      {
+        heading: 'Work from both ends',
+        body: 'It is often easier to see which words are one step away from END than to push forward blindly. Find END\'s neighbours in your head, then aim your ladder at one of them.',
+      },
+      {
+        heading: 'Rejections are free — use them',
+        body: 'Typing a word that turns out not to be in the list costs nothing, so test a promising rung rather than agonising. Only accepted words spend moves.',
+      },
+      {
+        heading: 'Undo before you dig deeper',
+        body: 'If a rung leads somewhere with no good next step, Undo now. The move is spent either way, but two more rungs down a dead end are two more moves you cannot get back.',
+      },
+    ],
+    related: ['classic', 'succession', 'six'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {

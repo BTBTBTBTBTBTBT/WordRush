@@ -44,6 +44,7 @@ export type ShareMode =
   /** More Games (§18d): one board drawing per title inside the same card frame. */
   | 'Sudoku'
   | 'Starsweep'
+  | 'Letter Ladder'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -130,6 +131,24 @@ export interface ShareRegionsInput extends ShareBase {
   hintMask: string;
   mistakes: number;
   sizeLabel: string;
+  puzzleNumber?: number;
+}
+
+/**
+ * Letter Ladder (More Games §18d): START and END spelled out, the rungs
+ * between them as blank tiles with only the changed position filled (accent;
+ * violet for a hint rung) — so the card shows the shape of the climb without
+ * a single rung word. Stat line reads "#12 · Par 5 · +1 · 2:10".
+ */
+export interface ShareLadderInput extends ShareBase {
+  layout: 'ladder';
+  start: string;
+  end: string;
+  /** The ladder as played, words[0] = start. */
+  words: string[];
+  hintMask: string;
+  par: number;
+  moves: number;
   puzzleNumber?: number;
 }
 
@@ -275,6 +294,7 @@ export type ShareImageInput =
   | ShareSingleInput
   | ShareSudokuInput
   | ShareRegionsInput
+  | ShareLadderInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -634,7 +654,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -684,6 +704,10 @@ function drawHeader(
     const m = `${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'}`;
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     statsText = `${num}${input.sizeLabel} · ${input.won ? m : 'Out of mistakes'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'ladder') {
+    const over = input.moves - input.par;
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}Par ${input.par} · ${input.won ? (over <= 0 ? 'On par' : `+${over}`) : 'Out of moves'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -861,6 +885,53 @@ function drawRegions(
       ctx.fill();
     }
   }
+  ctx.restore();
+}
+
+// Letter Ladder (More Games §18d): START and END spelled out as filled tiles,
+// every rung between them blank except the changed position (accent; violet
+// for a hint rung). Spoils no rung word.
+function drawLadder(
+  ctx: CanvasRenderingContext2D,
+  input: ShareLadderInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const words = input.words.length ? input.words : [input.start];
+  const rows: Array<{ word: string; prev?: string; kind: 'start' | 'rung' | 'hint' | 'end' }> = [];
+  words.forEach((w, i) => rows.push({ word: w, prev: i > 0 ? words[i - 1] : undefined, kind: i === 0 ? 'start' : input.hintMask[i] === '1' ? 'hint' : 'rung' }));
+  if (words[words.length - 1] !== input.end) rows.push({ word: input.end, kind: 'end' });
+  const areaHeight = footerTop - headerBottom;
+  const gap = 10, pad = 28;
+  const maxTile = 96;
+  const tile = Math.min(maxTile, Math.floor((areaHeight - pad * 2 - gap * (rows.length - 1)) / rows.length), Math.floor((width - 200 - gap * 4) / 5));
+  const boardW = tile * 5 + gap * 4, boardH = tile * rows.length + gap * (rows.length - 1);
+  const x0 = (width - boardW) / 2, y0 = headerBottom + (areaHeight - boardH) / 2;
+  const ACCENT = '#0284c7', HINTC = '#8b5cf6', START_FILL = '#7c3aed', EMPTY = '#ffffff', EMPTY_BORDER = '#d1d5db', END_BORDER = '#0284c788';
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `900 ${Math.floor(tile * 0.5)}px ${SHARE_FONT_STACK}`;
+  rows.forEach((row, r) => {
+    for (let c = 0; c < 5; c++) {
+      const x = x0 + c * (tile + gap), y = y0 + r * (tile + gap);
+      const changed = !!row.prev && row.prev[c] !== row.word[c];
+      const radius = Math.max(6, tile * 0.14);
+      ctx.lineWidth = 3;
+      if (row.kind === 'start') {
+        ctx.fillStyle = START_FILL; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.fillText(row.word[c] ?? '', x + tile / 2, y + tile / 2 + 2);
+      } else if (row.kind === 'end') {
+        ctx.setLineDash([8, 6]); ctx.strokeStyle = END_BORDER; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = ACCENT; ctx.fillText(row.word[c] ?? '', x + tile / 2, y + tile / 2 + 2);
+      } else if (changed) {
+        ctx.fillStyle = row.kind === 'hint' ? HINTC : ACCENT; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
+      } else {
+        ctx.fillStyle = EMPTY; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
+        ctx.strokeStyle = EMPTY_BORDER; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke();
+      }
+    }
+  });
   ctx.restore();
 }
 
@@ -1804,6 +1875,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawSudoku(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'regions') {
     drawRegions(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'ladder') {
+    drawLadder(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

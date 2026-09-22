@@ -1,6 +1,7 @@
 import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
 import { sweepModesFor, DAILY_MODES } from './daily-modes';
+import { MODE_BY_DBKEY } from './modes.generated';
 
 // ============================================================
 // Achievement Definitions
@@ -151,6 +152,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_regions_initiate', name: 'Pure Starsweep',        description: 'Clear a Starsweep board without using any hints', category: 'skill', icon: 'star' },
   { key: 'pure_regions_adept',    name: 'Pure Starsweep Adept',  description: 'Clear 10 Starsweep boards without hints',        category: 'skill', icon: 'star' },
   { key: 'pure_regions_master',   name: 'Pure Starsweep Master', description: 'Clear 50 Starsweep boards without hints',        category: 'skill', icon: 'crown' },
+  // More Games §18c — Letter Ladder.
+  { key: 'ladder_first',    name: 'First Rung',          description: 'Climb a Letter Ladder',                                 category: 'beginner', icon: 'trending-up' },
+  { key: 'ladder_regular',  name: 'Ladder Regular',      description: 'Climb 50 Letter Ladders',                               category: 'skill',    icon: 'trending-up' },
+  { key: 'ladder_on_par',   name: 'On Par',              description: 'Climb a Letter Ladder in exactly par moves',            category: 'skill',    icon: 'target' },
+  { key: 'ladder_par_week', name: 'Par Week',            description: 'Climb the daily Letter Ladder on par seven days in a row', category: 'skill', icon: 'flame' },
+  { key: 'pure_ladder_initiate', name: 'Pure Ladder',        description: 'Climb a Letter Ladder without using any hints',     category: 'skill', icon: 'star' },
+  { key: 'pure_ladder_adept',    name: 'Pure Ladder Adept',  description: 'Climb 10 Letter Ladders without hints',            category: 'skill', icon: 'star' },
+  { key: 'pure_ladder_master',   name: 'Pure Ladder Master', description: 'Climb 50 Letter Ladders without hints',            category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -239,8 +248,32 @@ export async function checkAchievements(
 
   // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
   // mistakes + 1, so a clean solve would read as a one-guess word solve.
-  if (won && guessCount === 1 && gameMode !== 'SUDOKU' && gameMode !== 'REGIONS') {
+  // Perfectionist is a WORD-mode feat: every mode whose guess_count means
+  // something else (mistakes, par, checks…) is excluded through the catalog.
+  if (won && guessCount === 1 && (MODE_BY_DBKEY[gameMode]?.guessSemantics ?? 'guesses') === 'guesses') {
     await tryUnlock('perfectionist');
+  }
+
+  // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
+  if (gameMode === 'LADDER' && won) {
+    await tryUnlock('ladder_first');
+    if (guessCount === 1) {
+      await tryUnlock('ladder_on_par');
+      if (seed?.startsWith('daily-') && !alreadyUnlocked.has('ladder_par_week')) {
+        const { data: rows } = await (supabase as any)
+          .from('daily_results')
+          .select('day, completed, guess_count')
+          .eq('user_id', userId)
+          .eq('game_mode', 'LADDER')
+          .order('day', { ascending: false })
+          .limit(7);
+        const days: Array<{ day: string; completed: boolean; guess_count: number }> = rows || [];
+        if (days.length === 7 && days.every((r) => r.completed && r.guess_count === 1)) {
+          const consecutive = days.every((r, i) => i === 0 || (Date.parse(`${days[i - 1].day}T00:00:00Z`) - Date.parse(`${r.day}T00:00:00Z`)) === 86400000);
+          if (consecutive) await tryUnlock('ladder_par_week');
+        }
+      }
+    }
   }
 
   // Sudoku (More Games §18c): first solve, clean sheet (0 mistakes, 0 hints), sprint.
@@ -395,6 +428,7 @@ export async function checkAchievements(
     ['proper_scholar', 'PROPERNOUNDLE', 50],
     ['sudoku_scholar', 'SUDOKU', 50],
     ['regions_regular', 'REGIONS', 50],
+    ['ladder_regular', 'LADDER', 50],
     ['classic_master', 'DUEL', 100],
   ];
   for (const [key, mode, threshold] of modeMasteryChecks) {
@@ -748,10 +782,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

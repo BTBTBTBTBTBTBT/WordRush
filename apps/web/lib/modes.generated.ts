@@ -390,7 +390,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "overPar",
     "guessBase": 1,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.ladder",
     "category": "word",
     "guideSlug": "letter-ladder"
