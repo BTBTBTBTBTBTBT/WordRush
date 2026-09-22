@@ -128,7 +128,8 @@ const out = path.join(SAMPLES, 'index.html'); fs.writeFileSync(out, html); conso
 // Overview: one representative card per game, light theme pinned, for a single side-by-side look (founder, 2026-09-22).
 const first = (s) => { const cards = s.split(/(?=<div class="card)/).filter(Boolean); return cards[0]; };
 const OV = [['Sudoku', '#1e40af', first(secSud)], ['Starsweep', '#ca8a04', first(secRg)], ['Letter Ladder', '#0284c7', first(secRungs)], ['Hubbub', '#c026d3', hubMock.replace(/<div class="hubnotes">[\s\S]*?<\/div><\/div>$/, '</div>')], ['Spyglass', '#4d7c0f', first(secSpy)], ['Codebreaker', '#92400e', first(secDec)], ['Kindred', '#9f1239', first(secKin)], ['Crosswordocious', '#475569', first(secCw)], ['Muddle', '#f97316', first(secMud)]];
-const styleBlock = html.match(/<style>[\s\S]*?<\/style>/)[0];
+// Light only: drop the dark-mode token blocks so the viewer's dark setting cannot flip it (founder, 2026-09-22).
+const styleBlock = html.match(/<style>[\s\S]*?<\/style>/)[0].replace(/@media \(prefers-color-scheme:dark\)\{[\s\S]*?\}\}\n/, "").replace(/:root\[data-theme="dark"\]\{[^}]*\}\n/, "").replace("<style>", "<style>html{color-scheme:light}");
 const overview = `<title>More Games Overview</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
 ${styleBlock}
