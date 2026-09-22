@@ -44,7 +44,7 @@ private let DECK_DEALS_7: [String: DeckDeal] = ["DUEL_7": DeckDeal(offset: 0, co
 
 /// mulberry32 PRNG — UInt32 wrapping ops reproduce the JS int32/imul bit
 /// patterns exactly. As parity-critical as simpleHash.
-private struct Mulberry32 {
+struct Mulberry32 {
     var state: UInt32
     mutating func next() -> UInt32 {
         state = state &+ 0x6D2B79F5

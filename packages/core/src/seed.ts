@@ -49,7 +49,7 @@ const DECK_DEALS_7: Record<string, DeckDeal> = { DUEL_7: { offset: 0, count: 1 }
 /** mulberry32 PRNG — 32-bit state, returns uint32. The Swift/Kotlin ports
  *  replicate this exactly (wrapping 32-bit adds/multiplies + unsigned
  *  shifts); it is as parity-critical as simpleHash. */
-function mulberry32(seedValue: number): () => number {
+export function mulberry32(seedValue: number): () => number {
   let a = seedValue | 0;
   return () => {
     a = (a + 0x6d2b79f5) | 0;

@@ -9,3 +9,4 @@ export * from './wotd-blocklist';
 export * from './solution-swaps';
 export * from './username';
 export * from './bank';
+export * from './games/sudoku';

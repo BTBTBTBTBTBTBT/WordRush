@@ -26,6 +26,7 @@ import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTo
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../src/bank';
+import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
@@ -136,6 +137,62 @@ export function renderPrefillFixtures() {
   });
 }
 
+// More Games §4: Sudoku. Generation cases pin seed → givens/solution (and the
+// re-roll count, so a gate change is visible); reducer scripts replay CONCRETE
+// actions computed here from the puzzle (first empty cells, a digit known to
+// be wrong) and pin the resulting board/notes/masks/mistakes/status; the
+// reconstruction cases pin the matches-row round trip.
+const SUDOKU_GEN_CASES: Array<[string, SudokuDifficulty]> = [
+  ['daily-2026-09-23-SUDOKU', 'medium'], ['daily-2026-10-05-SUDOKU', 'medium'], ['daily-2027-01-01-SUDOKU', 'medium'],
+  ['unlimited-SUDOKU-1727000000000-easy', 'easy'], ['unlimited-SUDOKU-1727000000000-hard', 'hard'],
+  ['test', 'easy'], ['test', 'medium'], ['test', 'hard'],
+];
+export function renderSudokuFixtures() {
+  const generation = SUDOKU_GEN_CASES.map(([seed, difficulty]) => {
+    const p = generateSudoku(seed, difficulty);
+    const givens = Array.from(p.givens, (ch) => ch.charCodeAt(0) - 48);
+    return { ...p, unique: countSudokuSolutions(givens, 2) === 1, singles: sudokuSolvableBySingles(givens) };
+  });
+  const base = generateSudoku('daily-2026-09-23-SUDOKU', 'medium');
+  const empties: number[] = [];
+  for (let i = 0; i < 81; i++) if (base.givens[i] === '0') empties.push(i);
+  const correct = (i: number) => base.solution.charCodeAt(i) - 48;
+  const wrong = (i: number) => (correct(i) % 9) + 1;
+  const givenCell = base.givens.indexOf(base.givens.split('').find((c) => c !== '0') as string);
+  const [e0, e1, e2, e3, e4] = empties;
+  const scripts: Array<{ name: string; actions: SudokuAction[] }> = [
+    { name: 'mixed', actions: [
+      { type: 'PLACE', cell: e0, digit: correct(e0) }, { type: 'PLACE', cell: e1, digit: wrong(e1) },
+      { type: 'NOTE_TOGGLE', cell: e2, digit: 5 }, { type: 'NOTE_TOGGLE', cell: e2, digit: 7 }, { type: 'NOTE_TOGGLE', cell: e3, digit: correct(e4) },
+      { type: 'TOGGLE_NOTES' }, { type: 'PLACE', cell: e3, digit: 3 }, { type: 'TOGGLE_NOTES' },
+      { type: 'HINT', cell: e2 }, { type: 'UNDO' }, { type: 'ERASE', cell: e1 },
+      { type: 'PLACE', cell: e4, digit: correct(e4) }, { type: 'HINT' },
+    ] },
+    { name: 'loss', actions: [
+      { type: 'PLACE', cell: e0, digit: wrong(e0) }, { type: 'PLACE', cell: e0, digit: correct(e0) },
+      { type: 'PLACE', cell: e1, digit: wrong(e1) }, { type: 'PLACE', cell: e2, digit: wrong(e2) },
+      { type: 'PLACE', cell: e3, digit: correct(e3) },
+    ] },
+    { name: 'win', actions: empties.map((i): SudokuAction => ({ type: 'PLACE', cell: i, digit: correct(i) })) },
+    { name: 'noops', actions: [
+      { type: 'PLACE', cell: givenCell, digit: 1 }, { type: 'UNDO' }, { type: 'ERASE', cell: e0 }, { type: 'NOTE_TOGGLE', cell: givenCell, digit: 2 },
+      { type: 'SET_AUTO_CLEAR', value: false }, { type: 'NOTE_TOGGLE', cell: e1, digit: correct(e0) },
+      { type: 'PLACE', cell: e0, digit: correct(e0) }, { type: 'PLACE', cell: e0, digit: correct(e0) }, { type: 'HINT', cell: givenCell },
+    ] },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createSudokuState(base, 0);
+    for (const a of sc.actions) s = sudokuReduce(s, a, 1000);
+    const row = sudokuMatchRow(s);
+    return {
+      name: sc.name, seed: base.seed, difficulty: base.difficulty, actions: sc.actions,
+      expect: { board: s.board, notes: s.notes, hintMask: s.hintMask, wrongMask: s.wrongMask, mistakes: s.mistakes, hintsUsed: s.hintsUsed, status: s.status, notesMode: s.notesMode, historyLength: s.history.length, endTime: s.endTime },
+      row, reconstruct: reconstructSudoku(row.solutions, row.guesses),
+    };
+  });
+  return { generation, reducer, malformed: reconstructSudoku(['nope'], []) };
+}
+
 // Same fixture dirs the composite-scoring generator writes (web has no copy of
 // these two — they exist for the native ports).
 const TARGET_DIRS = [
@@ -147,6 +204,7 @@ const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
   ['bank-fixtures.json', renderBankFixtures()],
+  ['sudoku-fixtures.json', renderSudokuFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

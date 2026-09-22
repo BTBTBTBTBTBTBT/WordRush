@@ -62,7 +62,7 @@ private val DECK_DEALS_7 = mapOf("DUEL_7" to DeckDeal(0, 1))
 
 /** mulberry32 PRNG — Kotlin Int wraps to 32 bits, so `+`/`*` reproduce the JS
  *  int32/imul bit patterns exactly. As parity-critical as [simpleHash]. */
-private class Mulberry32(private var state: Int) {
+internal class Mulberry32(private var state: Int) {
     /** Next value as an unsigned 32-bit quantity in a Long (for `% n`). */
     fun nextU32(): Long {
         state += 0x6D2B79F5
