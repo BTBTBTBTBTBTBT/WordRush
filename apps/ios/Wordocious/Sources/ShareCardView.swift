@@ -22,6 +22,9 @@ struct ShareCardView: View {
         /// Sudoku (More Games §18d): the 9 × 9 as squares — givens dark, the
         /// player's cells purple, hint cells violet — no digits.
         case sudoku(givens: String, board: String, hintMask: String, mistakes: Int, difficulty: String, puzzleNumber: Int?)
+        /// Starsweep (More Games §18d): the regions as tinted squares with the
+        /// placed stars as dots — no crosses, never the missing stars.
+        case regions(n: Int, regions: String, board: String, hintMask: String, mistakes: Int, sizeLabel: String, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -56,7 +59,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -109,6 +112,10 @@ struct ShareCardView: View {
             let m = "\(mistakes) mistake\(mistakes == 1 ? "" : "s")"
             let num = number.map { "#\($0) · " } ?? ""
             return "\(num)\(difficulty) · \(won ? m : "Out of mistakes") · \(t) · \(dateStr)"
+        case .regions(_, _, _, _, let mistakes, let sizeLabel, let number):
+            let m = "\(mistakes) mistake\(mistakes == 1 ? "" : "s")"
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)\(sizeLabel) · \(won ? m : "Out of mistakes") · \(t) · \(dateStr)"
         }
     }
 
@@ -139,7 +146,40 @@ struct ShareCardView: View {
             .padding(.horizontal, 60)
         case .sudoku(let givens, let board, let hintMask, _, _, _):
             sudokuCard(givens: givens, board: board, hintMask: hintMask)
+        case .regions(let n, let regions, let board, let hintMask, _, _, _):
+            regionsCard(n: n, regions: regions, board: board, hintMask: hintMask)
         }
+    }
+
+    /// Web drawRegions parity: 720pt card, tinted squares gapped 4, placed stars
+    /// as dark dots (hint stars violet), inside the win/loss-bordered frame.
+    private func regionsCard(n: Int, regions: String, board: String, hintMask: String) -> some View {
+        let side: CGFloat = 720, pad: CGFloat = 16, gap: CGFloat = 4
+        let count = max(1, n)
+        let cell = (side - pad * 2 - gap * CGFloat(count - 1)) / CGFloat(count)
+        let reg = Array(regions), b = Array(board), h = Array(hintMask)
+        let ok = reg.count == count * count
+        return VStack(spacing: gap) {
+            ForEach(0..<count, id: \.self) { r in
+                HStack(spacing: gap) {
+                    ForEach(0..<count, id: \.self) { c in
+                        let i = r * count + c
+                        let g = ok ? Int(reg[i].asciiValue ?? 48) - 48 : 0
+                        ZStack {
+                            RoundedRectangle(cornerRadius: max(4, cell * 0.18)).fill(regionsTints[max(0, g) % regionsTints.count])
+                            if b.count == count * count && b[i] == "*" {
+                                Circle().fill(h.count == count * count && h[i] == "1" ? Color(hex: 0x8B5CF6) : Color(hex: 0x1A1A2E))
+                                    .frame(width: cell * 0.48, height: cell * 0.48)
+                            }
+                        }
+                        .frame(width: cell, height: cell)
+                    }
+                }
+            }
+        }
+        .padding(pad)
+        .background(RoundedRectangle(cornerRadius: 28).fill(won ? boardWinTint : boardLossTint))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(won ? winFG : lossFG, lineWidth: 3))
     }
 
     /// Web drawSudoku parity: 720pt card, squares gapped 4 with a wider 12 gap

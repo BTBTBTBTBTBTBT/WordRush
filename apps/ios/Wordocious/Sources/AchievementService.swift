@@ -69,11 +69,17 @@ enum AchievementService {
         if isDaily { await tryUnlock("daily_debut") }
         if gameMode == "DUEL" && won && timeSeconds < 30 { await tryUnlock("speed_demon") }
         // Word modes only: for Sudoku guess_count is mistakes + 1 (More Games §18c).
-        if won && guessCount == 1 && gameMode != "SUDOKU" { await tryUnlock("perfectionist") }
+        if won && guessCount == 1 && gameMode != "SUDOKU" && gameMode != "REGIONS" { await tryUnlock("perfectionist") }
         if gameMode == "SUDOKU" && won {
             await tryUnlock("sudoku_first")
             if guessCount == 1 && hintsUsed == 0 { await tryUnlock("clean_sheet") }
             if timeSeconds < 300 { await tryUnlock("sudoku_sprint") }
+        }
+        // Starsweep (More Games §18c): first clear, flawless (0 mistakes, 0 hints), swift.
+        if gameMode == "REGIONS" && won {
+            await tryUnlock("regions_first")
+            if guessCount == 1 && hintsUsed == 0 { await tryUnlock("regions_flawless") }
+            if timeSeconds < 180 { await tryUnlock("regions_swift") }
         }
         if gameMode == "GAUNTLET" && won { await tryUnlock("gauntlet_master") }
         if gameMode == "DUEL" && won && guessCount <= 2 { await tryUnlock("no_sweat") }
@@ -126,6 +132,7 @@ enum AchievementService {
                 ("quad_king","QUORDLE",50), ("octo_boss","OCTORDLE",50), ("sequence_ace","SEQUENCE",50),
                 ("rescue_hero","RESCUE",50), ("six_shooter","DUEL_6",50), ("lucky_seven","DUEL_7",50),
                 ("proper_scholar","PROPERNOUNDLE",50), ("classic_master","DUEL",100), ("sudoku_scholar","SUDOKU",50),
+                ("regions_regular","REGIONS",50),
             ]
             for (key, mode, thresh) in mastery where soloWinsByMode(mode) >= thresh { await tryUnlock(key) }
 
@@ -170,9 +177,9 @@ enum AchievementService {
         }
 
         // Pure ladder (matches counts) — only after a hintless win in a pure mode.
-        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU"]
+        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS"]
         if won && hintsUsed == 0 && pureModes.contains(gameMode) {
-            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : "proper"
+            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : "proper"
             let c = await count("matches") { $0.eq("player1_id", value: userId).is("player2_id", value: nil)
                 .eq("winner_id", value: userId).eq("game_mode", value: gameMode).eq("hints_used", value: 0) }
             if c >= 1 { await tryUnlock("pure_\(slug)_initiate") }

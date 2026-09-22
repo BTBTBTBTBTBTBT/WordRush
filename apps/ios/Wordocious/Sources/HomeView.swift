@@ -104,6 +104,12 @@ struct HomeView: View {
     private func freshSudokuSeed(_ d: SudokuDifficulty) -> String {
         "unlimited-SUDOKU-\(Int(Date().timeIntervalSince1970))-\(d.rawValue)"
     }
+    /// A Starsweep run (own view): nil seed = today's daily; the trailing size is what regionsSizeForSeed reads.
+    struct RegionsGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var regionsGame: RegionsGame?
+    private func freshRegionsSeed(_ n: Int) -> String {
+        "unlimited-REGIONS-\(Int(Date().timeIntervalSince1970))-\(n)"
+    }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -233,6 +239,12 @@ struct HomeView: View {
                         .id(g.id)   // a new seed = a new view + view model
                 }
             }
+            .fullScreenCover(item: $regionsGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    RegionsView(seed: g.seed, onPlayAgain: { n in regionsGame = RegionsGame(seed: freshRegionsSeed(n)) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -250,6 +262,8 @@ struct HomeView: View {
                     } else if m.id == "sudoku" {
                         // Restores today's finished board from its save (the daily seed).
                         SudokuView()
+                    } else if m.id == "regions" {
+                        RegionsView()
                     }
                 }
             }
@@ -807,6 +821,8 @@ struct HomeView: View {
             if effectiveMode == .unlimited { pnGame = PNGame(seed: freshPNSeed()) } else { pnDaily = true }
         } else if mode.id == "sudoku" {
             sudokuGame = SudokuGame(seed: effectiveMode == .unlimited ? freshSudokuSeed(.medium) : nil)
+        } else if mode.id == "regions" {
+            regionsGame = RegionsGame(seed: effectiveMode == .unlimited ? freshRegionsSeed(8) : nil)
         } else {
             comingSoon = mode.title
         }
