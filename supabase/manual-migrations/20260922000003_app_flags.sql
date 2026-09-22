@@ -1,4 +1,4 @@
--- ⚠️ MANUAL MIGRATION — More Games Stage 7 (kill switch). NOT YET APPLIED.
+-- ⚠️ MANUAL MIGRATION — More Games Stage 7 (kill switch). APPLIED 2026-09-22 (Stage 8 step 5; 10 rows, RLS on, app_flags_read policy).
 -- Apply by hand in the dashboard SQL editor at Stage 8, AFTER `bash
 -- scripts/db-backup.sh`. Idempotent: safe to re-run.
 --

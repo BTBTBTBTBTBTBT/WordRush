@@ -1,4 +1,4 @@
--- More Games §11: mode-aware plausibility floors for daily_results.
+-- More Games §11: mode-aware plausibility floors for daily_results. APPLIED 2026-09-22 (Stage 8 step 2; trigger read back bound + enabled).
 -- Supersedes the function body in 20260911000001_plausibility_guards.sql
 -- (same generic rules, plus per-mode minimum winning guess_count and minimum
 -- solve time). Same numbers as web lib/plausibility.ts, iOS Plausibility.swift
