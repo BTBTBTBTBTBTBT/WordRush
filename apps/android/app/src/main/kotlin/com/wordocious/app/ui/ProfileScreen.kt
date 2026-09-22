@@ -955,16 +955,17 @@ private fun ModeStatsGrid(rows: List<ProfileService.UserStat>, streak: Pair<Int,
     val wins = rows.sumOf { it.wins }
     val losses = rows.sumOf { it.losses }
     val games = rows.sumOf { it.totalGames }
-    val winRate = if (games > 0) Math.round(wins.toFloat() / games * 100) else 0
-    val best = rows.mapNotNull { it.bestScore }.filter { it > 0 }.minOrNull()
-    val fastest = rows.mapNotNull { it.fastestTime }.filter { it > 0 }.minOrNull()
-    val cells = listOf(
-        "Wins" to "$wins", "Losses" to "$losses", "Games" to "$games", "Win Rate" to "$winRate%",
-        "Best" to (best?.let { "${it.toInt()}" } ?: "-"),
-        // Whole minutes drop the trailing "0s" (iOS fmtTime).
-        "Fastest" to (fastest?.let { if (it < 60) "${it}s" else if (it % 60 > 0) "${it / 60}m ${it % 60}s" else "${it / 60}m" } ?: "-"),
-        "Streak" to "${streak?.first ?: 0}", "Best Streak" to "${streak?.second ?: 0}",
-    )
+    val best = rows.mapNotNull { it.bestScore }.filter { it > 0 }.minOrNull()?.toInt() ?: 0
+    val fastest = rows.mapNotNull { it.fastestTime }.filter { it > 0 }.minOrNull() ?: 0
+    // The eight cells come from the shared per-mode stats registry (ModeStats,
+    // More Games §18) — same lines, same fixtures as web and iOS.
+    val dbKey = rows.firstOrNull()?.gameMode ?: ""
+    val meta = com.wordocious.app.ModeGen.byDbKey(dbKey)
+    val cells = com.wordocious.app.data.ModeStats.lines(
+        dbKey,
+        com.wordocious.app.data.ModeStats.Totals(wins, losses, games, best, fastest, streak?.first ?: 0, streak?.second ?: 0),
+        meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1,
+    ).map { it.label to it.value }
     KitCard {
         cells.chunked(4).forEachIndexed { i, row ->
             if (i > 0) Spacer(Modifier.height(12.dp))

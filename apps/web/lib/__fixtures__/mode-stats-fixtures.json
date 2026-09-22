@@ -1,0 +1,842 @@
+[
+  {
+    "dbKey": "DUEL",
+    "semantics": "guesses",
+    "guessBase": 1,
+    "totals": {
+      "wins": 41,
+      "losses": 6,
+      "totalGames": 47,
+      "bestScore": 2,
+      "fastestTime": 38,
+      "streak": 3,
+      "bestStreak": 12
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "41"
+      },
+      {
+        "label": "Losses",
+        "value": "6"
+      },
+      {
+        "label": "Games",
+        "value": "47"
+      },
+      {
+        "label": "Win Rate",
+        "value": "87%"
+      },
+      {
+        "label": "Best",
+        "value": "2"
+      },
+      {
+        "label": "Fastest",
+        "value": "38s"
+      },
+      {
+        "label": "Streak",
+        "value": "3"
+      },
+      {
+        "label": "Best Streak",
+        "value": "12"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": true,
+      "openerYield": true,
+      "positionAccuracy": true,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "DUEL",
+    "semantics": "guesses",
+    "guessBase": 1,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Games",
+        "value": "0"
+      },
+      {
+        "label": "Win Rate",
+        "value": "0%"
+      },
+      {
+        "label": "Best",
+        "value": "-"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": true,
+      "openerYield": true,
+      "positionAccuracy": true,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "QUORDLE",
+    "semantics": "guesses",
+    "guessBase": 4,
+    "totals": {
+      "wins": 10,
+      "losses": 5,
+      "totalGames": 15,
+      "bestScore": 5,
+      "fastestTime": 125,
+      "streak": 0,
+      "bestStreak": 4
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "10"
+      },
+      {
+        "label": "Losses",
+        "value": "5"
+      },
+      {
+        "label": "Games",
+        "value": "15"
+      },
+      {
+        "label": "Win Rate",
+        "value": "67%"
+      },
+      {
+        "label": "Best",
+        "value": "5"
+      },
+      {
+        "label": "Fastest",
+        "value": "2m 5s"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "4"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": true,
+      "openerYield": true,
+      "positionAccuracy": true,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "OCTORDLE",
+    "semantics": "guesses",
+    "guessBase": 8,
+    "totals": {
+      "wins": 3,
+      "losses": 1,
+      "totalGames": 4,
+      "bestScore": 10,
+      "fastestTime": 600,
+      "streak": 1,
+      "bestStreak": 1
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "3"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Games",
+        "value": "4"
+      },
+      {
+        "label": "Win Rate",
+        "value": "75%"
+      },
+      {
+        "label": "Best",
+        "value": "10"
+      },
+      {
+        "label": "Fastest",
+        "value": "10m"
+      },
+      {
+        "label": "Streak",
+        "value": "1"
+      },
+      {
+        "label": "Best Streak",
+        "value": "1"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": true,
+      "openerYield": true,
+      "positionAccuracy": true,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "GAUNTLET",
+    "semantics": "guesses",
+    "guessBase": 21,
+    "totals": {
+      "wins": 7,
+      "losses": 9,
+      "totalGames": 16,
+      "bestScore": 29,
+      "fastestTime": 1499,
+      "streak": 2,
+      "bestStreak": 2
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "7"
+      },
+      {
+        "label": "Losses",
+        "value": "9"
+      },
+      {
+        "label": "Games",
+        "value": "16"
+      },
+      {
+        "label": "Win Rate",
+        "value": "44%"
+      },
+      {
+        "label": "Best",
+        "value": "29"
+      },
+      {
+        "label": "Fastest",
+        "value": "24m 59s"
+      },
+      {
+        "label": "Streak",
+        "value": "2"
+      },
+      {
+        "label": "Best Streak",
+        "value": "2"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": true,
+      "openerYield": true,
+      "positionAccuracy": true,
+      "stageBreakdown": true
+    }
+  },
+  {
+    "dbKey": "PROPERNOUNDLE",
+    "semantics": "guesses",
+    "guessBase": 1,
+    "totals": {
+      "wins": 18,
+      "losses": 2,
+      "totalGames": 20,
+      "bestScore": 1,
+      "fastestTime": 59,
+      "streak": 5,
+      "bestStreak": 9
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "18"
+      },
+      {
+        "label": "Losses",
+        "value": "2"
+      },
+      {
+        "label": "Games",
+        "value": "20"
+      },
+      {
+        "label": "Win Rate",
+        "value": "90%"
+      },
+      {
+        "label": "Best",
+        "value": "1"
+      },
+      {
+        "label": "Fastest",
+        "value": "59s"
+      },
+      {
+        "label": "Streak",
+        "value": "5"
+      },
+      {
+        "label": "Best Streak",
+        "value": "9"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": true,
+      "openerYield": true,
+      "positionAccuracy": true,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "SUDOKU",
+    "semantics": "mistakes",
+    "guessBase": 1,
+    "totals": {
+      "wins": 36,
+      "losses": 5,
+      "totalGames": 41,
+      "bestScore": 1,
+      "fastestTime": 238,
+      "streak": 6,
+      "bestStreak": 14
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "36"
+      },
+      {
+        "label": "Losses",
+        "value": "5"
+      },
+      {
+        "label": "Games",
+        "value": "41"
+      },
+      {
+        "label": "Win Rate",
+        "value": "88%"
+      },
+      {
+        "label": "Best",
+        "value": "0 mistakes"
+      },
+      {
+        "label": "Fastest",
+        "value": "3m 58s"
+      },
+      {
+        "label": "Streak",
+        "value": "6"
+      },
+      {
+        "label": "Best Streak",
+        "value": "14"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "SUDOKU",
+    "semantics": "mistakes",
+    "guessBase": 1,
+    "totals": {
+      "wins": 1,
+      "losses": 0,
+      "totalGames": 1,
+      "bestScore": 3,
+      "fastestTime": 900,
+      "streak": 1,
+      "bestStreak": 1
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "1"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Games",
+        "value": "1"
+      },
+      {
+        "label": "Win Rate",
+        "value": "100%"
+      },
+      {
+        "label": "Best",
+        "value": "2 mistakes"
+      },
+      {
+        "label": "Fastest",
+        "value": "15m"
+      },
+      {
+        "label": "Streak",
+        "value": "1"
+      },
+      {
+        "label": "Best Streak",
+        "value": "1"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "SCRAMBLE",
+    "semantics": "checks",
+    "guessBase": 5,
+    "totals": {
+      "wins": 12,
+      "losses": 3,
+      "totalGames": 15,
+      "bestScore": 5,
+      "fastestTime": 112,
+      "streak": 2,
+      "bestStreak": 6
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "12"
+      },
+      {
+        "label": "Losses",
+        "value": "3"
+      },
+      {
+        "label": "Games",
+        "value": "15"
+      },
+      {
+        "label": "Win Rate",
+        "value": "80%"
+      },
+      {
+        "label": "Best",
+        "value": "5 checks"
+      },
+      {
+        "label": "Fastest",
+        "value": "1m 52s"
+      },
+      {
+        "label": "Streak",
+        "value": "2"
+      },
+      {
+        "label": "Best Streak",
+        "value": "6"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "CROSSWORD",
+    "semantics": "checks",
+    "guessBase": 1,
+    "totals": {
+      "wins": 4,
+      "losses": 0,
+      "totalGames": 4,
+      "bestScore": 1,
+      "fastestTime": 200,
+      "streak": 4,
+      "bestStreak": 4
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "4"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Games",
+        "value": "4"
+      },
+      {
+        "label": "Win Rate",
+        "value": "100%"
+      },
+      {
+        "label": "Best",
+        "value": "0 checks"
+      },
+      {
+        "label": "Fastest",
+        "value": "3m 20s"
+      },
+      {
+        "label": "Streak",
+        "value": "4"
+      },
+      {
+        "label": "Best Streak",
+        "value": "4"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "LADDER",
+    "semantics": "overPar",
+    "guessBase": 1,
+    "totals": {
+      "wins": 20,
+      "losses": 4,
+      "totalGames": 24,
+      "bestScore": 1,
+      "fastestTime": 75,
+      "streak": 0,
+      "bestStreak": 7
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "20"
+      },
+      {
+        "label": "Losses",
+        "value": "4"
+      },
+      {
+        "label": "Games",
+        "value": "24"
+      },
+      {
+        "label": "Win Rate",
+        "value": "83%"
+      },
+      {
+        "label": "Best",
+        "value": "Par"
+      },
+      {
+        "label": "Fastest",
+        "value": "1m 15s"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "7"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "LADDER",
+    "semantics": "overPar",
+    "guessBase": 1,
+    "totals": {
+      "wins": 2,
+      "losses": 1,
+      "totalGames": 3,
+      "bestScore": 3,
+      "fastestTime": 240,
+      "streak": 1,
+      "bestStreak": 1
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "2"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Games",
+        "value": "3"
+      },
+      {
+        "label": "Win Rate",
+        "value": "67%"
+      },
+      {
+        "label": "Best",
+        "value": "+2"
+      },
+      {
+        "label": "Fastest",
+        "value": "4m"
+      },
+      {
+        "label": "Streak",
+        "value": "1"
+      },
+      {
+        "label": "Best Streak",
+        "value": "1"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "WORDSEARCH",
+    "semantics": "misses",
+    "guessBase": 10,
+    "totals": {
+      "wins": 9,
+      "losses": 1,
+      "totalGames": 10,
+      "bestScore": 10,
+      "fastestTime": 165,
+      "streak": 3,
+      "bestStreak": 5
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "9"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Games",
+        "value": "10"
+      },
+      {
+        "label": "Win Rate",
+        "value": "90%"
+      },
+      {
+        "label": "Best",
+        "value": "0 misses"
+      },
+      {
+        "label": "Fastest",
+        "value": "2m 45s"
+      },
+      {
+        "label": "Streak",
+        "value": "3"
+      },
+      {
+        "label": "Best Streak",
+        "value": "5"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "HUB",
+    "semantics": "rank",
+    "guessBase": 1,
+    "totals": {
+      "wins": 30,
+      "losses": 4,
+      "totalGames": 34,
+      "bestScore": 1,
+      "fastestTime": 1500,
+      "streak": 8,
+      "bestStreak": 11
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "30"
+      },
+      {
+        "label": "Losses",
+        "value": "4"
+      },
+      {
+        "label": "Games",
+        "value": "34"
+      },
+      {
+        "label": "Win Rate",
+        "value": "88%"
+      },
+      {
+        "label": "Best",
+        "value": "Pandemonium"
+      },
+      {
+        "label": "Fastest",
+        "value": "25m"
+      },
+      {
+        "label": "Streak",
+        "value": "8"
+      },
+      {
+        "label": "Best Streak",
+        "value": "11"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "REGIONS",
+    "semantics": "mistakes",
+    "guessBase": 1,
+    "totals": {
+      "wins": 5,
+      "losses": 2,
+      "totalGames": 7,
+      "bestScore": 2,
+      "fastestTime": 130,
+      "streak": 1,
+      "bestStreak": 3
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "5"
+      },
+      {
+        "label": "Losses",
+        "value": "2"
+      },
+      {
+        "label": "Games",
+        "value": "7"
+      },
+      {
+        "label": "Win Rate",
+        "value": "71%"
+      },
+      {
+        "label": "Best",
+        "value": "1 mistake"
+      },
+      {
+        "label": "Fastest",
+        "value": "2m 10s"
+      },
+      {
+        "label": "Streak",
+        "value": "1"
+      },
+      {
+        "label": "Best Streak",
+        "value": "3"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  }
+]

@@ -919,12 +919,16 @@ struct ProfileTab: View {
 
     private func modeStats(_ p: Profile, mode: GameMode) -> some View {
         let s = UserStatsService.aggregate(filteredStats, mode: mode.rawValue)
-        let winRate = s.totalGames > 0 ? Int((Double(s.wins) / Double(s.totalGames) * 100).rounded()) : 0
-        let cells: [(String, String)] = [
-            ("Wins", "\(s.wins)"), ("Losses", "\(s.losses)"), ("Games", "\(s.totalGames)"), ("Win Rate", "\(winRate)%"),
-            ("Best", s.bestScore > 0 ? "\(s.bestScore)" : "-"), ("Fastest", fmtTime(s.fastestTime)),
-            ("Streak", "\(modeWinStreak.current)"), ("Best Streak", "\(modeWinStreak.best)"),
-        ]
+        // The eight cells come from the shared per-mode stats registry (ModeStats,
+        // More Games §18) — same lines, same fixtures as web and Android.
+        let meta = ModeGen.byDbKey(mode.rawValue)
+        // WordociousCore.ModeStats — the app has its own `ModeStats` aggregate struct in UserStatsService.
+        let cells: [(String, String)] = WordociousCore.ModeStats.lines(
+            dbKey: mode.rawValue,
+            totals: StatTotals(wins: s.wins, losses: s.losses, totalGames: s.totalGames, bestScore: s.bestScore,
+                               fastestTime: s.fastestTime, streak: modeWinStreak.current, bestStreak: modeWinStreak.best),
+            semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1
+        ).map { ($0.label, $0.value) }
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
             ForEach(cells, id: \.0) { c in
                 VStack(spacing: 1) {

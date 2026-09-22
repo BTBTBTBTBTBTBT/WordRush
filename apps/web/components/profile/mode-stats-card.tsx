@@ -1,8 +1,11 @@
 'use client';
 
-import { WIN_FG } from '@/lib/tile-theme';
+import { statLines } from '@/lib/mode-stats';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 interface ModeStatsCardProps {
+  /** daily_results / user_stats key ("DUEL", "SUDOKU", …). Picks the stats profile. */
+  gameMode: string;
   wins: number;
   losses: number;
   totalGames: number;
@@ -12,27 +15,21 @@ interface ModeStatsCardProps {
   winStreak?: { current: number; best: number };
 }
 
-function formatTime(seconds: number): string {
-  if (seconds <= 0) return '-';
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
-}
-
-export function ModeStatsCard({ wins, losses, totalGames, bestScore, fastestTime, accentColor, winStreak }: ModeStatsCardProps) {
-  const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
-
-  const stats = [
-    { label: 'Wins', value: wins, color: WIN_FG },
-    { label: 'Losses', value: losses, color: '#dc2626' },
-    { label: 'Games', value: totalGames, color: accentColor },
-    { label: 'Win Rate', value: `${winRate}%`, color: '#7c3aed' },
-    { label: 'Best', value: bestScore > 0 ? bestScore : '-', color: '#d97706' },
-    { label: 'Fastest', value: formatTime(fastestTime), color: '#2563eb' },
-    { label: 'Streak', value: winStreak?.current || 0, color: '#f59e0b' },
-    { label: 'Best Streak', value: winStreak?.best || 0, color: '#ea580c' },
-  ];
+/**
+ * The 4×2 stat grid on a mode's detail panel. The eight cells come from the
+ * per-mode stats registry (lib/mode-stats.ts, More Games §18), which reads
+ * "Best" through the mode's guess semantics — so a word mode still shows
+ * "2" and a Sudoku best of guess_count 1 reads "0 mistakes". Same registry,
+ * same fixtures, on iOS and Android.
+ */
+export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, fastestTime, winStreak }: ModeStatsCardProps) {
+  const meta = MODE_BY_DBKEY[gameMode];
+  const stats = statLines(
+    gameMode,
+    { wins, losses, totalGames, bestScore, fastestTime, streak: winStreak?.current || 0, bestStreak: winStreak?.best || 0 },
+    meta?.guessSemantics ?? 'guesses',
+    meta?.guessBase ?? 1,
+  );
 
   return (
     <div

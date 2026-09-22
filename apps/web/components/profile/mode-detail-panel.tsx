@@ -14,6 +14,8 @@ import { createInvite, vsHrefForMode } from '@/lib/invite-service';
 import { useAuth } from '@/lib/auth-context';
 import { ProDeepModeCard } from './pro-insights-deep';
 import { fetchModeDetail } from '@/lib/stats-service';
+import { statPanels } from '@/lib/mode-stats';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 interface ModeData {
   guessDist: Array<{ guesses: number; count: number }>;
@@ -52,6 +54,8 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
 
   const mode = PROFILE_MODES.find((m) => m.dbKey === gameMode);
   const accentColor = mode?.accentColor || '#7c3aed';
+  // Which cards below the grid apply to this mode (More Games §18 registry).
+  const panels = statPanels(gameMode, MODE_BY_DBKEY[gameMode]?.guessSemantics ?? 'guesses');
   const Icon = mode?.icon;
   const isOwnProfile = user?.id === userId;
 
@@ -178,6 +182,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
         <>
           {/* Stats Card */}
           <ModeStatsCard
+            gameMode={gameMode}
             wins={stats.wins}
             losses={stats.losses}
             totalGames={stats.total_games}
@@ -187,17 +192,17 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             winStreak={data?.winStreak}
           />
 
-          {/* Guess Distribution */}
-          {/* Gauntlet: up to 50 guesses across 21 boards — a histogram is meaningless. */}
-          {data && gameMode !== 'GAUNTLET' && <GuessDistribution data={data.guessDist} accentColor={accentColor} />}
+          {/* Guess Distribution — gated by the mode's stats profile (Gauntlet: up to 50
+              guesses across 21 boards, a histogram is meaningless; custom engines: no word rows). */}
+          {data && panels.guessDistribution && <GuessDistribution data={data.guessDist} accentColor={accentColor} />}
 
           {/* Solve Time Trend */}
-          {data && data.solveHistory.length >= 2 && (
+          {data && panels.solveTime && data.solveHistory.length >= 2 && (
             <SolveTimeChart data={data.solveHistory} accentColor={accentColor} />
           )}
 
           {/* Top Words */}
-          {data && data.topWords.length > 0 && (
+          {data && panels.topWords && data.topWords.length > 0 && (
             <TopWordsCard words={data.topWords} accentColor={accentColor} />
           )}
 
