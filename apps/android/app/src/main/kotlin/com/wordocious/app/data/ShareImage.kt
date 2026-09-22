@@ -582,6 +582,81 @@ object ShareImage {
         return bmp
     }
 
+    // ── Letter Ladder card (More Games §18d) ──────────────────────────────────
+
+    /** START purple with letters, END dashed in the accent with letters, every
+     *  rung between them white with only the changed tile filled (accent; violet
+     *  for a hint rung). No rung word is ever drawn. `meta` is the stats line
+     *  ("#12 · Par 5 · +1 · 2:10"). */
+    fun renderLadder(context: Context, start: String, end: String, words: List<String>, hintMask: String, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFF0284C7.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("LETTER LADDER", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+        val list = if (words.isEmpty()) listOf(start) else words
+        data class Rw(val word: String, val prev: String?, val kind: String)
+        val rows = ArrayList<Rw>()
+        list.forEachIndexed { i, w -> rows.add(Rw(w, if (i > 0) list[i - 1] else null, if (i == 0) "start" else if (hintMask.getOrNull(i) == '1') "hint" else "rung")) }
+        if (list.last() != end) rows.add(Rw(end, null, "end"))
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val gap = 10f
+        val tile = minOf(96f, ((areaBottom - areaTop - 40f) - gap * (rows.size - 1)) / rows.size, (W - 200f - gap * 4) / 5f)
+        val boardW = tile * 5 + gap * 4; val boardH = tile * rows.size + gap * (rows.size - 1)
+        val x0 = cx - boardW / 2f; val y0 = areaTop + (areaBottom - areaTop - boardH) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f }
+        val dashed = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = 0x880284C7.toInt(); pathEffect = android.graphics.DashPathEffect(floatArrayOf(8f, 6f), 0f) }
+        p.typeface = black; p.textSize = tile * 0.5f; p.textAlign = Paint.Align.CENTER
+        rows.forEachIndexed { r, row ->
+            for (col in 0 until 5) {
+                val x = x0 + col * (tile + gap); val y = y0 + r * (tile + gap)
+                val rect = RectF(x, y, x + tile, y + tile)
+                val rad = maxOf(6f, tile * 0.14f)
+                val ch = row.word.getOrNull(col)?.toString() ?: ""
+                val changed = row.prev != null && row.prev.getOrNull(col) != row.word.getOrNull(col)
+                when (row.kind) {
+                    "start" -> { fill.color = 0xFF7C3AED.toInt(); c.drawRoundRect(rect, rad, rad, fill); p.color = 0xFFFFFFFF.toInt(); c.drawText(ch, rect.centerX(), rect.centerY() + tile * 0.18f, p) }
+                    "end" -> { c.drawRoundRect(rect, rad, rad, dashed); p.color = accent; c.drawText(ch, rect.centerX(), rect.centerY() + tile * 0.18f, p) }
+                    else -> if (changed) { fill.color = (if (row.kind == "hint") 0xFF8B5CF6 else 0xFF0284C7).toInt(); c.drawRoundRect(rect, rad, rad, fill) }
+                    else { fill.color = 0xFFFFFFFF.toInt(); c.drawRoundRect(rect, rad, rad, fill); stroke.color = 0xFFD1D5DB.toInt(); c.drawRoundRect(rect, rad, rad, stroke) }
+                }
+            }
+        }
+        p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {

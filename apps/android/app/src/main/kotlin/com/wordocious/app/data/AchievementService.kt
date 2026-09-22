@@ -91,6 +91,9 @@ object AchievementService {
     private data class WinsRow(val wins: Int = 0)
 
     @Serializable
+    private data class ParRow(val day: String, val completed: Boolean = false, @SerialName("guess_count") val guessCount: Int = 0)
+
+    @Serializable
     private data class DailyTimedRow(
         @SerialName("game_mode") val gameMode: String,
         @SerialName("time_seconds") val timeSeconds: Int? = 0,
@@ -176,7 +179,31 @@ object AchievementService {
 
         // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
         // mistakes + 1 (More Games §18c).
-        if (won && guessCount == 1 && gameMode != "SUDOKU" && gameMode != "REGIONS") tryUnlock("perfectionist")
+        // Perfectionist is a WORD-mode feat: every mode whose guess_count means
+        // something else (mistakes, par, checks…) is excluded through the catalog.
+        if (won && guessCount == 1 && (com.wordocious.app.ModeGen.byDbKey(gameMode)?.guessSemantics ?: "guesses") == "guesses") tryUnlock("perfectionist")
+
+        // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
+        if (gameMode == "LADDER" && won) {
+            tryUnlock("ladder_first")
+            if (guessCount == 1) {
+                tryUnlock("ladder_on_par")
+                if (isDaily && "ladder_par_week" !in alreadyUnlocked) {
+                    val rows = runCatching {
+                        client.postgrest["daily_results"]
+                            .select(Columns.raw("day, completed, guess_count")) {
+                                filter { eq("user_id", userId); eq("game_mode", "LADDER") }
+                                order("day", Order.DESCENDING)
+                                limit(7)
+                            }
+                            .decodeList<ParRow>()
+                    }.getOrDefault(emptyList())
+                    val allPar = rows.size == 7 && rows.all { it.completed && it.guessCount == 1 }
+                    val consecutive = (1 until rows.size).all { com.wordocious.core.Bank.dayIndex(rows[it - 1].day, rows[it].day) == 1 }
+                    if (allPar && consecutive) tryUnlock("ladder_par_week")
+                }
+            }
+        }
 
         // Sudoku: first solve, clean sheet (0 mistakes, 0 hints), sprint.
         if (gameMode == "SUDOKU" && won) {
@@ -301,6 +328,7 @@ object AchievementService {
             Triple("proper_scholar", "PROPERNOUNDLE", 50),
             Triple("sudoku_scholar", "SUDOKU", 50),
             Triple("regions_regular", "REGIONS", 50),
+            Triple("ladder_regular", "LADDER", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -610,13 +638,14 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
                 "DUEL_7" -> "seven"
                 "SUDOKU" -> "sudoku"
                 "REGIONS" -> "regions"
+                "LADDER" -> "ladder"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"

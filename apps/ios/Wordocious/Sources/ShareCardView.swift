@@ -25,6 +25,9 @@ struct ShareCardView: View {
         /// Starsweep (More Games §18d): the regions as tinted squares with the
         /// placed stars as dots — no crosses, never the missing stars.
         case regions(n: Int, regions: String, board: String, hintMask: String, mistakes: Int, sizeLabel: String, puzzleNumber: Int?)
+        /// Letter Ladder (More Games §18d): START and END spelled out, every rung
+        /// between them blank except the changed position (accent; violet for a hint).
+        case ladder(start: String, end: String, words: [String], hintMask: String, par: Int, moves: Int, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -59,7 +62,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -116,6 +119,10 @@ struct ShareCardView: View {
             let m = "\(mistakes) mistake\(mistakes == 1 ? "" : "s")"
             let num = number.map { "#\($0) · " } ?? ""
             return "\(num)\(sizeLabel) · \(won ? m : "Out of mistakes") · \(t) · \(dateStr)"
+        case .ladder(_, _, _, _, let par, let moves, let number):
+            let over = moves - par
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)Par \(par) · \(won ? (over <= 0 ? "On par" : "+\(over)") : "Out of moves") · \(t) · \(dateStr)"
         }
     }
 
@@ -148,6 +155,49 @@ struct ShareCardView: View {
             sudokuCard(givens: givens, board: board, hintMask: hintMask)
         case .regions(let n, let regions, let board, let hintMask, _, _, _):
             regionsCard(n: n, regions: regions, board: board, hintMask: hintMask)
+        case .ladder(let start, let end, let words, let hintMask, _, _, _):
+            ladderCard(start: start, end: end, words: words, hintMask: hintMask)
+        }
+    }
+
+    /// Web drawLadder parity: START purple with letters, END dashed in the accent
+    /// with letters, rungs white with only the changed tile filled (accent; violet
+    /// for a hint rung). No rung word is ever drawn.
+    private func ladderCard(start: String, end: String, words: [String], hintMask: String) -> some View {
+        let list = words.isEmpty ? [start] : words
+        var rows: [(word: String, prev: String?, kind: String)] = list.enumerated().map { i, w in
+            (w, i > 0 ? list[i - 1] : nil, i == 0 ? "start" : (i < hintMask.count && Array(hintMask)[i] == "1" ? "hint" : "rung"))
+        }
+        if list.last != end { rows.append((end, nil, "end")) }
+        let gap: CGFloat = 10, maxTile: CGFloat = 96
+        let tile = min(maxTile, floor((720 - gap * CGFloat(rows.count - 1)) / CGFloat(rows.count)), floor((880 - gap * 4) / 5))
+        let accent = Color(hex: 0x0284C7), hint = Color(hex: 0x8B5CF6), start = Color(hex: 0x7C3AED)
+        return VStack(spacing: gap) {
+            ForEach(0..<rows.count, id: \.self) { r in
+                let row = rows[r]
+                let chars = Array(row.word.padding(toLength: 5, withPad: " ", startingAt: 0))
+                let prev = row.prev.map(Array.init)
+                HStack(spacing: gap) {
+                    ForEach(0..<5, id: \.self) { c in
+                        let changed = prev.map { $0[c] != chars[c] } ?? false
+                        let radius = max(6, tile * 0.14)
+                        ZStack {
+                            switch row.kind {
+                            case "start":
+                                RoundedRectangle(cornerRadius: radius).fill(start)
+                                Text(String(chars[c])).font(Brand.font(tile * 0.5, .black)).foregroundStyle(.white)
+                            case "end":
+                                RoundedRectangle(cornerRadius: radius).strokeBorder(style: StrokeStyle(lineWidth: 3, dash: [8, 6])).foregroundStyle(accent.opacity(0.55))
+                                Text(String(chars[c])).font(Brand.font(tile * 0.5, .black)).foregroundStyle(accent)
+                            default:
+                                if changed { RoundedRectangle(cornerRadius: radius).fill(row.kind == "hint" ? hint : accent) }
+                                else { RoundedRectangle(cornerRadius: radius).fill(Color.white); RoundedRectangle(cornerRadius: radius).strokeBorder(Color(hex: 0xD1D5DB), lineWidth: 3) }
+                            }
+                        }
+                        .frame(width: tile, height: tile)
+                    }
+                }
+            }
         }
     }
 

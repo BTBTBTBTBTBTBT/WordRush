@@ -110,6 +110,10 @@ struct HomeView: View {
     private func freshRegionsSeed(_ n: Int) -> String {
         "unlimited-REGIONS-\(Int(Date().timeIntervalSince1970))-\(n)"
     }
+    /// A Letter Ladder run (own view): nil seed = today's daily.
+    struct LadderGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var ladderGame: LadderGame?
+    private func freshLadderSeed() -> String { "unlimited-LADDER-\(Int(Date().timeIntervalSince1970))" }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -245,6 +249,12 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
+            .fullScreenCover(item: $ladderGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    LadderView(seed: g.seed, onPlayAgain: { ladderGame = LadderGame(seed: freshLadderSeed()) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -264,6 +274,8 @@ struct HomeView: View {
                         SudokuView()
                     } else if m.id == "regions" {
                         RegionsView()
+                    } else if m.id == "ladder" {
+                        LadderView()
                     }
                 }
             }
@@ -823,6 +835,8 @@ struct HomeView: View {
             sudokuGame = SudokuGame(seed: effectiveMode == .unlimited ? freshSudokuSeed(.medium) : nil)
         } else if mode.id == "regions" {
             regionsGame = RegionsGame(seed: effectiveMode == .unlimited ? freshRegionsSeed(8) : nil)
+        } else if mode.id == "ladder" {
+            ladderGame = LadderGame(seed: effectiveMode == .unlimited ? freshLadderSeed() : nil)
         } else {
             comingSoon = mode.title
         }

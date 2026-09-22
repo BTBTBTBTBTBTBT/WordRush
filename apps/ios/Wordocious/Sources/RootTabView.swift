@@ -64,6 +64,7 @@ struct RootTabView: View {
             switch m.id {
             case "sudoku": return "unlimited-SUDOKU-\(ts)-medium"
             case "regions": return "unlimited-REGIONS-\(ts)-8"
+            case "ladder": return "unlimited-LADDER-\(ts)"
             default: return "unlimited-PROPERNOUNDLE-\(ts)"
             }
         }
@@ -215,6 +216,11 @@ struct RootTabView: View {
                 } else if g.mode.id == "regions" {
                     RegionsView(seed: g.seed, onPlayAgain: { n in
                         unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: "unlimited-REGIONS-\(Int(Date().timeIntervalSince1970))-\(n)")
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "ladder" {
+                    LadderView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
                     })
                     .id(g.seed)
                 } else {

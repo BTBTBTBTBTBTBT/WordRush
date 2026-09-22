@@ -31,7 +31,7 @@ Tick a cell only after checking, in order:
 | Stats registry rows (Profile → mode) | ☐ | ☐ | ☐ |
 | **Sudoku** | ☐ | ☐ | ☐ |
 | **Starsweep** | ☐ | ☐ | ☐ |
-| Letter Ladder | ☐ | ☐ | ☐ |
+| **Letter Ladder** | ☐ | ☐ | ☐ |
 | Muddle | ☐ | ☐ | ☐ |
 | Spyglass | ☐ | ☐ | ☐ |
 | Crosswordocious | ☐ | ☐ | ☐ |
@@ -67,6 +67,26 @@ Tick a cell only after checking, in order:
 - Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 capsules above the board; switching starts a fresh board.
 - Score: mistakes + 1 out of 4, 300 per unused step, 10-minute speed cap. The share card is the
   regions as coloured squares with the placed stars as dots and "0 mistakes · 2:10".
+
+## Letter Ladder — what to look for (built 2026-09-22)
+
+- Daily "#N" counts from 2026-09-23; the first ladder is SKIRT → CHOKE, par 5. Same puzzle
+  everywhere on a date (the bank is bundled on both natives and sha-guarded against the web copy).
+  Par follows the weekday: Mon/Tue 4, Wed/Thu 5, Fri/Sat 6, Sun 7 (a few days fall back a step
+  where the pools ran thin).
+- START is a filled purple row, each accepted rung a white row with the CHANGED letter filled in
+  the sky-blue accent and ringed (violet when a Hint placed it), END waits as a dashed target. Type
+  on the normal keyboard and press Enter.
+- Rejections are FREE and say why: "Not in word list", "Change exactly one letter", "Already on the
+  ladder", "Five letters, please". Every accepted word is a move; the header shows moves and moves
+  left (budget = par + 5). Running out shows "Out of moves" and one shortest route, muted.
+- **Undo** removes the last rung but the move stays spent. **Hint** places the next word on a
+  shortest route from where you stand, counts as a move, costs 100 points, never a mistake.
+- Finished screen: "Ladder climbed on par" / "Ladder climbed" / "Out of moves", then moves · Par ·
+  "+1" (or "Par") · time. Victory card shows MOVES · TIME · POINTS. Score breakdown row is "Par bonus".
+- Share card: START and END spelled out, rungs blank except the changed tile; caption/unfurl
+  "Score · Time · Par 5 · +1 over par". Pro "Keep playing: Unlimited Letter Ladder" appears on all
+  three.
 
 ## Known gaps to close before the gate closes
 

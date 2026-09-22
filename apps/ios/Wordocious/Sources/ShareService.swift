@@ -119,6 +119,10 @@ enum ShareService {
             // Mistake-scored modes: the unfurl names score, time and mistakes (§18d).
             if let points { q["pts"] = "\(points)" }
             if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+        case let .ladder(_, _, _, _, par, _, _):
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+            q["par"] = "\(par)"
         case .single:
             break
         }

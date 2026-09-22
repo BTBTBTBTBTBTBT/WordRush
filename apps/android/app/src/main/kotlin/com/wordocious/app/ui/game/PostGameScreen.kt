@@ -751,6 +751,7 @@ internal fun ScoreBreakdownCard(
             "mistakes" -> "Mistake bonus"
             "checks" -> "Check bonus"
             "misses" -> "Miss bonus"
+            "overPar" -> "Par bonus"
             else -> "Guess bonus"
         }
         if (won && b.guessBonusApplies) ScoreRow(bonusLabel, "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)

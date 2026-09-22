@@ -19,6 +19,10 @@ public struct LadderPuzzle: Codable, Equatable {
     public let end: String
     public let par: Int
     public let path: [String]
+
+    public init(id: String, start: String, end: String, par: Int, path: [String]) {
+        self.id = id; self.start = start; self.end = end; self.par = par; self.path = path
+    }
 }
 
 public struct LadderBank: Codable {
@@ -26,6 +30,10 @@ public struct LadderBank: Codable {
     public let epoch: String
     public let daily: [LadderPuzzle]
     public let extra: [LadderPuzzle]
+
+    public init(version: Int, epoch: String, daily: [LadderPuzzle], extra: [LadderPuzzle]) {
+        self.version = version; self.epoch = epoch; self.daily = daily; self.extra = extra
+    }
 
     public static func load(from data: Data) -> LadderBank? { try? JSONDecoder().decode(LadderBank.self, from: data) }
 }

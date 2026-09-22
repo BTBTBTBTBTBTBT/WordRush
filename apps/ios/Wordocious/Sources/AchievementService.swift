@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Supabase
+import WordociousCore
 
 /// One achievement definition — 1:1 with apps/web/lib/achievement-service.ts
 /// ACHIEVEMENTS. Display-only on native: unlock detection runs server-side on
@@ -69,7 +70,27 @@ enum AchievementService {
         if isDaily { await tryUnlock("daily_debut") }
         if gameMode == "DUEL" && won && timeSeconds < 30 { await tryUnlock("speed_demon") }
         // Word modes only: for Sudoku guess_count is mistakes + 1 (More Games §18c).
-        if won && guessCount == 1 && gameMode != "SUDOKU" && gameMode != "REGIONS" { await tryUnlock("perfectionist") }
+        // Perfectionist is a WORD-mode feat: every mode whose guess_count means
+        // something else (mistakes, par, checks…) is excluded through the catalog.
+        if won && guessCount == 1 && (ModeGen.byDbKey(gameMode)?.guessSemantics ?? "guesses") == "guesses" { await tryUnlock("perfectionist") }
+        // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
+        if gameMode == "LADDER" && won {
+            await tryUnlock("ladder_first")
+            if guessCount == 1 {
+                await tryUnlock("ladder_on_par")
+                if isDaily && !has("ladder_par_week") {
+                    struct ParRow: Decodable { let day: String; let completed: Bool; let guess_count: Int }
+                    let rows: [ParRow] = (try? await client.from("daily_results")
+                        .select("day,completed,guess_count")
+                        .eq("user_id", value: userId).eq("game_mode", value: "LADDER")
+                        .order("day", ascending: false).limit(7)
+                        .execute().value) ?? []
+                    let allPar = rows.count == 7 && rows.allSatisfy { $0.completed && $0.guess_count == 1 }
+                    let consecutive = rows.indices.dropFirst().allSatisfy { Bank.dayIndex(rows[$0 - 1].day, epoch: rows[$0].day) == 1 }
+                    if allPar && consecutive { await tryUnlock("ladder_par_week") }
+                }
+            }
+        }
         if gameMode == "SUDOKU" && won {
             await tryUnlock("sudoku_first")
             if guessCount == 1 && hintsUsed == 0 { await tryUnlock("clean_sheet") }
@@ -132,7 +153,7 @@ enum AchievementService {
                 ("quad_king","QUORDLE",50), ("octo_boss","OCTORDLE",50), ("sequence_ace","SEQUENCE",50),
                 ("rescue_hero","RESCUE",50), ("six_shooter","DUEL_6",50), ("lucky_seven","DUEL_7",50),
                 ("proper_scholar","PROPERNOUNDLE",50), ("classic_master","DUEL",100), ("sudoku_scholar","SUDOKU",50),
-                ("regions_regular","REGIONS",50),
+                ("regions_regular","REGIONS",50), ("ladder_regular","LADDER",50),
             ]
             for (key, mode, thresh) in mastery where soloWinsByMode(mode) >= thresh { await tryUnlock(key) }
 
@@ -177,9 +198,9 @@ enum AchievementService {
         }
 
         // Pure ladder (matches counts) — only after a hintless win in a pure mode.
-        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS"]
+        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER"]
         if won && hintsUsed == 0 && pureModes.contains(gameMode) {
-            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : "proper"
+            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : "proper"
             let c = await count("matches") { $0.eq("player1_id", value: userId).is("player2_id", value: nil)
                 .eq("winner_id", value: userId).eq("game_mode", value: gameMode).eq("hints_used", value: 0) }
             if c >= 1 { await tryUnlock("pure_\(slug)_initiate") }

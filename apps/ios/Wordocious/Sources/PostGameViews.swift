@@ -204,6 +204,7 @@ struct ScoreBreakdownView: View {
                 case "mistakes": return "Mistake bonus"
                 case "checks": return "Check bonus"
                 case "misses": return "Miss bonus"
+                case "overPar": return "Par bonus"
                 default: return "Guess bonus"
                 }
             }()
