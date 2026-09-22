@@ -1008,7 +1008,7 @@ private struct ProfileModePicker: View {
         return Button { selected = active ? nil : gm } label: {
             VStack(spacing: 4) {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 28)
-                Text(shortTitles[m.id] ?? m.title).font(Brand.font(10, .heavy))
+                Text(shortTitles[m.id] ?? ModeGen.byId(m.id)?.shortTitle ?? m.title).font(Brand.font(10, .heavy))
                     .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(count > 0 ? "\(count)" : " ").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
@@ -2089,47 +2089,81 @@ struct SweepModeDots: View {
         .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
 }
 
-/// Shared mode picker — all 9 daily modes laid out 5-on-top-of-4 on one screen
+/// Shared mode picker — the sweep modes (+ Sweep, + a More chip once a More Games title is enabled) laid out 5-across on one screen
 /// (no horizontal scroll), matching the Profile "Today's Dailies" arrangement.
 /// Selecting a mode highlights it in the mode's accent color.
 struct HModePicker: View {
     @Binding var selected: GameMode
     // Parallel selection flag for the Sweep tile — GameMode can't hold SWEEP, so
-    // the picker tracks it alongside `selected` (untouched for the 9 real cells).
+    // the picker tracks it alongside `selected` (untouched for the real cells).
     // Defaults to a constant binding so the Home-grid / non-sweep call sites keep
     // compiling unchanged; only the sweep-aware screens pass a live binding.
     @Binding var isSweep: Bool
-    // All 9 daily-recordable modes incl. ProperNoundle (dbKey, no HomeMode.mode).
-    private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
+    // The sweep modes (More Games §18): the grid cannot hold every daily mode in
+    // its 5-over-N layout, so the non-sweep dailies sit behind ONE "More" chip
+    // that opens the sectioned More Games list. Today every daily mode is in
+    // the sweep, so the chip is hidden and the grid is unchanged (5-over-5).
+    private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.sweep }
+    private let morePickerModes: [HomeMode] = moreModes.filter { $0.dailyEligible && $0.dbKey != nil }
     private let spacing: CGFloat = 8
     // Sweep tile accent — indigo, used ONLY here (leaderboard/records sweep board).
     private let sweepAccent = Color(hex: 0x4F46E5)
+    @State private var showMore = false
 
     init(selected: Binding<GameMode>, isSweep: Binding<Bool> = .constant(false)) {
         _selected = selected
         _isSweep = isSweep
     }
 
-    // Short labels so each cell fits 5-across without truncating.
+    // Short labels so each cell fits 5-across without truncating; the catalog's
+    // shortTitle covers any mode not pinned here.
     private let shortTitles: [String: String] = [
         "practice": "Classic", "quordle": "Quad", "octordle": "Octo", "sequence": "Succ",
         "rescue": "Deliv", "six": "Six", "seven": "Seven", "gauntlet": "Gauntlet", "propernoundle": "Proper",
     ]
+    private func shortTitle(_ m: HomeMode) -> String { shortTitles[m.id] ?? ModeGen.byId(m.id)?.shortTitle ?? m.title }
+
+    /// Cells in order: sweep modes, the Sweep tile, then the More chip if needed.
+    private enum Cell: Identifiable {
+        case mode(HomeMode), sweep, more
+        var id: String { switch self { case .mode(let m): return m.id; case .sweep: return "SWEEP"; case .more: return "MORE" } }
+    }
+    private var cells: [Cell] {
+        var out: [Cell] = modes.map { .mode($0) } + [.sweep]
+        if !morePickerModes.isEmpty { out.append(.more) }
+        return out
+    }
+    private var rows: [[Cell]] {
+        let all = cells
+        return stride(from: 0, to: all.count, by: 5).map { Array(all[$0..<min($0 + 5, all.count)]) }
+    }
 
     var body: some View {
+        let rowCount = CGFloat(rows.count)
         GeometryReader { geo in
             let w = (geo.size.width - spacing * 4) / 5
             VStack(spacing: spacing) {
-                HStack(spacing: spacing) { ForEach(Array(modes.prefix(5))) { cell($0, w) } }
-                // Bottom row: the remaining 4 real modes + the Sweep tile → 5-over-5.
-                HStack(spacing: spacing) {
-                    ForEach(Array(modes.dropFirst(5))) { cell($0, w) }
-                    sweepCell(w)
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    HStack(spacing: spacing) {
+                        ForEach(row) { c in
+                            switch c {
+                            case .mode(let m): cell(m, w)
+                            case .sweep: sweepCell(w)
+                            case .more: moreCell(w)
+                            }
+                        }
+                        // A partial last row keeps its cells at 1/5 width, left-aligned.
+                        if row.count < 5 { Spacer(minLength: 0) }
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
         }
-        .frame(height: 112)
+        .frame(height: 52 * rowCount + spacing * (rowCount - 1))
+        .sheet(isPresented: $showMore) {
+            MoreModePickerSheet { gm in isSweep = false; selected = gm }
+                .presentationDetents([.large])
+        }
     }
 
     private func cell(_ m: HomeMode, _ w: CGFloat) -> some View {
@@ -2140,7 +2174,7 @@ struct HModePicker: View {
         } label: {
             VStack(spacing: 4) {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 26)
-                Text(shortTitles[m.id] ?? m.title).font(Brand.font(9, .heavy))
+                Text(shortTitle(m)).font(Brand.font(9, .heavy))
                     .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -2150,7 +2184,7 @@ struct HModePicker: View {
         }.buttonStyle(.plain)
     }
 
-    /// The 10th "Sweep" tile — leaderboard/records only, never the Home grid.
+    /// The "Sweep" tile — leaderboard/records only, never the Home grid.
     private func sweepCell(_ w: CGFloat) -> some View {
         Button { isSweep = true } label: {
             VStack(spacing: 4) {
@@ -2162,6 +2196,26 @@ struct HModePicker: View {
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(isSweep ? sweepAccent.opacity(0.08) : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(isSweep ? sweepAccent : Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
+    }
+
+    /// The "More" chip: opens the More Games list. When one of those modes is
+    /// selected the chip wears that mode's icon, title and accent so the grid
+    /// still shows what the screen is filtered to.
+    private func moreCell(_ w: CGFloat) -> some View {
+        let picked = isSweep ? nil : morePickerModes.first { $0.dbKey == selected.rawValue }
+        let accent = picked?.accent ?? sweepAccent
+        let active = picked != nil
+        return Button { showMore = true } label: {
+            VStack(spacing: 4) {
+                ModeIconView(icon: picked?.icon ?? .symbol("square.grid.2x2"), accent: accent, box: 26)
+                Text(picked.map(shortTitle) ?? "More").font(Brand.font(9, .heavy))
+                    .foregroundStyle(active ? accent : Theme.textMuted).lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(width: w, height: 52)
+            .background(RoundedRectangle(cornerRadius: 12).fill(active ? accent.opacity(0.08) : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? accent : Theme.border, lineWidth: 1.5))
         }.buttonStyle(.plain)
     }
 }

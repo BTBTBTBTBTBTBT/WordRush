@@ -87,6 +87,12 @@ struct HomeView: View {
         var id: String { seed }
     }
     @State private var pnGame: PNGame?
+    /// Today's ProperNoundle daily launched from the More Games sheet (the grid
+    /// card uses a NavigationLink; the sheet hands its pick back programmatically).
+    @State private var pnDaily = false
+    /// More Games sheet (Stage 5) + the pick it hands back on dismiss.
+    @State private var showMoreGames = false
+    @State private var pendingMorePick: HomeMode?
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -206,6 +212,15 @@ struct HomeView: View {
                 NavigationStack {
                     ProperNoundleView(seed: g.seed, onPlayAgain: { pnGame = PNGame(seed: freshPNSeed()) })
                 }
+            }
+            .fullScreenCover(isPresented: $pnDaily, onDismiss: { reloadDaily() }) {
+                NavigationStack { ProperNoundleView() }
+            }
+            .sheet(isPresented: $showMoreGames, onDismiss: {
+                if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
+            }) {
+                MoreGamesSheet(completions: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive) { pendingMorePick = $0 }
+                    .presentationDetents([.large])
             }
             .fullScreenCover(item: $solvedMode) { m in
                 NavigationStack {
@@ -699,6 +714,11 @@ struct HomeView: View {
                 NavigationLink { ProperNoundleView() } label: { cardBody(mode, locked: false) }
                     .buttonStyle(.plain)
             }
+        } else if mode.id == "more" {
+            // The More Games tile: opens the sectioned sheet (Stage 5). Never
+            // locks, never routes anywhere itself.
+            Button { showMoreGames = true } label: { cardBody(mode, locked: false) }
+                .buttonStyle(.plain)
         } else if mode.id == "vs" {
             if effectiveMode == .unlimited {
                 // Unlimited VS (Pro): the mode-picker lobby — any-mode battles
@@ -737,55 +757,37 @@ struct HomeView: View {
         return fresh
     }
 
+    /// The card itself lives in ModeCardView (More Games Stage 5) so the More
+    /// Games sheet renders the same card. Daily completion (W/L badge, "4
+    /// guesses · 27s", accent tint) is a DAILY-only concept: in Unlimited the
+    /// cards show the static description with no badge/tint (Pro parity #91).
     private func cardBody(_ mode: HomeMode, locked: Bool) -> some View {
-        // Daily completion (W/L badge, "N guesses · time", accent tint) is a
-        // DAILY-only concept. In Unlimited mode the cards must show the static
-        // mode description with no badge/tint — matching the web. (Pro parity #91.)
         let isVs = mode.id == "vs"
-        let done = (!isVs && effectiveMode == .daily) ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
-        // VS has no solo daily_results row; reflect today's daily-VS outcome
-        // (won/lost) so the card gets the same W/L badge + accent tint as the
-        // other completed daily cards (greyed when locked for freemium).
+        let isMore = mode.id == "more"
+        let done = (!isVs && !isMore && effectiveMode == .daily) ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
         let vsWon: Bool? = (isVs && effectiveMode == .daily) ? vsDailyWon : nil
-        let isDone = done != nil || vsWon != nil
-        let lockGray = Color(hex: 0xD1D5DB)
-        let barColors = locked ? [lockGray, lockGray] : [mode.accent, mode.accent.opacity(0.53)]
-        let borderC = locked ? lockGray : (isDone ? mode.accent.opacity(0.4) : Theme.border)
-        return VStack(spacing: 0) {
-            // Full-width top accent bar (flush, gradient → accent@0x88; gray when locked).
-            LinearGradient(colors: barColors, startPoint: .leading, endPoint: .trailing)
-                .frame(height: 4)
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top) {
-                    ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
-                    Spacer()
-                    if let done { winBadge(won: done.completed) }
-                    else if let vsWon { winBadge(won: vsWon) }
-                }
-                Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                    .padding(.top, 8)
-                Text(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText(mode, done))
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    .padding(.top, 1)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        // The More Games tile: "N of M played" over the More Games dailies in
+        // Daily mode, its description in Unlimited. Never locks, never tints.
+        let subtitle: String? = isMore
+            ? (effectiveMode == .daily ? morePlayedText(completedKeys: Set(completions.byMode.keys)) : mode.desc)
+            : nil
+        return ModeCardView(mode: mode, done: done, vsWon: vsWon, locked: locked, subtitleOverride: subtitle)
+    }
+
+    /// Route a More Games selection exactly as the grid would have — called from
+    /// the sheet's onDismiss so no cover is presented over a dismissing sheet.
+    private func openFromMoreGames(_ mode: HomeMode) {
+        if isLocked(mode) { limitModal = mode; return }
+        if isCompletedDaily(mode) { solvedMode = mode; return }
+        if let gameMode = mode.mode {
+            pendingGame = ActiveGame(
+                seed: effectiveMode == .unlimited ? resolvedUnlimitedSeed(gameMode) : DailySeed.today(mode: gameMode),
+                mode: gameMode, title: mode.title)
+        } else if mode.id == "propernoundle" {
+            if effectiveMode == .unlimited { pnGame = PNGame(seed: freshPNSeed()) } else { pnDaily = true }
+        } else {
+            comingSoon = mode.title
         }
-        .background(RoundedRectangle(cornerRadius: 14).fill(isDone ? mode.accent.opacity(0.06) : Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderC, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .opacity(locked ? 0.6 : 1)
-    }
-
-    private func resultText(_ mode: HomeMode, _ done: DailyCompletion?) -> String {
-        guard let done else { return mode.desc }
-        return "\(done.guessCount) guesses · \(formatShortTime(Int(done.timeSeconds)))"
-    }
-
-    private func winBadge(won: Bool) -> some View {
-        Text(won ? "W" : "L").font(Brand.font(10, .black)).foregroundStyle(.white)
-            .frame(width: 20, height: 20)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Color(hex: won ? 0x7C3AED : 0xDC2626)))
     }
 }
 

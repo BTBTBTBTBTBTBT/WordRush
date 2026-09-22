@@ -90,7 +90,11 @@ import kotlinx.coroutines.launch
  *   F. Sign out
  * (ProfileDashboard charts, 72-item Achievements + Edit Profile are follow-ups.)
  */
-private val DAILY_MODES = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
+// The Today's Dailies grid = the sweep set, from the catalog (More Games Stage 5:
+// no second hand-typed list; still the same nine keys today).
+private val DAILY_MODES: List<String> = com.wordocious.app.ModeGen.sweep.mapNotNull { it.dbKey }
+// The per-mode dashboard picker scrolls, so it lists EVERY daily mode.
+private val PICKER_MODES: List<String> = com.wordocious.app.ModeGen.daily.mapNotNull { it.dbKey }
 
 // ── P-cache memo bundles (session-lived StatsMemo snapshots; SWR seeds) ──────
 private data class ProfileMainMemo(
@@ -1554,7 +1558,7 @@ private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         ModeChip(label = "All", modeId = null, accent = WTheme.primary, count = 0, active = selected == null) { onSelect(null) }
-        DAILY_MODES.forEach { m ->
+        PICKER_MODES.forEach { m ->
             val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
             ModeChip(
                 label = shortModeLabel(m), modeId = m,
@@ -1931,7 +1935,7 @@ private fun modeLabel(mode: String) = when (mode) {
     "SEQUENCE" -> "Succession"; "RESCUE" -> "Deliverance"
     "DUEL_6" -> "Six"; "DUEL_7" -> "Seven"
     "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "ProperNoundle"
-    else -> mode
+    else -> com.wordocious.app.ModeGen.byDbKey(mode)?.title ?: mode
 }
 
 /** Short titles for the mode-picker chips — matches web PROFILE_MODES.shortTitle. */
@@ -1940,5 +1944,5 @@ private fun shortModeLabel(mode: String) = when (mode) {
     "SEQUENCE" -> "Succ"; "RESCUE" -> "Deliv"
     "DUEL_6" -> "Six"; "DUEL_7" -> "Seven"
     "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "Proper"
-    else -> mode
+    else -> com.wordocious.app.ModeGen.byDbKey(mode)?.shortTitle ?: mode
 }

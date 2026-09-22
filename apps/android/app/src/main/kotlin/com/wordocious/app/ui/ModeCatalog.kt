@@ -42,6 +42,13 @@ data class ModeCard(
     val glyph: String? = null,   // Roman numeral / number shown instead of an icon
     val lucide: String? = null,  // web lucide icon name (for the exact-icon pass)
     val hand: String? = null,    // brand hand asset (six-hand/seven-hand); glyph = its digit
+    // Catalog facts the cards and pickers read (More Games Stage 5).
+    val dbKey: String? = null,
+    val sweep: Boolean = false,
+    val dailyEligible: Boolean = false,
+    val category: String? = null,
+    val guessSemantics: String = "guesses",
+    val guessBase: Int = 1,
 )
 
 /** In-game uppercase mode title — single-sourced uppercased shareLabel from ModeGen. */
@@ -77,13 +84,34 @@ private val MODE_CHROME: Map<String, ModeChrome> = mapOf(
     "seven" to ModeChrome("7", null, hand = "seven-hand"),
     "gauntlet" to ModeChrome(null, "Skull"),
     "propernoundle" to ModeChrome(null, "Crown"),
+    // More Games (Stage 5): the tile and every title have their chrome here
+    // already so a game cannot land without an icon.
+    "more" to ModeChrome(null, "LayoutGrid"),
+    "sudoku" to ModeChrome(null, "Grid3x3"),
+    "scramble" to ModeChrome(null, "Shuffle"),
+    "hub" to ModeChrome(null, "Hexagon"),
+    "crossword" to ModeChrome(null, "Quote"),
+    "groups" to ModeChrome(null, "Group"),
+    "ladder" to ModeChrome(null, "Ladder"),
+    "cryptogram" to ModeChrome(null, "KeyRound"),
+    "wordsearch" to ModeChrome(null, "TextSearch"),
+    "regions" to ModeChrome(null, "Star"),
 )
 
-val MODE_CARDS: List<ModeCard> = ModeGen.core.map { m ->
+private fun toCard(m: com.wordocious.app.GenMode): ModeCard {
     val chrome = MODE_CHROME[m.id]
     val engine = m.dbKey?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
-    ModeCard(m.id, m.title, m.desc, m.accent, engine, glyph = chrome?.glyph, lucide = chrome?.lucide, hand = chrome?.hand)
+    return ModeCard(
+        m.id, m.title, m.desc, m.accent, engine, glyph = chrome?.glyph, lucide = chrome?.lucide, hand = chrome?.hand,
+        dbKey = m.dbKey, sweep = m.sweep, dailyEligible = m.dailyEligible, category = m.category,
+        guessSemantics = m.guessSemantics, guessBase = m.guessBase,
+    )
 }
+
+/** The home grid — every enabled core tile, catalog order. */
+val MODE_CARDS: List<ModeCard> = ModeGen.core.map(::toCard)
+/** The More Games sheet — every enabled More Games title, catalog order. */
+val MORE_CARDS: List<ModeCard> = ModeGen.more.map(::toCard)
 
 /** The MODE_CARDS entry for a `:core` GameMode (icon/accent/glyph source of truth). */
 fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineMode == mode }
@@ -97,6 +125,16 @@ fun modeIconRes(lucide: String?): Int? = when (lucide) {
     "Skull" -> com.wordocious.app.R.drawable.ic_skull
     "Crown" -> com.wordocious.app.R.drawable.ic_crown
     "Broom" -> com.wordocious.app.R.drawable.ic_broom
+    "LayoutGrid" -> com.wordocious.app.R.drawable.ic_layout_grid
+    "Grid3x3" -> com.wordocious.app.R.drawable.ic_grid_3x3
+    "Shuffle" -> com.wordocious.app.R.drawable.ic_shuffle
+    "Hexagon" -> com.wordocious.app.R.drawable.ic_hexagon
+    "Quote" -> com.wordocious.app.R.drawable.ic_quote
+    "Group" -> com.wordocious.app.R.drawable.ic_group
+    "Ladder" -> com.wordocious.app.R.drawable.ic_ladder
+    "KeyRound" -> com.wordocious.app.R.drawable.ic_key_round
+    "TextSearch" -> com.wordocious.app.R.drawable.ic_text_search
+    "Star" -> com.wordocious.app.R.drawable.ic_star
     "six-hand" -> com.wordocious.app.R.drawable.ic_six_hand
     "seven-hand" -> com.wordocious.app.R.drawable.ic_seven_hand
     else -> null

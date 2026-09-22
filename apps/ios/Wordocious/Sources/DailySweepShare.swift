@@ -142,6 +142,8 @@ struct DailySweepCardView: View {
                     Text(number).font(Brand.font(22, .black)).foregroundStyle(r.accent)
                         .offset(y: 9)
                 }
+            case .symbol(let name):
+                Image(systemName: name).font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
             }
         } else {
             Text(r.glyph).font(Brand.font(CGFloat(r.glyph.count >= 3 ? 24 : 30), .black)).foregroundStyle(.white)

@@ -7,6 +7,7 @@ enum ModeIconKind {
     case original(String)       // colored SVG, rendered as-is
     case roman(String)          // "IV" / "VIII"
     case hand(String, String)   // hand SVG asset + number digit
+    case symbol(String)         // SF Symbol, tinted by accent (More Games titles)
 }
 
 struct HomeMode: Identifiable {
@@ -15,15 +16,21 @@ struct HomeMode: Identifiable {
     let desc: String
     let accent: Color
     let icon: ModeIconKind
-    /// Engine mode if playable on iOS today; nil = coming soon (VS, ProperNoundle).
+    /// Engine mode if playable through the shared GameScreen; nil = own view
+    /// (VS, ProperNoundle, every More Games title) or no engine at all (More tile).
     let mode: GameMode?
     /// daily_results.game_mode key for the completed-today lookup.
     let dbKey: String?
+    /// Catalog facts the cards and pickers read (More Games Stage 5).
+    let sweep: Bool
+    let dailyEligible: Bool
+    let category: String?
+    let guessSemantics: String
+    let guessBase: Int
 
     /// Title/desc/accent/dbKey come from the single-source catalog (modes.json →
     /// ModeCatalog.generated.swift); only icon + engine mode stay native here.
-    init(genId: String, icon: ModeIconKind, mode: GameMode?) {
-        let g = ModeGen.byId(genId)!
+    init(gen g: GenMode, icon: ModeIconKind, mode: GameMode?) {
         self.id = g.id
         self.title = g.title
         self.desc = g.desc
@@ -31,22 +38,73 @@ struct HomeMode: Identifiable {
         self.icon = icon
         self.mode = mode
         self.dbKey = g.dbKey
+        self.sweep = g.sweep
+        self.dailyEligible = g.dailyEligible
+        self.category = g.category
+        self.guessSemantics = g.guessSemantics
+        self.guessBase = g.guessBase
+    }
+
+    init(genId: String, icon: ModeIconKind, mode: GameMode?) {
+        self.init(gen: ModeGen.byId(genId)!, icon: icon, mode: mode)
     }
 }
 
-/// The home grid; order + copy + accent come from ModeGen, icons stay native.
-let homeModes: [HomeMode] = [
-    HomeMode(genId: "practice",      icon: .original("wordle-grid"),    mode: .duel),
-    HomeMode(genId: "vs",            icon: .asset("swords"),            mode: nil),
-    HomeMode(genId: "quordle",       icon: .roman("IV"),                mode: .quordle),
-    HomeMode(genId: "octordle",      icon: .roman("VIII"),              mode: .octordle),
-    HomeMode(genId: "sequence",      icon: .asset("trending-up"),       mode: .sequence),
-    HomeMode(genId: "rescue",        icon: .asset("shield"),            mode: .rescue),
-    HomeMode(genId: "six",           icon: .hand("six-hand", "6"),      mode: .duel6),
-    HomeMode(genId: "seven",         icon: .hand("seven-hand", "7"),    mode: .duel7),
-    HomeMode(genId: "gauntlet",      icon: .asset("skull"),             mode: .gauntlet),
-    HomeMode(genId: "propernoundle", icon: .asset("crown"),             mode: nil),
+/// Per-mode icon + engine chrome (native; keyed by catalog id). Order, copy and
+/// accent come from ModeGen; a catalog record without a row here gets a plain
+/// glyph so a new game can never render blank. The More Games titles have their
+/// chrome already so a game cannot land without an icon.
+private let modeChrome: [String: (icon: ModeIconKind, mode: GameMode?)] = [
+    "practice":      (.original("wordle-grid"),       .duel),
+    "vs":            (.asset("swords"),               nil),
+    "quordle":       (.roman("IV"),                   .quordle),
+    "octordle":      (.roman("VIII"),                 .octordle),
+    "sequence":      (.asset("trending-up"),          .sequence),
+    "rescue":        (.asset("shield"),               .rescue),
+    "six":           (.hand("six-hand", "6"),         .duel6),
+    "seven":         (.hand("seven-hand", "7"),       .duel7),
+    "gauntlet":      (.asset("skull"),                .gauntlet),
+    "propernoundle": (.asset("crown"),                nil),
+    "more":          (.symbol("square.grid.2x2"),     nil),
+    "sudoku":        (.symbol("grid"),                nil),
+    "scramble":      (.symbol("shuffle"),             nil),
+    "hub":           (.symbol("hexagon"),             nil),
+    "crossword":     (.symbol("quote.opening"),       nil),
+    "groups":        (.symbol("rectangle.3.group"),   nil),
+    "ladder":        (.symbol("stairs"),              nil),
+    "cryptogram":    (.symbol("key"),                 nil),
+    "wordsearch":    (.symbol("text.magnifyingglass"), nil),
+    "regions":       (.symbol("star"),                nil),
 ]
+
+private func homeMode(_ g: GenMode) -> HomeMode {
+    let c = modeChrome[g.id]
+    return HomeMode(gen: g, icon: c?.icon ?? .roman(g.glyph ?? String(g.title.prefix(1))), mode: c?.mode)
+}
+
+/// The home grid — every enabled core tile, catalog order.
+let homeModes: [HomeMode] = ModeGen.core.map(homeMode)
+/// The More Games sheet — every enabled More Games title, catalog order.
+let moreModes: [HomeMode] = ModeGen.more.map(homeMode)
+
+/// The sheet's sections (catalog moreCategories order, non-empty only); an
+/// uncategorised title falls into a trailing "Other" section. Mirrors
+/// apps/web/lib/more-games.ts moreSections().
+struct MoreSection: Identifiable { let key: String; let title: String; let modes: [HomeMode]; var id: String { key } }
+func moreSections(_ modes: [HomeMode] = moreModes) -> [MoreSection] {
+    var sections = ModeGen.moreCategories.map { c in MoreSection(key: c.key, title: c.title, modes: modes.filter { $0.category == c.key }) }
+    let known = Set(ModeGen.moreCategories.map(\.key))
+    let other = modes.filter { $0.category == nil || !known.contains($0.category!) }
+    if !other.isEmpty { sections.append(MoreSection(key: "other", title: "Other", modes: other)) }
+    return sections.filter { !$0.modes.isEmpty }
+}
+
+/// "N of M played" over the More Games dailies — the More tile's Daily subtitle.
+func morePlayedText(completedKeys: Set<String>, modes: [HomeMode] = moreModes) -> String {
+    let daily = modes.filter { $0.dailyEligible && $0.dbKey != nil }
+    let played = daily.filter { completedKeys.contains($0.dbKey!) }.count
+    return "\(played) of \(daily.count) played"
+}
 
 /// Renders a mode's icon inside a rounded accent-tinted square (matches web).
 struct ModeIconView: View {
@@ -84,6 +142,9 @@ struct ModeIconView: View {
                 Text(number).font(Brand.font(box * 0.3, .black)).foregroundStyle(accent)
                     .offset(y: box * 0.12)
             }
+        case .symbol(let name):
+            Image(systemName: name).font(.system(size: box * 0.45, weight: .bold))
+                .foregroundStyle(accent)
         }
     }
 }

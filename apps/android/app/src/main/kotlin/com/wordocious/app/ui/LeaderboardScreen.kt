@@ -79,6 +79,10 @@ internal val MODE_OPTIONS: List<Pair<String, String>> = com.wordocious.app.ModeG
  *  THROWS — every picker-reachable valueOf must short-circuit on this first. */
 internal const val SWEEP_ID = "SWEEP"
 
+/** Synthetic picker id for the "More" chip (More Games §18) — opens the sectioned
+ *  More Games list; never a `:core` GameMode, never a leaderboard of its own. */
+internal const val MORE_ID = "MORE"
+
 /** §214 (Lindsay): the post-game "View Leaderboard" capsule lands on this
  *  tab with its mode preselected — set before switching tabs, consumed once. */
 object LeaderboardDeepLink {
@@ -94,7 +98,7 @@ internal val SWEEP_ACCENT = Color(0xFF4F46E5)
  * IllegalArgumentException, so callers must never hand a raw picker id to it.
  */
 internal fun pickerGameModeOrNull(id: String): com.wordocious.core.GameMode? =
-    if (id == SWEEP_ID) null
+    if (id == SWEEP_ID || id == MORE_ID) null
     else runCatching { com.wordocious.core.GameMode.valueOf(id) }.getOrNull()
 
 /**
@@ -1054,30 +1058,46 @@ internal fun ModePickerRow(
     horizontalPadding: androidx.compose.ui.unit.Dp = 12.dp,
     onSelect: (String) -> Unit,
 ) {
+    // More Games (§18): the grid cannot hold every daily mode in its 5-over-N
+    // layout, so the non-sweep dailies sit behind ONE "More" chip that opens the
+    // sectioned More Games list. Today every daily mode is in the sweep, so the
+    // chip is hidden and the grid is unchanged (5-over-5).
+    val morePicker = MORE_CARDS.filter { it.dailyEligible && it.dbKey != null }
+    val ids = MODE_OPTIONS.map { it.first } + (if (morePicker.isNotEmpty()) listOf(MORE_ID) else emptyList())
+    var showMore by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // With the 10th Sweep tile the grid is a clean 5-over-5 (no centering
-        // spacers). Any partial last row (should not happen at 10) is padded on
-        // the right so each cell stays 1/5 width.
-        MODE_OPTIONS.chunked(5).forEach { rowItems ->
+        // With the Sweep tile the grid is a clean 5-over-5 (no centering
+        // spacers). Any partial last row is padded on the right so each cell
+        // stays 1/5 width.
+        ids.chunked(5).forEach { rowItems ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                rowItems.forEach { (id, _) -> ModeCell(id, selected == id, Modifier.weight(1f)) { onSelect(id) } }
+                rowItems.forEach { id ->
+                    if (id == MORE_ID) ModeCell(id, active = morePicker.any { it.dbKey == selected }, Modifier.weight(1f), selectedId = selected) { showMore = true }
+                    else ModeCell(id, selected == id, Modifier.weight(1f)) { onSelect(id) }
+                }
                 repeat(5 - rowItems.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
+    if (showMore) MoreModePickerSheet(onPick = { showMore = false; onSelect(it) }, onDismiss = { showMore = false })
 }
 
 @Composable
-private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    // GUARDED valueOf: SWEEP is a synthetic id (no `:core` GameMode) → indigo
-    // broom tile; every other id maps to its GameMode's accent + web glyph.
+private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier, selectedId: String? = null, onClick: () -> Unit) {
+    // GUARDED valueOf: SWEEP and MORE are synthetic ids (no `:core` GameMode) →
+    // indigo broom / grid tile; every other id maps to its GameMode's accent +
+    // web glyph. The More chip wears the selected More Games mode's icon, title
+    // and accent when one is picked, so the grid still shows the filter.
     val isSweep = id == SWEEP_ID
+    val isMore = id == MORE_ID
+    val pickedMore = if (isMore) MORE_CARDS.firstOrNull { it.dbKey == selectedId } else null
     val mode = pickerGameModeOrNull(id)
-    val accent = if (isSweep) SWEEP_ACCENT else (mode?.let { modeAccent(it) } ?: WTheme.primary)
-    val short = LB_SHORT[id] ?: id
+    val accent = if (isSweep) SWEEP_ACCENT else if (isMore) (pickedMore?.accent ?: SWEEP_ACCENT) else (mode?.let { modeAccent(it) } ?: WTheme.primary)
+    val short = if (isMore) (pickedMore?.let { LB_SHORT[it.dbKey] ?: com.wordocious.app.ModeGen.byId(it.id)?.shortTitle } ?: "More")
+        else (LB_SHORT[id] ?: com.wordocious.app.ModeGen.byDbKey(id)?.shortTitle ?: id)
     // The cell is a FIXED 52dp tile: cap the effective fontScale at 1.3x so a
     // huge system text size can't shear the label out of the box (iOS caps its
     // dynamic type at 1.6x but also shrinks labels to fit; Compose has no
@@ -1104,6 +1124,12 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
                 if (isSweep) {
                     Icon(
                         androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
+                        null, tint = accent, modifier = Modifier.size(13.dp),
+                    )
+                } else if (isMore) {
+                    if (pickedMore != null) ModeGlyph(pickedMore, accent, box = 26.dp)
+                    else Icon(
+                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_layout_grid),
                         null, tint = accent, modifier = Modifier.size(13.dp),
                     )
                 } else {

@@ -53,6 +53,7 @@ enum WidgetBridge {
             case .original(let name): kind = "original"; asset = name
             case .roman(let t):       kind = "roman";    text = t
             case .hand(let name, let n): kind = "hand";  asset = name; text = n
+            case .symbol(let name):   kind = "symbol";   asset = name   // SF Symbol name (More Games titles; never in the sweep today)
             case nil: break
             }
             return ModeEntry(key: m.dbKey ?? m.id, title: m.shortTitle,

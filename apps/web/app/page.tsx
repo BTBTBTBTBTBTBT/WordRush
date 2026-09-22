@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock, Trophy, Sparkles } from 'lucide-react';
-import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
-import { SixIcon } from '@/components/ui/six-icon';
-import { SevenIcon } from '@/components/ui/seven-icon';
+import { LogOut, Star, BookOpen, Trophy, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { MODE_CARDS } from '@/components/home/mode-chrome';
+import { ModeCard, modeCardState } from '@/components/home/mode-card';
+import { MoreGamesSheet, useMoreSheetUrl } from '@/components/home/more-games-sheet';
+import { morePlayedCount, morePlayedText } from '@/lib/more-games';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
@@ -22,7 +23,7 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
-import { MODES, SWEEP_MODES } from '@/lib/modes.generated';
+import { SWEEP_MODES } from '@/lib/modes.generated';
 
 // The Daily Sweep set, from the catalog (More Games Stage 4). Every count on
 // this page is taken over these keys only, so a More Games result on the
@@ -202,46 +203,8 @@ function DailyCountdownText() {
   );
 }
 
-// Home-screen mode-card id → daily_results.game_mode key. The VS card
-// isn't a daily mode (no row in daily_results), so it's absent.
-// Single-sourced from the mode catalog (modes.json → modes.generated).
-const MODE_ID_TO_DB: Record<string, string> = Object.fromEntries(
-  MODES.filter((m) => m.dbKey).map((m) => [m.id, m.dbKey as string]),
-);
-
-function formatShortTime(seconds: number): string {
-  if (seconds <= 0) return '—';
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s === 0 ? `${m}m` : `${m}m ${s}s`;
-}
-
-// Per-mode icon + route chrome (web-native; not centralizable). Title/desc/
-// accent/romanNumeral come from the single-source catalog (modes.generated).
-const MODE_CHROME: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> | null; href: string; vsHref: string }> = {
-  practice: { icon: WordleGridIcon, href: '/practice?daily=true', vsHref: '/practice/vs' },
-  vs: { icon: Swords, href: '/practice/vs?daily=true', vsHref: '/practice/vs?daily=true' },   // daily toggle → shared daily VS
-  quordle: { icon: null, href: '/quadword?daily=true', vsHref: '/quadword/vs' },
-  octordle: { icon: null, href: '/octoword?daily=true', vsHref: '/octoword/vs' },
-  sequence: { icon: TrendingUp, href: '/sequence?daily=true', vsHref: '/sequence/vs' },
-  rescue: { icon: Shield, href: '/rescue?daily=true', vsHref: '/rescue/vs' },
-  six: { icon: SixIcon, href: '/six?daily=true', vsHref: '/six/vs' },
-  seven: { icon: SevenIcon, href: '/seven?daily=true', vsHref: '/seven/vs' },
-  gauntlet: { icon: Skull, href: '/gauntlet?daily=true', vsHref: '/gauntlet/vs' },
-  propernoundle: { icon: Crown, href: '/propernoundle?daily=true', vsHref: '/propernoundle/vs' },
-};
-
-const MODE_CARDS = MODES.map((m) => ({
-  id: m.id,
-  title: m.title,
-  icon: MODE_CHROME[m.id]?.icon ?? null,
-  romanNumeral: m.romanNumeral ?? undefined,
-  desc: m.desc,
-  accentColor: m.accentHex,
-  href: MODE_CHROME[m.id]?.href ?? '/',
-  vsHref: MODE_CHROME[m.id]?.vsHref ?? '/',
-}));
+// Mode cards (chrome + catalog) and the card itself live in components/home
+// (More Games Stage 5) so the home grid and the More Games sheet share them.
 
 
 export default function HomePage() {
@@ -262,6 +225,8 @@ export default function HomePage() {
   // just-finished daily VS refetches naturally.
   const [vsDailyWon, setVsDailyWon] = useState<boolean | null>(null);
   const router = useRouter();
+  // More Games sheet (Stage 5) — open state lives in the URL (/?more=1).
+  const { open: moreOpen, openSheet: openMoreSheet, closeSheet: closeMoreSheet } = useMoreSheetUrl();
 
   const isPro = isProActive;
 
@@ -552,24 +517,29 @@ export default function HomePage() {
         <div className="section-header mt-1 mb-0.5">GAME MODES</div>
         <div className="grid grid-cols-2 gap-2">
           {MODE_CARDS.map((mode) => {
-            const Icon = mode.icon;
-            // Today's daily result for this mode, if played. Keyed by the
-            // DB game_mode string (DUEL/QUORDLE/…), so we look up via
-            // mode.id → db key. The VS Battle card has no daily row.
-            const dbKey = MODE_ID_TO_DB[mode.id];
-            const dailyResult = playMode === 'daily' && dbKey ? todayDailies.get(dbKey) : undefined;
-            // VS has no daily_results row; reflect its completed state from the
-            // play-limit cache so the card shows "played" like other modes.
-            const isDailyDone = !!dailyResult
-              || (mode.id === 'vs' && playMode === 'daily' && (vsDailyWon !== null || hasPlayedModeToday('vs')));
-            // VS has no solo daily_results row — its W/L comes from the
-            // play_type='vs' row (vsDailyWon).
-            const vsBadge = mode.id === 'vs' ? vsDailyWon : null;
-
-            // Freemium users: lock card once the daily is done OR the
-            // play-limit cache says played. isDailyDone covers modes
-            // whose play-limit modeId was recorded under the wrong key.
-            const isLocked = !isPro && user && (isDailyDone || hasPlayedModeToday(mode.id));
+            // Today's daily result for this mode, if played (Daily mode only).
+            // Keyed by the DB game_mode string (DUEL/QUORDLE/…). The VS Battle
+            // card has no daily row; the More Games tile has no puzzle at all.
+            const isMore = mode.id === 'more';
+            const dailyResult = playMode === 'daily' && mode.dbKey ? todayDailies.get(mode.dbKey) : undefined;
+            // The More Games tile: "N of M played" over the More Games dailies in
+            // Daily mode, its description in Unlimited. Never locks, never tints.
+            const morePlayed = morePlayedCount(todayDailies.keys());
+            const state = modeCardState({
+              card: mode,
+              playMode,
+              dailyResult,
+              // VS has no solo daily_results row — its W/L comes from the
+              // play_type='vs' row (vsDailyWon).
+              vsWon: mode.id === 'vs' ? vsDailyWon : null,
+              playedToday: hasPlayedModeToday(mode.id),
+              isPro,
+              signedIn: !!user,
+              resetCountdownText,
+              subtitleOverride: isMore
+                ? (playMode === 'daily' ? morePlayedText(morePlayed.played, morePlayed.total) : mode.desc)
+                : null,
+            });
 
             // In Unlimited mode (Pro-only), route to the non-daily
             // variant so each tap lands on a fresh random seed. VS: the
@@ -581,7 +551,10 @@ export default function HomePage() {
               : mode.href;
 
             const handleCardClick = (e: React.MouseEvent) => {
-              if (isLocked) {
+              if (isMore) {
+                e.preventDefault();
+                openMoreSheet();
+              } else if (state.isLocked) {
                 e.preventDefault();
                 router.prefetch(effectiveHref);
                 setLimitModal({ open: true, modeName: mode.title, modeHref: effectiveHref });
@@ -593,90 +566,7 @@ export default function HomePage() {
 
             return (
               <Link key={mode.id} href={effectiveHref} onClick={handleCardClick}>
-                <div
-                  className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
-                  style={{
-                    // Completed daily: soft tint in the mode's accent
-                    // color to signal "you've played this one". Fresh/
-                    // unplayed cards stay white.
-                    background: isDailyDone ? `${mode.accentColor}0f` : 'var(--color-surface)',
-                    border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${mode.accentColor}66` : 'var(--color-border)'}`,
-                    borderRadius: '14px',
-                  }}
-                >
-                  {/* Top accent bar */}
-                  <div
-                    className="absolute top-0 left-0 right-0 h-1"
-                    style={{
-                      background: isLocked
-                        ? '#d1d5db'
-                        : `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}88)`,
-                      borderRadius: '14px 14px 0 0',
-                    }}
-                  />
-
-                  {/* Lock icon (only when locked but NOT daily-done — the
-                      W/L badge takes this slot when the daily is complete) */}
-                  {isLocked && !isDailyDone ? (
-                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-                      <Lock className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
-                    </div>
-                  ) : null}
-
-                  {/* W / L pill in the top-right when today's daily is
-                      already on the books. */}
-                  {isDailyDone && (
-                    <div
-                      className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
-                      style={{ background: dailyResult
-                        ? (dailyResult.won ? '#7c3aed' : '#dc2626')
-                        : vsBadge !== null ? (vsBadge ? '#7c3aed' : '#dc2626') : '#7c3aed' }}
-                    >
-                      <span className="text-[10px] font-black text-white leading-none">
-                        {dailyResult
-                          ? (dailyResult.won ? 'W' : 'L')
-                          : vsBadge !== null ? (vsBadge ? 'W' : 'L') : '✓'}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Icon — show mode icon when daily is done (even if
-                      locked), show lock only when locked without a result */}
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
-                    style={{ background: (isLocked && !isDailyDone) ? '#f3f4f6' : `${mode.accentColor}15` }}
-                  >
-                    {(isLocked && !isDailyDone)
-                      ? <Lock className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-                      : mode.romanNumeral
-                      ? <span className="text-[11px] font-black leading-none" style={{ color: mode.accentColor }}>{mode.romanNumeral}</span>
-                      : Icon
-                      ? <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
-                      : null
-                    }
-                  </div>
-                  <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{mode.title}</div>
-                  {/* §255: fixed two-line box. In Unlimited this line is mode.desc,
-                      which wraps on several cards; in Daily it's "4 guesses · 27s"
-                      on one line — so the cards changed height and the whole grid
-                      reflowed on every Daily/Unlimited toggle (founder). */}
-                  <div
-                    className="text-[10px] font-bold"
-                    style={{ color: 'var(--color-text-muted)', height: '28px', lineHeight: '14px', overflow: 'hidden',
-                             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-                  >
-                    {isDailyDone
-                      ? (dailyResult
-                          ? `${dailyResult.guesses} ${dailyResult.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult.timeSeconds)}`
-                          : 'Played today')
-                      : isLocked
-                      ? `Play again in ${resetCountdownText}`
-                      : mode.desc}
-                  </div>
-
-                  {/* Per-card VS swords shortcut removed (redundant) — VS is
-                      reachable only from the dedicated VS Battle card. */}
-                </div>
+                <ModeCard card={mode} state={state} />
               </Link>
             );
           })}
@@ -752,6 +642,19 @@ export default function HomePage() {
         onViewPuzzle={() => router.push(limitModal.modeHref.includes('daily=true') ? limitModal.modeHref : `${limitModal.modeHref}?daily=true`)}
       />
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <MoreGamesSheet
+        open={moreOpen}
+        onClose={closeMoreSheet}
+        playMode={playMode}
+        todayDailies={todayDailies}
+        isPro={isPro}
+        signedIn={!!user}
+        resetCountdownText={resetCountdownText}
+        onLocked={(card, href) => {
+          router.prefetch(href);
+          setLimitModal({ open: true, modeName: card.title, modeHref: href });
+        }}
+      />
       {sweepCeleb && (
         <SweepCelebration completions={sweepCeleb} onClose={() => setSweepCeleb(null)} />
       )}
