@@ -453,7 +453,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "mistakes",
     "guessBase": 1,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.regions",
     "category": "logic",
     "guideSlug": "starsweep"

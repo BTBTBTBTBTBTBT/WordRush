@@ -60,7 +60,7 @@ object ModeGen {
         GenMode("ladder", "LADDER", "Letter Ladder", "Ladder", "Letter Ladder", "One letter at a time", "#0284c7", "L", null, true, "more", false, "custom", "overPar", 1, false, "mode.ladder", "word", "letter-ladder"),
         GenMode("cryptogram", "CRYPTOGRAM", "Codebreaker", "Code", "Codebreaker", "Crack the coded saying", "#92400e", "?", null, true, "more", false, "custom", "checks", 1, false, "mode.cryptogram", "logic", "codebreaker"),
         GenMode("wordsearch", "WORDSEARCH", "Spyglass", "Spyglass", "Spyglass", "Themed word search", "#4d7c0f", "W", null, true, "more", false, "custom", "misses", 10, false, "mode.wordsearch", "word", "spyglass"),
-        GenMode("regions", "REGIONS", "Starsweep", "Stars", "Starsweep", "One star per colour region", "#ca8a04", "*", null, true, "more", false, "custom", "mistakes", 1, false, "mode.regions", "logic", "starsweep"),
+        GenMode("regions", "REGIONS", "Starsweep", "Stars", "Starsweep", "One star per colour region", "#ca8a04", "*", null, true, "more", false, "custom", "mistakes", 1, true, "mode.regions", "logic", "starsweep"),
     )
     fun byDbKey(k: String): GenMode? = all.firstOrNull { it.dbKey == k }
     fun byId(i: String): GenMode? = all.firstOrNull { it.id == i }

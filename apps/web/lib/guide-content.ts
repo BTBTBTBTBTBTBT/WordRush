@@ -460,6 +460,62 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['classic', 'gauntlet', 'quadword'],
   },
+  // ── More Games (§18b) — Starsweep. Always one word; it does NOT count
+  // toward the Daily Sweep and the copy never calls it "the sweep".
+  {
+    slug: 'starsweep',
+    title: 'Starsweep',
+    accent: '#ca8a04',
+    tagline: 'One star in every row, column and colour region, none touching — a pure logic puzzle you can finish without a single guess',
+    metaDescription:
+      'Wordocious Starsweep guide: the one-star rule, why stars can never touch, how crossing out and Auto-cross work, the exact scoring formula, and the region-counting strategy that solves every board by logic.',
+    facts: [
+      { label: 'Board', value: '7 × 7 Monday–Wednesday, 8 × 8 Thursday–Sunday' },
+      { label: 'Pro Unlimited', value: '7 × 7 · 8 × 8 · 9 × 9' },
+      { label: 'Mistakes allowed', value: '2 — the third ends the game' },
+      { label: 'Time bonus cap', value: '10:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'The board is split into colour regions, one for every row. Place exactly one star in every row, every column and every region. Stars can never touch, not even at a corner, so once a star is down all eight cells around it are out. Every board has exactly one solution and is built on your device from the day\'s seed, so everyone plays the same board.',
+      'Tap an empty cell once to cross it out (a small ×: "no star here"), tap again to place a star, tap a third time to clear it. A star in the right cell stays; a star in a wrong cell turns red and counts as a mistake — you can clear it, but the mistake stands. Three mistakes end the game. Crosses are notes for your own reasoning: they are never judged and never cost anything.',
+      'Auto-cross is on by default: when you place a correct star, every cell it rules out — its row, its column, its region and the eight neighbours — is crossed out for you. Switch it off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
+      'The daily is the same for everyone and counts once on the leaderboard. Starsweep lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A clear is worth a 1,000-point base plus a flat 200 for finishing. Mistakes are what separate players: the game treats your finish as mistakes + 1 out of a budget of 4, and every unused step is worth 300 points, so a clean board banks 900 in mistake bonus, one mistake 600, two mistakes 300. Speed is the tiebreaker: up to 240 points scaled by how far under the 10-minute cap you finish, which can never outweigh a single mistake — a cleaner board always outranks a faster one.',
+      'Each Hint costs 100 points and places the star for the row of the cell you last tapped (or the first row still missing its star). Hints never count as mistakes, but a board cleared with any hint is not a Perfect run and does not count toward the Pure Starsweep achievements. A lost board still earns credit for the time spent, so it is always worth playing on.',
+    ],
+    controls: [
+      { icon: 'undo-2', label: 'Undo', body: 'Steps back one action — a star, a cross or a clear. Free, unlimited, and it never gives a mistake or a hint back.' },
+      { icon: 'eraser', label: 'Erase', body: 'Clears the cell you last tapped, whether it holds a cross or a star. Stars placed by a Hint cannot be erased. Free.' },
+      { icon: 'x', label: 'Auto-cross', body: 'A toggle. While it is filled in, placing a correct star crosses out every cell it rules out for you. Purely a convenience; it never costs anything.' },
+      { icon: 'lightbulb', label: 'Hint', body: 'Places the correct star for the row of the cell you last tapped, or the first row still missing one. Costs 100 points of score, never a mistake, and rules out a Perfect run.' },
+    ],
+    tips: [
+      {
+        heading: 'Start with the smallest region',
+        body: 'A region of two or three cells has almost no room. Its star is one of those cells, so every cell that touches ALL of them can be crossed out immediately — and the row or column the region sits in is usually settled a move later.',
+      },
+      {
+        heading: 'Count regions against rows',
+        body: 'If two regions fit entirely inside two rows, those two rows\' stars must be in those regions, so every other cell in those rows is out. The same works for columns. This counting argument breaks open the middle of almost every 8 × 8 board.',
+      },
+      {
+        heading: 'Cross before you star',
+        body: 'The game is won by elimination, not inspiration. Mark the cells a star cannot go in, and the cell it must go in reveals itself. When a row is down to one uncrossed cell, that is your star — and it costs nothing to have been thorough.',
+      },
+      {
+        heading: 'A tall region that spans one column owns it',
+        body: 'When a region lives in a single column, its star takes that column, so no other region may place a star there. Cross the whole column outside the region and watch neighbouring regions collapse.',
+      },
+      {
+        heading: 'Never place a star you cannot prove',
+        body: 'Three mistakes end the game and each one costs 300 points. If two cells both seem possible, keep reasoning — the board is built to be solved by logic alone, so a guess is never required, only ever a shortcut with a price.',
+      },
+    ],
+    related: ['sudoku', 'classic', 'gauntlet'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {

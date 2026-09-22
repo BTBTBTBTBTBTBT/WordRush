@@ -143,6 +143,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_sudoku_initiate', name: 'Pure Sudoku',        description: 'Solve a Sudoku without using any hints',    category: 'skill', icon: 'star' },
   { key: 'pure_sudoku_adept',    name: 'Pure Sudoku Adept',  description: 'Solve 10 Sudoku puzzles without hints',     category: 'skill', icon: 'star' },
   { key: 'pure_sudoku_master',   name: 'Pure Sudoku Master', description: 'Solve 50 Sudoku puzzles without hints',     category: 'skill', icon: 'crown' },
+  // More Games §18c — Starsweep (always one word; never "Sweep!" — see components/regions/copy.ts).
+  { key: 'regions_first',    name: 'First Starsweep',    description: 'Clear a Starsweep board',                          category: 'beginner', icon: 'star' },
+  { key: 'regions_regular',  name: 'Starsweep Regular',  description: 'Clear 50 Starsweep boards',                        category: 'skill',    icon: 'star' },
+  { key: 'regions_flawless', name: 'Flawless Stars',     description: 'Clear a Starsweep board with no mistakes and no hints', category: 'skill', icon: 'star' },
+  { key: 'regions_swift',    name: 'Swift Stars',        description: 'Clear a Starsweep board in under 3 minutes',       category: 'skill',    icon: 'zap' },
+  { key: 'pure_regions_initiate', name: 'Pure Starsweep',        description: 'Clear a Starsweep board without using any hints', category: 'skill', icon: 'star' },
+  { key: 'pure_regions_adept',    name: 'Pure Starsweep Adept',  description: 'Clear 10 Starsweep boards without hints',        category: 'skill', icon: 'star' },
+  { key: 'pure_regions_master',   name: 'Pure Starsweep Master', description: 'Clear 50 Starsweep boards without hints',        category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -231,7 +239,7 @@ export async function checkAchievements(
 
   // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
   // mistakes + 1, so a clean solve would read as a one-guess word solve.
-  if (won && guessCount === 1 && gameMode !== 'SUDOKU') {
+  if (won && guessCount === 1 && gameMode !== 'SUDOKU' && gameMode !== 'REGIONS') {
     await tryUnlock('perfectionist');
   }
 
@@ -240,6 +248,13 @@ export async function checkAchievements(
     await tryUnlock('sudoku_first');
     if (guessCount === 1 && hintsUsed === 0) await tryUnlock('clean_sheet');
     if (timeSeconds < 300) await tryUnlock('sudoku_sprint');
+  }
+
+  // Starsweep (More Games §18c): first clear, flawless (0 mistakes, 0 hints), swift.
+  if (gameMode === 'REGIONS' && won) {
+    await tryUnlock('regions_first');
+    if (guessCount === 1 && hintsUsed === 0) await tryUnlock('regions_flawless');
+    if (timeSeconds < 180) await tryUnlock('regions_swift');
   }
 
   // Gauntlet Master
@@ -379,6 +394,7 @@ export async function checkAchievements(
     ['lucky_seven', 'DUEL_7', 50],
     ['proper_scholar', 'PROPERNOUNDLE', 50],
     ['sudoku_scholar', 'SUDOKU', 50],
+    ['regions_regular', 'REGIONS', 50],
     ['classic_master', 'DUEL', 100],
   ];
   for (const [key, mode, threshold] of modeMasteryChecks) {
@@ -732,10 +748,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

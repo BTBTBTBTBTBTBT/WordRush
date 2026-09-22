@@ -120,7 +120,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       },
       {
         name: 'More Games — Sudoku and Friends', accent: '#4f46e5',
-        body: 'The More Games tile on the home screen opens a menu of extra dailies that live outside the Daily Sweep: they earn XP, medals, leaderboard places and achievements like every other mode, but they never change your sweep count or Flawless Victory. Sudoku is the first: one Medium 9 × 9 puzzle a day, three mistakes allowed, pencil Notes for your candidates and a Hint that fills a cell for a score cost. Every game here has its own full guide behind the ? button in play.',
+        body: 'The More Games tile on the home screen opens a menu of extra dailies that live outside the Daily Sweep: they earn XP, medals, leaderboard places and achievements like every other mode, but they never change your sweep count or Flawless Victory. Sudoku is the first: one Medium 9 × 9 puzzle a day, three mistakes allowed, pencil Notes for your candidates and a Hint that fills a cell for a score cost. Starsweep is a star-placement logic puzzle: one star in every row, column and colour region with no two stars touching, three mistakes allowed, a 7 × 7 board early in the week and 8 × 8 from Thursday. Every game here has its own full guide behind the ? button in play.',
       },
     ],
   },

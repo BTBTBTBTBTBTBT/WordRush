@@ -23,11 +23,12 @@ describe('More Games sheet helpers', () => {
     expect(s[s.length - 1].modes.map((m) => m.id)).toEqual(['stray']);
   });
 
-  it('the enabled set drives the sheet and the tile count (Sudoku is the first title compiled in)', () => {
-    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['sudoku']);
-    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['logic', ['sudoku']]]);
-    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 1 });
-    expect(morePlayedCount([])).toEqual({ played: 0, total: 1 });
+  it('the enabled set drives the sheet and the tile count (Sudoku and Starsweep are compiled in)', () => {
+    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['sudoku', 'regions']);
+    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['logic', ['sudoku', 'regions']]]);
+    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 2 });
+    expect(morePlayedCount(['REGIONS', 'SUDOKU'])).toEqual({ played: 2, total: 2 });
+    expect(morePlayedCount([])).toEqual({ played: 0, total: 2 });
   });
 
   it('counts only More Games dailies the player has recorded today', () => {

@@ -43,6 +43,7 @@ export type ShareMode =
   | 'Seven'
   /** More Games (§18d): one board drawing per title inside the same card frame. */
   | 'Sudoku'
+  | 'Starsweep'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -106,6 +107,24 @@ export interface ShareSudokuInput extends ShareBase {
   hintMask: string;
   mistakes: number;
   difficulty: string;
+  puzzleNumber?: number;
+}
+
+/**
+ * Starsweep (More Games §18d): the coloured regions with the placed stars as
+ * dots — no crosses, no missing stars — so the card spoils nothing.
+ * Stat line reads "#12 · 8 × 8 · 0 mistakes · 2:10".
+ */
+export interface ShareRegionsInput extends ShareBase {
+  layout: 'regions';
+  n: number;
+  /** n*n chars, region index per cell. */
+  regions: string;
+  /** n*n chars: '.' empty, 'x' crossed, '*' star. */
+  board: string;
+  hintMask: string;
+  mistakes: number;
+  sizeLabel: string;
   puzzleNumber?: number;
 }
 
@@ -250,6 +269,7 @@ export interface ShareLeaderboardInput {
 export type ShareImageInput =
   | ShareSingleInput
   | ShareSudokuInput
+  | ShareRegionsInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -609,7 +629,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -655,6 +675,10 @@ function drawHeader(
     const m = `${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'}`;
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     statsText = `${num}${input.difficulty} · ${input.won ? m : 'Out of mistakes'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'regions') {
+    const m = `${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'}`;
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}${input.sizeLabel} · ${input.won ? m : 'Out of mistakes'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -786,6 +810,51 @@ function drawSudoku(
     ctx.fillStyle = given ? TEXT_DARK : hinted ? HINTC : filled ? PLAYER : EMPTY;
     drawRoundRect(ctx, x, y, cell, cell, Math.max(4, cell * 0.18));
     ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Starsweep (More Games §18d): the regions as tinted squares (the same soft
+// tints the board uses), the placed stars as dark dots (hint stars violet),
+// nothing else — no crosses and never the missing stars, so the card spoils
+// nothing and invites a try.
+const REGIONS_SHARE_TINTS = ['#ede9fe', '#d1fae5', '#e0f2fe', '#fce7f3', '#fef9c3', '#ccfbf1', '#ffedd5', '#ecfccb', '#e2e8f0'];
+function drawRegions(
+  ctx: CanvasRenderingContext2D,
+  input: ShareRegionsInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const n = Math.max(1, input.n);
+  const areaHeight = footerTop - headerBottom;
+  const size = Math.min(width - 200, areaHeight - 80);
+  const cardPad = 16, borderWidth = 3, gap = 4;
+  const inner = size - cardPad * 2;
+  const cell = (inner - gap * (n - 1)) / n;
+  const x0 = (width - size) / 2, y0 = headerBottom + (areaHeight - size) / 2;
+  ctx.save();
+  ctx.fillStyle = input.won ? WIN_BG : BOARD_LOSS_TINT;
+  drawRoundRect(ctx, x0, y0, size, size, 28);
+  ctx.fill();
+  ctx.lineWidth = borderWidth;
+  ctx.strokeStyle = input.won ? WIN_FG : LOSS_FG;
+  ctx.stroke();
+  const HINTC = '#8b5cf6';
+  for (let i = 0; i < n * n; i++) {
+    const r = Math.floor(i / n), c = i % n;
+    const x = x0 + cardPad + c * (cell + gap);
+    const y = y0 + cardPad + r * (cell + gap);
+    const g = (input.regions.charCodeAt(i) || 48) - 48;
+    ctx.fillStyle = REGIONS_SHARE_TINTS[g % REGIONS_SHARE_TINTS.length];
+    drawRoundRect(ctx, x, y, cell, cell, Math.max(4, cell * 0.18));
+    ctx.fill();
+    if (input.board[i] === '*') {
+      ctx.fillStyle = input.hintMask[i] === '1' ? HINTC : TEXT_DARK;
+      ctx.beginPath();
+      ctx.arc(x + cell / 2, y + cell / 2, cell * 0.24, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   ctx.restore();
 }
@@ -1728,6 +1797,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawGauntlet(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'sudoku') {
     drawSudoku(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'regions') {
+    drawRegions(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer
