@@ -6,7 +6,7 @@ import SwiftUI
 /// and Android:
 ///
 ///   no flagKey on the mode        → on   (nothing to gate)
-///   flags unknown / unreachable   → on   (the catalog's `enabled` alone decides)
+///   flags unknown / unreachable   → OFF  (a gated mode is hidden until the table has been read)
 ///   no row for the key            → OFF  (a gated mode needs its row — fail closed)
 ///   row.enabled = false           → OFF  (the kill switch)
 ///   row.audience = "all"          → on
@@ -65,7 +65,7 @@ final class FlagsService: ObservableObject {
     /// The shared resolver (see the header).
     func isOn(_ flagKey: String?) -> Bool {
         guard let flagKey else { return true }
-        guard let flags else { return loaded }   // in flight → hidden; unreachable → catalog decides
+        guard let flags else { return false }    // in flight or unreachable → hidden (the flags ARE the tester gate)
         guard let row = flags[flagKey] else { return false }
         if !row.enabled { return false }
         if row.audience == "all" { return true }
@@ -75,7 +75,7 @@ final class FlagsService: ObservableObject {
     /// Pure form for tests and previews: same rule, explicit inputs.
     nonisolated static func resolve(_ flagKey: String?, flags: [String: AppFlag]?, isTester: Bool) -> Bool {
         guard let flagKey else { return true }
-        guard let flags else { return true }
+        guard let flags else { return false }
         guard let row = flags[flagKey] else { return false }
         if !row.enabled { return false }
         if row.audience == "all" { return true }

@@ -41,11 +41,12 @@ export function useFlags(): { isOn: (flagKey: string | null | undefined) => bool
     errorRetryCount: 2,
   });
   const viewer = { isAdmin: !!profile?.is_admin, role: profile?.role ?? null };
-  const flags = data ?? (error ? null : undefined);
+  // Loading with nothing cached, or unreachable: both resolve to hidden for
+  // gated modes (isFlagOn treats a missing table as off).
+  const flags = data ?? null;
   const isOn = useCallback((flagKey: string | null | undefined) => {
     if (!flagKey) return true;
-    if (flags === undefined) return false;   // still loading, nothing cached
     return isFlagOn(flagKey, flags, viewer);
   }, [flags, viewer.isAdmin, viewer.role]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { isOn, loading: isLoading && flags === undefined };
+  return { isOn, loading: isLoading && !data && !error };
 }

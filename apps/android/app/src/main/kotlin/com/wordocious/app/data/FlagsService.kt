@@ -19,7 +19,7 @@ import kotlinx.serialization.json.Json
  * and iOS:
  *
  *   no flagKey on the mode        → on   (nothing to gate)
- *   flags unknown / unreachable   → on   (the catalog's `enabled` alone decides)
+ *   flags unknown / unreachable   → OFF  (a gated mode is hidden until the table has been read)
  *   no row for the key            → OFF  (a gated mode needs its row — fail closed)
  *   row.enabled = false           → OFF  (the kill switch)
  *   row.audience = "all"          → on
@@ -69,7 +69,7 @@ object FlagsService {
     /** The shared resolver, pure form: same rule, explicit inputs. */
     fun resolve(flagKey: String?, flags: Map<String, AppFlag>?, isTester: Boolean): Boolean {
         if (flagKey == null) return true
-        if (flags == null) return true
+        if (flags == null) return false
         val row = flags[flagKey] ?: return false
         if (!row.enabled) return false
         if (row.audience == "all") return true
@@ -79,7 +79,7 @@ object FlagsService {
     /** Live resolver against the current table and the signed-in profile. */
     fun isOn(flagKey: String?, flags: Map<String, AppFlag>? = _flags.value, loaded: Boolean = _loaded.value): Boolean {
         if (flagKey == null) return true
-        if (flags == null) return loaded    // in flight → hidden; unreachable → catalog decides
+        if (flags == null) return false     // in flight or unreachable → hidden (the flags ARE the tester gate)
         return resolve(flagKey, flags, AuthService.isAdsExempt)
     }
 }

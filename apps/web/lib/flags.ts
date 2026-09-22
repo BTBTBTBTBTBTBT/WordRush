@@ -5,7 +5,10 @@
 // mirror `isFlagOn` 1:1, pinned by flags.test.ts on the web):
 //
 //   no flagKey on the mode        → on   (nothing to gate)
-//   flags unknown / unreachable   → on   (the catalog's `enabled` alone decides)
+//   flags unknown / unreachable   → OFF  (a gated mode is hidden until the table
+//                                         has been read; the flags are the tester
+//                                         gate, so an outage must never show a
+//                                         game to the public)
 //   no row for the key            → OFF  (a gated mode needs its row; the
 //                                         Stage 7 migration seeds every key, so
 //                                         "table read fine but no row" means the
@@ -41,7 +44,7 @@ export function isTester(v: FlagViewer): boolean {
 
 export function isFlagOn(flagKey: string | null | undefined, flags: Record<string, AppFlag> | null | undefined, viewer: FlagViewer): boolean {
   if (!flagKey) return true;
-  if (!flags) return true;
+  if (!flags) return false;
   const row = flags[flagKey];
   if (!row) return false;
   if (!row.enabled) return false;
