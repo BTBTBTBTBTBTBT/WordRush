@@ -1,0 +1,133 @@
+{
+  "epoch": "2026-10-05",
+  "days": [
+    {
+      "day": "2026-10-05",
+      "n": 400,
+      "dayIndex": 0,
+      "index": 0
+    },
+    {
+      "day": "2026-10-06",
+      "n": 400,
+      "dayIndex": 1,
+      "index": 1
+    },
+    {
+      "day": "2027-02-13",
+      "n": 400,
+      "dayIndex": 131,
+      "index": 131
+    },
+    {
+      "day": "2027-11-08",
+      "n": 400,
+      "dayIndex": 399,
+      "index": 399
+    },
+    {
+      "day": "2027-11-09",
+      "n": 400,
+      "dayIndex": 400,
+      "index": 0
+    },
+    {
+      "day": "2028-05-01",
+      "n": 400,
+      "dayIndex": 574,
+      "index": 174
+    },
+    {
+      "day": "2026-10-04",
+      "n": 400,
+      "dayIndex": -1,
+      "index": 399
+    },
+    {
+      "day": "2026-01-01",
+      "n": 400,
+      "dayIndex": -277,
+      "index": 123
+    },
+    {
+      "day": "not-a-day",
+      "n": 400,
+      "dayIndex": null,
+      "index": 0
+    },
+    {
+      "day": "2026-12-25",
+      "n": 1,
+      "dayIndex": 81,
+      "index": 0
+    },
+    {
+      "day": "2026-12-25",
+      "n": 0,
+      "dayIndex": 81,
+      "index": 0
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-SUDOKU-1727000000000",
+      "n": 400,
+      "avoid": null,
+      "index": 149
+    },
+    {
+      "seed": "unlimited-SCRAMBLE-1727000000001",
+      "n": 120,
+      "avoid": null,
+      "index": 86
+    },
+    {
+      "seed": "unlimited-HUB-42",
+      "n": 800,
+      "avoid": null,
+      "index": 638
+    },
+    {
+      "seed": "unlimited-GROUPS-7",
+      "n": 1,
+      "avoid": null,
+      "index": 0
+    },
+    {
+      "seed": "unlimited-REGIONS-9",
+      "n": 0,
+      "avoid": null,
+      "index": 0
+    },
+    {
+      "seed": "unlimited-LADDER-1",
+      "n": 1000,
+      "avoid": null,
+      "index": 830
+    },
+    {
+      "seed": "avoid-me",
+      "n": 5,
+      "avoid": null,
+      "index": 1
+    },
+    {
+      "seed": "avoid-me",
+      "n": 5,
+      "avoid": 3,
+      "index": 1
+    },
+    {
+      "seed": "avoid-me",
+      "n": 5,
+      "avoid": 4,
+      "index": 1
+    },
+    {
+      "seed": "avoid-me",
+      "n": 1,
+      "avoid": 0,
+      "index": 0
+    }
+  ]
+}

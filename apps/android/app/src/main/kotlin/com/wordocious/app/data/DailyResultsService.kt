@@ -185,7 +185,7 @@ object DailyResultsService {
             ?: return false
         // §260: refuse what no human can do (zero-guess wins, six guesses in
         // three seconds) — same floor as web, iOS and the DB trigger.
-        if (!Plausibility.isPlausibleDailyResult(completed, guessCount, elapsedSeconds, totalBoards)) {
+        if (!Plausibility.isPlausibleDailyResult(completed, guessCount, elapsedSeconds, totalBoards, mode.name)) {
             android.util.Log.w("DailyResults", "rejected implausible result ${mode.name} guesses=$guessCount time=${elapsedSeconds}s")
             return false
         }

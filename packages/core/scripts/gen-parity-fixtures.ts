@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTodayForTests } from '../src/dictionary';
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
+import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../src/bank';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
@@ -89,6 +90,27 @@ export function renderSeedFixtures() {
   };
 }
 
+// More Games §11: epoch-indexed banks. Cases cover the epoch day, mid-bank, the
+// last unplayed entry, past-the-end and pre-epoch fallbacks, an unparseable
+// day, and seed indexing with and without an avoided entry.
+const BANK_EPOCH = '2026-10-05';
+const BANK_DAY_CASES: Array<[string, number]> = [
+  ['2026-10-05', 400], ['2026-10-06', 400], ['2027-02-13', 400], ['2027-11-08', 400], ['2027-11-09', 400],
+  ['2028-05-01', 400], ['2026-10-04', 400], ['2026-01-01', 400], ['not-a-day', 400], ['2026-12-25', 1], ['2026-12-25', 0],
+];
+const BANK_SEED_CASES: Array<[string, number, number | undefined]> = [
+  ['unlimited-SUDOKU-1727000000000', 400, undefined], ['unlimited-SCRAMBLE-1727000000001', 120, undefined],
+  ['unlimited-HUB-42', 800, undefined], ['unlimited-GROUPS-7', 1, undefined], ['unlimited-REGIONS-9', 0, undefined],
+  ['unlimited-LADDER-1', 1000, undefined], ['avoid-me', 5, undefined], ['avoid-me', 5, 3], ['avoid-me', 5, 4], ['avoid-me', 1, 0],
+];
+export function renderBankFixtures() {
+  return {
+    epoch: BANK_EPOCH,
+    days: BANK_DAY_CASES.map(([day, n]) => ({ day, n, dayIndex: bankDayIndex(day, BANK_EPOCH), index: bankIndexForDay(day, n, BANK_EPOCH) })),
+    seeds: BANK_SEED_CASES.map(([seed, n, avoid]) => ({ seed, n, avoid: avoid ?? null, index: bankIndexForSeed(seed, n, avoid) })),
+  };
+}
+
 export function renderPrefillFixtures() {
   // The pool MUST match what the reducers actually pass in production: the
   // curated solutions bank, NOT the allowed guess list. The fixtures were
@@ -124,6 +146,7 @@ const TARGET_DIRS = [
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
+  ['bank-fixtures.json', renderBankFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

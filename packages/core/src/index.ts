@@ -8,3 +8,4 @@ export * from './prefill';
 export * from './wotd-blocklist';
 export * from './solution-swaps';
 export * from './username';
+export * from './bank';

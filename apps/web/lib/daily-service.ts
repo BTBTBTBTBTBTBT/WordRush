@@ -147,7 +147,7 @@ export async function recordDailyResult(
   if (completed && guessCount <= 0) return null as any;
   // §260: and nothing else no human can do — six guesses in three seconds,
   // two-day timers, 200 guesses. Same floor as iOS, Android and the DB trigger.
-  if (!isPlausibleDailyResult(completed, guessCount, timeSeconds, totalBoards)) {
+  if (!isPlausibleDailyResult(completed, guessCount, timeSeconds, totalBoards, gameMode)) {
     console.warn(`[daily] rejected implausible result ${gameMode}: guesses=${guessCount} time=${timeSeconds}s boards=${totalBoards}`);
     return null as any;
   }

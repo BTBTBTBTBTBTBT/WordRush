@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/lib/supabase-client';
+import { CORE_MODES } from '@/lib/modes.generated';
+
+// More Games (§11): this global view charts the core word modes only. A
+// More Games row would show up with its raw key and a near-100% win rate
+// (Spyglass, Codebreaker), flattening the chart; they get their own stats.
+const CORE_DB_KEYS = new Set<string>([...CORE_MODES.map((m) => m.dbKey).filter((k): k is string => !!k), 'MULTI_DUEL', 'TOURNAMENT']);
 
 interface ProStatsProps {
   userId: string;
@@ -67,7 +73,7 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
         .eq('play_type', 'solo');
 
       if (data) {
-        setModeStats(data.map((s: any) => ({
+        setModeStats(data.filter((s: any) => CORE_DB_KEYS.has(s.game_mode)).map((s: any) => ({
           mode: MODE_LABELS[s.game_mode] || s.game_mode,
           winRate: s.total_games > 0 ? Math.round((s.wins / s.total_games) * 100) : 0,
           avgTime: s.average_time,

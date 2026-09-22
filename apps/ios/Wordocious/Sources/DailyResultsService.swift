@@ -161,7 +161,7 @@ enum DailyResultsService {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
         // §260: refuse what no human can do (zero-guess wins, six guesses in
         // three seconds) — same floor as web, Android and the DB trigger.
-        guard Plausibility.isPlausibleDailyResult(completed: completed, guessCount: guessCount, timeSeconds: timeSeconds, totalBoards: totalBoards) else {
+        guard Plausibility.isPlausibleDailyResult(completed: completed, guessCount: guessCount, timeSeconds: timeSeconds, totalBoards: totalBoards, gameMode: gameMode.rawValue) else {
             print("[DailyResults] rejected implausible result \(gameMode.rawValue) guesses=\(guessCount) time=\(timeSeconds)s")
             return nil
         }

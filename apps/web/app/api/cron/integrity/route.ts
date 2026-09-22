@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   {
     const rows = await sweepAll<{ id: string; user_id: string; game_mode: string; day: string; completed: boolean; guess_count: number; time_seconds: number; total_boards: number }>((f, t) =>
       admin.from('daily_results').select('id, user_id, game_mode, day, completed, guess_count, time_seconds, total_boards').eq('play_type', 'solo').gte('day', week).order('id').range(f, t));
-    const bad = rows.filter((r) => !isPlausibleDailyResult(r.completed, r.guess_count, r.time_seconds, r.total_boards));
+    const bad = rows.filter((r) => !isPlausibleDailyResult(r.completed, r.guess_count, r.time_seconds, r.total_boards, r.game_mode));
     checked.push(`daily_results (7d): ${rows.length} rows, ${bad.length} implausible`);
     for (const r of bad.slice(0, 10)) findings.push(`implausible daily_result ${r.game_mode} ${r.day} user ${r.user_id.slice(0, 8)}: completed=${r.completed} guesses=${r.guess_count} time=${r.time_seconds}s boards=${r.total_boards}`);
     if (bad.length > 10) findings.push(`…and ${bad.length - 10} more implausible daily_results`);
