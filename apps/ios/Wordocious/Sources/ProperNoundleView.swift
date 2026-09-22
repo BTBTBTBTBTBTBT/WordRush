@@ -371,6 +371,11 @@ struct ProperNoundleView: View {
                     timeSeconds: vm.finalTimeSeconds ?? vm.elapsed, boardsSolved: vm.status == .won ? 1 : 0,
                     totalBoards: 1, solution: p.display, solutions: [],
                     showDefinition: false,   // proper noun — no dictionary definition (the clue/photo stands in)
+                    points: Int(DailyScoring.breakdown(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
+                                                       guessCount: vm.guesses.count, timeSeconds: vm.finalTimeSeconds ?? vm.elapsed,
+                                                       boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
+                                                       bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) },
+                                                       dateKey: vm.isDaily ? LeaderboardService.todayLocal() : nil).total),
                     // §242: same non-daily + Pro gate as the finished screen's
                     // Play Again (line below the puzzle meta).
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && !vm.isVersus && AuthService.shared.isProActive)

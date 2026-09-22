@@ -88,6 +88,9 @@ struct VictoryOverlay: View {
     /// modes (Sudoku, Starsweep) pass "MISTAKES" (founder: "1 guesses is
     /// confusing" on the first Sudoku win, 2026-09-22).
     var statLabel = "GUESSES"
+    /// Composite score of the run — a third stat on the card (founder,
+    /// 2026-09-22: the points are the number players care about).
+    var points: Int? = nil
     /// §242 (founder: "go right into the next game without going back"): a
     /// Play/Try-again button on the card itself. Callers pass it ONLY on
     /// unlimited (non-daily) games — same gate as the finished screen's button.
@@ -137,12 +140,14 @@ struct VictoryOverlay: View {
                         }
                         statBlock(maxGuesses > 0 ? "\(guesses)/\(maxGuesses)" : "\(guesses)", statLabel)
                         statBlock(timeStr, "TIME")
+                        if let points { statBlock(points.formatted(.number.grouping(.automatic)), "POINTS") }
                     }
                     .padding(.top, 4)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(
                         (isMulti ? "\(boardsSolved) of \(totalBoards) boards solved. " : "")
-                        + "\(guesses)\(maxGuesses > 0 ? " of \(maxGuesses)" : "") guesses. Time \(timeStr)")
+                        + "\(guesses)\(maxGuesses > 0 ? " of \(maxGuesses)" : "") \(statLabel.lowercased()). Time \(timeStr)"
+                        + (points.map { ". \($0) points" } ?? ""))
 
                     if let onPlayAgain {
                         Button(action: onPlayAgain) {

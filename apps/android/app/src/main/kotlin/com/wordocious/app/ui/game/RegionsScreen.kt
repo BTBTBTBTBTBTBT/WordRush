@@ -529,8 +529,9 @@ private fun RegionsOverlay(session: RegionsSession, onPlayAgain: (() -> Unit)?, 
                     if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
                     style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
                 )
+                val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, session.state.mistakes + 1, secs, if (won) 1 else 0, 1, session.state.hintsUsed).total.toInt()
                 Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    StatBlock("${session.state.mistakes}", "MISTAKES"); StatBlock(timeText(secs), "TIME")
+                    StatBlock("${session.state.mistakes}", "MISTAKES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(pts), "POINTS")
                 }
                 onPlayAgain?.let {
                     Text(

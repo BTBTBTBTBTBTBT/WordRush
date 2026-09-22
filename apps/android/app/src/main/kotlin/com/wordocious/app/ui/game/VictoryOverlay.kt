@@ -64,6 +64,9 @@ fun VictoryOverlay(
     // Play/Try-again button on the card. Callers pass it ONLY on unlimited
     // games — same non-daily + Pro gate as the post-game screen's button.
     onPlayAgain: (() -> Unit)? = null,
+    /** Composite score of the run — a third stat on the card (founder,
+     *  2026-09-22: the points are the number players care about). */
+    points: Int? = null,
     onContinue: () -> Unit,
 ) {
     val won = state.status == GameStatus.WON
@@ -172,6 +175,7 @@ fun VictoryOverlay(
                     if (multi) StatBlock("Boards", "$boardsSolved/${state.boards.size}")
                     StatBlock("Guesses", if (board.maxGuesses > 0) "$rowsUsed/${board.maxGuesses}" else "$rowsUsed")
                     StatBlock("Time", fmtVTime(elapsedSeconds))
+                    if (points != null) StatBlock("Points", "%,d".format(points))
                 }
                 Spacer(Modifier.height(16.dp))
                 if (onPlayAgain != null) {

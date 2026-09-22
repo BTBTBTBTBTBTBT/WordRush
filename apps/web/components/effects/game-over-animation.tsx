@@ -15,11 +15,15 @@ interface GameOverAnimationProps {
   totalBoards?: number;
   solution?: string;
   solutions?: string[];
+  /** Composite score of the run — a third stat on the card (founder, 2026-09-22). */
+  points?: number;
+  /** Label under the guess count: "Guesses" for word modes; mistake-scored modes pass "Mistakes". */
+  guessLabel?: string;
   /** §242: "Try again" button on the card — unlimited games only. */
   onPlayAgain?: () => void;
 }
 
-export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, onPlayAgain }: GameOverAnimationProps) {
+export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain }: GameOverAnimationProps) {
   useEffect(() => { haptic('medium'); playGameOver(); }, []);
   const { definition: singleDef } = useWordDefinition(solution || null);
   const multiDefs = useWordDefinitions(solutions || []);
@@ -122,7 +126,7 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
             )}
 
             {/* Stats */}
-            {(guesses != null || timeSeconds != null || boardsSolved != null) && (
+            {(guesses != null || timeSeconds != null || boardsSolved != null || points != null) && (
               <div className="flex justify-center gap-5 mt-4">
                 {boardsSolved != null && totalBoards != null && (
                   <div className="text-center">
@@ -137,7 +141,7 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
                     <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
                       {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Guesses</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>{guessLabel}</div>
                   </div>
                 )}
                 {timeSeconds != null && (
@@ -146,6 +150,14 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
                       {formatTime(timeSeconds)}
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Time</div>
+                  </div>
+                )}
+                {points != null && (
+                  <div className="text-center">
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                      {Math.round(points).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Points</div>
                   </div>
                 )}
               </div>

@@ -627,6 +627,14 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     onPlayAgain = if (onPlayAgain != null && seed.startsWith("unlimited-") &&
                         com.wordocious.app.data.AuthService.isProActive
                     ) ({ dismissedVictory = true; onPlayAgain() }) else null,
+                    // The run's composite score — the same inputs the breakdown card uses.
+                    points = run {
+                        val rs = com.wordocious.app.data.GameResultsService.computeRunScore(state, mode)
+                        com.wordocious.app.data.DailyScoring.breakdown(
+                            mode.name, rs.won, rs.guessCount, elapsed, rs.boardsSolved, rs.totalBoards, vm.hintsUsed,
+                            rs.stagesCompleted, rs.bestCorrectLetters, com.wordocious.core.getDailySeedDate(seed),
+                        ).total.toInt()
+                    },
                     onContinue = { dismissedVictory = true },
                 )
                 xpResult?.let { XpToast(it) { xpResult = null } }

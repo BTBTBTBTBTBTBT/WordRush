@@ -176,6 +176,10 @@ struct SudokuView: View {
                     won: vm.state.status == .won, guesses: vm.mistakes, maxGuesses: 0,
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
                     solution: nil, solutions: [], showDefinition: false, statLabel: "MISTAKES",
+                    points: Int(DailyScoring.breakdown(gameMode: GameMode.sudoku.rawValue, completed: vm.state.status == .won,
+                                                       guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
+                                                       boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
+                                                       hintsUsed: vm.hintsUsed).total),
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?(vm.state.difficulty) } : nil,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))

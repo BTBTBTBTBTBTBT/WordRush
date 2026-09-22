@@ -188,6 +188,14 @@ struct GameScreen: View {
                     boardsSolved: vm.boards.filter { $0.status == .won }.count, totalBoards: vm.boardCount,
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
+                    // The run's composite score — the same inputs the breakdown card uses.
+                    points: Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: vm.status == .won,
+                                                       guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
+                                                       boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                                                       totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
+                                                       stagesCompleted: vm.stagesCompletedForScore,
+                                                       bestCorrectLetters: vm.bestCorrectLettersForScore,
+                                                       dateKey: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil).total),
                     // §242: unlimited games offer the next puzzle on the card
                     // (playAgainAction already carries the non-daily + Pro gate).
                     onPlayAgain: playAgainAction.map { action in

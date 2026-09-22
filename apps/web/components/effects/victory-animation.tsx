@@ -15,12 +15,18 @@ interface VictoryAnimationProps {
   totalBoards?: number;
   solution?: string;
   solutions?: string[];
+  /** Composite score of the run — a third stat on the card (founder,
+   *  2026-09-22: the points are the number players care about). */
+  points?: number;
+  /** Label under the guess count: "Guesses" for word modes; mistake-scored
+   *  modes pass "Mistakes". */
+  guessLabel?: string;
   /** §242: shown as a "Play again" button on the card — pass ONLY on
    *  unlimited (non-daily) games where the caller's restart handler exists. */
   onPlayAgain?: () => void;
 }
 
-export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, onPlayAgain }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain }: VictoryAnimationProps) {
   useEffect(() => { haptic('heavy'); playSuccess(); }, []);
   const { definition } = useWordDefinition(solution || null);
 
@@ -134,14 +140,14 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
             )}
 
             {/* Stats */}
-            {(guesses != null || timeSeconds != null || boardsSolved != null) && (
+            {(guesses != null || timeSeconds != null || boardsSolved != null || points != null) && (
               <div className="flex justify-center gap-5 mt-4">
                 {guesses != null && (
                   <div className="text-center">
                     <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Guesses</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{guessLabel}</div>
                   </div>
                 )}
                 {boardsSolved != null && totalBoards != null && (
@@ -158,6 +164,14 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                       {formatTime(timeSeconds)}
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Time</div>
+                  </div>
+                )}
+                {points != null && (
+                  <div className="text-center">
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                      {Math.round(points).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Points</div>
                   </div>
                 )}
               </div>

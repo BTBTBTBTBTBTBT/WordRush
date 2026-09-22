@@ -1,4 +1,5 @@
 'use client';
+import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
 import { useReducer, useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
@@ -621,6 +622,15 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             return last ? Math.floor(last.timeMs / 1000) : elapsedTime;
           })()}
           solutions={state.boards.map(b => b.solution)}
+          points={(() => {
+            // The run's composite score — the same cross-stage tally GauntletResults uses.
+            const rs = gauntlet.stageResults;
+            const won = rs.filter(r => r.status === GameStatus.WON);
+            const totalBoards = gauntlet.stages.reduce((s, st) => s + st.boardCount, 0) || 21;
+            const boards = won.reduce((s, r) => s + (gauntlet.stages[r.stageIndex]?.boardCount ?? 0), 0);
+            return computeScoreBreakdown('GAUNTLET', true, rs.reduce((s, r) => s + r.guesses, 0),
+              Math.floor(rs.reduce((s, r) => s + r.timeMs, 0) / 1000), boards, totalBoards, 0, won.length).total;
+          })()}
         />
       )}
       {xpToast}
