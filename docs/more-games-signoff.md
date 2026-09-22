@@ -30,7 +30,7 @@ Tick a cell only after checking, in order:
 | Pickers' More chip (Leaderboard, Records) | ☐ | ☐ | ☐ |
 | Stats registry rows (Profile → mode) | ☐ | ☐ | ☐ |
 | **Sudoku** | ☐ | ☐ | ☐ |
-| Starsweep | ☐ | ☐ | ☐ |
+| **Starsweep** | ☐ | ☐ | ☐ |
 | Letter Ladder | ☐ | ☐ | ☐ |
 | Muddle | ☐ | ☐ | ☐ |
 | Spyglass | ☐ | ☐ | ☐ |
@@ -50,6 +50,23 @@ Tick a cell only after checking, in order:
 - Pro Unlimited: Easy · Medium · Hard capsules above the board; switching starts a fresh puzzle.
 - Score: mistakes + 1 out of 4, 300 per unused step, 30-minute speed cap. The share card is the
   board as coloured squares with "0 mistakes · 3:58".
+
+## Starsweep — what to look for (built 2026-09-22)
+
+- Daily board is 7 × 7 Monday–Wednesday and 8 × 8 Thursday–Sunday; "#N" counts from 2026-09-23.
+  Same regions and the same hidden stars everywhere on a date (fixture-pinned on all three).
+- One continuous ruled board: heavy rules between colour regions, hairlines inside a region, nine
+  soft tints. Tap a cell once for ×, again for a star, again to clear. A wrong star turns red and
+  counts a mistake that clearing never refunds; the third ends the game and the missing stars show
+  muted. Stars placed by **Hint** are violet and cannot be erased.
+- Action row: **Undo** · **Erase** (clears the last-tapped cell) · **Auto-cross** (toggle, fills gold
+  when on; a correct star crosses out its row, column, region and eight neighbours) · **Hint**
+  (places the star for the last-tapped cell's row, 100 points, never a mistake).
+- Wording: always "Starsweep", win copy "Board cleared", picker chip "Stars". The guide's quick facts
+  say More Games do not count toward the Daily Sweep. Nothing about this game should read "Sweep!".
+- Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 capsules above the board; switching starts a fresh board.
+- Score: mistakes + 1 out of 4, 300 per unused step, 10-minute speed cap. The share card is the
+  regions as coloured squares with the placed stars as dots and "0 mistakes · 2:10".
 
 ## Known gaps to close before the gate closes
 
