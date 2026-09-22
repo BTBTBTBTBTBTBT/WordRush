@@ -236,7 +236,7 @@ enum ProfileArchetype {
     /// Priority order matches the server's computation.
     static let all: [Info] = [
         Info(key: "GRINDER", name: "Grinder", symbol: "repeat",
-             rule: "Swept all nine daily modes on 3 or more days."),
+             rule: "Swept every daily mode on 3 or more days."),
         Info(key: "SPEEDRUNNER", name: "Speedrunner", symbol: "bolt.fill",
              rule: "Average solve time of 90 seconds or under (10+ games)."),
         Info(key: "SNIPER", name: "Sniper", symbol: "scope",

@@ -31,7 +31,7 @@ enum DailySweepCatalog {
     private static let labelOverride: [String: String] = ["PROPERNOUNDLE": "Proper"]
 
     static let modes: [(dbKey: String, label: String, accent: Color, glyph: String)] =
-        ModeGen.daily.map { m in
+        ModeGen.sweep.map { m in
             let key = m.dbKey ?? ""
             return (dbKey: key, label: labelOverride[key] ?? m.shareLabel, accent: m.accent, glyph: m.glyph ?? "")
         }

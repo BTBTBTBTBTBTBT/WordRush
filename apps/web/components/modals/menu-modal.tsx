@@ -31,7 +31,7 @@ const MENU_ITEMS: {
   accent: string;
 }[] = [
   { href: '/how-to-play', title: 'How to Play', subtitle: 'Rules, tiles & scoring', icon: HelpCircle, accent: '#7C3AED' },
-  { href: '/guides', title: 'Guides', subtitle: 'Strategy for all 9 modes', icon: BookOpen, accent: '#3B82F6' },
+  { href: '/guides', title: 'Guides', subtitle: 'Strategy for every mode', icon: BookOpen, accent: '#3B82F6' },
   { href: '/strategy', title: 'Strategy', subtitle: 'Solve faster, in fewer guesses', icon: Lightbulb, accent: '#F59E0B' },
   { href: '/words', title: 'Words', subtitle: 'Every Word of the Day', icon: Calendar, accent: '#EC4899' },
   // "About" sat here until 2026-07-31 — it restated How to Play in older, dryer

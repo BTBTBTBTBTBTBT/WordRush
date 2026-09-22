@@ -1,5 +1,6 @@
 package com.wordocious.app.data
 
+import com.wordocious.app.ModeGen
 import com.wordocious.app.todayLocalDate
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -61,19 +62,26 @@ object DailyCompletionsService {
         val flawless: Boolean get() = completed >= total && won >= total
     }
 
-    /** The 9 daily modes (VS excluded — no daily row). */
-    const val TOTAL_DAILY_MODES = 9
+    /** The Daily Sweep set, from the catalog (More Games Stage 4) — never a literal.
+     *  Only these keys count toward N/total, the celebration, the ring and the
+     *  widget; a More Games result on the map is ignored here. */
+    val SWEEP_KEYS: Set<String> get() = ModeGen.sweep.mapNotNull { it.dbKey }.toSet()
+    val TOTAL_DAILY_MODES: Int get() = ModeGen.sweep.size
+
+    /** Today's completions restricted to the sweep set. */
+    fun sweepOnly(byMode: Map<String, Completion>): Map<String, Completion> = byMode.filterKeys { it in SWEEP_KEYS }
 
     fun totals(byMode: Map<String, Completion>): Totals {
         var won = 0; var guesses = 0; var time = 0; var score = 0.0
         // Web parity (daily-service.ts fetchTodayDailyCompletions): each mode's
         // score is rounded BEFORE summing — sum-of-rounds, not round-of-sum,
         // or the platforms' sweep totals drift by ±1.
-        for (c in byMode.values) {
+        val sweep = sweepOnly(byMode)
+        for (c in sweep.values) {
             if (c.completed) won++
             guesses += c.guessCount; time += c.timeSeconds; score += Math.round(c.score).toDouble()
         }
-        return Totals(byMode.size, won, TOTAL_DAILY_MODES, guesses, time, score.toInt())
+        return Totals(sweep.size, won, TOTAL_DAILY_MODES, guesses, time, score.toInt())
     }
 
     /** The local day the last fetch served — lets [refreshIfDayChanged] detect a

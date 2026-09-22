@@ -32,6 +32,7 @@ import {
   type SweepEntry,
   type SweepDetails,
 } from '@/lib/daily-service';
+import { requiredSweepCount } from '@/lib/daily-modes';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import {
@@ -520,7 +521,7 @@ export default function DailyPage() {
             {/* §227: full words — "2h" read as hours, not hints. */}
             {/* §246: wrap, never truncate — the hints segment fell off the end. */}
             <span className="leading-snug">
-              {formatTime(entry.total_time)} · {entry.modes_won}/9
+              {formatTime(entry.total_time)} · {entry.modes_won}/{requiredSweepCount(getTodayLocal())}
               {det ? ` · ${det.guesses} guess${det.guesses === 1 ? '' : 'es'}` : ''}
               {det && det.hints > 0 ? ` · ${det.hints} hint${det.hints === 1 ? '' : 's'}` : ''}
             </span>
@@ -713,7 +714,7 @@ export default function DailyPage() {
                 </div>
               </div>
               {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
-                  no Play button (just complete the 9 dailies to appear here). */}
+                  no Play button (just complete every sweep daily to appear here). */}
               {!isSweep && (
                 <button
                   onClick={handlePlayDaily}
@@ -784,8 +785,8 @@ export default function DailyPage() {
               </div>
             )}
             <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {/* §223 microcopy: the sweep board pre-answers "why is 9/9 below
-                  8/9" — it ranks by points, not wins. */}
+              {/* §223 microcopy: the sweep board pre-answers "why is a full sweep below
+                  a near-miss" — it ranks by points, not wins. */}
               {isSweep ? 'Ranked by total points across all modes' : 'Daily games only'}
             </div>
             {!loading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
@@ -948,7 +949,7 @@ export default function DailyPage() {
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                           <span className="leading-snug">
-                            {formatTime(entry.total_time)} · {entry.modes_won}/9
+                            {formatTime(entry.total_time)} · {entry.modes_won}/{requiredSweepCount(getYesterdayLocal())}
                             {(() => { const g = ySweepDetails.get(entry.user_id)?.guesses; return g !== undefined ? ` · ${g} guess${g === 1 ? '' : 'es'}` : ''; })()}
                             {(() => { const h = ySweepDetails.get(entry.user_id)?.hints ?? 0; return h > 0 ? ` · ${h} hint${h === 1 ? '' : 's'}` : ''; })()}
                           </span>

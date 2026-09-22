@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client';
 import { getTodayLocal, toLocalDayString, TROPHY_EPOCH_DATE } from './daily-service';
+import { sweepModesFor, requiredSweepCount } from './daily-modes';
 
 /**
  * Data layer for the "profile social" redesign — the public-profile identity
@@ -145,10 +146,15 @@ export const EMPTY_H2H: H2HSummary = {
 };
 
 const sweepDayCount = (rows: DailyRow[]): number => {
-  const byDay = new Map<string, number>();
-  for (const r of rows) byDay.set(r.day, (byDay.get(r.day) ?? 0) + 1);
+  // Distinct sweep-era modes per day (More Games Stage 4: never a literal 9).
+  const byDay = new Map<string, Set<string>>();
+  for (const r of rows) {
+    if (!sweepModesFor(r.day).includes(r.game_mode)) continue;
+    let s = byDay.get(r.day); if (!s) { s = new Set(); byDay.set(r.day, s); }
+    s.add(r.game_mode);
+  }
   let n = 0;
-  for (const c of byDay.values()) if (c >= 9) n++;
+  for (const [day, s] of byDay) if (s.size >= requiredSweepCount(day)) n++;
   return n;
 };
 

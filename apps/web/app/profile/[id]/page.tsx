@@ -545,7 +545,7 @@ export default function PublicProfilePage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="flex flex-col items-center gap-4 animate-fade-in-up">
-          {/* Avatar with today-progress ring + "N/9 today" pill */}
+          {/* Avatar with today-progress ring + "N/total today" pill */}
           <div className="relative" style={{ width: 128, height: 128 }}>
             {todayRing && (
               <svg

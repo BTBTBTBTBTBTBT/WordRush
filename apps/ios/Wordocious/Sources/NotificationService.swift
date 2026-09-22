@@ -75,7 +75,7 @@ enum NotificationService {
             content.title = streak >= 3 ? "STREAK AT RISK! 🔥" : "DAILY CHALLENGE 🧩"
             content.body = streak >= 3
                 ? "Your \(streak)-day streak ends at midnight. One quick game keeps it alive."
-                : "Today's nine puzzles are live. Keep the streak going."
+                : "Today's puzzles are live. Keep the streak going."
         }
         content.sound = .default
 

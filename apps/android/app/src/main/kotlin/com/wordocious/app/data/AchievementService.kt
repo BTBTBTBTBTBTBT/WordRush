@@ -119,10 +119,8 @@ object AchievementService {
     @Serializable
     private data class TimeSecondsRow(@SerialName("time_seconds") val timeSeconds: Int? = 0)
 
-    private val ALL_MODES = listOf(
-        "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
-        "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE",
-    )
+    // "All Modes Played" = every daily mode this build knows (More Games §11: all dailies, not just the sweep).
+    private val ALL_MODES: List<String> get() = com.wordocious.app.ModeGen.daily.mapNotNull { it.dbKey }
 
     /** Day strings are ISO dates; "consecutive" = exactly 1 day apart (web's ~23-25h ms window). */
     private fun isConsecutiveDays(newer: String, older: String): Boolean = runCatching {
@@ -311,11 +309,13 @@ object AchievementService {
             val fastWins = todayResults.filter { (it.timeSeconds ?: 0) < 60 }
             if (fastWins.size >= 3) tryUnlock("hat_trick")
 
-            // Sweep speed checks
-            if (todayResults.size >= 9) {
-                val modes = todayResults.map { it.gameMode }.toSet()
-                if (ALL_MODES.all { it in modes }) {
-                    val totalTime = todayResults.sumOf { it.timeSeconds ?: 0 }
+            // Sweep speed checks — over today's sweep-era set only (More Games Stage 4).
+            val sweepSet = com.wordocious.app.ModeGen.sweepModesFor(today)
+            val sweepRows = todayResults.filter { it.gameMode in sweepSet }
+            if (sweepRows.size >= sweepSet.size) {
+                val modes = sweepRows.map { it.gameMode }.toSet()
+                if (sweepSet.all { it in modes }) {
+                    val totalTime = sweepRows.sumOf { it.timeSeconds ?: 0 }
                     if (totalTime < 1200) tryUnlock("lightning_round")
                     if (totalTime < 900) tryUnlock("speed_sweep")
                     // todayResults is filtered completed=true, so all 9 present == Flawless day.

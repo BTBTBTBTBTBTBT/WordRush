@@ -63,7 +63,7 @@ private data class Benefit(val icon: ImageVector?, val asset: Int?, val text: St
 private val BENEFITS = listOf(
     Benefit(Icons.Filled.VisibilityOff, null, "Ad-free experience — no interruptions, ever"),
     Benefit(null, R.drawable.ic_wordle_grid, "Unlimited replays of all 9 game modes, any time"),
-    Benefit(null, R.drawable.ic_swords, "VS mode on every game — challenge friends in all 9 modes"),
+    Benefit(null, R.drawable.ic_swords, "VS mode on every game — challenge friends in every mode"),
     Benefit(Icons.Filled.Bolt, null, "Practice against the CPU — Easy, Medium & Hard bots, anytime"),
     Benefit(Icons.Filled.Mail, null, "Invite friends to private matches by link or username"),
     Benefit(null, R.drawable.ic_shield, "4 streak shields credited each billing period"),
@@ -106,7 +106,7 @@ fun ProScreen(onDone: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             Text("Go Pro", fontSize = 36.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Text(
-                "Play unlimited & ad-free — all 9 modes, any time",
+                "Play unlimited & ad-free — every mode, any time",
                 fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(24.dp))

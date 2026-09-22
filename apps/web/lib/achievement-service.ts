@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
+import { sweepModesFor, DAILY_MODES } from './daily-modes';
 
 // ============================================================
 // Achievement Definitions
@@ -16,7 +17,7 @@ export interface AchievementDef {
 export const ACHIEVEMENTS: AchievementDef[] = [
   // Beginner
   { key: 'first_win', name: 'First Win', description: 'Win any game', category: 'beginner', icon: 'trophy' },
-  { key: 'all_modes', name: 'All Modes Played', description: 'Play all 9 game modes', category: 'beginner', icon: 'grid' },
+  { key: 'all_modes', name: 'All Modes Played', description: 'Play every game mode', category: 'beginner', icon: 'grid' },
   { key: 'daily_debut', name: 'Daily Debut', description: 'Complete your first daily challenge', category: 'beginner', icon: 'calendar' },
 
   // Consistency
@@ -39,8 +40,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // Daily sweep achievements — unlock once the corresponding
   // daily_bonuses flag has ever been set for this user.
-  { key: 'daily_sweep', name: 'Daily Sweep', description: 'Complete all 9 dailies in a single day', category: 'skill', icon: 'sparkles' },
-  { key: 'flawless_victory', name: 'Flawless Victory', description: 'Win all 9 dailies in a single day', category: 'skill', icon: 'trophy' },
+  { key: 'daily_sweep', name: 'Daily Sweep', description: 'Complete every Daily Sweep game in a single day', category: 'skill', icon: 'sparkles' },
+  { key: 'flawless_victory', name: 'Flawless Victory', description: 'Win every Daily Sweep game in a single day', category: 'skill', icon: 'trophy' },
 
   // Cumulative milestones
   { key: 'century_club', name: 'Century Club', description: 'Win 100 total games', category: 'consistency', icon: 'trophy' },
@@ -153,7 +154,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'flawless_25', name: 'Flawless 25', description: 'Achieve Flawless Victory 25 times', category: 'consistency', icon: 'crown' },
   { key: 'flawless_streak_5', name: 'Flawless Streak 5', description: 'Achieve Flawless Victory 5 days in a row', category: 'skill', icon: 'trophy' },
   { key: 'sweep_streak_60', name: 'Sweep Streak 60', description: 'Complete the daily sweep 60 days in a row', category: 'consistency', icon: 'flame' },
-  { key: 'flawless_speed', name: 'Flawless Blitz', description: 'Win all 9 dailies with total time under 18 minutes', category: 'skill', icon: 'zap' },
+  { key: 'flawless_speed', name: 'Flawless Blitz', description: 'Win every Daily Sweep game with total time under 18 minutes', category: 'skill', icon: 'zap' },
 
   // ────────────────────────────────────────────────────────────
   // Round-out additions (6) — fill each grouped column to a clean
@@ -261,7 +262,8 @@ export async function checkAchievements(
       .select('game_mode')
       .eq('user_id', userId);
     const modes = new Set((modeStats || []).map((s: any) => s.game_mode));
-    if (['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'].every(m => modes.has(m))) {
+    // "All Modes Played" = every daily mode this build knows (More Games §11: all dailies, not just the sweep).
+    if (DAILY_MODES.every(m => modes.has(m))) {
       await tryUnlock('all_modes');
     }
   }
@@ -389,16 +391,17 @@ export async function checkAchievements(
       const fastWins = todayResults.filter((r: any) => (r.time_seconds || 0) < 60);
       if (fastWins.length >= 3) await tryUnlock('hat_trick');
 
-      // Sweep speed checks
-      if (todayResults.length >= 9) {
-        const modes = new Set(todayResults.map((r: any) => r.game_mode));
-        const allModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
-        if (allModes.every(m => modes.has(m))) {
-          const totalTime = todayResults.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
+      // Sweep speed checks — over today's sweep-era set only (More Games Stage 4).
+      const sweepSet = sweepModesFor(today);
+      const sweepRows = todayResults.filter((r: any) => sweepSet.includes(r.game_mode));
+      if (sweepRows.length >= sweepSet.length) {
+        const modes = new Set(sweepRows.map((r: any) => r.game_mode));
+        if (sweepSet.every(m => modes.has(m))) {
+          const totalTime = sweepRows.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
           if (totalTime < 1200) await tryUnlock('lightning_round');
           if (totalTime < 900) await tryUnlock('speed_sweep');
-          // Flawless Blitz: all 9 WON (completed) AND under 18 minutes. Since the
-          // query already filters completed=true, 9 rows here means a Flawless day.
+          // Flawless Blitz: every sweep mode WON (completed) AND under 18 minutes. Since
+          // the query already filters completed=true, a full set here means a Flawless day.
           if (totalTime < 1080) await tryUnlock('flawless_speed');
         }
       }

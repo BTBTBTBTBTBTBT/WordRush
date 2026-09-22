@@ -74,7 +74,7 @@ object WidgetBridge {
             // Same source as the header pill (daily streak, NOT the win streak —
             // that mismatch was iOS's 🔥1-vs-🔥19 bug; don't re-import it here).
             val streak = AuthService.headerStreak ?: 0
-            val modes = ModeGen.daily.map { m ->
+            val modes = ModeGen.sweep.map { m ->
                 val c = m.dbKey?.let { byMode[it] }
                 val (kind, asset, text) = iconSpec(m.id)
                 ModeEntry(
@@ -112,7 +112,7 @@ object WidgetBridge {
      *  install / not signed in) — real mode grid from ModeGen, all unplayed. */
     fun emptySnapshot(): Snapshot = Snapshot(
         day = todayLocalDate(), streak = 0,
-        modes = ModeGen.daily.map { m ->
+        modes = ModeGen.sweep.map { m ->
             val (kind, asset, text) = iconSpec(m.id)
             ModeEntry(
                 key = m.dbKey ?: m.id, title = m.shortTitle,

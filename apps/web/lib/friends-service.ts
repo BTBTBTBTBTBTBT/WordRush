@@ -27,7 +27,7 @@ export interface FriendProfile {
   lastWeekPoints?: number;
   /** §238: settled-week history — [0] = last week, back ~12 weeks (additive). */
   pastWeekPoints?: number[];
-  /** §244: current flawless-victory streak (consecutive all-nine-won days). */
+  /** §244: current flawless-victory streak (consecutive days with every daily won). */
   flawlessStreak?: number;
   h2hW?: number;
   h2hL?: number;
@@ -76,7 +76,7 @@ let inflight: Promise<void> | null = null;
 export async function loadFriends(force = false): Promise<void> {
   // §232: the cache is session-lived, but the DATA is day-scoped — an app/tab
   // left open across midnight kept showing yesterday's race under today's
-  // countdown (founder's Monday screenshot: last week's podium, "9/9 today"
+  // countdown (founder's Monday screenshot: last week's podium, "N/N today"
   // rows that were really Sunday's). A day rollover invalidates the cache.
   if (loaded && !force && fetchedDay === localDay()) {
     // §237 stale-while-revalidate: paint the cache instantly, but if it's

@@ -74,7 +74,7 @@ interface ModePickerProps {
   onSelectMode: (dbKey: string | null) => void;
   gamesPerMode?: Record<string, number>;
   showAll?: boolean;
-  /** When true, lay the 9 modes out 5-on-top-of-4 on one screen (no horizontal
+  /** When true, lay the sweep modes out 5-on-top-of-4 on one screen (no horizontal
    *  scroll) instead of a scrolling row. Used on /daily and /records. */
   grid?: boolean;
   /** When true, append the synthetic Sweep tile (10th) — the daily sweep
@@ -124,7 +124,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
     );
   };
 
-  // 5-on-top-of-4 grid (all 9 modes visible, no scroll) — matches the native
+  // 5-on-top-of-4 grid (every sweep mode visible, no scroll) — matches the native
   // app + Profile dailies. Each cell is exactly 1/5 of the row width so the
   // bottom 4 sit centered under the top 5.
   if (grid) {

@@ -44,7 +44,7 @@ enum WidgetBridge {
         // while his header read 🔥19 the day after a lost game. Next to
         // "puzzles played today", the flame means the daily streak.
         let streak = AuthService.shared.headerStreak ?? 0
-        let modes = ModeGen.daily.map { m -> ModeEntry in
+        let modes = ModeGen.sweep.map { m -> ModeEntry in
             let c = m.dbKey.flatMap { byMode[$0] }
             // Home-menu icon for this mode (homeModes keys icons by catalog id).
             var kind: String?, asset: String?, text: String?

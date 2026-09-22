@@ -226,7 +226,7 @@ export default async function WordOfDayPage({ params }: Props) {
             <Link href="/" className="font-bold" style={{ color: '#7c3aed' }}>Daily Challenge</Link>, or study the{' '}
             <Link href="/strategy/best-starting-words" className="font-bold" style={{ color: '#7c3aed' }}>best starting words</Link>{' '}
             before your next run. New to the multi-board modes? The{' '}
-            <Link href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</Link> cover all nine.
+            <Link href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</Link> cover every mode.
           </p>
         </SectionCard>
 

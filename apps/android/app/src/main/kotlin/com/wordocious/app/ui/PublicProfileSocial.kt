@@ -288,7 +288,7 @@ fun ArchetypeDialog(targetName: String, targetArchetype: String, onDismiss: () -
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 )
                 listOf(
-                    "GRINDER" to "Sweeps all nine dailies, day after day.",
+                    "GRINDER" to "Sweeps every daily, day after day.",
                     "SPEEDRUNNER" to "Average solve under 90 seconds.",
                     "SNIPER" to "Averages 3.6 guesses or fewer.",
                     "NIGHT_OWL" to "40%+ of dailies played late at night.",
@@ -775,7 +775,7 @@ fun StreakCalendarDialog(
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             week.forEach { day ->
                                 val n = dayCounts[day] ?: 0
-                                val flawlessDay = n >= 9
+                                val flawlessDay = n >= com.wordocious.app.ModeGen.requiredSweepCount(day)
                                 Box(
                                     Modifier
                                         .size(18.dp)

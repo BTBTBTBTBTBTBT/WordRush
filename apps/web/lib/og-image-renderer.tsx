@@ -259,7 +259,7 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             gap: '10px',
           }}
         >
-          <span>Daily puzzles  ·  9 game modes  ·  wordocious.com</span>
+          <span>Daily puzzles  ·  every game mode  ·  wordocious.com</span>
         </div>
       </div>
     ),

@@ -228,7 +228,7 @@ describe('buildDailySweepShareInput (§231)', () => {
     expect(input.delta).toBeUndefined();
     expect(input.shareRank).toBe(2);
     expect(input.sharePlayers).toBe(7);
-    expect(input.footer).toBe('Can you sweep all nine? Play free at wordocious.com');
+    expect(input.footer).toBe('Can you sweep them all? Play free at wordocious.com');
   });
 
   it('uses the RPC tie-aware rank on rows, not the list index', () => {
@@ -275,7 +275,7 @@ describe('buildYesterdaySweepPodiumShareInput (§231)', () => {
     expect(input.rows[2].subline).toBe('12m 36s · 9/9 · Flawless');
     expect(input.dateChip).toBe('Aug 22, 2026 · Final');
     expect(input.you).toBeUndefined();
-    expect(input.footer).toBe('Can you sweep all nine? Play free at wordocious.com');
+    expect(input.footer).toBe('Can you sweep them all? Play free at wordocious.com');
   });
 
   it('returns null when nobody swept yesterday', () => {

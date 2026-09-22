@@ -495,7 +495,7 @@ struct DailyRecordsView: View {
                 ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Daily Sweep").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                    Text("All 9 modes today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    Text("All \(ModeGen.sweep.count) modes today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
             }

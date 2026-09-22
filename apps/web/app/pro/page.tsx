@@ -10,8 +10,8 @@ import { PRO_PLANS } from '@/lib/payment/types';
 
 const benefits = [
   { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
-  { icon: WordleGridIcon, text: 'Unlimited replays of all 9 game modes, any time' },
-  { icon: Swords, text: 'VS mode on every game — challenge friends in all 9 modes' },
+  { icon: WordleGridIcon, text: 'Unlimited replays of every game mode, any time' },
+  { icon: Swords, text: 'VS mode on every game — challenge friends in every mode' },
   { icon: Bot, text: 'Practice against the CPU — Easy, Medium & Hard bots, anytime' },
   { icon: Mail, text: 'Invite friends to private matches by link or username' },
   { icon: Shield, text: '4 streak shields credited each billing period' },
@@ -82,7 +82,7 @@ export default function ProPage() {
           <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
           <h1 className="text-4xl font-black mb-1" style={{ color: 'var(--color-text)' }}>Go Pro</h1>
           <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Play unlimited & ad-free — all 9 modes, any time
+            Play unlimited & ad-free — every mode, any time
           </p>
         </div>
 
@@ -249,7 +249,7 @@ export default function ProPage() {
               is playable once a day at no cost, with the full daily leaderboard and your complete stats
               history included. Pro is for players who finish the daily slate and want to keep going.
               It removes the interstitial ads, unlocks unlimited replays of every mode, opens VS head-to-head
-              on all nine modes rather than the daily rotation, and adds CPU practice opponents at three
+              on every mode rather than the daily rotation, and adds CPU practice opponents at three
               difficulty levels so you can drill a weak mode without burning your daily attempt.
             </p>
           </div>

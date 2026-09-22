@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
-import { DAILY_MODES, requiredDailyModeCount } from '@/lib/daily-modes';
+import { sweepModesFor, requiredDailyModeCount } from '@/lib/daily-modes';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   // Group by user|day → which daily modes are present, and whether each was won.
   const byUserDay = new Map<string, { modes: Set<string>; wonModes: Set<string> }>();
   for (const r of rows) {
-    if (!DAILY_MODES.includes(r.game_mode)) continue;
+    if (!sweepModesFor(r.day).includes(r.game_mode)) continue; // only that day's sweep set counts
     const key = `${r.user_id}|${r.day}`;
     let entry = byUserDay.get(key);
     if (!entry) { entry = { modes: new Set(), wonModes: new Set() }; byUserDay.set(key, entry); }

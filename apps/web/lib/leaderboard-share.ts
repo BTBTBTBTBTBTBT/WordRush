@@ -14,6 +14,7 @@ import type {
 } from './share-image';
 import { formatScore, tieAwareScoreLabels, modeScoreCeiling } from './composite-scoring';
 import { formatShortTime } from './format';
+import { sweepModesFor, requiredSweepCount } from './daily-modes';
 
 /** A leaderboard entry with its display rank. Ranks come from the page (index
  *  + 1 with holes where blocked rows were) so the card can never disagree with
@@ -254,11 +255,11 @@ export function buildYesterdayPodiumShareInput(
 // SWEEP SHARE (§231): the Daily Sweep board, shared like every other board.
 // ──────────────────────────────────────────────────────────────────────────
 
-/** "12:34 · 8/9 · Flawless" — the sweep row's subline (mirrors the /daily
+/** "12:34 · 7/8 · Flawless" — the sweep row's subline (mirrors the /daily
  *  sweep row: total time, modes won, sweep vs flawless). */
 
-/** §249: the nine-dot mode strip's fixed order — the in-app SweepModeDots. */
-const SWEEP_DOT_ORDER = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
+// §249: the mode-dot strip's fixed order — the day's sweep-era set, same as the
+// in-app SweepModeDots (More Games Stage 4: never a literal list).
 
 export interface SweepDetailsLike {
   modes: Record<string, { score: number; completed: boolean }>;
@@ -268,7 +269,7 @@ export interface SweepDetailsLike {
  *  else the in-app win intensity t = clamp((score/ceiling − 0.35) / 0.55). */
 export function sweepDotValues(det: SweepDetailsLike | undefined, day: string): Array<number | null> | undefined {
   if (!det) return undefined;
-  return SWEEP_DOT_ORDER.map((mode) => {
+  return sweepModesFor(day).map((mode) => {
     const d = det.modes[mode];
     if (!d) return null;
     if (!d.completed) return -1;
@@ -277,14 +278,15 @@ export function sweepDotValues(det: SweepDetailsLike | undefined, day: string): 
   });
 }
 
-function sweepSubline(e: SweepEntry): string {
-  return `${formatShortTime(e.total_time)} · ${e.modes_won}/9 · ${e.is_flawless ? 'Flawless' : 'Sweep'}`;
+function sweepSubline(e: SweepEntry, day: string): string {
+  return `${formatShortTime(e.total_time)} · ${e.modes_won}/${requiredSweepCount(day)} · ${e.is_flawless ? 'Flawless' : 'Sweep'}`;
 }
 
 function sweepRow(
   e: SweepEntry,
   userId: string | null | undefined,
-  dots?: Array<number | null>,
+  dots: Array<number | null> | undefined,
+  day: string,
 ): ShareLeaderboardRowInput {
   return {
     // The RPC's tie-aware rank — the same number the page renders, so the
@@ -292,13 +294,13 @@ function sweepRow(
     rank: e.rank,
     name: e.username,
     scoreDisplay: formatScore(e.total_score),
-    subline: sweepSubline(e),
+    subline: sweepSubline(e, day),
     isYou: !!userId && e.user_id === userId,
     dots,
   };
 }
 
-const SWEEP_FOOTER = 'Can you sweep all nine? Play free at wordocious.com';
+const SWEEP_FOOTER = 'Can you sweep them all? Play free at wordocious.com';
 
 export interface DailySweepShareOpts {
   /** Board day (YYYY-MM-DD, local). */
@@ -335,14 +337,14 @@ export function buildDailySweepShareInput(opts: DailySweepShareOpts): ShareLeade
     variant: 'sweep',
     modeChip: 'Daily Sweep',
     dateChip: `${formatBoardDate(opts.day)}${puzzle ? ` · #${puzzle}` : ''} · as of ${formatClockTime(opts.now ?? new Date())}`,
-    rows: top.map((e) => sweepRow(e, opts.userId, sweepDotValues(opts.details?.get(e.user_id), opts.day))),
+    rows: top.map((e) => sweepRow(e, opts.userId, sweepDotValues(opts.details?.get(e.user_id), opts.day), opts.day)),
     footer: SWEEP_FOOTER,
     date: new Date(opts.day + 'T00:00:00'),
     shareRank: opts.userRank?.rank,
     sharePlayers: opts.userRank?.totalPlayers,
   };
   if (userEntry) {
-    input.you = sweepRow(userEntry, opts.userId, sweepDotValues(opts.details?.get(userEntry.user_id), opts.day));
+    input.you = sweepRow(userEntry, opts.userId, sweepDotValues(opts.details?.get(userEntry.user_id), opts.day), opts.day);
     input.youRankLine = `#${opts.userRank!.rank} of ${opts.userRank!.totalPlayers}`;
   }
   return input;
@@ -372,7 +374,7 @@ export function buildYesterdaySweepPodiumShareInput(
     variant: 'sweepPodium',
     modeChip: 'Daily Sweep',
     dateChip: `${formatBoardDate(opts.day)} · Final`,
-    rows: top.map((e) => sweepRow(e, opts.userId, sweepDotValues(opts.details?.get(e.user_id), opts.day))),
+    rows: top.map((e) => sweepRow(e, opts.userId, sweepDotValues(opts.details?.get(e.user_id), opts.day), opts.day)),
     footer: SWEEP_FOOTER,
     date: new Date(opts.day + 'T00:00:00'),
   };
@@ -538,7 +540,7 @@ export function buildFlawlessStreakShareInput(opts: FlawlessStreakShareOpts): Sh
     return {
       rank: dayNumber,
       name: formatBoardDate(day),
-      scoreDisplay: st ? `${Math.round(st.points).toLocaleString('en-US')} pts` : '9/9 won',
+      scoreDisplay: st ? `${Math.round(st.points).toLocaleString('en-US')} pts` : `${requiredSweepCount(day)}/${requiredSweepCount(day)} won`,
       subline,
       isYou: i === shown - 1,
       dots: st?.dots,
@@ -553,7 +555,7 @@ export function buildFlawlessStreakShareInput(opts: FlawlessStreakShareOpts): Sh
     modeChip: `Flawless ×${opts.streak}`,
     dateChip: `${formatBoardDate(localDayOf(now))} · as of ${formatClockTime(now)}`,
     rows,
-    footer: `${opts.streak} straight day${opts.streak === 1 ? '' : 's'} winning all nine`
+    footer: `${opts.streak} straight day${opts.streak === 1 ? '' : 's'} winning every daily`
       + (skipped > 0 ? ` (first ${skipped} not shown)` : '')
       + (best > opts.streak ? ` · best ${best}` : '')
       + ' · wordocious.com',

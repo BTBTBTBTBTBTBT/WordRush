@@ -97,7 +97,7 @@ export function UnlimitedGate({ isDaily, modeSlug, children }: {
  * The same gate, for the VS routes (/quordle/vs, /six/vs, …) — the sibling
  * hole to the one above, and for the same reason: the lobby's mode rows are
  * Pro-gated but the ROUTES were not, so a bookmarked or typed
- * /quordle/vs handed any signed-in free user unlimited live VS in all nine
+ * /quordle/vs handed any signed-in free user unlimited live VS in every mode
  * modes plus invite creation — two of the three bullets /pro sells.
  *
  * Two doors stay open, because neither is a Pro perk:
@@ -147,7 +147,7 @@ export function VsProGate({ mode, isDaily = false, inviteCode, children }: {
   return (
     <GateCard
       title="VS in every mode is a Pro perk"
-      blurb="Free players get one Classic VS match a day. Go Pro for live VS in all nine modes, private matches, and rematches."
+      blurb="Free players get one Classic VS match a day. Go Pro for live VS in every mode, private matches, and rematches."
       fallbackHref="/practice/vs?daily=true"
       fallbackLabel="Play today's daily VS"
     />

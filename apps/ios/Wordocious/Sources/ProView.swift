@@ -27,7 +27,7 @@ struct ProView: View {
     private let benefits: [Benefit] = [
         .init(symbol: "eye.slash.fill", asset: nil, text: "Ad-free experience — no interruptions, ever"),
         .init(symbol: "square.grid.3x3.fill", asset: "wordle-grid", text: "Unlimited replays of all 9 game modes, any time"),
-        .init(symbol: "", asset: "swords", text: "VS mode on every game — challenge friends in all 9 modes"),
+        .init(symbol: "", asset: "swords", text: "VS mode on every game — challenge friends in every mode"),
         .init(symbol: "cpu", asset: nil, text: "Practice against the CPU — Easy, Medium & Hard bots, anytime"),
         .init(symbol: "envelope.fill", asset: nil, text: "Invite friends to private matches by link or username"),
         .init(symbol: "", asset: "shield", text: "4 streak shields credited each billing period"),
@@ -82,7 +82,7 @@ struct ProView: View {
         VStack(spacing: 6) {
             Image(systemName: "crown.fill").font(.system(size: 54)).foregroundStyle(gold)
             Text("Go Pro").font(Brand.title(36)).foregroundStyle(Theme.textPrimary)
-            Text("Play unlimited & ad-free — all 9 modes, any time")
+            Text("Play unlimited & ad-free — every mode, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
         }
         .padding(.top, 12).padding(.bottom, 24)

@@ -812,11 +812,14 @@ private fun NextDailyRow(
     // First unplayed daily in home-grid order. The just-finished mode is
     // excluded outright — its row can lag the record pipeline (or never exist
     // for guests) and it's never a sensible "next".
+    // Only sweep modes are ever "next" (More Games Stage 4): a More Games title
+    // hands off to the sweep, never the other way round.
+    val sweepKeys = com.wordocious.app.data.DailyCompletionsService.SWEEP_KEYS
     val next = com.wordocious.app.ui.MODE_CARDS.firstOrNull { c ->
-        c.engineMode != null && c.engineMode != currentMode && completions[c.engineMode.name] == null
+        c.engineMode != null && c.engineMode.name in sweepKeys && c.engineMode != currentMode && completions[c.engineMode.name] == null
     }
     val allDone = next == null &&
-        completions.size >= com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
+        com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size >= com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
     // next == null with count < 9 can't normally happen (next covers every
     // gap); render nothing rather than a wrong claim if state is mid-flight.
     if (next == null && !allDone) return

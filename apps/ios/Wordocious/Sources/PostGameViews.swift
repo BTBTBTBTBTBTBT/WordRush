@@ -291,11 +291,12 @@ struct NextDailyCTA: View {
     @StateObject private var completions = DailyCompletionsStore()
     @Environment(\.dismiss) private var dismiss
 
-    /// First unplayed daily mode in the canonical home-grid order (VS has no
-    /// daily row — dbKey nil — so it's skipped automatically).
+    /// First unplayed SWEEP mode in the canonical home-grid order (VS has no
+    /// daily row — dbKey nil — so it is skipped automatically). More Games titles
+    /// are never "next": a More Games finish hands off to the sweep (Stage 4).
     private var nextMode: HomeMode? {
         homeModes.first { m in
-            guard let key = m.dbKey, key != currentMode else { return false }
+            guard let key = m.dbKey, key != currentMode, DailyCompletionsStore.sweepKeys.contains(key) else { return false }
             return completions.byMode[key] == nil
         }
     }

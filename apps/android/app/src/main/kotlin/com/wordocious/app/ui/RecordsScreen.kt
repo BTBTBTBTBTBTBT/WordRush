@@ -296,7 +296,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                         fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                     )
                     Text(
-                        if (isSweep) "All 9 modes today" else "Today",
+                        if (isSweep) "All ${com.wordocious.app.ModeGen.sweep.size} modes today" else "Today",
                         fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     )
                 }

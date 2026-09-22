@@ -56,7 +56,7 @@ object DailySweepShare {
      *  Only ProperNoundle's label is shortened to "Proper" to fit the row. */
     private val LABEL_OVERRIDE = mapOf("PROPERNOUNDLE" to "Proper")
     private val MODES: List<Pair<Triple<String, String, Int>, String>> =
-        ModeGen.daily.map { m ->
+        ModeGen.sweep.map { m ->
             val key = m.dbKey ?: ""
             Triple(key, LABEL_OVERRIDE[key] ?: m.shareLabel, m.accentInt) to (m.glyph ?: "")
         }

@@ -14,7 +14,7 @@
  * player of a local day could "sweep" after one game (1 >= 1) — that adaptive
  * probe poisoned daily_bonuses with fake sweeps/flawlesses. The mode set is a
  * product decision with known effective dates, so encode it as data.
- * 2026-05-21 is when DUEL_6/DUEL_7 dailies shipped (7 → 9 modes) — a
+ * 2026-05-21 is when DUEL_6/DUEL_7 dailies shipped (7 → 9) — a
  * hard-coded 9 would retroactively invalidate 16 real 7-mode sweeps.
  */
 import { DAILY_MODES as DAILY_MODE_METAS, SWEEP_ERAS, requiredSweepCount, sweepModesFor } from './modes.generated';

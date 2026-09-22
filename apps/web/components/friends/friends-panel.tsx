@@ -11,6 +11,7 @@ import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, ChevronDown, MoreH
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
+import { SWEEP_MODES } from '@/lib/modes.generated';
 import {
   loadFriends,
   getFriends,
@@ -554,7 +555,7 @@ export function FriendsPanel() {
                         {/* §225: show the score, not just the count — the
                             digest already ships todayPoints (§216). */}
                         {played > 0
-                          ? `${played}/9 today · ${(f.todayPoints ?? 0).toLocaleString()} pts${f.streak ? ` · 🔥${f.streak}` : ''}`
+                          ? `${played}/${SWEEP_MODES.length} today · ${(f.todayPoints ?? 0).toLocaleString()} pts${f.streak ? ` · 🔥${f.streak}` : ''}`
                           : "hasn't played today"}
                         {record ? ` · ${record}` : ''}
                       </span>

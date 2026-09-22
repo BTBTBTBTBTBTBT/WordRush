@@ -195,7 +195,7 @@ fun HomeScreen(
         mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
     }
     androidx.compose.runtime.LaunchedEffect(completions) {
-        if (completions.size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
+        if (com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
         val totals = com.wordocious.app.data.DailyCompletionsService.totals(completions)
         // Hard guard (iOS parity): a "sweep" with zero recorded wins is by
         // definition stale/degenerate data — never a real day of play.
@@ -526,9 +526,10 @@ private fun DailyHero(
     onShare: () -> Unit = {},
 ) {
     val secs by rememberMidnightCountdown()
-    val total = 9
-    val completed = completions.size
-    val wins = completions.values.count { it.completed }
+    val sweep = com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions)
+    val total = com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
+    val completed = sweep.size
+    val wins = sweep.values.count { it.completed }
     val allDone = completed >= total
     val flawless = allDone && wins >= total
     val totals = remember(completions) { com.wordocious.app.data.DailyCompletionsService.totals(completions) }
@@ -585,7 +586,7 @@ private fun DailyHero(
                 Text("Daily Challenge", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))), fontFamily = Nunito))
                 Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(17.dp))
             }
-            Text("9 puzzles · Leaderboards & medals", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
+            Text("${com.wordocious.app.ModeGen.sweep.size} puzzles · Leaderboards & medals", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
             Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9).copy(alpha = 0.9f), modifier = Modifier.padding(top = 2.dp))
         }
     }

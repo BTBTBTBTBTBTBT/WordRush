@@ -13,7 +13,7 @@ import {
 } from './daily-service';
 import { checkAchievements } from './achievement-service';
 import { grantFreeShield } from './shield-service';
-import { DAILY_MODES, requiredDailyModeCount } from './daily-modes';
+import { DAILY_MODES, requiredDailyModeCount, sweepModesFor } from './daily-modes';
 
 export interface XpResult {
   xpGain: number;
@@ -1658,6 +1658,7 @@ export async function fetchDailySweepStats(userId: string): Promise<DailySweepSt
   const perDayTime = new Map<string, number>();
   const perDayTimedModes = new Map<string, Set<string>>();
   for (const r of rows || []) {
+    if (!sweepModesFor(r.day).includes(r.game_mode)) continue; // More Games rows never time a sweep
     const t = r.time_seconds ?? 0;
     perDayTime.set(r.day, (perDayTime.get(r.day) ?? 0) + t);
     if (t > 0) {

@@ -47,7 +47,7 @@ struct DailyTotals {
     var flawless: Bool { completed >= total && won >= total }
 
     init(_ byMode: [String: DailyCompletion]) {
-        for c in byMode.values {
+        for (key, c) in byMode where DailyCompletionsStore.sweepKeys.contains(key) {
             completed += 1
             if c.completed { won += 1 }
             totalGuesses += c.guessCount
@@ -77,20 +77,23 @@ final class DailyCompletionsStore: ObservableObject {
     /// modal: fired off the stale set, then rendered today's empty truth).
     @Published private(set) var dataDay: String = LeaderboardService.todayLocal()
 
-    /// The 9 daily modes (VS excluded — no daily row).
-    /// nonisolated: an immutable Int constant, safely readable from the
-    /// non-isolated `DailyTotals` struct and any context.
-    nonisolated static let totalDailyModes = 9
+    /// The Daily Sweep set, from the catalog (More Games Stage 4) — never a
+    /// literal. Only these keys count toward N/total, the celebration, the ring
+    /// and the widget; a More Games result on the map is ignored here.
+    /// nonisolated: immutable constants, safely readable from the non-isolated
+    /// `DailyTotals` struct and any context.
+    nonisolated static let sweepKeys: Set<String> = Set(ModeGen.sweep.compactMap { $0.dbKey })
+    nonisolated static let totalDailyModes = ModeGen.sweep.count
 
     private static let cacheKey = "daily-completions-cache"
 
-    var completedCount: Int { byMode.count }
+    var completedCount: Int { byMode.keys.filter { Self.sweepKeys.contains($0) }.count }
 
     /// Today's cached completion count without spinning up a store — lets
     /// NotificationService decide whether tonight's reminder is still needed.
     /// The cache is day-keyed, so a stale (yesterday's) cache reads as 0.
     static func cachedTodayCount() -> Int { readCache()?.count ?? 0 }
-    var wonCount: Int { byMode.values.filter { $0.completed }.count }
+    var wonCount: Int { byMode.filter { Self.sweepKeys.contains($0.key) && $0.value.completed }.count }
     var allDone: Bool { completedCount >= Self.totalDailyModes }
     var flawless: Bool { allDone && wonCount >= Self.totalDailyModes }
 

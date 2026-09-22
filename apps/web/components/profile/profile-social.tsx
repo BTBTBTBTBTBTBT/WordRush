@@ -18,6 +18,7 @@ import { ChevronRight, Lock, X } from 'lucide-react';
 import { evaluateGuess } from '@wordle-duel/core';
 import { modeLabel } from '@/lib/mode-labels';
 import { getTodayLocal } from '@/lib/daily-service';
+import { requiredSweepCount } from '@/lib/daily-modes';
 import { getTileHex } from '@/lib/tile-theme';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import {
@@ -309,7 +310,7 @@ export function GuardedBoardModal({
 
 /** Rules mirror the persona route exactly — that route is the single source. */
 const ARCHETYPE_RULES: Array<{ key: Archetype; emoji: string; rule: string }> = [
-  { key: 'GRINDER', emoji: '\u{1F9F1}', rule: 'Swept all 9 dailies on 3 or more days. Checked first — sweeping every mode daily is the rarest habit.' },
+  { key: 'GRINDER', emoji: '\u{1F9F1}', rule: 'Swept every daily on 3 or more days. Checked first — sweeping every mode daily is the rarest habit.' },
   { key: 'SPEEDRUNNER', emoji: '⚡', rule: 'Average solve time 90 seconds or under (at least 10 timed games).' },
   { key: 'SNIPER', emoji: '\u{1F3AF}', rule: 'Average 3.6 guesses or fewer on single-board modes (at least 10 games).' },
   { key: 'NIGHT_OWL', emoji: '\u{1F989}', rule: '40%+ of plays late at night (measured in UTC, so it’s approximate by design).' },
@@ -731,7 +732,7 @@ export function HighlightsReel({
       key: 'flawless',
       emoji: '\u{1F48E}',
       big: `${persona.flawless.count} Flawless`,
-      cap: persona.flawless.count === 1 ? 'Day with all 9 dailies won' : 'Days with all 9 dailies won',
+      cap: persona.flawless.count === 1 ? 'Day with every daily won' : 'Days with every daily won',
     });
   }
 
@@ -782,14 +783,14 @@ export function HighlightsReel({
                   className="w-4 h-4 rounded-full"
                   style={{
                     background: d.played ? '#7c3aed' : 'var(--color-border)',
-                    boxShadow: d.completedCount >= 9 ? '0 0 0 2px #f59e0b' : undefined,
+                    boxShadow: d.completedCount >= requiredSweepCount(d.day) ? '0 0 0 2px #f59e0b' : undefined,
                   }}
                 />
               ))}
             </div>
             <div className="flex items-center justify-center gap-4 mt-3 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#7c3aed' }} /> played</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#7c3aed', boxShadow: '0 0 0 2px #f59e0b' }} /> 9/9 day</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#7c3aed', boxShadow: '0 0 0 2px #f59e0b' }} /> full-sweep day</span>
             </div>
           </>
         )}

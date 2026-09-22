@@ -22,7 +22,13 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
-import { MODES } from '@/lib/modes.generated';
+import { MODES, SWEEP_MODES } from '@/lib/modes.generated';
+
+// The Daily Sweep set, from the catalog (More Games Stage 4). Every count on
+// this page is taken over these keys only, so a More Games result on the
+// completions map can never move N/8, the celebration or the hero.
+const SWEEP_KEYS = new Set<string>(SWEEP_MODES.map((m) => m.dbKey as string));
+const sweepEntries = <T,>(m: Map<string, T>): Array<[string, T]> => Array.from(m.entries()).filter(([k]) => SWEEP_KEYS.has(k));
 import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAPS } from '@wordle-duel/core';
 
 /** Offline Word-of-the-Day fallback: same index math as lib/word-of-day.ts,
@@ -248,7 +254,7 @@ export default function HomePage() {
   const { todayDailies, dailiesDay } = useDailyCompletions();
   // The celebration renders from a SNAPSHOT captured at fire time, so a
   // concurrent refresh (e.g. the new day's empty map) can never blank the
-  // stats mid-celebration (the iOS widget-launch "0/9 WON · 0:00" bug).
+  // stats mid-celebration (the iOS widget-launch "0/N WON · 0:00" bug).
   const [sweepCeleb, setSweepCeleb] = useState<Map<string, DailyCompletion> | null>(null);
   // Today's daily VS outcome (server-backed, iOS vsDailyWon parity) — the VS
   // Battle card greys with a W/L badge like every other completed daily.
@@ -259,19 +265,20 @@ export default function HomePage() {
 
   const isPro = isProActive;
 
-  // One-time-per-day celebration modal when all 9 dailies are complete. Keyed
+  // One-time-per-day celebration modal when every sweep daily is complete. Keyed
   // on the local day; re-fires if the player upgrades a Sweep → Flawless.
   useEffect(() => {
     if (!user) return;
-    const completed = todayDailies.size;
-    if (completed < 9) return;
-    const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
-    // Hard guards (iOS widget-launch "0/9 sweep" parity): the completed set
+    const sweepToday = sweepEntries(todayDailies);
+    const completed = sweepToday.length;
+    if (completed < SWEEP_MODES.length) return;
+    const wins = sweepToday.filter(([, r]) => r.won).length;
+    // Hard guards (iOS widget-launch "0/N sweep" parity): the completed set
     // must BELONG to today — a tab alive across local midnight briefly holds
     // yesterday's map — and a "sweep" with zero recorded wins is by definition
     // stale/degenerate data, never a real day of play.
     if (dailiesDay !== getTodayLocal() || wins === 0) return;
-    const tier = wins >= 9 ? 'flawless' : 'sweep';
+    const tier = wins >= SWEEP_MODES.length ? 'flawless' : 'sweep';
     const key = `wordocious-sweep-celebrated-${getTodayLocal()}`;
     try {
       const seen = localStorage.getItem(key);
@@ -415,9 +422,10 @@ export default function HomePage() {
         {playMode === 'unlimited' ? (
           <UnlimitedHero />
         ) : (() => {
-          const completed = todayDailies.size;
-          const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
-          const total = 9;
+          const sweepToday = sweepEntries(todayDailies);
+          const completed = sweepToday.length;
+          const wins = sweepToday.filter(([, r]) => r.won).length;
+          const total = SWEEP_MODES.length;
           const allDone = completed >= total;
           const flawless = allDone && wins === total;
 
@@ -526,7 +534,7 @@ export default function HomePage() {
                   <Star className="w-5 h-5" style={{ color: '#4f46e5' }} fill="currentColor" />
                 </div>
                 <div className="text-[10px] font-bold mt-0.5" style={{ color: '#6d28d9' }}>
-                  9 puzzles · Leaderboards &amp; medals
+                  {SWEEP_MODES.length} puzzles · Leaderboards &amp; medals
                 </div>
                 <div className="text-[10px] font-bold mt-0.5" style={{ color: '#6d28d9' }}>
                   Resets in <DailyCountdownText />

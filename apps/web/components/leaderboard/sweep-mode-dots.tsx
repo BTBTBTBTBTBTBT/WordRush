@@ -6,18 +6,20 @@
 import { formatScore, modeScoreCeiling } from '@/lib/composite-scoring';
 import { formatShortTime } from '@/lib/format';
 import type { SweepDetails, SweepEntry } from '@/lib/daily-service';
+import { MODE_BY_DBKEY, SWEEP_MODES } from '@/lib/modes.generated';
+import { sweepModesFor } from '@/lib/daily-modes';
 
-// Fixed order = the mode grid.
-const SWEEP_DOT_MODES: Array<[string, string]> = [
-  ['DUEL', 'Classic'], ['QUORDLE', 'Quad'], ['OCTORDLE', 'Octo'],
-  ['SEQUENCE', 'Succession'], ['RESCUE', 'Deliverance'], ['DUEL_6', 'Six'],
-  ['DUEL_7', 'Seven'], ['GAUNTLET', 'Gauntlet'], ['PROPERNOUNDLE', 'Proper'],
-];
+// Fixed order = the mode grid, for the DAY being shown: a 9-mode day keeps
+// nine dots after the 8-mode era begins (More Games Stage 4: never a literal list).
+const sweepDotModes = (day: string): Array<[string, string]> =>
+  sweepModesFor(day).map((k) => [k, MODE_BY_DBKEY[k]?.shortTitle ?? k]);
 
-/** "28m 16s · 9/9 · 87 guesses · 2 hints" — full words (§227: "2h" read as
- *  hours); the g/h segments appear only once details land. */
-export function sweepStatsText(entry: SweepEntry, det: SweepDetails | undefined): string {
-  let s = `${formatShortTime(entry.total_time)} · ${entry.modes_won}/9`;
+/** "28m 16s · 8/8 · 87 guesses · 2 hints" — full words (§227: "2h" read as
+ *  hours); the g/h segments appear only once details land. The total is the
+ *  sweep size for `day` (era-aware), or today's when no day is given. */
+export function sweepStatsText(entry: SweepEntry, det: SweepDetails | undefined, day?: string): string {
+  const total = day ? sweepModesFor(day).length : SWEEP_MODES.length;
+  let s = `${formatShortTime(entry.total_time)} · ${entry.modes_won}/${total}`;
   if (det) {
     s += ` · ${det.guesses} guess${det.guesses === 1 ? '' : 'es'}`;
     if (det.hints > 0) s += ` · ${det.hints} hint${det.hints === 1 ? '' : 's'}`;
@@ -35,7 +37,7 @@ export function SweepModeDots({ details, day }: { details: SweepDetails | undefi
   if (!details) return null;
   return (
     <div className="flex items-center gap-[3px] mt-1" aria-label="Per-mode results">
-      {SWEEP_DOT_MODES.map(([mode, label]) => {
+      {sweepDotModes(day).map(([mode, label]) => {
         const d = details.modes[mode];
         if (!d) {
           return (

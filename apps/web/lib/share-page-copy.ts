@@ -153,7 +153,7 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
   const modeDisp = MODE_DISPLAY[mode] ?? mode;
   const dateDisp = fromPath.date ? fmtDate(fromPath.date) : undefined;
 
-  // All-dailies share card has its own copy shape (X/9 won · time · pts).
+  // All-dailies share card has its own copy shape (X/N won · time · pts).
   if (mode === 'DailySweep' && str(sp.won) !== undefined) {
     const flawless = str(sp.sweep) === 'flawless';
     const w = Number(str(sp.won)) || 0;
@@ -201,10 +201,10 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
       const tp = Number(str(sp.tp)) || 0;
       const standing = rank > 0 && tp > 0 ? `#${rank} of ${tp}` : rank > 0 ? `#${rank}` : '';
       const description = podium
-        ? `Yesterday’s Daily Sweep podium is settled — they swept all nine. ${PLAY_HOOK}`
+        ? `Yesterday’s Daily Sweep podium is settled — they swept every daily. ${PLAY_HOOK}`
         : standing
-          ? `I’m ${standing} on today’s Daily Sweep board. Can you sweep all nine? ${PLAY_HOOK}`
-          : `Today’s Daily Sweep board is live. Can you sweep all nine? ${PLAY_HOOK}`;
+          ? `I’m ${standing} on today’s Daily Sweep board. Can you sweep them all? ${PLAY_HOOK}`
+          : `Today’s Daily Sweep board is live. Can you sweep them all? ${PLAY_HOOK}`;
       return {
         mode: lb.kind,
         modeDisp: name,

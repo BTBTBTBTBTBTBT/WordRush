@@ -29,7 +29,7 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
     var subtitle: String {
         switch self {
         case .howToPlay: return "Rules, tiles & scoring"
-        case .guides:    return "Strategy for all 9 modes"
+        case .guides:    return "Strategy for every mode"
         case .strategy:  return "Solve faster, in fewer guesses"
         case .words:     return "Every Word of the Day"
         case .faq:       return "Common questions"

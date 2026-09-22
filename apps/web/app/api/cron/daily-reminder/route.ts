@@ -16,9 +16,9 @@ export const runtime = 'nodejs';
 // DAILY SWEEP!) so the nudge reads as Wordocious even though iOS/Android own
 // the banner chrome and won't let us style type or color.
 const MESSAGES = [
-  { title: 'DAILY CHALLENGE 🔥', body: "Today's nine puzzles are live. Keep the streak alive." },
+  { title: 'DAILY CHALLENGE 🔥', body: "Today's puzzles are live. Keep the streak alive." },
   { title: 'NEW PUZZLES! 🧩', body: "A fresh set just dropped. Can you beat yesterday's score?" },
-  { title: 'THE SWEEP AWAITS 🧹', body: 'All nine dailies, one run. Think you can clear them?' },
+  { title: 'THE SWEEP AWAITS 🧹', body: 'Every daily, one run. Think you can clear them all?' },
   { title: 'CLIMB THE BOARD 🏆', body: "Play today's puzzles before the day rolls over." },
   { title: 'STREAK AT RISK! 💪', body: 'One quick game keeps it going.' },
 ];
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
   );
   const nativeNote = {
     title: 'WE MISS YOU! 🧩',
-    body: "Your streak is waiting. Today's nine puzzles are live.",
+    body: "Your streak is waiting. Today's puzzles are live.",
     url: '/daily',
   };
 

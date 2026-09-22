@@ -27,6 +27,7 @@ import { boardDayStatus, type LeaderboardShareKind } from '@/lib/share-page-copy
 import { formatScore } from '@/lib/composite-scoring';
 import { formatShortTime as formatTime } from '@/lib/format';
 import { MODES } from '@/lib/modes.generated';
+import { requiredSweepCount } from '@/lib/daily-modes';
 
 interface LiveBoardSectionProps {
   kind: LeaderboardShareKind;
@@ -124,7 +125,7 @@ function BoardRow({ entry, rank, vs }: { entry: LeaderboardEntry; rank: number; 
 
 // SWEEP SHARE (§231): the live Sweep board row — rank/name/score with the
 // same time · won · Sweep/Flawless subline the shared card carries.
-function SweepBoardRow({ entry }: { entry: SweepEntry }) {
+function SweepBoardRow({ entry, date }: { entry: SweepEntry; date?: string }) {
   return (
     <div
       className="flex items-center gap-3 px-4 py-2.5"
@@ -148,7 +149,7 @@ function SweepBoardRow({ entry }: { entry: SweepEntry }) {
           {formatScore(entry.total_score)}
         </div>
         <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          {formatTime(entry.total_time)} · {entry.modes_won}/9 · {entry.is_flawless ? 'Flawless' : 'Sweep'}
+          {formatTime(entry.total_time)} · {entry.modes_won}/{requiredSweepCount(date ?? getTodayLocal())} · {entry.is_flawless ? 'Flawless' : 'Sweep'}
         </div>
       </div>
     </div>
@@ -261,7 +262,7 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
           ? (sweepRows === null
               ? <SkeletonRows />
               : sweepRows.slice(0, TOP_N).map((entry) => (
-                  <SweepBoardRow key={entry.user_id} entry={entry} />
+                  <SweepBoardRow key={entry.user_id} entry={entry} date={date} />
                 )))
           : (rows === null
               ? <SkeletonRows />

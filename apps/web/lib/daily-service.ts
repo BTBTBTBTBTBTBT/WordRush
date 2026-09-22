@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client';
-import { requiredDailyModeCount } from './daily-modes';
+import { requiredDailyModeCount, sweepModesFor } from './daily-modes';
+import { SWEEP_MODES } from './modes.generated';
 import { MODE_BY_DBKEY } from './modes.generated';
 import { getDailySeedDate } from '@wordle-duel/core';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
@@ -576,7 +577,7 @@ export interface AllTimeSweepEntry {
 
 /**
  * Fetch the daily Sweep leaderboard for a given day — players who completed
- * all 9 dailies, ranked by total composite score (time asc as tiebreak).
+ * every sweep mode, ranked by total composite score (time asc as tiebreak).
  */
 export async function fetchDailySweepLeaderboard(
   day?: string,
@@ -677,7 +678,7 @@ export async function fetchFlawlessStreaks(
     if (!byDay) { byDay = new Map(); wonModes.set(row.user_id, byDay); }
     let set = byDay.get(row.day);
     if (!set) { set = new Set(); byDay.set(row.day, set); }
-    set.add(row.game_mode);
+    if (sweepModesFor(row.day).includes(row.game_mode)) set.add(row.game_mode);
   }
   for (const id of userIds) {
     const byDay = wonModes.get(id);
@@ -1155,17 +1156,21 @@ export interface DailyTotals {
 }
 
 export function computeDailyTotals(completions: Map<string, DailyCompletion>): DailyTotals {
-  let won = 0, totalGuesses = 0, totalTimeSeconds = 0, totalScore = 0;
-  for (const c of completions.values()) {
+  let won = 0, totalGuesses = 0, totalTimeSeconds = 0, totalScore = 0, completed = 0;
+  // Only the current sweep set counts: a More Games result on the map must
+  // never nudge N/8, the celebration, the ring or the widget (More Games §2).
+  for (const [key, c] of completions) {
+    if (!SWEEP_MODE_KEYS.has(key)) continue;
+    completed += 1;
     if (c.won) won += 1;
     totalGuesses += c.guesses;
     totalTimeSeconds += c.timeSeconds;
     totalScore += c.score;
   }
-  const completed = completions.size;
+  const total = SWEEP_MODES.length;
   return {
-    completed, won, total: DAILY_MODE_COUNT, totalGuesses, totalTimeSeconds, totalScore,
-    flawless: completed >= DAILY_MODE_COUNT && won >= DAILY_MODE_COUNT,
+    completed, won, total, totalGuesses, totalTimeSeconds, totalScore,
+    flawless: completed >= total && won >= total,
   };
 }
 
@@ -1206,10 +1211,8 @@ export async function fetchTodayDailyCompletions(
   return out;
 }
 
-// Keep in sync with DAILY_MODES on the profile page + home — 9 modes
-// have solo daily seeds today (DUEL, QUORDLE, OCTORDLE, SEQUENCE,
-// RESCUE, DUEL_6, DUEL_7, GAUNTLET, PROPERNOUNDLE).
-const DAILY_MODE_COUNT = 9;
+// The current Daily Sweep set, from the catalog (More Games Stage 4): never a literal.
+const SWEEP_MODE_KEYS = new Set<string>(SWEEP_MODES.map((m) => m.dbKey as string));
 const DAILY_SWEEP_XP = 200;
 const FLAWLESS_EXTRA_XP = 400;
 

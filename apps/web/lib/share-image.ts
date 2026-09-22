@@ -49,7 +49,7 @@ export type ShareMode =
    *  not a playable mode (no catalog accent; the chip falls back to the
    *  weeklyRace variant theme). */
   | 'WeeklyRace'
-  /** FLAWLESS STREAK (§244): consecutive all-nine-won days — not a mode. */
+  /** FLAWLESS STREAK (§244): consecutive days with every daily won — not a mode. */
   | 'FlawlessStreak'
   /** TROPHY CASE (§245): the all-time records a player holds — not a mode. */
   | 'TrophyCase';
@@ -1159,7 +1159,7 @@ const LB_THEME: Record<ShareLeaderboardInput['variant'], {
   // Friends (§207): indigo — the leaderboard tab's own accent family.
   friends:       { bg: '#eef2ff', label: '#4f46e5', panelBorder: '#6366f155', footer: '#4f46e5' },
   friendsPodium: { bg: '#eef2ff', label: '#d97706', panelBorder: '#f59e0b55', footer: '#4f46e5' },
-  // Sweep (§231): pink-washed violet — the all-nine brag's own identity
+  // Sweep (§231): pink-washed violet — the full-sweep brag's own identity
   // (shared verbatim with the iOS/Android cards).
   sweep:       { bg: '#fdf2f8', label: '#7c3aed', panelBorder: '#ec489955', footer: '#7c3aed' },
   sweepPodium: { bg: '#fdf2f8', label: '#d97706', panelBorder: '#f59e0b55', footer: '#7c3aed' },

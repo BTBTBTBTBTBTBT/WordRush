@@ -11,8 +11,8 @@ interface DailyCompletionsContextValue {
    * that treat a full map as "today is swept" (the celebration modal) MUST
    * check this equals getTodayLocal(): a tab kept alive across local midnight
    * still holds yesterday's map until a refresh lands, and celebrating
-   * yesterday's 9/9 with today's once-per-day key is the iOS widget-launch
-   * "0/9 DAILY SWEEP" bug.
+   * yesterday's full sweep with today's once-per-day key is the iOS widget-launch
+   * "0/N DAILY SWEEP" bug.
    */
   dailiesDay: string;
   /** Optimistically add/update a single mode completion without re-fetching */

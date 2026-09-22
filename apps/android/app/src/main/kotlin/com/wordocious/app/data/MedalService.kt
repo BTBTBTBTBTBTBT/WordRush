@@ -25,7 +25,8 @@ import kotlinx.serialization.json.jsonPrimitive
 object MedalService {
     private val client get() = SupabaseConfig.client
 
-    private const val DAILY_MODE_COUNT = 9
+    // The sweep count is era-aware and lives in the catalog (More Games Stage 4).
+    private val DAILY_MODE_COUNT: Int get() = com.wordocious.app.ModeGen.sweep.size
     private const val DAILY_SWEEP_XP = 200
     private const val FLAWLESS_EXTRA_XP = 400
 

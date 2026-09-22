@@ -134,7 +134,7 @@ object NotificationService {
             val body = when {
                 flawless >= 2 -> "$flawless straight days winning all nine. Win them all today to make it ${flawless + 1}."
                 streak >= 3 -> "Your $streak-day streak ends at midnight. One quick game keeps it alive."
-                else -> "Today's nine puzzles are live. Keep the streak going."
+                else -> "Today's puzzles are live. Keep the streak going."
             }
             ensureChannel(applicationContext)
             val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)

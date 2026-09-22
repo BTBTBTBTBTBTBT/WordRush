@@ -326,9 +326,13 @@ object ProfileService {
         val targetSweeps: Int,
     )
 
+    // Distinct sweep-era modes per day (More Games Stage 4: never a literal 9).
     private fun sweepDays(rows: List<DailyRowLite>): Int =
         rows.filter { it.completed }.groupBy { it.day }
-            .count { (_, dayRows) -> dayRows.map { it.gameMode }.distinct().size >= 9 }
+            .count { (day, dayRows) ->
+                val set = com.wordocious.app.ModeGen.sweepModesFor(day)
+                dayRows.map { it.gameMode }.filter { it in set }.distinct().size >= set.size
+            }
 
     /** Pure join of two players' daily rows — no I/O, safe with empty inputs. */
     fun computeH2H(viewerRows: List<DailyRowLite>, targetRows: List<DailyRowLite>): H2HSummary {

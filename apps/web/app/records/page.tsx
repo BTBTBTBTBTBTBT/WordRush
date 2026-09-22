@@ -363,7 +363,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               with the pill beside it (founder ask, Aug 24). */}
           {/* §246: wrap, never truncate — the hints segment fell off the end. */}
           <div className="text-[10px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-            {sweepStatsText(entry, det)}
+            {sweepStatsText(entry, det, today)}
           </div>
           <div className="flex items-center gap-1.5">
             <SweepModeDots details={det} day={today} />

@@ -155,7 +155,7 @@ describe('buildCopy — leaderboard cards', () => {
     expect(c.mode).toBe('SweepBoard');
     expect(c.title).toBe('Wordocious Daily Sweep Leaderboard — Aug 23, 2026');
     expect(c.description).toBe(
-      'I’m #4 of 31 on today’s Daily Sweep board. Can you sweep all nine? Play today’s puzzles free at wordocious.com.',
+      'I’m #4 of 31 on today’s Daily Sweep board. Can you sweep them all? Play today’s puzzles free at wordocious.com.',
     );
   });
 
@@ -164,7 +164,7 @@ describe('buildCopy — leaderboard cards', () => {
     expect(c.mode).toBe('SweepPodium');
     expect(c.title).toBe('Wordocious Yesterday’s Sweep Podium — Aug 22, 2026');
     expect(c.description).toBe(
-      'Yesterday’s Daily Sweep podium is settled — they swept all nine. Play today’s puzzles free at wordocious.com.',
+      'Yesterday’s Daily Sweep podium is settled — they swept every daily. Play today’s puzzles free at wordocious.com.',
     );
   });
 

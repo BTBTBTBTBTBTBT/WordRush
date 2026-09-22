@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { verifyUser } from '@/lib/api-auth';
-import { DAILY_MODES, requiredDailyModeCount } from '@/lib/daily-modes';
+import { sweepModesFor } from '@/lib/daily-modes';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -73,14 +73,14 @@ export async function POST(req: NextRequest) {
       .eq('user_id', userId)
       .eq('day', day)
       .eq('play_type', 'solo')
-      .in('game_mode', DAILY_MODES);
+      .in('game_mode', sweepModesFor(day));
 
     const played = new Set((results ?? []).map((r: any) => r.game_mode));
     const won = new Set((results ?? []).filter((r: any) => r.completed).map((r: any) => r.game_mode));
 
     // The full mode count for this day's era — a sweep means the player's OWN
     // distinct daily modes reach it; flawless means all of them were won.
-    const required = requiredDailyModeCount(day);
+    const required = sweepModesFor(day).length;
 
     if (played.size < required) {
       return NextResponse.json({ awarded: false, reason: 'incomplete', played: played.size, required });

@@ -94,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const nightPct = done.length ? nightPlays / done.length : 0;
 
   // Priority order is part of the contract: a Grinder who is also fast is a
-  // GRINDER — sweeping all nine every day is the rarer, more telling habit.
+  // GRINDER — sweeping every daily, day after day, is the rarer, more telling habit.
   let archetype = 'CHALLENGER';
   if (sweepDays >= 3) archetype = 'GRINDER';
   else if (times.length >= 10 && avgTime <= 90) archetype = 'SPEEDRUNNER';

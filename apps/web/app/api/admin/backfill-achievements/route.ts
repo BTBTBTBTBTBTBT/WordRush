@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { DAILY_MODES } from '@/lib/modes.generated';
+import { sweepModesFor } from '@/lib/daily-modes';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
@@ -147,8 +149,9 @@ export async function POST(req: NextRequest) {
     .limit(100000);
 
   if (allStats) {
-    // All Modes Played — user has all 9 modes in user_stats
-    const ALL_MODES = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
+    // All Modes Played — user has every daily mode this build knows in user_stats
+    // (More Games §11: all dailies, not just the sweep).
+    const ALL_MODES = DAILY_MODES.map((m) => m.dbKey as string);
     const userModes = new Map<string, Set<string>>();
     for (const s of allStats) {
       if (!userModes.has(s.user_id)) userModes.set(s.user_id, new Set());
@@ -325,10 +328,11 @@ export async function POST(req: NextRequest) {
     const speedSweepUsers = new Set<string>();
     const flawlessSpeedUsers = new Set<string>();
     for (const [key, { modes, totalTime }] of dayResultsByUserDay) {
-      // allDailyResults is filtered completed=true, so having all 9 modes here
-      // means all 9 were WON → a Flawless day.
-      if (ALL_MODES.every((m) => modes.has(m))) {
-        const uid = key.split('|')[0];
+      // allDailyResults is filtered completed=true, so having the day's whole
+      // sweep-era set here means every sweep mode was WON → a Flawless day.
+      const [uid, day] = key.split('|');
+      const sweepSet = sweepModesFor(day);
+      if (sweepSet.every((m) => modes.has(m))) {
         if (totalTime < 1200) lightningUsers.add(uid);
         if (totalTime < 900) speedSweepUsers.add(uid);
         if (totalTime < 1080) flawlessSpeedUsers.add(uid);

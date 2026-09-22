@@ -79,7 +79,7 @@ data class InfoNavItem(
 
 val INFO_NAV = listOf(
     InfoNavItem("help", "How to Play", "Rules, tiles & scoring", Icons.AutoMirrored.Filled.HelpOutline, Color(0xFF7C3AED)),
-    InfoNavItem("guides", "Guides", "Strategy for all 9 modes", Icons.Filled.MenuBook, Color(0xFF3B82F6)),
+    InfoNavItem("guides", "Guides", "Strategy for every mode", Icons.Filled.MenuBook, Color(0xFF3B82F6)),
     InfoNavItem("strategy", "Strategy", "Solve faster, in fewer guesses", Icons.Filled.Lightbulb, Color(0xFFF59E0B)),
     InfoNavItem("words", "Words", "Every Word of the Day", Icons.Filled.CalendarMonth, Color(0xFFEC4899)),
     // "About" sat here until 2026-07-31. It restated How to Play in older, dryer

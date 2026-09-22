@@ -111,7 +111,8 @@ enum AchievementService {
             .select("game_mode,wins,total_games,play_type").eq("user_id", value: userId).execute().value) ?? []
         if !stats.isEmpty {
             let modes = Set(stats.map { $0.game_mode })
-            let allModes = ["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","DUEL_6","DUEL_7","GAUNTLET","PROPERNOUNDLE"]
+            // "All Modes Played" = every daily mode this build knows (More Games §11: all dailies, not just the sweep).
+            let allModes = ModeGen.daily.compactMap { $0.dbKey }
             if allModes.allSatisfy({ modes.contains($0) }) { await tryUnlock("all_modes") }
 
             let soloWinsByMode: (String) -> Int = { m in stats.filter { $0.game_mode == m && $0.play_type == "solo" }.reduce(0) { $0 + $1.wins } }
@@ -196,13 +197,15 @@ enum AchievementService {
                 .execute().value) ?? []
             let fastWins = todays.filter { ($0.time_seconds ?? 0) < 60 }
             if fastWins.count >= 3 { await tryUnlock("hat_trick") }
-            let todayModes = Set(todays.map { $0.game_mode })
-            let allModes = ["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","DUEL_6","DUEL_7","GAUNTLET","PROPERNOUNDLE"]
-            if todays.count >= 9 && allModes.allSatisfy({ todayModes.contains($0) }) {
-                let totalTime = todays.reduce(0) { $0 + ($1.time_seconds ?? 0) }
+            // Sweep speed checks — over today's sweep-era set only (More Games Stage 4).
+            let sweepSet = ModeGen.sweepModes(for: today)
+            let sweepRows = todays.filter { sweepSet.contains($0.game_mode) }
+            let todayModes = Set(sweepRows.map { $0.game_mode })
+            if sweepRows.count >= sweepSet.count && sweepSet.allSatisfy({ todayModes.contains($0) }) {
+                let totalTime = sweepRows.reduce(0) { $0 + ($1.time_seconds ?? 0) }
                 if totalTime < 1200 { await tryUnlock("lightning_round") }
                 if totalTime < 900 { await tryUnlock("speed_sweep") }
-                // todays is filtered completed=true, so all 9 present == Flawless day.
+                // rows are filtered completed=true, so the full set present == Flawless day.
                 if totalTime < 1080 { await tryUnlock("flawless_speed") }
             }
             if playType == "vs" && won && !has("triple_threat") {

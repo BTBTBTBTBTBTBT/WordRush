@@ -35,8 +35,8 @@ export async function generateMetadata(
   const name = await usernameFor(params.id);
   const title = name ? `${name} on Wordocious` : 'Player Profile — Wordocious';
   const description = name
-    ? `Add ${name} as a friend and race the daily word puzzles — 9 modes, one leaderboard.`
-    : 'Add friends and race the daily word puzzles — 9 modes, one leaderboard.';
+    ? `Add ${name} as a friend and race the daily word puzzles — every mode, one leaderboard.`
+    : 'Add friends and race the daily word puzzles — every mode, one leaderboard.';
   return {
     title,
     description,

@@ -241,7 +241,7 @@ export function AppHeader() {
                     <span className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Flawless Streak</span>
                   </div>
                   <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    {flawlessStreak} straight day{flawlessStreak === 1 ? '' : 's'} winning all 9 dailies.
+                    {flawlessStreak} straight day{flawlessStreak === 1 ? '' : 's'} winning every daily.
                     Win every daily today to keep it alive.
                   </p>
                 </div>

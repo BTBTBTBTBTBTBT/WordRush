@@ -5,25 +5,19 @@ import { ArrowRight, Trophy } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
+import { SWEEP_MODES } from '@/lib/modes.generated';
+import { dailyHref } from '@/lib/mode-routes';
 
-// Canonical daily order + routes — mirrors DAILY_MODES on the profile page
-// and the home grid order. First unplayed mode in this order is "next".
-const DAILY_ORDER: Array<{ id: string; href: string }> = [
-  { id: 'DUEL',          href: '/practice?daily=true' },
-  { id: 'QUORDLE',       href: '/quadword?daily=true' },
-  { id: 'OCTORDLE',      href: '/octoword?daily=true' },
-  { id: 'SEQUENCE',      href: '/sequence?daily=true' },
-  { id: 'RESCUE',        href: '/rescue?daily=true' },
-  { id: 'DUEL_6',        href: '/six?daily=true' },
-  { id: 'DUEL_7',        href: '/seven?daily=true' },
-  { id: 'GAUNTLET',      href: '/gauntlet?daily=true' },
-  { id: 'PROPERNOUNDLE', href: '/propernoundle?daily=true' },
-];
+// Canonical daily order + routes = the catalog's sweep set (More Games Stage
+// 4: no second hand-typed list). First unplayed sweep mode in this order is
+// "next"; More Games titles never appear here because they are not in the sweep.
+const DAILY_ORDER: Array<{ id: string; href: string }> = SWEEP_MODES
+  .map((m) => ({ id: m.dbKey as string, href: dailyHref(m.dbKey as string) ?? '/' }));
 
 /**
  * U3: post-game handoff that keeps the daily loop moving. Rendered only on
  * DAILY results — points at the first unplayed daily mode, or celebrates
- * the sweep when all 9 are done. `currentMode` is excluded explicitly so a
+ * the sweep when every sweep mode is done. `currentMode` is excluded explicitly so a
  * just-finished game never suggests itself while its completion event is
  * still propagating into the completions context.
  */
@@ -47,7 +41,7 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
           }}
         >
           <Trophy className="w-3.5 h-3.5" />
-          All 9 dailies done — Sweep complete! 🏆
+          All {SWEEP_MODES.length} dailies done — Sweep complete! 🏆
         </div>
       )}
       <ViewLeaderboardLink currentMode={currentMode} />

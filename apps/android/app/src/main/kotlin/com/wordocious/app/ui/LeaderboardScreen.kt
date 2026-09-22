@@ -67,11 +67,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import com.wordocious.app.ui.theme.WTheme
 
-internal val MODE_OPTIONS = listOf(
-    "DUEL" to "Classic", "QUORDLE" to "QuadWord", "OCTORDLE" to "OctoWord",
-    "SEQUENCE" to "Succession", "RESCUE" to "Deliverance",
-    "DUEL_6" to "Six", "DUEL_7" to "Seven",
-    "GAUNTLET" to "Gauntlet", "PROPERNOUNDLE" to "ProperNoundle",
+// The picker's daily modes come from the catalog (More Games Stage 4: no second
+// hand-typed list); the sweep set first, then the synthetic Sweep entry.
+internal val MODE_OPTIONS: List<Pair<String, String>> = com.wordocious.app.ModeGen.sweep.mapNotNull { m -> m.dbKey?.let { it to m.title } } + listOf(
     // Synthetic 10th picker id (NOT a `:core` GameMode) — the Daily Sweep board,
     // shown only on the Leaderboard + Records pickers, never the Home grid.
     SWEEP_ID to "Sweep",
