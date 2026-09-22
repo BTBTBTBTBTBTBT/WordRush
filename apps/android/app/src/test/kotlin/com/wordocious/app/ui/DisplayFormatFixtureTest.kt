@@ -27,11 +27,22 @@ class DisplayFormatFixtureTest {
     )
 
     @Serializable
+    private data class GuessStatCase(val semantics: String, val guessBase: Int, val guessCount: Int, val expected: String)
+
+    @Serializable
     private data class Fixtures(
         val formatScore: List<ScoreCase>,
         val formatShortTime: List<TimeCase>,
         val topPercentLabel: List<PercentileCase>,
+        val formatGuessStat: List<GuessStatCase>,
     )
+
+    @Test
+    fun formatGuessStat_matches_shared_fixtures() {
+        val cases = load().formatGuessStat
+        assertTrue(cases.isNotEmpty())
+        for (c in cases) assertEquals("formatGuessStat(${c.semantics}, ${c.guessBase}, ${c.guessCount})", c.expected, formatGuessStat(c.semantics, c.guessBase, c.guessCount))
+    }
 
     private fun load(): Fixtures {
         val text = javaClass.classLoader!!

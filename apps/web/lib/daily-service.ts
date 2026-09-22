@@ -1,6 +1,7 @@
 import { supabase } from './supabase-client';
 import { requiredDailyModeCount } from './daily-modes';
 import { MODE_BY_DBKEY } from './modes.generated';
+import { getDailySeedDate } from '@wordle-duel/core';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
 import { isPlausibleDailyResult } from '@/lib/plausibility';
@@ -1262,4 +1263,58 @@ export async function awardDailyBonusesIfComplete(_userId: string): Promise<Dail
     // Best-effort: a failed bonus call must never break result recording.
     return null;
   }
+}
+
+/**
+ * More Games §11: the idempotent "improve" path. `recordGameResult` counts a
+ * game (games, wins, XP, streaks) every time it is called, so a mode that
+ * finalises once and then keeps improving — Hubbub, where a later rank-up
+ * must raise the leaderboard score without paying XP twice — needs a second
+ * entry point that touches ONLY the score-bearing rows:
+ *   1. daily_results via recordDailyResult (already only-better), and
+ *   2. the solo matches row for this seed (player1_score / player1_time /
+ *      player1_guesses / hints_used), the precedent being recordGauntletStages.
+ * Totals, XP, level and streaks are never read or written here. Safe to call
+ * any number of times; a call that does not beat the stored score is a no-op.
+ * The natives (GameResultsService.improve) land with Hubbub, the only caller.
+ */
+export async function improveDailyRun(args: {
+  userId: string;
+  gameMode: string;
+  seed: string;
+  completed: boolean;
+  guessCount: number;
+  timeSeconds: number;
+  boardsSolved: number;
+  totalBoards: number;
+  hintsUsed?: number;
+  /** The event strings for the matches row (sigil-prefixed, see §11). */
+  guesses?: string[];
+}): Promise<number | null> {
+  const day = getDailySeedDate(args.seed) ?? getTodayLocal();
+  const score = await recordDailyResult(
+    args.userId, args.gameMode, 'solo', args.completed, args.guessCount, args.timeSeconds,
+    args.boardsSolved, args.totalBoards, args.hintsUsed ?? 0, day,
+  );
+  if (typeof score !== 'number') return null;
+  try {
+    const patch: Record<string, unknown> = {
+      player1_score: score,
+      player1_time: args.timeSeconds,
+      winner_id: args.completed ? args.userId : null,
+      hints_used: args.hintsUsed ?? 0,
+    };
+    if (args.guesses) patch.player1_guesses = args.guesses;
+    const { error } = await (supabase as any)
+      .from('matches')
+      .update(patch)
+      .eq('player1_id', args.userId)
+      .eq('game_mode', args.gameMode)
+      .eq('seed', args.seed)
+      .lt('player1_score', score);
+    reportRejectedWrite(`improveDailyRun matches ${args.gameMode}`, error);
+  } catch (err) {
+    handleSupabaseError(err, 'improveDailyRun');
+  }
+  return score;
 }

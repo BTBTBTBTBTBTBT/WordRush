@@ -1,4 +1,144 @@
 {
+  "formatGuessStat": [
+    {
+      "semantics": "guesses",
+      "guessBase": 1,
+      "guessCount": 1,
+      "expected": "1 guess"
+    },
+    {
+      "semantics": "guesses",
+      "guessBase": 1,
+      "guessCount": 4,
+      "expected": "4 guesses"
+    },
+    {
+      "semantics": "guesses",
+      "guessBase": 4,
+      "guessCount": 7,
+      "expected": "7 guesses"
+    },
+    {
+      "semantics": "mistakes",
+      "guessBase": 1,
+      "guessCount": 1,
+      "expected": "0 mistakes"
+    },
+    {
+      "semantics": "mistakes",
+      "guessBase": 1,
+      "guessCount": 2,
+      "expected": "1 mistake"
+    },
+    {
+      "semantics": "mistakes",
+      "guessBase": 1,
+      "guessCount": 4,
+      "expected": "3 mistakes"
+    },
+    {
+      "semantics": "checks",
+      "guessBase": 5,
+      "guessCount": 5,
+      "expected": "5 checks"
+    },
+    {
+      "semantics": "checks",
+      "guessBase": 5,
+      "guessCount": 8,
+      "expected": "8 checks"
+    },
+    {
+      "semantics": "checks",
+      "guessBase": 1,
+      "guessCount": 1,
+      "expected": "0 checks"
+    },
+    {
+      "semantics": "checks",
+      "guessBase": 1,
+      "guessCount": 2,
+      "expected": "1 check"
+    },
+    {
+      "semantics": "checks",
+      "guessBase": 1,
+      "guessCount": 4,
+      "expected": "3 checks"
+    },
+    {
+      "semantics": "overPar",
+      "guessBase": 1,
+      "guessCount": 1,
+      "expected": "Par"
+    },
+    {
+      "semantics": "overPar",
+      "guessBase": 1,
+      "guessCount": 2,
+      "expected": "+1"
+    },
+    {
+      "semantics": "overPar",
+      "guessBase": 1,
+      "guessCount": 6,
+      "expected": "+5"
+    },
+    {
+      "semantics": "misses",
+      "guessBase": 10,
+      "guessCount": 10,
+      "expected": "0 misses"
+    },
+    {
+      "semantics": "misses",
+      "guessBase": 10,
+      "guessCount": 11,
+      "expected": "1 miss"
+    },
+    {
+      "semantics": "misses",
+      "guessBase": 10,
+      "guessCount": 15,
+      "expected": "5 misses"
+    },
+    {
+      "semantics": "rank",
+      "guessBase": 1,
+      "guessCount": 1,
+      "expected": "Pandemonium"
+    },
+    {
+      "semantics": "rank",
+      "guessBase": 1,
+      "guessCount": 4,
+      "expected": "Hubbub"
+    },
+    {
+      "semantics": "rank",
+      "guessBase": 1,
+      "guessCount": 10,
+      "expected": "Hush"
+    },
+    {
+      "semantics": "rank",
+      "guessBase": 1,
+      "guessCount": 0,
+      "expected": "Pandemonium"
+    },
+    {
+      "semantics": "rank",
+      "guessBase": 1,
+      "guessCount": 12,
+      "expected": "Hush"
+    },
+    {
+      "semantics": "unknown",
+      "guessBase": 1,
+      "guessCount": 3,
+      "expected": "3 guesses"
+    }
+  ],
   "formatScore": [
     {
       "score": 0,

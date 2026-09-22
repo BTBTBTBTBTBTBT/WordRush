@@ -39,3 +39,25 @@ fun formatShortTime(seconds: Int): String {
     val rem = s % 60
     return if (rem > 0) "${m}m ${rem}s" else "${m}m"
 }
+
+// ── More Games (§11): guess_count is not always "guesses" ─────────────────
+// Mirrors web lib/format.ts formatGuessStat 1:1; pinned by
+// display-format-fixtures.json. `semantics` / `guessBase` come from the mode
+// catalog (ModeGen). See the web copy for the per-semantics table.
+
+/** Hubbub rank names, best first: guess_count 1 = Pandemonium … 10 = Hush. */
+val HUB_RANK_NAMES = listOf("Pandemonium", "Thunder", "Uproar", "Hubbub", "Racket", "Clamor", "Banter", "Chatter", "Murmur", "Hush")
+
+private fun plural(n: Int, one: String, many: String) = "$n ${if (n == 1) one else many}"
+
+fun formatGuessStat(semantics: String, guessBase: Int, guessCount: Int): String {
+    val g = max(0, guessCount)
+    return when (semantics) {
+        "mistakes" -> plural(max(0, g - guessBase), "mistake", "mistakes")
+        "checks" -> plural(if (guessBase == 1) max(0, g - 1) else g, "check", "checks")
+        "overPar" -> { val d = g - 1; if (d <= 0) "Par" else "+$d" }
+        "misses" -> plural(max(0, g - guessBase), "miss", "misses")
+        "rank" -> HUB_RANK_NAMES[minOf(HUB_RANK_NAMES.size, max(1, g)) - 1]
+        else -> plural(g, "guess", "guesses")
+    }
+}

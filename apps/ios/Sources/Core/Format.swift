@@ -94,3 +94,25 @@ public func topPercentLabel(rank: Int, totalPlayers: Int) -> (label: String, gol
     let percentile = Int(((1 - Double(rank - 1) / Double(totalPlayers)) * 100).rounded())
     return ("Top \(max(1, 100 - percentile))%", percentile >= 75)
 }
+
+// ── More Games (§11): guess_count is not always "guesses" ─────────────────
+// Mirrors web lib/format.ts formatGuessStat 1:1; pinned by
+// display-format-fixtures.json. `semantics` / `guessBase` come from the mode
+// catalog (ModeGen). See the web copy for the per-semantics table.
+
+/// Hubbub rank names, best first: guess_count 1 = Pandemonium … 10 = Hush.
+public let hubRankNames = ["Pandemonium", "Thunder", "Uproar", "Hubbub", "Racket", "Clamor", "Banter", "Chatter", "Murmur", "Hush"]
+
+private func plural(_ n: Int, _ one: String, _ many: String) -> String { "\(n) \(n == 1 ? one : many)" }
+
+public func formatGuessStat(semantics: String, guessBase: Int, guessCount: Int) -> String {
+    let g = max(0, guessCount)
+    switch semantics {
+    case "mistakes": return plural(max(0, g - guessBase), "mistake", "mistakes")
+    case "checks": return plural(guessBase == 1 ? max(0, g - 1) : g, "check", "checks")
+    case "overPar": let d = g - 1; return d <= 0 ? "Par" : "+\(d)"
+    case "misses": return plural(max(0, g - guessBase), "miss", "misses")
+    case "rank": return hubRankNames[min(hubRankNames.count, max(1, g)) - 1]
+    default: return plural(g, "guess", "guesses")
+    }
+}

@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { writeFileSync } from 'node:fs';
 import { formatScore } from '../lib/composite-scoring.ts';
-import { topPercentLabel, formatShortTime } from '../lib/format.ts';
+import { topPercentLabel, formatShortTime, formatGuessStat } from '../lib/format.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..');
@@ -33,7 +33,20 @@ const PERCENTILE_CASES = [
   [1, 2], [2, 2], [1, 8], [2, 8], [4, 8], [8, 8], [1, 100], [25, 100], [26, 100], [100, 100], [2, 3],
 ];
 
+// More Games §11: [semantics, guessBase, guessCount] — one perfect, one typical
+// and one edge case per semantics family, so every branch is pinned.
+const GUESS_STAT_CASES = [
+  ['guesses', 1, 1], ['guesses', 1, 4], ['guesses', 4, 7],
+  ['mistakes', 1, 1], ['mistakes', 1, 2], ['mistakes', 1, 4],
+  ['checks', 5, 5], ['checks', 5, 8], ['checks', 1, 1], ['checks', 1, 2], ['checks', 1, 4],
+  ['overPar', 1, 1], ['overPar', 1, 2], ['overPar', 1, 6],
+  ['misses', 10, 10], ['misses', 10, 11], ['misses', 10, 15],
+  ['rank', 1, 1], ['rank', 1, 4], ['rank', 1, 10], ['rank', 1, 0], ['rank', 1, 12],
+  ['unknown', 1, 3],
+];
+
 const fixtures = {
+  formatGuessStat: GUESS_STAT_CASES.map(([semantics, guessBase, guessCount]) => ({ semantics, guessBase, guessCount, expected: formatGuessStat(semantics, guessBase, guessCount) })),
   formatScore: SCORE_CASES.map((score) => ({ score, expected: formatScore(score) })),
   formatShortTime: TIME_CASES.map((seconds) => ({ seconds, expected: formatShortTime(seconds) })),
   topPercentLabel: PERCENTILE_CASES.map(([rank, totalPlayers]) => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { formatScore } from './composite-scoring';
-import { topPercentLabel, formatShortTime } from './format';
+import { topPercentLabel, formatShortTime, formatGuessStat } from './format';
 import fixtures from './__fixtures__/display-format-fixtures.json';
 
 /**
@@ -28,6 +28,19 @@ describe('display-format fixtures', () => {
       expect(label, `topPercentLabel(${c.rank}, ${c.totalPlayers})`).toBe(c.expectedLabel);
       expect(gold, `gold(${c.rank}, ${c.totalPlayers})`).toBe(c.expectedGold);
     }
+  });
+
+  it('formatGuessStat reproduces every fixture case', () => {
+    for (const c of fixtures.formatGuessStat) {
+      expect(formatGuessStat(c.semantics, c.guessBase, c.guessCount), `formatGuessStat(${c.semantics}, ${c.guessBase}, ${c.guessCount})`).toBe(c.expected);
+    }
+    // The decided readings (More Games §11).
+    expect(formatGuessStat('mistakes', 1, 1)).toBe('0 mistakes');
+    expect(formatGuessStat('checks', 5, 5)).toBe('5 checks');
+    expect(formatGuessStat('checks', 1, 1)).toBe('0 checks');
+    expect(formatGuessStat('overPar', 1, 1)).toBe('Par');
+    expect(formatGuessStat('overPar', 1, 3)).toBe('+2');
+    expect(formatGuessStat('rank', 1, 4)).toBe('Hubbub');
   });
 
   it('pins the decided semantics explicitly', () => {

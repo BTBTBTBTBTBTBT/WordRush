@@ -13,9 +13,18 @@ final class DisplayFormatFixtureTests: XCTestCase {
             let rank: Int; let totalPlayers: Int
             let expectedLabel: String; let expectedGold: Bool
         }
+        struct GuessStat: Decodable { let semantics: String; let guessBase: Int; let guessCount: Int; let expected: String }
         let formatScore: [Score]
         let formatShortTime: [Time]
         let topPercentLabel: [Percentile]
+        let formatGuessStat: [GuessStat]
+    }
+
+    func testFormatGuessStatMatchesFixtures() throws {
+        for c in try loadFixtures().formatGuessStat {
+            XCTAssertEqual(formatGuessStat(semantics: c.semantics, guessBase: c.guessBase, guessCount: c.guessCount), c.expected,
+                           "formatGuessStat(\(c.semantics), \(c.guessBase), \(c.guessCount))")
+        }
     }
 
     private func loadFixtures() throws -> Fixtures {

@@ -39,3 +39,35 @@ export function formatShortTime(seconds: number): string {
   const rem = s % 60;
   return rem > 0 ? `${m}m ${rem}s` : `${m}m`;
 }
+
+// ── More Games (§11): guess_count is not always "guesses" ─────────────────
+// Each mode's catalog record says what guess_count MEANS (guessSemantics) and
+// what a perfect run is (guessBase). This single formatter turns the stored
+// number into the words a player should read, on every surface (home card,
+// leaderboard row, records, share text). Mirrored 1:1 in Format.swift and
+// Format.kt and pinned by display-format-fixtures.json.
+//
+//   guesses  → "4 guesses"          (raw count; the word games)
+//   mistakes → "0 mistakes"         (guess_count − guessBase; Sudoku, Starsweep)
+//   checks   → "5 checks"           (Muddle counts every check, base 5)
+//              "2 checks"           (Crosswordocious / Codebreaker: optional Checks, base 1)
+//   overPar  → "Par" / "+2"         (Letter Ladder: guess_count − 1 over par)
+//   misses   → "3 misses"           (Spyglass: guess_count − 10)
+//   rank     → "Hubbub"             (Hubbub: rank position 1..10 → name)
+
+/** Hubbub rank names, best first: guess_count 1 = Pandemonium … 10 = Hush. */
+export const HUB_RANK_NAMES = ['Pandemonium', 'Thunder', 'Uproar', 'Hubbub', 'Racket', 'Clamor', 'Banter', 'Chatter', 'Murmur', 'Hush'] as const;
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export function formatGuessStat(semantics: string, guessBase: number, guessCount: number): string {
+  const g = Math.max(0, Math.floor(guessCount));
+  switch (semantics) {
+    case 'mistakes': return plural(Math.max(0, g - guessBase), 'mistake', 'mistakes');
+    case 'checks': return plural(guessBase === 1 ? Math.max(0, g - 1) : g, 'check', 'checks');
+    case 'overPar': { const d = g - 1; return d <= 0 ? 'Par' : `+${d}`; }
+    case 'misses': return plural(Math.max(0, g - guessBase), 'miss', 'misses');
+    case 'rank': return HUB_RANK_NAMES[Math.min(HUB_RANK_NAMES.length, Math.max(1, g)) - 1];
+    default: return plural(g, 'guess', 'guesses');
+  }
+}
