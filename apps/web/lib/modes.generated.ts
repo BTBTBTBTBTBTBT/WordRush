@@ -264,7 +264,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "guesses",
     "guessBase": 1,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "menu.more",
     "category": null,
     "guideSlug": null
@@ -285,7 +285,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "mistakes",
     "guessBase": 1,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.sudoku",
     "category": "logic",
     "guideSlug": "sudoku"

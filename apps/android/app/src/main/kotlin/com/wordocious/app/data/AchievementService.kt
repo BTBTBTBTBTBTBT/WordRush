@@ -174,8 +174,16 @@ object AchievementService {
         // Speed Demon (Classic under 30s)
         if (gameMode == "DUEL" && won && timeSeconds < 30) tryUnlock("speed_demon")
 
-        // Perfectionist (1 guess)
-        if (won && guessCount == 1) tryUnlock("perfectionist")
+        // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
+        // mistakes + 1 (More Games §18c).
+        if (won && guessCount == 1 && gameMode != "SUDOKU") tryUnlock("perfectionist")
+
+        // Sudoku: first solve, clean sheet (0 mistakes, 0 hints), sprint.
+        if (gameMode == "SUDOKU" && won) {
+            tryUnlock("sudoku_first")
+            if (guessCount == 1 && hintsUsed == 0) tryUnlock("clean_sheet")
+            if (timeSeconds < 300) tryUnlock("sudoku_sprint")
+        }
 
         // Gauntlet Master
         if (gameMode == "GAUNTLET" && won) tryUnlock("gauntlet_master")
@@ -284,6 +292,7 @@ object AchievementService {
             Triple("six_shooter", "DUEL_6", 50),
             Triple("lucky_seven", "DUEL_7", 50),
             Triple("proper_scholar", "PROPERNOUNDLE", 50),
+            Triple("sudoku_scholar", "SUDOKU", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -593,11 +602,12 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
                 "DUEL_7" -> "seven"
+                "SUDOKU" -> "sudoku"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"

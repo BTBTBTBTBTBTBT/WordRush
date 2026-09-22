@@ -10,6 +10,8 @@ import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/compos
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { formatGuessStat } from '@/lib/format';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
@@ -74,6 +76,28 @@ const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format
   most_daily_completions: { label: 'Most Dailies Completed', icon: Target, format: (v) => `${v} dailies` },
 };
 
+// More Games §11: "fewest guesses" reads through the mode's guess semantics —
+// Sudoku "0 mistakes", Letter Ladder "Par" — and the label follows.
+const recordValue = (rt: string, v: number, gameMode?: string | null): string => {
+  const meta = gameMode ? MODE_BY_DBKEY[gameMode] : undefined;
+  if (rt === 'fewest_guesses' && meta && meta.guessSemantics !== 'guesses') {
+    return formatGuessStat(meta.guessSemantics, meta.guessBase, v);
+  }
+  return RECORD_LABELS[rt]?.format(v) ?? String(v);
+};
+const recordLabel = (rt: string, gameMode?: string | null): string => {
+  const meta = gameMode ? MODE_BY_DBKEY[gameMode] : undefined;
+  if (rt !== 'fewest_guesses' || !meta) return RECORD_LABELS[rt]?.label ?? rt;
+  switch (meta.guessSemantics) {
+    case 'mistakes': return 'Fewest Mistakes';
+    case 'checks': return 'Fewest Checks';
+    case 'overPar': return 'Best Par';
+    case 'misses': return 'Fewest Misses';
+    case 'rank': return 'Best Rank';
+    default: return 'Fewest Guesses';
+  }
+};
+
 const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played', 'longest_streak'];
 const GLOBAL_RECORD_TYPES = ['longest_streak', 'highest_level', 'most_gold_medals', 'most_daily_completions'];
 
@@ -125,7 +149,7 @@ function StatCell({
           className="font-black text-base leading-tight"
           style={{ color: hasRecord ? 'var(--color-text)' : 'var(--color-text-muted)' }}
         >
-          {hasRecord ? config.format(record!.record_value) : '—'}
+          {hasRecord ? recordValue(record!.record_type, record!.record_value, record!.game_mode) : '—'}
           {/* §254: hints on the record cell, same wording as the leaderboard rows. */}
           {hasRecord && record!.hints_used != null && record!.game_mode && (() => {
             const h = formatHintsLabel(record!.game_mode, record!.hints_used!);
@@ -1045,7 +1069,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
   const my = stats.find((s) => s.game_mode === selectedMode && s.play_type === 'solo');
 
   const fmtRecord = (rt: string, v: number | null | undefined) =>
-    v == null || v === 0 ? '—' : RECORD_LABELS[rt].format(v);
+    v == null || v === 0 ? '—' : recordValue(rt, v, selectedMode);
 
   return (
     <div className="animate-fade-in-up space-y-5">
@@ -1141,7 +1165,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
           ) : (
             <div className="px-4 pb-3 grid grid-cols-2 gap-1">
               <MyStatCell icon={Clock} value={fmtRecord('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
-              <MyStatCell icon={Target} value={fmtRecord('fewest_guesses', my?.best_score)} label="Fewest Guesses" color={color} dim={!my?.best_score} />
+              <MyStatCell icon={Target} value={fmtRecord('fewest_guesses', my?.best_score)} label={recordLabel('fewest_guesses', selectedMode)} color={color} dim={!my?.best_score} />
               <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
               <MyStatCell icon={Trophy} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
             </div>
@@ -1243,7 +1267,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
                             {r.game_mode ? getMode(r.game_mode).title : 'Global'} · {cfg?.label ?? r.record_type}
                           </div>
                           <div className="text-2xl font-black leading-tight" style={{ color: '#d97706' }}>
-                            {cfg ? cfg.format(r.record_value) : r.record_value}
+                            {cfg ? recordValue(r.record_type, r.record_value, r.game_mode) : r.record_value}
                           </div>
                         </div>
                         {since && (
@@ -1277,7 +1301,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
                                 {glyph(r.game_mode, 20)}
                               </div>
                               <span className="text-[11px] font-black" style={{ color: accent }}>
-                                {cfg ? cfg.format(r.record_value) : r.record_value}
+                                {cfg ? recordValue(r.record_type, r.record_value, r.game_mode) : r.record_value}
                               </span>
                             </div>
                           );

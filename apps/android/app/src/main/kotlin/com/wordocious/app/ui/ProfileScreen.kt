@@ -895,8 +895,10 @@ private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppon
                     )
                 }
             }
+            // Through the mode's guess semantics (More Games §11): Sudoku reads "0 mistakes".
+            val meta = com.wordocious.app.ModeGen.byDbKey(m.gameMode)
             Text(
-                "$score ${if (score == 1) "guess" else "guesses"} · ${if (timeSec > 0) fmtMatchTime(timeSec) else "—"}",
+                "${formatGuessStat(meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, score)} · ${if (timeSec > 0) fmtMatchTime(timeSec) else "—"}",
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
         }

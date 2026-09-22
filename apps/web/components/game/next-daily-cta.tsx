@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
-import { dailyHref } from '@/lib/mode-routes';
+import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -135,7 +135,10 @@ function NextDailyLink({ next }: { next: { id: string; href: string } }) {
  */
 function KeepPlayingUnlimited({ currentMode }: { currentMode: string }) {
   const { isProActive } = useAuth();
-  const entry = DAILY_ORDER.find((m) => m.id === currentMode);
+  // Any daily mode with a route — the More Games titles are not in the sweep
+  // order but have the same Pro "keep playing" handoff (§18d).
+  const entry = DAILY_ORDER.find((m) => m.id === currentMode)
+    ?? (MODE_ROUTES[currentMode] ? { id: currentMode, href: `${MODE_ROUTES[currentMode]}?daily=true` } : undefined);
   const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
   if (!isProActive || !entry || !mode) return null;
 

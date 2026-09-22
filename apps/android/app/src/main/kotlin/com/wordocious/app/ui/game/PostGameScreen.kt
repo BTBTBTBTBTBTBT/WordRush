@@ -392,7 +392,7 @@ private fun androidx.compose.foundation.layout.BoxScope.PostGameHelpButton(mode:
 
 /** Corner Home button (top-left) — accent circle, matches the in-game one. */
 @Composable
-private fun CornerHomeButton(accent: Color, onBack: () -> Unit) {
+internal fun CornerHomeButton(accent: Color, onBack: () -> Unit) {
     Box(
         modifier = Modifier.padding(8.dp).size(44.dp)
             .shadow(4.dp, CircleShape, clip = false).clip(CircleShape)
@@ -683,7 +683,7 @@ private fun StatItem(icon: androidx.compose.ui.graphics.vector.ImageVector, colo
  * ≥2 players have a result today. Gold styling at ≥75th percentile.
  */
 @Composable
-private fun DailyRankBadge(mode: GameMode) {
+internal fun DailyRankBadge(mode: GameMode) {
     val userId = AuthService.profile.value?.id
     // Count-query rank (web/iOS parity) — replaces the legacy fetch-1000-and-
     // scan userRankAndTotal, which broke silently past 1,000 players and
@@ -791,7 +791,7 @@ private fun fmtSecs(s: Int): String = if (s <= 0) "0s" else if (s >= 60) "${s / 
  * All 9 done → static "Sweep complete!" line.
  */
 @Composable
-private fun NextDailyRow(
+internal fun NextDailyRow(
     currentMode: GameMode,
     onOpenDaily: (GameMode) -> Unit,
     onOpenUnlimited: ((GameMode) -> Unit)? = null,

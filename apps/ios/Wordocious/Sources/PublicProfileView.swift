@@ -677,7 +677,8 @@ struct RecentMatchRow: View {
     /// VS opponent's username — renders "· vs <name>" inline (web profile parity).
     var opponentName: String? = nil
 
-    private var mode: HomeMode? { homeModes.first { $0.dbKey == match.game_mode } }
+    /// Home tiles first, then the More Games titles (Sudoku et al. live in moreModes).
+    private var mode: HomeMode? { (homeModes + moreModes).first { $0.dbKey == match.game_mode } }
 
     var body: some View {
         let won = match.isWinner(profileId)
@@ -717,7 +718,8 @@ struct RecentMatchRow: View {
                             .minimumScaleFactor(0.7)
                     }
                 }
-                Text("\(guesses) \(guesses == 1 ? "guess" : "guesses") · \(secs > 0 ? durationStr(secs) : "—")")
+                // Through the mode's guess semantics (More Games §11): Sudoku reads "0 mistakes".
+                Text("\(formatGuessStat(semantics: mode?.guessSemantics ?? "guesses", guessBase: mode?.guessBase ?? 1, guessCount: guesses)) · \(secs > 0 ? durationStr(secs) : "—")")
                     .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()

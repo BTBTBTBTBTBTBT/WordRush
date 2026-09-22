@@ -7,7 +7,7 @@ import SwiftUI
 ///
 ///   no flagKey on the mode        → on   (nothing to gate)
 ///   flags unknown / unreachable   → on   (the catalog's `enabled` alone decides)
-///   no row for the key            → on
+///   no row for the key            → OFF  (a gated mode needs its row — fail closed)
 ///   row.enabled = false           → OFF  (the kill switch)
 ///   row.audience = "all"          → on
 ///   row.audience = "testers"      → on for admins and testers only
@@ -66,7 +66,7 @@ final class FlagsService: ObservableObject {
     func isOn(_ flagKey: String?) -> Bool {
         guard let flagKey else { return true }
         guard let flags else { return loaded }   // in flight → hidden; unreachable → catalog decides
-        guard let row = flags[flagKey] else { return true }
+        guard let row = flags[flagKey] else { return false }
         if !row.enabled { return false }
         if row.audience == "all" { return true }
         return viewerIsTester
@@ -76,7 +76,7 @@ final class FlagsService: ObservableObject {
     nonisolated static func resolve(_ flagKey: String?, flags: [String: AppFlag]?, isTester: Bool) -> Bool {
         guard let flagKey else { return true }
         guard let flags else { return true }
-        guard let row = flags[flagKey] else { return true }
+        guard let row = flags[flagKey] else { return false }
         if !row.enabled { return false }
         if row.audience == "all" { return true }
         return isTester

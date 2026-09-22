@@ -13,10 +13,8 @@ import {
   Swords,
   User,
   Medal,
-  Crown,
-  Shield,
-  Skull,
   Sparkles,
+  Crown,
   TrendingUp,
   Bot,
   Lock,
@@ -29,9 +27,6 @@ import { getTodayLocal } from '@/lib/daily-service';
 import { shareFlawlessStreakCard } from '@/lib/leaderboard-share-flow';
 import { WIN_FG } from '@/lib/tile-theme';
 import { ProBadge } from '@/components/ui/pro-badge';
-import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
-import { SixIcon } from '@/components/ui/six-icon';
-import { SevenIcon } from '@/components/ui/seven-icon';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
@@ -61,30 +56,30 @@ import type { Database } from '@/lib/database.types';
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'];
 
+import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { MODE_CHROME } from '@/components/home/mode-chrome';
+import { formatGuessStat } from '@/lib/format';
+
+// Recent Matches chrome — from the catalog + the home icon table (More Games
+// Stage 6), so every daily mode (Sudoku included) gets its title, icon and
+// accent without a second hand-typed list. The two legacy VS labels stay.
 const gameModeTitles: Record<string, string> = {
-  DUEL: 'Classic',
+  ...Object.fromEntries(MODES.filter((m) => m.dbKey).map((m) => [m.dbKey as string, m.title])),
   MULTI_DUEL: 'Multi Duel',
-  GAUNTLET: 'Gauntlet',
-  QUORDLE: 'QuadWord',
-  OCTORDLE: 'OctoWord',
-  SEQUENCE: 'Succession',
-  RESCUE: 'Deliverance',
-  PROPERNOUNDLE: 'ProperNoundle',
-  DUEL_6: 'Six',
-  DUEL_7: 'Seven',
   TOURNAMENT: 'Tournament',
 };
 
-const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; romanNumeral?: string; color: string }> = {
-  DUEL:          { icon: WordleGridIcon, color: '#7c3aed' },
-  QUORDLE:       { icon: null, romanNumeral: 'IV', color: '#ec4899' },
-  OCTORDLE:      { icon: null, romanNumeral: 'VIII', color: '#7e22ce' },
-  SEQUENCE:      { icon: TrendingUp, color: '#2563eb' },
-  RESCUE:        { icon: Shield, color: '#059669' },
-  GAUNTLET:      { icon: Skull, color: '#d97706' },
-  PROPERNOUNDLE: { icon: Crown, color: '#dc2626' },
-  DUEL_6:        { icon: SixIcon, color: '#06b6d4' },
-  DUEL_7:        { icon: SevenIcon, color: '#84cc16' },
+const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; romanNumeral?: string; color: string }> = Object.fromEntries(
+  MODES.filter((m) => m.dbKey).map((m) => [
+    m.dbKey as string,
+    { icon: MODE_CHROME[m.id]?.icon ?? null, romanNumeral: m.romanNumeral ?? undefined, color: m.accentHex },
+  ]),
+);
+
+/** "4 guesses" / "0 mistakes" / "Par" — the row's stat through the mode's semantics. */
+const matchStat = (gameMode: string, score: number): string => {
+  const meta = MODE_BY_DBKEY[gameMode];
+  return formatGuessStat(meta?.guessSemantics ?? 'guesses', meta?.guessBase ?? 1, score);
 };
 
 const DAILY_MODES: Array<{ id: string; href: string }> = [
@@ -1048,7 +1043,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
-                      {score} {score === 1 ? 'guess' : 'guesses'} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
+                      {matchStat(match.game_mode, score)} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
                       {opponentName ? ` · vs ${opponentName}` : ''}
                     </div>
                   </div>

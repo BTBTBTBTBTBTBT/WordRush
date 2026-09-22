@@ -1,6 +1,15 @@
 package com.wordocious.app.ui.game
 
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -105,6 +114,28 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                     }
                 }
                 guideCard("How it works") { paragraphs(g.rules) }
+                // "The buttons" (founder round 13): every on-screen control, with
+                // the SAME icon the button carries, its label, and what it costs.
+                if (g.controls.isNotEmpty()) {
+                    guideCard("The buttons") {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            g.controls.forEach { c ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    androidx.compose.foundation.layout.Box(
+                                        Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.1f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        androidx.compose.material3.Icon(controlIcon(c.icon), null, tint = accent, modifier = Modifier.size(14.dp))
+                                    }
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(c.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                                        Text(c.body, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, lineHeight = 18.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 guideCard("How scoring works") { paragraphs(g.scoring) }
                 guideCard("Strategy") {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -119,6 +150,20 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+/** lucide icon name (as written in guide-content.ts) → the Material icon the
+ *  game's button actually carries, so the sheet shows the SAME icon. */
+private fun controlIcon(lucide: String): androidx.compose.ui.graphics.vector.ImageVector = when (lucide) {
+    "undo-2" -> Icons.AutoMirrored.Filled.Undo
+    "eraser" -> Icons.AutoMirrored.Filled.Backspace
+    "pencil" -> Icons.Filled.Edit
+    "lightbulb" -> Icons.Filled.Lightbulb
+    "shuffle" -> Icons.Filled.Shuffle
+    "check" -> Icons.Filled.Check
+    "delete" -> Icons.AutoMirrored.Filled.Backspace
+    "eye" -> Icons.Filled.Visibility
+    else -> Icons.Filled.Circle
 }
 
 @Composable

@@ -13,11 +13,14 @@ const tester = { isAdmin: false, role: 'tester' };
 const player = { isAdmin: false, role: 'user' };
 
 describe('remote flags resolver', () => {
-  it('nothing to gate, unknown flags, or a missing row → on', () => {
+  it('nothing to gate or unknown flags → on; a missing row fails closed', () => {
     expect(isFlagOn(null, flags, NOBODY)).toBe(true);
     expect(isFlagOn('menu.more', null, NOBODY)).toBe(true);
     expect(isFlagOn('menu.more', undefined, NOBODY)).toBe(true);
-    expect(isFlagOn('mode.nope', flags, NOBODY)).toBe(true);
+    // The table was read but this key has no row: the gate was never set up,
+    // so a gated mode stays hidden even for admins (fail closed).
+    expect(isFlagOn('mode.nope', flags, NOBODY)).toBe(false);
+    expect(isFlagOn('mode.nope', flags, admin)).toBe(false);
   });
 
   it('enabled = false is the kill switch for everyone, admins included', () => {

@@ -363,6 +363,43 @@ fun MainScreen() {
 
     // Game screen shown fullscreen (no bottom nav — matches web behavior)
     val card = activeGame
+    // More Games titles have their own screens (More Games §4): route them
+    // BEFORE the word-engine fallthrough, which would hand a Sudoku card to the
+    // shared GameScreen.
+    if (card?.engineMode?.isCustomEngine == true) {
+        val mode = card.engineMode
+        androidx.activity.compose.BackHandler { activeGame = null; activeSeed = null }
+        when (mode) {
+            com.wordocious.core.GameMode.SUDOKU -> {
+                val isDaily = activeSeed == null
+                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                com.wordocious.app.ui.game.SudokuScreen(
+                    seed = seed, isDaily = isDaily,
+                    onBack = { activeGame = null; activeSeed = null },
+                    // Pro Unlimited: a fresh seed carrying the chosen difficulty.
+                    onPlayAgain = { d -> activeSeed = "unlimited-SUDOKU-${System.currentTimeMillis()}-${d.key}" },
+                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                    onOpenLeaderboard = { m ->
+                        activeGame = null; activeSeed = null
+                        publicProfileId = null; showFriends = false
+                        LeaderboardDeepLink.pendingMode.value = m.name
+                        selectedTab = 1
+                    },
+                )
+            }
+            else -> {
+                // A catalog record enabled before its screen landed — never a
+                // crash, just a plain note and the way back.
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().appBackground(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    androidx.compose.material3.Text("${card.title} is coming soon", fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                        color = com.wordocious.app.ui.theme.WTheme.textMuted,
+                        modifier = Modifier.clickableNoRipple { activeGame = null; activeSeed = null })
+                }
+            }
+        }
+        return
+    }
     if (card?.engineMode != null) {
         // Latch the seed for the lifetime of this game: todayLocalSeed()
         // re-evaluated on every recomposition, so any recomposition after

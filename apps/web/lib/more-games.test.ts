@@ -23,10 +23,11 @@ describe('More Games sheet helpers', () => {
     expect(s[s.length - 1].modes.map((m) => m.id)).toEqual(['stray']);
   });
 
-  it('with nothing enabled the sheet is empty and the tile says 0 of 0', () => {
-    expect(MORE_GAME_MODES).toEqual([]);
-    expect(moreSections()).toEqual([]);
-    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 0, total: 0 });
+  it('the enabled set drives the sheet and the tile count (Sudoku is the first title compiled in)', () => {
+    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['sudoku']);
+    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['logic', ['sudoku']]]);
+    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 1 });
+    expect(morePlayedCount([])).toEqual({ played: 0, total: 1 });
   });
 
   it('counts only More Games dailies the player has recorded today', () => {

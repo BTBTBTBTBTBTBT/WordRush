@@ -6,7 +6,10 @@
 //
 //   no flagKey on the mode        → on   (nothing to gate)
 //   flags unknown / unreachable   → on   (the catalog's `enabled` alone decides)
-//   no row for the key            → on
+//   no row for the key            → OFF  (a gated mode needs its row; the
+//                                         Stage 7 migration seeds every key, so
+//                                         "table read fine but no row" means the
+//                                         gate was never set up — fail closed)
 //   row.enabled = false           → OFF  (the kill switch)
 //   row.audience = 'all'          → on
 //   row.audience = 'testers'      → on for admins and testers only
@@ -40,7 +43,7 @@ export function isFlagOn(flagKey: string | null | undefined, flags: Record<strin
   if (!flagKey) return true;
   if (!flags) return true;
   const row = flags[flagKey];
-  if (!row) return true;
+  if (!row) return false;
   if (!row.enabled) return false;
   if (row.audience === 'all') return true;
   return isTester(viewer);

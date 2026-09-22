@@ -20,7 +20,7 @@ import kotlinx.serialization.json.Json
  *
  *   no flagKey on the mode        → on   (nothing to gate)
  *   flags unknown / unreachable   → on   (the catalog's `enabled` alone decides)
- *   no row for the key            → on
+ *   no row for the key            → OFF  (a gated mode needs its row — fail closed)
  *   row.enabled = false           → OFF  (the kill switch)
  *   row.audience = "all"          → on
  *   row.audience = "testers"      → on for admins and testers only
@@ -70,7 +70,7 @@ object FlagsService {
     fun resolve(flagKey: String?, flags: Map<String, AppFlag>?, isTester: Boolean): Boolean {
         if (flagKey == null) return true
         if (flags == null) return true
-        val row = flags[flagKey] ?: return true
+        val row = flags[flagKey] ?: return false
         if (!row.enabled) return false
         if (row.audience == "all") return true
         return isTester

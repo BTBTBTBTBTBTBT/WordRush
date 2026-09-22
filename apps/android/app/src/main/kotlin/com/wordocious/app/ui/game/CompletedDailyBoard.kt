@@ -117,6 +117,9 @@ private fun replayRecordedRow(mode: GameMode, seed: String, row: com.wordocious.
 @Composable
 fun CompletedDailyBoard(modeId: String) {
     val mode = remember(modeId) { runCatching { GameMode.valueOf(modeId) }.getOrNull() } ?: return
+    // More Games titles (own engines): no word-board reconstruction — the
+    // summary + score-breakdown card instead (SudokuScreen.kt).
+    if (mode.isCustomEngine) { CustomCompletedDailyCard(mode); return }
     val seed = remember(modeId) { todayLocalSeed(modeId) }
     // Refresh the instant a daily is recorded (no tab round-trip) — re-read the
     // local save + re-run the server replay when completionTick bumps.

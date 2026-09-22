@@ -59,7 +59,7 @@ fun modeTitle(mode: GameMode): String =
 
 /** Mode accent color (from MODE_CARDS). */
 fun modeAccent(mode: GameMode): Color =
-    MODE_CARDS.firstOrNull { it.engineMode == mode }?.accent ?: Color(0xFF7C3AED)
+    modeCardFor(mode)?.accent ?: Color(0xFF7C3AED)
 
 /** Mode-title gradient stops — matches iOS ModeStyle.gradient. */
 fun modeTitleGradient(mode: GameMode): List<Color> = when (mode) {
@@ -115,8 +115,8 @@ val MODE_CARDS: List<ModeCard> = ModeGen.core.map(::toCard)
 /** The More Games sheet — every enabled More Games title, catalog order. */
 val MORE_CARDS: List<ModeCard> = ModeGen.more.map(::toCard)
 
-/** The MODE_CARDS entry for a `:core` GameMode (icon/accent/glyph source of truth). */
-fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineMode == mode }
+/** The card for a GameMode — home tiles first, then the More Games titles (icon/accent/glyph source of truth). */
+fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineMode == mode } ?: MORE_CARDS.firstOrNull { it.engineMode == mode }
 
 /** Exact lucide/custom icon drawable per mode (matches the web MODE_CARDS icons). */
 fun modeIconRes(lucide: String?): Int? = when (lucide) {
