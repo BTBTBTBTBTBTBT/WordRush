@@ -70,7 +70,15 @@ Tick a cell only after checking, in order:
 
 ## Known gaps to close before the gate closes
 
-- The hosted share page (`/s/…`) caption for a Sudoku share still reads "1/4"; the image is right.
+- **Share link previews ("Solved 2/4", "Played X/4") come from the LIVE website**, not the app: the
+  hosted `/s/…` page on wordocious.com writes the unfurl text, and production only gets the new
+  wording (Score · Time · Mistakes, with the puzzle number) when this branch merges to main at
+  launch. Fixed on the branch (`lib/share-page-copy.ts`, tested); the image itself is right today.
+- **Every new game's finished screen must offer Pro players "Keep playing: Unlimited <Game>"** (and
+  "View <Game> Leaderboard"). On iOS this is `NextDailyCTA` (looks up `homeModes + moreModes`) plus a
+  branch per custom engine in `RootTabView`'s unlimited cover and `mintUnlimitedSeed`; on Android
+  `NextDailyRow` shows it for any mode whose screen passes `onOpenUnlimited`; on web
+  `KeepPlayingUnlimited` routes any daily mode. A new game is not done until all three show it.
 - Native achievement *display* names come from production's `/api/achievements` until the web
   deploys, so a Sudoku unlock toast may show the key. Unlock detection itself is native and works.
 - Android share is image + caption without the hosted `/s/` link (web and iOS upload theirs).
