@@ -432,7 +432,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "misses",
     "guessBase": 10,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.wordsearch",
     "category": "word",
     "guideSlug": "spyglass"

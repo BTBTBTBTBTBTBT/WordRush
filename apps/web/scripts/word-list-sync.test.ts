@@ -58,15 +58,17 @@ describe('bundled word-list copies are identical everywhere', () => {
   // Letter Ladder bank (More Games §15): the natives bundle it AND the iOS
   // test target reads it from Fixtures (Android's core tests read the bundle).
   const LADDER_DIRS = ['apps/web/data', 'apps/ios/Wordocious/Resources', 'apps/android/core/src/main/resources/data', 'apps/ios/Tests/Fixtures'];
-  it('ladder-puzzles.json', () => {
-    const canonical = sha(join(repoRoot, LADDER_DIRS[0], 'ladder-puzzles.json'));
-    for (const dir of LADDER_DIRS.slice(1)) {
-      expect(
-        sha(join(repoRoot, dir, 'ladder-puzzles.json')),
-        `${dir}/ladder-puzzles.json differs from the web copy — copy apps/web/data/ladder-puzzles.json over it`,
-      ).toBe(canonical);
-    }
-  });
+  for (const bank of ['ladder-puzzles.json', 'wordsearch-puzzles.json']) {
+    it(bank, () => {
+      const canonical = sha(join(repoRoot, LADDER_DIRS[0], bank));
+      for (const dir of LADDER_DIRS.slice(1)) {
+        expect(
+          sha(join(repoRoot, dir, bank)),
+          `${dir}/${bank} differs from the web copy — copy apps/web/data/${bank} over it`,
+        ).toBe(canonical);
+      }
+    });
+  }
 
   it('propernoundle-puzzles.json', () => {
     const canonical = sha(join(repoRoot, PN_PUZZLE_DIRS[0], 'propernoundle-puzzles.json'));

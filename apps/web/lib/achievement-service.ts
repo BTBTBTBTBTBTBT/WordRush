@@ -160,6 +160,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_ladder_initiate', name: 'Pure Ladder',        description: 'Climb a Letter Ladder without using any hints',     category: 'skill', icon: 'star' },
   { key: 'pure_ladder_adept',    name: 'Pure Ladder Adept',  description: 'Climb 10 Letter Ladders without hints',            category: 'skill', icon: 'star' },
   { key: 'pure_ladder_master',   name: 'Pure Ladder Master', description: 'Climb 50 Letter Ladders without hints',            category: 'skill', icon: 'crown' },
+  // More Games §18c — Spyglass.
+  { key: 'wordsearch_first',     name: 'First Sighting',   description: 'Clear a Spyglass grid',                             category: 'beginner', icon: 'target' },
+  { key: 'wordsearch_regular',   name: 'Spyglass Regular', description: 'Clear 50 Spyglass grids',                           category: 'skill',    icon: 'target' },
+  { key: 'wordsearch_eagle_eye', name: 'Eagle Eye',        description: 'Clear a Spyglass grid with no misses',              category: 'skill',    icon: 'star' },
+  { key: 'wordsearch_swift',     name: 'Swift Spyglass',   description: 'Clear a Spyglass grid in under 2 minutes',          category: 'skill',    icon: 'zap' },
+  { key: 'pure_wordsearch_initiate', name: 'Pure Spyglass',        description: 'Clear a Spyglass grid without using any hints', category: 'skill', icon: 'star' },
+  { key: 'pure_wordsearch_adept',    name: 'Pure Spyglass Adept',  description: 'Clear 10 Spyglass grids without hints',        category: 'skill', icon: 'star' },
+  { key: 'pure_wordsearch_master',   name: 'Pure Spyglass Master', description: 'Clear 50 Spyglass grids without hints',        category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -252,6 +260,13 @@ export async function checkAchievements(
   // something else (mistakes, par, checks…) is excluded through the catalog.
   if (won && guessCount === 1 && (MODE_BY_DBKEY[gameMode]?.guessSemantics ?? 'guesses') === 'guesses') {
     await tryUnlock('perfectionist');
+  }
+
+  // Spyglass (More Games §18c): first clear, eagle eye (no misses), swift.
+  if (gameMode === 'WORDSEARCH' && won) {
+    await tryUnlock('wordsearch_first');
+    if (guessCount <= 10) await tryUnlock('wordsearch_eagle_eye');
+    if (timeSeconds < 120) await tryUnlock('wordsearch_swift');
   }
 
   // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
@@ -429,6 +444,7 @@ export async function checkAchievements(
     ['sudoku_scholar', 'SUDOKU', 50],
     ['regions_regular', 'REGIONS', 50],
     ['ladder_regular', 'LADDER', 50],
+    ['wordsearch_regular', 'WORDSEARCH', 50],
     ['classic_master', 'DUEL', 100],
   ];
   for (const [key, mode, threshold] of modeMasteryChecks) {
@@ -782,10 +798,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

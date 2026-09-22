@@ -60,6 +60,13 @@ describe('buildCopy', () => {
     expect(lost.title).toBe('Wordocious Letter Ladder #2 — Time 5:00 · Par 5 · Out of moves');
   });
 
+  it('names score, time, words found and misses for Spyglass', () => {
+    const c = buildCopy({ m: 'Spyglass', won: '1', g: '11', mg: '15', t: '165', pts: '1700', n: '2', bs: '10', tb: '10' }, ['u', 'Spyglass-2026-09-24']);
+    expect(c.title).toBe('Wordocious Spyglass #2 — Score 1,700 pts · Time 2:45 · 10/10 found · 1 miss');
+    const lost = buildCopy({ m: 'Spyglass', won: '0', g: '10', mg: '15', t: '300', bs: '6', tb: '10' }, ['u', 'Spyglass-2026-09-24']);
+    expect(lost.title).toBe('Wordocious Spyglass — Time 5:00 · 6/10 found · 0 misses');
+  });
+
   it('builds a multi-board card with boards solved', () => {
     const c = buildCopy(
       { m: 'OctoWord', won: '1', g: '12', mg: '13', t: '600', bs: '8', tb: '8' },

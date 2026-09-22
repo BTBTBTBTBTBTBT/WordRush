@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures } from '../scripts/gen-parity-fixtures';
+import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures } from '../scripts/gen-parity-fixtures';
 
 // Freshness guard for the cross-platform engine-parity fixtures. The Swift and
 // Kotlin ports assert against the committed JSON; this test asserts the
@@ -24,6 +24,7 @@ describe('engine parity fixtures are fresh and synced', () => {
     ['sudoku-fixtures.json', JSON.stringify(renderSudokuFixtures(), null, 2) + '\n'],
     ['regions-fixtures.json', JSON.stringify(renderRegionsFixtures(), null, 2) + '\n'],
     ['ladder-fixtures.json', JSON.stringify(renderLadderFixtures(), null, 2) + '\n'],
+    ['wordsearch-fixtures.json', JSON.stringify(renderWordsearchFixtures(), null, 2) + '\n'],
   ];
 
   for (const [name, expected] of rendered) {

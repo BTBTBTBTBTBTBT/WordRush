@@ -699,6 +699,78 @@
           "body": "Removes the last letter you typed on the current rung. Free."
         }
       ]
+    },
+    {
+      "slug": "spyglass",
+      "title": "Spyglass",
+      "accent": "#4d7c0f",
+      "tagline": "Ten themed words hidden in a 10 × 10 grid — find them all, race the clock, spot them clean",
+      "facts": [
+        {
+          "label": "Grid",
+          "value": "10 × 10, ten words, one theme a day"
+        },
+        {
+          "label": "Directions",
+          "value": "Across, down and diagonal — always forwards, never backwards"
+        },
+        {
+          "label": "Misses",
+          "value": "Straight lines of 4+ letters that spell no listed word"
+        },
+        {
+          "label": "Time bonus cap",
+          "value": "15:00"
+        },
+        {
+          "label": "Daily Sweep",
+          "value": "Not counted — More Games are extra"
+        }
+      ],
+      "rules": [
+        "Every grid has a theme (the title above the board) and a list of ten words to find. The words run across, down, or diagonally, and in the daily they always read forwards — left to right, top to bottom, or up the diagonal — so nothing is hidden backwards. Themes rotate through fifteen families, a theme never returns within four months, and no word repeats within six weeks.",
+        "To pick a word, tap its first letter and then its last letter, or press and drag across it. When the letters you covered spell a listed word (in either direction), it is marked found and struck through in the list. A short or crooked drag costs nothing. A straight line of four or more letters that is not on the list is a miss — misses count against your score but never end the game.",
+        "Hint pulses the first letter of the next word you have not found. It costs score, never a miss. After five minutes a Reveal button appears; using it ends the grid as a loss and shows where the missing words were, with credit for everything you found. Find all ten and the grid is cleared.",
+        "The daily is the same for everyone and counts once on the leaderboard. Spyglass lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games."
+      ],
+      "scoring": [
+        "A clear is worth a 1,000-point base plus a flat 200 for finishing. Misses are what separate players: the game treats your finish as 10 + misses out of a budget of 15, and every unused step is worth 120 points, so a clean clear banks 600 in miss bonus, one miss 480, two misses 360. Speed is the tiebreaker: up to 96 points scaled by how far under the 15-minute cap you finish, so a clean clear ranks purely by time and a cleaner clear always outranks a faster one.",
+        "Each Hint costs 60 points and never counts as a miss. A clear with any hint is not a Perfect run and does not count toward the Pure Spyglass achievements. A revealed grid still earns credit for every word you found (ten word-boards, each worth its share), so it is always worth finding one more."
+      ],
+      "tips": [
+        {
+          "heading": "Scan for the rare letter",
+          "body": "Pick the word with the least common letter — a Q, Z, X, K or J — and sweep the grid for that letter alone. There are usually only two or three, and one of them starts or ends your word."
+        },
+        {
+          "heading": "Read forwards only",
+          "body": "The daily never hides a word backwards, so once you spot a first letter you only need to look right, down, down-right and up-right. That halves the search compared with an ordinary word search."
+        },
+        {
+          "heading": "Long words first",
+          "body": "An eight- or nine-letter word has very few places it can fit, and finding it often runs through the middle of shorter words, giving you letters for free."
+        },
+        {
+          "heading": "Pairs beat single letters",
+          "body": "Look for the first TWO letters together rather than one. A \"TH\" or \"SP\" pair stands out far more than a lone T, and it points you in the word's direction at the same time."
+        },
+        {
+          "heading": "Do not guess long lines",
+          "body": "Only straight drags of four or more letters can miss. If you are not sure, tap the first letter and check the list before committing the second tap — looking is free, guessing is not."
+        }
+      ],
+      "controls": [
+        {
+          "icon": "lightbulb",
+          "label": "Hint",
+          "body": "Pulses the first letter of the next word you have not found. Costs 60 points of score, never a miss, and rules out a Perfect run."
+        },
+        {
+          "icon": "eye",
+          "label": "Reveal",
+          "body": "Available after five minutes. Ends the grid as a loss, shows the missing words, and keeps credit for everything you found."
+        }
+      ]
     }
   ]
 }

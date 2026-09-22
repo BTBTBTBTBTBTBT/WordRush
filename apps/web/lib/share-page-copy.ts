@@ -23,6 +23,7 @@ export const MODE_ROUTE: Record<string, string> = {
   Sudoku: '/sudoku',
   Starsweep: '/starsweep',
   'Letter Ladder': '/letter-ladder',
+  Spyglass: '/spyglass',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',
@@ -356,6 +357,26 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const description = won
       ? `I solved ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
       : `I played ${name} on Wordocious — ${stats}. Think you can solve it? ${PLAY_HOOK}`;
+    return { mode, modeDisp: name, won, stats, title, description };
+  }
+
+  // Miss-scored modes (Spyglass — guessSemantics "misses"): g = 10 + misses;
+  // bs/tb carry words found of ten.
+  if (meta?.guessSemantics === 'misses') {
+    const pts = Number(str(sp.pts)) || 0;
+    const n = Number(str(sp.n)) || 0;
+    const misses = Math.max(0, g - meta.guessBase);
+    const name = n > 0 ? `${modeDisp} #${n}` : modeDisp;
+    const bits: string[] = [];
+    if (pts > 0) bits.push(`Score ${pts.toLocaleString()} pts`);
+    bits.push(`Time ${fmtTime(t)}`);
+    if (str(sp.bs) && str(sp.tb)) bits.push(`${str(sp.bs)}/${str(sp.tb)} found`);
+    bits.push(`${misses} miss${misses === 1 ? '' : 'es'}`);
+    const stats = bits.join(' · ');
+    const title = `Wordocious ${name} — ${stats}`;
+    const description = won
+      ? `I cleared ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
+      : `I played ${name} on Wordocious — ${stats}. Think you can clear it? ${PLAY_HOOK}`;
     return { mode, modeDisp: name, won, stats, title, description };
   }
 

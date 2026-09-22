@@ -45,6 +45,7 @@ export type ShareMode =
   | 'Sudoku'
   | 'Starsweep'
   | 'Letter Ladder'
+  | 'Spyglass'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -149,6 +150,21 @@ export interface ShareLadderInput extends ShareBase {
   hintMask: string;
   par: number;
   moves: number;
+  puzzleNumber?: number;
+}
+
+/**
+ * Spyglass (More Games §18d): the 10 × 10 as a dot grid with the found words
+ * as accent capsules — no letters, so the card spoils nothing.
+ * Stat line reads "#12 · 10/10 · 0 misses · 2:45".
+ */
+export interface ShareWordsearchInput extends ShareBase {
+  layout: 'wordsearch';
+  n: number;
+  words: Array<{ w: string; r: number; c: number; d: string }>;
+  found: string[];
+  misses: number;
+  title: string;
   puzzleNumber?: number;
 }
 
@@ -295,6 +311,7 @@ export type ShareImageInput =
   | ShareSudokuInput
   | ShareRegionsInput
   | ShareLadderInput
+  | ShareWordsearchInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -654,7 +671,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -708,6 +725,9 @@ function drawHeader(
     const over = input.moves - input.par;
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     statsText = `${num}Par ${input.par} · ${input.won ? (over <= 0 ? 'On par' : `+${over}`) : 'Out of moves'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'wordsearch') {
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}${input.found.length}/${input.words.length} · ${input.misses} miss${input.misses === 1 ? '' : 'es'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -932,6 +952,51 @@ function drawLadder(
       }
     }
   });
+  ctx.restore();
+}
+
+// Spyglass (More Games §18d): a dot grid with the found words as accent
+// capsules laid along their lines. No letters, so the card spoils nothing.
+const WORDSEARCH_DIR_DELTAS: Record<string, [number, number]> = { E: [0, 1], S: [1, 0], SE: [1, 1], NE: [-1, 1], W: [0, -1], N: [-1, 0], NW: [-1, -1], SW: [1, -1] };
+function drawWordsearch(
+  ctx: CanvasRenderingContext2D,
+  input: ShareWordsearchInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const n = Math.max(1, input.n);
+  const areaHeight = footerTop - headerBottom;
+  const size = Math.min(width - 200, areaHeight - 80);
+  const cardPad = 24;
+  const inner = size - cardPad * 2;
+  const cell = inner / n;
+  const x0 = (width - size) / 2, y0 = headerBottom + (areaHeight - size) / 2;
+  ctx.save();
+  ctx.fillStyle = input.won ? WIN_BG : BOARD_LOSS_TINT;
+  drawRoundRect(ctx, x0, y0, size, size, 28);
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = input.won ? WIN_FG : LOSS_FG;
+  ctx.stroke();
+  const ACCENT = '#4d7c0f';
+  // Capsules first, dots on top.
+  for (const p of input.words) {
+    if (!input.found.includes(p.w)) continue;
+    const [dr, dc] = WORDSEARCH_DIR_DELTAS[p.d] ?? [0, 1];
+    const ax = x0 + cardPad + (p.c + 0.5) * cell, ay = y0 + cardPad + (p.r + 0.5) * cell;
+    const bx = x0 + cardPad + (p.c + dc * (p.w.length - 1) + 0.5) * cell, by = y0 + cardPad + (p.r + dr * (p.w.length - 1) + 0.5) * cell;
+    ctx.strokeStyle = `${ACCENT}66`;
+    ctx.lineWidth = cell * 0.72;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+  }
+  ctx.fillStyle = '#c4b5fd';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    ctx.beginPath();
+    ctx.arc(x0 + cardPad + (c + 0.5) * cell, y0 + cardPad + (r + 0.5) * cell, cell * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -1877,6 +1942,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawRegions(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'ladder') {
     drawLadder(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'wordsearch') {
+    drawWordsearch(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

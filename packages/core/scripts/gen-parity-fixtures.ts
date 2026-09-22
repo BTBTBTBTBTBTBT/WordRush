@@ -29,6 +29,7 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../src/bank';
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
+import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
@@ -307,6 +308,57 @@ export function renderLadderFixtures() {
   return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, allowed, puzzle: p, reducer, dictHints, neighbours, malformed: reconstructLadder(['nope'], []) };
 }
 
+// More Games §17: Spyglass. Bank lookups use the REAL shipped bank; reducer
+// scripts replay concrete selections on the first daily (forward, backward,
+// crooked, short, miss, hint, reveal, full clear); geometry cases pin the line
+// and placement helpers.
+export function renderWordsearchFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'wordsearch-puzzles.json'), 'utf8')) as WordsearchBank;
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2026-09-22', 'nope']
+    .map((day) => ({ day, id: wordsearchPuzzleForDay(bank, day)?.id ?? null, number: wordsearchDailyNumber(day) }));
+  const seeds = ['unlimited-WORDSEARCH-1', 'unlimited-WORDSEARCH-1758578400000', 'x'].map((seed) => ({ seed, id: wordsearchPuzzleForSeed(bank, seed)?.id ?? null }));
+  const p = bank.daily[0];
+  const n = 10;
+  const cellsOf = (i: number) => wordsearchCells(n, p.words[i]);
+  const ends = (i: number) => { const c = cellsOf(i); return { from: c[0], to: c[c.length - 1] }; };
+  // A straight ≥4-cell line that spells no list word: scan rows for one.
+  const missLine = (() => {
+    for (let r = 0; r < n; r++) for (let c = 0; c + 3 < n; c++) {
+      const from = r * n + c, to = r * n + c + 3;
+      const letters = wordsearchLine(n, from, to)!.map((i) => p.grid[i]).join('');
+      if (!p.words.some((w) => w.w === letters || w.w === letters.split('').reverse().join(''))) return { from, to };
+    }
+    return { from: 0, to: 3 };
+  })();
+  const scripts: Array<{ name: string; actions: WordsearchAction[] }> = [
+    { name: 'mixed', actions: [
+      { type: 'SELECT', ...ends(0) },                                    // forward find
+      { type: 'SELECT', from: ends(1).to, to: ends(1).from },            // backward find
+      { type: 'SELECT', ...ends(0) },                                    // already found
+      { type: 'SELECT', from: 0, to: 12 },                               // crooked — free
+      { type: 'SELECT', from: 88, to: 89 },                              // 2 cells — free
+      { type: 'SELECT', ...missLine },                                   // miss
+      { type: 'HINT' }, { type: 'HINT' },
+    ] },
+    { name: 'reveal', actions: [{ type: 'SELECT', ...ends(2) }, { type: 'SELECT', ...missLine }, { type: 'REVEAL' }, { type: 'SELECT', ...ends(3) }, { type: 'FINISH' }] },
+    { name: 'clear', actions: p.words.map((_, i) => ({ type: 'SELECT', ...ends(i) }) as WordsearchAction) },
+    { name: 'hints-exhaust', actions: Array.from({ length: 12 }, () => ({ type: 'HINT' }) as WordsearchAction) },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createWordsearchState(p, 'fixture', 0);
+    for (const a of sc.actions) s = wordsearchReduce(s, a, 1000);
+    const row = wordsearchMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { found: s.found, misses: s.misses, hintsUsed: s.hintsUsed, hinted: s.hinted, events: s.events, status: s.status, endTime: s.endTime, guessCount: Math.min(15, 10 + s.misses) },
+      row, reconstruct: reconstructWordsearch(row.solutions, row.guesses),
+    };
+  });
+  const geometry = [[0, 4], [4, 0], [0, 33], [90, 63], [0, 12], [7, 7], [0, 100]].map(([from, to]) => ({ from, to, line: wordsearchLine(n, from, to) }));
+  const placements = p.words.map((w) => ({ ...w, cells: wordsearchCells(n, w) }));
+  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, reducer, geometry, placements, malformed: reconstructWordsearch(['nope'], []) };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -314,6 +366,7 @@ const FILES: Array<[string, unknown]> = [
   ['sudoku-fixtures.json', renderSudokuFixtures()],
   ['regions-fixtures.json', renderRegionsFixtures()],
   ['ladder-fixtures.json', renderLadderFixtures()],
+  ['wordsearch-fixtures.json', renderWordsearchFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

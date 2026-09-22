@@ -12,3 +12,4 @@ export * from './bank';
 export * from './games/sudoku';
 export * from './games/regions';
 export * from './games/ladder';
+export * from './games/wordsearch';
