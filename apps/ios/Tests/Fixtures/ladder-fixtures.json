@@ -1,0 +1,709 @@
+{
+  "epoch": "2026-09-23",
+  "dailyCount": 400,
+  "extraCount": 200,
+  "days": [
+    {
+      "day": "2026-09-23",
+      "id": "ld0001",
+      "number": 1
+    },
+    {
+      "day": "2026-09-24",
+      "id": "ld0002",
+      "number": 2
+    },
+    {
+      "day": "2026-10-05",
+      "id": "ld0013",
+      "number": 13
+    },
+    {
+      "day": "2027-01-01",
+      "id": "ld0101",
+      "number": 101
+    },
+    {
+      "day": "2028-02-29",
+      "id": "ld0125",
+      "number": 525
+    },
+    {
+      "day": "2026-09-22",
+      "id": "ld0400",
+      "number": 1
+    },
+    {
+      "day": "nope",
+      "id": "ld0001",
+      "number": 1
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-LADDER-1",
+      "id": "ld0431"
+    },
+    {
+      "seed": "unlimited-LADDER-1758578400000",
+      "id": "ld0479"
+    },
+    {
+      "seed": "x",
+      "id": "ld0521"
+    }
+  ],
+  "allowed": [
+    "CHARE",
+    "CHEKE",
+    "CHOKE",
+    "CHOKY",
+    "CHORD",
+    "CHORE",
+    "CHORT",
+    "CHOSE",
+    "CRORE",
+    "SCORE",
+    "SHARE",
+    "SHICE",
+    "SHIDE",
+    "SHIFT",
+    "SHINE",
+    "SHIRE",
+    "SHIRK",
+    "SHIRL",
+    "SHIRR",
+    "SHIRT",
+    "SHIVE",
+    "SHODE",
+    "SHOLE",
+    "SHONE",
+    "SHORE",
+    "SHORN",
+    "SHORT",
+    "SHOTE",
+    "SHOVE",
+    "SHURE",
+    "SKART",
+    "SKIFT",
+    "SKINT",
+    "SKIRL",
+    "SKIRP",
+    "SKIRR",
+    "SKIRT",
+    "SLIRT",
+    "SMORE",
+    "SNIRT",
+    "SNORE",
+    "SPIRE",
+    "SPIRT",
+    "SPORE",
+    "STORE",
+    "SWIRE",
+    "SWORE",
+    "THIRT",
+    "THOKE",
+    "THORE",
+    "WHORE"
+  ],
+  "puzzle": {
+    "id": "ld0001",
+    "start": "SKIRT",
+    "end": "CHOKE",
+    "par": 5,
+    "path": [
+      "SKIRT",
+      "SHIRT",
+      "SHIRE",
+      "SHORE",
+      "CHORE",
+      "CHOKE"
+    ]
+  },
+  "reducer": [
+    {
+      "name": "win-along-path",
+      "id": "ld0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHORE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "CHORE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "CHOKE"
+        }
+      ],
+      "expect": {
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "hintMask": "000000",
+        "moves": 5,
+        "hintsUsed": 0,
+        "events": [
+          "+SHIRT",
+          "+SHIRE",
+          "+SHORE",
+          "+CHORE",
+          "+CHOKE"
+        ],
+        "status": "won",
+        "reject": null,
+        "endTime": 1000,
+        "guessCount": 1
+      },
+      "row": {
+        "solutions": [
+          "SKIRT",
+          "CHOKE",
+          "par:5",
+          "path:SKIRT,SHIRT,SHIRE,SHORE,CHORE,CHOKE"
+        ],
+        "guesses": [
+          "+SHIRT",
+          "+SHIRE",
+          "+SHORE",
+          "+CHORE",
+          "+CHOKE"
+        ]
+      },
+      "reconstruct": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "par": 5,
+        "path": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "hintMask": "000000",
+        "moves": 5,
+        "hintsUsed": 0,
+        "solved": true
+      }
+    },
+    {
+      "name": "rejections-are-free",
+      "id": "ld0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "ab"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "ZZZZZ"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SKIRT"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "shirt"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SKIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        }
+      ],
+      "expect": {
+        "words": [
+          "SKIRT",
+          "SHIRT"
+        ],
+        "hintMask": "00",
+        "moves": 2,
+        "hintsUsed": 0,
+        "events": [
+          "+SHIRT",
+          "-",
+          "+SHIRT"
+        ],
+        "status": "playing",
+        "reject": null,
+        "endTime": null,
+        "guessCount": 1
+      },
+      "row": {
+        "solutions": [
+          "SKIRT",
+          "CHOKE",
+          "par:5",
+          "path:SKIRT,SHIRT,SHIRE,SHORE,CHORE,CHOKE"
+        ],
+        "guesses": [
+          "+SHIRT",
+          "-",
+          "+SHIRT"
+        ]
+      },
+      "reconstruct": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "par": 5,
+        "path": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "words": [
+          "SKIRT",
+          "SHIRT"
+        ],
+        "hintMask": "00",
+        "moves": 2,
+        "hintsUsed": 0,
+        "solved": false
+      }
+    },
+    {
+      "name": "hint-undo-hint",
+      "id": "ld0001",
+      "actions": [
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE"
+        ],
+        "hintMask": "011",
+        "moves": 3,
+        "hintsUsed": 3,
+        "events": [
+          "?SHIRT",
+          "-",
+          "?SHIRT",
+          "?SHIRE"
+        ],
+        "status": "playing",
+        "reject": null,
+        "endTime": null,
+        "guessCount": 1
+      },
+      "row": {
+        "solutions": [
+          "SKIRT",
+          "CHOKE",
+          "par:5",
+          "path:SKIRT,SHIRT,SHIRE,SHORE,CHORE,CHOKE"
+        ],
+        "guesses": [
+          "?SHIRT",
+          "-",
+          "?SHIRT",
+          "?SHIRE"
+        ]
+      },
+      "reconstruct": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "par": 5,
+        "path": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE"
+        ],
+        "hintMask": "011",
+        "moves": 3,
+        "hintsUsed": 3,
+        "solved": false
+      }
+    },
+    {
+      "name": "hints-to-the-end",
+      "id": "ld0001",
+      "actions": [
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        }
+      ],
+      "expect": {
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "hintMask": "011111",
+        "moves": 5,
+        "hintsUsed": 5,
+        "events": [
+          "?SHIRT",
+          "?SHIRE",
+          "?SHORE",
+          "?CHORE",
+          "?CHOKE"
+        ],
+        "status": "won",
+        "reject": null,
+        "endTime": 1000,
+        "guessCount": 1
+      },
+      "row": {
+        "solutions": [
+          "SKIRT",
+          "CHOKE",
+          "par:5",
+          "path:SKIRT,SHIRT,SHIRE,SHORE,CHORE,CHOKE"
+        ],
+        "guesses": [
+          "?SHIRT",
+          "?SHIRE",
+          "?SHORE",
+          "?CHORE",
+          "?CHOKE"
+        ]
+      },
+      "reconstruct": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "par": 5,
+        "path": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "hintMask": "011111",
+        "moves": 5,
+        "hintsUsed": 5,
+        "solved": true
+      }
+    },
+    {
+      "name": "loss-by-budget",
+      "id": "ld0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        },
+        {
+          "type": "UNDO"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "SHIRT"
+        }
+      ],
+      "expect": {
+        "words": [
+          "SKIRT",
+          "SHIRT"
+        ],
+        "hintMask": "00",
+        "moves": 10,
+        "hintsUsed": 0,
+        "events": [
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT"
+        ],
+        "status": "lost",
+        "reject": null,
+        "endTime": 1000,
+        "guessCount": 6
+      },
+      "row": {
+        "solutions": [
+          "SKIRT",
+          "CHOKE",
+          "par:5",
+          "path:SKIRT,SHIRT,SHIRE,SHORE,CHORE,CHOKE"
+        ],
+        "guesses": [
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT",
+          "-",
+          "+SHIRT"
+        ]
+      },
+      "reconstruct": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "par": 5,
+        "path": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "words": [
+          "SKIRT",
+          "SHIRT"
+        ],
+        "hintMask": "00",
+        "moves": 10,
+        "hintsUsed": 0,
+        "solved": false
+      }
+    }
+  ],
+  "dictHints": [
+    {
+      "id": "ld0001",
+      "from": "SKIRT",
+      "end": "CHOKE",
+      "next": "SHIRT"
+    },
+    {
+      "id": "ld0002",
+      "from": "STALK",
+      "end": "SWORD",
+      "next": "STALE"
+    },
+    {
+      "id": "ld0003",
+      "from": "CHOSE",
+      "end": "SHAWL",
+      "next": "CHASE"
+    },
+    {
+      "id": "ld0004",
+      "from": "DROVE",
+      "end": "SPORE",
+      "next": "DROME"
+    },
+    {
+      "id": "ld0005",
+      "from": "GRANT",
+      "end": "FLOOR",
+      "next": "BRANT"
+    },
+    {
+      "id": "ld0006",
+      "from": "STONY",
+      "end": "SNARE",
+      "next": "STONE"
+    },
+    {
+      "id": "ld0001",
+      "from": "SHIRT",
+      "end": "CHOKE",
+      "next": "SHIRE"
+    },
+    {
+      "id": "ld0002",
+      "from": "STALE",
+      "end": "SWORD",
+      "next": "STARE"
+    },
+    {
+      "id": "ld0003",
+      "from": "CHORE",
+      "end": "SHAWL",
+      "next": "CHARE"
+    }
+  ],
+  "neighbours": [
+    {
+      "word": "SKIRT",
+      "neighbours": [
+        "SHIRT",
+        "SKART",
+        "SKIFT",
+        "SKINT",
+        "SKIRL",
+        "SKIRP",
+        "SKIRR",
+        "SLIRT",
+        "SNIRT",
+        "SPIRT"
+      ]
+    },
+    {
+      "word": "CHOKE",
+      "neighbours": [
+        "CHEKE",
+        "CHOKY",
+        "CHORE",
+        "CHOSE",
+        "THOKE"
+      ]
+    }
+  ],
+  "malformed": null
+}

@@ -28,6 +28,7 @@ import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../src/bank';
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
+import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
@@ -255,12 +256,64 @@ const TARGET_DIRS = [
   join(repo, 'apps', 'android', 'core', 'src', 'test', 'resources', 'fixtures'),
 ];
 
+// More Games §15: Letter Ladder. Bank lookups use the REAL shipped bank (the
+// natives load their bundled copy, sha-guarded to be identical); reducer
+// scripts run over a small allowed set embedded in the fixture so they need no
+// dictionary; `dictHints` pin the BFS hint over the full allowed.json.
+export function renderLadderFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'ladder-puzzles.json'), 'utf8')) as LadderBank;
+  const allowedFull = new Set<string>((JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'allowed.json'), 'utf8')) as string[])
+    .map((w) => w.toUpperCase()).filter((w) => w.length === 5));
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2028-02-29', '2026-09-22', 'nope']
+    .map((day) => ({ day, id: ladderPuzzleForDay(bank, day)?.id ?? null, number: ladderDailyNumber(day) }));
+  const seeds = ['unlimited-LADDER-1', 'unlimited-LADDER-1758578400000', 'x'].map((seed) => ({ seed, id: ladderPuzzleForSeed(bank, seed)?.id ?? null }));
+
+  // Mini dictionary: the first daily's path plus every full-list neighbour of each rung.
+  const p = bank.daily[0];
+  const mini = new Set<string>(p.path);
+  for (const w of p.path) for (const n of ladderNeighbours(w, allowedFull)) mini.add(n);
+  const allowed = [...mini].sort();
+  const cur = (s: ReturnType<typeof createLadderState>) => s.words[s.words.length - 1];
+  const scripts: Array<{ name: string; actions: LadderAction[] }> = [
+    { name: 'win-along-path', actions: p.path.slice(1).map((w) => ({ type: 'SUBMIT', word: w }) as LadderAction) },
+    { name: 'rejections-are-free', actions: [
+      { type: 'SUBMIT', word: 'ab' }, { type: 'SUBMIT', word: 'ZZZZZ' }, { type: 'SUBMIT', word: p.start },
+      { type: 'SUBMIT', word: p.path[1].toLowerCase() }, { type: 'SUBMIT', word: p.start }, { type: 'UNDO' }, { type: 'UNDO' },
+      { type: 'SUBMIT', word: p.path[1] },
+    ] },
+    { name: 'hint-undo-hint', actions: [{ type: 'HINT' }, { type: 'UNDO' }, { type: 'HINT' }, { type: 'HINT' }, { type: 'FINISH' }] },
+    { name: 'hints-to-the-end', actions: Array.from({ length: p.par + 1 }, () => ({ type: 'HINT' }) as LadderAction) },
+    { name: 'loss-by-budget', actions: Array.from({ length: p.par + 5 }, (_, i) => (i % 2 === 0 ? { type: 'SUBMIT', word: p.path[1] } : { type: 'UNDO' }) as LadderAction)
+      .flatMap((a, i, arr) => (i === arr.length - 1 && a.type === 'UNDO' ? [] : [a])) },
+  ];
+  // 'loss-by-budget' alternates submit/undo so every submit is a fresh move; pad with submits until the budget is spent.
+  const loss = scripts.find((s) => s.name === 'loss-by-budget')!;
+  { let s = createLadderState(p, 'fixture', 0);
+    for (const a of loss.actions) s = ladderReduce(s, a, mini, 1000);
+    while (s.status === 'playing') { const a: LadderAction = cur(s) === p.path[1] ? { type: 'UNDO' } : { type: 'SUBMIT', word: p.path[1] }; loss.actions.push(a); s = ladderReduce(s, a, mini, 1000); } }
+  const reducer = scripts.map((sc) => {
+    let s = createLadderState(p, 'fixture', 0);
+    for (const a of sc.actions) s = ladderReduce(s, a, mini, 1000);
+    const row = ladderMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { words: s.words, hintMask: s.hintMask, moves: s.moves, hintsUsed: s.hintsUsed, events: s.events, status: s.status, reject: s.reject, endTime: s.endTime, guessCount: ladderGuessCount(s) },
+      row, reconstruct: reconstructLadder(row.solutions, row.guesses),
+    };
+  });
+  const dictHints = bank.daily.slice(0, 6).map((q) => ({ id: q.id, from: q.start, end: q.end, next: ladderNextStep(q.start, q.end, allowedFull, new Set([q.start])) }))
+    .concat(bank.daily.slice(0, 3).map((q) => ({ id: q.id, from: q.path[1], end: q.end, next: ladderNextStep(q.path[1], q.end, allowedFull, new Set(q.path.slice(0, 2))) })));
+  const neighbours = [p.start, p.end].map((w) => ({ word: w, neighbours: ladderNeighbours(w, allowedFull) }));
+  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, allowed, puzzle: p, reducer, dictHints, neighbours, malformed: reconstructLadder(['nope'], []) };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
   ['bank-fixtures.json', renderBankFixtures()],
   ['sudoku-fixtures.json', renderSudokuFixtures()],
   ['regions-fixtures.json', renderRegionsFixtures()],
+  ['ladder-fixtures.json', renderLadderFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports
