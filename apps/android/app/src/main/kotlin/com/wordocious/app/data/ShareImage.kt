@@ -511,6 +511,77 @@ object ShareImage {
         return bmp
     }
 
+    // ── Starsweep card (More Games §18d) ───────────────────────────────────────
+
+    /** The regions as tinted squares (the board's soft tints) with the placed
+     *  stars as dark dots (hint stars violet) — no crosses, never the missing
+     *  stars — inside the win/loss-bordered frame. `meta` is the stats line
+     *  ("#12 · 8 × 8 · 0 mistakes · 2:10"). */
+    fun renderRegions(context: Context, n: Int, regions: String, board: String, hintMask: String, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFFCA8A04.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("STARSWEEP", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+        val count = maxOf(1, n)
+        val side = 720f; val pad = 16f; val gap = 4f
+        val cell = (side - pad * 2 - gap * (count - 1)) / count
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val x0 = cx - side / 2f; val y0 = areaTop + (areaBottom - areaTop - side) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        fill.color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
+        c.drawRoundRect(RectF(x0, y0, x0 + side, y0 + side), 28f, 28f, fill)
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt() }
+        c.drawRoundRect(RectF(x0, y0, x0 + side, y0 + side), 28f, 28f, stroke)
+        val tints = intArrayOf(0xFFEDE9FE.toInt(), 0xFFD1FAE5.toInt(), 0xFFE0F2FE.toInt(), 0xFFFCE7F3.toInt(), 0xFFFEF9C3.toInt(),
+            0xFFCCFBF1.toInt(), 0xFFFFEDD5.toInt(), 0xFFECFCCB.toInt(), 0xFFE2E8F0.toInt())
+        for (i in 0 until count * count) {
+            val r = i / count; val col = i % count
+            val x = x0 + pad + col * (cell + gap)
+            val y = y0 + pad + r * (cell + gap)
+            val g = ((regions.getOrNull(i) ?: '0') - '0').coerceAtLeast(0)
+            fill.color = tints[g % tints.size]
+            val rad = maxOf(4f, cell * 0.18f)
+            c.drawRoundRect(RectF(x, y, x + cell, y + cell), rad, rad, fill)
+            if (board.getOrNull(i) == '*') {
+                fill.color = if (hintMask.getOrNull(i) == '1') 0xFF8B5CF6.toInt() else 0xFF1A1A2E.toInt()
+                c.drawCircle(x + cell / 2f, y + cell / 2f, cell * 0.24f, fill)
+            }
+        }
+        p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {

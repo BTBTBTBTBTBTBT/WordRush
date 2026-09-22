@@ -388,6 +388,24 @@ fun MainScreen() {
                     },
                 )
             }
+            com.wordocious.core.GameMode.REGIONS -> {
+                val isDaily = activeSeed == null
+                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                com.wordocious.app.ui.game.RegionsScreen(
+                    seed = seed, isDaily = isDaily,
+                    onBack = { activeGame = null; activeSeed = null },
+                    // Pro Unlimited: a fresh seed whose trailing segment is the board size (regionsSizeForSeed).
+                    onPlayAgain = { n -> activeSeed = "unlimited-REGIONS-${System.currentTimeMillis()}-$n" },
+                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                    onOpenLeaderboard = { m ->
+                        activeGame = null; activeSeed = null
+                        publicProfileId = null; showFriends = false
+                        LeaderboardDeepLink.pendingMode.value = m.name
+                        selectedTab = 1
+                    },
+                )
+            }
             else -> {
                 // A catalog record enabled before its screen landed — never a
                 // crash, just a plain note and the way back.

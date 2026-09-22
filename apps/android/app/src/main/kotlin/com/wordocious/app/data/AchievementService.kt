@@ -176,13 +176,20 @@ object AchievementService {
 
         // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
         // mistakes + 1 (More Games §18c).
-        if (won && guessCount == 1 && gameMode != "SUDOKU") tryUnlock("perfectionist")
+        if (won && guessCount == 1 && gameMode != "SUDOKU" && gameMode != "REGIONS") tryUnlock("perfectionist")
 
         // Sudoku: first solve, clean sheet (0 mistakes, 0 hints), sprint.
         if (gameMode == "SUDOKU" && won) {
             tryUnlock("sudoku_first")
             if (guessCount == 1 && hintsUsed == 0) tryUnlock("clean_sheet")
             if (timeSeconds < 300) tryUnlock("sudoku_sprint")
+        }
+
+        // Starsweep (More Games §18c): first clear, flawless (0 mistakes, 0 hints), swift.
+        if (gameMode == "REGIONS" && won) {
+            tryUnlock("regions_first")
+            if (guessCount == 1 && hintsUsed == 0) tryUnlock("regions_flawless")
+            if (timeSeconds < 180) tryUnlock("regions_swift")
         }
 
         // Gauntlet Master
@@ -293,6 +300,7 @@ object AchievementService {
             Triple("lucky_seven", "DUEL_7", 50),
             Triple("proper_scholar", "PROPERNOUNDLE", 50),
             Triple("sudoku_scholar", "SUDOKU", 50),
+            Triple("regions_regular", "REGIONS", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -602,12 +610,13 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
                 "DUEL_7" -> "seven"
                 "SUDOKU" -> "sudoku"
+                "REGIONS" -> "regions"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"
