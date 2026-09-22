@@ -26,6 +26,7 @@ import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTo
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../src/bank';
+import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -193,6 +194,60 @@ export function renderSudokuFixtures() {
   return { generation, reducer, malformed: reconstructSudoku(['nope'], []) };
 }
 
+// More Games §18b: Starsweep (regions). Generation cases pin seed+size →
+// regions/solution/sizes/rerolls (the Phase 0 sample seeds included, so the
+// port is provably the same generator); reducer scripts replay concrete taps.
+const REGIONS_GEN_CASES: Array<[string, number]> = [
+  ['daily-2026-10-01-REGIONS', 7], ['daily-2026-10-02-REGIONS', 7], ['daily-2026-10-03-REGIONS', 8],
+  ['daily-2026-10-04-REGIONS', 8], ['daily-2026-10-05-REGIONS', 8], ['unlimited-REGIONS-1-hard', 9],
+  ['daily-2026-09-23-REGIONS', regionsSizeForDay('daily-2026-09-23-REGIONS'.slice(6, 16))], ['test', 7], ['test', 8], ['test', 9],
+];
+export function renderRegionsFixtures() {
+  const generation = REGIONS_GEN_CASES.map(([seed, n]) => {
+    const p = generateRegions(seed, n)!;
+    const reg = Array.from(p.regions, (ch) => ch.charCodeAt(0) - 48);
+    return { ...p, unique: countRegionsSolutions(n, reg, 2) === 1 };
+  });
+  const base = generateRegions('daily-2026-10-03-REGIONS', 8)!;
+  const n = base.n;
+  const star = (r: number) => r * n + (base.solution.charCodeAt(r) - 48);
+  // A cell that is NOT a star in row 1 and not adjacent to row 0/1 stars: pick the first such column.
+  const wrongIn = (r: number) => { for (let c = 0; c < n; c++) { const i = r * n + c; if (i !== star(r)) return i; } return -1; };
+  const scripts: Array<{ name: string; actions: RegionsAction[] }> = [
+    { name: 'mixed', actions: [
+      { type: 'TAP', cell: star(0) }, { type: 'TAP', cell: star(0) },                 // cross then star (correct, auto-cross)
+      { type: 'TAP', cell: wrongIn(3) }, { type: 'TAP', cell: wrongIn(3) },           // wrong star → mistake
+      { type: 'TAP', cell: wrongIn(3) },                                            // clear it (mistake stands)
+      { type: 'HINT', cell: star(5) }, { type: 'UNDO' }, { type: 'HINT' },        // hint row 5, undo, hint first missing row
+      { type: 'TAP', cell: star(0) },                                              // clearing a placed star
+      { type: 'ERASE', cell: 1 }, { type: 'SET_AUTO_CROSS', value: false }, { type: 'TAP', cell: star(7) }, { type: 'TAP', cell: star(7) },
+    ] },
+    { name: 'loss', actions: [
+      { type: 'TAP', cell: wrongIn(0) }, { type: 'TAP', cell: wrongIn(0) },
+      { type: 'TAP', cell: wrongIn(2) }, { type: 'TAP', cell: wrongIn(2) },
+      { type: 'TAP', cell: wrongIn(4) }, { type: 'TAP', cell: wrongIn(4) },
+      { type: 'TAP', cell: star(6) },
+    ] },
+    { name: 'win', actions: Array.from({ length: n }, (_, r): RegionsAction[] => [{ type: 'TAP', cell: star(r) }, { type: 'TAP', cell: star(r) }]).flat() },
+    { name: 'noops', actions: [
+      { type: 'UNDO' }, { type: 'ERASE', cell: 0 }, { type: 'TAP', cell: 99 }, { type: 'HINT', cell: 0 }, { type: 'TAP', cell: star(0) }, { type: 'ERASE', cell: star(0) },
+    ] },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createRegionsState(base, 0);
+    for (const a of sc.actions) s = regionsReduce(s, a, 1000);
+    const row = regionsMatchRow(s);
+    return {
+      name: sc.name, seed: base.seed, n, actions: sc.actions,
+      expect: { board: s.board, hintMask: s.hintMask, wrongMask: s.wrongMask, mistakes: s.mistakes, hintsUsed: s.hintsUsed, status: s.status, autoCross: s.autoCross, historyLength: s.history.length, endTime: s.endTime },
+      row, reconstruct: reconstructRegions(row.solutions, row.guesses),
+    };
+  });
+  const ruledOut = [0, 9, 27, 63].map((cell) => ({ cell, cells: regionsRuledOut(n, base.regions, cell) }));
+  const sizes = ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27', 'nope'].map((day) => ({ day, n: regionsSizeForDay(day) }));
+  return { generation, reducer, ruledOut, sizes, malformed: reconstructRegions(['nope'], []) };
+}
+
 // Same fixture dirs the composite-scoring generator writes (web has no copy of
 // these two — they exist for the native ports).
 const TARGET_DIRS = [
@@ -205,6 +260,7 @@ const FILES: Array<[string, unknown]> = [
   ['prefill-fixtures.json', renderPrefillFixtures()],
   ['bank-fixtures.json', renderBankFixtures()],
   ['sudoku-fixtures.json', renderSudokuFixtures()],
+  ['regions-fixtures.json', renderRegionsFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports
