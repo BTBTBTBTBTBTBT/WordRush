@@ -110,6 +110,30 @@ Tick a cell only after checking, in order:
   Spyglass" on all three.
 - Not built yet: the Pro "Hard" variant with all eight directions (the bank only lays words forwards).
 
+## Hubbub — what to look for (built overnight 2026-09-22 → 23)
+
+- Daily "#N" counts from 2026-09-23; the first letter set is U·DELMNP (centre U, 25 words, max 81,
+  pangram PENDULUM). Same puzzle everywhere on a date (bank bundled on both natives, sha-guarded).
+  Seven letters, no S ever, centre letter required, words of four letters or more, letters may repeat.
+- Tap tiles or type; **Delete · Shuffle · Enter** under the cluster. Four-letter words score 1,
+  longer words score their length, a pangram (all seven letters) adds 7. A real word that is not on
+  the scoring list is accepted as a **bonus word** for 0 points (dimmed chip) — never "not a word".
+- Ranks by % of the maximum: Hush 0 · Murmur 5 · Chatter 12 · Banter 20 · Clamor 30 · Racket 40 ·
+  **Hubbub 50 = solved** · Uproar 70 · Thunder 85 · Pandemonium 100. The rank bar marks Hubbub.
+- **Finalises once.** Reaching Hubbub records the win (XP, streak, achievements) and shows the
+  victory card once; "End puzzle and see answers" before Hubbub records a loss and lists every word.
+  After the win you can **Keep going**: each later rank-up updates your daily result, leaderboard and
+  the matches row only (never games, XP or streak). Toast "Rank up: Uproar" on each step.
+- **Starts with…** (50 points) shows the first two letters and length of an unfound word;
+  **Reveal a word** (100 points) fills one in (violet chip). Neither counts against you.
+- Finished screen: rank name, points/max · words · pangrams · time · hints, then Home · Share ·
+  Keep going (· Play Again on Pro Unlimited). Victory card shows WORDS · TIME · POINTS. Score row
+  reads "Rank bonus"; the stat label is the rank, e.g. "Racket".
+- Share card: blank 2-3-2 silhouette with the centre filled, rank name, "% of the maximum", no
+  letters. Caption names Rank · % · words · Score · Time. Pro "Keep playing: Unlimited Hubbub" on all three.
+- Achievements: first Hubbub, 50 Hubbub days, pangram, Pandemonium, seven Uproar-or-better days in a
+  row, pure (no hints) 1/10/50.
+
 ## Known gaps to close before the gate closes
 
 - **Share link previews ("Solved 2/4", "Played X/4") come from the LIVE website**, not the app: the
