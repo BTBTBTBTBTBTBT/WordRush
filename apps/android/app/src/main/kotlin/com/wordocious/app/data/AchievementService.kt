@@ -248,6 +248,22 @@ object AchievementService {
             if (timeSeconds < 180) tryUnlock("cryptogram_swift")
         }
 
+        // Kindred (More Games §18c): first win, flawless (4 submissions, no hints),
+        // hardest first (the tier-4 group was the first one solved — from the matches row).
+        if (gameMode == "GROUPS" && won) {
+            tryUnlock("groups_first")
+            if (guessCount == 4 && hintsUsed == 0) tryUnlock("groups_flawless")
+            if (seed != null && "groups_hardest_first" !in alreadyUnlocked) {
+                val m = runCatching {
+                    client.postgrest["matches"].select(Columns.raw("solutions, player1_guesses")) {
+                        filter { eq("player1_id", userId); eq("game_mode", "GROUPS"); eq("seed", seed) }; limit(1)
+                    }.decodeList<HubMatchRow>().firstOrNull()
+                }.getOrNull()
+                val firstSolved = (m?.player1Guesses ?: emptyList()).firstOrNull { it.startsWith("+") }
+                if (firstSolved != null && firstSolved.startsWith("+4:")) tryUnlock("groups_hardest_first")
+            }
+        }
+
         // Sudoku: first solve, clean sheet (0 mistakes, 0 hints), sprint.
         if (gameMode == "SUDOKU" && won) {
             tryUnlock("sudoku_first")
@@ -375,6 +391,7 @@ object AchievementService {
             Triple("wordsearch_regular", "WORDSEARCH", 50),
             Triple("hub_regular", "HUB", 50),
             Triple("cryptogram_regular", "CRYPTOGRAM", 50),
+            Triple("groups_regular", "GROUPS", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -684,7 +701,7 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
@@ -695,6 +712,7 @@ object AchievementService {
                 "WORDSEARCH" -> "wordsearch"
                 "HUB" -> "hub"
                 "CRYPTOGRAM" -> "cryptogram"
+                "GROUPS" -> "groups"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"

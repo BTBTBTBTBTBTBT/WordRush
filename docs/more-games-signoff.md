@@ -160,6 +160,32 @@ Tick a cell only after checking, in order:
   your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three copies (a rebuild before
   launch reorders the dailies; that is fine while nothing is live).
 
+## Kindred — what to look for (built 2026-09-23)
+
+- Daily "#N" counts from 2026-09-23; the first board's groups are "In the mouth · Sticky stuff ·
+  ___drop · Hidden EAR". Same board everywhere on a date (bank bundled on both natives, sha-guarded;
+  the tile order is dealt from the seed, so every platform shows the same layout). **On a holiday
+  the puzzle belongs to the day** and the header shows the holiday's name.
+- Tap four tiles and **Submit** (the capsule fills in when four are selected). A group locks into a
+  bar above the grid with one to four pips (one = plain category, four = wordplay); the tier colours
+  are one hue at four lightnesses, never colour alone. Three of a kind reads "One away…"; a set you
+  already tried is free to resubmit ("Already tried that set"); anything else spends one of four
+  mistakes (the dots). Four mistakes end it and the remaining groups appear as dashed bars.
+- **Shuffle** rearranges the unsolved tiles (free). **Deselect** clears the selection. **Name a
+  category** (100) shows the label of the easiest unsolved group as a chip; **Show a pair** (200)
+  rings two tiles that belong together in violet. Neither costs a mistake; both cost less than a
+  wrong guess (250), by design.
+- Finished screen: bars in solve order, "Flawless — all four groups" / "All four groups found" /
+  "Out of mistakes" + groups · mistakes · time · hints. Victory card shows MISTAKES · TIME · POINTS
+  (score row reads "Guess bonus": submissions 4 → 750, 5 → 500, 6 → 250, 7 → 0). Pro "Keep playing:
+  Unlimited Kindred" on all three.
+- Share card: the four tier bars with pips and the four mistake dots — no words. Caption names
+  Score · Time · groups · mistakes.
+- Achievements: Kindred Spirits, 50 solves, Flawless Kindred (no mistake, no hint), Hardest First
+  (the four-pip group solved first), pure 1/10/50.
+- Content: 380 everyday dailies + 80 Unlimited + 56 holiday puzzles from the bank you are reviewing;
+  your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three copies.
+
 ## Content banks awaiting your veto pass (drafted overnight 2026-09-22 → 23)
 
 The four titles that need authored content now have first-draft banks, machine-validated, packaged

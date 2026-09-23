@@ -889,6 +889,108 @@ object ShareImage {
         return bmp
     }
 
+    // ── Kindred card (More Games §18d) ────────────────────────────────────────
+
+    /** Four tier bars in solve order (tier ramp fill, one to four pips centred),
+     *  the unsolved tiers dashed beneath on a loss, then the four mistake dots.
+     *  No words (no spoilers). `meta` is the stats line ("#12 · 4/4 groups · 1 mistake · 2:45"). */
+    fun renderGroups(context: Context, solvedTiers: List<Int>, mistakes: Int, maxMistakes: Int, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFF9F1239.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("KINDRED", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+
+        // Tier ramp — one hue, four lightnesses, plus pips (never colour alone).
+        val tierBg = mapOf(1 to 0xFFDDD6FE.toInt(), 2 to 0xFFA78BFA.toInt(), 3 to 0xFF7C3AED.toInt(), 4 to 0xFF1A1A2E.toInt())
+        val tierFg = mapOf(1 to 0xFF3B0764.toInt(), 2 to 0xFF1A1A2E.toInt(), 3 to 0xFFFFFFFF.toInt(), 4 to 0xFFFFFFFF.toInt())
+        val solved = solvedTiers.filter { it in 1..4 }.distinct()
+        val unsolved = (1..4).filter { it !in solved }
+        val barW = W - 2 * 120f; val barH = 108f; val barGap = 22f; val rad = 24f
+        val rows = solved.size + (if (won) 0 else unsolved.size)
+        val dotsH = 60f
+        val blockH = rows * barH + (rows - 1).coerceAtLeast(0) * barGap + dotsH
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        var y = areaTop + (areaBottom - areaTop - blockH) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        val pip = Paint(Paint.ANTI_ALIAS_FLAG)
+        val dash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; strokeWidth = 5f
+            pathEffect = android.graphics.DashPathEffect(floatArrayOf(22f, 14f), 0f)
+        }
+        fun drawPips(tier: Int, cy: Float, color: Int) {
+            val r = 11f; val gap = 16f
+            val total = tier * 2 * r + (tier - 1) * gap
+            var x = cx - total / 2f + r
+            pip.color = color
+            repeat(tier) { c.drawCircle(x, cy, r, pip); x += 2 * r + gap }
+        }
+        for (t in solved) {
+            val rect = RectF(cx - barW / 2f, y, cx + barW / 2f, y + barH)
+            fill.color = tierBg[t]!!
+            c.drawRoundRect(rect, rad, rad, fill)
+            drawPips(t, rect.centerY(), tierFg[t]!!)
+            y += barH + barGap
+        }
+        if (!won) for (t in unsolved) {
+            val rect = RectF(cx - barW / 2f, y, cx + barW / 2f, y + barH)
+            fill.color = (tierBg[t]!! and 0x00FFFFFF) or 0x33000000
+            c.drawRoundRect(rect, rad, rad, fill)
+            dash.color = tierBg[t]!!
+            c.drawRoundRect(rect, rad, rad, dash)
+            drawPips(t, rect.centerY(), tierBg[t]!!)
+            y += barH + barGap
+        }
+        // Four mistake dots: filled while a mistake remains.
+        run {
+            val r = 13f; val gap = 22f
+            val total = maxMistakes * 2 * r + (maxMistakes - 1) * gap
+            var x = cx - total / 2f + r
+            val cy = y + dotsH / 2f
+            for (i in 0 until maxMistakes) {
+                pip.color = if (i < maxMistakes - mistakes) accent else 0xFFD1D5DB.toInt()
+                c.drawCircle(x, cy, r, pip); x += 2 * r + gap
+            }
+        }
+
+        p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
+        c.drawText(if (won) (if (mistakes == 0) "FLAWLESS" else "ALL FOUR GROUPS") else "OUT OF MISTAKES", cx, height - 150f, p)
+        p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
+        c.drawText("${solved.size}/4 groups · $mistakes mistake${if (mistakes == 1) "" else "s"}", cx, height - 104f, p)
+        p.textSize = 22f; p.color = FOOT
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {
