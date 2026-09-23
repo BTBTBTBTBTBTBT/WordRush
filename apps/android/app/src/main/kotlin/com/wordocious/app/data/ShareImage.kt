@@ -991,6 +991,82 @@ object ShareImage {
         return bmp
     }
 
+    // ── Crosswordocious card (More Games §18d) ────────────────────────────────
+
+    /** The grid silhouette only: a purple tile wherever a letter belongs, nothing
+     *  where a block is — no letters, no numbers (no spoilers). `solution` is the
+     *  w*h grid ("." = block). `meta` is the stats line ("#12 · No checks · 2:45"). */
+    fun renderCrossword(context: Context, w: Int, h: Int, solution: String, checks: Int, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFF475569.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("CROSSWORDOCIOUS", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+
+        // The silhouette, centred in the area above the headline; cells shrink to fit the wider axis.
+        val cols = maxOf(1, w); val rows = maxOf(1, h)
+        val margin = 120f
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        val gapRatio = 0.08f
+        val cell = minOf(
+            (W - 2 * margin) / (cols + gapRatio * (cols - 1)),
+            (areaBottom - areaTop) / (rows + gapRatio * (rows - 1)),
+            96f,
+        )
+        val gap = cell * gapRatio
+        val rad = maxOf(6f, cell * 0.14f)
+        val blockW = cols * cell + (cols - 1) * gap
+        val blockH = rows * cell + (rows - 1) * gap
+        val x0 = cx - blockW / 2f
+        val y0 = areaTop + (areaBottom - areaTop - blockH) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEDE9FE.toInt() }
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = 0xFFC4B5FD.toInt() }
+        for (r in 0 until rows) for (col in 0 until cols) {
+            val i = r * cols + col
+            if (i >= solution.length || solution[i] == '.') continue
+            val x = x0 + col * (cell + gap); val y = y0 + r * (cell + gap)
+            val rect = RectF(x, y, x + cell, y + cell)
+            c.drawRoundRect(rect, rad, rad, fill); c.drawRoundRect(rect, rad, rad, stroke)
+        }
+
+        p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
+        c.drawText(if (won) "GRID FINISHED" else "PUZZLE REVEALED", cx, height - 150f, p)
+        p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
+        c.drawText(if (checks == 0) "No checks" else "$checks check${if (checks == 1) "" else "s"}", cx, height - 104f, p)
+        p.textSize = 22f; p.color = FOOT
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {

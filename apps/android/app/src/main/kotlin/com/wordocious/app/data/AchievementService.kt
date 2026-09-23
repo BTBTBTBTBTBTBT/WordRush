@@ -248,6 +248,13 @@ object AchievementService {
             if (timeSeconds < 180) tryUnlock("cryptogram_swift")
         }
 
+        // Crosswordocious (More Games §18c): first finish, clean (no Check), swift.
+        if (gameMode == "CROSSWORD" && won) {
+            tryUnlock("crossword_first")
+            if (guessCount == 1) tryUnlock("crossword_clean")
+            if (timeSeconds < 240) tryUnlock("crossword_swift")
+        }
+
         // Kindred (More Games §18c): first win, flawless (4 submissions, no hints),
         // hardest first (the tier-4 group was the first one solved — from the matches row).
         if (gameMode == "GROUPS" && won) {
@@ -392,6 +399,7 @@ object AchievementService {
             Triple("hub_regular", "HUB", 50),
             Triple("cryptogram_regular", "CRYPTOGRAM", 50),
             Triple("groups_regular", "GROUPS", 50),
+            Triple("crossword_regular", "CROSSWORD", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -701,7 +709,7 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS", "CROSSWORD")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
@@ -713,6 +721,7 @@ object AchievementService {
                 "HUB" -> "hub"
                 "CRYPTOGRAM" -> "cryptogram"
                 "GROUPS" -> "groups"
+                "CROSSWORD" -> "crossword"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"
