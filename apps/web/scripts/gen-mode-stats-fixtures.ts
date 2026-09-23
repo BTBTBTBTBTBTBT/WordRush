@@ -32,7 +32,7 @@ const row = (r: Partial<MatchRow> & Pick<MatchRow, 'guess_count' | 'completed' |
 
 // ── Realistic rows per engine (event formats from packages/core/src/games/*.ts) ──
 
-// Sudoku / Starsweep: solutions = [solution, givens]; guesses = [board, hintMask]. guess_count = mistakes + 1.
+// Sudocious / Starsweep: solutions = [solution, givens]; guesses = [board, hintMask]. guess_count = mistakes + 1.
 const sudokuRows: MatchRow[] = [
   row({ guess_count: 1, completed: true, time_seconds: 238, hints_used: 0, player1_guesses: ['<board81>', '<hintMask81>'], solutions: ['<solution81>', '<givens81>'], seed: 'daily-2026-09-23-SUDOKU' }),
   row({ guess_count: 1, completed: true, time_seconds: 402, hints_used: 2, player1_guesses: ['<board81>', '<hintMask81>'], solutions: ['<solution81>', '<givens81>'], seed: 'daily-2026-09-24-SUDOKU' }),

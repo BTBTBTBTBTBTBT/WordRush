@@ -1547,14 +1547,18 @@ private fun YesterdaySweepRow(
     }
 }
 
-/** Row detail: "{guesses} Guesses · m s [· bs/tb] [· hint label]". Mirrors web. */
+/** Row detail: "{guesses} Guesses · m s [· bs/tb] [· hint label]". Mirrors web.
+ *  The guess stat reads through the mode's semantics (ModeStats.guessRowLabel,
+ *  More Games §18): "0 Mistakes", "5 Checks", "Par", "+2 over par", "Hubbub". */
 private fun rowDetail(
     entry: LeaderboardService.LeaderboardEntry,
     mode: String,
     /** Records rows omit the hints segment — iOS shows it on the Leaderboard only. */
     showHints: Boolean = true,
 ): String {
-    val sb = StringBuilder("${entry.guessCount} Guesses · ${fmtTime(entry.timeSeconds)}")
+    val meta = com.wordocious.app.ModeGen.byDbKey(mode)
+    val guessLabel = com.wordocious.app.data.ModeStats.guessRowLabel(meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, entry.guessCount)
+    val sb = StringBuilder("$guessLabel · ${fmtTime(entry.timeSeconds)}")
     if (entry.totalBoards > 1) sb.append(" · ${entry.boardsSolved}/${entry.totalBoards}")
     if (showHints) formatHintsLabel(mode, entry.hintsUsed)?.let { sb.append(" · $it") }
     return sb.toString()

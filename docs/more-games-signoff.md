@@ -15,7 +15,7 @@ Tick a cell only after checking, in order:
 5. **Finish**: win and loss overlays, the Solved/Out line, score breakdown, rank badge, XP toast,
    Home · Share · Play Again (Unlimited, Pro) and the Next Daily handoff.
 6. **Records / Leaderboard / Profile**: the mode appears behind the **More** chip; its rows read in
-   its own words (Sudoku: "0 mistakes"), never "guesses".
+   its own words (Sudocious: "0 mistakes"), never "guesses".
 7. **Sweep untouched**: finishing the game changes nothing on N/8, the celebration, the profile
    ring, the friends panel or the widget.
 8. **Share** image renders the board without spoiling it; the caption reads right.
@@ -29,7 +29,7 @@ Tick a cell only after checking, in order:
 | More Games tile + sheet | ☐ | ☐ | ☐ |
 | Pickers' More chip (Leaderboard, Records) | ☐ | ☐ | ☐ |
 | Stats registry rows (Profile → mode) | ☐ | ☐ | ☐ |
-| **Sudoku** | ☐ | ☐ | ☐ |
+| **Sudocious** | ☐ | ☐ | ☐ |
 | **Starsweep** | ☐ | ☐ | ☐ |
 | **Letter Ladder** | ☐ | ☐ | ☐ |
 | Muddle | ☐ | ☐ | ☐ |
@@ -39,7 +39,7 @@ Tick a cell only after checking, in order:
 | Kindred | ☐ | ☐ | ☐ |
 | Hubbub | ☐ | ☐ | ☐ |
 
-## Sudoku — what to look for (built 2026-09-22)
+## Sudocious — what to look for (built 2026-09-22; renamed from Sudoku 2026-09-23 — route /sudocious, /sudoku redirects)
 
 - Daily = Medium, "#N" in the header counts from 2026-09-23. Same givens everywhere on a date.
 - Three mistake dots; the third wrong digit ends the game and the board shows the solution muted.
@@ -280,7 +280,7 @@ simply never dated.
 - **Muddle:** the composer picks the four scrambled words from the Classic answer lists, so the
   puns are the review; the scrambled words were swept for tone (the blocklist grew after the first
   pass surfaced RACISM, GUNMEN, WHISKY). Cartoons come later, ten first for a style check.
-- Hubbub, Letter Ladder, Sudoku and Starsweep need no authored content. Spyglass's 180 themes
+- Hubbub, Letter Ladder, Sudocious and Starsweep need no authored content. Spyglass's 180 themes
   still await your skim (above).
 
 ## Known gaps to close before the gate closes
@@ -295,5 +295,5 @@ simply never dated.
   `NextDailyRow` shows it for any mode whose screen passes `onOpenUnlimited`; on web
   `KeepPlayingUnlimited` routes any daily mode. A new game is not done until all three show it.
 - Native achievement *display* names come from production's `/api/achievements` until the web
-  deploys, so a Sudoku unlock toast may show the key. Unlock detection itself is native and works.
+  deploys, so a Sudocious unlock toast may show the key. Unlock detection itself is native and works.
 - Android share is image + caption without the hosted `/s/` link (web and iOS upload theirs).

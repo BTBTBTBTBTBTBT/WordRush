@@ -136,14 +136,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // The cross-mode capstone unlocks at 50 hintless wins summed
   // across all three modes for players who never lean on a hint.
   // ────────────────────────────────────────────────────────────
-  // More Games §18c — Sudoku (ids use the catalog id; names the display name).
-  { key: 'sudoku_first',   name: 'First Sudoku',     description: 'Solve a Sudoku',                                   category: 'beginner', icon: 'grid' },
-  { key: 'sudoku_scholar', name: 'Sudoku Scholar',   description: 'Solve 50 Sudoku puzzles',                          category: 'skill',    icon: 'grid' },
-  { key: 'clean_sheet',    name: 'Clean Sheet',      description: 'Solve a Sudoku with no mistakes and no hints',     category: 'skill',    icon: 'star' },
-  { key: 'sudoku_sprint',  name: 'Sudoku Sprint',    description: 'Solve a Sudoku in under 5 minutes',                category: 'skill',    icon: 'zap' },
-  { key: 'pure_sudoku_initiate', name: 'Pure Sudoku',        description: 'Solve a Sudoku without using any hints',    category: 'skill', icon: 'star' },
-  { key: 'pure_sudoku_adept',    name: 'Pure Sudoku Adept',  description: 'Solve 10 Sudoku puzzles without hints',     category: 'skill', icon: 'star' },
-  { key: 'pure_sudoku_master',   name: 'Pure Sudoku Master', description: 'Solve 50 Sudoku puzzles without hints',     category: 'skill', icon: 'crown' },
+  // More Games §18c — Sudocious (keys use the catalog id 'sudoku'; names the display name).
+  { key: 'sudoku_first',   name: 'First Sudocious',  description: 'Solve a Sudocious puzzle',                                   category: 'beginner', icon: 'grid' },
+  { key: 'sudoku_scholar', name: 'Sudocious Scholar', description: 'Solve 50 Sudocious puzzles',                          category: 'skill',    icon: 'grid' },
+  { key: 'clean_sheet',    name: 'Clean Sheet',      description: 'Solve a Sudocious puzzle with no mistakes and no hints',     category: 'skill',    icon: 'star' },
+  { key: 'sudoku_sprint',  name: 'Sudocious Sprint', description: 'Solve a Sudocious puzzle in under 5 minutes',                category: 'skill',    icon: 'zap' },
+  { key: 'pure_sudoku_initiate', name: 'Pure Sudocious',        description: 'Solve a Sudocious puzzle without using any hints',    category: 'skill', icon: 'star' },
+  { key: 'pure_sudoku_adept',    name: 'Pure Sudocious Adept',  description: 'Solve 10 Sudocious puzzles without hints',     category: 'skill', icon: 'star' },
+  { key: 'pure_sudoku_master',   name: 'Pure Sudocious Master', description: 'Solve 50 Sudocious puzzles without hints',     category: 'skill', icon: 'crown' },
   // More Games §18c — Starsweep (always one word; never "Sweep!" — see components/regions/copy.ts).
   { key: 'regions_first',    name: 'First Starsweep',    description: 'Clear a Starsweep board',                          category: 'beginner', icon: 'star' },
   { key: 'regions_regular',  name: 'Starsweep Regular',  description: 'Clear 50 Starsweep boards',                        category: 'skill',    icon: 'star' },
@@ -295,7 +295,7 @@ export async function checkAchievements(
     await tryUnlock('speed_demon');
   }
 
-  // Perfectionist (1 guess) — word modes only: for Sudoku guess_count is
+  // Perfectionist (1 guess) — word modes only: for Sudocious guess_count is
   // mistakes + 1, so a clean solve would read as a one-guess word solve.
   // Perfectionist is a WORD-mode feat: every mode whose guess_count means
   // something else (mistakes, par, checks…) is excluded through the catalog.
@@ -389,7 +389,7 @@ export async function checkAchievements(
     }
   }
 
-  // Sudoku (More Games §18c): first solve, clean sheet (0 mistakes, 0 hints), sprint.
+  // Sudocious (More Games §18c): first solve, clean sheet (0 mistakes, 0 hints), sprint.
   if (gameMode === 'SUDOKU' && won) {
     await tryUnlock('sudoku_first');
     if (guessCount === 1 && hintsUsed === 0) await tryUnlock('clean_sheet');

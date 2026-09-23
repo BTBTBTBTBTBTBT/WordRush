@@ -78,7 +78,7 @@ const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format
 };
 
 // More Games §11: "fewest guesses" reads through the mode's guess semantics —
-// Sudoku "0 mistakes", Letter Ladder "Par" — and the label follows.
+// Sudocious "0 mistakes", Letter Ladder "Par" — and the label follows.
 const recordValue = (rt: string, v: number, gameMode?: string | null): string => {
   const meta = gameMode ? MODE_BY_DBKEY[gameMode] : undefined;
   if (rt === 'fewest_guesses' && meta && meta.guessSemantics !== 'guesses') {

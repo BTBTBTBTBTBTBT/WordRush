@@ -16,7 +16,7 @@ const ICONS: Record<string, IconCmp> = {
   gauntlet: Skull,
   propernoundle: Crown,
   // More Games titles (same icons as the home chrome).
-  sudoku: Grid3x3, muddle: Shuffle, hubbub: Hexagon, crosswordocious: Quote, kindred: Group,
+  sudocious: Grid3x3, muddle: Shuffle, hubbub: Hexagon, crosswordocious: Quote, kindred: Group,
   'letter-ladder': LadderIcon, codebreaker: KeyRound, spyglass: TextSearch, starsweep: Star,
 };
 const ROMAN: Record<string, string> = { quadword: 'IV', octoword: 'VIII' };

@@ -4,7 +4,7 @@ import { computeScoreBreakdown } from '@/lib/daily-service';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 /** "Guess bonus" reads through the mode's guess semantics (More Games §11):
- *  Sudoku and Starsweep count mistakes, so their row says "Mistake bonus". */
+ *  Sudocious and Starsweep count mistakes, so their row says "Mistake bonus". */
 export function guessBonusLabel(gameMode: string): string {
   switch (MODE_BY_DBKEY[gameMode]?.guessSemantics) {
     case 'mistakes': return 'Mistake bonus';

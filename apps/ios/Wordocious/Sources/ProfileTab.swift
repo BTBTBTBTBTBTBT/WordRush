@@ -17,6 +17,10 @@ struct ProfileTab: View {
     // mirrors web mode-detail-panel's fetchModeWinStreak). Not stored in
     // user_stats, so it's fetched when the selected mode changes.
     @State private var modeWinStreak: (current: Int, best: Int) = (0, 0)
+    /// The selected mode's pure aggregate over the player's own matches rows
+    /// (ModeStats.modeAggregates) — the custom games' grid cells (Clean, Avg
+    /// Mistakes, Pangrams, …) read from it; word modes ignore it.
+    @State private var modeAggregates: ModeAggregates = .empty
     // Solo/VS toggle (mirrors the web personal profile) — filters user_stats by play_type.
     @State private var activeTab = "solo"
     @State private var unlockedAchievements: Set<String> = []
@@ -926,11 +930,12 @@ struct ProfileTab: View {
         // More Games §18) — same lines, same fixtures as web and Android.
         let meta = ModeGen.byDbKey(mode.rawValue)
         // WordociousCore.ModeStats — the app has its own `ModeStats` aggregate struct in UserStatsService.
-        let cells: [(String, String)] = WordociousCore.ModeStats.lines(
+        let cells: [(String, String)] = WordociousCore.ModeStats.statLines(
             dbKey: mode.rawValue,
             totals: StatTotals(wins: s.wins, losses: s.losses, totalGames: s.totalGames, bestScore: s.bestScore,
                                fastestTime: s.fastestTime, streak: modeWinStreak.current, bestStreak: modeWinStreak.best),
-            semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1
+            semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1,
+            aggregates: modeAggregates
         ).map { ($0.label, $0.value) }
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
             ForEach(cells, id: \.0) { c in
@@ -944,14 +949,19 @@ struct ProfileTab: View {
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        // Fetch the per-mode win streak from match history whenever the selected
-        // mode OR the play-type toggle changes (web mode-detail-panel parity —
-        // restat B1 scopes the streak to the toggle). Reset first so a stale
-        // value from the previous mode never flashes.
+        // Fetch the per-mode win streak AND the mode's matches aggregate from
+        // match history whenever the selected mode OR the play-type toggle
+        // changes (web mode-detail-panel parity — restat B1 scopes both to the
+        // toggle). Reset first so a stale value from the previous mode never
+        // flashes.
         .task(id: "\(mode.rawValue)-\(activeTab)") {
             modeWinStreak = (0, 0)
+            modeAggregates = .empty
             if let uid = auth.profile?.id {
-                modeWinStreak = await MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: activeTab)
+                async let streak = MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: activeTab)
+                async let rows = MatchStatsService.modeMatches(uid: uid, mode: mode, playType: activeTab)
+                modeWinStreak = await streak
+                modeAggregates = WordociousCore.ModeStats.modeAggregates(mode.rawValue, await rows, guessBase: meta?.guessBase ?? 1)
             }
         }
     }
@@ -1779,7 +1789,10 @@ struct LeaderboardTab: View {
     private func detail(_ e: LeaderboardEntry) -> String {
         // Web parity: time as "Ns" / "Nm Ns" (formatTime in app/daily/page.tsx), not M:SS.
         let t = formatShortTime(Int(e.timeSeconds))
-        var s = "\(e.guessCount) Guesses · \(t)"
+        // Through the mode's guess semantics (ModeStats.guessRowLabel, web daily
+        // page parity): "4 Guesses", "0 Mistakes", "5 Checks", "Par", "Hubbub".
+        let meta = ModeGen.byDbKey(mode.rawValue)
+        var s = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
         if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
         if HINT_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
         return s

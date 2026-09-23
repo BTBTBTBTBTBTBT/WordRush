@@ -117,6 +117,8 @@ private data class ProfileChartsMemo(
     val topWords: List<com.wordocious.app.data.MatchStatsService.TopWord>,
     val proInsights: com.wordocious.app.data.MatchStatsService.ProInsights,
     val modeStreaks: Map<String, Pair<Int, Int>>,
+    /** Per-mode stats registry aggregate (More Games §18); EMPTY in the All view. */
+    val modeAgg: com.wordocious.app.data.ModeStats.ModeAggregates = com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES,
 )
 
 @Composable
@@ -152,6 +154,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // mode-stats-card / iOS mode-detail streak. Play-type-scoped (restat B1),
     // so it reloads when the Solo/VS/VS-CPU toggle changes.
     var modeStreaks by remember { mutableStateOf<Map<String, Pair<Int, Int>>>(emptyMap()) }
+    // Per-mode stats registry aggregate over the player's own matches rows
+    // (ModeStats.modeAggregates, More Games §18) — feeds the custom games'
+    // grid cells (Clean, Avg Mistakes, Pangrams, …). EMPTY in the All view.
+    var modeAgg by remember { mutableStateOf(com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES) }
     // True once the chart fetches have landed at least once — gates the Top Words
     // empty card so it never flashes before the first result (iOS `loaded`).
     var chartsLoaded by remember { mutableStateOf(false) }
@@ -242,6 +248,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             topWords = saved.topWords
             proInsights = saved.proInsights
             modeStreaks = saved.modeStreaks
+            modeAgg = saved.modeAgg
         }
         // All chart fetches run CONCURRENTLY (was 6 serial round-trips + a
         // 9-query per-mode streak N+1 — now one consolidated streak query).
@@ -267,6 +274,15 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             // Per-mode win streaks (scoped to the toggle) — ONE query for every
             // mode at once (modeWinStreaks) instead of stats re-fetch + per-mode.
             val streaksD = async { com.wordocious.app.data.MatchStatsService.modeWinStreaks(uid, activeTab) }
+            // Per-mode stats registry: the player's own rows for this mode →
+            // pure aggregate (More Games §18). Only the aggregate is kept.
+            val aggD = async {
+                if (m == null) com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES
+                else com.wordocious.app.data.ModeStats.modeAggregates(
+                    m, com.wordocious.app.data.MatchStatsService.modeMatchRows(uid, m, activeTab),
+                    com.wordocious.app.ModeGen.byDbKey(m)?.guessBase ?: 1,
+                )
+            }
             guessDist = gdD.await()
             activity7 = a7D.await()
             modeCal = calD.await()
@@ -275,11 +291,12 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             topWords = twD.await()
             proInsights = piD.await()
             modeStreaks = streaksD.await()
+            modeAgg = aggD.await()
         }
         com.wordocious.app.data.StatsMemo.set(memoKey, ProfileChartsMemo(
             guessDist = guessDist, activity7 = activity7, modeCal = modeCal, solveTimes = solveTimes,
             timeOfDay = timeOfDay, topWords = topWords, proInsights = proInsights,
-            modeStreaks = modeStreaks,
+            modeStreaks = modeStreaks, modeAgg = modeAgg,
         ))
         chartsLoaded = true
     }
@@ -449,18 +466,27 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         // Always the grid — the aggregations zero out on an empty
                         // list, so an unplayed mode reads 0/0/0 instead of swapping
                         // in a placeholder box (iOS modeStats renders unconditionally).
-                        ModeStatsGrid(tabStats, modeStreaks[mode])
-                        // Gauntlet: 50 guesses across 21 boards — histogram meaningless.
-                        if (mode != "GAUNTLET") GuessDistributionCard(guessDist)
+                        ModeStatsGrid(mode, tabStats, modeStreaks[mode], modeAgg)
+                        // The cards below the grid come from the mode's stats profile
+                        // (ModeStats.statPanels, More Games §18): Gauntlet's 50 guesses
+                        // across 21 boards make a histogram meaningless; the custom
+                        // engines have no word rows, so the word-only cards stay off;
+                        // Kindred and Muddle draw a histogram in their own unit.
+                        val modeMeta = com.wordocious.app.ModeGen.byDbKey(mode)
+                        val modeSemantics = modeMeta?.guessSemantics ?: "guesses"
+                        val panels = com.wordocious.app.data.ModeStats.statPanels(mode, modeSemantics)
+                        if (panels.guessDistribution) GuessDistributionCard(guessDist, com.wordocious.app.data.ModeStats.guessNoun(modeSemantics))
                         // Per-mode 90-day heatmap (iOS ActivityCalendarView(mode:)).
                         if (modeCal.any { it.played > 0 }) DailyCalendarCard(modeCal)
-                        SolveTimeCard(solveTimes)
-                        if (topWords.isNotEmpty()) TopWordsCard(topWords)
-                        else if (chartsLoaded && tab != "vs_cpu") {
-                            StatsEmptyCard(
-                                "Top Words", accent = Color(0xFFD97706),
-                                hint = "Your most-guessed words appear here as you play.",
-                            )
+                        if (panels.solveTime) SolveTimeCard(solveTimes)
+                        if (panels.topWords) {
+                            if (topWords.isNotEmpty()) TopWordsCard(topWords)
+                            else if (chartsLoaded && tab != "vs_cpu") {
+                                StatsEmptyCard(
+                                    "Top Words", accent = Color(0xFFD97706),
+                                    hint = "Your most-guessed words appear here as you play.",
+                                )
+                            }
                         }
                         // WHEN YOU PLAY (time-of-day).
                         if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
@@ -469,7 +495,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         // single Pro gate on the profile (the old locked teaser
                         // was redundant with it).
                         if (isProActive && proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
-                            ProInsightsCard(proInsights)
+                            ProInsightsCard(proInsights, mode)
                         }
                         // Deep Insights (restat R4). Hidden on vs_cpu (restat B1).
                         if (tab != "vs_cpu") {
@@ -957,20 +983,25 @@ private fun ModeDetailHeader(modeId: String, activeTab: String) {
 
 /** 4×2 stats grid for the selected mode (web ModeStatsCard). */
 @Composable
-private fun ModeStatsGrid(rows: List<ProfileService.UserStat>, streak: Pair<Int, Int>?) {
+private fun ModeStatsGrid(
+    dbKey: String,
+    rows: List<ProfileService.UserStat>,
+    streak: Pair<Int, Int>?,
+    aggregates: com.wordocious.app.data.ModeStats.ModeAggregates,
+) {
     val wins = rows.sumOf { it.wins }
     val losses = rows.sumOf { it.losses }
     val games = rows.sumOf { it.totalGames }
     val best = rows.mapNotNull { it.bestScore }.filter { it > 0 }.minOrNull()?.toInt() ?: 0
     val fastest = rows.mapNotNull { it.fastestTime }.filter { it > 0 }.minOrNull() ?: 0
     // The eight cells come from the shared per-mode stats registry (ModeStats,
-    // More Games §18) — same lines, same fixtures as web and iOS.
-    val dbKey = rows.firstOrNull()?.gameMode ?: ""
+    // More Games §18) — same lines, same fixtures as web and iOS. The custom
+    // games' matches-derived cells read from the aggregate over own rows.
     val meta = com.wordocious.app.ModeGen.byDbKey(dbKey)
-    val cells = com.wordocious.app.data.ModeStats.lines(
+    val cells = com.wordocious.app.data.ModeStats.statLines(
         dbKey,
         com.wordocious.app.data.ModeStats.Totals(wins, losses, games, best, fastest, streak?.first ?: 0, streak?.second ?: 0),
-        meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1,
+        meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, aggregates,
     ).map { it.label to it.value }
     KitCard {
         cells.chunked(4).forEachIndexed { i, row ->
@@ -1141,15 +1172,23 @@ private fun SectionLabel(text: String) {
 }
 
 // ── Dashboard charts ──────────────────────────────────────────────────────────
-/** Guess-distribution horizontal bars (1..6), bar width ∝ count. */
+/** Guess-distribution horizontal bars (1..6, or the mode's own range), bar
+ *  width ∝ count. `noun` is the unit the histogram counts (ModeStats.guessNoun):
+ *  "guess" for the word modes, "check" for Muddle. */
 @Composable
-private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchStatsService.GuessBucket>) {
+private fun GuessDistributionCard(
+    buckets: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
+    noun: com.wordocious.app.data.ModeStats.Noun = com.wordocious.app.data.ModeStats.Noun("guess", "guesses"),
+) {
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
     val totalWins = buckets.sumOf { it.count }
+    // The colour ramp reads from the FIRST bucket (fast wins purple → mid amber →
+    // slow grey) so a histogram that starts at 5 (Muddle) still opens in purple.
+    val firstBucket = buckets.firstOrNull()?.guesses ?: 1
     // Tap a row -> "N guesses · X wins · Y% of wins" detail (iOS parity).
     var selected by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionLabel("GUESS DISTRIBUTION")
+        SectionLabel("${noun.one.uppercase()} DISTRIBUTION")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
@@ -1158,7 +1197,7 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
             if (buckets.none { it.count > 0 }) {
                 // Web parity: chart-specific empty copy (guess-distribution.tsx).
                 Text(
-                    "Win a game to see your guess distribution", fontSize = 12.sp,
+                    "Win a game to see your ${noun.one} distribution", fontSize = 12.sp,
                     fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1178,8 +1217,8 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
                         val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
                         // Bucket colour ramp: fast wins purple → mid amber → slow grey (iOS).
                         val barColor = when {
-                            b.guesses <= 2 -> Color(0xFF7C3AED)
-                            b.guesses <= 4 -> Color(0xFFF59E0B)
+                            b.guesses - firstBucket <= 1 -> Color(0xFF7C3AED)
+                            b.guesses - firstBucket <= 3 -> Color(0xFFF59E0B)
                             else -> Color(0xFF9CA3AF)
                         }
                         Box(
@@ -1197,7 +1236,7 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
             if (selBucket != null) {
                 val pct = (selBucket.count * 100f / totalWins.coerceAtLeast(1)).toInt()
                 Text(
-                    "${selBucket.label} guess${if (selBucket.label == "1") "" else "es"} · ${selBucket.count} win${if (selBucket.count == 1) "" else "s"} · $pct% of wins",
+                    "${selBucket.label} ${if (selBucket.label == "1") noun.one else noun.many} · ${selBucket.count} win${if (selBucket.count == 1) "" else "s"} · $pct% of wins",
                     fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -1768,8 +1807,15 @@ private fun TopWordsCard(words: List<com.wordocious.app.data.MatchStatsService.T
 // ── Pro Insights (per-mode, Pro-only; the call site gates on isProActive — free
 // users see no card here, the blurred Deep Insights section is the one Pro gate) ──
 @Composable
-private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsights) {
+private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsights, gameMode: String? = null) {
     val gold = Color(0xFFD97706)
+    // The fewest-guesses cell reads through the mode's guess semantics (More
+    // Games §18): a Sudoku best of guess_count 1 is "Fewest Mistakes · 0 mistakes",
+    // never "Fewest Guesses · 1". Word modes keep today's bare number.
+    val meta = gameMode?.let { com.wordocious.app.ModeGen.byDbKey(it) }
+    val semantics = meta?.guessSemantics ?: "guesses"
+    val fewestLabel = com.wordocious.app.data.ModeStats.fewestRecordLabel(semantics)
+    fun fewestValue(v: Int): String = if (semantics == "guesses") "$v" else formatGuessStat(semantics, meta?.guessBase ?: 1, v)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("PRO INSIGHTS")
         Column(
@@ -1784,7 +1830,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                     // The four base cells always render — an em dash where the
                     // metric is missing, so the 2×2 grid never reflows (iOS).
                     add(Triple("Fastest Win", s.fastestTime?.let { fmtTime(it) } ?: "—", Icons.Filled.Bolt))
-                    add(Triple("Fewest Guesses", s.fewestGuesses?.let { "$it" } ?: "—", Icons.Filled.TrackChanges))
+                    add(Triple(fewestLabel, s.fewestGuesses?.let { fewestValue(it) } ?: "—", Icons.Filled.TrackChanges))
                     add(Triple("Perfect Games", "${s.perfectGames}", Icons.Filled.Star))
                     add(Triple("Consistency", if (s.consistencySample >= 3) "${s.consistency}" else "—", Icons.Filled.TrackChanges))
                     if (s.currentStreak > 0) add(Triple("Win Streak", "${s.currentStreak}", Icons.Filled.LocalFireDepartment))

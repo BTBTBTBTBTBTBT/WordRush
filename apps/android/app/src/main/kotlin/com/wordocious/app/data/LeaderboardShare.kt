@@ -546,9 +546,15 @@ object LeaderboardShare {
             "most_gold_medals" to "Most Gold Medals", "highest_level" to "Highest Level",
             "most_daily_completions" to "Most Dailies Completed",
         )
-        fun fmt(type: String, v: Int): String = when (type) {
+        // "fewest_guesses" reads through the mode's guess semantics (More Games
+        // §18): Sudoku "Fewest Mistakes · 0 mistakes", Hubbub "Best Rank · Hubbub".
+        fun fewestMeta(gm: String?) = gm?.let { com.wordocious.app.ModeGen.byDbKey(it) }?.takeIf { it.guessSemantics != "guesses" }
+        fun label(type: String, gm: String?): String =
+            if (type == "fewest_guesses") fewestMeta(gm)?.let { ModeStats.fewestRecordLabel(it.guessSemantics) } ?: "Fewest Guesses"
+            else labels[type] ?: type
+        fun fmt(type: String, v: Int, gm: String? = null): String = when (type) {
             "fastest_win" -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
-            "fewest_guesses" -> "$v guesses"
+            "fewest_guesses" -> fewestMeta(gm)?.let { com.wordocious.app.ui.formatGuessStat(it.guessSemantics, it.guessBase, v) } ?: "$v guesses"
             "most_games_played" -> "$v games"
             "longest_streak" -> "$v wins"
             "most_gold_medals" -> "$v golds"
@@ -566,8 +572,8 @@ object LeaderboardShare {
         } ?: "Global"
         val rows = sorted.take(5).mapIndexed { i, r ->
             RowInput(rank = i + 1,
-                     name = "${title(r.gameMode)} · ${labels[r.recordType] ?: r.recordType}",
-                     scoreDisplay = fmt(r.recordType, r.recordValue.toInt()),
+                     name = "${title(r.gameMode)} · ${label(r.recordType, r.gameMode)}",
+                     scoreDisplay = fmt(r.recordType, r.recordValue.toInt(), r.gameMode),
                      subline = null, isYou = false)
         }
         val extra = records.size - rows.size

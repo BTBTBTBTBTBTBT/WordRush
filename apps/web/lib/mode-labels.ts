@@ -14,7 +14,7 @@ export const MODE_LABELS: Record<string, string> = {
   RESCUE: 'Deliverance',
   GAUNTLET: 'Gauntlet',
   PROPERNOUNDLE: 'ProperNoundle',
-  SUDOKU: 'Sudoku',
+  SUDOKU: 'Sudocious',
   SCRAMBLE: 'Muddle',
   HUB: 'Hubbub',
   CROSSWORD: 'Crosswordocious',

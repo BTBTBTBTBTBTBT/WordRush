@@ -48,7 +48,7 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
       className="w-full mx-auto select-none"
       style={{ maxWidth: maxSize, aspectRatio: '1 / 1' }}
       role="grid"
-      aria-label="Sudoku board"
+      aria-label="Sudocious board"
     >
       <div
         className="grid w-full h-full overflow-hidden"

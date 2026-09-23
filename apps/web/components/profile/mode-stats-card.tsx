@@ -21,7 +21,7 @@ interface ModeStatsCardProps {
  * The 4×2 stat grid on a mode's detail panel. The eight cells come from the
  * per-mode stats registry (lib/mode-stats.ts, More Games §18): the word modes
  * show Wins … Best Streak with "Best" read through the mode's guess
- * semantics; each custom game shows its own eight (Sudoku's Clean and Avg
+ * semantics; each custom game shows its own eight (Sudocious's Clean and Avg
  * Mistakes, Hubbub's Best Rank and Pangrams, …), the matches-derived ones
  * via `aggregates`. Same registry, same fixtures, on iOS and Android.
  */

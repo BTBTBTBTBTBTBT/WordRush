@@ -48,7 +48,7 @@ export function formatShortTime(seconds: number): string {
 // Format.kt and pinned by display-format-fixtures.json.
 //
 //   guesses  → "4 guesses"          (raw count; the word games)
-//   mistakes → "0 mistakes"         (guess_count − guessBase; Sudoku, Starsweep)
+//   mistakes → "0 mistakes"         (guess_count − guessBase; Sudocious, Starsweep)
 //   checks   → "5 checks"           (Muddle counts every check, base 5)
 //              "2 checks"           (Crosswordocious / Codebreaker: optional Checks, base 1)
 //   overPar  → "Par" / "+2"         (Letter Ladder: guess_count − 1 over par)

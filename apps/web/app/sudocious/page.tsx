@@ -8,5 +8,5 @@ import { UnlimitedGate } from '@/components/game/unlimited-gate';
 export default function SudokuPage() {
   const searchParams = useSearchParams();
   const isDaily = searchParams.get('daily') === 'true';
-  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="sudoku"><SudokuGame isDaily={isDaily} /></UnlimitedGate></AdGate>;
+  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="sudocious"><SudokuGame isDaily={isDaily} /></UnlimitedGate></AdGate>;
 }

@@ -561,6 +561,21 @@ private val RECORD_CFG: Map<String, RecordCfg> = mapOf(
     "highest_level" to RecordCfg("Highest Level", androidx.compose.material.icons.Icons.Filled.EmojiEvents, false) { v -> "Level $v" },
     "most_daily_completions" to RecordCfg("Most Dailies Completed", androidx.compose.material.icons.Icons.Filled.TrackChanges, false) { v -> "$v dailies" },
 )
+/**
+ * The record config read through a mode's guess semantics (More Games §18):
+ * "fewest_guesses" on Sudoku is "Fewest Mistakes · 0 mistakes", on Letter
+ * Ladder "Best vs Par · Par", on Hubbub "Best Rank · Hubbub". Word modes (and
+ * every other record type) keep RECORD_CFG untouched.
+ */
+private fun recordCfgFor(type: String, gameMode: String?): RecordCfg? {
+    val base = RECORD_CFG[type] ?: return null
+    if (type != "fewest_guesses" || gameMode == null) return base
+    val meta = com.wordocious.app.ModeGen.byDbKey(gameMode) ?: return base
+    if (meta.guessSemantics == "guesses") return base
+    return RecordCfg(com.wordocious.app.data.ModeStats.fewestRecordLabel(meta.guessSemantics), base.icon, base.crown) { v ->
+        formatGuessStat(meta.guessSemantics, meta.guessBase, v)
+    }
+}
 private val GLOBAL_RECORD_TYPES = listOf("longest_streak", "highest_level", "most_gold_medals", "most_daily_completions")
 private val PER_MODE_RECORD_TYPES = listOf("fastest_win", "fewest_guesses", "most_games_played", "longest_streak")
 
@@ -702,7 +717,7 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
                                     val cands = modeRecords.filter { it.recordType == rt }
                                     val rec = cands.find { it.playType == "solo" } ?: cands.firstOrNull()
                                     Box(Modifier.weight(1f)) {
-                                        StatCell(rt, rec, accent, isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile)
+                                        StatCell(rt, rec, accent, isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile, gameMode = selectedMode)
                                     }
                                 }
                             }
@@ -787,7 +802,7 @@ private fun YourRecordsTab() {
             } else if (r.recordType == "fewest_guesses" && bs > 0 && bs > r.recordValue) {
                 val gap = bs - r.recordValue
                 all.add(Cand(RecordChase(
-                    label = "${recModeTitle(r.gameMode!!)} fewest guesses",
+                    label = "${recModeTitle(r.gameMode!!)} ${(recordCfgFor("fewest_guesses", r.gameMode)?.label ?: "Fewest Guesses").lowercase()}",
                     gap = "${gap.toInt()} away",
                     pct = Math.round(r.recordValue / bs * 100).toInt(),
                 ), gap / maxOf(1.0, r.recordValue)))
@@ -923,7 +938,9 @@ private fun YourRecordsTab() {
                 } else {
                     Row(Modifier.fillMaxWidth()) {
                         Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Schedule, if ((my?.fastestTime ?: 0) > 0) fmtSecs(my!!.fastestTime!!) else "—", "Fastest Win", accent, dim = (my?.fastestTime ?: 0) == 0) }
-                        Box(Modifier.weight(1f)) { MeCell(Icons.Filled.TrackChanges, if ((my?.bestScore ?: 0.0) > 0) "${my!!.bestScore!!.toInt()} guesses" else "—", "Fewest Guesses", accent, dim = (my?.bestScore ?: 0.0) == 0.0) }
+                        // Through the mode's guess semantics (More Games §18): Sudoku reads "Fewest Mistakes · 0 mistakes".
+                        val fewestCfg = recordCfgFor("fewest_guesses", selectedMode)
+                        Box(Modifier.weight(1f)) { MeCell(Icons.Filled.TrackChanges, if ((my?.bestScore ?: 0.0) > 0) (fewestCfg?.format?.invoke(my!!.bestScore!!.toInt()) ?: "${my!!.bestScore!!.toInt()} guesses") else "—", fewestCfg?.label ?: "Fewest Guesses", accent, dim = (my?.bestScore ?: 0.0) == 0.0) }
                     }
                     Row(Modifier.fillMaxWidth()) {
                         Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Bolt, if (my != null) "${my.totalGames} games" else "—", "Games Played", accent, dim = my == null) }
@@ -1011,7 +1028,7 @@ private fun YourRecordsTab() {
                 Spacer(Modifier.height(6.dp))
                 // Marquee jewels — the records worth a plinth of their own.
                 marquee.forEach { r ->
-                    val cfg = RECORD_CFG[r.recordType]
+                    val cfg = recordCfgFor(r.recordType, r.gameMode)
                     val accent = r.gameMode?.let { gm -> pickerGameModeOrNull(gm)?.let { modeAccent(it) } } ?: Color(0xFFD97706)
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
@@ -1067,7 +1084,7 @@ private fun YourRecordsTab() {
                             ) {
                                 TrophyGlyphBox(r.gameMode, 20.dp)
                                 Text(
-                                    cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
+                                    recordCfgFor(type, r.gameMode)?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
                                     fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent,
                                 )
                             }
@@ -1166,8 +1183,8 @@ private fun recordHintSuffix(r: LeaderboardService.AllTimeRecord): String {
 
 /** Record stat cell — icon + formatted value + label + holder (me-highlight). Mirrors web StatCell. */
 @Composable
-private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
-    val cfg = RECORD_CFG[recordType] ?: return
+private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, gameMode: String? = null) {
+    val cfg = recordCfgFor(recordType, gameMode ?: record?.gameMode) ?: return
     val hasRecord = record != null
     Row(
         Modifier.fillMaxWidth()

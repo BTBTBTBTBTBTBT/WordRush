@@ -33,7 +33,7 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
-// Daily Sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
+// Sudocious, the daily sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
 // device from the daily seed; Pro Unlimited picks Easy / Medium / Hard. Three
 // wrong digits lose; hints fill a cell and cost score but never a mistake.
 // guess_count = mistakes + 1 (perfect = 1), boards 1/1 — no new scoring formula.
@@ -41,7 +41,7 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 const DIFFICULTY_LABEL: Record<SudokuDifficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
 
 interface SudokuGameProps {
-  /** /sudoku?daily=true → today's Medium daily, recorded to daily_results. */
+  /** /sudocious?daily=true → today's Medium daily, recorded to daily_results. */
   isDaily?: boolean;
 }
 
@@ -217,7 +217,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
     if (!state) return;
     const out = await shareResult({
       layout: 'sudoku',
-      mode: 'Sudoku',
+      mode: 'Sudocious',
       won: state.status === 'won',
       guesses: state.mistakes + 1,
       maxGuesses: SUDOKU_MAX_MISTAKES + 1,
@@ -267,9 +267,9 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
       {/* Header — the same Home / "?" / sound trio as every game (§19). */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor={SUDOKU_ACCENT} />
-        <GameGuideButton slug="sudoku" accentColor={SUDOKU_ACCENT} />
+        <GameGuideButton slug="sudocious" accentColor={SUDOKU_ACCENT} />
         <SoundToggle accentColor={SUDOKU_ACCENT} />
-        <h1 className="text-2xl font-black" style={{ color: SUDOKU_ACCENT }}>SUDOKU</h1>
+        <h1 className="text-2xl font-black" style={{ color: SUDOKU_ACCENT }}>SUDOCIOUS</h1>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{sudokuDailyNumber(getTodayLocal())}</span>}
           <span>{DIFFICULTY_LABEL[state.difficulty]}</span>
@@ -334,7 +334,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? 'Sudoku solved' : 'Out of mistakes'}
+                    {won ? 'Sudocious solved' : 'Out of mistakes'}
                   </span>
                   <span className="text-xs text-gray-400">
                     {won

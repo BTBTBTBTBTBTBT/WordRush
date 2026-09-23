@@ -19,6 +19,11 @@ const nextConfig = {
       { source: '/quordle/vs', destination: '/quadword/vs', permanent: true },
       { source: '/octordle', destination: '/octoword', permanent: true },
       { source: '/octordle/vs', destination: '/octoword/vs', permanent: true },
+      // Sudocious rename 2026-09-23: the daily sudoku mode is Sudocious (a
+      // house coinage like Crosswordocious). The id/dbKey/flag stay 'sudoku'
+      // (rename-proof rule); only the player-facing route moves. Next carries
+      // the query string (?daily=true) across a redirect by default.
+      { source: '/sudoku', destination: '/sudocious', permanent: true },
     ];
   },
   eslint: {

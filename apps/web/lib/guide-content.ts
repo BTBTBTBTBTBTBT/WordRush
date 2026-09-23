@@ -415,12 +415,12 @@ export const MODE_GUIDES: ModeGuide[] = [
   },
   // ── More Games (§4) ──────────────────────────────────────────────────────
   {
-    slug: 'sudoku',
-    title: 'Sudoku',
+    slug: 'sudocious',
+    title: 'Sudocious',
     accent: '#1e40af',
-    tagline: 'One Medium puzzle a day, three mistakes, pencil notes — the classic number grid, the Wordocious way',
+    tagline: 'The classic number grid, the Wordocious way — one Medium puzzle a day, three mistakes, pencil notes',
     metaDescription:
-      'Wordocious Sudoku guide: the daily Medium puzzle, the three-mistake rule, how Notes and Hints work, the exact scoring formula, and the scanning strategy that solves without guessing.',
+      'Sudocious guide — the Wordocious daily sudoku: the Medium puzzle, the three-mistake rule, how Notes and Hints work, the exact scoring formula, and the scanning strategy that solves without guessing.',
     facts: [
       { label: 'Board', value: '9 × 9, one puzzle a day' },
       { label: 'Daily difficulty', value: 'Medium (Pro Unlimited: Easy · Medium · Hard)' },
@@ -429,14 +429,14 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
     ],
     rules: [
-      'Fill the grid so every row, every column and every 3 × 3 box contains the digits 1 to 9 exactly once. The puzzle starts with about a third of the cells filled in (the givens, in dark ink); those never change. Tap an empty cell, then tap a number on the pad. A correct digit turns purple and stays. A wrong digit turns red and counts as a mistake — you can erase it or overwrite it, but the mistake stands. Make three mistakes and the puzzle is over.',
+      'Sudocious is a classic nine-by-nine sudoku. Fill the grid so every row, every column and every 3 × 3 box contains the digits 1 to 9 exactly once. The puzzle starts with about a third of the cells filled in (the givens, in dark ink); those never change. Tap an empty cell, then tap a number on the pad. A correct digit turns purple and stays. A wrong digit turns red and counts as a mistake — you can erase it or overwrite it, but the mistake stands. Make three mistakes and the puzzle is over.',
       'Every puzzle has exactly one solution and is generated on your device from the day\'s seed, so everyone plays the same grid and nobody has to download anything. The daily is always Medium: solvable with careful scanning and a little pencil work, never guessing. Pro Unlimited lets you pick Easy (solvable by singles alone), Medium or Hard (you will need pencil marks).',
       'Notes are for thinking, not answering. Turn Notes on and tapping a number pencils that small candidate into the corner grid of the selected cell instead of placing it; tap again to remove it. Pencil marks are never judged and never count as mistakes. When you place a correct digit, that digit is cleared from the pencil marks in its row, column and box automatically. Undo steps back through placements and notes alike; it never refunds a mistake or a hint.',
-      'The daily is the same for everyone and counts once on the leaderboard. Sudoku lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+      'The daily is the same for everyone and counts once on the leaderboard. Sudocious lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
     scoring: [
       'A solve is worth a 1,000-point base plus a flat 200 for finishing. Mistakes are what separate players: the game treats your finish as mistakes + 1 out of a budget of 4, and every unused step is worth 300 points, so a clean solve banks 900 in mistake bonus, one mistake 600, two mistakes 300. Speed is the tiebreaker: up to 240 points scaled by how far under the 30-minute cap you finish, which can never outweigh a single mistake — a cleaner solve always outranks a faster one.',
-      'Each Hint costs 100 points and fills the selected cell (or the first empty one) with the right digit. Hints never count as mistakes, but a solve with any hint is not a Perfect run and does not count toward the Pure Sudoku achievements. A lost puzzle still earns credit for the time spent and the cells you filled correctly, so it is always worth playing on.',
+      'Each Hint costs 100 points and fills the selected cell (or the first empty one) with the right digit. Hints never count as mistakes, but a solve with any hint is not a Perfect run and does not count toward the Pure Sudocious achievements. A lost puzzle still earns credit for the time spent and the cells you filled correctly, so it is always worth playing on.',
     ],
     controls: [
       { icon: 'undo-2', label: 'Undo', body: 'Steps back one action — a placement, an erase or a pencil mark. Free, unlimited, and it never gives a mistake or a hint back.' },
@@ -522,7 +522,7 @@ export const MODE_GUIDES: ModeGuide[] = [
         body: 'Three mistakes end the game and each one costs 300 points. If two cells both seem possible, keep reasoning — the board is built to be solved by logic alone, so a guess is never required, only ever a shortcut with a price.',
       },
     ],
-    related: ['sudoku', 'classic', 'gauntlet'],
+    related: ['sudocious', 'classic', 'gauntlet'],
   },
   // ── More Games (§15) — Letter Ladder ─────────────────────────────────────
   {

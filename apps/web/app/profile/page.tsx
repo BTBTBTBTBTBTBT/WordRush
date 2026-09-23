@@ -63,7 +63,7 @@ import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { formatGuessStat } from '@/lib/format';
 
 // Recent Matches chrome — from the catalog + the home icon table (More Games
-// Stage 6), so every daily mode (Sudoku included) gets its title, icon and
+// Stage 6), so every daily mode (Sudocious included) gets its title, icon and
 // accent without a second hand-typed list. The two legacy VS labels stay.
 const gameModeTitles: Record<string, string> = {
   ...Object.fromEntries(MODES.filter((m) => m.dbKey).map((m) => [m.dbKey as string, m.title])),

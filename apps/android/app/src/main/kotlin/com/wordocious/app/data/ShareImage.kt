@@ -465,7 +465,7 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("SUDOKU", cx, 152f, p)
+        c.drawText("SUDOCIOUS", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f

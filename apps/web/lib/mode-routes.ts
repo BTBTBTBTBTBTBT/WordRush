@@ -16,7 +16,7 @@ export const MODE_ROUTES: Record<string, string> = {
   DUEL_7: '/seven',
   GAUNTLET: '/gauntlet',
   PROPERNOUNDLE: '/propernoundle',
-  SUDOKU: '/sudoku',
+  SUDOKU: '/sudocious',
   SCRAMBLE: '/muddle',
   HUB: '/hubbub',
   CROSSWORD: '/crosswordocious',

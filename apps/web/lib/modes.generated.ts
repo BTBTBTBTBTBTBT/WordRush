@@ -254,7 +254,7 @@ export const MODES: ModeMeta[] = [
     "title": "More Games",
     "shortTitle": "More",
     "shareLabel": "More Games",
-    "desc": "Sudoku, Muddle and more",
+    "desc": "Sudocious, Muddle and more",
     "accentHex": "#4f46e5",
     "glyph": "+",
     "romanNumeral": null,
@@ -272,9 +272,9 @@ export const MODES: ModeMeta[] = [
   {
     "id": "sudoku",
     "dbKey": "SUDOKU",
-    "title": "Sudoku",
-    "shortTitle": "Sudoku",
-    "shareLabel": "Sudoku",
+    "title": "Sudocious",
+    "shortTitle": "Sudocious",
+    "shareLabel": "Sudocious",
     "desc": "Daily number logic",
     "accentHex": "#1e40af",
     "glyph": "9",
@@ -288,7 +288,7 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.sudoku",
     "category": "logic",
-    "guideSlug": "sudoku"
+    "guideSlug": "sudocious"
   },
   {
     "id": "scramble",

@@ -42,7 +42,7 @@ export type ShareMode =
   | 'Six'
   | 'Seven'
   /** More Games (§18d): one board drawing per title inside the same card frame. */
-  | 'Sudoku'
+  | 'Sudocious'
   | 'Starsweep'
   | 'Letter Ladder'
   | 'Spyglass'

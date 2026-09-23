@@ -13,7 +13,7 @@ describe('More Games sheet helpers', () => {
     // Word 4 · Trivia 1 (ProperNoundle is still a core tile) · Logic 4.
     expect(s.map((x) => x.modes.length)).toEqual([4, 2, 4]);
     expect(s.find((x) => x.key === 'word')!.modes.map((m) => m.title)).toEqual(['Muddle', 'Hubbub', 'Letter Ladder', 'Spyglass']);
-    expect(s.find((x) => x.key === 'logic')!.modes.map((m) => m.title)).toEqual(['Sudoku', 'Kindred', 'Codebreaker', 'Starsweep']);
+    expect(s.find((x) => x.key === 'logic')!.modes.map((m) => m.title)).toEqual(['Sudocious', 'Kindred', 'Codebreaker', 'Starsweep']);
   });
 
   it('an uncategorised mode lands in a trailing Other section instead of vanishing', () => {

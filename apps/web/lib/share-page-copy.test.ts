@@ -39,16 +39,21 @@ describe('buildCopy', () => {
     expect(c.won).toBe(true);
   });
 
-  it('lists score, time and mistakes by name for mistake-scored modes (Sudoku, Starsweep)', () => {
-    const c = buildCopy({ m: 'Sudoku', won: '1', g: '2', mg: '4', t: '976', pts: '1909', n: '1' }, ['u', 'Sudoku-2026-09-22']);
-    expect(c.title).toBe('Wordocious Sudoku #1 — Score 1,909 pts · Time 16:16 · 1 mistake');
+  it('lists score, time and mistakes by name for mistake-scored modes (Sudocious, Starsweep)', () => {
+    const c = buildCopy({ m: 'Sudocious', won: '1', g: '2', mg: '4', t: '976', pts: '1909', n: '1' }, ['u', 'Sudocious-2026-09-22']);
+    expect(c.title).toBe('Wordocious Sudocious #1 — Score 1,909 pts · Time 16:16 · 1 mistake');
     expect(c.description).toBe(
-      'I solved Sudoku #1 on Wordocious — Score 1,909 pts · Time 16:16 · 1 mistake. Can you beat it? Play today’s puzzles free at wordocious.com.',
+      'I solved Sudocious #1 on Wordocious — Score 1,909 pts · Time 16:16 · 1 mistake. Can you beat it? Play today’s puzzles free at wordocious.com.',
     );
     const lost = buildCopy({ m: 'Starsweep', won: '0', g: '4', mg: '4', t: '130', n: '3' }, ['u', 'Starsweep-2026-09-22']);
     expect(lost.title).toBe('Wordocious Starsweep #3 — Time 2:10 · Out of mistakes');
-    const noPts = buildCopy({ m: 'Sudoku', won: '1', g: '1', mg: '4', t: '60' }, ['u', 'Sudoku-2026-09-22']);
-    expect(noPts.title).toBe('Wordocious Sudoku — Time 1:00 · 0 mistakes');
+    const noPts = buildCopy({ m: 'Sudocious', won: '1', g: '1', mg: '4', t: '60' }, ['u', 'Sudocious-2026-09-22']);
+    expect(noPts.title).toBe('Wordocious Sudocious — Time 1:00 · 0 mistakes');
+    // Links shared before the 2026-09-23 rename carry the old label: they
+    // still unfurl as Sudocious and route to /sudocious.
+    const legacy = buildCopy({ m: 'Sudoku', won: '1', g: '1', mg: '4', t: '60' }, ['u', 'Sudoku-2026-09-22']);
+    expect(legacy.mode).toBe('Sudocious');
+    expect(legacy.title).toBe('Wordocious Sudocious — Time 1:00 · 0 mistakes');
   });
 
   it('names score, time and par for Letter Ladder', () => {

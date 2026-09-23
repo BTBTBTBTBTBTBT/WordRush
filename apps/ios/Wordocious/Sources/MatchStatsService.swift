@@ -81,14 +81,19 @@ enum MatchStatsService {
             "DUEL": 6, "RESCUE": 6, "PROPERNOUNDLE": 6, "DUEL_6": 7, "DUEL_7": 8,
             "QUORDLE": 9, "SEQUENCE": 10, "OCTORDLE": 13, "GAUNTLET": 13,
         ]
-        let maxBucket = mode.map { distMax[$0.rawValue] ?? 6 } ?? 6
+        // Kindred (4–7 submissions) and Muddle (5–13 checks) start their histogram
+        // at the perfect count — a "1 guess" bar would be impossible there
+        // (ModeStats.guessDistributionRange, web fetchModeDetail parity).
+        let range = mode.flatMap { WordociousCore.ModeStats.guessDistributionRange($0.rawValue) }
+        let minBucket = range?.min ?? 1
+        let maxBucket = range?.max ?? mode.map { distMax[$0.rawValue] ?? 6 } ?? 6
         let clampable = mode == nil || mode == .gauntlet
         var counts = [Int: Int]()
         for r in rows {
             guard let s = r.player1_score, s > 0 else { continue }
-            counts[min(s, maxBucket), default: 0] += 1
+            counts[max(minBucket, min(s, maxBucket)), default: 0] += 1
         }
-        return (1...maxBucket).map {
+        return (minBucket...maxBucket).map {
             GuessBucket(guesses: $0, count: counts[$0] ?? 0,
                         label: "\($0)" + (clampable && $0 == maxBucket ? "+" : ""))
         }
@@ -167,6 +172,35 @@ enum MatchStatsService {
 
     // Codable so CompletedDailyCard can keep a day-keyed disk copy (§254).
     struct SolvedDaily: Codable { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int; let hintsUsed: Int }
+
+    /// The player's own matches rows for one mode, mapped onto the shared
+    /// MatchRow shape the per-mode stats registry aggregates (More Games §18;
+    /// web fetchModeDetail parity: player1_score → guess_count, winner_id →
+    /// completed, player1_time → time_seconds). Own rows only — player1_guesses
+    /// and hints_used are the recorder's. The matches table has no boards
+    /// columns, so boards_solved/total_boards stay nil and
+    /// ModeStats.modeAggregates rebuilds them from the event log.
+    static func modeMatches(uid: String, mode: GameMode, playType: String = "solo") async -> [WordociousCore.MatchRow] {
+        if playType == "vs_cpu" { return [] }
+        struct Row: Decodable {
+            let id: String?; let seed: String?; let game_mode: String?
+            let player1_score: Int?; let player1_time: Double?; let winner_id: String?
+            let player1_guesses: [String]?; let solutions: [String]?
+            let hints_used: Int?; let created_at: String?
+        }
+        var q = AuthService.shared.client.from("matches")
+            .select("id,seed,game_mode,player1_score,player1_time,winner_id,player1_guesses,solutions,hints_used,created_at")
+            .eq("player1_id", value: uid)
+            .eq("game_mode", value: mode.rawValue)
+        q = scopeToPlayType(q, playType)
+        // Newest-first, capped like the web slice; the aggregate is order-independent.
+        let rows: [Row] = (try? await q.order("created_at", ascending: false).limit(2000).execute().value) ?? []
+        return rows.map { r in
+            WordociousCore.MatchRow(guessCount: r.player1_score ?? 0, completed: r.winner_id == uid,
+                                    timeSeconds: Int((r.player1_time ?? 0).rounded()), hintsUsed: r.hints_used ?? 0,
+                                    player1Guesses: r.player1_guesses ?? [], solutions: r.solutions ?? [], seed: r.seed)
+        }
+    }
 
     /// Server-persisted Gauntlet per-stage breakdown (matches.gauntlet_stages),
     /// so the results screen renders cross-device when there's no local session.

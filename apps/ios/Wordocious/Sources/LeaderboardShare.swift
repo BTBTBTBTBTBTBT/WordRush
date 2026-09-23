@@ -159,8 +159,14 @@ enum LeaderboardShareBuilder {
         return "\(s / 60):\(String(format: "%02d", s % 60))"
     }
 
-    static func soloSubline(_ e: LeaderboardEntry) -> String {
-        "\(e.guessCount) guesses · \(fmtClock(e.timeSeconds)) · \(e.completed ? "Win" : "Loss")"
+    static func soloSubline(_ e: LeaderboardEntry) -> String { soloSubline(e, gameModeRaw: nil) }
+
+    /// More Games §11: the row's guess stat through the mode's semantics
+    /// ("0 mistakes", "Par", "Hubbub") — web leaderboard-share-flow guessLabelFor.
+    static func soloSubline(_ e: LeaderboardEntry, gameModeRaw: String?) -> String {
+        let meta = gameModeRaw.flatMap { ModeGen.byDbKey($0) }
+        let g = formatGuessStat(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)
+        return "\(g) · \(fmtClock(e.timeSeconds)) · \(e.completed ? "Win" : "Loss")"
     }
 
     static func vsSubline(_ e: LeaderboardEntry) -> String {
@@ -196,7 +202,7 @@ enum LeaderboardShareBuilder {
         let top = Array(ranked.prefix(5))
         guard !top.isEmpty else { return nil }
 
-        let subline: (LeaderboardEntry) -> String = variant == .vs ? vsSubline : soloSubline
+        let subline: (LeaderboardEntry) -> String = variant == .vs ? vsSubline : { soloSubline($0, gameModeRaw: gameModeRaw) }
         let youInTop = userId != nil && top.contains { $0.entry.userId == userId }
         let belowTop = !youInTop && userId != nil && userRank != nil && userEntry != nil
         let delta = userRank.flatMap { rankDelta(yesterdayRank: yesterdayRank, todayRank: $0.rank) }
@@ -251,7 +257,7 @@ enum LeaderboardShareBuilder {
         // Top 5 + sharer's final rank — daily-card parity (founder, Aug 10).
         let top = Array(ranked.prefix(5))
         guard !top.isEmpty else { return nil }
-        let subline: (LeaderboardEntry) -> String = playType == .vs ? vsSubline : soloSubline
+        let subline: (LeaderboardEntry) -> String = playType == .vs ? vsSubline : { soloSubline($0, gameModeRaw: gameModeRaw) }
         let youInTop = userId != nil && top.contains { $0.entry.userId == userId }
         let belowTop = !youInTop && userId != nil && userRank != nil && userEntry != nil
         let cardLabels = tieAwareScoreLabels(

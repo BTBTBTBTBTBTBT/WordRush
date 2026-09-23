@@ -330,7 +330,7 @@ export async function shareTrophyCaseCard(opts: {
 }): Promise<ShareResultOutcome | null> {
   const modeTitle = (dbKey: string | null) =>
     dbKey ? (MODES.find((m) => m.dbKey === dbKey)?.title ?? dbKey) : 'Global';
-  // "Sudoku · Fewest Mistakes · 0 mistakes", never "1 guesses" (More Games §11).
+  // "Sudocious · Fewest Mistakes · 0 mistakes", never "1 guesses" (More Games §11).
   const fewestGuesses = (dbKey: string | null, value: number) => {
     const m = dbKey ? MODE_BY_DBKEY[dbKey] : undefined;
     if (!m || m.guessSemantics === 'guesses') return null;

@@ -35,11 +35,18 @@ struct ProfileDashboard: View {
                 WeekdayFormCard(playType: playType)
                 TimeOfDayHeatmap(mode: nil, playType: playType)
             } else {
-                GuessDistributionChart(mode: mode, playType: playType)
+                // The cards below the grid follow the mode's stats profile
+                // (ModeStats.statPanels, More Games §18; web mode-detail-panel
+                // parity): a histogram only where the count has a real range
+                // (word modes, Kindred submissions, Muddle checks — never
+                // Gauntlet), and no word-only cards for a custom engine.
+                let meta = ModeGen.byDbKey(mode!.rawValue)
+                let panels = WordociousCore.ModeStats.statPanels(dbKey: mode!.rawValue, semantics: meta?.guessSemantics ?? "guesses")
+                if panels.guessDistribution { GuessDistributionChart(mode: mode, playType: playType) }
                 ActivityCalendarView(mode: mode)
-                SolveTimeChart(mode: mode, playType: playType)
+                if panels.solveTime { SolveTimeChart(mode: mode, playType: playType) }
                 TimeOfDayHeatmap(mode: mode, playType: playType)
-                TopWordsCard(mode: mode, playType: playType)
+                if panels.topWords { TopWordsCard(mode: mode, playType: playType) }
                 // Per-mode Pro insights (selected mode). On the All view the
                 // global Pro Stats card is rendered by ProfileTab AFTER the
                 // Insights section, to match the web All-view order.
@@ -92,14 +99,19 @@ private struct GuessDistributionChart: View {
     private func barLabel(_ b: MatchStatsService.GuessBucket) -> String {
         b.label.isEmpty ? "\(b.guesses)" : b.label
     }
+    /// The unit the histogram counts — "guess" for the word modes (card
+    /// unchanged), "check" for Muddle (ModeStats.guessNoun).
+    private var noun: (one: String, many: String) {
+        WordociousCore.ModeStats.guessNoun(mode.flatMap { ModeGen.byDbKey($0.rawValue) }?.guessSemantics ?? "guesses")
+    }
 
     var body: some View {
         // Gauntlet runs can take up to 50 guesses across 21 boards — a guess
         // histogram is meaningless there, so the chart is hidden (all platforms).
         if mode == .gauntlet { EmptyView() } else {
-        LegacyChartCard(title: "GUESS DISTRIBUTION") {
+        LegacyChartCard(title: "\(noun.one.uppercased()) DISTRIBUTION") {
             if totalWins == 0 {
-                EmptyChart(copy: "Win a game to see your guess distribution")
+                EmptyChart(copy: "Win a game to see your \(noun.one) distribution")
             } else {
                 Chart(data) { b in
                     BarMark(x: .value("Guesses", barLabel(b)), y: .value("Wins", b.count))
@@ -114,7 +126,7 @@ private struct GuessDistributionChart: View {
                 .chartTapSelection(bars: data.map(barLabel), selection: $selected)
                 // Footer: tapped-bar detail (wins share) or the plain total.
                 if let sel = selected, let b = data.first(where: { barLabel($0) == sel }), b.count > 0 {
-                    Text("\(sel) guess\(sel == "1" ? "" : "es") · \(b.count) win\(b.count == 1 ? "" : "s") · \(Int((Double(b.count) / Double(max(1, totalWins)) * 100).rounded()))% of wins")
+                    Text("\(sel) \(sel == "1" ? noun.one : noun.many) · \(b.count) win\(b.count == 1 ? "" : "s") · \(Int((Double(b.count) / Double(max(1, totalWins)) * 100).rounded()))% of wins")
                         .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
                 } else {
                     Text("\(totalWins) win\(totalWins == 1 ? "" : "s")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
@@ -640,6 +652,14 @@ private struct ProInsightsCard: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var s = MatchStatsService.ProInsights()
     private let gold = Color(hex: 0xD97706)
+    /// The mode's guess semantics — "Fewest Guesses" reads "Fewest Mistakes" /
+    /// "Best vs Par" / "Best Rank" with a matching value (More Games §11).
+    private var meta: GenMode? { ModeGen.byDbKey(mode.rawValue) }
+    private var fewestLabel: String { WordociousCore.ModeStats.fewestRecordLabel(meta?.guessSemantics ?? "guesses") }
+    private func fewestValue(_ v: Int) -> String {
+        guard let meta, meta.guessSemantics != "guesses" else { return "\(v)" }
+        return formatGuessStat(semantics: meta.guessSemantics, guessBase: meta.guessBase, guessCount: v)
+    }
 
     var body: some View {
         // Pro-only: free users see no card here — the blurred Deep Insights
@@ -651,7 +671,7 @@ private struct ProInsightsCard: View {
                 LegacyChartCard(title: "PRO INSIGHTS") {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     statCell("Fastest Win", s.fastestTime.map(fmt) ?? "—", "bolt.fill", gold)
-                    statCell("Fewest Guesses", s.fewestGuesses.map { "\($0)" } ?? "—", "target", gold)
+                    statCell(fewestLabel, s.fewestGuesses.map(fewestValue) ?? "—", "target", gold)
                     statCell("Perfect Games", "\(s.perfectGames)", "star.fill", gold)
                     statCell("Consistency", s.consistencySample >= 3 ? "\(s.consistency)" : "—", "waveform.path.ecg", gold)
                     if s.currentStreak > 0 { statCell("Win Streak", "\(s.currentStreak)", "flame.fill", gold) }

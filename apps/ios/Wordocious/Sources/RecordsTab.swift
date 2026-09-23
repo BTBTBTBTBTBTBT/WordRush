@@ -136,7 +136,7 @@ struct AllTimeRecordsView: View {
                     if RecordCatalog.perMode.contains(where: { modeRecord($0) != nil }) {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                             ForEach(RecordCatalog.perMode, id: \.self) { rt in
-                                RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId)
+                                RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId, gameMode: mode.rawValue)
                             }
                         }
                         .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
@@ -289,6 +289,9 @@ struct RecordStatCell: View {
     let record: AllTimeRecord?
     let accent: Color
     let isMe: Bool
+    /// The card's mode (per-mode grid) — titles the fewest-guesses cell through
+    /// its guess semantics even while the record itself is still nil.
+    var gameMode: String? = nil
 
     var body: some View {
         let meta = RecordCatalog.labels[type]
@@ -299,7 +302,7 @@ struct RecordStatCell: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(record?.formattedValue ?? "—").font(Brand.font(16, .black))
                     .foregroundStyle(has ? Theme.textPrimary : Theme.textMuted)
-                Text(meta?.label ?? type).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text(RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 if has {
                     NavigationLink(value: record?.holderId ?? "") {
                         HStack(spacing: 3) {
@@ -635,7 +638,10 @@ struct DailyRecordsView: View {
         let isMe = e.userId == auth.profile?.id
         // Web parity: "Ns"/"Nm Ns" time + multi-board fraction + a Win/Loss pill.
         let t = formatShortTime(Int(e.timeSeconds))
-        var line = "\(e.guessCount) Guesses · \(t)"
+        // Through the mode's guess semantics (ModeStats.guessRowLabel — the same
+        // call the daily leaderboard row in ProfileTab makes): "0 Mistakes", "Par".
+        let meta = ModeGen.byDbKey(mode.rawValue)
+        var line = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
         if e.totalBoards > 1 { line += " · \(e.boardsSolved)/\(e.totalBoards)" }
         // §254: hints ride this row exactly as on the daily leaderboard row
         // (ProfileTab) — the founder wants the two pages to match.
@@ -977,7 +983,8 @@ struct YourRecordsView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
                             meCell("clock.fill", (my?.fastestTime ?? 0) > 0 ? formatShortTime(my!.fastestTime) : "—", "Fastest Win", accent, dim: (my?.fastestTime ?? 0) == 0)
-                            meCell("target", (my?.bestScore ?? 0) > 0 ? "\(my!.bestScore) guesses" : "—", "Fewest Guesses", accent, dim: (my?.bestScore ?? 0) == 0)
+                            meCell("target", (my?.bestScore ?? 0) > 0 ? RecordCatalog.fewestValue(my!.bestScore, gameMode: mode.rawValue) : "—",
+                                   RecordCatalog.label("fewest_guesses", gameMode: mode.rawValue), accent, dim: (my?.bestScore ?? 0) == 0)
                             meCell("bolt.fill", my != nil ? "\(my!.totalGames) games" : "—", "Games Played", accent, dim: my == nil)
                             meCell("trophy.fill", my != nil ? "\(my!.wins)–\(my!.losses)" : "—", "Win–Loss", accent, dim: my == nil)
                         }
@@ -1112,7 +1119,7 @@ struct YourRecordsView: View {
         HStack(spacing: 12) {
             recordGlyph(r.gameMode, box: 40)
             VStack(alignment: .leading, spacing: 1) {
-                Text("\(r.gameMode.map(modeTitle) ?? "Global") · \(RecordCatalog.labels[r.recordType]?.label ?? r.recordType)")
+                Text("\(r.gameMode.map(modeTitle) ?? "Global") · \(RecordCatalog.label(r.recordType, gameMode: r.gameMode))")
                     .font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Text(r.formattedValue).font(Brand.font(22, .black)).foregroundStyle(Color(hex: 0xD97706))
@@ -1199,7 +1206,7 @@ struct YourRecordsView: View {
                             gap / max(1, r.recordValue)))
             } else if r.recordType == "fewest_guesses", mine.bestScore > 0, Double(mine.bestScore) > r.recordValue {
                 let gap = Double(mine.bestScore) - r.recordValue
-                all.append(("\(modeTitle(r.gameMode!)) fewest guesses", "\(Int(gap)) away",
+                all.append(("\(modeTitle(r.gameMode!)) \(RecordCatalog.label("fewest_guesses", gameMode: r.gameMode).lowercased())", "\(Int(gap)) away",
                             Int((r.recordValue / Double(mine.bestScore) * 100).rounded()),
                             gap / max(1, r.recordValue)))
             }

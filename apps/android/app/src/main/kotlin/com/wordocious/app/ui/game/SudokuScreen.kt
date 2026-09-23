@@ -99,6 +99,8 @@ import kotlinx.serialization.json.Json
 // mistakes + 1.
 
 private val SUDOKU_ACCENT = Color(0xFF1E40AF)
+// Player-facing name from the catalog (the id `sudoku` and GameMode.SUDOKU stay; rename-proof rule).
+private val SUDOKU_TITLE: String get() = com.wordocious.app.ModeGen.byDbKey(GameMode.SUDOKU.name)?.title?.uppercase() ?: "SUDOCIOUS"
 private val DIFFICULTY_LABEL = mapOf(SudokuDifficulty.EASY to "Easy", SudokuDifficulty.MEDIUM to "Medium", SudokuDifficulty.HARD to "Hard")
 
 // ── Session (state holder: reducer, clock, save, recording) ─────────────────
@@ -316,7 +318,7 @@ private fun SudokuHeader(session: SudokuSession) {
         while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
-        Text("SUDOKU", fontSize = 24.sp, fontWeight = FontWeight.Black, color = SUDOKU_ACCENT, fontFamily = Nunito)
+        Text(SUDOKU_TITLE, fontSize = 24.sp, fontWeight = FontWeight.Black, color = SUDOKU_ACCENT, fontFamily = Nunito)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text(DIFFICULTY_LABEL[session.state.difficulty] ?: "Medium", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -499,7 +501,7 @@ private fun SudokuResult(
     val remaining = sudokuRemaining(s)
     val context = LocalContext.current
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Text(if (won) "Sudoku solved" else "Out of mistakes", fontSize = 20.sp, fontWeight = FontWeight.Black,
+        Text(if (won) "Sudocious solved" else "Out of mistakes", fontSize = 20.sp, fontWeight = FontWeight.Black,
             color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
         Text(
             if (won) "${formatGuessStat("mistakes", 1, s.mistakes + 1)} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else "")
@@ -513,7 +515,7 @@ private fun SudokuResult(
                 val meta = "${num?.let { "#$it · " } ?: ""}${DIFFICULTY_LABEL[s.difficulty]} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · ${timeText(secs)}"
                 // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
                 val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
-                val text = "Wordocious Sudoku${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/sudoku"
+                val text = "Wordocious Sudocious${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/sudoku"
                 val bmp = ShareImage.renderSudoku(context, s.givens, s.board, s.hintMask, won, meta)
                 ShareImage.shareBitmap(context, bmp, text)
             }

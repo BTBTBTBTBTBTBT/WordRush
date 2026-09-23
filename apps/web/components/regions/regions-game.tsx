@@ -39,7 +39,7 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // Thursday–Sunday; Pro Unlimited picks 7 / 8 / 9. Tap = cross out, tap again =
 // star, again = clear. A wrong star is a mistake, the third loses; a hint
 // places one correct star for a score cost, never a mistake.
-// guess_count = mistakes + 1 (perfect = 1), boards 1/1 — the Sudoku scoring row.
+// guess_count = mistakes + 1 (perfect = 1), boards 1/1 — the Sudocious scoring row.
 
 const SIZES: RegionsSize[] = [7, 8, 9];
 

@@ -16,11 +16,18 @@ export const MODE_DISPLAY: Record<string, string> = {
   Profile: 'Player Profile',
 };
 
+// Share modes a shipped link may still carry under an old name. The ?m= key
+// is the catalog shareLabel; when a mode is renamed the old label lands here
+// so those links keep unfurling and routing. Sudoku → Sudocious, 2026-09-23.
+export const LEGACY_SHARE_MODES: Record<string, string> = {
+  Sudoku: 'Sudocious',
+};
+
 // Map a share mode back to its play route so the CTA sends visitors to it.
 export const MODE_ROUTE: Record<string, string> = {
   Classic: '/practice',
   // More Games titles (§18d) — keyed by shareLabel like every other mode.
-  Sudoku: '/sudoku',
+  Sudocious: '/sudocious',
   Starsweep: '/starsweep',
   'Letter Ladder': '/letter-ladder',
   Spyglass: '/spyglass',
@@ -161,7 +168,8 @@ export interface ShareCopy {
 
 export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
   const fromPath = parseShareKey(key);
-  const mode = str(sp.m) ?? fromPath.mode ?? 'Wordocious';
+  const rawMode = str(sp.m) ?? fromPath.mode ?? 'Wordocious';
+  const mode = LEGACY_SHARE_MODES[rawMode] ?? rawMode;
   const modeDisp = MODE_DISPLAY[mode] ?? mode;
   const dateDisp = fromPath.date ? fmtDate(fromPath.date) : undefined;
 
@@ -342,7 +350,7 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
   const mg = Number(str(sp.mg)) || 0;
   const t = Number(str(sp.t)) || 0;
 
-  // Mistake-scored modes (Sudoku, Starsweep — catalog guessSemantics
+  // Mistake-scored modes (Sudocious, Starsweep — catalog guessSemantics
   // "mistakes"): "Solved 2/4" means nothing to a reader, so the unfurl lists
   // each figure by name — score, time, mistakes — and the puzzle number.
   // Founder, 2026-09-22: "populate the points and total time, and list it

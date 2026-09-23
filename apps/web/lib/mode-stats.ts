@@ -229,7 +229,7 @@ type Lines = (t: StatTotals, semantics: string, guessBase: number, a: ModeAggreg
 /** The eight cells every word mode shows: Wins · Losses · Games · Win Rate · Best · Fastest · Streak · Best Streak. */
 function defaultLines(t: StatTotals, semantics: string, guessBase: number): StatLine[] {
   // "Best" is the best guess_count, read through the mode's semantics: "4 guesses"
-  // stays a bare number for the word modes (today's display), but a Sudoku best
+  // stays a bare number for the word modes (today's display), but a Sudocious best
   // of guess_count 1 must read "0 mistakes", never "1".
   const best = t.bestScore > 0 ? (semantics === 'guesses' ? String(t.bestScore) : formatGuessStat(semantics, guessBase, t.bestScore)) : '-';
   return [
@@ -244,7 +244,7 @@ function defaultLines(t: StatTotals, semantics: string, guessBase: number): Stat
   ];
 }
 
-/** Sudoku, Starsweep: Wins · Losses · Win Rate · Clean · Avg Mistakes · Fastest · No-hint Wins · Streak. */
+/** Sudocious, Starsweep: Wins · Losses · Win Rate · Clean · Avg Mistakes · Fastest · No-hint Wins · Streak. */
 const mistakesLines: Lines = (t, _s, base, a) => [
   { label: 'Wins', value: String(t.wins) },
   { label: 'Losses', value: String(t.losses) },

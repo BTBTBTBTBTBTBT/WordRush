@@ -134,8 +134,10 @@ object MatchStatsService {
         "QUORDLE" to 9, "SEQUENCE" to 10, "OCTORDLE" to 13, "GAUNTLET" to 13,
     )
 
-    /** Guess-distribution buckets 1..modeMax over the user's wins, scoped to the
-     *  play-type toggle (GAUNTLET/All clamp into "N+"). */
+    /** Guess-distribution buckets min..modeMax over the user's wins, scoped to the
+     *  play-type toggle (GAUNTLET/All clamp into "N+"). Kindred (4–7 submissions)
+     *  and Muddle (5–13 checks) start at the perfect count — a "1 guess" bar
+     *  would be impossible there (ModeStats.guessDistributionRange, web parity). */
     suspend fun guessDistribution(userId: String, mode: String? = null, playType: String = "solo"): List<GuessBucket> = runCatching {
         if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
@@ -145,13 +147,59 @@ object MatchStatsService {
                 limit(2000)
             }
             .decodeList<ScoreRow>()
-        val maxBucket = mode?.let { DIST_MAX[it] ?: 6 } ?: 6
+        val range = mode?.let { ModeStats.guessDistributionRange(it) }
+        val minBucket = range?.min ?: 1
+        val maxBucket = range?.max ?: mode?.let { DIST_MAX[it] ?: 6 } ?: 6
         val clampable = mode == null || mode == "GAUNTLET"
         val counts = HashMap<Int, Int>()
-        rows.forEach { r -> r.player1Score?.takeIf { it > 0 }?.let { val b = minOf(it, maxBucket); counts[b] = (counts[b] ?: 0) + 1 } }
-        (1..maxBucket).map {
+        rows.forEach { r -> r.player1Score?.takeIf { it > 0 }?.let { val b = maxOf(minBucket, minOf(it, maxBucket)); counts[b] = (counts[b] ?: 0) + 1 } }
+        (minBucket..maxBucket).map {
             GuessBucket(it, counts[it] ?: 0, label = "$it" + if (clampable && it == maxBucket) "+" else "")
         }
+    }.getOrElse { emptyList() }
+
+    // ── Per-mode stats registry rows (More Games §18) ────────────────────────────
+    @Serializable
+    private data class RegistryRow(
+        @SerialName("player1_score") val player1Score: Double? = null,
+        @SerialName("player1_time") val player1Time: Double? = null,
+        @SerialName("winner_id") val winnerId: String? = null,
+        @SerialName("player1_guesses") val player1Guesses: List<String>? = null,
+        val solutions: List<String>? = null,
+        @SerialName("hints_used") val hintsUsed: Int? = null,
+        val seed: String? = null,
+    )
+
+    /**
+     * The player's OWN matches rows for a mode as the stats registry reads them
+     * (web fetchModeDetail: player1_score → guess_count, winner_id → completed,
+     * player1_time → time_seconds). The matches table has no boards columns, so
+     * boards_solved / total_boards stay null and ModeStats.modeAggregates rebuilds
+     * them from the event log. Own rows only: player1_guesses / hints_used are
+     * the recorder's. vs_cpu games never write match rows → empty.
+     */
+    suspend fun modeMatchRows(userId: String, mode: String, playType: String = "solo"): List<ModeStats.MatchRow> = runCatching {
+        if (playType == "vs_cpu") return emptyList()
+        client.postgrest["matches"]
+            .select(Columns.raw("id,seed,game_mode,player1_score,player1_time,winner_id,player1_guesses,solutions,hints_used,created_at")) {
+                filter { eq("player1_id", userId); eq("game_mode", mode); scopeToPlayType(playType) }
+                order("created_at", Order.DESCENDING)
+                limit(2000)
+            }
+            .decodeList<RegistryRow>()
+            .map { r ->
+                ModeStats.MatchRow(
+                    guess_count = (r.player1Score ?: 0.0).toInt(),
+                    completed = r.winnerId == userId,
+                    time_seconds = (r.player1Time ?: 0.0).roundToInt(),
+                    hints_used = r.hintsUsed ?: 0,
+                    boards_solved = null,
+                    total_boards = null,
+                    player1_guesses = r.player1Guesses ?: emptyList(),
+                    solutions = r.solutions ?: emptyList(),
+                    seed = r.seed,
+                )
+            }
     }.getOrElse { emptyList() }
 
     // ── Activity ─────────────────────────────────────────────────────────────────

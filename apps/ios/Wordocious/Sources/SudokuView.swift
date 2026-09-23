@@ -1,12 +1,15 @@
 import SwiftUI
 import WordociousCore
 
-// Daily Sudoku (More Games §4) — the iOS twin of components/sudoku/*. One fixed
+// Daily Sudocious (More Games §4; catalog id `sudoku`) — the iOS twin of
+// components/sudoku/*. One fixed
 // Medium puzzle a day generated on the device from the daily seed; Pro
 // Unlimited picks Easy / Medium / Hard. Three wrong digits lose; hints fill a
 // cell and cost score but never a mistake. guess_count = mistakes + 1.
 
 private let sudokuAccent = Color(hex: 0x1E40AF)
+/// Player-facing name, read from the catalog (rename-proof: the id stays `sudoku`).
+private let sudokuTitle = ModeGen.byId("sudoku")?.title ?? "Sudocious"
 private let difficultyLabel: [SudokuDifficulty: String] = [.easy: "Easy", .medium: "Medium", .hard: "Hard"]
 
 @MainActor
@@ -217,7 +220,7 @@ struct SudokuView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("SUDOKU").font(Brand.font(24, .black)).foregroundStyle(sudokuAccent)
+            Text(ModeStyle.title(.sudoku)).font(Brand.font(24, .black)).foregroundStyle(sudokuAccent)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -273,7 +276,7 @@ struct SudokuView: View {
         let secs = vm.elapsed
         let remaining = sudokuRemaining(vm.state)
         return VStack(spacing: 10) {
-            Text(won ? "Sudoku solved" : "Out of mistakes")
+            Text(won ? "\(sudokuTitle) solved" : "Out of mistakes")
                 .font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
             Text(won
                  ? "\(formatGuessStat(semantics: "mistakes", guessBase: 1, guessCount: vm.mistakes + 1)) · \(timeText(secs))\(vm.hintsUsed > 0 ? " · \(vm.hintsUsed) hint\(vm.hintsUsed == 1 ? "" : "s")" : "")"
@@ -305,7 +308,7 @@ struct SudokuView: View {
         ShareService.share(kind: .sudoku(givens: vm.state.givens, board: vm.state.board, hintMask: vm.state.hintMask,
                                          mistakes: vm.mistakes, difficulty: difficultyLabel[vm.state.difficulty] ?? "Medium",
                                          puzzleNumber: vm.isDaily ? vm.dailyNumber : nil),
-                           mode: .sudoku, modeLabel: "SUDOKU", accent: sudokuAccent, won: vm.state.status == .won,
+                           mode: .sudoku, modeLabel: ModeStyle.title(.sudoku), accent: sudokuAccent, won: vm.state.status == .won,
                            guesses: vm.mistakes + 1, maxGuesses: SUDOKU_MAX_MISTAKES + 1, timeSeconds: vm.elapsed,
                            points: Int(DailyScoring.breakdown(gameMode: GameMode.sudoku.rawValue, completed: vm.state.status == .won,
                                                               guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
@@ -376,7 +379,7 @@ struct SudokuBoardView: View {
         }
         .aspectRatio(1, contentMode: .fit)
         .frame(maxWidth: 420)
-        .accessibilityLabel("Sudoku board")
+        .accessibilityLabel("\(sudokuTitle) board")
     }
 
     @ViewBuilder

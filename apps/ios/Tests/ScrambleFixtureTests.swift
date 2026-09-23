@@ -71,7 +71,8 @@ final class ScrambleFixtureTests: XCTestCase {
         XCTAssertFalse(f.seeds.isEmpty)
         for c in f.seeds { XCTAssertEqual(scramblePuzzleForSeed(b, seed: c.seed)?.id, c.id, "seed \(c.seed)") }
         XCTAssertEqual(b.daily[0], f.puzzle)
-        XCTAssertNil(f.puzzle.cartoon)
+        // Every puzzle carries its hash-named cartoon since the art batch (2026-09-23).
+        XCTAssertTrue(f.puzzle.cartoon?.hasSuffix(".webp") == true && f.puzzle.cartoon?.hasPrefix("md-") == true, "cartoon \(f.puzzle.cartoon ?? "nil")")
         XCTAssertEqual(scrambleFinalLetters(f.puzzle), f.finalLetters)
         XCTAssertEqual(scrambleFinalTray(f.puzzle), f.finalTray)
         XCTAssertEqual(f.targets.count, SCRAMBLE_TOTAL_BOARDS)

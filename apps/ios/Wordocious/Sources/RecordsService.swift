@@ -49,7 +49,7 @@ struct AllTimeRecord: Identifiable, Decodable {
         let v = Int(recordValue)
         switch recordType {
         case "fastest_win": return (v < 60 ? "\(v)s" : "\(v / 60)m \(v % 60)s") + hintsSuffix
-        case "fewest_guesses": return "\(v) guesses" + hintsSuffix
+        case "fewest_guesses": return RecordCatalog.fewestValue(v, gameMode: gameMode) + hintsSuffix
         case "most_games_played": return "\(v) games"
         case "longest_streak": return "\(v) wins"
         case "most_gold_medals": return "\(v) golds"
@@ -73,6 +73,25 @@ enum RecordCatalog {
     ]
     static let global = ["longest_streak", "highest_level", "most_gold_medals", "most_daily_completions"]
     static let perMode = ["fastest_win", "fewest_guesses", "most_games_played", "longest_streak"]
+
+    /// A record's title for a mode. More Games §11: "fewest_guesses" reads
+    /// through the mode's guess semantics — "Fewest Mistakes" / "Best vs Par" /
+    /// "Fewest Misses" / "Best Rank" / "Fewest Checks" (ModeStats.fewestRecordLabel,
+    /// web records/page.tsx recordLabel). Every other type keeps its label.
+    static func label(_ type: String, gameMode: String?) -> String {
+        guard type == "fewest_guesses", let m = gameMode, let meta = ModeGen.byDbKey(m) else { return labels[type]?.label ?? type }
+        return WordociousCore.ModeStats.fewestRecordLabel(meta.guessSemantics)
+    }
+
+    /// The "fewest_guesses" value for a mode: "4 guesses" for the word modes,
+    /// else formatGuessStat — Sudoku "0 mistakes", Letter Ladder "Par", Hubbub a
+    /// rank name (web recordValue).
+    static func fewestValue(_ v: Int, gameMode: String?) -> String {
+        if let m = gameMode, let meta = ModeGen.byDbKey(m), meta.guessSemantics != "guesses" {
+            return formatGuessStat(semantics: meta.guessSemantics, guessBase: meta.guessBase, guessCount: v)
+        }
+        return "\(v) guesses"
+    }
 }
 
 /// Reads the all-time "hall of records" — mirrors lib/daily-service.ts
