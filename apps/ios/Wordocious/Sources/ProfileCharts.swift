@@ -752,10 +752,16 @@ struct ProStatsCard: View {
 
     struct ModeBar: Identifiable { var id: String { label }; let label: String; let winRate: Double; let avgTime: Int }
 
-    // game_mode (dbKey) → short label, mirroring the web MODE_LABELS.
-    private static let order = ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE"]
-    private static let label = ["DUEL": "Classic", "QUORDLE": "Quad", "OCTORDLE": "Octo", "SEQUENCE": "Succ",
-                                "RESCUE": "Deliv", "DUEL_6": "Six", "DUEL_7": "Seven", "GAUNTLET": "Gaunt", "PROPERNOUNDLE": "Proper"]
+    // Per-mode bars over EVERY daily mode this build knows (catalog order —
+    // ProperNoundle and the More Games titles included; a mode with no games
+    // simply has no bar). Short labels pinned for the classic set so the axis
+    // stays as it was; anything else takes the catalog shortTitle.
+    private static let order: [String] = ModeGen.daily.compactMap { $0.dbKey }
+    private static let pinnedLabel = ["DUEL": "Classic", "QUORDLE": "Quad", "OCTORDLE": "Octo", "SEQUENCE": "Succ",
+                                      "RESCUE": "Deliv", "DUEL_6": "Six", "DUEL_7": "Seven", "GAUNTLET": "Gaunt", "PROPERNOUNDLE": "Proper"]
+    private static let label: [String: String] = Dictionary(uniqueKeysWithValues: order.map { key in
+        (key, pinnedLabel[key] ?? ModeGen.byDbKey(key)?.shortTitle ?? key)
+    })
 
     /// Derived synchronously from statRows — no async, no fetch-timing race.
     /// Web parity (pro-stats.tsx): Pro Stats compute from SOLO rows only.

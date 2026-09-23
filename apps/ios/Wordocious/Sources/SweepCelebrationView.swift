@@ -1,7 +1,7 @@
 import SwiftUI
 import WordociousCore
 
-// One-time full-screen celebration shown when all 9 daily puzzles are complete.
+// One-time full-screen celebration shown when every Daily Sweep puzzle is complete.
 // Distinct from the per-game victory confetti (which would look redundant when
 // the final daily was itself a win):
 //   • Daily Sweep      → violet/pink sparkle burst + foil shimmer.

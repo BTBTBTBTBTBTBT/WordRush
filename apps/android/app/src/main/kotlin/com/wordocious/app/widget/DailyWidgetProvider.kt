@@ -217,8 +217,18 @@ class DailyWidgetProvider : AppWidgetProvider() {
             theme: Theme,
             done: Int,
         ) {
+            // The roster is ModeGen.sweep (WidgetBridge) — 8 since Stage 9, 9 in a
+            // snapshot written by an older build. Cells are 0..8 for modes + one
+            // themed cell; any slot past the roster is blanked (INVISIBLE keeps
+            // the 5-column weights, so the rows stay aligned).
+            val modeCount = snap.modes.size.coerceAtMost(9)
             for (i in 0 until 9) {
-                val m = snap.modes.getOrNull(i) ?: continue
+                val m = snap.modes.getOrNull(i)
+                if (m == null) {
+                    views.setViewVisibility(CELL[i], View.INVISIBLE)
+                    continue
+                }
+                views.setViewVisibility(CELL[i], View.VISIBLE)
                 val accent = hex(m.colorHex)
                 views.setTextViewText(CELL_LABEL[i], m.title)
                 views.setTextColor(CELL_LABEL[i], TEXT_SECONDARY)
@@ -276,19 +286,20 @@ class DailyWidgetProvider : AppWidgetProvider() {
                             if (t.length > 2) 10f else 13f,
                         )
                     }
-                    // Deep link into that mode's daily; ProperNoundle has no
-                    // programmatic daily launch path (iOS parity) → plain open.
-                    views.setOnClickPendingIntent(
-                        CELL[i],
-                        if (m.key != "PROPERNOUNDLE") dailyIntent(context, 1 + i, m.key)
-                        else openAppIntent(context, 1 + i),
-                    )
+                    // Deep link into that mode's daily. Every roster entry is a
+                    // sweep word game (ProperNoundle left the sweep at Stage 9),
+                    // so each one has a programmatic daily launch path.
+                    views.setOnClickPendingIntent(CELL[i], dailyIntent(context, 1 + i, m.key))
                 }
             }
 
-            // 10th cell, by theme: celebration when swept, remaining count
-            // mid-day, the shield stash when the streak's on the line, sparkle at dawn.
-            val i = 9
+            // Themed cell right after the last mode (slot 8 with today's eight;
+            // slot 9 with a nine-mode snapshot): celebration when swept, remaining
+            // count mid-day, the shield stash when the streak's on the line,
+            // sparkle at dawn. Any slot after it stays blank.
+            val i = modeCount
+            for (spare in (i + 1) until CELL.size) views.setViewVisibility(CELL[spare], View.INVISIBLE)
+            views.setViewVisibility(CELL[i], View.VISIBLE)
             data class X(val icon: Int, val tint: Int, val label: String)
             val x = when (theme) {
                 Theme.FLAWLESS, Theme.SWEEP -> X(R.drawable.ic_w_party, PURPLE, "Done!")

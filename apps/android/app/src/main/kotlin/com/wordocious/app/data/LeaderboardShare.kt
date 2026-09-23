@@ -328,18 +328,16 @@ object LeaderboardShare {
     private const val SWEEP_LM = "SWEEP"
     private const val SWEEP_ACCENT = 0xFF7C3AED.toInt()
 
-    /** "12m 4s · 8/9 · Flawless" — the sweep row's own stats, not guesses. */
-    private fun sweepSubline(e: LeaderboardService.SweepEntry): String =
-        "${com.wordocious.app.ui.formatShortTime(e.totalTime)} · ${e.modesWon}/9 · ${if (e.isFlawless) "Flawless" else "Sweep"}"
+    /** "12m 4s · 7/8 · Flawless" — the sweep row's own stats, not guesses; the
+     *  denominator is that day's sweep-era size (Stage 9: 8 today, 9 before). */
+    private fun sweepSubline(e: LeaderboardService.SweepEntry, day: String): String =
+        "${com.wordocious.app.ui.formatShortTime(e.totalTime)} · ${e.modesWon}/${com.wordocious.app.ModeGen.requiredSweepCount(day)} · ${if (e.isFlawless) "Flawless" else "Sweep"}"
 
-    /** §249: the nine-dot strip's fixed order — the in-app SweepModeDots. */
-    private val SWEEP_DOT_ORDER = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
-        "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
-
-    /** §249: per-dot values — null = unplayed, -1 = loss, else win intensity t. */
+    /** §249: per-dot values — null = unplayed, -1 = loss, else win intensity t.
+     *  Order = the in-app SweepModeDots ([com.wordocious.app.ui.sweepDotModes]). */
     fun sweepDotValues(det: LeaderboardService.SweepDetails?, day: String): List<Double?>? {
         if (det == null) return null
-        return SWEEP_DOT_ORDER.map { mode ->
+        return com.wordocious.app.ui.sweepDotModes(day).map { mode ->
             val d = det.modes[mode] ?: return@map null
             if (!d.completed) return@map -1.0
             val ratio = d.score / DailyScoring.modeScoreCeiling(mode, day)
@@ -351,13 +349,14 @@ object LeaderboardShare {
         e: LeaderboardService.SweepEntry,
         userId: String?,
         scoreLabels: Map<Double, String>,
+        day: String,
         dots: List<Double?>? = null,
     ): RowInput = RowInput(
         // The RPC already ranks tie-aware (§217) — never re-rank by index.
         rank = e.rank.toInt(),
         name = e.username ?: "Player",
         scoreDisplay = scoreLabels[e.totalScore] ?: com.wordocious.app.ui.formatScore(e.totalScore),
-        subline = sweepSubline(e),
+        subline = sweepSubline(e, day),
         isYou = userId != null && e.userId == userId,
         dots = dots,
     )
@@ -397,10 +396,10 @@ object LeaderboardShare {
             modeChip = "Daily Sweep",
             dateChip = if (podium) "${formatBoardDate(day)} · Final"
                 else "${formatBoardDate(day)}${if (puzzle != null) " · #$puzzle" else ""} · as of ${formatClockTime(now)}",
-            rows = top.map { sweepRow(it, userId, cardLabels, sweepDotValues(details[it.userId], day)) },
-            you = if (belowTop) sweepRow(userEntry!!, userId, cardLabels, sweepDotValues(details[userEntry.userId], day)) else null,
+            rows = top.map { sweepRow(it, userId, cardLabels, day, sweepDotValues(details[it.userId], day)) },
+            you = if (belowTop) sweepRow(userEntry!!, userId, cardLabels, day, sweepDotValues(details[userEntry.userId], day)) else null,
             youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank.totalPlayers}" else null,
-            footer = "Can you sweep all nine? Play free at wordocious.com",
+            footer = "Can you sweep them all? Play free at wordocious.com",
             day = day,
             shareRank = userRank?.rank,
             sharePlayers = userRank?.totalPlayers,
@@ -514,11 +513,12 @@ object LeaderboardShare {
                 }
             }
             RowInput(rank = dayNumber, name = formatBoardDate(d),
-                     scoreDisplay = st?.let { String.format(java.util.Locale.US, "%,d pts", Math.round(it.points)) } ?: "9/9 won",
+                     scoreDisplay = st?.let { String.format(java.util.Locale.US, "%,d pts", Math.round(it.points)) }
+                         ?: com.wordocious.app.ModeGen.requiredSweepCount(d).let { n -> "$n/$n won" },
                      subline = subline, isYou = i == shown - 1, dots = st?.dots)
         }
         val skipped = streak - shown
-        var footer = "$streak straight day${if (streak == 1) "" else "s"} winning all nine"
+        var footer = "$streak straight day${if (streak == 1) "" else "s"} winning every daily"
         if (skipped > 0) footer += " (first $skipped not shown)"
         if (bestStreak > streak) footer += " · best $bestStreak"
         footer += " · wordocious.com"
@@ -558,8 +558,11 @@ object LeaderboardShare {
         }
         val sorted = records.sortedWith(compareBy({ order.indexOf(it.recordType).let { i -> if (i == -1) 99 else i } },
             { if (it.recordType in lowerIsBetter) it.recordValue else -it.recordValue }))
+        // MODE_OPTIONS holds the sweep picker only — a More Games record
+        // (ProperNoundle, Sudoku…) reads its title from the catalog.
         fun title(gm: String?): String = gm?.let { key ->
             com.wordocious.app.ui.MODE_OPTIONS.firstOrNull { it.first == key }?.second
+                ?: com.wordocious.app.ModeGen.byDbKey(key)?.title
         } ?: "Global"
         val rows = sorted.take(5).mapIndexed { i, r ->
             RowInput(rank = i + 1,

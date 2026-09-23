@@ -14,6 +14,7 @@ import {
 import { checkAchievements } from './achievement-service';
 import { grantFreeShield } from './shield-service';
 import { DAILY_MODES, requiredDailyModeCount, sweepModesFor } from './daily-modes';
+import { guessDistributionRange, type MatchRow } from './mode-stats';
 
 export interface XpResult {
   xpGain: number;
@@ -1339,7 +1340,7 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
       ? Promise.resolve({ data: null } as { data: any[] | null })
       : (supabase as any)
           .from('matches')
-          .select('created_at, winner_id, player1_id, player2_id, game_mode, player1_score, player1_time, player1_guesses, solutions')
+          .select('created_at, winner_id, player1_id, player2_id, game_mode, player1_score, player1_time, player1_guesses, solutions, hints_used, seed')
           .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
           .eq('game_mode', gameMode)
           .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
@@ -1363,17 +1364,42 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
     created_at: string; winner_id: string | null; player1_id: string; player2_id: string | null;
     game_mode: string; player1_score: number; player1_time: number;
     player1_guesses: string[] | null; solutions: string[] | null;
+    hints_used: number | null; seed: string | null;
   }> = rowsRes.data || [];
+
+  // ── Matches rows for the per-mode stats registry (More Games §18) ──
+  // The mode's own grid cells (Clean, Avg Mistakes, Pangrams, …) come from a
+  // pure aggregate over these rows (lib/mode-stats.ts modeAggregates). The
+  // matches table has no boards columns, so boards_solved/total_boards are
+  // left null and the aggregate rebuilds them from the event log. Own rows
+  // only: player1_guesses / hints_used are the recorder's.
+  const matches: MatchRow[] = cpu ? [] : rows
+    .filter((r) => r.player1_id === userId)
+    .map((r) => ({
+      guess_count: r.player1_score || 0,
+      completed: r.winner_id === userId,
+      time_seconds: Math.round(r.player1_time || 0),
+      hints_used: r.hints_used || 0,
+      boards_solved: null,
+      total_boards: null,
+      player1_guesses: Array.isArray(r.player1_guesses) ? r.player1_guesses.map(String) : [],
+      solutions: Array.isArray(r.solutions) ? r.solutions.map(String) : [],
+      seed: r.seed ?? undefined,
+    }));
 
   // ── Guess distribution (fetchGuessDistribution — gameMode always set) ──
   const MAX_BUCKET: Record<string, number> = {
     DUEL: 6, RESCUE: 6, PROPERNOUNDLE: 6, DUEL_6: 7, DUEL_7: 8,
     QUORDLE: 9, SEQUENCE: 10, OCTORDLE: 13, GAUNTLET: 13,
   };
-  const maxBucket = MAX_BUCKET[gameMode] ?? 6;
+  // Kindred (4–7 submissions) and Muddle (5–13 checks) start their histogram
+  // at the perfect count — a "1 guess" bar would be impossible there.
+  const range = guessDistributionRange(gameMode);
+  const minBucket = range?.min ?? 1;
+  const maxBucket = range?.max ?? MAX_BUCKET[gameMode] ?? 6;
   const clampable = gameMode === 'GAUNTLET';
   const dist: Record<number, number> = {};
-  for (let g = 1; g <= maxBucket; g++) dist[g] = 0;
+  for (let g = minBucket; g <= maxBucket; g++) dist[g] = 0;
   for (const row of rows) {
     if (row.winner_id == null) continue; // original query: .not('winner_id','is',null)
     const isP1 = row.player1_id === userId;
@@ -1381,7 +1407,7 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
     if (!won) continue;
     const score = isP1 ? row.player1_score : 0;
     if (score <= 0) continue;
-    const bucket = Math.min(score, maxBucket);
+    const bucket = Math.max(minBucket, Math.min(score, maxBucket));
     dist[bucket] = (dist[bucket] || 0) + 1;
   }
   const guessDist = cpu ? [] : Object.entries(dist).map(([g, c]) => ({
@@ -1573,6 +1599,7 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
     headToHead,
     topWords,
     wordInsights,
+    matches,
   };
 }
 

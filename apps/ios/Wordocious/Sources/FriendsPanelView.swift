@@ -584,12 +584,13 @@ struct FriendsPanelView: View {
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
     }
 
-    /// "5/9 today · 2,116 pts · 🔥12 · you lead 7–4" — the row's engagement
-    /// digest (§212; §238 wording).
+    /// "5/8 today · 2,116 pts · 🔥12 · you lead 7–4" — the row's engagement
+    /// digest (§212; §238 wording). The denominator is the current Daily
+    /// Sweep size (web parity: SWEEP_MODES.length), never a literal.
     private func statusLine(_ f: FriendsService.FriendProfile, played: Int) -> String {
         var parts: [String] = []
         if played > 0 {
-            var lead = "\(played)/9 today"
+            var lead = "\(played)/\(DailyCompletionsStore.totalDailyModes) today"
             // §225: show the score, not just the count — todayPoints already
             // rides the §216 digest. formatted() = grouping separators.
             // §238: points ride right after the count so "N pts" clearly

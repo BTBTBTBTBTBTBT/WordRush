@@ -68,9 +68,11 @@ fun InviteSheet(onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
-    // The 9 VS-capable modes (every MODE_CARD with an engine mode — excludes the
-    // "vs" card itself). Same list + brand colors/glyphs as web MODES.
-    val modes = remember { MODE_CARDS.filter { it.engineMode != null } }
+    // The VS-capable modes: every catalog card on the shared word reducer (the
+    // eight sweep games + ProperNoundle, which sits under the More tile since
+    // Stage 9). The custom-engine More Games titles have no VS. Same list +
+    // brand colors/glyphs as web MODES / VSLobbyScreen.VS_MODES.
+    val modes = remember { ALL_CARDS.filter { it.engineMode != null && !it.engineMode.isCustomEngine } }
 
     var card by remember { mutableStateOf(modes.first()) }
     var modeOpen by remember { mutableStateOf(false) }

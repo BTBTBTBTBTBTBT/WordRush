@@ -1,7 +1,9 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ModeGen
 import com.wordocious.core.GameMode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -29,12 +31,30 @@ class SweepPickerGuardTest {
     }
 
     @Test
-    fun theNineRealModesResolveToTheirEnum() {
+    fun theSweepModesResolveToTheirEnum() {
+        // The picker's real modes ARE the catalog's sweep set — derived, never a
+        // literal count (More Games Stage 9 took ProperNoundle out of the sweep).
         val realIds = MODE_OPTIONS.map { it.first }.filter { it != SWEEP_ID }
-        assertEquals("picker should carry exactly 9 real modes + SWEEP", 9, realIds.size)
+        val sweepKeys = ModeGen.sweep.mapNotNull { it.dbKey }
+        assertEquals("picker should carry exactly the sweep modes + SWEEP", sweepKeys, realIds)
         realIds.forEach { id ->
             assertEquals("$id must resolve to its enum", GameMode.valueOf(id), pickerGameModeOrNull(id))
         }
+    }
+
+    @Test
+    fun moreGamesTitlesStayOffTheSweepPicker() {
+        // Every More Games title (ProperNoundle included) reaches the boards
+        // through the More chip, never as a sweep tile.
+        val pickerIds = MODE_OPTIONS.map { it.first }.toSet()
+        ModeGen.more.mapNotNull { it.dbKey }.forEach { key ->
+            assertFalse("$key is a More Games title and must not be a sweep chip", key in pickerIds)
+        }
+        assertTrue("ProperNoundle lives under the More tile", ModeGen.more.any { it.dbKey == "PROPERNOUNDLE" })
+        // Codegen invariant, mirrored here so a hand-edited era row cannot drift
+        // from the catalog's sweep flags: newest era == modes.filter(sweep).
+        assertEquals("newest sweep era must equal the current sweep set",
+            ModeGen.sweep.mapNotNull { it.dbKey }.toSet(), ModeGen.sweepEras.first().modes.toSet())
     }
 
     @Test

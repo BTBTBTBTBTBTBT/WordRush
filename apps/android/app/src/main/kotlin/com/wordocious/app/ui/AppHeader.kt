@@ -222,7 +222,7 @@ fun AppHeader(
                 }
                 PopoverStatRow("Current", "$flawlessStreak ${if (flawlessStreak == 1) "day" else "days"}")
                 PopoverDivider()
-                PopoverBody("Consecutive days winning all 9 dailies. Win every daily today to keep it alive.")
+                PopoverBody("Consecutive days winning every Daily Sweep game. Win them all today to keep it alive.")
             }
         }
         if (shieldOpen && p != null) {

@@ -162,13 +162,22 @@ struct MenuSheet: View {
     }
 }
 
-// MARK: - Guides index (list the 9 mode guides → GuideSheet)
+// MARK: - Guides index (one row per daily mode's guide → GuideSheet)
 
 struct GuidesIndexView: View {
     @ObservedObject private var service = GuideService.shared
+    @ObservedObject private var flags = FlagsService.shared
     @State private var selected: ModeBox?
 
-    private let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue, .gauntlet, .propernoundle]
+    /// Every daily mode this viewer can see, catalog order — the sweep games
+    /// first, then the More Games titles (ProperNoundle among them since Stage
+    /// 9). Flag-gated titles stay out until their flag is on, so an unlaunched
+    /// game's guide never leaks.
+    private var modes: [GameMode] {
+        ModeGen.daily
+            .filter { flags.isOn($0.flagKey) }
+            .compactMap { $0.dbKey.flatMap(GameMode.init(rawValue:)) }
+    }
 
     var body: some View {
         MenuScaffold("Guides") {

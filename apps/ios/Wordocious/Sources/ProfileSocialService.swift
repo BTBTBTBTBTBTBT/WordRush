@@ -106,10 +106,13 @@ extension PublicProfileService {
         } catch { return [] }
     }
 
-    /// Count of dailies the target completed TODAY (0–9) — the avatar ring.
+    /// Count of SWEEP dailies the target completed TODAY — the avatar ring.
+    /// More Games titles (ProperNoundle included) never count toward it.
     static func todayRing(userId: String) async -> Int {
-        let rows = await dailyRows(userId: userId, sinceDay: LeaderboardService.todayLocal(), limit: 20)
-        return Set(rows.filter { $0.completed == true }.map(\.gameMode)).count
+        let today = LeaderboardService.todayLocal()
+        let sweep = Set(ModeGen.sweepModes(for: today))
+        let rows = await dailyRows(userId: userId, sinceDay: today, limit: 40)
+        return Set(rows.filter { $0.completed == true && sweep.contains($0.gameMode) }.map(\.gameMode)).count
     }
 
     /// True once the player has ever solved all 8 OctoWord boards in a daily.
@@ -197,11 +200,14 @@ extension PublicProfileService {
         return summary
     }
 
-    /// Days on which a player completed all daily modes (a "sweep").
+    /// Days on which a player completed every sweep mode of that day's era (a
+    /// "sweep") — More Games rows never substitute for a missing sweep mode.
     private static func sweepCount(_ rows: [DailyCell]) -> Int {
         var modesByDay: [String: Set<String>] = [:]
-        for r in rows { modesByDay[r.day, default: []].insert(r.gameMode) }
-        return modesByDay.values.filter { $0.count >= MedalService.dailyModeCount }.count
+        for r in rows where ModeGen.sweepModes(for: r.day).contains(r.gameMode) {
+            modesByDay[r.day, default: []].insert(r.gameMode)
+        }
+        return modesByDay.filter { $0.value.count >= ModeGen.requiredSweepCount(for: $0.key) }.count
     }
 
     // MARK: Streak calendar (60 days)
@@ -215,8 +221,12 @@ extension PublicProfileService {
         f.timeZone = .current
         let start = Calendar.current.date(byAdding: .day, value: -(days - 1), to: Date()) ?? Date()
         let rows = await dailyRows(userId: userId, sinceDay: f.string(from: start))
+        // Sweep modes only (per that day's era), so the calendar's "swept all N"
+        // ring means the Daily Sweep — a More Games finish never pads the count.
         var modesByDay: [String: Set<String>] = [:]
-        for r in rows where r.completed == true { modesByDay[r.day, default: []].insert(r.gameMode) }
+        for r in rows where r.completed == true && ModeGen.sweepModes(for: r.day).contains(r.gameMode) {
+            modesByDay[r.day, default: []].insert(r.gameMode)
+        }
         return modesByDay.mapValues(\.count)
     }
 

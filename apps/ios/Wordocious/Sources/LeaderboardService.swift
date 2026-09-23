@@ -347,8 +347,12 @@ enum LeaderboardService {
             .gte("day", value: from)
             .lte("day", value: day)
             .execute().value) ?? []
+        // Sweep-era modes only: a More Games win (ProperNoundle after Stage 9)
+        // can never stand in for a missing sweep mode on that day.
         var wonModes: [String: [String: Set<String>]] = [:]
-        for r in rows { wonModes[r.user_id, default: [:]][r.day, default: []].insert(r.game_mode) }
+        for r in rows where ModeGen.sweepModes(for: r.day).contains(r.game_mode) {
+            wonModes[r.user_id, default: [:]][r.day, default: []].insert(r.game_mode)
+        }
         var out: [String: Int] = [:]
         for id in userIds {
             guard let byDay = wonModes[id] else { out[id] = 0; continue }
@@ -373,8 +377,11 @@ enum LeaderboardService {
             .in("user_id", values: userIds)
             .execute()
             .value) ?? []
+        // The sweep board explains the SWEEP ranking, so guesses/hints sum over
+        // that day's sweep-era modes only; a More Games row is left out.
+        let sweep = Set(ModeGen.sweepModes(for: day))
         var out: [String: SweepDetails] = [:]
-        for row in rows {
+        for row in rows where sweep.contains(row.gameMode) {
             var d = out[row.userId] ?? SweepDetails()
             d.modes[row.gameMode] = SweepModeDetail(score: row.compositeScore, completed: row.completed)
             d.guesses += row.guessCount ?? 0

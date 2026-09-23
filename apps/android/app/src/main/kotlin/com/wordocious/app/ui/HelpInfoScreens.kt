@@ -129,8 +129,11 @@ private fun ExampleRow(letters: List<String>, highlightIdx: Int, fill: Color, hi
 private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.HelpMode>) {
     // iOS drives this list from the local mode catalog and uses /api/content only to
     // override the description, so the tab is complete offline and keeps its icons.
+    // The home tiles (minus the More Games tile itself) followed by every More
+    // Games title this viewer can see, so ProperNoundle keeps its help row.
+    val helpCards = MODE_CARDS.filter { it.id != "more" } + visibleDailyCards().filter { it !in MODE_CARDS }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MODE_CARDS.forEach { card ->
+        helpCards.forEach { card ->
             Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
                     .border(1.dp, WTheme.divider, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),

@@ -63,8 +63,10 @@ enum WidgetTheme {
 }
 
 /// Fallback roster so the widget shows the real mode grid before the app has
-/// ever written a snapshot (fresh install / not signed in). Icon specs match
-/// ModeCatalog.swift's homeModes.
+/// ever written a snapshot (fresh install / not signed in). The eight Daily
+/// Sweep modes (ModeGen.sweep) — the extension can't import the catalog, so
+/// this literal mirrors it; icon specs match ModeCatalog.swift's homeModes.
+/// ProperNoundle lives under More Games and is not in the sweep (Stage 9).
 private let placeholderModes: [(title: String, glyph: String, hex: String, kind: String, asset: String?, text: String?)] = [
     ("Classic", "C", "#7c3aed", "original", "wordle-grid", nil),
     ("Quad", "IV", "#ec4899", "roman", nil, "IV"),
@@ -74,7 +76,6 @@ private let placeholderModes: [(title: String, glyph: String, hex: String, kind:
     ("Six", "6", "#06b6d4", "hand", "six-hand", "6"),
     ("Seven", "7", "#84cc16", "hand", "seven-hand", "7"),
     ("Gauntlet", "G", "#d97706", "asset", "skull", nil),
-    ("Proper", "P", "#dc2626", "asset", "crown", nil),
 ]
 
 private func emptySnapshot() -> WSnapshot {
@@ -334,7 +335,7 @@ private struct FooterStrip: View {
     }
 }
 
-// MARK: - Small: streak + big X/9 + countdown/points + dot strip
+// MARK: - Small: streak + big X/N + countdown/points + dot strip
 
 struct SmallView: View {
     let snap: WSnapshot
@@ -566,7 +567,7 @@ struct AccessoryRectangularView: View {
             Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
                 .widgetAccentable()
             switch theme {
-            case .flawless: Text("Flawless victory! 9/9 won")
+            case .flawless: Text("Flawless victory! \(done)/\(snap.modes.count) won")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
             case .sweep: Text("Daily sweep! \(done)/\(snap.modes.count) played")
                     .font(.system(size: 13, weight: .bold, design: .rounded))

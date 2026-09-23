@@ -8,7 +8,8 @@ import { CORE_MODES } from '@/lib/modes.generated';
 // More Games (§11): this global view charts the core word modes only. A
 // More Games row would show up with its raw key and a near-100% win rate
 // (Spyglass, Codebreaker), flattening the chart; they get their own stats.
-const CORE_DB_KEYS = new Set<string>([...CORE_MODES.map((m) => m.dbKey).filter((k): k is string => !!k), 'MULTI_DUEL', 'TOURNAMENT']);
+// ProperNoundle moved under More Games at Stage 9 but keeps its place here: it has months of history in these charts.
+const CORE_DB_KEYS = new Set<string>([...CORE_MODES.map((m) => m.dbKey).filter((k): k is string => !!k), 'PROPERNOUNDLE', 'MULTI_DUEL', 'TOURNAMENT']);
 
 interface ProStatsProps {
   userId: string;

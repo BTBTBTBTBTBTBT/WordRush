@@ -62,7 +62,7 @@ private data class Benefit(val icon: ImageVector?, val asset: Int?, val text: St
 
 private val BENEFITS = listOf(
     Benefit(Icons.Filled.VisibilityOff, null, "Ad-free experience — no interruptions, ever"),
-    Benefit(null, R.drawable.ic_wordle_grid, "Unlimited replays of all 9 game modes, any time"),
+    Benefit(null, R.drawable.ic_wordle_grid, "Unlimited replays of every game mode, any time"),
     Benefit(null, R.drawable.ic_swords, "VS mode on every game — challenge friends in every mode"),
     Benefit(Icons.Filled.Bolt, null, "Practice against the CPU — Easy, Medium & Hard bots, anytime"),
     Benefit(Icons.Filled.Mail, null, "Invite friends to private matches by link or username"),

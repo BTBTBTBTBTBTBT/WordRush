@@ -8,7 +8,7 @@ import WordociousCore
 /// content even if all of these fetches fail.
 struct ProfileSocialData {
     var persona: PublicProfileService.Persona?
-    /// Dailies the target completed today (0–9) — avatar progress ring.
+    /// Sweep dailies the target completed today — avatar progress ring.
     var todayCount = 0
     /// Viewer↔target record from shared dailies (nil = signed out / own profile).
     var h2h: PublicProfileService.H2HSummary?
@@ -98,7 +98,7 @@ private extension View {
 // MARK: - Identity: today ring + presence + chips
 
 /// The profile avatar wrapped in a brand-gradient progress ring showing how
-/// many of today's dailies the player has completed, with an "N/9 today" pill.
+/// many of today's sweep dailies the player has completed, with an "N/M today" pill.
 struct TodayRingAvatar: View {
     let profile: Profile
     let completedToday: Int
@@ -901,7 +901,7 @@ struct HighlightsReel: View {
     }
 }
 
-/// 60-day dot grid of daily completions — gold ring on 9/9 (sweep) days.
+/// 60-day dot grid of daily completions — gold ring on Daily Sweep days.
 struct StreakCalendarSheet: View {
     let username: String
     let calendar: [String: Int]
@@ -936,7 +936,9 @@ struct StreakCalendarSheet: View {
                         .fill(day.count > 0 ? Theme.primary.opacity(min(1, 0.35 + Double(day.count) / 12)) : Theme.border.opacity(0.6))
                         .frame(width: 15, height: 15)
                         .overlay {
-                            if day.count >= MedalService.dailyModeCount {
+                            // Each day judged against ITS era's sweep size (the
+                            // 60-day window can straddle the Stage 9 switch).
+                            if day.count >= ModeGen.requiredSweepCount(for: day.key) {
                                 Circle().stroke(Theme.gold, lineWidth: 2).frame(width: 21, height: 21)
                             }
                         }
@@ -944,7 +946,7 @@ struct StreakCalendarSheet: View {
             }
             HStack(spacing: 14) {
                 legend(fill: Theme.primary, ring: false, label: "Played")
-                legend(fill: Theme.primary, ring: true, label: "Swept all \(MedalService.dailyModeCount)")
+                legend(fill: Theme.primary, ring: true, label: "Daily Sweep")
                 legend(fill: Theme.border.opacity(0.6), ring: false, label: "Missed")
             }
             Spacer(minLength: 0)

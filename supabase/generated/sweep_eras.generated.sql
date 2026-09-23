@@ -10,6 +10,7 @@ language sql immutable parallel safe
 set search_path = public
 as $$
   select case
+    when p_day >= '2026-09-23' then array['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'DUEL_6', 'DUEL_7']::text[]
     when p_day >= '2026-05-21' then array['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE', 'DUEL_6', 'DUEL_7']::text[]
     when p_day >= '0000-00-00' then array['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE']::text[]
     else array['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE']::text[]
@@ -25,5 +26,6 @@ as $$
 $$;
 
 -- Probes (expected values as of this generation):
+--   select sweep_required_count('2026-09-23');  -- 8
 --   select sweep_required_count('2026-05-21');  -- 9
 --   select sweep_required_count('2026-01-01');  -- 7

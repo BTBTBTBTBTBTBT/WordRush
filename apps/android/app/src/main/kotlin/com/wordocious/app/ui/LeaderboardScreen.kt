@@ -367,7 +367,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         } else emptyMap()
     }
 
-    val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode
+    // A More Games pick (via the More chip) is not in MODE_OPTIONS — read its catalog title.
+    val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: modeTitleForKey(selectedMode)
 
     // LEADERBOARD SHARE — today's board card + yesterday's podium card (web
     // /daily parity). Single-tap, spoiler-free by construction, so no variant
@@ -923,7 +924,7 @@ private fun RankIcon(rank: Int) {
 private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: (com.wordocious.core.GameMode) -> Unit) {
     // Per-mode card (web /daily Play CTA): accent bar + icon + title + players
     // today + an orange Play button that launches today's daily for this mode.
-    val card = MODE_CARDS.firstOrNull { it.engineMode?.name == modeId }
+    val card = modeCardForKey(modeId)
     val accent = card?.accent ?: WTheme.primary
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
@@ -1060,8 +1061,8 @@ internal fun ModePickerRow(
 ) {
     // More Games (§18): the grid cannot hold every daily mode in its 5-over-N
     // layout, so the non-sweep dailies sit behind ONE "More" chip that opens the
-    // sectioned More Games list. Today every daily mode is in the sweep, so the
-    // chip is hidden and the grid is unchanged (5-over-5).
+    // sectioned More Games list (Stage 9: ProperNoundle and the new titles).
+    // The chip is hidden only when no non-sweep daily is visible to this viewer.
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
     val morePicker = MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
@@ -1285,7 +1286,7 @@ internal fun SweepRow(
                 )
             }
             Text(
-                sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                sweepStatsLine(entry, details, day), fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 // §246: the hints segment fell off the row's end — wrap, never truncate.
                 color = WTheme.textMuted, maxLines = 2,
             )
@@ -1306,19 +1307,17 @@ internal fun SweepRow(
  *  Aug 18). The segments appear only once details land. §227: spelled out —
  *  the founder read "2h" as HOURS; the pill moved off this line so the words
  *  have the width (iOS sweepStatsLine parity). */
-private fun sweepStatsLine(entry: LeaderboardService.SweepEntry, details: LeaderboardService.SweepDetails?): String = buildString {
-    append("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9")
+private fun sweepStatsLine(entry: LeaderboardService.SweepEntry, details: LeaderboardService.SweepDetails?, day: String): String = buildString {
+    // The denominator is that day's sweep-era size (Stage 9: 8 today, 9 before).
+    append("${fmtTime(entry.totalTime)} · ${entry.modesWon}/${com.wordocious.app.ModeGen.requiredSweepCount(day)}")
     if (details != null) {
         append(" · ${details.guesses} guess${if (details.guesses == 1) "" else "es"}")
         if (details.hints > 0) append(" · ${details.hints} hint${if (details.hints == 1) "" else "s"}")
     }
 }
 
-/** §223: the Sweep board's nine-dot mode strip — fixed order = the mode grid. */
-private val SWEEP_DOT_MODES = listOf(
-    "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
-    "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE",
-)
+/** §223: the Sweep board's dot strip — that day's sweep-era modes in mode-grid
+ *  order ([sweepDotModes]); an era-2 day still shows nine dots. */
 
 /**
  * One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction of
@@ -1336,7 +1335,7 @@ private fun SweepModeDots(details: LeaderboardService.SweepDetails?, day: String
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SWEEP_DOT_MODES.forEach { mode ->
+        sweepDotModes(day).forEach { mode ->
             val d = details.modes[mode]
             val dot = Modifier.size(7.dp).clip(CircleShape)
             when {
@@ -1533,7 +1532,7 @@ private fun YesterdaySweepRow(
                 Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, maxLines = 1, softWrap = false)
             }
             Text(
-                sweepStatsLine(entry, details), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                sweepStatsLine(entry, details, day), fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 // §246: the hints segment fell off the row's end — wrap, never truncate.
                 color = WTheme.textMuted, maxLines = 2,
             )

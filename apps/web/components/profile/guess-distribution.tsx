@@ -6,14 +6,20 @@ import { CORRECT_GRADIENT, PRESENT_GRADIENT } from '@/lib/tile-theme';
 interface GuessDistributionProps {
   data: Array<{ guesses: number; count: number }>;
   accentColor?: string;
+  /** The unit each bar counts (More Games §18): guess/guesses by default,
+   *  check/checks for Muddle — the card title, empty state and footer follow. */
+  noun?: { one: string; many: string };
 }
 
-export function GuessDistribution({ data, accentColor }: GuessDistributionProps) {
+const GUESS_NOUN = { one: 'guess', many: 'guesses' };
+
+export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN }: GuessDistributionProps) {
   // Tapped bar's label — shows "N guesses · X wins · Y% of wins".
   const [selected, setSelected] = useState<string | null>(null);
 
   const maxCount = Math.max(1, ...data.map((d) => d.count));
   const totalGames = data.reduce((sum, d) => sum + d.count, 0);
+  const title = `${noun.one} distribution`;
 
   if (totalGames === 0) {
     return (
@@ -22,7 +28,7 @@ export function GuessDistribution({ data, accentColor }: GuessDistributionProps)
         style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
       >
         <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          Win a game to see your guess distribution
+          Win a game to see your {title}
         </p>
       </div>
     );
@@ -39,6 +45,10 @@ export function GuessDistribution({ data, accentColor }: GuessDistributionProps)
       className="p-4"
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
     >
+      {/* Only a non-default unit needs naming — the word modes' card is unchanged. */}
+      {noun !== GUESS_NOUN && (
+        <div className="section-header mb-2">{title.toUpperCase()}</div>
+      )}
       <div className="space-y-1.5">
         {data.map((d) => {
           const pct = (d.count / maxCount) * 100;
@@ -86,7 +96,7 @@ export function GuessDistribution({ data, accentColor }: GuessDistributionProps)
       {/* Footer: tapped-bar detail (wins share) or the plain total. */}
       {selectedBar && selectedBar.count > 0 ? (
         <p className="text-[10px] font-black text-center mt-2" style={{ color: '#7C3AED' }}>
-          {selected} guess{selected === '1' ? '' : 'es'} · {selectedBar.count} win{selectedBar.count === 1 ? '' : 's'} · {Math.round((selectedBar.count / Math.max(1, totalGames)) * 100)}% of wins
+          {selected} {selected === '1' ? noun.one : noun.many} · {selectedBar.count} win{selectedBar.count === 1 ? '' : 's'} · {Math.round((selectedBar.count / Math.max(1, totalGames)) * 100)}% of wins
         </p>
       ) : (
         <p className="text-[10px] font-bold text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>

@@ -60,7 +60,8 @@ describe('mode-catalog invariants', () => {
     const { modes, moreCategories } = await load();
     const cats = new Set(moreCategories.map((c) => c.key));
     for (const m of modes.filter((x) => x.group === 'more')) {
-      expect(m.flagKey, m.id).toMatch(/^mode\./);
+      // ProperNoundle shipped to everyone long before remote flags existed and is never gated (no key → on).
+      if (m.id !== 'propernoundle') expect(m.flagKey, m.id).toMatch(/^mode\./);
       expect(cats.has(m.category as string), `${m.id} category`).toBe(true);
       expect(m.guideSlug, m.id).toBeTruthy();
     }

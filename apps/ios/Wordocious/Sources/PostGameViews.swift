@@ -267,7 +267,7 @@ struct ScoreBreakdownView: View {
 /// mode's daily via the same GameScreen(DailySeed.today)/ProperNoundleView()
 /// path the Leaderboard tab's Play CTA uses — a root-level presenter works no
 /// matter which surface (Home / Leaderboard / Profile) presented this game.
-/// All 9 recorded → a static "Sweep complete" line instead.
+/// Every sweep daily recorded → a static "Sweep complete" line instead.
 struct NextDailyCTA: View {
     /// Posted (object = the mode's dbKey) when the player taps the CTA;
     /// RootTabView observes and presents that mode's daily.
@@ -303,13 +303,25 @@ struct NextDailyCTA: View {
     @StateObject private var completions = DailyCompletionsStore()
     @Environment(\.dismiss) private var dismiss
 
-    /// First unplayed SWEEP mode in the canonical home-grid order (VS has no
-    /// daily row — dbKey nil — so it is skipped automatically). More Games titles
-    /// are never "next": a More Games finish hands off to the sweep (Stage 4).
+    /// The Next Daily target (More Games §18d). A sweep finish walks the SWEEP
+    /// set in canonical home-grid order (VS has no daily row — dbKey nil — so it
+    /// is skipped automatically). A More Games finish hands off to the next
+    /// unplayed More Games title first (catalog order, flag-visible, daily-
+    /// eligible — ProperNoundle among them since Stage 9), then to the sweep.
+    /// More Games titles are never "next" after a sweep game.
     private var nextMode: HomeMode? {
-        homeModes.first { m in
-            guard let key = m.dbKey, key != currentMode, DailyCompletionsStore.sweepKeys.contains(key) else { return false }
+        let unplayed: (HomeMode) -> Bool = { m in
+            guard let key = m.dbKey, key != currentMode else { return false }
             return completions.byMode[key] == nil
+        }
+        let fromMoreGames = currentMode.map { key in moreModes.contains { $0.dbKey == key } } ?? false
+        if fromMoreGames,
+           let next = moreModes.first(where: { $0.dailyEligible && FlagsService.shared.isOn($0.flagKey) && unplayed($0) }) {
+            return next
+        }
+        return homeModes.first { m in
+            guard let key = m.dbKey, DailyCompletionsStore.sweepKeys.contains(key) else { return false }
+            return unplayed(m)
         }
     }
 

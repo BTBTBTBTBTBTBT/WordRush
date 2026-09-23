@@ -132,7 +132,7 @@ object NotificationService {
                 else -> "DAILY CHALLENGE 🧩"
             }
             val body = when {
-                flawless >= 2 -> "$flawless straight days winning all nine. Win them all today to make it ${flawless + 1}."
+                flawless >= 2 -> "$flawless straight days winning every daily. Win them all today to make it ${flawless + 1}."
                 streak >= 3 -> "Your $streak-day streak ends at midnight. One quick game keeps it alive."
                 else -> "Today's puzzles are live. Keep the streak going."
             }

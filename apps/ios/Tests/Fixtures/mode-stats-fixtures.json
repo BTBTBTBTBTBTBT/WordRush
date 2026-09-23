@@ -12,6 +12,23 @@
       "streak": 3,
       "bestStreak": 12
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
         "label": "Wins",
@@ -67,6 +84,23 @@
       "fastestTime": 0,
       "streak": 0,
       "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
@@ -124,6 +158,23 @@
       "streak": 0,
       "bestStreak": 4
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
         "label": "Wins",
@@ -179,6 +230,23 @@
       "fastestTime": 600,
       "streak": 1,
       "bestStreak": 1
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
@@ -236,6 +304,23 @@
       "streak": 2,
       "bestStreak": 2
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
         "label": "Wins",
@@ -292,6 +377,23 @@
       "streak": 5,
       "bestStreak": 9
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
         "label": "Wins",
@@ -329,9 +431,314 @@
     "panels": {
       "guessDistribution": true,
       "solveTime": true,
-      "topWords": true,
-      "openerYield": true,
-      "positionAccuracy": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "PROPERNOUNDLE",
+    "semantics": "guesses",
+    "guessBase": 1,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Games",
+        "value": "0"
+      },
+      {
+        "label": "Win Rate",
+        "value": "0%"
+      },
+      {
+        "label": "Best",
+        "value": "-"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "SUDOKU",
+    "semantics": "mistakes",
+    "guessBase": 1,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Win Rate",
+        "value": "0%"
+      },
+      {
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "-"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "0"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "SUDOKU",
+    "semantics": "mistakes",
+    "guessBase": 1,
+    "totals": {
+      "wins": 4,
+      "losses": 1,
+      "totalGames": 5,
+      "bestScore": 1,
+      "fastestTime": 238,
+      "streak": 0,
+      "bestStreak": 4
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board81>",
+          "<hintMask81>"
+        ],
+        "solutions": [
+          "<solution81>",
+          "<givens81>"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 238,
+        "seed": "daily-2026-09-23-SUDOKU"
+      },
+      {
+        "hints_used": 2,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board81>",
+          "<hintMask81>"
+        ],
+        "solutions": [
+          "<solution81>",
+          "<givens81>"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 402,
+        "seed": "daily-2026-09-24-SUDOKU"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board81>",
+          "<hintMask81>"
+        ],
+        "solutions": [
+          "<solution81>",
+          "<givens81>"
+        ],
+        "guess_count": 3,
+        "completed": true,
+        "time_seconds": 611,
+        "seed": "daily-2026-09-25-SUDOKU"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board81>",
+          "<hintMask81>"
+        ],
+        "solutions": [
+          "<solution81>",
+          "<givens81>"
+        ],
+        "guess_count": 2,
+        "completed": true,
+        "time_seconds": 0,
+        "seed": "daily-2026-09-26-SUDOKU"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board81>",
+          "<hintMask81>"
+        ],
+        "solutions": [
+          "<solution81>",
+          "<givens81>"
+        ],
+        "guess_count": 4,
+        "completed": false,
+        "time_seconds": 300,
+        "seed": "daily-2026-09-27-SUDOKU"
+      }
+    ],
+    "aggregates": {
+      "games": 5,
+      "wins": 4,
+      "cleanWins": 1,
+      "perfectWins": 2,
+      "noHintWins": 2,
+      "winGuessTotal": 7,
+      "winTimeTotal": 1251,
+      "timedWins": 3,
+      "fastestPerfect": 238,
+      "boardsSolved": 4,
+      "boardsTotal": 5,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "4"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Win Rate",
+        "value": "80%"
+      },
+      {
+        "label": "Clean",
+        "value": "1"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "0.8"
+      },
+      {
+        "label": "Fastest",
+        "value": "3m 58s"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "2"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
       "stageBreakdown": false
     }
   },
@@ -348,6 +755,23 @@
       "streak": 6,
       "bestStreak": 14
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
         "label": "Wins",
@@ -358,28 +782,28 @@
         "value": "5"
       },
       {
-        "label": "Games",
-        "value": "41"
-      },
-      {
         "label": "Win Rate",
         "value": "88%"
       },
       {
-        "label": "Best",
-        "value": "0 mistakes"
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "-"
       },
       {
         "label": "Fastest",
         "value": "3m 58s"
       },
       {
-        "label": "Streak",
-        "value": "6"
+        "label": "No-hint Wins",
+        "value": "0"
       },
       {
-        "label": "Best Streak",
-        "value": "14"
+        "label": "Streak",
+        "value": "6"
       }
     ],
     "panels": {
@@ -392,50 +816,67 @@
     }
   },
   {
-    "dbKey": "SUDOKU",
+    "dbKey": "REGIONS",
     "semantics": "mistakes",
     "guessBase": 1,
     "totals": {
-      "wins": 1,
+      "wins": 0,
       "losses": 0,
-      "totalGames": 1,
-      "bestScore": 3,
-      "fastestTime": 900,
-      "streak": 1,
-      "bestStreak": 1
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "1"
+        "value": "0"
       },
       {
         "label": "Losses",
         "value": "0"
       },
       {
-        "label": "Games",
-        "value": "1"
-      },
-      {
         "label": "Win Rate",
-        "value": "100%"
+        "value": "0%"
       },
       {
-        "label": "Best",
-        "value": "2 mistakes"
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "-"
       },
       {
         "label": "Fastest",
-        "value": "15m"
+        "value": "-"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "0"
       },
       {
         "label": "Streak",
-        "value": "1"
-      },
-      {
-        "label": "Best Streak",
-        "value": "1"
+        "value": "0"
       }
     ],
     "panels": {
@@ -448,106 +889,119 @@
     }
   },
   {
-    "dbKey": "SCRAMBLE",
-    "semantics": "checks",
-    "guessBase": 5,
+    "dbKey": "REGIONS",
+    "semantics": "mistakes",
+    "guessBase": 1,
     "totals": {
-      "wins": 12,
-      "losses": 3,
-      "totalGames": 15,
-      "bestScore": 5,
-      "fastestTime": 112,
-      "streak": 2,
-      "bestStreak": 6
+      "wins": 2,
+      "losses": 1,
+      "totalGames": 3,
+      "bestScore": 1,
+      "fastestTime": 130,
+      "streak": 0,
+      "bestStreak": 2
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board49>",
+          "<hintMask49>"
+        ],
+        "solutions": [
+          "<regions49>",
+          "<solution7>"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 130,
+        "seed": "daily-2026-09-23-REGIONS"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board49>",
+          "<hintMask49>"
+        ],
+        "solutions": [
+          "<regions49>",
+          "<solution7>"
+        ],
+        "guess_count": 2,
+        "completed": true,
+        "time_seconds": 190,
+        "seed": "daily-2026-09-24-REGIONS"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "<board64>",
+          "<hintMask64>"
+        ],
+        "solutions": [
+          "<regions64>",
+          "<solution8>"
+        ],
+        "guess_count": 4,
+        "completed": false,
+        "time_seconds": 95,
+        "seed": "daily-2026-09-25-REGIONS"
+      }
+    ],
+    "aggregates": {
+      "games": 3,
+      "wins": 2,
+      "cleanWins": 1,
+      "perfectWins": 1,
+      "noHintWins": 2,
+      "winGuessTotal": 3,
+      "winTimeTotal": 320,
+      "timedWins": 2,
+      "fastestPerfect": 130,
+      "boardsSolved": 2,
+      "boardsTotal": 3,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "12"
-      },
-      {
-        "label": "Losses",
-        "value": "3"
-      },
-      {
-        "label": "Games",
-        "value": "15"
-      },
-      {
-        "label": "Win Rate",
-        "value": "80%"
-      },
-      {
-        "label": "Best",
-        "value": "5 checks"
-      },
-      {
-        "label": "Fastest",
-        "value": "1m 52s"
-      },
-      {
-        "label": "Streak",
         "value": "2"
       },
       {
-        "label": "Best Streak",
-        "value": "6"
-      }
-    ],
-    "panels": {
-      "guessDistribution": false,
-      "solveTime": true,
-      "topWords": false,
-      "openerYield": false,
-      "positionAccuracy": false,
-      "stageBreakdown": false
-    }
-  },
-  {
-    "dbKey": "CROSSWORD",
-    "semantics": "checks",
-    "guessBase": 1,
-    "totals": {
-      "wins": 4,
-      "losses": 0,
-      "totalGames": 4,
-      "bestScore": 1,
-      "fastestTime": 200,
-      "streak": 4,
-      "bestStreak": 4
-    },
-    "lines": [
-      {
-        "label": "Wins",
-        "value": "4"
-      },
-      {
         "label": "Losses",
-        "value": "0"
-      },
-      {
-        "label": "Games",
-        "value": "4"
+        "value": "1"
       },
       {
         "label": "Win Rate",
-        "value": "100%"
+        "value": "67%"
       },
       {
-        "label": "Best",
-        "value": "0 checks"
+        "label": "Clean",
+        "value": "1"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "0.5"
       },
       {
         "label": "Fastest",
-        "value": "3m 20s"
+        "value": "2m 10s"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "2"
       },
       {
         "label": "Streak",
-        "value": "4"
-      },
-      {
-        "label": "Best Streak",
-        "value": "4"
+        "value": "0"
       }
     ],
     "panels": {
@@ -564,38 +1018,55 @@
     "semantics": "overPar",
     "guessBase": 1,
     "totals": {
-      "wins": 20,
-      "losses": 4,
-      "totalGames": 24,
-      "bestScore": 1,
-      "fastestTime": 75,
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
       "streak": 0,
-      "bestStreak": 7
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "20"
+        "value": "0"
       },
       {
         "label": "Losses",
-        "value": "4"
+        "value": "0"
       },
       {
-        "label": "Games",
-        "value": "24"
+        "label": "Par Rate",
+        "value": "0%"
       },
       {
-        "label": "Win Rate",
-        "value": "83%"
+        "label": "Avg Over Par",
+        "value": "-"
       },
       {
-        "label": "Best",
-        "value": "Par"
+        "label": "Fastest Par",
+        "value": "-"
       },
       {
-        "label": "Fastest",
-        "value": "1m 15s"
+        "label": "No-hint Wins",
+        "value": "0"
       },
       {
         "label": "Streak",
@@ -603,7 +1074,195 @@
       },
       {
         "label": "Best Streak",
-        "value": "7"
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "LADDER",
+    "semantics": "overPar",
+    "guessBase": 1,
+    "totals": {
+      "wins": 4,
+      "losses": 1,
+      "totalGames": 5,
+      "bestScore": 1,
+      "fastestTime": 75,
+      "streak": 0,
+      "bestStreak": 4
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+CORD",
+          "+CARD",
+          "+WARD",
+          "+WARM"
+        ],
+        "solutions": [
+          "COLD",
+          "WARM",
+          "par:4",
+          "path:CORD,CARD,WARD,WARM"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 75,
+        "seed": "daily-2026-09-23-LADDER"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+HEAT",
+          "?HEAD",
+          "+HERD",
+          "+HARD"
+        ],
+        "solutions": [
+          "BEAT",
+          "HARD",
+          "par:4",
+          "path:HEAT,HEAD,HERD,HARD"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 140,
+        "seed": "daily-2026-09-24-LADDER"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+SLAT",
+          "+SLIT",
+          "-",
+          "+SPAT",
+          "+SPIT",
+          "+SPIN",
+          "+SHIN",
+          "+SHIP"
+        ],
+        "solutions": [
+          "SLAM",
+          "SHIP",
+          "par:5",
+          "path:SLAT,SPAT,SPIT,SPIN,SHIN,SHIP"
+        ],
+        "guess_count": 3,
+        "completed": true,
+        "time_seconds": 260,
+        "seed": "daily-2026-09-25-LADDER"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+MOLE",
+          "+MALE",
+          "+MALT",
+          "+MELT"
+        ],
+        "solutions": [
+          "MOLD",
+          "MELT",
+          "par:3",
+          "path:MOLE,MALE,MALT,MELT"
+        ],
+        "guess_count": 2,
+        "completed": true,
+        "time_seconds": 0,
+        "seed": "unlimited-LADDER-1"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+FEAR",
+          "+FEAT",
+          "+BEAT",
+          "+BEAD",
+          "+BEND",
+          "+BAND",
+          "+BOND",
+          "+FOND",
+          "+FIND"
+        ],
+        "solutions": [
+          "FEAR",
+          "FIRE",
+          "par:4",
+          "path:FEAT,FIAT,FIRE"
+        ],
+        "guess_count": 6,
+        "completed": false,
+        "time_seconds": 400,
+        "seed": "daily-2026-09-26-LADDER"
+      }
+    ],
+    "aggregates": {
+      "games": 5,
+      "wins": 4,
+      "cleanWins": 1,
+      "perfectWins": 2,
+      "noHintWins": 3,
+      "winGuessTotal": 7,
+      "winTimeTotal": 475,
+      "timedWins": 3,
+      "fastestPerfect": 75,
+      "boardsSolved": 4,
+      "boardsTotal": 5,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "4"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Par Rate",
+        "value": "50%"
+      },
+      {
+        "label": "Avg Over Par",
+        "value": "0.8"
+      },
+      {
+        "label": "Fastest Par",
+        "value": "1m 15s"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "3"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "4"
       }
     ],
     "panels": {
@@ -628,6 +1287,23 @@
       "streak": 1,
       "bestStreak": 1
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
         "label": "Wins",
@@ -638,20 +1314,20 @@
         "value": "1"
       },
       {
-        "label": "Games",
-        "value": "3"
+        "label": "Par Rate",
+        "value": "0%"
       },
       {
-        "label": "Win Rate",
-        "value": "67%"
+        "label": "Avg Over Par",
+        "value": "-"
       },
       {
-        "label": "Best",
-        "value": "+2"
+        "label": "Fastest Par",
+        "value": "-"
       },
       {
-        "label": "Fastest",
-        "value": "4m"
+        "label": "No-hint Wins",
+        "value": "0"
       },
       {
         "label": "Streak",
@@ -672,50 +1348,777 @@
     }
   },
   {
-    "dbKey": "WORDSEARCH",
-    "semantics": "misses",
-    "guessBase": 10,
+    "dbKey": "SCRAMBLE",
+    "semantics": "checks",
+    "guessBase": 5,
     "totals": {
-      "wins": 9,
-      "losses": 1,
-      "totalGames": 10,
-      "bestScore": 10,
-      "fastestTime": 165,
-      "streak": 3,
-      "bestStreak": 5
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "9"
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Win Rate",
+        "value": "0%"
+      },
+      {
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "Avg Checks",
+        "value": "-"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "Words Solved",
+        "value": "0"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "SCRAMBLE",
+    "semantics": "checks",
+    "guessBase": 5,
+    "totals": {
+      "wins": 3,
+      "losses": 1,
+      "totalGames": 4,
+      "bestScore": 5,
+      "fastestTime": 112,
+      "streak": 0,
+      "bestStreak": 3
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "0✓BREAD",
+          "1✓PAGER",
+          "2✓STOOL",
+          "3✓CANDY",
+          "4✓A SLICE OF LIFE"
+        ],
+        "solutions": [
+          "BREAD",
+          "PAGER",
+          "STOOL",
+          "CANDY",
+          "A SLICE OF LIFE"
+        ],
+        "guess_count": 5,
+        "completed": true,
+        "time_seconds": 112,
+        "seed": "daily-2026-09-23-SCRAMBLE"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "0✓LEMON",
+          "1h__N___",
+          "1✓BANANA",
+          "2✓GRAPE",
+          "3✓PLUMS",
+          "4✓FRUIT LOOP"
+        ],
+        "solutions": [
+          "LEMON",
+          "BANANA",
+          "GRAPE",
+          "PLUMS",
+          "FRUIT LOOP"
+        ],
+        "guess_count": 5,
+        "completed": true,
+        "time_seconds": 190,
+        "seed": "daily-2026-09-24-SCRAMBLE"
+      },
+      {
+        "hints_used": 2,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "0✗TRAIL",
+          "0✓TRIAL",
+          "1✓JUDGE",
+          "2H",
+          "3✓GAVEL",
+          "4✗ORDER IN COURT",
+          "4✓CASE CLOSED"
+        ],
+        "solutions": [
+          "TRIAL",
+          "JUDGE",
+          "BENCH",
+          "GAVEL",
+          "CASE CLOSED"
+        ],
+        "guess_count": 7,
+        "completed": true,
+        "time_seconds": 240,
+        "seed": "daily-2026-09-25-SCRAMBLE"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "0✓PIANO",
+          "1✗VIOLA",
+          "1✗VOILA",
+          "1✓VIOLA",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS",
+          "2✗DRUMS"
+        ],
+        "solutions": [
+          "PIANO",
+          "VIOLA",
+          "MUSIC",
+          "CELLO",
+          "BAND TOGETHER"
+        ],
+        "guess_count": 13,
+        "completed": false,
+        "time_seconds": 480,
+        "seed": "daily-2026-09-26-SCRAMBLE"
+      }
+    ],
+    "aggregates": {
+      "games": 4,
+      "wins": 3,
+      "cleanWins": 1,
+      "perfectWins": 2,
+      "noHintWins": 1,
+      "winGuessTotal": 17,
+      "winTimeTotal": 542,
+      "timedWins": 3,
+      "fastestPerfect": 112,
+      "boardsSolved": 17,
+      "boardsTotal": 20,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "3"
       },
       {
         "label": "Losses",
         "value": "1"
       },
       {
-        "label": "Games",
-        "value": "10"
+        "label": "Win Rate",
+        "value": "75%"
+      },
+      {
+        "label": "Clean",
+        "value": "1"
+      },
+      {
+        "label": "Avg Checks",
+        "value": "5.7"
+      },
+      {
+        "label": "Fastest",
+        "value": "1m 52s"
+      },
+      {
+        "label": "Words Solved",
+        "value": "17"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "WORDSEARCH",
+    "semantics": "misses",
+    "guessBase": 10,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Cleared",
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
       },
       {
         "label": "Win Rate",
-        "value": "90%"
+        "value": "0%"
       },
       {
-        "label": "Best",
-        "value": "0 misses"
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "Avg Time",
+        "value": "-"
+      },
+      {
+        "label": "Sec / Word",
+        "value": "-"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "WORDSEARCH",
+    "semantics": "misses",
+    "guessBase": 10,
+    "totals": {
+      "wins": 3,
+      "losses": 1,
+      "totalGames": 4,
+      "bestScore": 10,
+      "fastestTime": 165,
+      "streak": 0,
+      "bestStreak": 3
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+WHISK",
+          "+LADLE",
+          "+SPOON",
+          "+KNIFE",
+          "+PLATE",
+          "+GLASS",
+          "+BOWL",
+          "+CUP",
+          "+PAN",
+          "+POT"
+        ],
+        "solutions": [
+          "g:<grid100>",
+          "t:In the Kitchen",
+          "WHISK@0,0,E",
+          "LADLE@1,0,E",
+          "SPOON@2,0,E",
+          "KNIFE@3,0,E",
+          "PLATE@4,0,E",
+          "GLASS@5,0,E",
+          "BOWL@6,0,E",
+          "CUP@7,0,E",
+          "PAN@8,0,E",
+          "POT@9,0,E"
+        ],
+        "guess_count": 10,
+        "completed": true,
+        "time_seconds": 165,
+        "seed": "daily-2026-09-23-WORDSEARCH"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "x 0,0>0,4",
+          "+WHISK",
+          "+LADLE",
+          "+SPOON",
+          "+KNIFE",
+          "+PLATE",
+          "x 3,3>3,7",
+          "+GLASS",
+          "+BOWL",
+          "+CUP",
+          "+PAN",
+          "+POT"
+        ],
+        "solutions": [
+          "g:<grid100>",
+          "t:In the Kitchen",
+          "WHISK@0,0,E",
+          "LADLE@1,0,E",
+          "SPOON@2,0,E",
+          "KNIFE@3,0,E",
+          "PLATE@4,0,E",
+          "GLASS@5,0,E",
+          "BOWL@6,0,E",
+          "CUP@7,0,E",
+          "PAN@8,0,E",
+          "POT@9,0,E"
+        ],
+        "guess_count": 12,
+        "completed": true,
+        "time_seconds": 255,
+        "seed": "daily-2026-09-24-WORDSEARCH"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "?WHISK",
+          "+WHISK",
+          "+LADLE",
+          "+SPOON",
+          "+KNIFE",
+          "+PLATE",
+          "+GLASS",
+          "+BOWL",
+          "+CUP",
+          "+PAN",
+          "+POT"
+        ],
+        "solutions": [
+          "g:<grid100>",
+          "t:In the Kitchen",
+          "WHISK@0,0,E",
+          "LADLE@1,0,E",
+          "SPOON@2,0,E",
+          "KNIFE@3,0,E",
+          "PLATE@4,0,E",
+          "GLASS@5,0,E",
+          "BOWL@6,0,E",
+          "CUP@7,0,E",
+          "PAN@8,0,E",
+          "POT@9,0,E"
+        ],
+        "guess_count": 10,
+        "completed": true,
+        "time_seconds": 200,
+        "seed": "daily-2026-09-25-WORDSEARCH"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+WHISK",
+          "+LADLE",
+          "+SPOON",
+          "+KNIFE",
+          "+PLATE",
+          "+GLASS",
+          "x 1,1>1,5",
+          "x 2,2>2,6",
+          "x 3,3>3,7",
+          "x 4,4>4,8",
+          "x 5,5>5,9",
+          "!"
+        ],
+        "solutions": [
+          "g:<grid100>",
+          "t:In the Kitchen",
+          "WHISK@0,0,E",
+          "LADLE@1,0,E",
+          "SPOON@2,0,E",
+          "KNIFE@3,0,E",
+          "PLATE@4,0,E",
+          "GLASS@5,0,E",
+          "BOWL@6,0,E",
+          "CUP@7,0,E",
+          "PAN@8,0,E",
+          "POT@9,0,E"
+        ],
+        "guess_count": 15,
+        "completed": false,
+        "time_seconds": 900,
+        "seed": "daily-2026-09-26-WORDSEARCH"
+      }
+    ],
+    "aggregates": {
+      "games": 4,
+      "wins": 3,
+      "cleanWins": 1,
+      "perfectWins": 2,
+      "noHintWins": 2,
+      "winGuessTotal": 32,
+      "winTimeTotal": 620,
+      "timedWins": 3,
+      "fastestPerfect": 165,
+      "boardsSolved": 36,
+      "boardsTotal": 40,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Cleared",
+        "value": "3"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Win Rate",
+        "value": "75%"
+      },
+      {
+        "label": "Clean",
+        "value": "2"
       },
       {
         "label": "Fastest",
         "value": "2m 45s"
       },
       {
+        "label": "Avg Time",
+        "value": "3m 27s"
+      },
+      {
+        "label": "Sec / Word",
+        "value": "20.7s"
+      },
+      {
         "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "HUB",
+    "semantics": "rank",
+    "guessBase": 1,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Days Played",
+        "value": "0"
+      },
+      {
+        "label": "Hubbub+",
+        "value": "0"
+      },
+      {
+        "label": "Pandemonium",
+        "value": "0"
+      },
+      {
+        "label": "Best Rank",
+        "value": "-"
+      },
+      {
+        "label": "Avg % Max",
+        "value": "0%"
+      },
+      {
+        "label": "Pangrams",
+        "value": "0"
+      },
+      {
+        "label": "Longest Word",
+        "value": "-"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "HUB",
+    "semantics": "rank",
+    "guessBase": 1,
+    "totals": {
+      "wins": 3,
+      "losses": 1,
+      "totalGames": 4,
+      "bestScore": 1,
+      "fastestTime": 700,
+      "streak": 1,
+      "bestStreak": 2
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+TRAIN",
+          "+RETINAL",
+          "=TALER",
+          "+LATER",
+          "+ALERT",
+          "+RAIL",
+          "+LINEAR"
+        ],
+        "solutions": [
+          "h-0001",
+          "ATLNEIR",
+          "60",
+          "24",
+          "2"
+        ],
+        "guess_count": 4,
+        "completed": true,
+        "time_seconds": 900,
+        "seed": "daily-2026-09-23-HUB"
+      },
+      {
+        "hints_used": 3,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+OUTDOING",
+          "?DU6",
+          "+OUTING",
+          "!DUGOUT",
+          "+DOING",
+          "+DOTING",
+          "+INGOT",
+          "+UNDO"
+        ],
+        "solutions": [
+          "h-0002",
+          "OUTGNID",
+          "44",
+          "9",
+          "1"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 1500,
+        "seed": "daily-2026-09-24-HUB"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+CAMP",
+          "+PALM",
+          "=CALM",
+          "#"
+        ],
+        "solutions": [
+          "h-0003",
+          "MCAPLOT",
+          "40",
+          "18",
+          "1"
+        ],
+        "guess_count": 8,
+        "completed": false,
+        "time_seconds": 120,
+        "seed": "daily-2026-09-25-HUB"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": 15,
+        "total_boards": 20,
+        "player1_guesses": [
+          "+STARE",
+          "+TEARS",
+          "+ASTER"
+        ],
+        "solutions": [
+          "h-0004",
+          "SATERMN",
+          "50",
+          "20",
+          "1"
+        ],
+        "guess_count": 3,
+        "completed": true,
+        "time_seconds": 700,
+        "seed": "daily-2026-09-26-HUB"
+      }
+    ],
+    "aggregates": {
+      "games": 4,
+      "wins": 3,
+      "cleanWins": 0,
+      "perfectWins": 1,
+      "noHintWins": 2,
+      "winGuessTotal": 8,
+      "winTimeTotal": 3100,
+      "timedWins": 3,
+      "fastestPerfect": 1500,
+      "boardsSolved": 48,
+      "boardsTotal": 80,
+      "hardestFirst": 0,
+      "pangrams": 2,
+      "longestWord": "OUTDOING"
+    },
+    "lines": [
+      {
+        "label": "Days Played",
+        "value": "4"
+      },
+      {
+        "label": "Hubbub+",
         "value": "3"
       },
       {
-        "label": "Best Streak",
-        "value": "5"
+        "label": "Pandemonium",
+        "value": "1"
+      },
+      {
+        "label": "Best Rank",
+        "value": "Pandemonium"
+      },
+      {
+        "label": "Avg % Max",
+        "value": "60%"
+      },
+      {
+        "label": "Pangrams",
+        "value": "2"
+      },
+      {
+        "label": "Longest Word",
+        "value": "OUTDOING"
+      },
+      {
+        "label": "Streak",
+        "value": "1"
       }
     ],
     "panels": {
@@ -740,38 +2143,55 @@
       "streak": 8,
       "bestStreak": 11
     },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
     "lines": [
       {
-        "label": "Wins",
-        "value": "30"
-      },
-      {
-        "label": "Losses",
-        "value": "4"
-      },
-      {
-        "label": "Games",
+        "label": "Days Played",
         "value": "34"
       },
       {
-        "label": "Win Rate",
-        "value": "88%"
+        "label": "Hubbub+",
+        "value": "30"
       },
       {
-        "label": "Best",
+        "label": "Pandemonium",
+        "value": "0"
+      },
+      {
+        "label": "Best Rank",
         "value": "Pandemonium"
       },
       {
-        "label": "Fastest",
-        "value": "25m"
+        "label": "Avg % Max",
+        "value": "0%"
+      },
+      {
+        "label": "Pangrams",
+        "value": "0"
+      },
+      {
+        "label": "Longest Word",
+        "value": "-"
       },
       {
         "label": "Streak",
         "value": "8"
-      },
-      {
-        "label": "Best Streak",
-        "value": "11"
       }
     ],
     "panels": {
@@ -784,54 +2204,665 @@
     }
   },
   {
-    "dbKey": "REGIONS",
-    "semantics": "mistakes",
+    "dbKey": "CROSSWORD",
+    "semantics": "checks",
     "guessBase": 1,
     "totals": {
-      "wins": 5,
-      "losses": 2,
-      "totalGames": 7,
-      "bestScore": 2,
-      "fastestTime": 130,
-      "streak": 1,
-      "bestStreak": 3
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "5"
+        "value": "0"
       },
       {
         "label": "Losses",
-        "value": "2"
-      },
-      {
-        "label": "Games",
-        "value": "7"
+        "value": "0"
       },
       {
         "label": "Win Rate",
-        "value": "71%"
+        "value": "0%"
       },
       {
-        "label": "Best",
-        "value": "1 mistake"
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "0"
       },
       {
         "label": "Fastest",
-        "value": "2m 10s"
+        "value": "-"
+      },
+      {
+        "label": "Avg Time",
+        "value": "-"
       },
       {
         "label": "Streak",
-        "value": "1"
-      },
-      {
-        "label": "Best Streak",
-        "value": "3"
+        "value": "0"
       }
     ],
     "panels": {
       "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "CROSSWORD",
+    "semantics": "checks",
+    "guessBase": 1,
+    "totals": {
+      "wins": 3,
+      "losses": 1,
+      "totalGames": 4,
+      "bestScore": 1,
+      "fastestTime": 200,
+      "streak": 0,
+      "bestStreak": 3
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<fill25>",
+          "h<mask25>",
+          "c0"
+        ],
+        "solutions": [
+          "cw-0001|Kitchen Sayings|5x5",
+          "<grid25>",
+          "SALT",
+          "PEPPER"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 200,
+        "seed": "daily-2026-09-23-CROSSWORD"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<fill25>",
+          "h<mask25>",
+          "c2"
+        ],
+        "solutions": [
+          "cw-0002|Garden Sayings|5x5",
+          "<grid25>",
+          "ROSE",
+          "THORN"
+        ],
+        "guess_count": 3,
+        "completed": true,
+        "time_seconds": 430,
+        "seed": "daily-2026-09-24-CROSSWORD"
+      },
+      {
+        "hints_used": 2,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<fill25>",
+          "h<mask25>",
+          "c0"
+        ],
+        "solutions": [
+          "cw-0003|Sea Sayings|5x5",
+          "<grid25>",
+          "TIDE",
+          "WAVE"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 360,
+        "seed": "daily-2026-09-25-CROSSWORD"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<fill25>",
+          "h<mask25>",
+          "c1"
+        ],
+        "solutions": [
+          "cw-0004|Sky Sayings|5x5",
+          "<grid25>",
+          "STAR",
+          "CLOUD"
+        ],
+        "guess_count": 2,
+        "completed": false,
+        "time_seconds": 150,
+        "seed": "daily-2026-09-26-CROSSWORD"
+      }
+    ],
+    "aggregates": {
+      "games": 4,
+      "wins": 3,
+      "cleanWins": 1,
+      "perfectWins": 2,
+      "noHintWins": 2,
+      "winGuessTotal": 5,
+      "winTimeTotal": 990,
+      "timedWins": 3,
+      "fastestPerfect": 200,
+      "boardsSolved": 3,
+      "boardsTotal": 4,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "3"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Win Rate",
+        "value": "75%"
+      },
+      {
+        "label": "Clean",
+        "value": "1"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "2"
+      },
+      {
+        "label": "Fastest",
+        "value": "3m 20s"
+      },
+      {
+        "label": "Avg Time",
+        "value": "5m 30s"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "CRYPTOGRAM",
+    "semantics": "checks",
+    "guessBase": 1,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Win Rate",
+        "value": "0%"
+      },
+      {
+        "label": "Clean",
+        "value": "0"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "0"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "Avg Time",
+        "value": "-"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "CRYPTOGRAM",
+    "semantics": "checks",
+    "guessBase": 1,
+    "totals": {
+      "wins": 2,
+      "losses": 1,
+      "totalGames": 3,
+      "bestScore": 1,
+      "fastestTime": 300,
+      "streak": 0,
+      "bestStreak": 2
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<mapping26>",
+          "h<mask26>",
+          "c0"
+        ],
+        "solutions": [
+          "THE EARLY BIRD CATCHES THE WORM",
+          "<key26>",
+          "cg-0001"
+        ],
+        "guess_count": 1,
+        "completed": true,
+        "time_seconds": 300,
+        "seed": "daily-2026-09-23-CRYPTOGRAM"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<mapping26>",
+          "h<mask26>",
+          "c1"
+        ],
+        "solutions": [
+          "A STITCH IN TIME SAVES NINE",
+          "<key26>",
+          "cg-0002"
+        ],
+        "guess_count": 2,
+        "completed": true,
+        "time_seconds": 480,
+        "seed": "daily-2026-09-24-CRYPTOGRAM"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "=<mapping26>",
+          "h<mask26>",
+          "c0"
+        ],
+        "solutions": [
+          "LOOK BEFORE YOU LEAP",
+          "<key26>",
+          "cg-0003"
+        ],
+        "guess_count": 1,
+        "completed": false,
+        "time_seconds": 300,
+        "seed": "daily-2026-09-25-CRYPTOGRAM"
+      }
+    ],
+    "aggregates": {
+      "games": 3,
+      "wins": 2,
+      "cleanWins": 1,
+      "perfectWins": 1,
+      "noHintWins": 1,
+      "winGuessTotal": 3,
+      "winTimeTotal": 780,
+      "timedWins": 2,
+      "fastestPerfect": 300,
+      "boardsSolved": 2,
+      "boardsTotal": 3,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "2"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Win Rate",
+        "value": "67%"
+      },
+      {
+        "label": "Clean",
+        "value": "1"
+      },
+      {
+        "label": "No-hint Wins",
+        "value": "1"
+      },
+      {
+        "label": "Fastest",
+        "value": "5m"
+      },
+      {
+        "label": "Avg Time",
+        "value": "6m 30s"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": false,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "GROUPS",
+    "semantics": "guesses",
+    "guessBase": 4,
+    "totals": {
+      "wins": 0,
+      "losses": 0,
+      "totalGames": 0,
+      "bestScore": 0,
+      "fastestTime": 0,
+      "streak": 0,
+      "bestStreak": 0
+    },
+    "matches": [],
+    "aggregates": {
+      "games": 0,
+      "wins": 0,
+      "cleanWins": 0,
+      "perfectWins": 0,
+      "noHintWins": 0,
+      "winGuessTotal": 0,
+      "winTimeTotal": 0,
+      "timedWins": 0,
+      "fastestPerfect": 0,
+      "boardsSolved": 0,
+      "boardsTotal": 0,
+      "hardestFirst": 0,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "0"
+      },
+      {
+        "label": "Losses",
+        "value": "0"
+      },
+      {
+        "label": "Win Rate",
+        "value": "0%"
+      },
+      {
+        "label": "Perfect",
+        "value": "0"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "-"
+      },
+      {
+        "label": "Hardest 1st",
+        "value": "0"
+      },
+      {
+        "label": "Fastest",
+        "value": "-"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
+      "solveTime": true,
+      "topWords": false,
+      "openerYield": false,
+      "positionAccuracy": false,
+      "stageBreakdown": false
+    }
+  },
+  {
+    "dbKey": "GROUPS",
+    "semantics": "guesses",
+    "guessBase": 4,
+    "totals": {
+      "wins": 3,
+      "losses": 1,
+      "totalGames": 4,
+      "bestScore": 4,
+      "fastestTime": 95,
+      "streak": 0,
+      "bestStreak": 3
+    },
+    "matches": [
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+4:OPTS,POST,POTS,TOPS",
+          "+3:APPLE,CUTIE,HUMBLE,MUD",
+          "+2:CHERRY,ROSE,RUBY,SCARLET",
+          "+1:APPLE,FIG,PEAR,PLUM"
+        ],
+        "solutions": [
+          "1|FRUIT|APPLE,PEAR,PLUM,FIG",
+          "2|SHADES OF RED|RUBY,CHERRY,SCARLET,ROSE",
+          "3|___ PIE|APPLE,MUD,HUMBLE,CUTIE",
+          "4|ANAGRAMS OF STOP|POTS,TOPS,OPTS,POST"
+        ],
+        "guess_count": 4,
+        "completed": true,
+        "time_seconds": 95,
+        "seed": "daily-2026-09-23-GROUPS"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "~1",
+          "x1:APPLE,FIG,PEAR,ROSE",
+          "+1:APPLE,FIG,PEAR,PLUM",
+          "x0:CHERRY,MUD,OPTS,ROSE",
+          "+2:CHERRY,ROSE,RUBY,SCARLET",
+          "+3:APPLE,CUTIE,HUMBLE,MUD",
+          "+4:OPTS,POST,POTS,TOPS"
+        ],
+        "solutions": [
+          "1|FRUIT|APPLE,PEAR,PLUM,FIG",
+          "2|SHADES OF RED|RUBY,CHERRY,SCARLET,ROSE",
+          "3|___ PIE|APPLE,MUD,HUMBLE,CUTIE",
+          "4|ANAGRAMS OF STOP|POTS,TOPS,OPTS,POST"
+        ],
+        "guess_count": 6,
+        "completed": true,
+        "time_seconds": 240,
+        "seed": "daily-2026-09-24-GROUPS"
+      },
+      {
+        "hints_used": 1,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "?c1",
+          "+1:APPLE,FIG,PEAR,PLUM",
+          "+2:CHERRY,ROSE,RUBY,SCARLET",
+          "+4:OPTS,POST,POTS,TOPS",
+          "+3:APPLE,CUTIE,HUMBLE,MUD"
+        ],
+        "solutions": [
+          "1|FRUIT|APPLE,PEAR,PLUM,FIG",
+          "2|SHADES OF RED|RUBY,CHERRY,SCARLET,ROSE",
+          "3|___ PIE|APPLE,MUD,HUMBLE,CUTIE",
+          "4|ANAGRAMS OF STOP|POTS,TOPS,OPTS,POST"
+        ],
+        "guess_count": 4,
+        "completed": true,
+        "time_seconds": 180,
+        "seed": "daily-2026-09-25-GROUPS"
+      },
+      {
+        "hints_used": 0,
+        "boards_solved": null,
+        "total_boards": null,
+        "player1_guesses": [
+          "+4:OPTS,POST,POTS,TOPS",
+          "x0:APPLE,MUD,ROSE,RUBY",
+          "x1:APPLE,FIG,PEAR,ROSE",
+          "x1:CHERRY,RUBY,SCARLET,PLUM",
+          "x0:APPLE,CUTIE,ROSE,FIG"
+        ],
+        "solutions": [
+          "1|FRUIT|APPLE,PEAR,PLUM,FIG",
+          "2|SHADES OF RED|RUBY,CHERRY,SCARLET,ROSE",
+          "3|___ PIE|APPLE,MUD,HUMBLE,CUTIE",
+          "4|ANAGRAMS OF STOP|POTS,TOPS,OPTS,POST"
+        ],
+        "guess_count": 5,
+        "completed": false,
+        "time_seconds": 400,
+        "seed": "daily-2026-09-26-GROUPS"
+      }
+    ],
+    "aggregates": {
+      "games": 4,
+      "wins": 3,
+      "cleanWins": 1,
+      "perfectWins": 2,
+      "noHintWins": 2,
+      "winGuessTotal": 14,
+      "winTimeTotal": 515,
+      "timedWins": 3,
+      "fastestPerfect": 95,
+      "boardsSolved": 13,
+      "boardsTotal": 16,
+      "hardestFirst": 2,
+      "pangrams": 0,
+      "longestWord": ""
+    },
+    "lines": [
+      {
+        "label": "Wins",
+        "value": "3"
+      },
+      {
+        "label": "Losses",
+        "value": "1"
+      },
+      {
+        "label": "Win Rate",
+        "value": "75%"
+      },
+      {
+        "label": "Perfect",
+        "value": "1"
+      },
+      {
+        "label": "Avg Mistakes",
+        "value": "0.7"
+      },
+      {
+        "label": "Hardest 1st",
+        "value": "2"
+      },
+      {
+        "label": "Fastest",
+        "value": "1m 35s"
+      },
+      {
+        "label": "Streak",
+        "value": "0"
+      }
+    ],
+    "panels": {
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,

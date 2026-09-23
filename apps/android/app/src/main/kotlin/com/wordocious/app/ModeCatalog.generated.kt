@@ -50,7 +50,7 @@ object ModeGen {
         GenMode("six", "DUEL_6", "Six", "Six", "Classic Six", "6 letters, 7 tries", "#06b6d4", "6", null, true, "core", true, "word", "guesses", 1, true, null, null, "six"),
         GenMode("seven", "DUEL_7", "Seven", "Seven", "Classic Seven", "7 letters, 8 tries", "#84cc16", "7", null, true, "core", true, "word", "guesses", 1, true, null, null, "seven"),
         GenMode("gauntlet", "GAUNTLET", "Gauntlet", "Gauntlet", "Gauntlet", "5 escalating stages", "#d97706", "G", null, true, "core", true, "word", "guesses", 21, true, null, null, "gauntlet"),
-        GenMode("propernoundle", "PROPERNOUNDLE", "ProperNoundle", "Proper", "ProperNoundle", "Guess famous names", "#dc2626", "P", null, true, "core", true, "custom", "guesses", 1, true, null, "trivia", "propernoundle"),
+        GenMode("propernoundle", "PROPERNOUNDLE", "ProperNoundle", "Proper", "ProperNoundle", "Guess famous names", "#dc2626", "P", null, true, "more", false, "custom", "guesses", 1, true, null, "trivia", "propernoundle"),
         GenMode("more", null, "More Games", "More", "More Games", "Sudoku, Muddle and more", "#4f46e5", "+", null, false, "core", false, "custom", "guesses", 1, true, "menu.more", null, null),
         GenMode("sudoku", "SUDOKU", "Sudoku", "Sudoku", "Sudoku", "Daily number logic", "#1e40af", "9", null, true, "more", false, "custom", "mistakes", 1, true, "mode.sudoku", "logic", "sudoku"),
         GenMode("scramble", "SCRAMBLE", "Muddle", "Muddle", "Muddle", "Unscramble the punchline", "#f97316", "M", null, true, "more", false, "custom", "checks", 5, true, "mode.scramble", "word", "muddle"),
@@ -81,6 +81,7 @@ object ModeGen {
     )
     /** Sweep eras, newest first. Which dbKeys formed the required sweep on a given local day. */
     val sweepEras: List<GenSweepEra> = listOf(
+        GenSweepEra("2026-09-23", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "DUEL_6", "DUEL_7")),
         GenSweepEra("2026-05-21", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7")),
         GenSweepEra("0000-00-00", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE")),
     )

@@ -376,13 +376,14 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Guesses', value: '6' },
       { label: 'Answers', value: 'Proper nouns (can be multi-word)' },
       { label: 'Hints', value: 'Clue / vowel / consonant, −60 pts each' },
+      { label: 'Daily Sweep', value: 'Not counted — ProperNoundle lives under More Games' },
     ],
     rules: [
       'Instead of an everyday word, the answer here is a famous name — a person, place, brand, character, or title (these are called proper nouns). A label at the top tells you which kind you are guessing. You have six tries. Type a guess of the right length, press enter, and the tiles color to guide you: PURPLE for a letter that is correct and in the right spot, AMBER for a letter in the name but a different spot, GRAY for a letter that is not in it. Two things set this apart from a normal word puzzle: the answer can be more than one word (a "first last" name shows a gap), and your guesses do NOT have to be real dictionary words — any sequence of letters of the right length is allowed, since you are spelling a name.',
       'Stuck? Three optional hints are available, each costing 60 points: a short clue sentence about the answer (drawn from Wikipedia), a revealed vowel, and a revealed consonant. Each hint shows up as an extra row on the board, so use them sparingly.',
     ],
     scoring: [
-      'Win base 1,000, a 300-point bonus per unused guess — tied for the richest guess bonus in the game, because names can be genuinely hard — up to 240 speed points under the five-minute cap (a tiebreaker — never worth a full guess), plus 200 completion.',
+      'Win base 1,000, a 300-point bonus per unused guess — tied for the richest guess bonus in the game, because names can be genuinely hard — up to 240 speed points under the 5-minute cap (a tiebreaker — never worth a full guess), plus 200 completion.',
       'Hints subtract 60 each, but each one also occupies a board row worth a full 300-point guess step, so the real cost is steeper than the sticker price. Taking all three still frequently converts a loss into a win — and a hinted win above 1,000 points beats a hintless loss at a few hundred.',
     ],
     tips: [
@@ -402,6 +403,13 @@ export const MODE_GUIDES: ModeGuide[] = [
         heading: 'Multi-word answers: solve the short word first',
         body: 'In a "3 + 5" name, the three-letter word has very few possibilities (BOB, JAY, KIM, LEE, MAX, SAM…). Lock it, and the long word usually falls out of pop-culture memory rather than letter logic.',
       },
+    ],
+    controls: [
+      { icon: 'lightbulb', label: 'Clue', body: 'Shows a one-sentence clue about the answer, drawn from Wikipedia, as an extra row on the board. Costs 60 points and one board row; once per puzzle.' },
+      { icon: 'eye', label: 'Vowel', body: 'Reveals one vowel from the answer in its place. Costs 60 points and one board row; once per puzzle.' },
+      { icon: 'eye', label: 'Consonant', body: 'Reveals one consonant from the answer in its place. Costs 60 points and one board row; once per puzzle.' },
+      { icon: 'delete', label: 'Delete', body: 'Removes the last letter you typed. Free.' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Submits the row. Any letters of the right length are accepted, so a mistyped probe still costs a guess.' },
     ],
     related: ['classic', 'six', 'seven'],
   },

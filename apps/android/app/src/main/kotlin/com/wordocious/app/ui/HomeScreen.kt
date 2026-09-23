@@ -770,7 +770,8 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
     }
     val top = invites.firstOrNull() ?: return
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val modeTitle = MODE_CARDS.firstOrNull { it.engineMode?.name == top.gameMode }?.title ?: top.gameMode
+    // Whole catalog: a ProperNoundle invite must still read "ProperNoundle" (Stage 9 moved it under More).
+    val modeTitle = modeCardForKey(top.gameMode)?.title ?: top.gameMode
 
     Row(
         modifier = Modifier.fillMaxWidth()

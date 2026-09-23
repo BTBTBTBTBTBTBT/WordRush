@@ -519,18 +519,19 @@ object MatchStatsService {
         @SerialName("time_seconds") val timeSeconds: Int = 0,
     )
 
-    /** The daily-recordable modes — keep in step with web lib/daily-modes.ts. */
-    private val DAILY_MODES = listOf(
-        "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
-        "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7",
-    )
+    /** Every mode that has EVER been part of a sweep era (the union of the
+     *  catalog's era rows) — the query filter for sweep-day timing rows. A
+     *  More Games title that was never in the sweep (Sudoku…) is excluded;
+     *  ProperNoundle stays because eras 1–2 counted it. */
+    private val SWEEP_ERA_MODES: List<String> get() =
+        com.wordocious.app.ModeGen.sweepEras.flatMap { it.modes }.distinct()
 
     /**
-     * The era's full daily-mode count for a local day — 7 before 2026-05-21
-     * (when DUEL_6/DUEL_7 dailies shipped), 9 on/after. Mirrors web
-     * lib/daily-modes.ts requiredDailyModeCount; ISO strings compare safely.
+     * The era's full sweep count for a local day — 7, then 9 from 2026-05-21,
+     * then 8 from the Stage 9 launch day; from the catalog's era table (More
+     * Games Stage 4/9: never a literal). ISO strings compare safely.
      */
-    private fun requiredDailyModeCount(day: String): Int = if (day < "2026-05-21") 7 else 9
+    private fun requiredDailyModeCount(day: String): Int = com.wordocious.app.ModeGen.requiredSweepCount(day)
 
     @Serializable
     private data class DayScoreRow(val day: String, @SerialName("composite_score") val compositeScore: Double = 0.0)
@@ -575,13 +576,15 @@ object MatchStatsService {
             .select(Columns.raw("day,game_mode,time_seconds")) {
                 filter {
                     eq("user_id", userId); eq("play_type", "solo")
-                    isIn("game_mode", DAILY_MODES); isIn("day", sweepDays)
+                    isIn("game_mode", SWEEP_ERA_MODES); isIn("day", sweepDays)
                 }
             }
             .decodeList<DayTimeRow>()
         val perDayTime = HashMap<String, Int>()
         val perDayTimedModes = HashMap<String, MutableSet<String>>()
-        rows.forEach {
+        // Only that day's OWN sweep-era modes count: a ProperNoundle row on a
+        // post-Stage-9 day is a More Games result and must not pad the time.
+        rows.filter { it.gameMode in com.wordocious.app.ModeGen.sweepModesFor(it.day) }.forEach {
             perDayTime[it.day] = (perDayTime[it.day] ?: 0) + it.timeSeconds
             if (it.timeSeconds > 0) perDayTimedModes.getOrPut(it.day) { mutableSetOf() }.add(it.gameMode)
         }

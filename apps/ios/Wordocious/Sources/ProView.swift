@@ -26,7 +26,7 @@ struct ProView: View {
     private struct Benefit { let symbol: String; let asset: String?; let text: String }
     private let benefits: [Benefit] = [
         .init(symbol: "eye.slash.fill", asset: nil, text: "Ad-free experience — no interruptions, ever"),
-        .init(symbol: "square.grid.3x3.fill", asset: "wordle-grid", text: "Unlimited replays of all 9 game modes, any time"),
+        .init(symbol: "square.grid.3x3.fill", asset: "wordle-grid", text: "Unlimited replays of every game mode, any time"),
         .init(symbol: "", asset: "swords", text: "VS mode on every game — challenge friends in every mode"),
         .init(symbol: "cpu", asset: nil, text: "Practice against the CPU — Easy, Medium & Hard bots, anytime"),
         .init(symbol: "envelope.fill", asset: nil, text: "Invite friends to private matches by link or username"),

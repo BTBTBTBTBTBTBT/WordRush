@@ -29,13 +29,21 @@ import {
   type RankedEntry,
 } from './leaderboard-share';
 import type { ShareMode } from './share-image';
-import { MODES } from './modes.generated';
+import { MODES, MODE_BY_DBKEY } from './modes.generated';
+import { formatGuessStat } from './format';
+import { fewestRecordLabel } from './mode-stats';
 
 const SHARE_SURFACE = 'leaderboard';
 
 function modeMeta(dbKey: string): { mode: ShareMode; label: string } | null {
   const m = MODES.find((x) => x.dbKey === dbKey);
   return m ? { mode: m.title as ShareMode, label: m.shareLabel } : null;
+}
+
+/** More Games §11: a row's guess stat through the mode's semantics ("0 mistakes", "Par", "Hubbub"). */
+function guessLabelFor(dbKey: string): (n: number) => string {
+  const m = MODE_BY_DBKEY[dbKey];
+  return (n) => formatGuessStat(m?.guessSemantics ?? 'guesses', m?.guessBase ?? 1, n);
 }
 
 export interface ShareDailyLeaderboardOpts {
@@ -129,6 +137,7 @@ export async function shareDailyLeaderboardCard(
     userRank: opts.userRank,
     userEntry,
     yesterdayRank,
+    guessLabel: guessLabelFor(opts.dbMode),
   });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
@@ -189,6 +198,7 @@ export async function shareYesterdayPodiumCard(
     userId: opts.userId,
     userRank,
     userEntry,
+    guessLabel: guessLabelFor(opts.dbMode),
   });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
@@ -320,7 +330,13 @@ export async function shareTrophyCaseCard(opts: {
 }): Promise<ShareResultOutcome | null> {
   const modeTitle = (dbKey: string | null) =>
     dbKey ? (MODES.find((m) => m.dbKey === dbKey)?.title ?? dbKey) : 'Global';
-  const input = buildTrophyCaseShareInput({ ...opts, modeTitle });
+  // "Sudoku · Fewest Mistakes · 0 mistakes", never "1 guesses" (More Games §11).
+  const fewestGuesses = (dbKey: string | null, value: number) => {
+    const m = dbKey ? MODE_BY_DBKEY[dbKey] : undefined;
+    if (!m || m.guessSemantics === 'guesses') return null;
+    return { label: fewestRecordLabel(m.guessSemantics), value: formatGuessStat(m.guessSemantics, m.guessBase, value) };
+  };
+  const input = buildTrophyCaseShareInput({ ...opts, modeTitle, fewestGuesses });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }

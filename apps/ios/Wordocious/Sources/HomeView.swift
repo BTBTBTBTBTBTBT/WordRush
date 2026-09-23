@@ -945,7 +945,7 @@ struct ModeLimitModal: View {
                     .padding(.bottom, 12)
                 Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center).padding(.bottom, 4)
-                Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across all 9 modes.")
+                Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.")
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     .multilineTextAlignment(.center).padding(.bottom, 16)
 

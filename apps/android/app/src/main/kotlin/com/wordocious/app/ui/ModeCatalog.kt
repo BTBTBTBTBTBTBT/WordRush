@@ -7,6 +7,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -117,6 +119,42 @@ val MORE_CARDS: List<ModeCard> = ModeGen.more.map(::toCard)
 
 /** The card for a GameMode — home tiles first, then the More Games titles (icon/accent/glyph source of truth). */
 fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineMode == mode } ?: MORE_CARDS.firstOrNull { it.engineMode == mode }
+
+/** Every catalog card — the home tiles, then the More Games titles. A lookup by
+ *  dbKey must search BOTH (Stage 9: ProperNoundle lives under the More tile, so
+ *  `MODE_CARDS.firstOrNull { it.dbKey == … }` alone would miss it). */
+val ALL_CARDS: List<ModeCard> get() = MODE_CARDS + MORE_CARDS
+
+/** The card for a daily_results/matches `game_mode` key, wherever it lives. */
+fun modeCardForKey(dbKey: String?): ModeCard? = dbKey?.let { k -> ALL_CARDS.firstOrNull { it.dbKey == k } }
+
+/** Display title for a `game_mode` key — the catalog title, else the raw key. */
+fun modeTitleForKey(dbKey: String): String = ModeGen.byDbKey(dbKey)?.title ?: dbKey
+
+/**
+ * The daily-playable cards this viewer may see: the sweep tiles plus every More
+ * Games title whose remote flag is on (a title with no flag — ProperNoundle — is
+ * always visible). For pickers that list "every daily mode" (favourite mode,
+ * per-mode stats chips, help), never the home grid, which has its own filter.
+ */
+@androidx.compose.runtime.Composable
+fun visibleDailyCards(): List<ModeCard> {
+    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+    return ALL_CARDS.filter {
+        it.engineMode != null && it.dailyEligible && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded)
+    }
+}
+
+/**
+ * The Sweep board's dot strip for a local day — that day's sweep-era modes in
+ * catalog (home-grid) order, so the strip reads like the mode grid and an
+ * era-2 day still shows its nine dots with ProperNoundle last.
+ */
+fun sweepDotModes(day: String): List<String> {
+    val era = ModeGen.sweepModesFor(day)
+    return ModeGen.all.mapNotNull { it.dbKey }.filter { it in era }
+}
 
 /** Exact lucide/custom icon drawable per mode (matches the web MODE_CARDS icons). */
 fun modeIconRes(lucide: String?): Int? = when (lucide) {

@@ -586,7 +586,8 @@ enum GameResultsService {
             if trackPending, dailyScore != nil || DailyScoring.config[gameMode.rawValue] == nil {
                 PendingRecords.markDone(gameMode: mode, seed: seed, part: .daily)
             }
-            // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
+            // Daily Sweep / Flawless bonus once every sweep daily is in (web parity;
+            // the server derives the set from the era table).
             // Kept SPLIT from dailyBonus so the toast shows distinct
             // "+200 sweep" / "+400 flawless" chips like web xp-toast.tsx.
             let (sweep, flawless) = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)

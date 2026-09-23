@@ -33,6 +33,8 @@ import {
   type SweepDetails,
 } from '@/lib/daily-service';
 import { requiredSweepCount } from '@/lib/daily-modes';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { guessRowLabel } from '@/lib/mode-stats';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import {
@@ -406,7 +408,9 @@ export default function DailyPage() {
           </Link>
           <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <span className="truncate">
-              {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
+              {/* More Games §11: the number reads through the mode's semantics —
+                  "0 Mistakes", "5 Checks", "Par", "Hubbub" — never a bare "Guesses". */}
+              {guessRowLabel(MODE_BY_DBKEY[selectedMode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[selectedMode]?.guessBase ?? 1, entry.guess_count)} · {formatTime(entry.time_seconds)}
               {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
               {(() => {
                 const h = formatHintsLabel(selectedMode, entry.hints_used);

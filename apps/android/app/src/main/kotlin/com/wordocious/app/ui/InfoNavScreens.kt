@@ -424,12 +424,15 @@ private fun WordSectionCard(title: String, icon: ImageVector, tint: Color, conte
     }
 }
 
-// ── Guides index (list 9 modes → GuideSheet) ──────────────────────────────────
+// ── Guides index (every visible daily mode → GuideSheet) ─────────────────────
 
 @Composable
 fun GuidesIndexScreen(onDone: () -> Unit) {
-    val modes = listOf(GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7, GameMode.QUORDLE, GameMode.OCTORDLE, GameMode.SEQUENCE, GameMode.RESCUE, GameMode.GAUNTLET, GameMode.PROPERNOUNDLE)
-    val guides by produceState(initialValue = emptyList<Pair<GameMode, com.wordocious.app.data.GuideService.ModeGuide?>>()) {
+    // Every daily mode this viewer can play — the sweep word games, then the
+    // More Games titles whose flag is on (ProperNoundle among them) — from the
+    // catalog, never a hand-typed list.
+    val modes = visibleDailyCards().mapNotNull { it.engineMode }
+    val guides by produceState(initialValue = emptyList<Pair<GameMode, com.wordocious.app.data.GuideService.ModeGuide?>>(), modes) {
         value = modes.map { it to com.wordocious.app.data.GuideService.guide(it) }
     }
     var selected by remember { mutableStateOf<GameMode?>(null) }

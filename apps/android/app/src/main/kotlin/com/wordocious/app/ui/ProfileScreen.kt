@@ -91,7 +91,7 @@ import kotlinx.coroutines.launch
  * (ProfileDashboard charts, 72-item Achievements + Edit Profile are follow-ups.)
  */
 // The Today's Dailies grid = the sweep set, from the catalog (More Games Stage 5:
-// no second hand-typed list; still the same nine keys today).
+// no second hand-typed list; the eight word games since Stage 9).
 private val DAILY_MODES: List<String> = com.wordocious.app.ModeGen.sweep.mapNotNull { it.dbKey }
 // The per-mode dashboard picker scrolls, so it lists EVERY daily mode.
 private val PICKER_MODES: List<String> = com.wordocious.app.ModeGen.daily.mapNotNull { it.dbKey }
@@ -1098,7 +1098,8 @@ private fun MedalHistoryRow(m: ProfileService.UserMedal) {
     val label = when (m.medalType) {
         "streak_7" -> "7-Day Streak"; "streak_30" -> "30-Day Streak"; "streak_100" -> "100-Day Streak"
         "perfect" -> "Perfect!"
-        else -> MODE_OPTIONS.firstOrNull { it.first == m.gameMode }?.second ?: (m.gameMode ?: "")
+        // MODE_OPTIONS is the sweep picker only — a More Games medal (ProperNoundle…) reads the catalog title.
+        else -> MODE_OPTIONS.firstOrNull { it.first == m.gameMode }?.second ?: m.gameMode?.let(::modeTitleForKey) ?: ""
     }
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(10.dp),
@@ -1846,7 +1847,10 @@ private fun ProStatCell(label: String, value: String, icon: ImageVector, color: 
 @Composable
 private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, onGoPro: () -> Unit) {
     data class Bar(val label: String, val winRate: Int, val avgTime: Int)
-    val order = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
+    // Every daily mode the catalog knows, in catalog order (a More Games title
+    // only earns a bar once it has games); the short labels keep the legacy
+    // abbreviations and fall back to the catalog shortTitle.
+    val order = PICKER_MODES
     val shortLabel = mapOf("DUEL" to "Classic", "QUORDLE" to "Quad", "OCTORDLE" to "Octo", "SEQUENCE" to "Succ",
         "RESCUE" to "Deliv", "DUEL_6" to "Six", "DUEL_7" to "Seven", "GAUNTLET" to "Gaunt", "PROPERNOUNDLE" to "Proper")
     val bars = order.mapNotNull { m ->
@@ -1855,7 +1859,7 @@ private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, o
         if (games == 0) return@mapNotNull null
         val wins = rows.sumOf { it.wins }
         val weighted = rows.sumOf { it.averageTime * it.totalGames }
-        Bar(shortLabel[m] ?: m, wins * 100 / games, weighted / games)
+        Bar(shortLabel[m] ?: com.wordocious.app.ModeGen.byDbKey(m)?.shortTitle ?: m, wins * 100 / games, weighted / games)
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("PRO STATS")

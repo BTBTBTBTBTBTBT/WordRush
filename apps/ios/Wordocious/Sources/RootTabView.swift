@@ -160,18 +160,32 @@ struct RootTabView: View {
         .ignoresSafeArea(.keyboard)
         // Post-game "Next Daily" handoff: launch the requested mode's daily via
         // the same path the Leaderboard Play CTA uses (GameScreen with today's
-        // seed; ProperNoundleView() for PN). The CTA dismisses its own game
-        // first, then posts, so this cover presents cleanly from the root.
+        // seed; the own-engine view with a nil seed for ProperNoundle and the
+        // More Games titles). The CTA dismisses its own game first, then
+        // posts, so this cover presents cleanly from the root.
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playNextDaily)) { note in
             guard let key = note.object as? String else { return }
-            presentAfterCoverClears { nextDaily = homeModes.first { $0.dbKey == key } }
+            presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } }
         }
         .fullScreenCover(item: $nextDaily) { m in
             NavigationStack {
                 if let gm = m.mode {
                     GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title)
                 } else {
-                    ProperNoundleView()   // ProperNoundle daily (dbKey set, no engine mode)
+                    // Own-engine dailies (nil seed = today's), exactly as
+                    // HomeView.openFromMoreGames presents them.
+                    switch m.id {
+                    case "sudoku": SudokuView()
+                    case "regions": RegionsView()
+                    case "ladder": LadderView()
+                    case "wordsearch": SpyglassView()
+                    case "hub": HubView()
+                    case "cryptogram": CodebreakerView()
+                    case "groups": KindredView()
+                    case "crossword": CrosswordView()
+                    case "scramble": MuddleView()
+                    default: ProperNoundleView()   // ProperNoundle daily (dbKey set, no engine mode)
+                    }
                 }
             }
         }

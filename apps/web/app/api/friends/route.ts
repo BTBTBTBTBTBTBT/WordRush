@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { sweepAll } from '@/lib/supabase-sweep';
+import { sweepModesFor } from '@/lib/modes.generated';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,10 +88,10 @@ export async function GET(req: NextRequest) {
     // so whole users fell off the end — Oliver and Michael had ZERO rows in
     // the answer (0 pts, "hasn't played today"), and the founder's own week
     // was undercounted. Page through the sweep until a short page comes back.
-    const results = await sweepAll<{ user_id: string; day: string; composite_score: number }>((from, to) =>
+    const results = await sweepAll<{ user_id: string; day: string; composite_score: number; game_mode: string }>((from, to) =>
       admin
         .from('daily_results')
-        .select('user_id, day, composite_score')
+        .select('user_id, day, composite_score, game_mode')
         .in('user_id', ids)
         .eq('play_type', 'solo')
         .gte('day', cutoffDay)
@@ -101,11 +102,13 @@ export async function GET(req: NextRequest) {
     // per-user per-day totals
     const totals = new Map<string, Map<string, number>>();
     const playedCount = new Map<string, number>();
+    const sweepSet = new Set<string>(sweepModesFor(day));
     for (const r of results) {
       let byDay = totals.get(r.user_id);
       if (!byDay) { byDay = new Map(); totals.set(r.user_id, byDay); }
       byDay.set(r.day, (byDay.get(r.day) ?? 0) + (r.composite_score ?? 0));
-      if (r.day === day) playedCount.set(r.user_id, (playedCount.get(r.user_id) ?? 0) + 1);
+      // "N of 8 today" counts sweep modes only — a More Games finish must never pad the ring.
+      if (r.day === day && sweepSet.has(r.game_mode)) playedCount.set(r.user_id, (playedCount.get(r.user_id) ?? 0) + 1);
     }
     const weekPointsOf = (id: string): number => {
       let sum = 0;

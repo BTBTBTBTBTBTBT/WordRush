@@ -164,7 +164,7 @@ struct AppHeaderView: View {
             }
             statRow("Current", "\(streak) \(streak == 1 ? "day" : "days")")
             Divider().overlay(Theme.divider)
-            Text("Consecutive days winning all 9 dailies. Win every daily today to keep it alive.")
+            Text("Consecutive days winning all \(DailyCompletionsStore.totalDailyModes) Daily Sweep games. Win every one today to keep it alive.")
                 .font(Brand.font(11, .medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(14).frame(width: 240).background(Theme.surface)

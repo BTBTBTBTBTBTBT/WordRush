@@ -57,6 +57,8 @@ type UserStats = Database['public']['Tables']['user_stats']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'];
 
 import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { sweepModesFor } from '@/lib/daily-modes';
+import { dailyHref } from '@/lib/mode-routes';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { formatGuessStat } from '@/lib/format';
 
@@ -82,17 +84,15 @@ const matchStat = (gameMode: string, score: number): string => {
   return formatGuessStat(meta?.guessSemantics ?? 'guesses', meta?.guessBase ?? 1, score);
 };
 
-const DAILY_MODES: Array<{ id: string; href: string }> = [
-  { id: 'DUEL',          href: '/practice?daily=true' },
-  { id: 'QUORDLE',       href: '/quadword?daily=true' },
-  { id: 'OCTORDLE',      href: '/octoword?daily=true' },
-  { id: 'SEQUENCE',      href: '/sequence?daily=true' },
-  { id: 'RESCUE',        href: '/rescue?daily=true' },
-  { id: 'DUEL_6',        href: '/six?daily=true' },
-  { id: 'DUEL_7',        href: '/seven?daily=true' },
-  { id: 'GAUNTLET',      href: '/gauntlet?daily=true' },
-  { id: 'PROPERNOUNDLE', href: '/propernoundle?daily=true' },
-];
+// Today's Dailies = today's Daily Sweep set, from the catalog's dated era table
+// (More Games Stage 2: 8 modes from 2026-09-23, 9 before — never a literal
+// list). The More Games titles record dailies too but are not sweep cells, so
+// the card counts only these keys. Routes come from the shared mode-routes map.
+const DAILY_MODES: Array<{ id: string; href: string }> = sweepModesFor(getTodayLocal()).map((id) => ({
+  id,
+  href: dailyHref(id) ?? '/',
+}));
+const isSweepMode = (dbKey: string) => DAILY_MODES.some((m) => m.id === dbKey);
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -318,11 +318,13 @@ export default function ProfilePage() {
     if (weekTotal >= 10) out.push(`You've played ${weekTotal} games this week — on a roll!`);
     else if (weekTotal >= 1 && weekTotal < 5) out.push(`Only ${weekTotal} game${weekTotal === 1 ? '' : 's'} this week — warm up with a daily.`);
     if (xpToNextLevel <= 300) out.push(`Just ${xpToNextLevel} XP away from Level ${profile.level + 1}.`);
-    if (todayDailies.size === DAILY_MODES.length) {
-      const allWon = Array.from(todayDailies.values()).every((r) => r.won);
+    // Sweep cells only — a More Games daily on the books is not a sweep mode.
+    const sweepToday = Array.from(todayDailies.entries()).filter(([k]) => isSweepMode(k));
+    if (sweepToday.length === DAILY_MODES.length) {
+      const allWon = sweepToday.every(([, r]) => r.won);
       out.push(allWon ? `Flawless Victory — all ${DAILY_MODES.length} dailies won today.` : `All ${DAILY_MODES.length} dailies done today. Legendary.`);
-    } else if (todayDailies.size >= 3) {
-      out.push(`${todayDailies.size}/${DAILY_MODES.length} dailies complete today — keep going.`);
+    } else if (sweepToday.length >= 3) {
+      out.push(`${sweepToday.length}/${DAILY_MODES.length} dailies complete today — keep going.`);
     }
     return out.slice(0, 2);
   })();
@@ -472,8 +474,9 @@ export default function ProfilePage() {
 
         {/* ── B. Today's Dailies ── */}
         {(() => {
-          const completed = todayDailies.size;
-          const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
+          const sweepToday = Array.from(todayDailies.entries()).filter(([k]) => isSweepMode(k));
+          const completed = sweepToday.length;
+          const wins = sweepToday.filter(([, r]) => r.won).length;
           const total = DAILY_MODES.length;
           const allDone = completed >= total;
           const flawless = allDone && wins === total;

@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 import WordociousCore
 
-/// A daily-sweep leaderboard row — players who completed all 9 daily modes that
+/// A daily-sweep leaderboard row — players who completed every sweep mode that
 /// day, ranked by total composite score (desc), total time (asc). Mirrors the
 /// `daily_sweep_leaderboard` RPC contract.
 struct SweepEntry: Identifiable, Codable {

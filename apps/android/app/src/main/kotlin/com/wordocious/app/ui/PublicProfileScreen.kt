@@ -455,9 +455,13 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
             val customAccent = ProfileAccent.isCustom(p.accentColor)
-            // Today-progress ring — the target's completed dailies today (mock:
-            // ring + "N/9 today" capsule around the avatar).
-            val todayCount = targetDailies.count { it.day == com.wordocious.app.todayLocalDate() && it.completed }
+            // Today-progress ring — the target's completed SWEEP dailies today
+            // (ring + "N/total today" capsule around the avatar). A More Games
+            // result (ProperNoundle, Sudoku…) is not part of the sweep ring.
+            val todayCount = com.wordocious.app.todayLocalDate().let { today ->
+                val sweepSet = com.wordocious.app.ModeGen.sweepModesFor(today)
+                targetDailies.count { it.day == today && it.completed && it.gameMode in sweepSet }
+            }
             TodayRingAvatar(completed = todayCount) {
                 Box(
                     // iOS AvatarView: no accent set = the wordmark gradient, never a flat grey.
@@ -599,7 +603,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 )
             }
             persona?.flawless?.takeIf { it.count > 0 }?.let { fl ->
-                add(ProfileHighlight("💎", "×${fl.count} Flawless", "All 9 dailies won in a day", onTap = { showCalendar = true }))
+                add(ProfileHighlight("💎", "×${fl.count} Flawless", "Every Daily Sweep game won in a day", onTap = { showCalendar = true }))
             }
         }
         HighlightsCard(highlights)
@@ -647,8 +651,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // iOS modeChip: the mode's own glyph over its proper-case title.
-            MODE_CARDS.filter { it.engineMode != null }.forEach { card ->
+            // iOS modeChip: the mode's own glyph over its proper-case title —
+            // every daily mode this viewer can see (sweep + visible More Games
+            // titles, ProperNoundle included), since the row scrolls.
+            visibleDailyCards().forEach { card ->
                 val m = card.engineMode!!
                 val active = m == selectedMode
                 Column(

@@ -798,7 +798,8 @@ private fun fmtSecs(s: Int): String = if (s <= 0) "0s" else if (s >= 60) "${s / 
  * at the FIRST still-unplayed daily mode in the home-grid order (MODE_CARDS,
  * the canonical order) in that mode's accent; tap closes this game and opens
  * that mode's daily (same route as the home cards / leaderboard Play CTA).
- * All 9 done → static "Sweep complete!" line.
+ * Whole sweep done (and, from a More Games title, no visible More Games daily
+ * left) → static "Sweep complete!" line.
  */
 @Composable
 internal fun NextDailyRow(
@@ -822,16 +823,28 @@ internal fun NextDailyRow(
     // First unplayed daily in home-grid order. The just-finished mode is
     // excluded outright — its row can lag the record pipeline (or never exist
     // for guests) and it's never a sensible "next".
-    // Only sweep modes are ever "next" (More Games Stage 4): a More Games title
-    // hands off to the sweep, never the other way round.
+    // Handoff order (More Games Stage 4/9): a sweep game hands to the next
+    // unplayed sweep game; a More Games title (ProperNoundle, Sudoku…) hands to
+    // the next unplayed More Games title this viewer can see, THEN the sweep.
+    // The sweep never hands into More Games.
     val sweepKeys = com.wordocious.app.data.DailyCompletionsService.SWEEP_KEYS
-    val next = com.wordocious.app.ui.MODE_CARDS.firstOrNull { c ->
+    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+    val fromMoreGames = currentMode.name !in sweepKeys
+    val nextMore = if (!fromMoreGames) null else com.wordocious.app.ui.MORE_CARDS.firstOrNull { c ->
+        c.engineMode != null && c.dailyEligible && c.engineMode != currentMode &&
+            com.wordocious.app.data.FlagsService.isOn(c.flagKey, flagTable, flagsLoaded) &&
+            completions[c.engineMode.name] == null
+    }
+    val nextSweep = com.wordocious.app.ui.MODE_CARDS.firstOrNull { c ->
         c.engineMode != null && c.engineMode.name in sweepKeys && c.engineMode != currentMode && completions[c.engineMode.name] == null
     }
+    val next = nextMore ?: nextSweep
+    val sweepTotal = com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
     val allDone = next == null &&
-        com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size >= com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
-    // next == null with count < 9 can't normally happen (next covers every
-    // gap); render nothing rather than a wrong claim if state is mid-flight.
+        com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size >= sweepTotal
+    // next == null with the sweep incomplete can't normally happen (next covers
+    // every gap); render nothing rather than a wrong claim if state is mid-flight.
     if (next == null && !allDone) return
 
     // iOS renders a compact accent-tinted CAPSULE (two-tone label + arrow glyph),
@@ -859,7 +872,7 @@ internal fun NextDailyRow(
             }
         } else {
             Text(
-                "All 9 dailies done — Sweep complete! 🏆",
+                "All $sweepTotal dailies done — Sweep complete! 🏆",
                 fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
                 modifier = Modifier.padding(vertical = 4.dp),
             )

@@ -481,17 +481,19 @@ enum MatchStatsService {
         return f.string(from: shifted)
     }
 
-    /// The daily-recordable modes — keep in step with web lib/daily-modes.ts.
-    private static let dailyModes = [
-        "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
-        "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7",
-    ]
+    /// Every mode that has EVER been in a Daily Sweep (the union of the catalog's
+    /// sweep eras) — the query filter; per-day membership is decided by
+    /// ModeGen.sweepModes(for:) below. Single-sourced from modes.json (Stage 4/9).
+    private static let dailyModes: [String] = {
+        var seen: Set<String> = []
+        return ModeGen.sweepEras.flatMap(\.modes).filter { seen.insert($0).inserted }
+    }()
 
-    /// The era's full daily-mode count for a local day — 7 before 2026-05-21
-    /// (when DUEL_6/DUEL_7 dailies shipped), 9 on/after. Mirrors web
-    /// lib/daily-modes.ts requiredDailyModeCount; ISO strings compare safely.
+    /// The era's required sweep size for a local day — 7 before 2026-05-21,
+    /// 9 until the More Games launch, 8 from then on — from the generated era
+    /// table (mirrors web lib/daily-modes.ts requiredSweepCount).
     private static func requiredDailyModeCount(_ day: String) -> Int {
-        day < "2026-05-21" ? 7 : 9
+        ModeGen.requiredSweepCount(for: day)
     }
 
     static func dailySweepStats() async -> DailySweepStats {
@@ -523,9 +525,13 @@ enum MatchStatsService {
         var perDayTime: [String: Double] = [:]
         var perDayTimedModes: [String: Set<String>] = [:]
         for r in rows {
+            // Only that day's sweep-era modes count — a ProperNoundle row from
+            // after Stage 9 (or any More Games row) must not pad a sweep's time
+            // or stand in for a missing sweep mode.
+            guard let mode = r.game_mode, ModeGen.sweepModes(for: r.day).contains(mode) else { continue }
             let t = r.time_seconds ?? 0
             perDayTime[r.day, default: 0] += t
-            if t > 0, let mode = r.game_mode { perDayTimedModes[r.day, default: []].insert(mode) }
+            if t > 0 { perDayTimedModes[r.day, default: []].insert(mode) }
         }
         func fullyTimed(_ day: String) -> Bool {
             (perDayTimedModes[day]?.count ?? 0) >= requiredDailyModeCount(day)

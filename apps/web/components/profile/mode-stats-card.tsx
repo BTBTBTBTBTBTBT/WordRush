@@ -1,6 +1,6 @@
 'use client';
 
-import { statLines } from '@/lib/mode-stats';
+import { statLines, type ModeAggregates } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 interface ModeStatsCardProps {
@@ -13,22 +13,26 @@ interface ModeStatsCardProps {
   fastestTime: number;
   accentColor: string;
   winStreak?: { current: number; best: number };
+  /** modeAggregates(gameMode, matches) — the custom games' own cells (Clean, Pangrams, …). */
+  aggregates?: ModeAggregates;
 }
 
 /**
  * The 4×2 stat grid on a mode's detail panel. The eight cells come from the
- * per-mode stats registry (lib/mode-stats.ts, More Games §18), which reads
- * "Best" through the mode's guess semantics — so a word mode still shows
- * "2" and a Sudoku best of guess_count 1 reads "0 mistakes". Same registry,
- * same fixtures, on iOS and Android.
+ * per-mode stats registry (lib/mode-stats.ts, More Games §18): the word modes
+ * show Wins … Best Streak with "Best" read through the mode's guess
+ * semantics; each custom game shows its own eight (Sudoku's Clean and Avg
+ * Mistakes, Hubbub's Best Rank and Pangrams, …), the matches-derived ones
+ * via `aggregates`. Same registry, same fixtures, on iOS and Android.
  */
-export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, fastestTime, winStreak }: ModeStatsCardProps) {
+export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, fastestTime, winStreak, aggregates }: ModeStatsCardProps) {
   const meta = MODE_BY_DBKEY[gameMode];
   const stats = statLines(
     gameMode,
     { wins, losses, totalGames, bestScore, fastestTime, streak: winStreak?.current || 0, bestStreak: winStreak?.best || 0 },
     meta?.guessSemantics ?? 'guesses',
     meta?.guessBase ?? 1,
+    aggregates,
   );
 
   return (

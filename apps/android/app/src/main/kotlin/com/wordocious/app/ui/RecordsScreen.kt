@@ -719,7 +719,8 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
 // MILESTONE_EVERY=7) — the "next shield" card counts toward the next multiple
 // of 7, NOT the [7, 30, 100] streak MEDAL milestones.
 private const val SHIELD_EVERY = 7
-private fun recModeTitle(key: String) = MODE_OPTIONS.firstOrNull { it.first == key }?.second ?: key
+// MODE_OPTIONS is the sweep picker only — a More Games record (ProperNoundle…) reads the catalog title.
+private fun recModeTitle(key: String) = MODE_OPTIONS.firstOrNull { it.first == key }?.second ?: modeTitleForKey(key)
 private fun fmtSecs(v: Int) = if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
 
 /** One beatable all-time record: label, gap copy, progress (record/mine %). */

@@ -106,7 +106,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
     val catalog by androidx.compose.runtime.produceState(com.wordocious.app.data.AchievementCatalog.cached()) {
         value = com.wordocious.app.data.AchievementCatalog.load()
     }
-    val dailyModes = remember { MODE_CARDS.filter { it.engineMode != null && it.id != "vs" } }
+    // Favourite-mode picker: every daily mode this viewer can see — the sweep
+    // tiles plus the visible More Games titles (ProperNoundle among them).
+    val dailyModes = visibleDailyCards()
 
     LaunchedEffect(profile?.id) {
         username = profile?.username ?: ""

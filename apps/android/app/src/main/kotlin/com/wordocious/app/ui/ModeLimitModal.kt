@@ -65,7 +65,7 @@ fun ModeLimitModal(
             Text("$modeName — Played Today", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
             Text(
-                "You've used your free play of $modeName for today. Upgrade to Pro for unlimited replays and ad-free gameplay across all 9 modes.",
+                "You've used your free play of $modeName for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.",
                 fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(16.dp))

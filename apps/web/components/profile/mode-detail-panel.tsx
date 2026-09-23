@@ -14,11 +14,13 @@ import { createInvite, vsHrefForMode } from '@/lib/invite-service';
 import { useAuth } from '@/lib/auth-context';
 import { ProDeepModeCard } from './pro-insights-deep';
 import { fetchModeDetail } from '@/lib/stats-service';
-import { statPanels } from '@/lib/mode-stats';
+import { statPanels, modeAggregates, guessNoun, type MatchRow } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 interface ModeData {
   guessDist: Array<{ guesses: number; count: number }>;
+  /** The player's own matches rows, mapped for the stats registry (More Games §18). */
+  matches: MatchRow[];
   solveHistory: Array<{ date: string; timeSeconds: number; mode: string }>;
   winStreak: { current: number; best: number };
   timeOfDay: Array<{ hour: number; gamesPlayed: number; gamesWon: number }>;
@@ -54,8 +56,12 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
 
   const mode = PROFILE_MODES.find((m) => m.dbKey === gameMode);
   const accentColor = mode?.accentColor || '#7c3aed';
-  // Which cards below the grid apply to this mode (More Games §18 registry).
-  const panels = statPanels(gameMode, MODE_BY_DBKEY[gameMode]?.guessSemantics ?? 'guesses');
+  // Which cards below the grid apply to this mode (More Games §18 registry),
+  // and the unit its histogram counts ("Checks" for Muddle, "Guesses" elsewhere).
+  const meta = MODE_BY_DBKEY[gameMode];
+  const semantics = meta?.guessSemantics ?? 'guesses';
+  const panels = statPanels(gameMode, semantics);
+  const noun = guessNoun(semantics);
   const Icon = mode?.icon;
   const isOwnProfile = user?.id === userId;
 
@@ -190,11 +196,13 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             fastestTime={stats.fastest_time}
             accentColor={accentColor}
             winStreak={data?.winStreak}
+            aggregates={data ? modeAggregates(gameMode, data.matches ?? [], meta?.guessBase ?? 1) : undefined}
           />
 
           {/* Guess Distribution — gated by the mode's stats profile (Gauntlet: up to 50
-              guesses across 21 boards, a histogram is meaningless; custom engines: no word rows). */}
-          {data && panels.guessDistribution && <GuessDistribution data={data.guessDist} accentColor={accentColor} />}
+              guesses across 21 boards, a histogram is meaningless; custom engines only
+              where the count has a real range — Kindred submissions, Muddle checks). */}
+          {data && panels.guessDistribution && <GuessDistribution data={data.guessDist} accentColor={accentColor} noun={noun} />}
 
           {/* Solve Time Trend */}
           {data && panels.solveTime && data.solveHistory.length >= 2 && (

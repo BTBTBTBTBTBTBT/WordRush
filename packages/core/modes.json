@@ -201,8 +201,8 @@
       "glyph": "P",
       "romanNumeral": null,
       "dailyEligible": true,
-      "group": "core",
-      "sweep": true,
+      "group": "more",
+      "sweep": false,
       "engine": "custom",
       "guessSemantics": "guesses",
       "guessBase": 1,
@@ -424,6 +424,19 @@
   ],
   "_sweepEras_comment": "Newest first, append-only. Each row: the first local day (YYYY-MM-DD) it applies and the dbKeys that made up the required Daily Sweep from that day. 2026-05-21 is when Six/Seven dailies shipped (7 → 9). The launch row (8 word games, ProperNoundle out) is appended at Stage 9 with LAUNCH_DAY; until then the top row MUST equal modes.filter(sweep), which the codegen test asserts. Past days are never recomputed.",
   "sweepEras": [
+    {
+      "since": "2026-09-23",
+      "modes": [
+        "DUEL",
+        "QUORDLE",
+        "OCTORDLE",
+        "SEQUENCE",
+        "RESCUE",
+        "GAUNTLET",
+        "DUEL_6",
+        "DUEL_7"
+      ]
+    },
     {
       "since": "2026-05-21",
       "modes": [

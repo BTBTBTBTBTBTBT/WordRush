@@ -11,7 +11,7 @@ describe('More Games sheet helpers', () => {
     const s = moreSections(ALL_MORE);
     expect(s.map((x) => x.key)).toEqual(MORE_CATEGORIES.map((c) => c.key));
     // Word 4 · Trivia 1 (ProperNoundle is still a core tile) · Logic 4.
-    expect(s.map((x) => x.modes.length)).toEqual([4, 1, 4]);
+    expect(s.map((x) => x.modes.length)).toEqual([4, 2, 4]);
     expect(s.find((x) => x.key === 'word')!.modes.map((m) => m.title)).toEqual(['Muddle', 'Hubbub', 'Letter Ladder', 'Spyglass']);
     expect(s.find((x) => x.key === 'logic')!.modes.map((m) => m.title)).toEqual(['Sudoku', 'Kindred', 'Codebreaker', 'Starsweep']);
   });
@@ -24,18 +24,18 @@ describe('More Games sheet helpers', () => {
   });
 
   it('the enabled set drives the sheet and the tile count (five titles compiled in)', () => {
-    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder', 'cryptogram', 'wordsearch', 'regions']);
-    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['word', ['scramble', 'hub', 'ladder', 'wordsearch']], ['trivia', ['crossword']], ['logic', ['sudoku', 'groups', 'cryptogram', 'regions']]]);
-    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 9 });
-    expect(morePlayedCount(['REGIONS', 'SUDOKU', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD', 'SCRAMBLE'])).toEqual({ played: 9, total: 9 });
-    expect(morePlayedCount([])).toEqual({ played: 0, total: 9 });
+    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['propernoundle', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder', 'cryptogram', 'wordsearch', 'regions']);
+    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['word', ['scramble', 'hub', 'ladder', 'wordsearch']], ['trivia', ['propernoundle', 'crossword']], ['logic', ['sudoku', 'groups', 'cryptogram', 'regions']]]);
+    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 10 });
+    expect(morePlayedCount(['REGIONS', 'SUDOKU', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD', 'SCRAMBLE'])).toEqual({ played: 9, total: 10 });
+    expect(morePlayedCount([])).toEqual({ played: 0, total: 10 });
   });
 
   it('counts only More Games dailies the player has recorded today', () => {
-    expect(moreDailyModes(ALL_MORE).length).toBe(9);
+    expect(moreDailyModes(ALL_MORE).length).toBe(10);
     const c = morePlayedCount(['DUEL', 'SUDOKU', 'HUB', 'NOPE'], ALL_MORE);
-    expect(c).toEqual({ played: 2, total: 9 });
-    expect(morePlayedText(c.played, c.total)).toBe('2 of 9 played');
+    expect(c).toEqual({ played: 2, total: 10 });
+    expect(morePlayedText(c.played, c.total)).toBe('2 of 10 played');
     expect(morePlayedText(0, 10)).toBe('0 of 10 played');
   });
 });

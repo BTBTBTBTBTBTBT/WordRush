@@ -45,6 +45,8 @@ import {
 } from '@/lib/friends-service';
 import { WIN_FG } from '@/lib/tile-theme';
 import { modeLabel } from '@/lib/mode-labels';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { formatGuessStat } from '@/lib/format';
 import {
   fetchPersona,
   fetchTodayRing,
@@ -883,7 +885,13 @@ export default function PublicProfilePage() {
                       {[
                         { label: 'Wins', value: stat.wins, color: WIN_FG },
                         { label: 'Losses', value: stat.losses, color: '#dc2626' },
-                        { label: 'Best', value: stat.best_score > 0 ? stat.best_score : '-', color: '#d97706' },
+                        // More Games §11: a word mode keeps the bare count; a custom game reads
+                        // through its semantics ("0 mistakes", "Par", "Hubbub"), never a raw "1".
+                        { label: 'Best', value: stat.best_score > 0
+                          ? (MODE_BY_DBKEY[modeKey]?.guessSemantics ?? 'guesses') === 'guesses'
+                            ? stat.best_score
+                            : formatGuessStat(MODE_BY_DBKEY[modeKey]!.guessSemantics, MODE_BY_DBKEY[modeKey]!.guessBase, stat.best_score)
+                          : '-', color: '#d97706' },
                         { label: 'Fastest', value: stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-', color: '#2563eb' },
                       ].map((s) => (
                         <div key={s.label} className="text-center">

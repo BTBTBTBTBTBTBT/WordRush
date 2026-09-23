@@ -70,7 +70,7 @@ enum NotificationService {
         let flawless = MatchStatsService.cachedFlawlessStreak()
         if flawless >= 2 {
             content.title = "FLAWLESS STREAK AT RISK! 🏆"
-            content.body = "\(flawless) straight days winning all nine. Win them all today to make it \(flawless + 1)."
+            content.body = "\(flawless) straight days winning every daily. Win them all today to make it \(flawless + 1)."
         } else {
             content.title = streak >= 3 ? "STREAK AT RISK! 🔥" : "DAILY CHALLENGE 🧩"
             content.body = streak >= 3

@@ -12,6 +12,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { formatGuessStat } from '@/lib/format';
+import { fewestRecordLabel, guessRowLabel } from '@/lib/mode-stats';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
@@ -88,14 +89,8 @@ const recordValue = (rt: string, v: number, gameMode?: string | null): string =>
 const recordLabel = (rt: string, gameMode?: string | null): string => {
   const meta = gameMode ? MODE_BY_DBKEY[gameMode] : undefined;
   if (rt !== 'fewest_guesses' || !meta) return RECORD_LABELS[rt]?.label ?? rt;
-  switch (meta.guessSemantics) {
-    case 'mistakes': return 'Fewest Mistakes';
-    case 'checks': return 'Fewest Checks';
-    case 'overPar': return 'Best Par';
-    case 'misses': return 'Fewest Misses';
-    case 'rank': return 'Best Rank';
-    default: return 'Fewest Guesses';
-  }
+  // "Fewest Mistakes" / "Best vs Par" / "Fewest Misses" / "Best Rank" — the shared table.
+  return fewestRecordLabel(meta.guessSemantics);
 };
 
 const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played', 'longest_streak'];
@@ -601,7 +596,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                       {playType === 'solo' ? (
                         <>
                           <span>
-                            {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
+                            {guessRowLabel(MODE_BY_DBKEY[selectedMode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[selectedMode]?.guessBase ?? 1, entry.guess_count)} · {formatTime(entry.time_seconds)}
                             {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
                             {/* §254: hints ride this row exactly as on the daily
                                 leaderboard — the founder wants the two pages to match. */}
@@ -1041,7 +1036,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
           all.push({ label: `${getMode(r.game_mode).title} fastest win`, gap: `${gap}s away`, pct: Math.round((r.record_value / mine.fastest_time) * 100), rel: gap / Math.max(1, r.record_value) });
         } else if (r.record_type === 'fewest_guesses' && mine.best_score && mine.best_score > r.record_value) {
           const gap = mine.best_score - r.record_value;
-          all.push({ label: `${getMode(r.game_mode).title} fewest guesses`, gap: `${gap} away`, pct: Math.round((r.record_value / mine.best_score) * 100), rel: gap / Math.max(1, r.record_value) });
+          all.push({ label: `${getMode(r.game_mode).title} ${recordLabel('fewest_guesses', r.game_mode).toLowerCase()}`, gap: `${gap} away`, pct: Math.round((r.record_value / mine.best_score) * 100), rel: gap / Math.max(1, r.record_value) });
         }
       }
       setChases(all.sort((a, b) => a.rel - b.rel).slice(0, 3).map(({ rel: _rel, ...rest }) => rest));

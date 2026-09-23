@@ -11,7 +11,7 @@
 // file ~/.wordocious-openai-key (a single line). It is never printed, never
 // logged, never written anywhere else.
 //
-//   OPENAI_API_KEY=… node apps/web/scripts/muddle/cartoons.mjs --limit 10 [--dry] [--model gpt-image-1] [--quality high] [--holiday christmas]
+//   OPENAI_API_KEY=… node apps/web/scripts/muddle/cartoons.mjs --limit 10 [--dry] [--model gpt-image-1] [--quality high] [--holiday christmas] [--concurrency 4] [--gap-ms 12500]
 //
 // Cost guard: --max-usd (default 40) stops the run once the estimated spend
 // (--usd-per-image, default 0.07) would exceed it.
@@ -62,26 +62,48 @@ if (todo.length * USD_PER_IMAGE > MAX_USD) { console.error(`Refusing: estimated 
 const key = DRY ? 'dry' : readKey();
 if (!key) { console.error('No key. Set OPENAI_API_KEY in this shell or put the key on one line in ~/.wordocious-openai-key (chmod 600). Never paste it into chat.'); process.exit(1); }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// The org limit for gpt-image is 5 images per minute (measured 2026-09-23): start at most one request every 12.5 s,
+// and on a 429 wait the time the API asks for and try again rather than skipping the puzzle.
+const START_GAP_MS = Number(arg('gap-ms', 12500));
+let nextStartAt = 0;
+async function paceStart() {
+  const now = Date.now();
+  const at = Math.max(now, nextStartAt);
+  nextStartAt = at + START_GAP_MS;
+  if (at > now) await sleep(at - now);
+}
 async function generate(prompt) {
-  const res = await fetch('https://api.openai.com/v1/images/generations', {
+  for (let attempt = 1; ; attempt++) {
+    await paceStart();
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: MODEL, prompt, size: SIZE, quality: QUALITY, n: 1, output_format: 'png' }),
   });
-  if (!res.ok) { const t = await res.text(); throw new Error(`OpenAI ${res.status}: ${t.slice(0, 300)}`); }
-  const json = await res.json();
-  const b64 = json.data?.[0]?.b64_json;
-  if (!b64) throw new Error('no image in response');
-  return Buffer.from(b64, 'base64');
+    if (res.status === 429 && attempt < 12) {
+      const t = await res.text();
+      const m = t.match(/try again in ([\d.]+)\s*(m?s)/i);
+      const waitMs = m ? Math.ceil(parseFloat(m[1]) * (m[2].toLowerCase() === 'ms' ? 1 : 1000)) + 500 : 15000;
+      await sleep(waitMs);
+      continue;
+    }
+    if (!res.ok) { const t = await res.text(); throw new Error(`OpenAI ${res.status}: ${t.slice(0, 300)}`); }
+    const json = await res.json();
+    const b64 = json.data?.[0]?.b64_json;
+    if (!b64) throw new Error('no image in response');
+    return Buffer.from(b64, 'base64');
+  }
 }
 
+const CONCURRENCY = Math.max(1, Number(arg('concurrency', 4)));
 let done = 0, spent = 0;
-for (const p of todo) {
+async function work(p) {
   const letters = p.final.answer.replace(/[^A-Z]/g, '');
   const scene = sceneFor.get(letters);
-  if (!scene) { console.log(`  skip ${p.id}: no scene in jokes.json`); continue; }
+  if (!scene) { console.log(`  skip ${p.id}: no scene in jokes.json`); return; }
   const prompt = `${STYLE} Scene: ${scene}`;
-  if (DRY) { console.log(`  [dry] ${p.id} ← ${scene.slice(0, 80)}…`); continue; }
+  if (DRY) { console.log(`  [dry] ${p.id} ← ${scene.slice(0, 80)}…`); return; }
   try {
     const png = await generate(prompt);
     // Centre-crop to 4:3 and shrink to 800×600 WebP (~40–80 KB), hash-named so the CDN can cache forever.
@@ -97,4 +119,9 @@ for (const p of todo) {
     console.error(`  ${p.id} FAILED: ${e.message}`);
   }
 }
+// A small pool: CONCURRENCY puzzles in flight at once (the API allows a handful per minute; default 4).
+let next = 0;
+await Promise.all(Array.from({ length: Math.min(CONCURRENCY, todo.length) }, async () => {
+  while (next < todo.length) { const p = todo[next++]; await work(p); }
+}));
 console.log(`done ${done}/${todo.length}; est. spent $${spent.toFixed(2)}. Next: copy apps/web/data/scramble-puzzles.json over the iOS/Android copies (bank-sync) and review the images in apps/web/public/muddle/.`);

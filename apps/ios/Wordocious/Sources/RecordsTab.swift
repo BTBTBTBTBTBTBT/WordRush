@@ -94,7 +94,9 @@ struct AllTimeRecordsView: View {
     @State private var sweepLoading = false
     private let sweepAccent = Color(hex: 0x4F46E5)
 
-    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
+    /// Every daily-recordable mode (sweep tiles + More Games titles) — lookup
+    /// only, for the picked mode's title/icon/accent.
+    private let pickerModes: [HomeMode] = (homeModes + moreModes).filter { $0.dbKey != nil }
     private var myId: String? { auth.profile?.id }
 
     var body: some View {
@@ -329,7 +331,7 @@ struct DailyRecordsView: View {
     @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
     @State private var loading = false
     @State private var reloadToken = 0
-    // Sweep tile — the cross-mode "completed all 9 dailies today" board.
+    // Sweep tile — the cross-mode "completed every sweep daily today" board.
     @State private var isSweep = false
     @State private var sweepEntries: [SweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
@@ -560,7 +562,7 @@ struct DailyRecordsView: View {
                             .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                             .lineLimit(1).fixedSize()
                     }
-                    Text(sweepStatsLine(e, details: sweepDetails[e.userId]))
+                    Text(sweepStatsLine(e, details: sweepDetails[e.userId], day: LeaderboardService.todayLocal()))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                         // §246 (founder screenshot: "86 guesses ·…"): the hints
                         // segment fell off the row's end — wrap, never truncate.

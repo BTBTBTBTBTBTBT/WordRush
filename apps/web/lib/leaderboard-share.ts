@@ -70,8 +70,10 @@ export function buildRankDelta(
     : { text: `▼${-d} vs yesterday`, improved: false };
 }
 
-function soloSubline(e: LeaderboardEntry): string {
-  return `${e.guess_count} guesses · ${fmtClock(e.time_seconds)} · ${e.completed ? 'Win' : 'Loss'}`;
+const defaultGuessLabel = (n: number) => `${n} guesses`;
+
+function soloSubline(e: LeaderboardEntry, guessLabel: (n: number) => string = defaultGuessLabel): string {
+  return `${guessLabel(e.guess_count)} · ${fmtClock(e.time_seconds)} · ${e.completed ? 'Win' : 'Loss'}`;
 }
 
 function vsSubline(e: LeaderboardEntry): string {
@@ -125,6 +127,10 @@ export interface DailyLeaderboardShareOpts {
   userEntry?: LeaderboardEntry | null;
   /** Sharer's final rank yesterday (same mode/playType); null = didn't play. */
   yesterdayRank?: number | null;
+  /** More Games §11: the row's guess stat through the mode's semantics
+   *  ("0 mistakes", "Par", "Hubbub"); defaults to "N guesses". Supplied by the
+   *  caller so this file stays catalog-free. */
+  guessLabel?: (guessCount: number) => string;
 }
 
 /**
@@ -140,7 +146,7 @@ export function buildDailyLeaderboardShareInput(
   const top = opts.ranked.slice(0, 5);
   if (top.length === 0) return null;
 
-  const subline = opts.variant === 'vs' ? vsSubline : soloSubline;
+  const subline = opts.variant === 'vs' ? vsSubline : (e: LeaderboardEntry) => soloSubline(e, opts.guessLabel);
   const youInTop = !!opts.userId && top.some((r) => r.entry.user_id === opts.userId);
   const belowTop = !youInTop && !!opts.userId && !!opts.userRank && !!opts.userEntry;
   const delta = opts.userRank ? buildRankDelta(opts.yesterdayRank, opts.userRank.rank) : undefined;
@@ -204,6 +210,8 @@ export interface YesterdayPodiumShareOpts {
   userRank?: { rank: number; totalPlayers: number } | null;
   /** Sharer's own yesterday row, for the below-top-5 highlighted row. */
   userEntry?: LeaderboardEntry | null;
+  /** More Games §11: guess stat through the mode's semantics; defaults to "N guesses". */
+  guessLabel?: (guessCount: number) => string;
 }
 
 /**
@@ -219,7 +227,7 @@ export function buildYesterdayPodiumShareInput(
 ): ShareLeaderboardInput | null {
   const top = opts.ranked.slice(0, 5);
   if (top.length === 0) return null;
-  const subline = opts.playType === 'vs' ? vsSubline : soloSubline;
+  const subline = opts.playType === 'vs' ? vsSubline : (e: LeaderboardEntry) => soloSubline(e, opts.guessLabel);
   const youInTop = !!opts.userId && top.some((r) => r.entry.user_id === opts.userId);
   const belowTop = !youInTop && !!opts.userId && !!opts.userRank && !!opts.userEntry;
   const cardLabels = tieAwareScoreLabels([
@@ -580,6 +588,10 @@ export interface TrophyCaseShareOpts {
   records: Array<{ record_type: string; game_mode: string | null; record_value: number }>;
   /** dbKey → display title, resolved by the caller (keeps this file catalog-free). */
   modeTitle: (dbKey: string | null) => string;
+  /** More Games §11: the fewest_guesses record read through the mode's
+   *  semantics — { label: "Fewest Mistakes", value: "0 mistakes" }. Null/omitted
+   *  = the word reading ("Fewest Guesses", "N guesses"). */
+  fewestGuesses?: (dbKey: string | null, value: number) => { label: string; value: string } | null;
   username?: string;
   now?: Date;
 }
@@ -600,10 +612,11 @@ export function buildTrophyCaseShareInput(opts: TrophyCaseShareOpts): ShareLeade
   });
   const rows: ShareLeaderboardRowInput[] = sorted.slice(0, 5).map((r, i) => {
     const cfg = TROPHY_LABELS[r.record_type];
+    const fewest = r.record_type === 'fewest_guesses' ? opts.fewestGuesses?.(r.game_mode, r.record_value) ?? null : null;
     return {
       rank: i + 1,
-      name: `${opts.modeTitle(r.game_mode)} · ${cfg?.label ?? r.record_type}`,
-      scoreDisplay: cfg ? cfg.format(r.record_value) : String(r.record_value),
+      name: `${opts.modeTitle(r.game_mode)} · ${fewest?.label ?? cfg?.label ?? r.record_type}`,
+      scoreDisplay: fewest?.value ?? (cfg ? cfg.format(r.record_value) : String(r.record_value)),
       isYou: false,
     };
   });

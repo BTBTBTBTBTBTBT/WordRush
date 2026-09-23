@@ -8,11 +8,12 @@ import Supabase
 /// (apps/web/app/api/cron/daily-medals), so they already apply to native; only
 /// these three were web-client-only and missing on native.
 enum MedalService {
-    /// The number of solo daily modes a full sweep requires. Keep in sync with
-    /// web daily-service.ts DAILY_MODE_COUNT and Android MedalService.kt — a
-    /// hardcoded 9 here silently broke sweep detection when the mode count
-    /// changed on only two of the three platforms.
-    static let dailyModeCount = 9
+    /// The number of solo daily modes a full sweep requires TODAY — derived from
+    /// the catalog (ModeGen.sweep, More Games Stage 4/9), never a literal: a
+    /// hardcoded 9 here once silently broke sweep detection when the mode count
+    /// changed on only two of the three platforms. Historical days go through
+    /// ModeGen.requiredSweepCount(for:) instead.
+    static var dailyModeCount: Int { ModeGen.sweep.count }
 
     private struct MedalInsert: Encodable {
         let user_id, day, game_mode, play_type, medal_type: String
@@ -66,8 +67,8 @@ enum MedalService {
             medal_type: "perfect", composite_score: guessCount)).execute()
     }
 
-    /// Daily Sweep (+200 XP) / Flawless (+400 XP) bonuses, awarded once when all
-    /// 9 daily solo results exist. Adds the XP to the profile and returns the
+    /// Daily Sweep (+200 XP) / Flawless (+400 XP) bonuses, awarded once when every
+    /// sweep-mode solo result exists. Adds the XP to the profile and returns the
     /// (sweep, flawless) split so the XP toast can render the distinct
     /// "+200 sweep" / "+400 flawless" chips (web xp-toast.tsx parity).
     static func awardDailyBonusesIfComplete(_ client: SupabaseClient, userId: String) async -> (sweep: Int, flawless: Int) {

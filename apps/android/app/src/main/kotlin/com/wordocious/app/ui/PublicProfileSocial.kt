@@ -167,9 +167,10 @@ private fun rememberMinutesSince(instant: String?): Long? {
     }.getOrNull()
 }
 
-/** Progress ring + "N/9 today" capsule wrapped around the avatar. */
+/** Progress ring + "N/total today" capsule wrapped around the avatar — total =
+ *  the sweep size from the catalog (Stage 9: 8), never a literal. */
 @Composable
-fun TodayRingAvatar(completed: Int, total: Int = 9, content: @Composable () -> Unit) {
+fun TodayRingAvatar(completed: Int, total: Int = com.wordocious.app.ModeGen.sweep.size, content: @Composable () -> Unit) {
     val ringColor = WTheme.primary
     val track = WTheme.border
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(bottom = 6.dp)) {
@@ -803,7 +804,7 @@ fun StreakCalendarDialog(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     LegendDot(WTheme.primary, "played")
-                    LegendDot(WTheme.gold, "all 9 dailies")
+                    LegendDot(WTheme.gold, "full sweep")
                     LegendDot(WTheme.surfaceAlt, "missed")
                 }
             }

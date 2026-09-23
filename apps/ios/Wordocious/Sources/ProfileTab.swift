@@ -48,15 +48,18 @@ struct ProfileTab: View {
     // Games played in the last 7 days — powers the Insights "this week" line.
     @State private var sevenDayTotal = 0
 
-    // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
-    // Every daily mode with recorded stats — including ProperNoundle, whose
-    // HomeMode has `mode: nil` (it launches its own view, not GameScreen) but
-    // still has a GameMode case + stats rows. Only VS (dbKey nil) is excluded.
-    private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
-    // Today's-Dailies grid covers all 9 daily-recordable modes — including
-    // ProperNoundle, which has a dbKey but no GameMode (its own engine). VS is
-    // excluded (no daily row).
-    private let dailyTiles: [HomeMode] = homeModes.filter { $0.dbKey != nil }
+    // Mode-picker (per-mode stats): EVERY daily mode with recorded stats — the
+    // sweep modes plus the More Games titles this viewer can see (ProperNoundle
+    // lives there since Stage 9; its HomeMode has `mode: nil` but a GameMode
+    // case + stats rows). Only VS (dbKey nil) is excluded. Flag-gated titles
+    // stay hidden until their flag is on, so an unlaunched game never leaks.
+    private var dailyModes: [HomeMode] {
+        (homeModes + moreModes).filter { $0.dbKey != nil && $0.dailyEligible && FlagsService.shared.isOn($0.flagKey) }
+    }
+    // Today's-Dailies grid = the Daily Sweep set only (ModeGen.sweep via the
+    // core grid), so its N/M matches the completions store. More Games titles
+    // are not part of the sweep and don't appear here.
+    private let dailyTiles: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.sweep }
 
     var body: some View {
         NavigationStack {
@@ -522,7 +525,7 @@ struct ProfileTab: View {
         return f.string(from: d)
     }
 
-    // MARK: Today's Dailies (5 + 4 grid)
+    // MARK: Today's Dailies (5-over-N grid of the sweep modes)
 
     private var todaysDailies: some View {
         let completed = completions.completedCount
@@ -1029,7 +1032,8 @@ struct LeaderboardTab: View {
     /// Owned by RootTabView so tab gestures can pop it to root.
     @Binding var path: [String]
     @State private var mode: GameMode = .duel
-    // Sweep tile (10th HModePicker cell) — the cross-mode "completed all 9" board.
+    // Sweep tile (HModePicker cell after the sweep modes) — the cross-mode
+    // "completed every sweep daily" board.
     @State private var isSweep = false
     @State private var sweepEntries: [SweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
@@ -1088,10 +1092,11 @@ struct LeaderboardTab: View {
     @State private var showPNDaily = false
     struct LbGame: Identifiable { let id = UUID(); let mode: GameMode; let title: String }
 
-    /// All 9 daily-recordable modes (incl. ProperNoundle, which has a dbKey but
-    /// no GameMode enum on its HomeMode — its leaderboard keys off the dbKey).
-    /// VS is excluded (no daily leaderboard).
-    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
+    /// Every daily-recordable mode — sweep tiles AND More Games titles (incl.
+    /// ProperNoundle, which has a dbKey but no GameMode enum on its HomeMode —
+    /// its leaderboard keys off the dbKey). Lookup only (title/icon/accent of
+    /// the picked mode); VS is excluded (no daily leaderboard).
+    private let pickerModes: [HomeMode] = (homeModes + moreModes).filter { $0.dbKey != nil }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -1263,7 +1268,7 @@ struct LeaderboardTab: View {
         .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
     }
 
-    /// The cross-mode Sweep board — players who completed all 9 dailies today,
+    /// The cross-mode Sweep board — players who completed every sweep daily today,
     /// ranked by total composite score. Reuses the rank banner + rankIcon shell.
     @ViewBuilder private var sweepBoard: some View {
         if let r = sweepRank { rankBanner(r) }
@@ -1385,7 +1390,7 @@ struct LeaderboardTab: View {
                             .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
                             .lineLimit(1).fixedSize()
                     }
-                    Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId]))
+                    Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId], day: LeaderboardService.yesterdayLocal()))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                         // §246 (founder screenshot: "86 guesses ·…"): the hints
                         // segment fell off the row's end — wrap, never truncate.
@@ -1808,7 +1813,7 @@ struct LeaderboardTab: View {
                             .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                             .lineLimit(1).fixedSize()
                     }
-                    Text(sweepStatsLine(entry, details: sweepDetails[entry.userId]))
+                    Text(sweepStatsLine(entry, details: sweepDetails[entry.userId], day: LeaderboardService.todayLocal()))
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                         // §246 (founder screenshot: "86 guesses ·…"): the hints
                         // segment fell off the row's end — wrap, never truncate.
@@ -2021,10 +2026,11 @@ let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
 // board) so Records' daily-sweep rows render the identical line — the web
 // twin lives in components/leaderboard/sweep-mode-dots.tsx for the same
 // reason (founder ask, Aug 24: Records must match).
-func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?) -> String {
+func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?, day: String) -> String {
     // §227: full words — the founder read "2h" as hours-since-completion.
     // Room comes from the pill living on the dots row, not this line.
-    var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9"
+    // The denominator is that day's sweep-era size (Stage 4/9), never a literal.
+    var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/\(ModeGen.requiredSweepCount(for: day))"
     if let d = details {
         s += " · \(d.guesses) guess\(d.guesses == 1 ? "" : "es")"
         if d.hints > 0 { s += " · \(d.hints) hint\(d.hints == 1 ? "" : "s")" }
@@ -2032,7 +2038,9 @@ func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetail
     return s
 }
 
-/// §223: the Sweep board's nine-dot mode strip. Fixed order = the mode grid.
+/// §223: the Sweep board's mode-dot strip. Order = that day's sweep set in
+/// catalog order (ModeGen.sweepModes(for:)), so a pre-Stage-9 day still shows
+/// its ProperNoundle dot and a post-launch day shows eight.
 /// One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction
 /// of that mode's theoretical ceiling, never a comparison to the field, so the
 /// strip reads identically with three players or three thousand (founder call,
@@ -2043,13 +2051,12 @@ struct SweepModeDots: View {
     let details: LeaderboardService.SweepDetails?
     let day: String
 
-    private static let dotModes = ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
-                                   "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE"]
+    private var dotModes: [String] { ModeGen.sweepModes(for: day) }
 
     var body: some View {
         if let details {
             HStack(spacing: 3) {
-                ForEach(Self.dotModes, id: \.self) { mode in
+                ForEach(dotModes, id: \.self) { mode in
                     dot(details.modes[mode], mode: mode)
                 }
             }
@@ -2073,8 +2080,8 @@ struct SweepModeDots: View {
     }
 }
 
-/// Sweep-board rank pill — GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP"
-/// (completed all 9 but dropped a board). Mirrors the per-mode Win/Loss pill
+/// Sweep-board rank pill — GOLD "FLAWLESS" (won every sweep mode) vs VIOLET "SWEEP"
+/// (completed every sweep mode but dropped a board). Mirrors the per-mode Win/Loss pill
 /// shape; the sweep-celebration colors (amber #D97706 / violet #A78BFA).
 @ViewBuilder func sweepPill(isFlawless: Bool, streak: Int = 0) -> some View {
     let color = isFlawless ? Color(hex: 0xD97706) : Color(hex: 0xA78BFA)

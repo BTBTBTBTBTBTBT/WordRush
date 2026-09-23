@@ -943,12 +943,13 @@ private fun Modifier.combinedClickableNoRipple(onLongClick: () -> Unit, onClick:
     )
 }
 
-/** "5/9 today · 🔥12 · 7–4 you" — the row's engagement digest (§212). */
+/** "5/8 today · 🔥12 · 7–4 you" — the row's engagement digest (§212). The
+ *  denominator is the catalog's sweep size (Stage 9: 8), never a literal. */
 private fun statusLine(f: FriendsService.FriendProfile, played: Int): String {
     val parts = mutableListOf<String>()
     if (played > 0) {
-        var lead = "$played/9 today"
-        // §225: played rows show today's score — "5/9 today · 2,116 pts".
+        var lead = "$played/${com.wordocious.app.ModeGen.sweep.size} today"
+        // §225: played rows show today's score — "5/8 today · 2,116 pts".
         // The digest carries todayPoints since §216; US locale pins the
         // comma grouping the copy spec shows. §238: points ride right after
         // the count so "N pts" clearly belongs to "today"; streak follows.
