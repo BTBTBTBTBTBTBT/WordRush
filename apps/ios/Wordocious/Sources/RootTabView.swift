@@ -67,6 +67,7 @@ struct RootTabView: View {
             case "ladder": return "unlimited-LADDER-\(ts)"
             case "wordsearch": return "unlimited-WORDSEARCH-\(ts)"
             case "hub": return "unlimited-HUB-\(ts)"
+            case "cryptogram": return "unlimited-CRYPTOGRAM-\(ts)"
             default: return "unlimited-PROPERNOUNDLE-\(ts)"
             }
         }
@@ -232,6 +233,11 @@ struct RootTabView: View {
                     .id(g.seed)
                 } else if g.mode.id == "hub" {
                     HubView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "cryptogram" {
+                    CodebreakerView(seed: g.seed, onPlayAgain: {
                         unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
                     })
                     .id(g.seed)

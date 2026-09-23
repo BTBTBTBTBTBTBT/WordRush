@@ -32,6 +32,8 @@ struct ShareCardView: View {
         case wordsearch(n: Int, words: [WordsearchPlacement], found: [String], misses: Int, title: String, puzzleNumber: Int?)
         /// Hubbub (More Games §18d): the blank 2-3-2 silhouette with the centre filled, rank, % of max — no letters.
         case hub(rankName: String, pct: Int, wordsFound: Int, wordCount: Int, pangramsFound: Int, puzzleNumber: Int?)
+        /// Codebreaker (More Games §18d): the CIPHERTEXT only — blank cells with the code letter under each, words wrapped whole — no plain letters.
+        case cryptogram(cipher: String, checks: Int, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -66,7 +68,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -133,6 +135,11 @@ struct ShareCardView: View {
         case .hub(let rankName, let pct, let wordsFound, _, let pangramsFound, let number):
             let num = number.map { "#\($0) · " } ?? ""
             return "\(num)\(rankName) · \(pct)% · \(wordsFound) word\(wordsFound == 1 ? "" : "s") · \(pangramsFound) pangram\(pangramsFound == 1 ? "" : "s") · \(dateStr)"
+        case .cryptogram(_, let checks, let number):
+            // Check-scored (More Games §11): checks, never "guesses"; a loss is a reveal.
+            let num = number.map { "#\($0) · " } ?? ""
+            let c = checks == 0 ? "No checks" : "\(checks) check\(checks == 1 ? "" : "s")"
+            return "\(num)\(won ? c : "Revealed") · \(t) · \(dateStr)"
         }
     }
 
@@ -171,6 +178,62 @@ struct ShareCardView: View {
             wordsearchCard(n: n, words: words, found: found)
         case .hub(let rankName, let pct, _, _, _, _):
             hubCard(rankName: rankName, pct: pct)
+        case .cryptogram(let cipher, _, _):
+            cryptogramCard(cipher: cipher)
+        }
+    }
+
+    /// Web drawCryptogram parity: the ciphertext as rows of blank white cells
+    /// with the code letter in grey monospace beneath each, words wrapped whole,
+    /// punctuation in the accent. The largest cell (58 down to 26) whose wrapped
+    /// rows fit the area wins. No plain letters — the card spoils nothing.
+    private func cryptogramCard(cipher: String) -> some View {
+        let accent = Color(hex: 0x92400E), codeInk = Color(hex: 0x9CA3AF)
+        let words = cipher.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
+        let maxW: CGFloat = 1080 - 70 * 2, areaHeight: CGFloat = 660, gap: CGFloat = 6, wordGap: CGFloat = 22
+        func isLetter(_ ch: Character) -> Bool { ch >= "A" && ch <= "Z" }
+        func wordWidth(_ w: String, _ cell: CGFloat) -> CGFloat {
+            let letters = w.filter(isLetter).count, puncts = w.count - letters
+            return CGFloat(letters) * (cell + gap) + CGFloat(puncts) * (cell * 0.45) - gap
+        }
+        var cell: CGFloat = 58, rows: [[String]] = []
+        while cell >= 26 {
+            rows = []
+            var cur: [String] = [], curW: CGFloat = 0
+            for w in words {
+                let ww = wordWidth(w, cell)
+                if !cur.isEmpty && curW + wordGap + ww > maxW { rows.append(cur); cur = []; curW = 0 }
+                curW += (cur.isEmpty ? 0 : wordGap) + ww; cur.append(w)
+            }
+            if !cur.isEmpty { rows.append(cur) }
+            let rowH = cell + 40
+            if CGFloat(rows.count) * rowH + CGFloat(rows.count - 1) * 10 <= areaHeight - 40 || cell == 26 { break }
+            cell -= 4
+        }
+        let side = cell
+        return VStack(spacing: 10) {
+            ForEach(0..<rows.count, id: \.self) { r in
+                HStack(alignment: .top, spacing: wordGap) {
+                    ForEach(0..<rows[r].count, id: \.self) { i in
+                        HStack(alignment: .top, spacing: gap) {
+                            ForEach(Array(rows[r][i].enumerated()), id: \.offset) { _, ch in
+                                if isLetter(ch) {
+                                    VStack(spacing: 6) {
+                                        RoundedRectangle(cornerRadius: max(5, side * 0.16)).fill(Color.white)
+                                            .overlay(RoundedRectangle(cornerRadius: max(5, side * 0.16)).stroke(Color(hex: 0xD1D5DB), lineWidth: 3))
+                                            .frame(width: side, height: side)
+                                        Text(String(ch)).font(.system(size: floor(side * 0.34), weight: .heavy, design: .monospaced)).foregroundStyle(codeInk)
+                                            .frame(height: 22)
+                                    }
+                                } else {
+                                    Text(String(ch)).font(Brand.fixedFont(floor(side * 0.6), .black)).foregroundStyle(accent)
+                                        .frame(width: max(8, side * 0.45 - gap), height: side)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

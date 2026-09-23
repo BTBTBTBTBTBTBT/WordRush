@@ -39,7 +39,11 @@ enum ShareService {
         reveal: Bool = false, letters: [[String]]? = nil, solutionDisplay: String? = nil,
         /// Mistake-scored modes (§18d): the composite score + puzzle number ride
         /// the hosted URL so the unfurl names score, time and mistakes.
-        points: Int? = nil, puzzleNumber: Int? = nil
+        points: Int? = nil, puzzleNumber: Int? = nil,
+        /// Text-fallback caption (web buildShareCaption parity): rides the sheet
+        /// only when the hosted URL cannot be built, so the post still names the
+        /// result and the play route.
+        caption: String? = nil
     ) {
         #if canImport(UIKit)
         let card = ShareCardView(
@@ -64,7 +68,7 @@ enum ShareService {
                                               points: points, puzzleNumber: puzzleNumber)
             await MainActor.run {
                 var items: [Any] = [image]
-                if let url { items.append(url) }
+                if let url { items.append(url) } else if let caption { items.append(caption) }
                 present(items: items)
             }
         }
@@ -131,6 +135,11 @@ enum ShareService {
             if let points { q["pts"] = "\(points)" }
             if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
             q["pct"] = "\(pct)"; q["bs"] = "\(wordsFound)"; q["tb"] = "\(wordCount)"
+        case let .cryptogram(_, checks, _):
+            // Check-scored (§18d): the unfurl names score, time and checks.
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+            q["ck"] = "\(checks)"
         case .single:
             break
         }
