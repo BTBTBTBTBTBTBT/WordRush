@@ -1,6 +1,6 @@
 // Muddle cartoon batch (More Games §5 + §8) — the ONE step that needs the
 // founder's own OpenAI key. Generates the single-panel gag cartoon for each
-// puzzle in apps/web/data/scramble-puzzles.json (dailies, then holidays, then
+// puzzle in apps/web/data/scramble-puzzles.json (holidays first, then dailies, then
 // Unlimited), converts it to an 800×600 WebP, saves it under
 // apps/web/public/muddle/<id>-<hash>.webp and writes the file name back into
 // the bank's `cartoon` field. Idempotent: puzzles that already have a cartoon
@@ -30,7 +30,7 @@ const QUALITY = arg('quality', 'high');
 const SIZE = arg('size', '1536x1024');           // 3:2 from the API, cropped to 4:3 below
 const ONLY_HOLIDAY = arg('holiday', null);
 const MAX_USD = Number(arg('max-usd', 40));
-const USD_PER_IMAGE = Number(arg('usd-per-image', 0.07));
+const USD_PER_IMAGE = Number(arg('usd-per-image', QUALITY === 'high' ? 0.25 : QUALITY === 'medium' ? 0.07 : 0.02)); // measured 2026-09-23: high 1536x1024 ≈ $0.25
 
 // The fixed style spec (§8): one artist for the whole year, no text in the image.
 const STYLE = 'Single-panel newspaper gag cartoon, confident black ink outlines, flat limited palette on cream paper (#fdf8ec) with purple (#7c3aed) and orange (#f97316) as the only saturated accents and warm greys, one or two characters with expressive faces, generous margins. No text, lettering, captions, signage or speech bubbles anywhere in the image.';
@@ -49,9 +49,10 @@ const sceneFor = new Map(jokes.map((j) => [j.final.replace(/[^A-Z]/g, ''), j.sce
 const outDir = path.join(WEB, 'public', 'muddle');
 fs.mkdirSync(outDir, { recursive: true });
 
+// Holiday puzzles first: they are pinned to dates, so a run that stops early must never leave one without art.
 const queue = [
-  ...bank.daily,
   ...Object.entries(bank.holiday || {}).filter(([k]) => !ONLY_HOLIDAY || k === ONLY_HOLIDAY).flatMap(([, list]) => list),
+  ...bank.daily,
   ...bank.extra,
 ].filter((p) => !p.cartoon && (!ONLY_HOLIDAY || p.holiday === ONLY_HOLIDAY));
 const todo = queue.slice(0, LIMIT);
