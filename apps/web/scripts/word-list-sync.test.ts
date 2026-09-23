@@ -58,7 +58,7 @@ describe('bundled word-list copies are identical everywhere', () => {
   // Letter Ladder bank (More Games §15): the natives bundle it AND the iOS
   // test target reads it from Fixtures (Android's core tests read the bundle).
   const LADDER_DIRS = ['apps/web/data', 'apps/ios/Wordocious/Resources', 'apps/android/core/src/main/resources/data', 'apps/ios/Tests/Fixtures'];
-  for (const bank of ['ladder-puzzles.json', 'wordsearch-puzzles.json']) {
+  for (const bank of ['ladder-puzzles.json', 'wordsearch-puzzles.json', 'hub-puzzles.json']) {
     it(bank, () => {
       const canonical = sha(join(repoRoot, LADDER_DIRS[0], bank));
       for (const dir of LADDER_DIRS.slice(1)) {

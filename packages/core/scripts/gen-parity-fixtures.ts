@@ -30,6 +30,7 @@ import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, re
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
+import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..', '..');
@@ -359,6 +360,46 @@ export function renderWordsearchFixtures() {
   return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, reducer, geometry, placements, malformed: reconstructWordsearch(['nope'], []) };
 }
 
+// More Games §12: Hubbub. Bank lookups use the REAL shipped bank; scoring
+// cases pin the integer rank maths; reducer scripts replay concrete entries on
+// the first daily (rejections, scoring, bonus, hints, End before and after the win).
+export function renderHubFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'hub-puzzles.json'), 'utf8')) as HubBank;
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2026-09-22', 'nope']
+    .map((day) => ({ day, id: hubPuzzleForDay(bank, day)?.id ?? null, number: hubDailyNumber(day) }));
+  const seeds = ['unlimited-HUB-1', 'unlimited-HUB-1758578400000', 'x'].map((seed) => ({ seed, id: hubPuzzleForSeed(bank, seed)?.id ?? null }));
+  const p = bank.daily[0];
+  const scoring = [[0, 81], [40, 81], [41, 81], [81, 81], [57, 81], [7, 144], [144, 144], [0, 0]].map(([points, max]) => ({
+    points, max, rank: hubRankIndex(points, max), guessCount: hubGuessCount(hubRankIndex(points, max)), boards: hubBoardsSolved(points, max),
+  }));
+  const thresholds = Array.from({ length: 10 }, (_, r) => hubRankThreshold(r, p.max));
+  const scores = p.words.slice(0, 8).map((w) => ({ w, score: hubWordScore(w, p.letters) }));
+  // Enough scoring words to reach Hubbub, in list order.
+  const toHubbub: HubAction[] = [];
+  { let s = createHubState(p, 'fixture', 0); for (const w of p.words) { if (s.status !== 'playing') break; toHubbub.push({ type: 'SUBMIT', word: w }); s = hubReduce(s, toHubbub[toHubbub.length - 1], 1000); } }
+  const scripts: Array<{ name: string; actions: HubAction[] }> = [
+    { name: 'rejections-and-first-points', actions: [
+      { type: 'SUBMIT', word: 'DUE' }, { type: 'SUBMIT', word: 'MELD' }, { type: 'SUBMIT', word: 'DUES' }, { type: 'SUBMIT', word: 'UUUU' },
+      { type: 'SUBMIT', word: p.words[0].toLowerCase() }, { type: 'SUBMIT', word: p.words[0] }, { type: 'SUBMIT', word: p.bonus[0] }, { type: 'SUBMIT', word: p.bonus[0] },
+    ] },
+    { name: 'hints', actions: [{ type: 'HINT_START' }, { type: 'HINT_START' }, { type: 'HINT_REVEAL' }, { type: 'HINT_START' }] },
+    { name: 'end-below-hubbub', actions: [{ type: 'SUBMIT', word: p.words[0] }, { type: 'END' }, { type: 'SUBMIT', word: p.words[1] }, { type: 'HINT_START' }, { type: 'FINISH' }] },
+    { name: 'win-then-keep-going', actions: [...toHubbub, { type: 'SUBMIT', word: p.words[p.words.length - 1] }, { type: 'END' }] },
+    { name: 'all-words', actions: p.words.map((w) => ({ type: 'SUBMIT', word: w }) as HubAction) },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createHubState(p, 'fixture', 0);
+    for (const a of sc.actions) s = hubReduce(s, a, 1000);
+    const row = hubMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { found: s.found, bonusFound: s.bonusFound, revealed: s.revealed, hinted: s.hinted, points: s.points, hintsUsed: s.hintsUsed, events: s.events, status: s.status, ended: s.ended, reject: s.reject, endTime: s.endTime, rank: hubRankIndex(s.points, s.max), guessCount: hubGuessCount(hubRankIndex(s.points, s.max)), boardsSolved: hubBoardsSolved(s.points, s.max) },
+      row, reconstruct: reconstructHub(row.solutions, row.guesses),
+    };
+  });
+  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, scoring, thresholds, scores, reducer, malformed: reconstructHub(['x', 'ABC', '1'], []) };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -367,6 +408,7 @@ const FILES: Array<[string, unknown]> = [
   ['regions-fixtures.json', renderRegionsFixtures()],
   ['ladder-fixtures.json', renderLadderFixtures()],
   ['wordsearch-fixtures.json', renderWordsearchFixtures()],
+  ['hub-fixtures.json', renderHubFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

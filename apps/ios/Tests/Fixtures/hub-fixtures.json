@@ -1,0 +1,915 @@
+{
+  "epoch": "2026-09-23",
+  "dailyCount": 400,
+  "extraCount": 200,
+  "days": [
+    {
+      "day": "2026-09-23",
+      "id": "hb0001",
+      "number": 1
+    },
+    {
+      "day": "2026-09-24",
+      "id": "hb0002",
+      "number": 2
+    },
+    {
+      "day": "2026-10-05",
+      "id": "hb0013",
+      "number": 13
+    },
+    {
+      "day": "2027-01-01",
+      "id": "hb0101",
+      "number": 101
+    },
+    {
+      "day": "2026-09-22",
+      "id": "hb0400",
+      "number": 1
+    },
+    {
+      "day": "nope",
+      "id": "hb0001",
+      "number": 1
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-HUB-1",
+      "id": "hb0428"
+    },
+    {
+      "seed": "unlimited-HUB-1758578400000",
+      "id": "hb0404"
+    },
+    {
+      "seed": "x",
+      "id": "hb0521"
+    }
+  ],
+  "puzzle": {
+    "id": "hb0001",
+    "letters": "UDELMNP",
+    "words": [
+      "DELUDED",
+      "DUDE",
+      "DUEL",
+      "DULL",
+      "DUMP",
+      "DUMPED",
+      "DUNE",
+      "DUPED",
+      "LULL",
+      "LUMP",
+      "MENU",
+      "MULE",
+      "NUDE",
+      "NULL",
+      "PENDULUM",
+      "PLUM",
+      "PLUME",
+      "PLUMP",
+      "PUDDLE",
+      "PULL",
+      "PULLED",
+      "PULP",
+      "PUMP",
+      "PUMPED",
+      "UNDUE"
+    ],
+    "bonus": [
+      "DELUDE",
+      "DENUDED",
+      "DULLED",
+      "DUPE",
+      "ELUDE",
+      "ELUDED",
+      "LULLED",
+      "LULU",
+      "LUMEN",
+      "LUMPED",
+      "MUDDLE",
+      "MUDDLED",
+      "MULL",
+      "MULLED",
+      "PEPLUM",
+      "PLENUM",
+      "PLUMED",
+      "PLUMPED",
+      "PUMMEL",
+      "PUMMELED",
+      "UNNEEDED",
+      "UPEND",
+      "UPENDED"
+    ],
+    "pangrams": [
+      "PENDULUM"
+    ],
+    "max": 81
+  },
+  "scoring": [
+    {
+      "points": 0,
+      "max": 81,
+      "rank": 0,
+      "guessCount": 10,
+      "boards": 0
+    },
+    {
+      "points": 40,
+      "max": 81,
+      "rank": 5,
+      "guessCount": 5,
+      "boards": 9
+    },
+    {
+      "points": 41,
+      "max": 81,
+      "rank": 6,
+      "guessCount": 4,
+      "boards": 10
+    },
+    {
+      "points": 81,
+      "max": 81,
+      "rank": 9,
+      "guessCount": 1,
+      "boards": 20
+    },
+    {
+      "points": 57,
+      "max": 81,
+      "rank": 7,
+      "guessCount": 3,
+      "boards": 14
+    },
+    {
+      "points": 7,
+      "max": 144,
+      "rank": 0,
+      "guessCount": 10,
+      "boards": 0
+    },
+    {
+      "points": 144,
+      "max": 144,
+      "rank": 9,
+      "guessCount": 1,
+      "boards": 20
+    },
+    {
+      "points": 0,
+      "max": 0,
+      "rank": 0,
+      "guessCount": 10,
+      "boards": 0
+    }
+  ],
+  "thresholds": [
+    0,
+    5,
+    10,
+    17,
+    25,
+    33,
+    41,
+    57,
+    69,
+    81
+  ],
+  "scores": [
+    {
+      "w": "DELUDED",
+      "score": 7
+    },
+    {
+      "w": "DUDE",
+      "score": 1
+    },
+    {
+      "w": "DUEL",
+      "score": 1
+    },
+    {
+      "w": "DULL",
+      "score": 1
+    },
+    {
+      "w": "DUMP",
+      "score": 1
+    },
+    {
+      "w": "DUMPED",
+      "score": 6
+    },
+    {
+      "w": "DUNE",
+      "score": 1
+    },
+    {
+      "w": "DUPED",
+      "score": 5
+    }
+  ],
+  "reducer": [
+    {
+      "name": "rejections-and-first-points",
+      "id": "hb0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "DUE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "MELD"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUES"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "UUUU"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "deluded"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DELUDED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DELUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DELUDE"
+        }
+      ],
+      "expect": {
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [
+          "DELUDE"
+        ],
+        "revealed": [],
+        "hinted": [],
+        "points": 7,
+        "hintsUsed": 0,
+        "events": [
+          "+DELUDED",
+          "=DELUDE"
+        ],
+        "status": "playing",
+        "ended": false,
+        "reject": "found",
+        "endTime": null,
+        "rank": 1,
+        "guessCount": 9,
+        "boardsSolved": 1
+      },
+      "row": {
+        "solutions": [
+          "hb0001",
+          "UDELMNP",
+          "81",
+          "25",
+          "1"
+        ],
+        "guesses": [
+          "+DELUDED",
+          "=DELUDE"
+        ]
+      },
+      "reconstruct": {
+        "id": "hb0001",
+        "letters": "UDELMNP",
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1,
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [
+          "DELUDE"
+        ],
+        "revealed": [],
+        "hints": [],
+        "points": 7,
+        "hintsUsed": 0,
+        "rank": 1,
+        "rankName": "Murmur",
+        "ended": false,
+        "solved": false
+      }
+    },
+    {
+      "name": "hints",
+      "id": "hb0001",
+      "actions": [
+        {
+          "type": "HINT_START"
+        },
+        {
+          "type": "HINT_START"
+        },
+        {
+          "type": "HINT_REVEAL"
+        },
+        {
+          "type": "HINT_START"
+        }
+      ],
+      "expect": {
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [],
+        "revealed": [
+          "DELUDED"
+        ],
+        "hinted": [
+          "DELUDED",
+          "DUDE",
+          "DUEL"
+        ],
+        "points": 7,
+        "hintsUsed": 5,
+        "events": [
+          "?DE7",
+          "?DU4",
+          "!DELUDED",
+          "?DU4"
+        ],
+        "status": "playing",
+        "ended": false,
+        "reject": null,
+        "endTime": null,
+        "rank": 1,
+        "guessCount": 9,
+        "boardsSolved": 1
+      },
+      "row": {
+        "solutions": [
+          "hb0001",
+          "UDELMNP",
+          "81",
+          "25",
+          "1"
+        ],
+        "guesses": [
+          "?DE7",
+          "?DU4",
+          "!DELUDED",
+          "?DU4"
+        ]
+      },
+      "reconstruct": {
+        "id": "hb0001",
+        "letters": "UDELMNP",
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1,
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [],
+        "revealed": [
+          "DELUDED"
+        ],
+        "hints": [
+          "DE7",
+          "DU4",
+          "DU4"
+        ],
+        "points": 7,
+        "hintsUsed": 5,
+        "rank": 1,
+        "rankName": "Murmur",
+        "ended": false,
+        "solved": false
+      }
+    },
+    {
+      "name": "end-below-hubbub",
+      "id": "hb0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "DELUDED"
+        },
+        {
+          "type": "END"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUDE"
+        },
+        {
+          "type": "HINT_START"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [],
+        "revealed": [],
+        "hinted": [],
+        "points": 7,
+        "hintsUsed": 0,
+        "events": [
+          "+DELUDED",
+          "#"
+        ],
+        "status": "lost",
+        "ended": true,
+        "reject": "ended",
+        "endTime": 1000,
+        "rank": 1,
+        "guessCount": 9,
+        "boardsSolved": 1
+      },
+      "row": {
+        "solutions": [
+          "hb0001",
+          "UDELMNP",
+          "81",
+          "25",
+          "1"
+        ],
+        "guesses": [
+          "+DELUDED",
+          "#"
+        ]
+      },
+      "reconstruct": {
+        "id": "hb0001",
+        "letters": "UDELMNP",
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1,
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [],
+        "revealed": [],
+        "hints": [],
+        "points": 7,
+        "hintsUsed": 0,
+        "rank": 1,
+        "rankName": "Murmur",
+        "ended": true,
+        "solved": false
+      }
+    },
+    {
+      "name": "win-then-keep-going",
+      "id": "hb0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "DELUDED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUEL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUMP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUMPED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUNE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUPED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "LULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "LUMP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "MENU"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "MULE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "NUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "NULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PENDULUM"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "UNDUE"
+        },
+        {
+          "type": "END"
+        }
+      ],
+      "expect": {
+        "found": [
+          "DELUDED",
+          "DUDE",
+          "DUEL",
+          "DULL",
+          "DUMP",
+          "DUMPED",
+          "DUNE",
+          "DUPED",
+          "LULL",
+          "LUMP",
+          "MENU",
+          "MULE",
+          "NUDE",
+          "NULL",
+          "PENDULUM",
+          "UNDUE"
+        ],
+        "bonusFound": [],
+        "revealed": [],
+        "hinted": [],
+        "points": 49,
+        "hintsUsed": 0,
+        "events": [
+          "+DELUDED",
+          "+DUDE",
+          "+DUEL",
+          "+DULL",
+          "+DUMP",
+          "+DUMPED",
+          "+DUNE",
+          "+DUPED",
+          "+LULL",
+          "+LUMP",
+          "+MENU",
+          "+MULE",
+          "+NUDE",
+          "+NULL",
+          "+PENDULUM",
+          "+UNDUE",
+          "#"
+        ],
+        "status": "won",
+        "ended": true,
+        "reject": null,
+        "endTime": 1000,
+        "rank": 6,
+        "guessCount": 4,
+        "boardsSolved": 12
+      },
+      "row": {
+        "solutions": [
+          "hb0001",
+          "UDELMNP",
+          "81",
+          "25",
+          "1"
+        ],
+        "guesses": [
+          "+DELUDED",
+          "+DUDE",
+          "+DUEL",
+          "+DULL",
+          "+DUMP",
+          "+DUMPED",
+          "+DUNE",
+          "+DUPED",
+          "+LULL",
+          "+LUMP",
+          "+MENU",
+          "+MULE",
+          "+NUDE",
+          "+NULL",
+          "+PENDULUM",
+          "+UNDUE",
+          "#"
+        ]
+      },
+      "reconstruct": {
+        "id": "hb0001",
+        "letters": "UDELMNP",
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1,
+        "found": [
+          "DELUDED",
+          "DUDE",
+          "DUEL",
+          "DULL",
+          "DUMP",
+          "DUMPED",
+          "DUNE",
+          "DUPED",
+          "LULL",
+          "LUMP",
+          "MENU",
+          "MULE",
+          "NUDE",
+          "NULL",
+          "PENDULUM",
+          "UNDUE"
+        ],
+        "bonusFound": [],
+        "revealed": [],
+        "hints": [],
+        "points": 49,
+        "hintsUsed": 0,
+        "rank": 6,
+        "rankName": "Hubbub",
+        "ended": true,
+        "solved": true
+      }
+    },
+    {
+      "name": "all-words",
+      "id": "hb0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "DELUDED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUEL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUMP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUMPED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUNE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUPED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "LULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "LUMP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "MENU"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "MULE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "NUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "NULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PENDULUM"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PLUM"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PLUME"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PLUMP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PUDDLE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PULL"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PULLED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PULP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PUMP"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "PUMPED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "UNDUE"
+        }
+      ],
+      "expect": {
+        "found": [
+          "DELUDED",
+          "DUDE",
+          "DUEL",
+          "DULL",
+          "DUMP",
+          "DUMPED",
+          "DUNE",
+          "DUPED",
+          "LULL",
+          "LUMP",
+          "MENU",
+          "MULE",
+          "NUDE",
+          "NULL",
+          "PENDULUM",
+          "PLUM",
+          "PLUME",
+          "PLUMP",
+          "PUDDLE",
+          "PULL",
+          "PULLED",
+          "PULP",
+          "PUMP",
+          "PUMPED",
+          "UNDUE"
+        ],
+        "bonusFound": [],
+        "revealed": [],
+        "hinted": [],
+        "points": 81,
+        "hintsUsed": 0,
+        "events": [
+          "+DELUDED",
+          "+DUDE",
+          "+DUEL",
+          "+DULL",
+          "+DUMP",
+          "+DUMPED",
+          "+DUNE",
+          "+DUPED",
+          "+LULL",
+          "+LUMP",
+          "+MENU",
+          "+MULE",
+          "+NUDE",
+          "+NULL",
+          "+PENDULUM",
+          "+PLUM",
+          "+PLUME",
+          "+PLUMP",
+          "+PUDDLE",
+          "+PULL",
+          "+PULLED",
+          "+PULP",
+          "+PUMP",
+          "+PUMPED",
+          "+UNDUE"
+        ],
+        "status": "won",
+        "ended": false,
+        "reject": null,
+        "endTime": 1000,
+        "rank": 9,
+        "guessCount": 1,
+        "boardsSolved": 20
+      },
+      "row": {
+        "solutions": [
+          "hb0001",
+          "UDELMNP",
+          "81",
+          "25",
+          "1"
+        ],
+        "guesses": [
+          "+DELUDED",
+          "+DUDE",
+          "+DUEL",
+          "+DULL",
+          "+DUMP",
+          "+DUMPED",
+          "+DUNE",
+          "+DUPED",
+          "+LULL",
+          "+LUMP",
+          "+MENU",
+          "+MULE",
+          "+NUDE",
+          "+NULL",
+          "+PENDULUM",
+          "+PLUM",
+          "+PLUME",
+          "+PLUMP",
+          "+PUDDLE",
+          "+PULL",
+          "+PULLED",
+          "+PULP",
+          "+PUMP",
+          "+PUMPED",
+          "+UNDUE"
+        ]
+      },
+      "reconstruct": {
+        "id": "hb0001",
+        "letters": "UDELMNP",
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1,
+        "found": [
+          "DELUDED",
+          "DUDE",
+          "DUEL",
+          "DULL",
+          "DUMP",
+          "DUMPED",
+          "DUNE",
+          "DUPED",
+          "LULL",
+          "LUMP",
+          "MENU",
+          "MULE",
+          "NUDE",
+          "NULL",
+          "PENDULUM",
+          "PLUM",
+          "PLUME",
+          "PLUMP",
+          "PUDDLE",
+          "PULL",
+          "PULLED",
+          "PULP",
+          "PUMP",
+          "PUMPED",
+          "UNDUE"
+        ],
+        "bonusFound": [],
+        "revealed": [],
+        "hints": [],
+        "points": 81,
+        "hintsUsed": 0,
+        "rank": 9,
+        "rankName": "Pandemonium",
+        "ended": false,
+        "solved": true
+      }
+    }
+  ],
+  "malformed": null
+}
