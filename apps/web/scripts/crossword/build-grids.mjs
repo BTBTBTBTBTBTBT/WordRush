@@ -28,10 +28,15 @@ console.log(`pairs: ${pairs.length} accepted, ${rejected.length} rejected`);
 for (const r of rejected) console.log(`  REJECT ${r.answer.padEnd(9)} "${r.clue}" — ${r.why.join('; ')}`);
 
 // ---- construct ----------------------------------------------------------
-function tryBuild(theme, seedLabel) {
+function tryBuild(theme, seedLabel, recent = { last: new Set(), older: new Set() }) {
   const rng = rngFor(seedLabel);
   // Wild fill comes from EVERGREEN themes only: a Kwanzaa grid must never borrow a Passover word (or any other holiday's allow-listed vocabulary).
-  const themed = shuffle(pairs.filter((p) => p.theme === theme), rng), wild = shuffle(pairs.filter((p) => p.theme !== theme && !bank[p.theme].holiday), rng);
+  // `recent` = clues used by this theme's previous grids (last = the grid just before, older = the ones before that). A year of dailies needs
+  // several grids per theme, so the queue is ordered fresh pairs → pairs from older grids → pairs from the last grid: a phrase only comes back
+  // when nothing else will fit, and never two outings in a row while the theme has enough pairs.
+  const tier = (p) => (recent.last.has(p.clue) ? 2 : recent.older.has(p.clue) ? 1 : 0);
+  const byTier = (list) => [0, 1, 2].flatMap((k) => shuffle(list.filter((p) => tier(p) === k), rng));
+  const themed = byTier(pairs.filter((p) => p.theme === theme)), wild = byTier(pairs.filter((p) => p.theme !== theme && !bank[p.theme].holiday));
   const grid = new Map(), key = (r, c) => r * SIZE + c, at = (r, c) => grid.get(key(r, c));
   const placed = [], used = new Set();
   const bbox = (extra) => { let r0 = 1e9, r1 = -1, c0 = 1e9, c1 = -1; for (const e of [...placed, ...(extra ? [extra] : [])]) { const er = e.r + (e.dir === 'D' ? e.answer.length - 1 : 0), ec = e.c + (e.dir === 'A' ? e.answer.length - 1 : 0); r0 = Math.min(r0, e.r); c0 = Math.min(c0, e.c); r1 = Math.max(r1, er); c1 = Math.max(c1, ec); } return { h: r1 - r0 + 1, w: c1 - c0 + 1, r0, c0 }; };
@@ -50,7 +55,7 @@ function tryBuild(theme, seedLabel) {
     for (let k = 0; k < p.answer.length; k++) { const kk = key(r + dr * k, c + dc * k), cell = grid.get(kk) || { letter: p.answer[k], dirs: new Set() }; cell.dirs.add(dir); grid.set(kk, cell); }
     placed.push({ ...p, r, c, dir }); used.add(p.answer);
   }
-  const first = themed.slice().sort((a, b) => b.answer.length - a.answer.length)[0];
+  const freshest = themed.filter((p) => tier(p) === 0), first = (freshest.length ? freshest : themed).slice().sort((a, b) => b.answer.length - a.answer.length)[0];
   put(first, MID, MID - (first.answer.length >> 1), 'A');
   let crossTotal = 0;
   const queue = [...themed.filter((p) => p !== first), ...wild];
@@ -86,10 +91,13 @@ function number(p) {
 const out = [];
 for (const theme of Object.keys(bank)) for (let serial = 1; serial <= PER; serial++) {
   let best = null;
+  const prev = out.filter((g) => g.theme === theme), clues = (g) => g.entries.map((e) => e.clue);
+  const recent = { last: new Set(prev.length ? clues(prev[prev.length - 1]) : []), older: new Set(prev.slice(0, -1).flatMap(clues)) };
   for (let t = 0; t < 300; t++) {
-    const p = tryBuild(theme, `cw-${theme}-${serial}-${t}-v1`);
+    const p = tryBuild(theme, `cw-${theme}-${serial}-${t}-v1`, recent);
     if (p.entries.length < MIN_ENTRIES || p.themedShare < 0.6 || p.crossings < p.entries.length) continue;
-    const q = p.entries.length * 10 + p.crossings * 3 - p.w * p.h / 10;
+    const reused = p.entries.filter((e) => recent.last.has(e.clue)).length;
+    const q = p.entries.length * 10 + p.crossings * 3 - p.w * p.h / 10 - reused * 8;
     if (!best || q > best.q) best = { ...p, q };
   }
   if (!best) { console.log(`  ${theme} #${serial}: no grid met the rules`); continue; }
