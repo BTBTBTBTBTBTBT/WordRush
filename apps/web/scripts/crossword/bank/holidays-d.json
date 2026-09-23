@@ -1,0 +1,82 @@
+{
+ "earthday": {"title": "Earth Day", "holiday": "earthday", "allow": [], "pairs": [
+  ["Reduce, reuse, ____","RECYCLE"],["Mother ____, our home planet","EARTH"],["Let ____ take its course","NATURE"],["Fresh as a ____","DAISY"],
+  ["Make hay while the sun ____","SHINES"],["April showers bring May ____","FLOWERS"],["You reap what you ____","SOW"],["The grass is always ____ on the other side","GREENER"],
+  ["Between a rock and a hard ____","PLACE"],["Money doesn't grow on ____","TREES"],["Can't see the ____ for the trees","FOREST"],["Bloom where you are ____","PLANTED"],
+  ["Turn over a new ____","LEAF"],["Nip it in the ____","BUD"],["Still ____ run deep","WATERS"],["A breath of fresh ____","AIR"],
+  ["Not out of the ____ yet","WOODS"],["Go with the ____","FLOW"],["Put down ____","ROOTS"],["Old as the ____","HILLS"],
+  ["Busy as a ____","BEE"],["Leave no ____ unturned","STONE"],["Make a ____ out of a molehill","MOUNTAIN"],["Sow the wind, reap the ____","WHIRLWIND"],
+  ["One man's trash is another man's ____","TREASURE"],["Plant the ____ of doubt","SEEDS"],["Blue-____ thinking","SKY"],["Living off the ____","LAND"],
+  ["Think ____, act locally","GLOBALLY"],["A drop in the ____","OCEAN"],["The tip of the ____","ICEBERG"],["Have a green ____","THUMB"]
+ ]},
+ "mardigras": {"title": "Mardi Gras", "holiday": "mardigras", "allow": ["TUESDAY"], "pairs": [
+  ["Let the good times ____","ROLL"],["Eat, drink, and be ____","MERRY"],["Throw me something, ____!","MISTER"],["Catch strings of ____","BEADS"],
+  ["Fat ____, the day before Lent","TUESDAY"],["Find the baby in the king ____","CAKE"],["Purple, green, and ____","GOLD"],["Hide your face behind a ____","MASK"],
+  ["All that ____","JAZZ"],["Dance along with the ____ band","BRASS"],["Ride on a carnival ____","FLOAT"],["Burn the midnight ____","OIL"],
+  ["Have a ____","BALL"],["A feather ____ around the neck","BOA"],["Party like there's no ____","TOMORROW"],["Kick up your ____","HEELS"],
+  ["Dressed to ____","KILL"],["Cut ____ and dance","LOOSE"],["Trip the light ____","FANTASTIC"],["One last feast before the ____","FAST"],
+  ["Forty days of ____ begin tomorrow","LENT"],["Costumes and floats at the ____","CARNIVAL"],["Music to my ____","EARS"],["Shake a ____","LEG"],
+  ["Throw a ____","PARTY"],["Pull out all the ____","STOPS"],["Dance till ____","DAWN"],["Cap and ____","BELLS"],
+  ["Shiny ____ tossed from the floats","COINS"],["Bring the house ____","DOWN"],["Rain on someone's ____","PARADE"],["Sing for your ____","SUPPER"]
+ ]},
+ "lunarnewyear": {"title": "Lunar New Year", "holiday": "lunarnewyear", "allow": [], "pairs": [
+  ["Red ____ filled with lucky money","ENVELOPES"],["Hang paper ____ for the festival","LANTERNS"],["The ____ dance winds through the street","DRAGON"],["____ dance to the beat of the drums","LION"],
+  ["Steamed ____ for the family feast","DUMPLINGS"],["A family ____ dinner on New Year's Eve","REUNION"],["Good ____ and prosperity","FORTUNE"],["Sweep out the old, welcome the ____","NEW"],
+  ["Set off ____ at midnight","FIREWORKS"],["Hold your ____","HORSES"],["Let sleeping ____ lie","DOGS"],["Paper ____","TIGER"],
+  ["____ business","MONKEY"],["Pull a ____ out of a hat","RABBIT"],["Smell a ____","RAT"],["A ____ in a poke","PIG"],
+  ["Get someone's ____","GOAT"],["The ____ crows at dawn","ROOSTER"],["A ____ in the grass","SNAKE"],["Beginner's ____","LUCK"],
+  ["Fortune favours the ____","BOLD"],["Health is ____","WEALTH"],["Gifts of ____ for good luck","ORANGES"],["Red for luck, ____ for wealth","GOLD"],
+  ["Long ____ for a long life","NOODLES"],["The full ____ ends the celebrations","MOON"],["Bow to your ____","ELDERS"],["Twelve animals of the ____","ZODIAC"],
+  ["Spring ____, another name for the holiday","FESTIVAL"],["A ____ of good luck","STROKE"],["A ____ fit for a king","FEAST"],["Third time ____","LUCKY"]
+ ]},
+ "diwali": {"title": "Festival of Lights", "holiday": "diwali", "allow": ["DIYA","RANGOLI"], "pairs": [
+  ["A small clay lamp, a ____","DIYA"],["Light over ____","DARKNESS"],["Good ____ over evil","TRIUMPHS"],["Every cloud has a silver ____","LINING"],
+  ["Light at the end of the ____","TUNNEL"],["Share a plate of ____","SWEETS"],["____ designs in coloured powder at the door","RANGOLI"],["____ burst over the rooftops","FIREWORKS"],
+  ["New ____ for the new year","CLOTHES"],["A fresh ____","START"],["Home ____ home","SWEET"],["Sweep the house clean to welcome good ____","FORTUNE"],
+  ["Rise and ____","SHINE"],["Burn the ____ at both ends","CANDLE"],["A guiding ____","BEACON"],["Bright as a ____","BUTTON"],
+  ["Twinkling oil ____ on every ledge","LAMPS"],["A warm ____ in every window","GLOW"],["A ____ of light in the dark","FLICKER"],["Trim the ____","WICK"],
+  ["Fan the ____","FLAMES"],["____ with joy","RADIANT"],["Look on the ____ side","BRIGHT"],["Eyes that ____","SPARKLE"],
+  ["A ____ for the eyes","FEAST"],["Exchange ____ with the neighbours","GIFTS"],["Evening ____ before the feast","PRAYERS"],["Count your ____","BLESSINGS"],
+  ["It's always darkest before the ____","DAWN"],["Twinkle, twinkle, little ____","STAR"],["Silence is ____","GOLDEN"],["Jump for ____","JOY"]
+ ]},
+ "kwanzaa": {"title": "Kwanzaa", "holiday": "kwanzaa", "allow": ["KINARA"], "pairs": [
+  ["Seven ____ in the kinara","CANDLES"],["The candle holder, the ____","KINARA"],["____ is strength","UNITY"],["Three red, three green, one ____","BLACK"],
+  ["It takes a ____ to raise a child","VILLAGE"],["First ____ of the harvest","FRUITS"],["Reap the ____","HARVEST"],["Family ____ on the sixth night","FEAST"],
+  ["Gather the whole ____","FAMILY"],["A sense of ____","COMMUNITY"],["Find your ____","PURPOSE"],["Get ____","CREATIVE"],
+  ["Take it on ____","FAITH"],["United we ____","STAND"],["Many hands make light ____","WORK"],["An ear of ____ for each child","CORN"],
+  ["A woven ____ beneath the candles","MAT"],["Share a drink from one ____","CUP"],["Handmade ____ for the children","GIFTS"],["Proud of your ____","HERITAGE"],
+  ["Honour the ____","ANCESTORS"],["Know your ____","ROOTS"],["Respect your ____","ELDERS"],["Celebrate your ____","CULTURE"],
+  ["Bring something to the ____","TABLE"],["Seven ____ of celebration","NIGHTS"],["Light the black candle ____","FIRST"],["Red, black, and ____","GREEN"],
+  ["Pearls of ____","WISDOM"],["Take ____ in your work","PRIDE"],["March to the beat of your own ____","DRUM"],["Two heads are better than ____","ONE"]
+ ]},
+ "passover": {"title": "Passover", "holiday": "passover", "allow": ["MATZO","SEDER","MOSES","JERUSALEM"], "pairs": [
+  ["Why is this night different from all other ____","NIGHTS"],["Unleavened bread called ____","MATZO"],["Gather for the ____ meal","SEDER"],["The Four ____ asked by the youngest","QUESTIONS"],
+  ["Four cups of ____","WINE"],["Bitter ____ recall the hard years","HERBS"],["Let my ____ go","PEOPLE"],["Parting of the Red ____","SEA"],
+  ["Frogs, locusts, and other ____","PLAGUES"],["Forty years in the ____","DESERT"],["Land of milk and ____","HONEY"],["The Promised ____","LAND"],
+  ["From slavery to ____","FREEDOM"],["A roasted ____ on the plate","EGG"],["Blood is thicker than ____","WATER"],["Open the ____ for the prophet","DOOR"],
+  ["____ parted the waters","MOSES"],["Next year in ____","JERUSALEM"],["Full of the joys of ____","SPRING"],["Gentle as a ____","LAMB"],
+  ["Man cannot live by ____ alone","BREAD"],["Eight ____ of the festival","DAYS"],["Dip the ____ in salt water","PARSLEY"],["Tell the ____ of the exodus","STORY"],
+  ["One little ____, my father bought","GOAT"],["It would have been ____","ENOUGH"],["Spring ____ before the holiday","CLEANING"],["No time for the dough to ____","RISE"],
+  ["Bread baked in ____","HASTE"],["A season of ____","MIRACLES"],["A pillar of ____ by night","FIRE"],["Generations around the ____","TABLE"]
+ ]},
+ "cincodemayo": {"title": "Cinco de Mayo", "holiday": "cincodemayo", "allow": ["PINATA","MARIACHI"], "pairs": [
+  ["Swing at the candy-filled ____","PINATA"],["____ band in silver-buttoned suits","MARIACHI"],["Strike up the ____","BAND"],["Dance the night ____","AWAY"],
+  ["Cut-paper ____ flutter overhead","BANNERS"],["Join the ____","FIESTA"],["____ to my ears","MUSIC"],["Strum the ____","GUITAR"],
+  ["Blow your own ____","TRUMPET"],["Swing your ____","PARTNER"],["A warm ____ folded around the filling","TORTILLA"],["Have a sweet ____","TOOTH"],
+  ["A squeeze of ____","LIME"],["Variety is the ____ of life","SPICE"],["Some like it ____","HOT"],["Red, white, and ____","GREEN"],
+  ["Shall we ____","DANCE"],["Life of the ____","PARTY"],["The fifth of ____","MAY"],["A movable ____","FEAST"],
+  ["Propose a ____","TOAST"],["Sing your heart ____","OUT"],["Feel the ____","RHYTHM"],["Three ____","CHEERS"],
+  ["Pass the hot ____","SAUCE"],["Chili ____ bring the heat","PEPPERS"],["Full of ____","BEANS"],["A ____ of paper flowers","GARLAND"],
+  ["Fun and ____","GAMES"],["____ is the best medicine","LAUGHTER"],["Clap your ____","HANDS"],["High ____","SPIRITS"]
+ ]},
+ "leapday": {"title": "Leap Day", "holiday": "leapday", "allow": ["FEBRUARY"], "pairs": [
+  ["Look before you ____","LEAP"],["The 29th of ____","FEBRUARY"],["Once every ____ years","FOUR"],["Once in a blue ____","MOON"],
+  ["Hop, skip, and a ____","JUMP"],["Jump the ____","GUN"],["Leaps and ____","BOUNDS"],["An extra day makes a leap ____","YEAR"],
+  ["Twenty-nine days in the shortest ____","MONTH"],["Mark your ____","CALENDAR"],["Time ____ when you're having fun","FLIES"],["Time and ____ wait for no man","TIDE"],
+  ["Better late than ____","NEVER"],["Seize the ____","DAY"],["A ____ in your throat","FROG"],["____ court","KANGAROO"],
+  ["____ back","BOUNCE"],["____ into action","SPRING"],["Pole ____","VAULT"],["Clear the first ____","HURDLE"],
+  ["____ a beat","SKIP"],["____ to it","HOP"],["Race against the ____","CLOCK"],["A split ____","SECOND"],
+  ["Up to the ____","MINUTE"],["The eleventh ____","HOUR"],["Go the ____ mile","EXTRA"],["Rare as hen's ____","TEETH"],
+  ["____ in a lifetime","ONCE"],["Many happy ____","RETURNS"],["One trip around the sun, one ____","ORBIT"],["What makes you ____","TICK"]
+ ]}
+}

@@ -84,10 +84,6 @@
     "HORSES"
    ],
    [
-    "A wolf in ____ clothing",
-    "SHEEPS"
-   ],
-   [
     "Kill two ____ with one stone",
     "BIRDS"
    ],
@@ -134,6 +130,10 @@
    [
     "Take the bull by the ____",
     "HORNS"
+   ],
+   [
+    "A wolf in sheep's ____",
+    "CLOTHING"
    ]
   ]
  },
@@ -248,10 +248,6 @@
    [
     "Cost an arm and a ____",
     "LEG"
-   ],
-   [
-    "Rob Peter to pay ____",
-    "PAUL"
    ],
    [
     "Put your money where your ____ is",
@@ -410,6 +406,3932 @@
    [
     "Up the garden ____",
     "PATH"
+   ]
+  ]
+ },
+ "christmas": {
+  "title": "Merry Christmas",
+  "holiday": "christmas",
+  "allow": [
+   "SLEIGH",
+   "MISTLETOE",
+   "SANTA"
+  ],
+  "pairs": [
+   [
+    "Deck the halls with boughs of ____",
+    "HOLLY"
+   ],
+   [
+    "'Tis the season to be ____",
+    "JOLLY"
+   ],
+   [
+    "Don we now our gay ____",
+    "APPAREL"
+   ],
+   [
+    "Troll the ancient Yuletide ____",
+    "CAROL"
+   ],
+   [
+    "Dashing through the ____",
+    "SNOW"
+   ],
+   [
+    "In a one-horse open ____",
+    "SLEIGH"
+   ],
+   [
+    "Jingle bells, jingle all the ____",
+    "WAY"
+   ],
+   [
+    "All is calm, all is ____",
+    "BRIGHT"
+   ],
+   [
+    "Sleep in heavenly ____",
+    "PEACE"
+   ],
+   [
+    "Hark! The ____ angels sing",
+    "HERALD"
+   ],
+   [
+    "A partridge in a pear ____",
+    "TREE"
+   ],
+   [
+    "Two turtle ____",
+    "DOVES"
+   ],
+   [
+    "Five golden ____",
+    "RINGS"
+   ],
+   [
+    "Seven swans a-____",
+    "SWIMMING"
+   ],
+   [
+    "Eight maids a-____",
+    "MILKING"
+   ],
+   [
+    "Ten lords a-____",
+    "LEAPING"
+   ],
+   [
+    "Nine ladies ____",
+    "DANCING"
+   ],
+   [
+    "Now bring us some figgy ____",
+    "PUDDING"
+   ],
+   [
+    "O come, all ye ____",
+    "FAITHFUL"
+   ],
+   [
+    "Joy to the ____",
+    "WORLD"
+   ],
+   [
+    "We three ____ of Orient are",
+    "KINGS"
+   ],
+   [
+    "Hang the ____ by the chimney with care",
+    "STOCKINGS"
+   ],
+   [
+    "Not a creature was stirring, not even a ____",
+    "MOUSE"
+   ],
+   [
+    "Visions of sugar-plums danced in their ____",
+    "HEADS"
+   ],
+   [
+    "Merry Christmas to all, and to all a good ____",
+    "NIGHT"
+   ],
+   [
+    "Kiss under the ____",
+    "MISTLETOE"
+   ],
+   [
+    "Rudolph and the other ____",
+    "REINDEER"
+   ],
+   [
+    "Secret ____ gift swap",
+    "SANTA"
+   ],
+   [
+    "Season's ____",
+    "GREETINGS"
+   ],
+   [
+    "Angels we have heard on ____",
+    "HIGH"
+   ],
+   [
+    "It came upon the midnight ____",
+    "CLEAR"
+   ],
+   [
+    "Let nothing you ____",
+    "DISMAY"
+   ],
+   [
+    "Go tell it on the ____",
+    "MOUNTAIN"
+   ],
+   [
+    "Pull a Christmas ____",
+    "CRACKER"
+   ]
+  ]
+ },
+ "hanukkah": {
+  "title": "Happy Hanukkah",
+  "holiday": "hanukkah",
+  "allow": [
+   "DREIDEL",
+   "MENORAH",
+   "LATKES"
+  ],
+  "pairs": [
+   [
+    "Spin the ____",
+    "DREIDEL"
+   ],
+   [
+    "I have a little dreidel, I made it out of ____",
+    "CLAY"
+   ],
+   [
+    "When it's dry and ready, then dreidel I shall ____",
+    "PLAY"
+   ],
+   [
+    "The nine-branched ____",
+    "MENORAH"
+   ],
+   [
+    "Hanukkah, the Festival of ____",
+    "LIGHTS"
+   ],
+   [
+    "Eight ____ of candles and song",
+    "NIGHTS"
+   ],
+   [
+    "One day's oil burned for ____ days",
+    "EIGHT"
+   ],
+   [
+    "Potato pancakes fried in ____",
+    "OIL"
+   ],
+   [
+    "Serve them with applesauce or sour ____",
+    "CREAM"
+   ],
+   [
+    "Golden potato ____ with applesauce",
+    "LATKES"
+   ],
+   [
+    "Grate the ____ and fry them golden",
+    "POTATOES"
+   ],
+   [
+    "Gold-foil chocolate ____",
+    "COINS"
+   ],
+   [
+    "Jelly-filled ____ for dessert",
+    "DOUGHNUTS"
+   ],
+   [
+    "The ninth candle is the ____",
+    "HELPER"
+   ],
+   [
+    "Kindle the candles from left to ____",
+    "RIGHT"
+   ],
+   [
+    "A great ____ happened there",
+    "MIRACLE"
+   ],
+   [
+    "Rededication of the ____ in Jerusalem",
+    "TEMPLE"
+   ],
+   [
+    "Dreidel letters: nun, gimel, hey and ____",
+    "SHIN"
+   ],
+   [
+    "Gimel: take the whole ____",
+    "POT"
+   ],
+   [
+    "Nun: you get ____, spin again",
+    "NOTHING"
+   ],
+   [
+    "Hey: take ____ the pot",
+    "HALF"
+   ],
+   [
+    "Recite the ____ over the candles",
+    "BLESSINGS"
+   ],
+   [
+    "A little light dispels much ____",
+    "DARKNESS"
+   ],
+   [
+    "Rock of ____, let our song",
+    "AGES"
+   ],
+   [
+    "Exchange ____ each night",
+    "GIFTS"
+   ],
+   [
+    "Family and friends sit down to a ____",
+    "FEAST"
+   ],
+   [
+    "Fried golden and ____",
+    "CRISP"
+   ],
+   [
+    "Place the menorah in the ____ for all to see",
+    "WINDOW"
+   ],
+   [
+    "The family ____ around the candles",
+    "GATHERS"
+   ],
+   [
+    "Fry them in a hot ____",
+    "PAN"
+   ],
+   [
+    "Tell the ____ of the Maccabees",
+    "STORY"
+   ],
+   [
+    "Freedom to ____ in peace",
+    "WORSHIP"
+   ],
+   [
+    "Fill the house with ____ and song",
+    "JOY"
+   ],
+   [
+    "Kindle the candles after ____",
+    "SUNSET"
+   ]
+  ]
+ },
+ "newyear": {
+  "title": "Happy New Year",
+  "holiday": "newyear",
+  "allow": [],
+  "pairs": [
+   [
+    "Should auld acquaintance be ____",
+    "FORGOT"
+   ],
+   [
+    "And never brought to ____",
+    "MIND"
+   ],
+   [
+    "We'll take a cup of ____ yet",
+    "KINDNESS"
+   ],
+   [
+    "Ring out the old, ring in the ____",
+    "NEW"
+   ],
+   [
+    "In with the new, out with the ____",
+    "OLD"
+   ],
+   [
+    "Turn over a new ____",
+    "LEAF"
+   ],
+   [
+    "Resolutions are made to be ____",
+    "BROKEN"
+   ],
+   [
+    "The clock strikes ____",
+    "TWELVE"
+   ],
+   [
+    "A kiss at ____",
+    "MIDNIGHT"
+   ],
+   [
+    "Pop the ____ on the bubbly",
+    "CORK"
+   ],
+   [
+    "Raise a glass and make a ____",
+    "TOAST"
+   ],
+   [
+    "Count down from ____",
+    "TEN"
+   ],
+   [
+    "Three, two, one... Happy New ____",
+    "YEAR"
+   ],
+   [
+    "Watch the ball ____",
+    "DROP"
+   ],
+   [
+    "Rockets light up the ____",
+    "SKY"
+   ],
+   [
+    "Dance till ____",
+    "DAWN"
+   ],
+   [
+    "A fresh ____",
+    "START"
+   ],
+   [
+    "Wipe the slate ____",
+    "CLEAN"
+   ],
+   [
+    "Every day is a new ____",
+    "BEGINNING"
+   ],
+   [
+    "Another year older, another year ____",
+    "WISER"
+   ],
+   [
+    "Time ____ for no one",
+    "WAITS"
+   ],
+   [
+    "Well begun is half ____",
+    "DONE"
+   ],
+   [
+    "Today is the first day of the rest of your ____",
+    "LIFE"
+   ],
+   [
+    "A journey of a thousand miles begins with a single ____",
+    "STEP"
+   ],
+   [
+    "The best is yet to ____",
+    "COME"
+   ],
+   [
+    "Cheers to the year ____",
+    "AHEAD"
+   ],
+   [
+    "Health, wealth and ____",
+    "HAPPINESS"
+   ],
+   [
+    "Go out with a ____",
+    "BANG"
+   ],
+   [
+    "Pour the ____ and raise a glass",
+    "CHAMPAGNE"
+   ],
+   [
+    "Look back, then look ____",
+    "FORWARD"
+   ],
+   [
+    "The ____ looks bright",
+    "FUTURE"
+   ],
+   [
+    "Black-eyed ____ for luck on New Year's Day",
+    "PEAS"
+   ],
+   [
+    "Set off the ____",
+    "FIREWORKS"
+   ],
+   [
+    "Noisemakers and party ____",
+    "HATS"
+   ]
+  ]
+ },
+ "valentines": {
+  "title": "Be My Valentine",
+  "holiday": "valentines",
+  "allow": [
+   "VIOLETS",
+   "VALENTINE",
+   "CUPID"
+  ],
+  "pairs": [
+   [
+    "Roses are red, ____ are blue",
+    "VIOLETS"
+   ],
+   [
+    "Sugar is ____, and so are you",
+    "SWEET"
+   ],
+   [
+    "Will you be my ____?",
+    "VALENTINE"
+   ],
+   [
+    "The winged archer of love, ____",
+    "CUPID"
+   ],
+   [
+    "Struck by Cupid's ____",
+    "ARROW"
+   ],
+   [
+    "Love is in the ____",
+    "AIR"
+   ],
+   [
+    "Wear your heart on your ____",
+    "SLEEVE"
+   ],
+   [
+    "Say it with ____",
+    "FLOWERS"
+   ],
+   [
+    "A dozen red ____",
+    "ROSES"
+   ],
+   [
+    "____ makes the heart grow fonder",
+    "ABSENCE"
+   ],
+   [
+    "Love will find a ____",
+    "WAY"
+   ],
+   [
+    "My heart ____ a beat",
+    "SKIPS"
+   ],
+   [
+    "Be ____",
+    "MINE"
+   ],
+   [
+    "Hugs and ____",
+    "KISSES"
+   ],
+   [
+    "Whisper sweet nothings in my ____",
+    "EAR"
+   ],
+   [
+    "A match made in ____",
+    "HEAVEN"
+   ],
+   [
+    "Made for each ____",
+    "OTHER"
+   ],
+   [
+    "Head over ____",
+    "HEELS"
+   ],
+   [
+    "A ____ in shining armor",
+    "KNIGHT"
+   ],
+   [
+    "Candlelit ____ for two",
+    "DINNER"
+   ],
+   [
+    "A secret ____",
+    "ADMIRER"
+   ],
+   [
+    "You make my heart ____",
+    "FLUTTER"
+   ],
+   [
+    "A ____ of affection",
+    "TOKEN"
+   ],
+   [
+    "Pen a love ____",
+    "LETTER"
+   ],
+   [
+    "Written in the ____",
+    "STARS"
+   ],
+   [
+    "The eyes are the ____ to the soul",
+    "WINDOW"
+   ],
+   [
+    "Love is patient, love is ____",
+    "KIND"
+   ],
+   [
+    "Walk along holding ____",
+    "HANDS"
+   ],
+   [
+    "Love, honor and ____",
+    "CHERISH"
+   ],
+   [
+    "Serenade her beneath the ____",
+    "BALCONY"
+   ],
+   [
+    "May I have this ____?",
+    "DANCE"
+   ],
+   [
+    "Opposites ____",
+    "ATTRACT"
+   ],
+   [
+    "A heart-shaped box tied with a ____",
+    "RIBBON"
+   ],
+   [
+    "Lovers' ____",
+    "LANE"
+   ]
+  ]
+ },
+ "stpatricks": {
+  "title": "St Patrick's Day",
+  "holiday": "stpatricks",
+  "allow": [
+   "IRISH",
+   "SHAMROCK"
+  ],
+  "pairs": [
+   [
+    "May the ____ rise up to meet you",
+    "ROAD"
+   ],
+   [
+    "May the wind be always at your ____",
+    "BACK"
+   ],
+   [
+    "May the sun shine warm upon your ____",
+    "FACE"
+   ],
+   [
+    "The rains fall soft upon your ____",
+    "FIELDS"
+   ],
+   [
+    "Hold you in the ____ of his hand",
+    "PALM"
+   ],
+   [
+    "May the hinges of our friendship never grow ____",
+    "RUSTY"
+   ],
+   [
+    "Nothing but happiness come through your ____",
+    "DOOR"
+   ],
+   [
+    "May your pockets be heavy and your heart be ____",
+    "LIGHT"
+   ],
+   [
+    "When Irish eyes are ____",
+    "SMILING"
+   ],
+   [
+    "Oh Danny boy, the pipes, the pipes are ____",
+    "CALLING"
+   ],
+   [
+    "In Dublin's fair city, where the girls are so ____",
+    "PRETTY"
+   ],
+   [
+    "A good laugh and a long ____ are the best cures",
+    "SLEEP"
+   ],
+   [
+    "The grass is always ____ on the other side",
+    "GREENER"
+   ],
+   [
+    "Wearing of the ____",
+    "GREEN"
+   ],
+   [
+    "A ____ for anyone not in green",
+    "PINCH"
+   ],
+   [
+    "Kiss me, I'm ____",
+    "IRISH"
+   ],
+   [
+    "The ____ of the Irish",
+    "LUCK"
+   ],
+   [
+    "A four-leaf ____",
+    "CLOVER"
+   ],
+   [
+    "A ____ of gold at the end of the rainbow",
+    "POT"
+   ],
+   [
+    "Follow the ____ to the pot of gold",
+    "RAINBOW"
+   ],
+   [
+    "A ____ charm",
+    "LUCKY"
+   ],
+   [
+    "Top o' the ____ to you",
+    "MORNING"
+   ],
+   [
+    "Kiss the Blarney Stone for a silver ____",
+    "TONGUE"
+   ],
+   [
+    "The ____ Isle",
+    "EMERALD"
+   ],
+   [
+    "Saint Patrick drove the ____ out of Ireland",
+    "SNAKES"
+   ],
+   [
+    "Corned beef and ____",
+    "CABBAGE"
+   ],
+   [
+    "A warm slice of soda ____",
+    "BREAD"
+   ],
+   [
+    "Dance a lively ____",
+    "JIG"
+   ],
+   [
+    "Ireland's emblem, the ____",
+    "HARP"
+   ],
+   [
+    "Watch the ____ march by",
+    "PARADE"
+   ],
+   [
+    "Three-leaf ____",
+    "SHAMROCK"
+   ],
+   [
+    "Saint Patrick used the shamrock to explain the ____",
+    "TRINITY"
+   ],
+   [
+    "May you be poor in misfortune and rich in ____",
+    "BLESSINGS"
+   ],
+   [
+    "May your glass be ever ____",
+    "FULL"
+   ]
+  ]
+ },
+ "aprilfools": {
+  "title": "April Fools",
+  "holiday": "aprilfools",
+  "allow": [],
+  "pairs": [
+   [
+    "Fools rush in where angels fear to ____",
+    "TREAD"
+   ],
+   [
+    "Fool me once, shame on you; fool me ____",
+    "TWICE"
+   ],
+   [
+    "Sent on a fool's ____",
+    "ERRAND"
+   ],
+   [
+    "April showers bring May ____",
+    "FLOWERS"
+   ],
+   [
+    "Pull someone's ____",
+    "LEG"
+   ],
+   [
+    "Play a ____ on someone",
+    "PRANK"
+   ],
+   [
+    "The ____ is on you",
+    "JOKE"
+   ],
+   [
+    "Pull the ____ over someone's eyes",
+    "WOOL"
+   ],
+   [
+    "Take someone for a ____",
+    "RIDE"
+   ],
+   [
+    "A wild goose ____",
+    "CHASE"
+   ],
+   [
+    "Laughter is the best ____",
+    "MEDICINE"
+   ],
+   [
+    "Many a true word is spoken in ____",
+    "JEST"
+   ],
+   [
+    "Better to stay silent than speak and remove all ____",
+    "DOUBT"
+   ],
+   [
+    "A whoopee ____ on the chair",
+    "CUSHION"
+   ],
+   [
+    "Swap the sugar for ____",
+    "SALT"
+   ],
+   [
+    "A rubber ____ on the keyboard",
+    "SPIDER"
+   ],
+   [
+    "Short-sheet the ____",
+    "BED"
+   ],
+   [
+    "Don't be so ____",
+    "GULLIBLE"
+   ],
+   [
+    "Tongue in ____",
+    "CHEEK"
+   ],
+   [
+    "Call someone's ____",
+    "BLUFF"
+   ],
+   [
+    "A red ____, a false trail",
+    "HERRING"
+   ],
+   [
+    "An elaborate ____",
+    "HOAX"
+   ],
+   [
+    "Fool's ____: glitters but isn't",
+    "GOLD"
+   ],
+   [
+    "Up to some ____ business",
+    "MONKEY"
+   ],
+   [
+    "Making ____",
+    "MISCHIEF"
+   ],
+   [
+    "A ____ up your sleeve",
+    "TRICK"
+   ],
+   [
+    "Living in a fool's ____",
+    "PARADISE"
+   ],
+   [
+    "Caught red-____",
+    "HANDED"
+   ],
+   [
+    "Spring a ____",
+    "SURPRISE"
+   ],
+   [
+    "Seeing is ____",
+    "BELIEVING"
+   ],
+   [
+    "Too good to be ____",
+    "TRUE"
+   ],
+   [
+    "Ha-ha, very ____",
+    "FUNNY"
+   ],
+   [
+    "Smoke and ____",
+    "MIRRORS"
+   ],
+   [
+    "Bait and ____",
+    "SWITCH"
+   ]
+  ]
+ },
+ "easter": {
+  "title": "Happy Easter",
+  "holiday": "easter",
+  "allow": [
+   "DUCKLING",
+   "CANDY"
+  ],
+  "pairs": [
+   [
+    "Don't put all your eggs in one ____",
+    "BASKET"
+   ],
+   [
+    "An egg ____ across the lawn",
+    "HUNT"
+   ],
+   [
+    "The Easter ____ has been here",
+    "BUNNY"
+   ],
+   [
+    "Hot cross ____",
+    "BUNS"
+   ],
+   [
+    "April showers bring May ____",
+    "FLOWERS"
+   ],
+   [
+    "Fresh as a ____",
+    "DAISY"
+   ],
+   [
+    "Spring has ____",
+    "SPRUNG"
+   ],
+   [
+    "A touch of spring ____",
+    "FEVER"
+   ],
+   [
+    "____ springs eternal",
+    "HOPE"
+   ],
+   [
+    "A bee in your ____",
+    "BONNET"
+   ],
+   [
+    "Dye the ____ in bright colors",
+    "EGGS"
+   ],
+   [
+    "Dressed in your Sunday ____",
+    "BEST"
+   ],
+   [
+    "A ____ of sunshine",
+    "RAY"
+   ],
+   [
+    "Every ____ has its thorn",
+    "ROSE"
+   ],
+   [
+    "Bright-eyed and bushy-____",
+    "TAILED"
+   ],
+   [
+    "Breed like ____",
+    "RABBITS"
+   ],
+   [
+    "Mad as a March ____",
+    "HARE"
+   ],
+   [
+    "In like a lion, out like a ____",
+    "LAMB"
+   ],
+   [
+    "The ugly ____",
+    "DUCKLING"
+   ],
+   [
+    "Don't count your ____ before they hatch",
+    "CHICKENS"
+   ],
+   [
+    "A little ____ told me",
+    "BIRD"
+   ],
+   [
+    "Birds of a ____ flock together",
+    "FEATHER"
+   ],
+   [
+    "Time for spring ____",
+    "CLEANING"
+   ],
+   [
+    "Like a kid in a ____ store",
+    "CANDY"
+   ],
+   [
+    "Rise and ____",
+    "SHINE"
+   ],
+   [
+    "A new ____ on life",
+    "LEASE"
+   ],
+   [
+    "Turn over a new ____",
+    "LEAF"
+   ],
+   [
+    "Bloom where you are ____",
+    "PLANTED"
+   ],
+   [
+    "Cute as a ____",
+    "BUTTON"
+   ],
+   [
+    "The grass is always ____ on the other side",
+    "GREENER"
+   ],
+   [
+    "Spring is in the ____",
+    "AIR"
+   ],
+   [
+    "A handful of jelly ____",
+    "BEANS"
+   ],
+   [
+    "Pull a rabbit out of a ____",
+    "HAT"
+   ],
+   [
+    "Melts in your ____",
+    "MOUTH"
+   ]
+  ]
+ },
+ "mothersday": {
+  "title": "Mother's Day",
+  "holiday": "mothersday",
+  "allow": [],
+  "pairs": [
+   [
+    "Home is where the ____ is",
+    "HEART"
+   ],
+   [
+    "____ knows best",
+    "MOTHER"
+   ],
+   [
+    "Necessity is the mother of ____",
+    "INVENTION"
+   ],
+   [
+    "Like mother, like ____",
+    "DAUGHTER"
+   ],
+   [
+    "A face only a mother could ____",
+    "LOVE"
+   ],
+   [
+    "The hand that rocks the ____",
+    "CRADLE"
+   ],
+   [
+    "Tied to her apron ____",
+    "STRINGS"
+   ],
+   [
+    "Mother ____ has her own plans",
+    "NATURE"
+   ],
+   [
+    "Speak your mother ____",
+    "TONGUE"
+   ],
+   [
+    "Fussing like a mother ____",
+    "HEN"
+   ],
+   [
+    "Mother of ____",
+    "PEARL"
+   ],
+   [
+    "Mum's the ____",
+    "WORD"
+   ],
+   [
+    "A mother's ____ is never done",
+    "WORK"
+   ],
+   [
+    "Mother ____, our planet",
+    "EARTH"
+   ],
+   [
+    "A dozen red ____",
+    "ROSES"
+   ],
+   [
+    "A handmade greeting ____",
+    "CARD"
+   ],
+   [
+    "Blood is thicker than ____",
+    "WATER"
+   ],
+   [
+    "The apple doesn't fall far from the ____",
+    "TREE"
+   ],
+   [
+    "There's no place like ____",
+    "HOME"
+   ],
+   [
+    "Kiss it and make it ____",
+    "BETTER"
+   ],
+   [
+    "Wash behind your ____",
+    "EARS"
+   ],
+   [
+    "A mother's gentle ____",
+    "TOUCH"
+   ],
+   [
+    "Rock-a-bye ____",
+    "BABY"
+   ],
+   [
+    "Protective as a mama ____",
+    "BEAR"
+   ],
+   [
+    "Tender loving ____",
+    "CARE"
+   ],
+   [
+    "Spare the rod and spoil the ____",
+    "CHILD"
+   ],
+   [
+    "Words of ____",
+    "WISDOM"
+   ],
+   [
+    "Sugar and ____ and everything nice",
+    "SPICE"
+   ],
+   [
+    "Blow a goodnight ____",
+    "KISS"
+   ],
+   [
+    "____ comes first",
+    "FAMILY"
+   ],
+   [
+    "Gather for Sunday ____",
+    "DINNER"
+   ],
+   [
+    "Nothing beats home ____",
+    "COOKING"
+   ],
+   [
+    "Grandma's secret ____",
+    "RECIPE"
+   ],
+   [
+    "Made from ____",
+    "SCRATCH"
+   ]
+  ]
+ },
+ "fathersday": {
+  "title": "Father's Day",
+  "holiday": "fathersday",
+  "allow": [],
+  "pairs": [
+   [
+    "Like father, like ____",
+    "SON"
+   ],
+   [
+    "A chip off the old ____",
+    "BLOCK"
+   ],
+   [
+    "Father ____ waits for no one",
+    "TIME"
+   ],
+   [
+    "A father ____ to look up to",
+    "FIGURE"
+   ],
+   [
+    "____ of the bride",
+    "FATHER"
+   ],
+   [
+    "Daddy's little ____",
+    "GIRL"
+   ],
+   [
+    "Actions speak louder than ____",
+    "WORDS"
+   ],
+   [
+    "Money doesn't grow on ____",
+    "TREES"
+   ],
+   [
+    "Early to bed, early to ____",
+    "RISE"
+   ],
+   [
+    "A penny saved is a penny ____",
+    "EARNED"
+   ],
+   [
+    "Measure twice, cut ____",
+    "ONCE"
+   ],
+   [
+    "If it ain't broke, don't ____ it",
+    "FIX"
+   ],
+   [
+    "Man of the ____",
+    "HOUSE"
+   ],
+   [
+    "Bring home the ____",
+    "BACON"
+   ],
+   [
+    "Fire up the ____",
+    "GRILL"
+   ],
+   [
+    "A man's home is his ____",
+    "CASTLE"
+   ],
+   [
+    "Wait till your father gets ____",
+    "HOME"
+   ],
+   [
+    "Go ask your ____",
+    "MOTHER"
+   ],
+   [
+    "Were you born in a ____?",
+    "BARN"
+   ],
+   [
+    "Don't make me turn this car ____",
+    "AROUND"
+   ],
+   [
+    "We're not made of ____",
+    "MONEY"
+   ],
+   [
+    "Practice makes ____",
+    "PERFECT"
+   ],
+   [
+    "Head of the ____",
+    "HOUSEHOLD"
+   ],
+   [
+    "A little elbow ____",
+    "GREASE"
+   ],
+   [
+    "Straighten your ____",
+    "TIE"
+   ],
+   [
+    "Idle hands are the devil's ____",
+    "WORKSHOP"
+   ],
+   [
+    "Big ____ to fill",
+    "SHOES"
+   ],
+   [
+    "Groan at the dad ____",
+    "JOKES"
+   ],
+   [
+    "A father's ____ and joy",
+    "PRIDE"
+   ],
+   [
+    "Tough as ____",
+    "NAILS"
+   ],
+   [
+    "A word of fatherly ____",
+    "ADVICE"
+   ],
+   [
+    "Teach a man to ____",
+    "FISH"
+   ],
+   [
+    "Grandfather ____",
+    "CLOCK"
+   ],
+   [
+    "Keep your ____ up",
+    "CHIN"
+   ]
+  ]
+ },
+ "july4": {
+  "title": "Fourth of July",
+  "holiday": "july4",
+  "allow": [],
+  "pairs": [
+   [
+    "Yankee Doodle went to town, riding on a ____",
+    "PONY"
+   ],
+   [
+    "Stuck a feather in his cap and called it ____",
+    "MACARONI"
+   ],
+   [
+    "O say can you see, by the dawn's early ____",
+    "LIGHT"
+   ],
+   [
+    "The home of the ____",
+    "BRAVE"
+   ],
+   [
+    "Count the fifty ____",
+    "STARS"
+   ],
+   [
+    "The rockets' red ____",
+    "GLARE"
+   ],
+   [
+    "Bombs bursting in ____",
+    "AIR"
+   ],
+   [
+    "O beautiful for spacious ____",
+    "SKIES"
+   ],
+   [
+    "For amber waves of ____",
+    "GRAIN"
+   ],
+   [
+    "Above the fruited ____",
+    "PLAIN"
+   ],
+   [
+    "God shed His ____ on thee",
+    "GRACE"
+   ],
+   [
+    "Sweet land of ____",
+    "LIBERTY"
+   ],
+   [
+    "Freedom of ____",
+    "SPEECH"
+   ],
+   [
+    "Life, liberty and the pursuit of ____",
+    "HAPPINESS"
+   ],
+   [
+    "We the ____",
+    "PEOPLE"
+   ],
+   [
+    "The land of the ____",
+    "FREE"
+   ],
+   [
+    "Thirteen red and white ____",
+    "STRIPES"
+   ],
+   [
+    "Fly Old ____ high",
+    "GLORY"
+   ],
+   [
+    "Red, white and ____",
+    "BLUE"
+   ],
+   [
+    "The star-spangled ____",
+    "BANNER"
+   ],
+   [
+    "Pledge to the ____",
+    "FLAG"
+   ],
+   [
+    "With liberty and ____ for all",
+    "JUSTICE"
+   ],
+   [
+    "United we stand, divided we ____",
+    "FALL"
+   ],
+   [
+    "Oohs and aahs at the ____",
+    "FIREWORKS"
+   ],
+   [
+    "A short ____",
+    "FUSE"
+   ],
+   [
+    "Fire up the backyard ____",
+    "BARBECUE"
+   ],
+   [
+    "Hot ____ on the grill",
+    "DOGS"
+   ],
+   [
+    "As American as apple ____",
+    "PIE"
+   ],
+   [
+    "Main Street ____",
+    "PARADE"
+   ],
+   [
+    "Philadelphia's famous cracked ____",
+    "BELL"
+   ],
+   [
+    "Save the best for the grand ____",
+    "FINALE"
+   ],
+   [
+    "Take me out to the ball ____",
+    "GAME"
+   ],
+   [
+    "Long may it ____",
+    "WAVE"
+   ],
+   [
+    "The original thirteen ____",
+    "COLONIES"
+   ]
+  ]
+ },
+ "halloween": {
+  "title": "Happy Halloween",
+  "holiday": "halloween",
+  "allow": [
+   "COBWEBS"
+  ],
+  "pairs": [
+   [
+    "Trick or ____",
+    "TREAT"
+   ],
+   [
+    "Carve the ____",
+    "PUMPKIN"
+   ],
+   [
+    "Scared out of your ____",
+    "WITS"
+   ],
+   [
+    "Things that go bump in the ____",
+    "NIGHT"
+   ],
+   [
+    "The witching ____",
+    "HOUR"
+   ],
+   [
+    "Skeletons in the ____",
+    "CLOSET"
+   ],
+   [
+    "A ghost of a ____",
+    "CHANCE"
+   ],
+   [
+    "Dare to enter the haunted ____",
+    "HOUSE"
+   ],
+   [
+    "Howl at the full ____",
+    "MOON"
+   ],
+   [
+    "A black ____ crossed my path",
+    "CAT"
+   ],
+   [
+    "Bobbing for ____",
+    "APPLES"
+   ],
+   [
+    "Candy ____",
+    "CORN"
+   ],
+   [
+    "Dust off the ____",
+    "COBWEBS"
+   ],
+   [
+    "Stir the bubbling ____",
+    "BREW"
+   ],
+   [
+    "Double, double toil and ____",
+    "TROUBLE"
+   ],
+   [
+    "Hop on a ____ and fly",
+    "BROOM"
+   ],
+   [
+    "Chills down your ____",
+    "SPINE"
+   ],
+   [
+    "A hair-____ tale",
+    "RAISING"
+   ],
+   [
+    "Make your ____ crawl",
+    "SKIN"
+   ],
+   [
+    "Spooky ____ around the campfire",
+    "STORIES"
+   ],
+   [
+    "Ghosts and ____",
+    "GOBLINS"
+   ],
+   [
+    "Pick out a ____",
+    "COSTUME"
+   ],
+   [
+    "Behind the ____",
+    "MASK"
+   ],
+   [
+    "Light the jack-o'-____",
+    "LANTERN"
+   ],
+   [
+    "Blind as a ____",
+    "BAT"
+   ],
+   [
+    "Caught in a spider's ____",
+    "WEB"
+   ],
+   [
+    "Quaking in your ____",
+    "BOOTS"
+   ],
+   [
+    "Pale as a ____",
+    "GHOST"
+   ],
+   [
+    "Whistling past the ____",
+    "GRAVEYARD"
+   ],
+   [
+    "Cackle like a ____",
+    "WITCH"
+   ],
+   [
+    "The stroke of ____",
+    "MIDNIGHT"
+   ],
+   [
+    "Ring the ____ for candy",
+    "DOORBELL"
+   ],
+   [
+    "Cast a ____",
+    "SPELL"
+   ],
+   [
+    "The ____ in the cornfield",
+    "SCARECROW"
+   ]
+  ]
+ },
+ "thanksgiving": {
+  "title": "Giving Thanks",
+  "holiday": "thanksgiving",
+  "allow": [
+   "WISHBONE",
+   "GOBBLE"
+  ],
+  "pairs": [
+   [
+    "Over the river and through the ____",
+    "WOOD"
+   ],
+   [
+    "Count your ____",
+    "BLESSINGS"
+   ],
+   [
+    "Give ____",
+    "THANKS"
+   ],
+   [
+    "Let's talk ____",
+    "TURKEY"
+   ],
+   [
+    "Pass the ____",
+    "GRAVY"
+   ],
+   [
+    "A spoonful of ____",
+    "STUFFING"
+   ],
+   [
+    "Cranberry ____",
+    "SAUCE"
+   ],
+   [
+    "Pumpkin ____ with whipped cream",
+    "PIE"
+   ],
+   [
+    "Make a wish on the ____",
+    "WISHBONE"
+   ],
+   [
+    "____ till you wobble",
+    "GOBBLE"
+   ],
+   [
+    "Horn of ____",
+    "PLENTY"
+   ],
+   [
+    "Reap what you ____",
+    "SOW"
+   ],
+   [
+    "A bumper ____",
+    "CROP"
+   ],
+   [
+    "Bring in the ____",
+    "HARVEST"
+   ],
+   [
+    "The ____ landed at Plymouth",
+    "PILGRIMS"
+   ],
+   [
+    "Loosen your ____",
+    "BELT"
+   ],
+   [
+    "Eyes bigger than your ____",
+    "STOMACH"
+   ],
+   [
+    "Save room for ____",
+    "SECONDS"
+   ],
+   [
+    "A week of turkey ____",
+    "LEFTOVERS"
+   ],
+   [
+    "Mashed ____",
+    "POTATOES"
+   ],
+   [
+    "Green bean ____",
+    "CASSEROLE"
+   ],
+   [
+    "Bow your heads and say ____",
+    "GRACE"
+   ],
+   [
+    "An attitude of ____",
+    "GRATITUDE"
+   ],
+   [
+    "Sneak an afternoon ____",
+    "NAP"
+   ],
+   [
+    "Don't bite the hand that ____ you",
+    "FEEDS"
+   ],
+   [
+    "Break ____ together",
+    "BREAD"
+   ],
+   [
+    "Pull up a ____",
+    "CHAIR"
+   ],
+   [
+    "Set the ____",
+    "TABLE"
+   ],
+   [
+    "Eat, drink and be ____",
+    "MERRY"
+   ],
+   [
+    "Enjoy the ____ of your labor",
+    "FRUITS"
+   ],
+   [
+    "Roasted to a golden ____",
+    "BROWN"
+   ],
+   [
+    "A ____ fit for a king",
+    "FEAST"
+   ],
+   [
+    "Rake the autumn ____",
+    "LEAVES"
+   ],
+   [
+    "Be ____ for what you have",
+    "GRATEFUL"
+   ]
+  ]
+ },
+ "mlkday": {
+  "title": "A Day of Service",
+  "holiday": "mlkday",
+  "allow": [],
+  "pairs": [
+   [
+    "Actions speak louder than ____",
+    "WORDS"
+   ],
+   [
+    "A ____ come true",
+    "DREAM"
+   ],
+   [
+    "Justice delayed is justice ____",
+    "DENIED"
+   ],
+   [
+    "A journey of a thousand miles begins with a single ____",
+    "STEP"
+   ],
+   [
+    "United we stand, divided we ____",
+    "FALL"
+   ],
+   [
+    "Love thy ____",
+    "NEIGHBOR"
+   ],
+   [
+    "Keep your eyes on the ____",
+    "PRIZE"
+   ],
+   [
+    "Stand up for what is ____",
+    "RIGHT"
+   ],
+   [
+    "Turn the other ____",
+    "CHEEK"
+   ],
+   [
+    "Walk a mile in someone else's ____",
+    "SHOES"
+   ],
+   [
+    "It takes a village to raise a ____",
+    "CHILD"
+   ],
+   [
+    "Give someone a helping ____",
+    "HAND"
+   ],
+   [
+    "Charity begins at ____",
+    "HOME"
+   ],
+   [
+    "Blessed are the ____, for they shall inherit the earth",
+    "MEEK"
+   ],
+   [
+    "Let ____ ring",
+    "FREEDOM"
+   ],
+   [
+    "Onward and ____",
+    "UPWARD"
+   ],
+   [
+    "Hold your head ____",
+    "HIGH"
+   ],
+   [
+    "Slow and steady wins the ____",
+    "RACE"
+   ],
+   [
+    "Stand up and be ____",
+    "COUNTED"
+   ],
+   [
+    "Strength in ____",
+    "NUMBERS"
+   ],
+   [
+    "Practice what you ____",
+    "PREACH"
+   ],
+   [
+    "Lead by ____",
+    "EXAMPLE"
+   ],
+   [
+    "Where there's a will there's a ____",
+    "WAY"
+   ],
+   [
+    "Reach for the ____",
+    "STARS"
+   ],
+   [
+    "Let your ____ shine",
+    "LIGHT"
+   ],
+   [
+    "Make your ____ heard",
+    "VOICE"
+   ],
+   [
+    "March to the beat of your own ____",
+    "DRUM"
+   ],
+   [
+    "Hope springs ____",
+    "ETERNAL"
+   ],
+   [
+    "Live in ____",
+    "HARMONY"
+   ],
+   [
+    "Faith can move ____",
+    "MOUNTAINS"
+   ],
+   [
+    "Rise to the ____",
+    "OCCASION"
+   ],
+   [
+    "Level the playing ____",
+    "FIELD"
+   ]
+  ]
+ },
+ "presidents": {
+  "title": "Presidents' Day",
+  "holiday": "presidents",
+  "allow": [
+   "ABE",
+   "LINCOLN",
+   "RUSHMORE",
+   "CHERRY"
+  ],
+  "pairs": [
+   [
+    "Government of the people shall not perish from the ____",
+    "EARTH"
+   ],
+   [
+    "I cannot tell a ____",
+    "LIE"
+   ],
+   [
+    "A house divided against itself cannot ____",
+    "STAND"
+   ],
+   [
+    "With malice toward none, with charity for ____",
+    "ALL"
+   ],
+   [
+    "Honest ____",
+    "ABE"
+   ],
+   [
+    "Born in a log ____",
+    "CABIN"
+   ],
+   [
+    "Hail to the ____",
+    "CHIEF"
+   ],
+   [
+    "Father of his ____",
+    "COUNTRY"
+   ],
+   [
+    "Chopped down the ____ tree",
+    "CHERRY"
+   ],
+   [
+    "Mount ____",
+    "RUSHMORE"
+   ],
+   [
+    "The ____ House",
+    "WHITE"
+   ],
+   [
+    "The ____ Office",
+    "OVAL"
+   ],
+   [
+    "Stovepipe ____",
+    "HAT"
+   ],
+   [
+    "Honesty is the best ____",
+    "POLICY"
+   ],
+   [
+    "The buck stops ____",
+    "HERE"
+   ],
+   [
+    "A penny for your ____",
+    "THOUGHTS"
+   ],
+   [
+    "Four score and seven years ____",
+    "AGO"
+   ],
+   [
+    "All men are created ____",
+    "EQUAL"
+   ],
+   [
+    "Life, liberty and the pursuit of ____",
+    "HAPPINESS"
+   ],
+   [
+    "We the ____",
+    "PEOPLE"
+   ],
+   [
+    "In order to form a more perfect ____",
+    "UNION"
+   ],
+   [
+    "Speak softly and carry a big ____",
+    "STICK"
+   ],
+   [
+    "The ____ Memorial",
+    "LINCOLN"
+   ],
+   [
+    "The First ____ of the land",
+    "LADY"
+   ],
+   [
+    "Take the oath of ____",
+    "OFFICE"
+   ],
+   [
+    "Preserve, protect and ____ the Constitution",
+    "DEFEND"
+   ],
+   [
+    "The ____ of the Union address",
+    "STATE"
+   ],
+   [
+    "Founding ____",
+    "FATHERS"
+   ],
+   [
+    "Don't change ____ in midstream",
+    "HORSES"
+   ],
+   [
+    "You can't fool all the people all of the ____",
+    "TIME"
+   ],
+   [
+    "Checks and ____",
+    "BALANCES"
+   ],
+   [
+    "Cast your ____",
+    "BALLOT"
+   ]
+  ]
+ },
+ "memorial": {
+  "title": "Memorial Day",
+  "holiday": "memorial",
+  "allow": [],
+  "pairs": [
+   [
+    "Land of the free and the home of the ____",
+    "BRAVE"
+   ],
+   [
+    "Lest we ____",
+    "FORGET"
+   ],
+   [
+    "Wear a red ____",
+    "POPPY"
+   ],
+   [
+    "Gone but not ____",
+    "FORGOTTEN"
+   ],
+   [
+    "Rest in ____",
+    "PEACE"
+   ],
+   [
+    "Day is done, gone the ____",
+    "SUN"
+   ],
+   [
+    "The ____ of the Unknown Soldier",
+    "TOMB"
+   ],
+   [
+    "A moment of ____",
+    "SILENCE"
+   ],
+   [
+    "Twenty-one-gun ____",
+    "SALUTE"
+   ],
+   [
+    "Remember the fallen ____",
+    "HEROES"
+   ],
+   [
+    "Lay a ____",
+    "WREATH"
+   ],
+   [
+    "Stars and Stripes ____",
+    "FOREVER"
+   ],
+   [
+    "Old ____",
+    "GLORY"
+   ],
+   [
+    "Duty, honor, ____",
+    "COUNTRY"
+   ],
+   [
+    "The ultimate ____",
+    "SACRIFICE"
+   ],
+   [
+    "The last full measure of ____",
+    "DEVOTION"
+   ],
+   [
+    "Salute the ____",
+    "FLAG"
+   ],
+   [
+    "A grateful ____",
+    "NATION"
+   ],
+   [
+    "Play ____ at sundown",
+    "TAPS"
+   ],
+   [
+    "Between the ____, row on row",
+    "CROSSES"
+   ],
+   [
+    "At the going down of the sun and in the ____",
+    "MORNING"
+   ],
+   [
+    "Hallowed ____",
+    "GROUND"
+   ],
+   [
+    "They shall not have died in ____",
+    "VAIN"
+   ],
+   [
+    "Flag folded into a ____",
+    "TRIANGLE"
+   ],
+   [
+    "In loving ____",
+    "MEMORY"
+   ],
+   [
+    "Stand at ____",
+    "ATTENTION"
+   ],
+   [
+    "Pay your ____",
+    "RESPECTS"
+   ],
+   [
+    "Answer the call of ____",
+    "DUTY"
+   ],
+   [
+    "Purple ____",
+    "HEART"
+   ],
+   [
+    "Amazing ____",
+    "GRACE"
+   ],
+   [
+    "Bugle ____",
+    "CALL"
+   ],
+   [
+    "Brothers in ____",
+    "ARMS"
+   ]
+  ]
+ },
+ "juneteenth": {
+  "title": "Juneteenth",
+  "holiday": "juneteenth",
+  "allow": [],
+  "pairs": [
+   [
+    "Free at ____",
+    "LAST"
+   ],
+   [
+    "Day of ____",
+    "JUBILEE"
+   ],
+   [
+    "Break the ____",
+    "CHAINS"
+   ],
+   [
+    "Red velvet ____",
+    "CAKE"
+   ],
+   [
+    "Cook out on the ____",
+    "GRILL"
+   ],
+   [
+    "Family ____",
+    "REUNION"
+   ],
+   [
+    "Lift every voice and ____",
+    "SING"
+   ],
+   [
+    "Church ____ ring out",
+    "BELLS"
+   ],
+   [
+    "Wade in the ____",
+    "WATER"
+   ],
+   [
+    "He's got the whole world in his ____",
+    "HANDS"
+   ],
+   [
+    "This little light of mine, I'm gonna let it ____",
+    "SHINE"
+   ],
+   [
+    "Down by the ____",
+    "RIVERSIDE"
+   ],
+   [
+    "Free as a ____",
+    "BIRD"
+   ],
+   [
+    "Jump for ____",
+    "JOY"
+   ],
+   [
+    "Roots and ____",
+    "BRANCHES"
+   ],
+   [
+    "Trace your family ____",
+    "TREE"
+   ],
+   [
+    "Respect your ____",
+    "ELDERS"
+   ],
+   [
+    "Stories told around the ____",
+    "TABLE"
+   ],
+   [
+    "Break ____ together",
+    "BREAD"
+   ],
+   [
+    "Kick up your ____",
+    "HEELS"
+   ],
+   [
+    "Sweet taste of ____",
+    "FREEDOM"
+   ],
+   [
+    "Liberty and justice for ____",
+    "ALL"
+   ],
+   [
+    "Better late than ____",
+    "NEVER"
+   ],
+   [
+    "Take ____ in your roots",
+    "PRIDE"
+   ],
+   [
+    "Stand ____",
+    "TALL"
+   ],
+   [
+    "Homeward ____",
+    "BOUND"
+   ],
+   [
+    "Eat, drink and be ____",
+    "MERRY"
+   ],
+   [
+    "Fireworks light up the ____",
+    "SKY"
+   ],
+   [
+    "Pass the ____",
+    "TORCH"
+   ],
+   [
+    "Dawn of a new ____",
+    "DAY"
+   ],
+   [
+    "Sweet land of ____",
+    "LIBERTY"
+   ],
+   [
+    "Red beans and ____",
+    "RICE"
+   ]
+  ]
+ },
+ "labor": {
+  "title": "Labor Day",
+  "holiday": "labor",
+  "allow": [],
+  "pairs": [
+   [
+    "Many hands make light ____",
+    "WORK"
+   ],
+   [
+    "All work and no ____",
+    "PLAY"
+   ],
+   [
+    "A job well ____",
+    "DONE"
+   ],
+   [
+    "Early to bed and early to ____",
+    "RISE"
+   ],
+   [
+    "Roll up your ____",
+    "SLEEVES"
+   ],
+   [
+    "Put your shoulder to the ____",
+    "WHEEL"
+   ],
+   [
+    "Idle hands are the devil's ____",
+    "WORKSHOP"
+   ],
+   [
+    "Bring home the ____",
+    "BACON"
+   ],
+   [
+    "Earn your ____",
+    "KEEP"
+   ],
+   [
+    "Unofficial end of ____",
+    "SUMMER"
+   ],
+   [
+    "Don't wear ____ after Labor Day",
+    "WHITE"
+   ],
+   [
+    "Punch the ____",
+    "CLOCK"
+   ],
+   [
+    "Nine to ____",
+    "FIVE"
+   ],
+   [
+    "Long ____",
+    "WEEKEND"
+   ],
+   [
+    "Kick back and ____",
+    "RELAX"
+   ],
+   [
+    "Take a well-earned ____",
+    "BREAK"
+   ],
+   [
+    "A change is as good as a ____",
+    "REST"
+   ],
+   [
+    "Elbow ____",
+    "GREASE"
+   ],
+   [
+    "Learn the ____",
+    "ROPES"
+   ],
+   [
+    "Climb the corporate ____",
+    "LADDER"
+   ],
+   [
+    "Practice makes ____",
+    "PERFECT"
+   ],
+   [
+    "No pain, no ____",
+    "GAIN"
+   ],
+   [
+    "If a job's worth doing, it's worth doing ____",
+    "WELL"
+   ],
+   [
+    "Strike while the iron is ____",
+    "HOT"
+   ],
+   [
+    "Tools of the ____",
+    "TRADE"
+   ],
+   [
+    "Labor of ____",
+    "LOVE"
+   ],
+   [
+    "Fruits of your ____",
+    "LABOR"
+   ],
+   [
+    "Daily ____",
+    "GRIND"
+   ],
+   [
+    "Time off for good ____",
+    "BEHAVIOR"
+   ],
+   [
+    "Back to ____",
+    "SCHOOL"
+   ],
+   [
+    "Sweat of your ____",
+    "BROW"
+   ],
+   [
+    "Pull your ____",
+    "WEIGHT"
+   ]
+  ]
+ },
+ "indigenous": {
+  "title": "Harvest Moon",
+  "holiday": "indigenous",
+  "allow": [],
+  "pairs": [
+   [
+    "Reap what you ____",
+    "SOW"
+   ],
+   [
+    "Make hay while the sun ____",
+    "SHINES"
+   ],
+   [
+    "Harvest ____",
+    "MOON"
+   ],
+   [
+    "Salt of the ____",
+    "EARTH"
+   ],
+   [
+    "Let ____ take its course",
+    "NATURE"
+   ],
+   [
+    "Live off the ____",
+    "LAND"
+   ],
+   [
+    "Count your ____",
+    "BLESSINGS"
+   ],
+   [
+    "Give ____",
+    "THANKS"
+   ],
+   [
+    "It takes a ____",
+    "VILLAGE"
+   ],
+   [
+    "Rake the ____",
+    "LEAVES"
+   ],
+   [
+    "Crisp autumn ____",
+    "AIR"
+   ],
+   [
+    "Sit around the ____",
+    "CAMPFIRE"
+   ],
+   [
+    "Warm mug of apple ____",
+    "CIDER"
+   ],
+   [
+    "Lost in the corn ____",
+    "MAZE"
+   ],
+   [
+    "Ears of ____",
+    "CORN"
+   ],
+   [
+    "Amber waves of ____",
+    "GRAIN"
+   ],
+   [
+    "Plant the ____",
+    "SEEDS"
+   ],
+   [
+    "Put down ____",
+    "ROOTS"
+   ],
+   [
+    "Horn of ____",
+    "PLENTY"
+   ],
+   [
+    "Leave no ____",
+    "TRACE"
+   ],
+   [
+    "Take only what you ____",
+    "NEED"
+   ],
+   [
+    "Tread ____",
+    "LIGHTLY"
+   ],
+   [
+    "Wisdom of the ____",
+    "AGES"
+   ],
+   [
+    "Sit down to the ____",
+    "FEAST"
+   ],
+   [
+    "Bountiful ____",
+    "HARVEST"
+   ],
+   [
+    "Migrating ____ fly south",
+    "GEESE"
+   ],
+   [
+    "From a little ____ grows a mighty oak",
+    "ACORN"
+   ],
+   [
+    "Frost on the ____",
+    "PUMPKIN"
+   ],
+   [
+    "Change of ____",
+    "SEASONS"
+   ],
+   [
+    "Bumper ____",
+    "CROP"
+   ],
+   [
+    "Attitude of ____",
+    "GRATITUDE"
+   ],
+   [
+    "Gather in a ____",
+    "CIRCLE"
+   ]
+  ]
+ },
+ "veterans": {
+  "title": "Veterans Day",
+  "holiday": "veterans",
+  "allow": [
+   "SAM"
+  ],
+  "pairs": [
+   [
+    "Hail the conquering ____",
+    "HERO"
+   ],
+   [
+    "Thank you for your ____",
+    "SERVICE"
+   ],
+   [
+    "Wear a yellow ____",
+    "RIBBON"
+   ],
+   [
+    "In the line of ____",
+    "DUTY"
+   ],
+   [
+    "Courage under ____",
+    "FIRE"
+   ],
+   [
+    "At ____",
+    "EASE"
+   ],
+   [
+    "Rank and ____",
+    "FILE"
+   ],
+   [
+    "Leave no one ____",
+    "BEHIND"
+   ],
+   [
+    "Band of ____",
+    "BROTHERS"
+   ],
+   [
+    "Stand and ____",
+    "SALUTE"
+   ],
+   [
+    "Old ____ never die",
+    "SOLDIERS"
+   ],
+   [
+    "A warm ____ home",
+    "WELCOME"
+   ],
+   [
+    "Ticker-tape ____",
+    "PARADE"
+   ],
+   [
+    "Marching ____",
+    "ORDERS"
+   ],
+   [
+    "Toe the ____",
+    "LINE"
+   ],
+   [
+    "Safe and ____",
+    "SOUND"
+   ],
+   [
+    "Dog ____",
+    "TAGS"
+   ],
+   [
+    "Earn your ____",
+    "STRIPES"
+   ],
+   [
+    "Medal of ____",
+    "HONOR"
+   ],
+   [
+    "Badge of ____",
+    "COURAGE"
+   ],
+   [
+    "Men and women in ____",
+    "UNIFORM"
+   ],
+   [
+    "Drill ____",
+    "SERGEANT"
+   ],
+   [
+    "Stand your ____",
+    "GROUND"
+   ],
+   [
+    "Hold the ____",
+    "FORT"
+   ],
+   [
+    "When Johnny comes marching ____",
+    "HOME"
+   ],
+   [
+    "Fought the good ____",
+    "FIGHT"
+   ],
+   [
+    "Uncle ____",
+    "SAM"
+   ],
+   [
+    "Fortune favors the ____",
+    "BOLD"
+   ],
+   [
+    "Discretion is the better part of ____",
+    "VALOR"
+   ],
+   [
+    "Spit and ____",
+    "POLISH"
+   ],
+   [
+    "Pass with flying ____",
+    "COLORS"
+   ],
+   [
+    "Live to tell the ____",
+    "TALE"
+   ]
+  ]
+ },
+ "groundhog": {
+  "title": "Groundhog Day",
+  "holiday": "groundhog",
+  "allow": [
+   "WOODCHUCK",
+   "PHIL"
+  ],
+  "pairs": [
+   [
+    "Six more weeks of ____",
+    "WINTER"
+   ],
+   [
+    "Afraid of your own ____",
+    "SHADOW"
+   ],
+   [
+    "Signs of an early ____",
+    "SPRING"
+   ],
+   [
+    "Red sky at night, sailor's ____",
+    "DELIGHT"
+   ],
+   [
+    "Red sky in the morning, sailors take ____",
+    "WARNING"
+   ],
+   [
+    "March comes in like a ____",
+    "LION"
+   ],
+   [
+    "In like a lion, out like a ____",
+    "LAMB"
+   ],
+   [
+    "April showers bring May ____",
+    "FLOWERS"
+   ],
+   [
+    "Every cloud has a silver ____",
+    "LINING"
+   ],
+   [
+    "Under the ____",
+    "WEATHER"
+   ],
+   [
+    "Snug as a bug in a ____",
+    "RUG"
+   ],
+   [
+    "Hibernate like a ____",
+    "BEAR"
+   ],
+   [
+    "Pop your head out of your ____",
+    "BURROW"
+   ],
+   [
+    "Come rain or ____",
+    "SHINE"
+   ],
+   [
+    "How much wood would a ____ chuck",
+    "WOODCHUCK"
+   ],
+   [
+    "When it rains, it ____",
+    "POURS"
+   ],
+   [
+    "Save it for a ____ day",
+    "RAINY"
+   ],
+   [
+    "Chilled to the ____",
+    "BONE"
+   ],
+   [
+    "Jack ____",
+    "FROST"
+   ],
+   [
+    "Break the ____",
+    "ICE"
+   ],
+   [
+    "Cabin ____",
+    "FEVER"
+   ],
+   [
+    "The calm before the ____",
+    "STORM"
+   ],
+   [
+    "Under a ____ of snow",
+    "BLANKET"
+   ],
+   [
+    "Everything under the ____",
+    "SUN"
+   ],
+   [
+    "Wake up on the wrong side of the ____",
+    "BED"
+   ],
+   [
+    "Snowed ____",
+    "UNDER"
+   ],
+   [
+    "Spring ____",
+    "THAW"
+   ],
+   [
+    "Mad as a March ____",
+    "HARE"
+   ],
+   [
+    "Five-day ____",
+    "FORECAST"
+   ],
+   [
+    "Punxsutawney ____",
+    "PHIL"
+   ],
+   [
+    "The shortest ____",
+    "MONTH"
+   ],
+   [
+    "Warm as ____",
+    "TOAST"
+   ]
+  ]
+ },
+ "earthday": {
+  "title": "Earth Day",
+  "holiday": "earthday",
+  "allow": [],
+  "pairs": [
+   [
+    "Reduce, reuse, ____",
+    "RECYCLE"
+   ],
+   [
+    "Mother ____, our home planet",
+    "EARTH"
+   ],
+   [
+    "Let ____ take its course",
+    "NATURE"
+   ],
+   [
+    "Fresh as a ____",
+    "DAISY"
+   ],
+   [
+    "Make hay while the sun ____",
+    "SHINES"
+   ],
+   [
+    "April showers bring May ____",
+    "FLOWERS"
+   ],
+   [
+    "You reap what you ____",
+    "SOW"
+   ],
+   [
+    "The grass is always ____ on the other side",
+    "GREENER"
+   ],
+   [
+    "Between a rock and a hard ____",
+    "PLACE"
+   ],
+   [
+    "Money doesn't grow on ____",
+    "TREES"
+   ],
+   [
+    "Can't see the ____ for the trees",
+    "FOREST"
+   ],
+   [
+    "Bloom where you are ____",
+    "PLANTED"
+   ],
+   [
+    "Turn over a new ____",
+    "LEAF"
+   ],
+   [
+    "Nip it in the ____",
+    "BUD"
+   ],
+   [
+    "Still ____ run deep",
+    "WATERS"
+   ],
+   [
+    "A breath of fresh ____",
+    "AIR"
+   ],
+   [
+    "Not out of the ____ yet",
+    "WOODS"
+   ],
+   [
+    "Go with the ____",
+    "FLOW"
+   ],
+   [
+    "Put down ____",
+    "ROOTS"
+   ],
+   [
+    "Old as the ____",
+    "HILLS"
+   ],
+   [
+    "Busy as a ____",
+    "BEE"
+   ],
+   [
+    "Leave no ____ unturned",
+    "STONE"
+   ],
+   [
+    "Make a ____ out of a molehill",
+    "MOUNTAIN"
+   ],
+   [
+    "Sow the wind, reap the ____",
+    "WHIRLWIND"
+   ],
+   [
+    "One man's trash is another man's ____",
+    "TREASURE"
+   ],
+   [
+    "Plant the ____ of doubt",
+    "SEEDS"
+   ],
+   [
+    "Blue-____ thinking",
+    "SKY"
+   ],
+   [
+    "Living off the ____",
+    "LAND"
+   ],
+   [
+    "Think ____, act locally",
+    "GLOBALLY"
+   ],
+   [
+    "A drop in the ____",
+    "OCEAN"
+   ],
+   [
+    "The tip of the ____",
+    "ICEBERG"
+   ],
+   [
+    "Have a green ____",
+    "THUMB"
+   ]
+  ]
+ },
+ "mardigras": {
+  "title": "Mardi Gras",
+  "holiday": "mardigras",
+  "allow": [
+   "TUESDAY"
+  ],
+  "pairs": [
+   [
+    "Let the good times ____",
+    "ROLL"
+   ],
+   [
+    "Eat, drink, and be ____",
+    "MERRY"
+   ],
+   [
+    "Throw me something, ____!",
+    "MISTER"
+   ],
+   [
+    "Catch strings of ____",
+    "BEADS"
+   ],
+   [
+    "Fat ____, the day before Lent",
+    "TUESDAY"
+   ],
+   [
+    "Find the baby in the king ____",
+    "CAKE"
+   ],
+   [
+    "Purple, green, and ____",
+    "GOLD"
+   ],
+   [
+    "Hide your face behind a ____",
+    "MASK"
+   ],
+   [
+    "All that ____",
+    "JAZZ"
+   ],
+   [
+    "Dance along with the ____ band",
+    "BRASS"
+   ],
+   [
+    "Ride on a carnival ____",
+    "FLOAT"
+   ],
+   [
+    "Burn the midnight ____",
+    "OIL"
+   ],
+   [
+    "Have a ____",
+    "BALL"
+   ],
+   [
+    "A feather ____ around the neck",
+    "BOA"
+   ],
+   [
+    "Party like there's no ____",
+    "TOMORROW"
+   ],
+   [
+    "Kick up your ____",
+    "HEELS"
+   ],
+   [
+    "Dressed to ____",
+    "KILL"
+   ],
+   [
+    "Cut ____ and dance",
+    "LOOSE"
+   ],
+   [
+    "Trip the light ____",
+    "FANTASTIC"
+   ],
+   [
+    "One last feast before the ____",
+    "FAST"
+   ],
+   [
+    "Forty days of ____ begin tomorrow",
+    "LENT"
+   ],
+   [
+    "Costumes and floats at the ____",
+    "CARNIVAL"
+   ],
+   [
+    "Music to my ____",
+    "EARS"
+   ],
+   [
+    "Shake a ____",
+    "LEG"
+   ],
+   [
+    "Throw a ____",
+    "PARTY"
+   ],
+   [
+    "Pull out all the ____",
+    "STOPS"
+   ],
+   [
+    "Dance till ____",
+    "DAWN"
+   ],
+   [
+    "Cap and ____",
+    "BELLS"
+   ],
+   [
+    "Shiny ____ tossed from the floats",
+    "COINS"
+   ],
+   [
+    "Bring the house ____",
+    "DOWN"
+   ],
+   [
+    "Rain on someone's ____",
+    "PARADE"
+   ],
+   [
+    "Sing for your ____",
+    "SUPPER"
+   ]
+  ]
+ },
+ "lunarnewyear": {
+  "title": "Lunar New Year",
+  "holiday": "lunarnewyear",
+  "allow": [],
+  "pairs": [
+   [
+    "Red ____ filled with lucky money",
+    "ENVELOPES"
+   ],
+   [
+    "Hang paper ____ for the festival",
+    "LANTERNS"
+   ],
+   [
+    "The ____ dance winds through the street",
+    "DRAGON"
+   ],
+   [
+    "____ dance to the beat of the drums",
+    "LION"
+   ],
+   [
+    "Steamed ____ for the family feast",
+    "DUMPLINGS"
+   ],
+   [
+    "A family ____ dinner on New Year's Eve",
+    "REUNION"
+   ],
+   [
+    "Good ____ and prosperity",
+    "FORTUNE"
+   ],
+   [
+    "Sweep out the old, welcome the ____",
+    "NEW"
+   ],
+   [
+    "Set off ____ at midnight",
+    "FIREWORKS"
+   ],
+   [
+    "Hold your ____",
+    "HORSES"
+   ],
+   [
+    "Let sleeping ____ lie",
+    "DOGS"
+   ],
+   [
+    "Paper ____",
+    "TIGER"
+   ],
+   [
+    "____ business",
+    "MONKEY"
+   ],
+   [
+    "Pull a ____ out of a hat",
+    "RABBIT"
+   ],
+   [
+    "Smell a ____",
+    "RAT"
+   ],
+   [
+    "A ____ in a poke",
+    "PIG"
+   ],
+   [
+    "Get someone's ____",
+    "GOAT"
+   ],
+   [
+    "The ____ crows at dawn",
+    "ROOSTER"
+   ],
+   [
+    "A ____ in the grass",
+    "SNAKE"
+   ],
+   [
+    "Beginner's ____",
+    "LUCK"
+   ],
+   [
+    "Fortune favours the ____",
+    "BOLD"
+   ],
+   [
+    "Health is ____",
+    "WEALTH"
+   ],
+   [
+    "Gifts of ____ for good luck",
+    "ORANGES"
+   ],
+   [
+    "Red for luck, ____ for wealth",
+    "GOLD"
+   ],
+   [
+    "Long ____ for a long life",
+    "NOODLES"
+   ],
+   [
+    "The full ____ ends the celebrations",
+    "MOON"
+   ],
+   [
+    "Bow to your ____",
+    "ELDERS"
+   ],
+   [
+    "Twelve animals of the ____",
+    "ZODIAC"
+   ],
+   [
+    "Spring ____, another name for the holiday",
+    "FESTIVAL"
+   ],
+   [
+    "A ____ of good luck",
+    "STROKE"
+   ],
+   [
+    "A ____ fit for a king",
+    "FEAST"
+   ],
+   [
+    "Third time ____",
+    "LUCKY"
+   ]
+  ]
+ },
+ "diwali": {
+  "title": "Festival of Lights",
+  "holiday": "diwali",
+  "allow": [
+   "DIYA",
+   "RANGOLI"
+  ],
+  "pairs": [
+   [
+    "A small clay lamp, a ____",
+    "DIYA"
+   ],
+   [
+    "Light over ____",
+    "DARKNESS"
+   ],
+   [
+    "Good ____ over evil",
+    "TRIUMPHS"
+   ],
+   [
+    "Every cloud has a silver ____",
+    "LINING"
+   ],
+   [
+    "Light at the end of the ____",
+    "TUNNEL"
+   ],
+   [
+    "Share a plate of ____",
+    "SWEETS"
+   ],
+   [
+    "____ designs in coloured powder at the door",
+    "RANGOLI"
+   ],
+   [
+    "____ burst over the rooftops",
+    "FIREWORKS"
+   ],
+   [
+    "New ____ for the new year",
+    "CLOTHES"
+   ],
+   [
+    "A fresh ____",
+    "START"
+   ],
+   [
+    "Home ____ home",
+    "SWEET"
+   ],
+   [
+    "Sweep the house clean to welcome good ____",
+    "FORTUNE"
+   ],
+   [
+    "Rise and ____",
+    "SHINE"
+   ],
+   [
+    "Burn the ____ at both ends",
+    "CANDLE"
+   ],
+   [
+    "A guiding ____",
+    "BEACON"
+   ],
+   [
+    "Bright as a ____",
+    "BUTTON"
+   ],
+   [
+    "Twinkling oil ____ on every ledge",
+    "LAMPS"
+   ],
+   [
+    "A warm ____ in every window",
+    "GLOW"
+   ],
+   [
+    "A ____ of light in the dark",
+    "FLICKER"
+   ],
+   [
+    "Trim the ____",
+    "WICK"
+   ],
+   [
+    "Fan the ____",
+    "FLAMES"
+   ],
+   [
+    "____ with joy",
+    "RADIANT"
+   ],
+   [
+    "Look on the ____ side",
+    "BRIGHT"
+   ],
+   [
+    "Eyes that ____",
+    "SPARKLE"
+   ],
+   [
+    "A ____ for the eyes",
+    "FEAST"
+   ],
+   [
+    "Exchange ____ with the neighbours",
+    "GIFTS"
+   ],
+   [
+    "Evening ____ before the feast",
+    "PRAYERS"
+   ],
+   [
+    "Count your ____",
+    "BLESSINGS"
+   ],
+   [
+    "It's always darkest before the ____",
+    "DAWN"
+   ],
+   [
+    "Twinkle, twinkle, little ____",
+    "STAR"
+   ],
+   [
+    "Silence is ____",
+    "GOLDEN"
+   ],
+   [
+    "Jump for ____",
+    "JOY"
+   ]
+  ]
+ },
+ "kwanzaa": {
+  "title": "Kwanzaa",
+  "holiday": "kwanzaa",
+  "allow": [
+   "KINARA"
+  ],
+  "pairs": [
+   [
+    "Seven ____ in the kinara",
+    "CANDLES"
+   ],
+   [
+    "The candle holder, the ____",
+    "KINARA"
+   ],
+   [
+    "____ is strength",
+    "UNITY"
+   ],
+   [
+    "Three red, three green, one ____",
+    "BLACK"
+   ],
+   [
+    "It takes a ____ to raise a child",
+    "VILLAGE"
+   ],
+   [
+    "First ____ of the harvest",
+    "FRUITS"
+   ],
+   [
+    "Reap the ____",
+    "HARVEST"
+   ],
+   [
+    "Family ____ on the sixth night",
+    "FEAST"
+   ],
+   [
+    "Gather the whole ____",
+    "FAMILY"
+   ],
+   [
+    "A sense of ____",
+    "COMMUNITY"
+   ],
+   [
+    "Find your ____",
+    "PURPOSE"
+   ],
+   [
+    "Get ____",
+    "CREATIVE"
+   ],
+   [
+    "Take it on ____",
+    "FAITH"
+   ],
+   [
+    "United we ____",
+    "STAND"
+   ],
+   [
+    "Many hands make light ____",
+    "WORK"
+   ],
+   [
+    "An ear of ____ for each child",
+    "CORN"
+   ],
+   [
+    "A woven ____ beneath the candles",
+    "MAT"
+   ],
+   [
+    "Share a drink from one ____",
+    "CUP"
+   ],
+   [
+    "Handmade ____ for the children",
+    "GIFTS"
+   ],
+   [
+    "Proud of your ____",
+    "HERITAGE"
+   ],
+   [
+    "Honour the ____",
+    "ANCESTORS"
+   ],
+   [
+    "Know your ____",
+    "ROOTS"
+   ],
+   [
+    "Respect your ____",
+    "ELDERS"
+   ],
+   [
+    "Celebrate your ____",
+    "CULTURE"
+   ],
+   [
+    "Bring something to the ____",
+    "TABLE"
+   ],
+   [
+    "Seven ____ of celebration",
+    "NIGHTS"
+   ],
+   [
+    "Light the black candle ____",
+    "FIRST"
+   ],
+   [
+    "Red, black, and ____",
+    "GREEN"
+   ],
+   [
+    "Pearls of ____",
+    "WISDOM"
+   ],
+   [
+    "Take ____ in your work",
+    "PRIDE"
+   ],
+   [
+    "March to the beat of your own ____",
+    "DRUM"
+   ],
+   [
+    "Two heads are better than ____",
+    "ONE"
+   ]
+  ]
+ },
+ "passover": {
+  "title": "Passover",
+  "holiday": "passover",
+  "allow": [
+   "MATZO",
+   "SEDER",
+   "MOSES",
+   "JERUSALEM"
+  ],
+  "pairs": [
+   [
+    "Why is this night different from all other ____",
+    "NIGHTS"
+   ],
+   [
+    "Unleavened bread called ____",
+    "MATZO"
+   ],
+   [
+    "Gather for the ____ meal",
+    "SEDER"
+   ],
+   [
+    "The Four ____ asked by the youngest",
+    "QUESTIONS"
+   ],
+   [
+    "Four cups of ____",
+    "WINE"
+   ],
+   [
+    "Bitter ____ recall the hard years",
+    "HERBS"
+   ],
+   [
+    "Let my ____ go",
+    "PEOPLE"
+   ],
+   [
+    "Parting of the Red ____",
+    "SEA"
+   ],
+   [
+    "Frogs, locusts, and other ____",
+    "PLAGUES"
+   ],
+   [
+    "Forty years in the ____",
+    "DESERT"
+   ],
+   [
+    "Land of milk and ____",
+    "HONEY"
+   ],
+   [
+    "The Promised ____",
+    "LAND"
+   ],
+   [
+    "From slavery to ____",
+    "FREEDOM"
+   ],
+   [
+    "A roasted ____ on the plate",
+    "EGG"
+   ],
+   [
+    "Blood is thicker than ____",
+    "WATER"
+   ],
+   [
+    "Open the ____ for the prophet",
+    "DOOR"
+   ],
+   [
+    "____ parted the waters",
+    "MOSES"
+   ],
+   [
+    "Next year in ____",
+    "JERUSALEM"
+   ],
+   [
+    "Full of the joys of ____",
+    "SPRING"
+   ],
+   [
+    "Gentle as a ____",
+    "LAMB"
+   ],
+   [
+    "Man cannot live by ____ alone",
+    "BREAD"
+   ],
+   [
+    "Eight ____ of the festival",
+    "DAYS"
+   ],
+   [
+    "Dip the ____ in salt water",
+    "PARSLEY"
+   ],
+   [
+    "Tell the ____ of the exodus",
+    "STORY"
+   ],
+   [
+    "One little ____, my father bought",
+    "GOAT"
+   ],
+   [
+    "It would have been ____",
+    "ENOUGH"
+   ],
+   [
+    "Spring ____ before the holiday",
+    "CLEANING"
+   ],
+   [
+    "No time for the dough to ____",
+    "RISE"
+   ],
+   [
+    "Bread baked in ____",
+    "HASTE"
+   ],
+   [
+    "A season of ____",
+    "MIRACLES"
+   ],
+   [
+    "A pillar of ____ by night",
+    "FIRE"
+   ],
+   [
+    "Generations around the ____",
+    "TABLE"
+   ]
+  ]
+ },
+ "cincodemayo": {
+  "title": "Cinco de Mayo",
+  "holiday": "cincodemayo",
+  "allow": [
+   "PINATA",
+   "MARIACHI"
+  ],
+  "pairs": [
+   [
+    "Swing at the candy-filled ____",
+    "PINATA"
+   ],
+   [
+    "____ band in silver-buttoned suits",
+    "MARIACHI"
+   ],
+   [
+    "Strike up the ____",
+    "BAND"
+   ],
+   [
+    "Dance the night ____",
+    "AWAY"
+   ],
+   [
+    "Cut-paper ____ flutter overhead",
+    "BANNERS"
+   ],
+   [
+    "Join the ____",
+    "FIESTA"
+   ],
+   [
+    "____ to my ears",
+    "MUSIC"
+   ],
+   [
+    "Strum the ____",
+    "GUITAR"
+   ],
+   [
+    "Blow your own ____",
+    "TRUMPET"
+   ],
+   [
+    "Swing your ____",
+    "PARTNER"
+   ],
+   [
+    "A warm ____ folded around the filling",
+    "TORTILLA"
+   ],
+   [
+    "Have a sweet ____",
+    "TOOTH"
+   ],
+   [
+    "A squeeze of ____",
+    "LIME"
+   ],
+   [
+    "Variety is the ____ of life",
+    "SPICE"
+   ],
+   [
+    "Some like it ____",
+    "HOT"
+   ],
+   [
+    "Red, white, and ____",
+    "GREEN"
+   ],
+   [
+    "Shall we ____",
+    "DANCE"
+   ],
+   [
+    "Life of the ____",
+    "PARTY"
+   ],
+   [
+    "The fifth of ____",
+    "MAY"
+   ],
+   [
+    "A movable ____",
+    "FEAST"
+   ],
+   [
+    "Propose a ____",
+    "TOAST"
+   ],
+   [
+    "Sing your heart ____",
+    "OUT"
+   ],
+   [
+    "Feel the ____",
+    "RHYTHM"
+   ],
+   [
+    "Three ____",
+    "CHEERS"
+   ],
+   [
+    "Pass the hot ____",
+    "SAUCE"
+   ],
+   [
+    "Chili ____ bring the heat",
+    "PEPPERS"
+   ],
+   [
+    "Full of ____",
+    "BEANS"
+   ],
+   [
+    "A ____ of paper flowers",
+    "GARLAND"
+   ],
+   [
+    "Fun and ____",
+    "GAMES"
+   ],
+   [
+    "____ is the best medicine",
+    "LAUGHTER"
+   ],
+   [
+    "Clap your ____",
+    "HANDS"
+   ],
+   [
+    "High ____",
+    "SPIRITS"
+   ]
+  ]
+ },
+ "leapday": {
+  "title": "Leap Day",
+  "holiday": "leapday",
+  "allow": [
+   "FEBRUARY"
+  ],
+  "pairs": [
+   [
+    "Look before you ____",
+    "LEAP"
+   ],
+   [
+    "The 29th of ____",
+    "FEBRUARY"
+   ],
+   [
+    "Once every ____ years",
+    "FOUR"
+   ],
+   [
+    "Once in a blue ____",
+    "MOON"
+   ],
+   [
+    "Hop, skip, and a ____",
+    "JUMP"
+   ],
+   [
+    "Jump the ____",
+    "GUN"
+   ],
+   [
+    "Leaps and ____",
+    "BOUNDS"
+   ],
+   [
+    "An extra day makes a leap ____",
+    "YEAR"
+   ],
+   [
+    "Twenty-nine days in the shortest ____",
+    "MONTH"
+   ],
+   [
+    "Mark your ____",
+    "CALENDAR"
+   ],
+   [
+    "Time ____ when you're having fun",
+    "FLIES"
+   ],
+   [
+    "Time and ____ wait for no man",
+    "TIDE"
+   ],
+   [
+    "Better late than ____",
+    "NEVER"
+   ],
+   [
+    "Seize the ____",
+    "DAY"
+   ],
+   [
+    "A ____ in your throat",
+    "FROG"
+   ],
+   [
+    "____ court",
+    "KANGAROO"
+   ],
+   [
+    "____ back",
+    "BOUNCE"
+   ],
+   [
+    "____ into action",
+    "SPRING"
+   ],
+   [
+    "Pole ____",
+    "VAULT"
+   ],
+   [
+    "Clear the first ____",
+    "HURDLE"
+   ],
+   [
+    "____ a beat",
+    "SKIP"
+   ],
+   [
+    "____ to it",
+    "HOP"
+   ],
+   [
+    "Race against the ____",
+    "CLOCK"
+   ],
+   [
+    "A split ____",
+    "SECOND"
+   ],
+   [
+    "Up to the ____",
+    "MINUTE"
+   ],
+   [
+    "The eleventh ____",
+    "HOUR"
+   ],
+   [
+    "Go the ____ mile",
+    "EXTRA"
+   ],
+   [
+    "Rare as hen's ____",
+    "TEETH"
+   ],
+   [
+    "____ in a lifetime",
+    "ONCE"
+   ],
+   [
+    "Many happy ____",
+    "RETURNS"
+   ],
+   [
+    "One trip around the sun, one ____",
+    "ORBIT"
+   ],
+   [
+    "What makes you ____",
+    "TICK"
    ]
   ]
  },

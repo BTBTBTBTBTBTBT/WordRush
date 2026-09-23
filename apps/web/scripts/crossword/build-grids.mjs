@@ -30,7 +30,8 @@ for (const r of rejected) console.log(`  REJECT ${r.answer.padEnd(9)} "${r.clue}
 // ---- construct ----------------------------------------------------------
 function tryBuild(theme, seedLabel) {
   const rng = rngFor(seedLabel);
-  const themed = shuffle(pairs.filter((p) => p.theme === theme), rng), wild = shuffle(pairs.filter((p) => p.theme !== theme), rng);
+  // Wild fill comes from EVERGREEN themes only: a Kwanzaa grid must never borrow a Passover word (or any other holiday's allow-listed vocabulary).
+  const themed = shuffle(pairs.filter((p) => p.theme === theme), rng), wild = shuffle(pairs.filter((p) => p.theme !== theme && !bank[p.theme].holiday), rng);
   const grid = new Map(), key = (r, c) => r * SIZE + c, at = (r, c) => grid.get(key(r, c));
   const placed = [], used = new Set();
   const bbox = (extra) => { let r0 = 1e9, r1 = -1, c0 = 1e9, c1 = -1; for (const e of [...placed, ...(extra ? [extra] : [])]) { const er = e.r + (e.dir === 'D' ? e.answer.length - 1 : 0), ec = e.c + (e.dir === 'A' ? e.answer.length - 1 : 0); r0 = Math.min(r0, e.r); c0 = Math.min(c0, e.c); r1 = Math.max(r1, er); c1 = Math.max(c1, ec); } return { h: r1 - r0 + 1, w: c1 - c0 + 1, r0, c0 }; };
@@ -56,7 +57,7 @@ function tryBuild(theme, seedLabel) {
   for (let pass = 0; pass < 3 && placed.length < MAX_ENTRIES; pass++) for (const p of queue) {
     if (placed.length >= MAX_ENTRIES || used.has(p.answer)) continue;
     // No answer may be readable in another clue of the same puzzle (RAIN vs "It never rains…").
-    const stem = (w) => w.toLowerCase().replace(/(s|es|ed|ing)$/, '');
+    const stem = (w) => { const s = w.toLowerCase().replace(/(s|es|ed|ing)$/, ''); return s.length >= 3 ? s : w.toLowerCase(); };   // BED must not stem to "b"
     if (placed.some((e) => e.clue.toLowerCase().includes(stem(p.answer)) || p.clue.toLowerCase().includes(stem(e.answer)))) continue;
     const themedCount = placed.filter((e) => e.theme === theme).length;
     if (p.theme !== theme && (themedCount / (placed.length + 1)) < 0.6) continue;
