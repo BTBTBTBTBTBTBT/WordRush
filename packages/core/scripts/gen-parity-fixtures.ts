@@ -26,6 +26,7 @@ import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTo
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 import { bankIndexForDay, bankIndexForSeed, bankDayIndex, holidayKeyForDay, holidayOccurrence, bankHolidayPick, type HolidayTable } from '../src/bank';
+import { groupsPuzzleForDay, groupsPuzzleForSeed, groupsDailyNumber, groupsTileOrder, createGroupsState, groupsReduce, groupsMatchRow, reconstructGroups, groupsGuessCount, groupsBoardsSolved, groupsLabelTarget, groupsPairTarget, type GroupsBank, type GroupsAction } from '../src/games/groups';
 import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, cryptogramEncipher, cryptogramCodeLetters, cryptogramFrequencies, cryptogramHintTarget, cryptogramGuessCount, cryptogramConflicts, cryptogramCorrectCount, createCryptogramState, cryptogramReduce, cryptogramMatchRow, reconstructCryptogram, type CryptogramBank, type CryptogramAction } from '../src/games/cryptogram';
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
@@ -456,6 +457,38 @@ export function renderCryptogramFixtures() {
 }
 const CRYPTOGRAM_ALPHABET_LOCAL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+export function renderGroupsFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'groups-puzzles.json'), 'utf8')) as GroupsBank;
+  const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2026-09-22', 'nope', '2026-12-25', '2026-11-26', '2026-01-19', '2027-07-04']
+    .map((day) => ({ day, id: groupsPuzzleForDay(bank, day, table)?.id ?? null, plainId: groupsPuzzleForDay(bank, day, null)?.id ?? null, number: groupsDailyNumber(day) }));
+  const seeds = ['unlimited-GROUPS-1', 'unlimited-GROUPS-1758578400000', 'x'].map((seed) => ({ seed, id: groupsPuzzleForSeed(bank, seed)?.id ?? null }));
+  const p = bank.daily[0];
+  const orders = ['daily-2026-09-23-GROUPS', 'fixture', 'unlimited-GROUPS-1'].map((seed) => ({ seed, tiles: groupsTileOrder(p, seed) }));
+  const g = (t: number) => p.groups.find((x) => x.tier === t)!;
+  const pick = (words: string[]): GroupsAction[] => [{ type: 'DESELECT' }, ...words.map((w) => ({ type: 'TOGGLE', word: w }) as GroupsAction), { type: 'SUBMIT' }];
+  const scripts: Array<{ name: string; actions: GroupsAction[] }> = [
+    { name: 'select-limits-and-short', actions: [{ type: 'SUBMIT' }, { type: 'TOGGLE', word: g(1).words[0] }, { type: 'TOGGLE', word: g(1).words[0] }, { type: 'TOGGLE', word: 'NOTATILE' }, ...g(1).words.map((w) => ({ type: 'TOGGLE', word: w.toLowerCase() }) as GroupsAction), { type: 'TOGGLE', word: g(2).words[0] }, { type: 'SUBMIT' }] },
+    { name: 'one-away-repeat-miss', actions: [...pick([...g(2).words.slice(0, 3), g(3).words[0]]), { type: 'SUBMIT' }, ...pick([...g(2).words.slice(0, 2), ...g(3).words.slice(0, 2)])] },
+    { name: 'hints-and-shuffle', actions: [{ type: 'HINT_LABEL' }, { type: 'HINT_PAIR' }, { type: 'SHUFFLE' }, { type: 'HINT_LABEL' }, { type: 'HINT_PAIR' }, { type: 'SHUFFLE' }] },
+    { name: 'win-with-two-mistakes', actions: [...pick(g(1).words), ...pick([...g(2).words.slice(0, 3), g(4).words[0]]), ...pick([...g(3).words.slice(0, 2), ...g(4).words.slice(0, 2)]), ...pick(g(4).words), ...pick(g(2).words), ...pick(g(3).words), { type: 'TOGGLE', word: g(1).words[0] }, { type: 'FINISH' }] },
+    { name: 'perfect', actions: [...pick(g(4).words), ...pick(g(3).words), ...pick(g(2).words), ...pick(g(1).words)] },
+    { name: 'lose', actions: [...pick(g(1).words), ...pick([...g(2).words.slice(0, 2), ...g(3).words.slice(0, 2)]), ...pick([...g(2).words.slice(0, 2), ...g(4).words.slice(0, 2)]), ...pick([...g(3).words.slice(0, 2), ...g(4).words.slice(0, 2)]), ...pick([g(2).words[0], g(3).words[0], g(4).words[0], g(2).words[3]]), ...pick(g(2).words), { type: 'HINT_LABEL' }, { type: 'FINISH' }] },
+    { name: 'hint-everything', actions: Array.from({ length: 10 }, (_, i) => ({ type: i % 2 ? 'HINT_PAIR' : 'HINT_LABEL' }) as GroupsAction) },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createGroupsState(p, 'fixture', 0);
+    for (const a of sc.actions) s = groupsReduce(s, a, 1000);
+    const row = groupsMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { tiles: s.tiles, solvedTiers: s.solved.map((x) => x.tier), selected: s.selected, mistakes: s.mistakes, submissions: s.submissions, hintsUsed: s.hintsUsed, revealedTiers: s.revealedTiers, pairs: s.pairs, wrongSets: s.wrongSets, shuffles: s.shuffles, lastResult: s.lastResult, events: s.events, status: s.status, ended: s.ended, endTime: s.endTime, guessCount: groupsGuessCount(s), boardsSolved: groupsBoardsSolved(s), labelTarget: groupsLabelTarget(s)?.tier ?? null, pairTarget: groupsPairTarget(s) },
+      row, reconstruct: reconstructGroups(row.solutions, row.guesses),
+    };
+  });
+  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, holidayKeys: Object.keys(bank.holiday ?? {}), days, seeds, puzzle: p, orders, reducer, malformed: [reconstructGroups(['1|a|A,B,C'], []), reconstructGroups(['1|a|A,B,C,D', '2|b|E,F,G,H', '3|c|I,J,K,L'], [])] };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -466,6 +499,7 @@ const FILES: Array<[string, unknown]> = [
   ['wordsearch-fixtures.json', renderWordsearchFixtures()],
   ['hub-fixtures.json', renderHubFixtures()],
   ['cryptogram-fixtures.json', renderCryptogramFixtures()],
+  ['groups-fixtures.json', renderGroupsFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

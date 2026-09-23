@@ -15,3 +15,4 @@ export * from './games/ladder';
 export * from './games/wordsearch';
 export * from './games/hub';
 export * from './games/cryptogram';
+export * from './games/groups';

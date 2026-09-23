@@ -1,0 +1,1634 @@
+{
+  "epoch": "2026-09-23",
+  "dailyCount": 380,
+  "extraCount": 80,
+  "holidayKeys": [
+    "aprilfools",
+    "christmas",
+    "cincodemayo",
+    "diwali",
+    "earthday",
+    "easter",
+    "fathersday",
+    "groundhog",
+    "halloween",
+    "hanukkah",
+    "indigenous",
+    "july4",
+    "juneteenth",
+    "kwanzaa",
+    "labor",
+    "leapday",
+    "lunarnewyear",
+    "mardigras",
+    "memorial",
+    "mlkday",
+    "mothersday",
+    "newyear",
+    "passover",
+    "presidents",
+    "stpatricks",
+    "thanksgiving",
+    "valentines",
+    "veterans"
+  ],
+  "days": [
+    {
+      "day": "2026-09-23",
+      "id": "gr-vjx4rc",
+      "plainId": "gr-vjx4rc",
+      "number": 1
+    },
+    {
+      "day": "2026-09-24",
+      "id": "gr-3rx348",
+      "plainId": "gr-3rx348",
+      "number": 2
+    },
+    {
+      "day": "2026-10-05",
+      "id": "gr-chus6l",
+      "plainId": "gr-chus6l",
+      "number": 13
+    },
+    {
+      "day": "2027-01-01",
+      "id": "gr-52nabl",
+      "plainId": "gr-ypfyql",
+      "number": 101
+    },
+    {
+      "day": "2026-09-22",
+      "id": "gr-n3h0zw",
+      "plainId": "gr-n3h0zw",
+      "number": 1
+    },
+    {
+      "day": "nope",
+      "id": "gr-vjx4rc",
+      "plainId": "gr-vjx4rc",
+      "number": 1
+    },
+    {
+      "day": "2026-12-25",
+      "id": "gr-brsuvy",
+      "plainId": "gr-wdeev",
+      "number": 94
+    },
+    {
+      "day": "2026-11-26",
+      "id": "gr-w8h2v7",
+      "plainId": "gr-b16hmz",
+      "number": 65
+    },
+    {
+      "day": "2026-01-19",
+      "id": "gr-2m3c9e",
+      "plainId": "gr-c9dwuc",
+      "number": 1
+    },
+    {
+      "day": "2027-07-04",
+      "id": "gr-wm1umz",
+      "plainId": "gr-trihk9",
+      "number": 285
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-GROUPS-1",
+      "id": "gr-kqcai9"
+    },
+    {
+      "seed": "unlimited-GROUPS-1758578400000",
+      "id": "gr-8mro0q"
+    },
+    {
+      "seed": "x",
+      "id": "gr-x3gggf"
+    }
+  ],
+  "puzzle": {
+    "id": "gr-vjx4rc",
+    "groups": [
+      {
+        "tier": 1,
+        "label": "In the mouth",
+        "words": [
+          "TONGUE",
+          "MOLAR",
+          "GUM",
+          "PALATE"
+        ]
+      },
+      {
+        "tier": 2,
+        "label": "Sticky stuff",
+        "words": [
+          "PASTE",
+          "GLUE",
+          "TAR",
+          "RESIN"
+        ]
+      },
+      {
+        "tier": 3,
+        "label": "___drop",
+        "words": [
+          "EYE",
+          "RAIN",
+          "LEMON",
+          "COUGH"
+        ]
+      },
+      {
+        "tier": 4,
+        "label": "Hidden EAR",
+        "words": [
+          "BEARD",
+          "PEARL",
+          "LEARN",
+          "YEARN"
+        ]
+      }
+    ]
+  },
+  "orders": [
+    {
+      "seed": "daily-2026-09-23-GROUPS",
+      "tiles": [
+        "TONGUE",
+        "PASTE",
+        "PALATE",
+        "GLUE",
+        "RAIN",
+        "MOLAR",
+        "COUGH",
+        "PEARL",
+        "GUM",
+        "RESIN",
+        "TAR",
+        "EYE",
+        "LEMON",
+        "YEARN",
+        "BEARD",
+        "LEARN"
+      ]
+    },
+    {
+      "seed": "fixture",
+      "tiles": [
+        "COUGH",
+        "PEARL",
+        "RESIN",
+        "LEARN",
+        "TONGUE",
+        "TAR",
+        "GUM",
+        "PALATE",
+        "MOLAR",
+        "LEMON",
+        "RAIN",
+        "EYE",
+        "GLUE",
+        "BEARD",
+        "YEARN",
+        "PASTE"
+      ]
+    },
+    {
+      "seed": "unlimited-GROUPS-1",
+      "tiles": [
+        "GUM",
+        "COUGH",
+        "MOLAR",
+        "TONGUE",
+        "YEARN",
+        "PEARL",
+        "EYE",
+        "GLUE",
+        "BEARD",
+        "LEARN",
+        "RAIN",
+        "PALATE",
+        "TAR",
+        "PASTE",
+        "RESIN",
+        "LEMON"
+      ]
+    }
+  ],
+  "reducer": [
+    {
+      "name": "select-limits-and-short",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TONGUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TONGUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "NOTATILE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "tongue"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "molar"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "gum"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "palate"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "SUBMIT"
+        }
+      ],
+      "expect": {
+        "tiles": [
+          "COUGH",
+          "PEARL",
+          "RESIN",
+          "LEARN",
+          "TAR",
+          "LEMON",
+          "RAIN",
+          "EYE",
+          "GLUE",
+          "BEARD",
+          "YEARN",
+          "PASTE"
+        ],
+        "solvedTiers": [
+          1
+        ],
+        "selected": [],
+        "mistakes": 0,
+        "submissions": 1,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "wrongSets": [],
+        "shuffles": 0,
+        "lastResult": "correct",
+        "events": [
+          "+1:TONGUE,MOLAR,GUM,PALATE"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "boardsSolved": 1,
+        "labelTarget": 2,
+        "pairTarget": {
+          "tier": 2,
+          "pair": [
+            "GLUE",
+            "PASTE"
+          ]
+        }
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "+1:TONGUE,MOLAR,GUM,PALATE"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [
+          1
+        ],
+        "mistakes": 0,
+        "oneAways": 0,
+        "submissions": 1,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "solved": false
+      }
+    },
+    {
+      "name": "one-away-repeat-miss",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RAIN"
+        },
+        {
+          "type": "SUBMIT"
+        }
+      ],
+      "expect": {
+        "tiles": [
+          "COUGH",
+          "PEARL",
+          "RESIN",
+          "LEARN",
+          "TONGUE",
+          "TAR",
+          "GUM",
+          "PALATE",
+          "MOLAR",
+          "LEMON",
+          "RAIN",
+          "EYE",
+          "GLUE",
+          "BEARD",
+          "YEARN",
+          "PASTE"
+        ],
+        "solvedTiers": [],
+        "selected": [
+          "PASTE",
+          "GLUE",
+          "EYE",
+          "RAIN"
+        ],
+        "mistakes": 2,
+        "submissions": 2,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "wrongSets": [
+          "EYE|GLUE|PASTE|TAR",
+          "EYE|GLUE|PASTE|RAIN"
+        ],
+        "shuffles": 0,
+        "lastResult": "wrong",
+        "events": [
+          "x1:EYE,GLUE,PASTE,TAR",
+          "=EYE,GLUE,PASTE,TAR",
+          "x0:EYE,GLUE,PASTE,RAIN"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 2,
+        "boardsSolved": 0,
+        "labelTarget": 1,
+        "pairTarget": {
+          "tier": 1,
+          "pair": [
+            "GUM",
+            "MOLAR"
+          ]
+        }
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "x1:EYE,GLUE,PASTE,TAR",
+          "=EYE,GLUE,PASTE,TAR",
+          "x0:EYE,GLUE,PASTE,RAIN"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [],
+        "mistakes": 2,
+        "oneAways": 1,
+        "submissions": 2,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "solved": false
+      }
+    },
+    {
+      "name": "hints-and-shuffle",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        },
+        {
+          "type": "SHUFFLE"
+        },
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        },
+        {
+          "type": "SHUFFLE"
+        }
+      ],
+      "expect": {
+        "tiles": [
+          "YEARN",
+          "GUM",
+          "BEARD",
+          "EYE",
+          "PASTE",
+          "RESIN",
+          "PEARL",
+          "COUGH",
+          "PALATE",
+          "TONGUE",
+          "LEARN",
+          "MOLAR",
+          "GLUE",
+          "TAR",
+          "RAIN",
+          "LEMON"
+        ],
+        "solvedTiers": [],
+        "selected": [],
+        "mistakes": 0,
+        "submissions": 0,
+        "hintsUsed": 6,
+        "revealedTiers": [
+          1,
+          2
+        ],
+        "pairs": [
+          [
+            "GUM",
+            "MOLAR"
+          ],
+          [
+            "GLUE",
+            "PASTE"
+          ]
+        ],
+        "wrongSets": [],
+        "shuffles": 2,
+        "lastResult": null,
+        "events": [
+          "?c1",
+          "?p:GUM,MOLAR",
+          "~1",
+          "?c2",
+          "?p:GLUE,PASTE",
+          "~2"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 0,
+        "boardsSolved": 0,
+        "labelTarget": 3,
+        "pairTarget": {
+          "tier": 3,
+          "pair": [
+            "COUGH",
+            "EYE"
+          ]
+        }
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "?c1",
+          "?p:GUM,MOLAR",
+          "~1",
+          "?c2",
+          "?p:GLUE,PASTE",
+          "~2"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [],
+        "mistakes": 0,
+        "oneAways": 0,
+        "submissions": 0,
+        "hintsUsed": 6,
+        "revealedTiers": [
+          1,
+          2
+        ],
+        "pairs": [
+          [
+            "GUM",
+            "MOLAR"
+          ],
+          [
+            "GLUE",
+            "PASTE"
+          ]
+        ],
+        "solved": false
+      }
+    },
+    {
+      "name": "win-with-two-mistakes",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TONGUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "MOLAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GUM"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PALATE"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RAIN"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PEARL"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PEARL"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "LEARN"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "YEARN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RESIN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RAIN"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "LEMON"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "COUGH"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TONGUE"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "tiles": [],
+        "solvedTiers": [
+          1,
+          4,
+          2,
+          3
+        ],
+        "selected": [],
+        "mistakes": 2,
+        "submissions": 6,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "wrongSets": [
+          "BEARD|GLUE|PASTE|TAR",
+          "BEARD|EYE|PEARL|RAIN"
+        ],
+        "shuffles": 0,
+        "lastResult": "correct",
+        "events": [
+          "+1:TONGUE,MOLAR,GUM,PALATE",
+          "x1:BEARD,GLUE,PASTE,TAR",
+          "x0:BEARD,EYE,PEARL,RAIN",
+          "+4:BEARD,PEARL,LEARN,YEARN",
+          "+2:PASTE,GLUE,TAR,RESIN",
+          "+3:EYE,RAIN,LEMON,COUGH"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 6,
+        "boardsSolved": 4,
+        "labelTarget": null,
+        "pairTarget": null
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "+1:TONGUE,MOLAR,GUM,PALATE",
+          "x1:BEARD,GLUE,PASTE,TAR",
+          "x0:BEARD,EYE,PEARL,RAIN",
+          "+4:BEARD,PEARL,LEARN,YEARN",
+          "+2:PASTE,GLUE,TAR,RESIN",
+          "+3:EYE,RAIN,LEMON,COUGH"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [
+          1,
+          4,
+          2,
+          3
+        ],
+        "mistakes": 2,
+        "oneAways": 1,
+        "submissions": 6,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "solved": true
+      }
+    },
+    {
+      "name": "perfect",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PEARL"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "LEARN"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "YEARN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RAIN"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "LEMON"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "COUGH"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RESIN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TONGUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "MOLAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GUM"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PALATE"
+        },
+        {
+          "type": "SUBMIT"
+        }
+      ],
+      "expect": {
+        "tiles": [],
+        "solvedTiers": [
+          4,
+          3,
+          2,
+          1
+        ],
+        "selected": [],
+        "mistakes": 0,
+        "submissions": 4,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "wrongSets": [],
+        "shuffles": 0,
+        "lastResult": "correct",
+        "events": [
+          "+4:BEARD,PEARL,LEARN,YEARN",
+          "+3:EYE,RAIN,LEMON,COUGH",
+          "+2:PASTE,GLUE,TAR,RESIN",
+          "+1:TONGUE,MOLAR,GUM,PALATE"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 4,
+        "boardsSolved": 4,
+        "labelTarget": null,
+        "pairTarget": null
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "+4:BEARD,PEARL,LEARN,YEARN",
+          "+3:EYE,RAIN,LEMON,COUGH",
+          "+2:PASTE,GLUE,TAR,RESIN",
+          "+1:TONGUE,MOLAR,GUM,PALATE"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [
+          4,
+          3,
+          2,
+          1
+        ],
+        "mistakes": 0,
+        "oneAways": 0,
+        "submissions": 4,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "solved": true
+      }
+    },
+    {
+      "name": "lose",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TONGUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "MOLAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GUM"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PALATE"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RAIN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PEARL"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RAIN"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PEARL"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "EYE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "BEARD"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RESIN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "DESELECT"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "PASTE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "GLUE"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "TAR"
+        },
+        {
+          "type": "TOGGLE",
+          "word": "RESIN"
+        },
+        {
+          "type": "SUBMIT"
+        },
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "tiles": [
+          "COUGH",
+          "PEARL",
+          "RESIN",
+          "LEARN",
+          "TAR",
+          "LEMON",
+          "RAIN",
+          "EYE",
+          "GLUE",
+          "BEARD",
+          "YEARN",
+          "PASTE"
+        ],
+        "solvedTiers": [
+          1
+        ],
+        "selected": [],
+        "mistakes": 4,
+        "submissions": 5,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "wrongSets": [
+          "EYE|GLUE|PASTE|RAIN",
+          "BEARD|GLUE|PASTE|PEARL",
+          "BEARD|EYE|PEARL|RAIN",
+          "BEARD|EYE|PASTE|RESIN"
+        ],
+        "shuffles": 0,
+        "lastResult": "wrong",
+        "events": [
+          "+1:TONGUE,MOLAR,GUM,PALATE",
+          "x0:EYE,GLUE,PASTE,RAIN",
+          "x0:BEARD,GLUE,PASTE,PEARL",
+          "x0:BEARD,EYE,PEARL,RAIN",
+          "x0:BEARD,EYE,PASTE,RESIN"
+        ],
+        "status": "lost",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 5,
+        "boardsSolved": 1,
+        "labelTarget": 2,
+        "pairTarget": {
+          "tier": 2,
+          "pair": [
+            "GLUE",
+            "PASTE"
+          ]
+        }
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "+1:TONGUE,MOLAR,GUM,PALATE",
+          "x0:EYE,GLUE,PASTE,RAIN",
+          "x0:BEARD,GLUE,PASTE,PEARL",
+          "x0:BEARD,EYE,PEARL,RAIN",
+          "x0:BEARD,EYE,PASTE,RESIN"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [
+          1
+        ],
+        "mistakes": 4,
+        "oneAways": 0,
+        "submissions": 5,
+        "hintsUsed": 0,
+        "revealedTiers": [],
+        "pairs": [],
+        "solved": false
+      }
+    },
+    {
+      "name": "hint-everything",
+      "id": "gr-vjx4rc",
+      "actions": [
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        },
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        },
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        },
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        },
+        {
+          "type": "HINT_LABEL"
+        },
+        {
+          "type": "HINT_PAIR"
+        }
+      ],
+      "expect": {
+        "tiles": [
+          "COUGH",
+          "PEARL",
+          "RESIN",
+          "LEARN",
+          "TONGUE",
+          "TAR",
+          "GUM",
+          "PALATE",
+          "MOLAR",
+          "LEMON",
+          "RAIN",
+          "EYE",
+          "GLUE",
+          "BEARD",
+          "YEARN",
+          "PASTE"
+        ],
+        "solvedTiers": [],
+        "selected": [],
+        "mistakes": 0,
+        "submissions": 0,
+        "hintsUsed": 12,
+        "revealedTiers": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "pairs": [
+          [
+            "GUM",
+            "MOLAR"
+          ],
+          [
+            "GLUE",
+            "PASTE"
+          ],
+          [
+            "COUGH",
+            "EYE"
+          ],
+          [
+            "BEARD",
+            "LEARN"
+          ]
+        ],
+        "wrongSets": [],
+        "shuffles": 0,
+        "lastResult": null,
+        "events": [
+          "?c1",
+          "?p:GUM,MOLAR",
+          "?c2",
+          "?p:GLUE,PASTE",
+          "?c3",
+          "?p:COUGH,EYE",
+          "?c4",
+          "?p:BEARD,LEARN"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 0,
+        "boardsSolved": 0,
+        "labelTarget": null,
+        "pairTarget": null
+      },
+      "row": {
+        "solutions": [
+          "1|In the mouth|TONGUE,MOLAR,GUM,PALATE",
+          "2|Sticky stuff|PASTE,GLUE,TAR,RESIN",
+          "3|___drop|EYE,RAIN,LEMON,COUGH",
+          "4|Hidden EAR|BEARD,PEARL,LEARN,YEARN"
+        ],
+        "guesses": [
+          "?c1",
+          "?p:GUM,MOLAR",
+          "?c2",
+          "?p:GLUE,PASTE",
+          "?c3",
+          "?p:COUGH,EYE",
+          "?c4",
+          "?p:BEARD,LEARN"
+        ]
+      },
+      "reconstruct": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [],
+        "mistakes": 0,
+        "oneAways": 0,
+        "submissions": 0,
+        "hintsUsed": 12,
+        "revealedTiers": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "pairs": [
+          [
+            "GUM",
+            "MOLAR"
+          ],
+          [
+            "GLUE",
+            "PASTE"
+          ],
+          [
+            "COUGH",
+            "EYE"
+          ],
+          [
+            "BEARD",
+            "LEARN"
+          ]
+        ],
+        "solved": false
+      }
+    }
+  ],
+  "malformed": [
+    null,
+    null
+  ]
+}
