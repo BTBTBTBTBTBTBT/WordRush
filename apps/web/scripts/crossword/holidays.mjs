@@ -35,8 +35,8 @@ export function holidayDays(y) {
   add('groundhog', ymd(y, 2, 2));
   add('valentines', ymd(y, 2, 14));
   add('presidents', nthWeekday(y, 2, 1, 3));
-  if (new Date(Date.UTC(y, 1, 29)).getUTCMonth() === 1) add('leapday', ymd(y, 2, 29));
   add('mardigras', shift(E, -47));
+  if (new Date(Date.UTC(y, 1, 29)).getUTCMonth() === 1) add('leapday', ymd(y, 2, 29));   // once in four years, so it outranks Mardi Gras (they collide in 2028)
   add('stpatricks', ymd(y, 3, 17));
   add('aprilfools', ymd(y, 4, 1));
   add('easter', shift(E, -2), shift(E, 0));           // Good Friday and Easter Sunday

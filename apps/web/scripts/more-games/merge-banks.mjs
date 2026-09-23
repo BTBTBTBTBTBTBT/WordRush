@@ -17,7 +17,7 @@ const run = (cmd) => { console.log('\n$ ' + cmd); const out = execSync(cmd, { cw
 // ---- Kindred (groups): array of puzzles; dedupe on the sorted 16-word set ----
 {
   const seen = new Set(), out = []; let dropped = 0;
-  for (const f of shards('groups', /^shard-\d+\.json$/)) for (const p of readJSON(f)) {
+  for (const f of shards('groups', /^shard-.+\.json$/)) for (const p of readJSON(f)) {
     const key = p.groups.flatMap((g) => g.words).sort().join('|');
     if (seen.has(key)) { dropped++; continue; }
     seen.add(key); out.push({ ...p, source: path.basename(f, '.json') });
@@ -33,7 +33,7 @@ const run = (cmd) => { console.log('\n$ ' + cmd); const out = execSync(cmd, { cw
   for (const f of files) for (const q of readJSON(f)) {
     const key = q.text.toUpperCase().replace(/[^A-Z]/g, '');
     if (seen.has(key)) { dropped++; continue; }
-    seen.add(key); out.push({ text: q.text });
+    seen.add(key); out.push(q.holiday ? { text: q.text, holiday: q.holiday } : { text: q.text });
   }
   console.log(`Codebreaker: ${out.length} sayings merged (${dropped} duplicates dropped; includes the 24 Phase 0 samples)`);
   write('cryptogram/sayings.json', out);
