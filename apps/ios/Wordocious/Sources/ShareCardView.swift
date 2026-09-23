@@ -34,6 +34,9 @@ struct ShareCardView: View {
         case hub(rankName: String, pct: Int, wordsFound: Int, wordCount: Int, pangramsFound: Int, puzzleNumber: Int?)
         /// Codebreaker (More Games §18d): the CIPHERTEXT only — blank cells with the code letter under each, words wrapped whole — no plain letters.
         case cryptogram(cipher: String, checks: Int, puzzleNumber: Int?)
+        /// Kindred (More Games §18d): the solved groups as tier bars in solve order (pips, never words),
+        /// the missed tiers dashed beneath on a loss, then the four mistake dots.
+        case groups(solvedTiers: [Int], mistakes: Int, maxMistakes: Int, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -68,7 +71,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram, .groups: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -140,6 +143,10 @@ struct ShareCardView: View {
             let num = number.map { "#\($0) · " } ?? ""
             let c = checks == 0 ? "No checks" : "\(checks) check\(checks == 1 ? "" : "s")"
             return "\(num)\(won ? c : "Revealed") · \(t) · \(dateStr)"
+        case .groups(let solvedTiers, let mistakes, _, let number):
+            // Mistake-scored (More Games §11): groups found and mistakes, never "guesses".
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)\(solvedTiers.count)/\(GROUPS_TOTAL_BOARDS) groups · \(mistakes) mistake\(mistakes == 1 ? "" : "s") · \(t) · \(dateStr)"
         }
     }
 
@@ -180,6 +187,47 @@ struct ShareCardView: View {
             hubCard(rankName: rankName, pct: pct)
         case .cryptogram(let cipher, _, _):
             cryptogramCard(cipher: cipher)
+        case .groups(let solvedTiers, let mistakes, let maxMistakes, _):
+            groupsCard(solvedTiers: solvedTiers, mistakes: mistakes, maxMistakes: maxMistakes)
+        }
+    }
+
+    /// Web drawGroups parity: four 720-wide tier bars — the solved tiers filled
+    /// from the ramp in solve order with 1–4 pips centred, the unsolved tiers
+    /// dashed beneath on a loss — then four mistake dots (accent while a
+    /// mistake remains, grey once spent). No words — the card spoils nothing.
+    private func groupsCard(solvedTiers: [Int], mistakes: Int, maxMistakes: Int) -> some View {
+        let accent = Color(hex: 0x9F1239)
+        let ramp: [Int: (bg: Color, fg: Color)] = [
+            1: (Color(hex: 0xDDD6FE), Color(hex: 0x3B0764)), 2: (Color(hex: 0xA78BFA), Color(hex: 0x1A1A2E)),
+            3: (Color(hex: 0x7C3AED), Color.white), 4: (Color(hex: 0x1A1A2E), Color.white),
+        ]
+        let missed = (1...GROUPS_TOTAL_BOARDS).filter { !solvedTiers.contains($0) }
+        let barW: CGFloat = 720, barH: CGFloat = 108, pip: CGFloat = 22, radius: CGFloat = 24
+        func pips(_ tier: Int, _ color: Color) -> some View {
+            HStack(spacing: pip * 0.8) {
+                ForEach(0..<max(1, min(4, tier)), id: \.self) { _ in Circle().fill(color).frame(width: pip, height: pip) }
+            }
+        }
+        return VStack(spacing: 36) {
+            VStack(spacing: 16) {
+                ForEach(0..<solvedTiers.count, id: \.self) { i in
+                    let st = ramp[solvedTiers[i]] ?? ramp[1]!
+                    RoundedRectangle(cornerRadius: radius).fill(st.bg).frame(width: barW, height: barH)
+                        .overlay(pips(solvedTiers[i], st.fg))
+                }
+                ForEach(0..<missed.count, id: \.self) { i in
+                    let st = ramp[missed[i]] ?? ramp[1]!
+                    RoundedRectangle(cornerRadius: radius).fill(st.bg.opacity(0.18)).frame(width: barW, height: barH)
+                        .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(style: StrokeStyle(lineWidth: 4, dash: [16, 12])).foregroundStyle(st.bg.opacity(0.7)))
+                        .overlay(pips(missed[i], st.bg.opacity(0.7)))
+                }
+            }
+            HStack(spacing: 22) {
+                ForEach(0..<max(1, maxMistakes), id: \.self) { i in
+                    Circle().fill(i < maxMistakes - mistakes ? accent : Color(hex: 0xE5E7EB)).frame(width: 40, height: 40)
+                }
+            }
         }
     }
 

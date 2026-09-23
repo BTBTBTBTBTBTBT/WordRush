@@ -68,6 +68,7 @@ struct RootTabView: View {
             case "wordsearch": return "unlimited-WORDSEARCH-\(ts)"
             case "hub": return "unlimited-HUB-\(ts)"
             case "cryptogram": return "unlimited-CRYPTOGRAM-\(ts)"
+            case "groups": return "unlimited-GROUPS-\(ts)"
             default: return "unlimited-PROPERNOUNDLE-\(ts)"
             }
         }
@@ -238,6 +239,11 @@ struct RootTabView: View {
                     .id(g.seed)
                 } else if g.mode.id == "cryptogram" {
                     CodebreakerView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "groups" {
+                    KindredView(seed: g.seed, onPlayAgain: {
                         unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
                     })
                     .id(g.seed)

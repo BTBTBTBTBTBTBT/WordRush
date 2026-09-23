@@ -107,6 +107,17 @@ enum AchievementService {
             if guessCount == 1 { await tryUnlock("cryptogram_clean") }
             if timeSeconds < 180 { await tryUnlock("cryptogram_swift") }
         }
+        // Kindred (More Games §18c): first solve, flawless (four submissions, no hints), hardest group first (from the matches row).
+        if gameMode == "GROUPS" && won {
+            await tryUnlock("groups_first")
+            if guessCount == GROUPS_PERFECT_GUESSES && hintsUsed == 0 { await tryUnlock("groups_flawless") }
+            if let seed, !has("groups_hardest_first") {
+                struct MatchRow: Decodable { let player1_guesses: [String]? }
+                let rows: [MatchRow] = (try? await client.from("matches").select("player1_guesses")
+                    .eq("player1_id", value: userId).eq("game_mode", value: "GROUPS").eq("seed", value: seed).limit(1).execute().value) ?? []
+                if let first = rows.first?.player1_guesses?.first(where: { $0.hasPrefix("+") }), first.hasPrefix("+4:") { await tryUnlock("groups_hardest_first") }
+            }
+        }
         // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
         if gameMode == "LADDER" && won {
             await tryUnlock("ladder_first")
@@ -188,7 +199,7 @@ enum AchievementService {
                 ("rescue_hero","RESCUE",50), ("six_shooter","DUEL_6",50), ("lucky_seven","DUEL_7",50),
                 ("proper_scholar","PROPERNOUNDLE",50), ("classic_master","DUEL",100), ("sudoku_scholar","SUDOKU",50),
                 ("regions_regular","REGIONS",50), ("ladder_regular","LADDER",50), ("wordsearch_regular","WORDSEARCH",50), ("hub_regular","HUB",50),
-                ("cryptogram_regular","CRYPTOGRAM",50),
+                ("cryptogram_regular","CRYPTOGRAM",50), ("groups_regular","GROUPS",50),
             ]
             for (key, mode, thresh) in mastery where soloWinsByMode(mode) >= thresh { await tryUnlock(key) }
 
@@ -233,9 +244,9 @@ enum AchievementService {
         }
 
         // Pure ladder (matches counts) — only after a hintless win in a pure mode.
-        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER","WORDSEARCH","HUB","CRYPTOGRAM"]
+        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER","WORDSEARCH","HUB","CRYPTOGRAM","GROUPS"]
         if won && hintsUsed == 0 && pureModes.contains(gameMode) {
-            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : gameMode == "WORDSEARCH" ? "wordsearch" : gameMode == "HUB" ? "hub" : gameMode == "CRYPTOGRAM" ? "cryptogram" : "proper"
+            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : gameMode == "WORDSEARCH" ? "wordsearch" : gameMode == "HUB" ? "hub" : gameMode == "CRYPTOGRAM" ? "cryptogram" : gameMode == "GROUPS" ? "groups" : "proper"
             let c = await count("matches") { $0.eq("player1_id", value: userId).is("player2_id", value: nil)
                 .eq("winner_id", value: userId).eq("game_mode", value: gameMode).eq("hints_used", value: 0) }
             if c >= 1 { await tryUnlock("pure_\(slug)_initiate") }

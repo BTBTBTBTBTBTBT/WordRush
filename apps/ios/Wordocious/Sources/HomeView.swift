@@ -126,6 +126,10 @@ struct HomeView: View {
     struct CodebreakerGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
     @State private var codebreakerGame: CodebreakerGame?
     private func freshCodebreakerSeed() -> String { "unlimited-CRYPTOGRAM-\(Int(Date().timeIntervalSince1970))" }
+    /// A Kindred run (own view): nil seed = today's daily.
+    struct KindredGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var kindredGame: KindredGame?
+    private func freshKindredSeed() -> String { "unlimited-GROUPS-\(Int(Date().timeIntervalSince1970))" }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -285,6 +289,12 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
+            .fullScreenCover(item: $kindredGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    KindredView(seed: g.seed, onPlayAgain: { kindredGame = KindredGame(seed: freshKindredSeed()) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -312,6 +322,8 @@ struct HomeView: View {
                         HubView()
                     } else if m.id == "cryptogram" {
                         CodebreakerView()
+                    } else if m.id == "groups" {
+                        KindredView()
                     }
                 }
             }
@@ -879,6 +891,8 @@ struct HomeView: View {
             hubGame = HubGame(seed: effectiveMode == .unlimited ? freshHubSeed() : nil)
         } else if mode.id == "cryptogram" {
             codebreakerGame = CodebreakerGame(seed: effectiveMode == .unlimited ? freshCodebreakerSeed() : nil)
+        } else if mode.id == "groups" {
+            kindredGame = KindredGame(seed: effectiveMode == .unlimited ? freshKindredSeed() : nil)
         } else {
             comingSoon = mode.title
         }
