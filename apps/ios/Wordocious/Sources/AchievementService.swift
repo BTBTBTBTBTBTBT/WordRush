@@ -113,6 +113,12 @@ enum AchievementService {
             if guessCount == 1 { await tryUnlock("crossword_clean") }
             if timeSeconds < 240 { await tryUnlock("crossword_swift") }
         }
+        // Muddle (More Games §18c): first solve, clean (five checks — no wrong words), swift (under ninety seconds).
+        if gameMode == "SCRAMBLE" && won {
+            await tryUnlock("scramble_first")
+            if guessCount == 5 { await tryUnlock("scramble_clean") }
+            if timeSeconds < 90 { await tryUnlock("scramble_swift") }
+        }
         // Kindred (More Games §18c): first solve, flawless (four submissions, no hints), hardest group first (from the matches row).
         if gameMode == "GROUPS" && won {
             await tryUnlock("groups_first")
@@ -206,6 +212,7 @@ enum AchievementService {
                 ("proper_scholar","PROPERNOUNDLE",50), ("classic_master","DUEL",100), ("sudoku_scholar","SUDOKU",50),
                 ("regions_regular","REGIONS",50), ("ladder_regular","LADDER",50), ("wordsearch_regular","WORDSEARCH",50), ("hub_regular","HUB",50),
                 ("cryptogram_regular","CRYPTOGRAM",50), ("groups_regular","GROUPS",50), ("crossword_regular","CROSSWORD",50),
+                ("scramble_regular","SCRAMBLE",50),
             ]
             for (key, mode, thresh) in mastery where soloWinsByMode(mode) >= thresh { await tryUnlock(key) }
 
@@ -250,9 +257,9 @@ enum AchievementService {
         }
 
         // Pure ladder (matches counts) — only after a hintless win in a pure mode.
-        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER","WORDSEARCH","HUB","CRYPTOGRAM","GROUPS","CROSSWORD"]
+        let pureModes = ["DUEL_6","DUEL_7","PROPERNOUNDLE","SUDOKU","REGIONS","LADDER","WORDSEARCH","HUB","CRYPTOGRAM","GROUPS","CROSSWORD","SCRAMBLE"]
         if won && hintsUsed == 0 && pureModes.contains(gameMode) {
-            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : gameMode == "WORDSEARCH" ? "wordsearch" : gameMode == "HUB" ? "hub" : gameMode == "CRYPTOGRAM" ? "cryptogram" : gameMode == "GROUPS" ? "groups" : gameMode == "CROSSWORD" ? "crossword" : "proper"
+            let slug = gameMode == "DUEL_6" ? "six" : gameMode == "DUEL_7" ? "seven" : gameMode == "SUDOKU" ? "sudoku" : gameMode == "REGIONS" ? "regions" : gameMode == "LADDER" ? "ladder" : gameMode == "WORDSEARCH" ? "wordsearch" : gameMode == "HUB" ? "hub" : gameMode == "CRYPTOGRAM" ? "cryptogram" : gameMode == "GROUPS" ? "groups" : gameMode == "CROSSWORD" ? "crossword" : gameMode == "SCRAMBLE" ? "scramble" : "proper"
             let c = await count("matches") { $0.eq("player1_id", value: userId).is("player2_id", value: nil)
                 .eq("winner_id", value: userId).eq("game_mode", value: gameMode).eq("hints_used", value: 0) }
             if c >= 1 { await tryUnlock("pure_\(slug)_initiate") }

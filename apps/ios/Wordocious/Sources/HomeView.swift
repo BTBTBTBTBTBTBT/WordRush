@@ -134,6 +134,10 @@ struct HomeView: View {
     struct CrosswordGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
     @State private var crosswordGame: CrosswordGame?
     private func freshCrosswordSeed() -> String { "unlimited-CROSSWORD-\(Int(Date().timeIntervalSince1970))" }
+    /// A Muddle run (own view): nil seed = today's daily.
+    struct MuddleGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var muddleGame: MuddleGame?
+    private func freshMuddleSeed() -> String { "unlimited-SCRAMBLE-\(Int(Date().timeIntervalSince1970))" }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -305,6 +309,12 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
+            .fullScreenCover(item: $muddleGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    MuddleView(seed: g.seed, onPlayAgain: { muddleGame = MuddleGame(seed: freshMuddleSeed()) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -336,6 +346,8 @@ struct HomeView: View {
                         KindredView()
                     } else if m.id == "crossword" {
                         CrosswordView()
+                    } else if m.id == "scramble" {
+                        MuddleView()
                     }
                 }
             }
@@ -907,6 +919,8 @@ struct HomeView: View {
             kindredGame = KindredGame(seed: effectiveMode == .unlimited ? freshKindredSeed() : nil)
         } else if mode.id == "crossword" {
             crosswordGame = CrosswordGame(seed: effectiveMode == .unlimited ? freshCrosswordSeed() : nil)
+        } else if mode.id == "scramble" {
+            muddleGame = MuddleGame(seed: effectiveMode == .unlimited ? freshMuddleSeed() : nil)
         } else {
             comingSoon = mode.title
         }

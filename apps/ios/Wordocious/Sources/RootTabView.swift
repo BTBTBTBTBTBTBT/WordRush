@@ -70,6 +70,7 @@ struct RootTabView: View {
             case "cryptogram": return "unlimited-CRYPTOGRAM-\(ts)"
             case "groups": return "unlimited-GROUPS-\(ts)"
             case "crossword": return "unlimited-CROSSWORD-\(ts)"
+            case "scramble": return "unlimited-SCRAMBLE-\(ts)"
             default: return "unlimited-PROPERNOUNDLE-\(ts)"
             }
         }
@@ -250,6 +251,11 @@ struct RootTabView: View {
                     .id(g.seed)
                 } else if g.mode.id == "crossword" {
                     CrosswordView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "scramble" {
+                    MuddleView(seed: g.seed, onPlayAgain: {
                         unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
                     })
                     .id(g.seed)

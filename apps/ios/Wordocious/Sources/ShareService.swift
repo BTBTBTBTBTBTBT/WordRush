@@ -150,6 +150,11 @@ enum ShareService {
             if let points { q["pts"] = "\(points)" }
             if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
             q["ck"] = "\(checks)"
+        case let .scramble(_, _, _, checks, solvedCount, _):
+            // Check-scored (§18d): the unfurl names score, time, checks and words solved of five.
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+            q["ck"] = "\(checks)"; q["bs"] = "\(solvedCount)"; q["tb"] = "\(SCRAMBLE_TOTAL_BOARDS)"
         case .single:
             break
         }

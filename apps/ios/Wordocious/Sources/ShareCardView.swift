@@ -40,6 +40,9 @@ struct ShareCardView: View {
         /// Crosswordocious (More Games §18d): the grid silhouette only — purple tiles where letters are,
         /// nothing where blocks are; no letters, no numbers.
         case crossword(w: Int, h: Int, solution: String, checks: Int, puzzleNumber: Int?)
+        /// Muddle (More Games §18d): four rows of blank tiles on one six-column grid with the circled
+        /// positions ringed, a divider, then the punchline row grouped by word in the lilac tint — no letters, no cartoon.
+        case scramble(wordLengths: [Int], circled: [[Int]], pattern: [Int], checks: Int, solvedCount: Int, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -74,7 +77,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram, .groups, .crossword: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram, .groups, .crossword, .scramble: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -155,6 +158,10 @@ struct ShareCardView: View {
             let num = number.map { "#\($0) · " } ?? ""
             let c = checks == 0 ? "Clean" : "\(checks) check\(checks == 1 ? "" : "s")"
             return "\(num)\(won ? c : "Revealed") · \(t) · \(dateStr)"
+        case .scramble(_, _, _, let checks, let solvedCount, let number):
+            // Check-scored (More Games §11): words solved of five and checks, never "guesses".
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)\(solvedCount)/\(SCRAMBLE_TOTAL_BOARDS) solved · \(checks) check\(checks == 1 ? "" : "s") · \(t) · \(dateStr)"
         }
     }
 
@@ -199,6 +206,53 @@ struct ShareCardView: View {
             groupsCard(solvedTiers: solvedTiers, mistakes: mistakes, maxMistakes: maxMistakes)
         case .crossword(let w, let h, let solution, _, _):
             crosswordCard(w: w, h: h, solution: solution)
+        case .scramble(let wordLengths, let circled, let pattern, _, _, _):
+            scrambleCard(wordLengths: wordLengths, circled: circled, pattern: pattern)
+        }
+    }
+
+    /// Web drawScramble parity: four rows of blank white tiles left-aligned on
+    /// one six-column grid, the circled positions ringed in purple; a divider;
+    /// then the punchline row grouped by word in the lilac tint, every box
+    /// ringed. No letters, no cartoon — the card spoils nothing.
+    private func scrambleCard(wordLengths: [Int], circled: [[Int]], pattern: [Int]) -> some View {
+        let emptyBorder = Color(hex: 0xD1D5DB), ring = Color(hex: 0x7C3AED)
+        let lilac = Color(hex: 0xF5F3FF), lilacBorder = Color(hex: 0xC4B5FD)
+        let gap: CGFloat = 10, rowGap: CGFloat = 26, cols = 6
+        let areaHeight: CGFloat = 660
+        let tile = min(84, floor((1080 - 200 - gap * CGFloat(cols - 1)) / CGFloat(cols)), floor((areaHeight - 120 - rowGap * 5) / 5))
+        let boardW = CGFloat(cols) * tile + CGFloat(cols - 1) * gap
+        let small = floor(tile * 0.78), wordGap: CGFloat = 26
+        return VStack(spacing: 0) {
+            VStack(spacing: rowGap) {
+                ForEach(0..<wordLengths.count, id: \.self) { r in
+                    HStack(spacing: gap) {
+                        ForEach(0..<wordLengths[r], id: \.self) { i in
+                            RoundedRectangle(cornerRadius: max(6, tile * 0.14)).fill(Color.white)
+                                .overlay(RoundedRectangle(cornerRadius: max(6, tile * 0.14)).stroke(emptyBorder, lineWidth: 3))
+                                .overlay(r < circled.count && circled[r].contains(i)
+                                         ? Circle().stroke(ring, lineWidth: 4).frame(width: tile * 0.68, height: tile * 0.68) : nil)
+                                .frame(width: tile, height: tile)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: boardW)
+                }
+            }
+            Rectangle().fill(emptyBorder).frame(width: boardW, height: 2).padding(.top, rowGap + 6)
+            HStack(spacing: wordGap) {
+                ForEach(0..<pattern.count, id: \.self) { wi in
+                    HStack(spacing: 6) {
+                        ForEach(0..<pattern[wi], id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: max(5, small * 0.14)).fill(lilac)
+                                .overlay(RoundedRectangle(cornerRadius: max(5, small * 0.14)).stroke(lilacBorder, lineWidth: 3))
+                                .overlay(Circle().stroke(ring, lineWidth: 3).frame(width: small * 0.64, height: small * 0.64))
+                                .frame(width: small, height: small)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 34)
         }
     }
 
