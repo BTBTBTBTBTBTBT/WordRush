@@ -193,6 +193,8 @@ struct GuideSheet: View {
         case "delete": return "delete.left"
         case "eye": return "eye"
         case "corner-down-left": return "return"
+        case "check-check": return "checkmark.circle"
+        case "flag": return "flag"
         default: return "circle"
         }
     }

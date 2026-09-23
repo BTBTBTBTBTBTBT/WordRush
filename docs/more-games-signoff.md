@@ -134,6 +134,32 @@ Tick a cell only after checking, in order:
 - Achievements: first Hubbub, 50 Hubbub days, pangram, Pandemonium, seven Uproar-or-better days in a
   row, pure (no hints) 1/10/50.
 
+## Codebreaker — what to look for (built 2026-09-23)
+
+- Daily "#N" counts from 2026-09-23; the first saying is "Give him an inch and he'll take a mile."
+  (given A E I). Same puzzle everywhere on a date (bank bundled on both natives, sha-guarded). **On a
+  holiday the saying belongs to the day** (28 holidays, `apps/web/data/holiday-days.json`) and the
+  header shows the holiday's name — the first ones you can hit: Halloween Eve/Day (Oct 30–31),
+  Diwali (Nov 8), Veterans Day (Nov 11), Thanksgiving Eve/Day (Nov 25–26).
+- Every letter is a small tile with the CODE letter beneath it; the three most frequent letters are
+  filled in the accent and locked. Tap a tile (or a chip in the frequency strip) and type: the letter
+  lands in every tile with that code letter and the selection moves to the next open letter. Typing
+  over replaces everywhere; **Delete** clears everywhere. Using one plain letter for two code letters
+  reads red. Nothing is judged while you pencil.
+- **Check** locks right letters (accent tint) and clears wrong ones with a red flash; each Check
+  counts (score row "Check bonus": 750 / 500 / 250 / 0). **Hint** (100) fills the most frequent
+  unsolved letter in violet. **Reveal** unlocks at 5:00 (the capsule counts down), shows the answer
+  and records a loss. The puzzle completes itself the moment every letter is right.
+- Finished screen: decoded board, the saying in quotes, "Code cracked clean" / "Code cracked" /
+  "Answer revealed" + checks · time · hints. Victory card shows CHECKS · TIME · POINTS. Pro "Keep
+  playing: Unlimited Codebreaker" on all three.
+- Share card: the ciphertext only — blank cells with code letters — so it spoils nothing; caption
+  "Score · Time · No checks".
+- Achievements: Code Cracked, 50 cracks, Clean Crack (no Check), Swift (under 3:00), pure 1/10/50.
+- Content: 372 everyday dailies + 60 Unlimited + 84 holiday sayings from the bank you are reviewing;
+  your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three copies (a rebuild before
+  launch reorders the dailies; that is fine while nothing is live).
+
 ## Content banks awaiting your veto pass (drafted overnight 2026-09-22 → 23)
 
 The four titles that need authored content now have first-draft banks, machine-validated, packaged
