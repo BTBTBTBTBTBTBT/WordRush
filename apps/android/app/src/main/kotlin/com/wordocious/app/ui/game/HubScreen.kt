@@ -190,7 +190,11 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         val word = typing.uppercase()
         dispatch(HubAction.Submit(word))
         val r = state.reject
-        if (r != null) { toast = rejectCopy(r); SoundManager.playInvalid() }
+        if (r != null) {
+            toast = rejectCopy(r); SoundManager.playInvalid()
+            // Like the word games: the rejected entry erases after the shake so the next word starts clean.
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ if (typing == word) typing = "" }, 450)
+        }
         else {
             typing = ""
             if (word in state.words) { SoundManager.playSuccess(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}" }

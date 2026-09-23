@@ -158,7 +158,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       if (!s) return s;
       const next = hubReduce(s, a, Date.now());
       if (a.type === 'SUBMIT') {
-        if (next.reject) { flash(REJECT_COPY[next.reject]); haptic('medium'); playInvalid(); setShake(true); setTimeout(() => setShake(false), 450); }
+        if (next.reject) { flash(REJECT_COPY[next.reject]); haptic('medium'); playInvalid(); setShake(true); setTimeout(() => { setShake(false); setTyping(''); }, 450); }
         else {
           setTyping('');
           const word = a.word.toUpperCase();

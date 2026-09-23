@@ -130,7 +130,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
       if (a.type === 'SUBMIT') {
         if (next.reject) {
           flash(REJECT_COPY[next.reject]); haptic('medium'); playInvalid();
-          setInvalid(true); setShaking(true); setTimeout(() => { setInvalid(false); setShaking(false); }, 500);
+          setInvalid(true); setShaking(true); setTimeout(() => { setInvalid(false); setShaking(false); setTyping(''); }, 500);
         } else { setTyping(''); playKeyTap(); }
       } else if (a.type === 'HINT' && next.words.length > s.words.length) { setTyping(''); }
       return next;

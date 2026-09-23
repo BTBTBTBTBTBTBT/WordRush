@@ -25,7 +25,7 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 131
+        versionCode = 132
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -126,12 +126,22 @@ dependencies {
     // Avatar image loading (profile + leaderboard avatars from avatar_url).
     implementation("io.coil-kt:coil-compose:2.7.0")
 
-    // AppLovin MAX — game-start interstitial for free users.
-    // §252: AdMob + Google's UMP consent SDK removed together — the publisher
-    // entity is permanently banned, and UMP's consent forms are configured
-    // inside the (dead) AdMob console, so it could not serve them anyway.
-    // AppLovin MAX brings its own CMP. Pinned, not "+", so builds reproduce.
-    implementation("com.applovin:applovin-sdk:13.6.4")
+    // Unity LevelPlay (ironSource mediation) — game-start interstitial for
+    // free users. See docs/LEVELPLAY_SETUP.md. History: AdMob + Google's UMP
+    // died with the banned publisher entity (§252); AppLovin MAX replaced it
+    // but never activated ("not accepting new signups", 2026-09-23). LevelPlay
+    // is a separate company. Artifact lives on Maven Central — no extra repo.
+    // Pinned, not "+", so builds reproduce. NEVER add the AdMob / Google Ad
+    // Manager adapter here: that would route Google demand through a banned
+    // entity. The SDK's own AAR contributes its activities, lifecycle
+    // providers and consumer ProGuard rules via manifest merging.
+    implementation("com.unity3d.ads-mediation:mediation-sdk:9.6.0")
+    // Advertising-ID + AppSet libraries the LevelPlay guide lists alongside
+    // the SDK. Identity plumbing only (GAID is how the dashboard recognises a
+    // registered TEST device — the invalid-traffic safeguard); not AdMob, not
+    // an ad network, and no ads-related Google account is involved.
+    implementation("com.google.android.gms:play-services-ads-identifier:18.1.0")
+    implementation("com.google.android.gms:play-services-appset:16.0.0")
 
     // Google sign-in (Credential Manager -> Supabase signInWithIdToken)
     implementation("androidx.credentials:credentials:1.6.0")

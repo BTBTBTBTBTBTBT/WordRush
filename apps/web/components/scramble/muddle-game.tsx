@@ -17,7 +17,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT } from './muddle-board';
+import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT, COLUMN_CLASS } from './muddle-board';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -205,7 +205,8 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const holiday = holidayTitle(puzzle?.holiday ?? null);
   const checksLabel = `${state.checks} check${state.checks === 1 ? '' : 's'}`;
   const captionParts = state.caption.split('____');
-  const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
+  // Compact rule (§5, founder 2026-09-23): 30px capsules; the ::before pseudo stretches the hit target to 44px without adding height.
+  const capsule = (dim: boolean) => `relative flex items-center gap-1 text-xs font-bold px-3 h-[30px] rounded-full border transition-all before:content-[''] before:absolute before:-inset-y-[7px] before:inset-x-0 ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${MUDDLE_ACCENT}66`, color: MUDDLE_ACCENT, background: `${MUDDLE_ACCENT}0d` };
 
   return (
@@ -214,12 +215,12 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="text-center py-1.5 px-2 shrink-0 relative">
         <GameHomeButton accentColor={MUDDLE_ACCENT} />
         <GameGuideButton slug="muddle" accentColor={MUDDLE_ACCENT} />
         <SoundToggle accentColor={MUDDLE_ACCENT} />
-        <h1 className="text-2xl font-black" style={{ color: MUDDLE_ACCENT }}>MUDDLE</h1>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <h1 className="text-xl font-black leading-7" style={{ color: MUDDLE_ACCENT }}>MUDDLE</h1>
+        <div className="flex justify-center items-center gap-2 mt-0.5 text-[11px] leading-none font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{scrambleDailyNumber(getTodayLocal())}</span>}
           {holiday && <span style={{ color: MUDDLE_ACCENT }}>{holiday}</span>}
           <span>{scrambleBoardsSolved(state)}/{SCRAMBLE_TOTAL_BOARDS} solved</span>
@@ -227,20 +228,24 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '60px' }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-3 px-3 pb-2 pt-1">
-        <CartoonPanel src={puzzle?.cartoon ?? null} alt={puzzle?.altText ?? 'Cartoon'} />
-        <p className="text-center font-extrabold max-w-md px-2" style={{ fontSize: 'clamp(15px, 4.4vw, 18px)', color: 'var(--color-text)' }}>
+      {/* Compact rule (§5, founder 2026-09-23): one flex column — the cartoon
+          flexes to the height left over (96px floor, 26vh cap), caption and
+          words never shrink, and only this region scrolls on a short screen;
+          the keyboard below is a fixed footer that never scrolls away. */}
+      <div className={`flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-3 pt-1 ${finished ? 'gap-2 pb-2' : ''}`}>
+        <CartoonPanel src={puzzle?.cartoon ?? null} alt={puzzle?.altText ?? 'Cartoon'} fixed={finished} />
+        <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1.5 line-clamp-2" style={{ fontSize: 14, lineHeight: 1.25, color: 'var(--color-text)' }}>
           {captionParts[0]}
-          <span className="inline-block min-w-[3.5em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{finished || state.solved[SCRAMBLE_FINAL] ? state.final.answer.toLowerCase() : ' '}</span>
+          <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{finished || state.solved[SCRAMBLE_FINAL] ? state.final.answer.toLowerCase() : ' '}</span>
           {captionParts[1] ?? ''}
         </p>
-        <div className="w-full max-w-md flex flex-col gap-1">
+        <div className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
           {state.words.map((_, i) => (
             <WordRow key={i} state={state} row={i} active={row === i} shaking={shakeRow === i} finished={finished}
               onSelect={(r) => setRow(r)} onTapTile={(r, ch) => { setRow(r); dispatch({ type: 'TYPE', row: r, letter: ch }); playKeyTap(); }}
@@ -251,7 +256,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
             onRevealLetter={() => { dispatch({ type: 'REVEAL_LETTER', row: SCRAMBLE_FINAL }); haptic('light'); }} />
         </div>
         {finished && (
-          <div className="w-full max-w-md px-1 pb-2 animate-fade-in-up">
+          <div className={`${COLUMN_CLASS} px-1 pb-2 animate-fade-in-up`}>
             <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
               <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black" style={{ backgroundColor: `${MUDDLE_ACCENT}15`, border: `2px solid ${MUDDLE_ACCENT}44`, color: MUDDLE_ACCENT }}>
                 {won ? state.checks : '✗'}
@@ -277,7 +282,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       </div>
 
       {!finished ? (
-        <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
+        <div className="shrink-0 pb-1.5 px-2 pt-1 flex flex-col gap-1.5">
           <div className="flex justify-center gap-2 px-1" role="group" aria-label="Muddle controls">
             <button type="button" onClick={() => { dispatch({ type: 'BACK', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the last letter">
               <Delete className="w-3.5 h-3.5" /> Delete

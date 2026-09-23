@@ -79,7 +79,8 @@ class MainActivity : ComponentActivity() {
             com.wordocious.app.data.ModerationService.loadBlockedIds()
         }
         com.wordocious.app.data.StoreManager.start(this)
-        // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
+        // LevelPlay: region gate -> privacy flags -> init -> preload the
+        // game-start interstitial. Dormant until the dashboard keys exist.
         com.wordocious.app.data.AdsManager.start(this)
         tagLaunchAfterUpdate()
         // setContentView(ComposeView), NOT the androidx setContent extension:

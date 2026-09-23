@@ -26,6 +26,8 @@ export interface ModeMeta {
   guessSemantics: GuessSemantics;
   /** The perfect guess_count; display shows guess_count − guessBase. */
   guessBase: number;
+  /** Reading order of the home grid (2 × 5); the array order stays the sweep/canonical order. */
+  homeSlot: number;
   /** Compiled in and visible (a remote flag may still hide it). */
   enabled: boolean;
   flagKey: string | null;
@@ -57,7 +59,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "classic"
+    "guideSlug": "classic",
+    "homeSlot": 0
   },
   {
     "id": "vs",
@@ -78,7 +81,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": null
+    "guideSlug": null,
+    "homeSlot": 8
   },
   {
     "id": "quordle",
@@ -99,7 +103,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "quadword"
+    "guideSlug": "quadword",
+    "homeSlot": 2
   },
   {
     "id": "octordle",
@@ -120,7 +125,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "octoword"
+    "guideSlug": "octoword",
+    "homeSlot": 3
   },
   {
     "id": "sequence",
@@ -141,7 +147,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "succession"
+    "guideSlug": "succession",
+    "homeSlot": 4
   },
   {
     "id": "rescue",
@@ -162,7 +169,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "deliverance"
+    "guideSlug": "deliverance",
+    "homeSlot": 5
   },
   {
     "id": "six",
@@ -183,7 +191,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "six"
+    "guideSlug": "six",
+    "homeSlot": 6
   },
   {
     "id": "seven",
@@ -204,7 +213,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "seven"
+    "guideSlug": "seven",
+    "homeSlot": 7
   },
   {
     "id": "gauntlet",
@@ -225,7 +235,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": null,
-    "guideSlug": "gauntlet"
+    "guideSlug": "gauntlet",
+    "homeSlot": 1
   },
   {
     "id": "propernoundle",
@@ -246,7 +257,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": null,
     "category": "trivia",
-    "guideSlug": "propernoundle"
+    "guideSlug": "propernoundle",
+    "homeSlot": 109
   },
   {
     "id": "more",
@@ -267,7 +279,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "menu.more",
     "category": null,
-    "guideSlug": null
+    "guideSlug": null,
+    "homeSlot": 9
   },
   {
     "id": "sudoku",
@@ -288,7 +301,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.sudoku",
     "category": "logic",
-    "guideSlug": "sudocious"
+    "guideSlug": "sudocious",
+    "homeSlot": 111
   },
   {
     "id": "scramble",
@@ -309,7 +323,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.scramble",
     "category": "word",
-    "guideSlug": "muddle"
+    "guideSlug": "muddle",
+    "homeSlot": 112
   },
   {
     "id": "hub",
@@ -330,7 +345,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.hub",
     "category": "word",
-    "guideSlug": "hubbub"
+    "guideSlug": "hubbub",
+    "homeSlot": 113
   },
   {
     "id": "crossword",
@@ -351,7 +367,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.crossword",
     "category": "trivia",
-    "guideSlug": "crosswordocious"
+    "guideSlug": "crosswordocious",
+    "homeSlot": 114
   },
   {
     "id": "groups",
@@ -372,7 +389,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.groups",
     "category": "logic",
-    "guideSlug": "kindred"
+    "guideSlug": "kindred",
+    "homeSlot": 115
   },
   {
     "id": "ladder",
@@ -393,7 +411,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.ladder",
     "category": "word",
-    "guideSlug": "letter-ladder"
+    "guideSlug": "letter-ladder",
+    "homeSlot": 116
   },
   {
     "id": "cryptogram",
@@ -414,7 +433,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.cryptogram",
     "category": "logic",
-    "guideSlug": "codebreaker"
+    "guideSlug": "codebreaker",
+    "homeSlot": 117
   },
   {
     "id": "wordsearch",
@@ -435,7 +455,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.wordsearch",
     "category": "word",
-    "guideSlug": "spyglass"
+    "guideSlug": "spyglass",
+    "homeSlot": 118
   },
   {
     "id": "regions",
@@ -456,7 +477,8 @@ export const MODES: ModeMeta[] = [
     "enabled": true,
     "flagKey": "mode.regions",
     "category": "logic",
-    "guideSlug": "starsweep"
+    "guideSlug": "starsweep",
+    "homeSlot": 119
   }
 ];
 
@@ -471,7 +493,7 @@ export const DAILY_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.dailyEligib
 /** The current required Daily Sweep set, canonical order. */
 export const SWEEP_MODES: ModeMeta[] = DAILY_MODES.filter((m) => m.sweep);
 /** Home grid tiles. */
-export const CORE_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'core');
+export const CORE_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'core').sort((a, b) => a.homeSlot - b.homeSlot);
 /** More Games sheet entries. */
 export const MORE_GAME_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'more');
 export const MORE_CATEGORIES: MoreCategory[] = [{"key":"word","title":"Word"},{"key":"trivia","title":"Trivia"},{"key":"logic","title":"Logic"}];

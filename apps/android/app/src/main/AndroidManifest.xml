@@ -4,6 +4,11 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Unity LevelPlay (docs/LEVELPLAY_SETUP.md) reads the advertising ID
+         on Android 13+ only with this permission; it is also how the
+         dashboard recognises a registered test device. ACCESS_NETWORK_STATE
+         arrives from the SDK's own AAR manifest. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <!-- androidx.biometric arrives transitively via credentials-play-services-auth
          and contributes these two. NOTHING in the app uses biometrics, and
@@ -72,7 +77,11 @@
             android:value="0.0" />
 
         <!-- §252: the AdMob APPLICATION_ID meta-data is gone with AdMob itself.
-             AppLovin takes its SDK key at runtime (AdsManager.kt), not here. -->
+             Unity LevelPlay takes its app key at runtime (AdsManager.kt), not
+             here, and its AAR manifest contributes the ControllerActivity /
+             InterstitialActivity / OpenUrlActivity / TestSuiteActivity and the
+             two lifecycle <provider>s through manifest merging — nothing to
+             declare by hand. -->
 
         <!-- Share-image pipeline: exposes the rendered PNG in cacheDir/share to
              the system share sheet (read-only, per-grant). -->

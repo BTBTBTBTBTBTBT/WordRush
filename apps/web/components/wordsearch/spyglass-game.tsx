@@ -186,7 +186,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         const found = state.found.includes(p.w);
         const hinted = state.hinted.includes(p.w) && !found;
         return (
-          <span key={p.w} className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${found ? 'line-through' : ''}`}
+          <span key={p.w} className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
             style={found
               ? { background: `${WORDSEARCH_ACCENT}22`, borderColor: `${WORDSEARCH_ACCENT}55`, color: '#365314' }
               : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: 'var(--color-text)' }}>

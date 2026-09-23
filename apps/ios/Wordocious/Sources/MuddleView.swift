@@ -220,6 +220,53 @@ final class MuddleVM: ObservableObject {
     }
 }
 
+// MARK: - Compact geometry (founder, 2026-09-23, TestFlight 186: "make it smaller so it can all fit on one screen")
+//
+// The whole puzzle sits on one 390 × 844 screen with the keyboard pinned at the
+// bottom. Everything below the cartoon is fixed-height; the cartoon takes what
+// is left (capped at 26 % of the screen) and, on a phone too short for even the
+// floor, ONLY the cartoon + caption area scrolls — never the words or the keys.
+private enum MdSize {
+    /// Answer boxes on the six-column grid (rule 36–40; the low end buys the cartoon room).
+    static let tile: CGFloat = 36
+    static let tileGap: CGFloat = 6
+    /// Scrambled letters (rule 16–17 pt bold, light tracking).
+    static let scrambleFont: CGFloat = 17
+    static let scrambleTracking: CGFloat = 0.8
+    /// Letter · Solve icon-only circles (rule 28–30) inside a 44 pt hit frame.
+    static let hintButton: CGFloat = 30
+    static let hitTarget: CGFloat = 44
+    /// Punchline tiles (rule ≈ 32) — shrink toward the floor to keep a long punchline on one line.
+    static let punchTile: CGFloat = 32
+    static let punchTileFloor: CGFloat = 26
+    static let punchGap: CGFloat = 6
+    static let punchWordGap: CGFloat = 12
+    /// Between words, and between the stacked sections.
+    static let wordGap: CGFloat = 8
+    static let gap: CGFloat = 4
+    /// Cartoon: 4:3, at most this share of the screen height; below the floor the top area scrolls instead.
+    static let cartoonCap: CGFloat = 0.26
+    static let cartoonFloor: CGFloat = 96
+    static let captionFont: CGFloat = 14.5
+    /// Delete · Clear capsules.
+    static let capsuleHeight: CGFloat = 30
+    /// Horizontal padding of the play column and of a word block.
+    static let columnPad: CGFloat = 10
+    static let rowPad: CGFloat = 6
+}
+
+/// The measured caption height (1–2 lines) so the cartoon can take exactly what is left.
+private struct MdHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+private struct MdNoBounceIfFits: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) { content.scrollBounceBehavior(.basedOnSize) } else { content }
+    }
+}
+
 struct MuddleView: View {
     @StateObject private var vm: MuddleVM
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh seed.
@@ -228,6 +275,8 @@ struct MuddleView: View {
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
+    /// Measured caption height (two 14.5 pt lines until the first layout reports).
+    @State private var captionHeight: CGFloat = 36
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: MuddleVM(seed: seed))
@@ -246,25 +295,10 @@ struct MuddleView: View {
                         board(finished: true)
                         result
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, MdSize.columnPad)
                 }
             } else {
-                VStack(spacing: 8) {
-                    header
-                    ScrollView {
-                        board(finished: false)
-                            .padding(.vertical, 4)
-                    }
-                    VStack(spacing: 8) {
-                        HStack(spacing: 8) {
-                            capsule("Delete", "delete.left") { SoundManager.shared.playKeyTap(); vm.deleteLetter() }
-                            capsule("Clear", "xmark.circle") { SoundManager.shared.playKeyTap(); vm.clearRow() }
-                        }
-                        LetterKeyboard(onLetter: { vm.typeLetter($0) }, onEnter: { vm.nextRow() }, onDelete: { vm.deleteLetter() })
-                    }
-                    .padding(.bottom, 6)
-                }
-                .padding(.horizontal, 10)
+                playing
             }
             if let toast = vm.toast {
                 Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
@@ -293,6 +327,10 @@ struct MuddleView: View {
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .scramble) }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // No bar items live up there (the corner buttons are overlays); hiding the
+        // empty bar hands its height back to the puzzle.
+        .toolbar(.hidden, for: .navigationBar)
+        .onPreferenceChange(MdHeightKey.self) { h in if h > 0, abs(h - captionHeight) > 0.5 { captionHeight = h } }
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .hidesBottomNav()
         .swipeToGoBack { dismiss() }
@@ -307,12 +345,63 @@ struct MuddleView: View {
         }
     }
 
-    /// The one column (web max-w-md): cartoon, caption, the four words, divider, punchline.
+    /// The one-screen play layout: header, the flexible cartoon + caption area,
+    /// then the fixed stack — four words, the punchline, Delete · Clear, keys.
+    private var playing: some View {
+        VStack(spacing: MdSize.gap) {
+            header
+            GeometryReader { geo in
+                topArea(available: geo.size.height)
+            }
+            VStack(spacing: MdSize.wordGap) {
+                ForEach(0..<SCRAMBLE_WORDS, id: \.self) { i in
+                    MuddleWordRow(vm: vm, row: i, finished: false)
+                        .modifier(ShakeEffect(animatableData: vm.shakes[i]))
+                }
+            }
+            .frame(maxWidth: 420)
+            MuddleFinalRow(vm: vm, finished: false)
+                .modifier(ShakeEffect(animatableData: vm.shakes[SCRAMBLE_FINAL]))
+                .frame(maxWidth: 420)
+            HStack(spacing: 8) {
+                capsule("Delete", "delete.left") { SoundManager.shared.playKeyTap(); vm.deleteLetter() }
+                capsule("Clear", "xmark.circle") { SoundManager.shared.playKeyTap(); vm.clearRow() }
+            }
+            .padding(.top, 2)
+            LetterKeyboard(onLetter: { vm.typeLetter($0) }, onEnter: { vm.nextRow() }, onDelete: { vm.deleteLetter() })
+                .padding(.bottom, 4)
+        }
+        .padding(.horizontal, MdSize.columnPad)
+        // If a phone is too short for even the cartoon floor, the overflow goes
+        // off the TOP behind the header — the keys stay pinned.
+        .frame(maxHeight: .infinity, alignment: .bottom)
+    }
+
+    /// The cartoon at the height that is left (capped at 26 % of the screen),
+    /// centred, with the caption beneath. Scrolls only when the floor does not fit.
+    private func topArea(available: CGFloat) -> some View {
+        let cap = floor(UIScreen.main.bounds.height * MdSize.cartoonCap)
+        let fit = available - captionHeight - MdSize.gap
+        let h = max(MdSize.cartoonFloor, min(cap, fit))
+        return ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: MdSize.gap) {
+                MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
+                    .frame(height: h)
+                caption(finished: false)
+            }
+            .frame(maxWidth: .infinity, minHeight: max(0, available))
+        }
+        .modifier(MdNoBounceIfFits())
+    }
+
+    /// The finished-state column (scrolls with the results beneath): cartoon at
+    /// its cap, caption, the four words, divider, punchline.
     private func board(finished: Bool) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: MdSize.wordGap) {
             MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
+                .frame(height: floor(UIScreen.main.bounds.height * MdSize.cartoonCap))
             caption(finished: finished)
-            VStack(spacing: 4) {
+            VStack(spacing: MdSize.wordGap) {
                 ForEach(0..<SCRAMBLE_WORDS, id: \.self) { i in
                     MuddleWordRow(vm: vm, row: i, finished: finished)
                         .modifier(ShakeEffect(animatableData: vm.shakes[i]))
@@ -325,7 +414,9 @@ struct MuddleView: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// The caption with the blank as an accent underline — the punchline fills it in lowercase purple once solved.
+    /// The caption with the blank as an accent underline — the punchline fills it
+    /// in lowercase purple once solved. At most two lines; its height is reported
+    /// up so the cartoon can take exactly what remains.
     private func caption(finished: Bool) -> some View {
         let parts = vm.state.caption.components(separatedBy: "____")
         let solved = finished || vm.state.solved[SCRAMBLE_FINAL]
@@ -333,9 +424,12 @@ struct MuddleView: View {
         return (Text(parts.first ?? "")
                 + Text(blank).foregroundColor(mdLilacText).underline(true, color: muddleAccent)
                 + Text(parts.count > 1 ? parts[1...].joined(separator: "____") : ""))
-            .font(Brand.font(17, .heavy)).foregroundStyle(Theme.textPrimary)
+            .font(Brand.font(MdSize.captionFont, .heavy)).foregroundStyle(Theme.textPrimary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 8)
+            .lineLimit(2).minimumScaleFactor(0.8)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 4)
+            .background(GeometryReader { g in Color.clear.preference(key: MdHeightKey.self, value: g.size.height) })
             .accessibilityLabel(solved ? vm.state.caption.replacingOccurrences(of: "____", with: vm.state.final.answer.lowercased()) : vm.state.caption.replacingOccurrences(of: "____", with: "blank"))
     }
 
@@ -349,40 +443,45 @@ struct MuddleView: View {
         .buttonStyle(.plain)
     }
 
-    /// Accent-outlined capsule (the web's Delete · Clear controls).
+    /// Accent-outlined 30 pt capsule (the web's Delete · Clear controls); the hit
+    /// shape is grown to 44 pt around the visible pill.
     private func capsule(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
+            Label(label, systemImage: symbol).font(Brand.font(12, .heavy))
                 .foregroundStyle(muddleAccent)
-                .padding(.horizontal, 12).padding(.vertical, 7)
+                .padding(.horizontal, 14)
+                .frame(height: MdSize.capsuleHeight)
                 .background(Capsule().fill(muddleAccent.opacity(0.05)))
                 .overlay(Capsule().stroke(muddleAccent.opacity(0.4), lineWidth: 1.5))
+                .contentShape(Rectangle().inset(by: -(MdSize.hitTarget - MdSize.capsuleHeight) / 2))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
     }
 
+    /// Title plus ONE meta line, tight.
     private var header: some View {
-        VStack(spacing: 4) {
-            Text("MUDDLE").font(Brand.font(24, .black)).foregroundStyle(muddleAccent)
-            HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(muddleAccent) }
-                Text("\(vm.boardsSolved)/\(SCRAMBLE_TOTAL_BOARDS) solved").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text("\(vm.checksLabel) · \(vm.leftLabel)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+        VStack(spacing: 1) {
+            Text("MUDDLE").font(Brand.font(20, .black)).foregroundStyle(muddleAccent)
+            HStack(spacing: 6) {
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted) }
+                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(11)).foregroundStyle(muddleAccent) }
+                Text("\(vm.boardsSolved)/\(SCRAMBLE_TOTAL_BOARDS) solved").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                Text("\(vm.checksLabel) · \(vm.leftLabel)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text(timeText(vm.elapsed, clock: true))
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
-            .lineLimit(1).minimumScaleFactor(0.8)
+            .lineLimit(1).minimumScaleFactor(0.75)
         }
-        .padding(.top, 6)
+        .padding(.top, 2)
+        .padding(.horizontal, 44)
     }
 
     private var result: some View {
@@ -439,7 +538,8 @@ struct MuddleView: View {
 /// The cartoon panel (More Games §5/§8): a standard card in the cream paper
 /// tone at 4:3. The puzzle's image when the founder's batch has produced one;
 /// until then the placeholder sketch. The caption is ALWAYS typeset by the app
-/// beneath the panel, never drawn into the picture.
+/// beneath the panel, never drawn into the picture. The caller sets the height;
+/// the 4:3 fit centres it horizontally.
 struct MuddleCartoonPanel: View {
     let cartoon: String?
     let altText: String
@@ -458,6 +558,7 @@ struct MuddleCartoonPanel: View {
         .aspectRatio(4 / 3, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1))
+        .frame(maxWidth: .infinity)
         .accessibilityLabel(altText)
     }
 
@@ -511,15 +612,22 @@ private func muddleStarts(_ pattern: [Int]) -> [Int] {
     return out
 }
 
-/// The tile side that fits the fixed six-column grid on this phone (web max 56).
+/// The width a word block's left column may use: the column minus the row
+/// padding, the spacer and the two 44 pt hint targets at the right.
+private func muddleColumnWidth() -> CGFloat {
+    min(UIScreen.main.bounds.width, 420) - 2 * MdSize.columnPad - 2 * MdSize.rowPad - MdSize.gap - 2 * MdSize.hitTarget
+}
+
+/// The tile side on the fixed six-column grid: 36 pt, or less only on a phone
+/// narrower than the grid plus the hint buttons.
 private func muddleTileSide() -> CGFloat {
-    let width = min(UIScreen.main.bounds.width, 420) - 20 - 16
-    return min(56, floor((width - 8 * CGFloat(mdCols - 1)) / CGFloat(mdCols)))
+    min(MdSize.tile, floor((muddleColumnWidth() - MdSize.tileGap * CGFloat(mdCols - 1)) / CGFloat(mdCols)))
 }
 
 /// One answer box: a placed letter is a purple tile with white ink (violet when
-/// pinned by a hint); a circled position is a ring drawn INSIDE the box — white
-/// on a filled tile, purple on an empty one — never an outline around the tile.
+/// pinned by a hint); a circled position is a ring ≈ 60 % of the tile drawn
+/// INSIDE the box — white on a filled tile, purple on an empty one — never an
+/// outline around the tile. Letters ≥ 17 pt (half the tile) and Dynamic Type still scales them.
 private struct MuddleTile: View {
     let letter: String
     let filled: Bool
@@ -531,11 +639,11 @@ private struct MuddleTile: View {
         let bg = filled ? (pinned ? mdHint : mdPurple) : Theme.surface
         let border = filled ? bg : Theme.border
         ZStack {
-            RoundedRectangle(cornerRadius: 8).fill(bg)
-            RoundedRectangle(cornerRadius: 8).strokeBorder(border, lineWidth: 2)
-            Text(letter).font(Brand.font(side * 0.46, .black)).foregroundStyle(filled ? Color.white : Theme.textPrimary)
+            RoundedRectangle(cornerRadius: 7).fill(bg)
+            RoundedRectangle(cornerRadius: 7).strokeBorder(border, lineWidth: 1.5)
+            Text(letter).font(Brand.font(max(17, side * 0.5), .black)).foregroundStyle(filled ? Color.white : Theme.textPrimary)
             if ring {
-                Circle().stroke(filled ? Color.white : mdPurple, lineWidth: 2.5).padding(5).opacity(0.9)
+                Circle().stroke(filled ? Color.white : mdPurple, lineWidth: 2).padding(side * 0.2).opacity(0.9)
             }
         }
         .frame(width: side, height: side)
@@ -543,11 +651,42 @@ private struct MuddleTile: View {
     }
 }
 
-/// One word (the classic newspaper layout): the scrambled letters as bold
-/// spaced type with Letter · Solve at the row's right, then the answer boxes
-/// directly beneath on ONE fixed six-column grid (the sixth slot simply empty
-/// for a five-letter word). Tapping a scrambled letter places it; used letters
-/// dim. The active row wears a faint accent wash and border.
+/// Letter · Solve as a 28–30 pt icon-only accent circle inside a 44 pt hit
+/// frame. The label is the accessibility label ("Reveal a letter" / "Solve this word").
+private func hintButton(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+        Image(systemName: symbol).font(.system(size: 14, weight: .bold))
+            .foregroundStyle(muddleAccent)
+            .frame(width: MdSize.hintButton, height: MdSize.hintButton)
+            .background(Circle().fill(muddleAccent.opacity(0.06)))
+            .overlay(Circle().stroke(muddleAccent.opacity(0.45), lineWidth: 1.5))
+            .frame(width: MdSize.hitTarget, height: MdSize.hitTarget)
+            .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(label)
+}
+
+/// A tappable tray letter (scrambled or circled): the glyph sits in a short
+/// line, the hit shape is grown to ≈ 44 pt around it.
+private func trayLetter(_ letter: Character, size: CGFloat, color: Color, dimmed: Bool, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+        Text(String(letter)).font(Brand.font(size, .bold)).tracking(MdSize.scrambleTracking)
+            .foregroundStyle(color)
+            .opacity(dimmed ? 0.25 : 1)
+            .frame(minWidth: 20, minHeight: 24)
+            .contentShape(Rectangle().inset(by: -10))
+    }
+    .buttonStyle(.plain)
+    .disabled(dimmed)
+    .accessibilityLabel("Place \(letter)")
+}
+
+/// One word as ONE compact block: the scrambled letters (17 pt bold, light
+/// tracking) with the answer boxes directly beneath on the fixed six-column
+/// grid (the sixth slot simply empty for a five-letter word), and Letter · Solve
+/// as icon circles at the block's right. Tapping a scrambled letter places it;
+/// used letters dim. No card frame — the active row wears a light lilac tint.
 struct MuddleWordRow: View {
     @ObservedObject var vm: MuddleVM
     let row: Int
@@ -563,47 +702,41 @@ struct MuddleWordRow: View {
         let circled = Set(w.circled)
         let dimmed = muddleDimmed(tray: scramble, remaining: scrambleRemaining(pool: w.scramble, entry: s.entries[row]))
         let side = muddleTileSide()
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center) {
-                HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: MdSize.gap) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
                     ForEach(0..<scramble.count, id: \.self) { i in
-                        Button { vm.tapTile(row, String(scramble[i])) } label: {
-                            Text(String(scramble[i])).font(Brand.font(24, .black)).tracking(1)
-                                .foregroundStyle(Theme.textPrimary)
-                                .opacity(dimmed[i] || solved ? 0.25 : 1)
-                                .frame(minWidth: 22)
+                        trayLetter(scramble[i], size: MdSize.scrambleFont, color: Theme.textPrimary, dimmed: dimmed[i] || solved) {
+                            vm.tapTile(row, String(scramble[i]))
                         }
-                        .buttonStyle(.plain)
                         .disabled(solved || finished || dimmed[i])
-                        .accessibilityLabel("Place \(scramble[i])")
                     }
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Scrambled letters \(scramble.map(String.init).joined(separator: " "))")
-                Spacer(minLength: 6)
-                if !solved && !finished {
-                    HStack(spacing: 6) {
-                        hintCapsule("Letter", "lightbulb") { vm.revealLetter(row) }
-                        hintCapsule("Solve", "eye") { vm.solveWord(row) }
+                HStack(spacing: MdSize.tileGap) {
+                    ForEach(0..<mdCols, id: \.self) { i in
+                        if i < answer.count {
+                            let ch: String = solved ? String(answer[i]) : (i < entry.count ? String(entry[i]) : "")
+                            MuddleTile(letter: ch, filled: !ch.isEmpty, pinned: !solved && i < revealed.count && revealed[i] != "_",
+                                       ring: circled.contains(i), side: side)
+                        } else {
+                            Color.clear.frame(width: side, height: side)
+                        }
                     }
                 }
             }
-            HStack(spacing: 8) {
-                ForEach(0..<mdCols, id: \.self) { i in
-                    if i < answer.count {
-                        let ch: String = solved ? String(answer[i]) : (i < entry.count ? String(entry[i]) : "")
-                        MuddleTile(letter: ch, filled: !ch.isEmpty, pinned: !solved && i < revealed.count && revealed[i] != "_",
-                                   ring: circled.contains(i), side: side)
-                    } else {
-                        Color.clear.frame(width: side, height: side)
-                    }
+            Spacer(minLength: 0)
+            if !solved && !finished {
+                HStack(spacing: 0) {
+                    hintButton("Reveal a letter", "lightbulb") { vm.revealLetter(row) }
+                    hintButton("Solve this word", "eye") { vm.solveWord(row) }
                 }
-                Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 8).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 12).fill(active ? muddleAccent.opacity(0.05) : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? muddleAccent.opacity(0.33) : Color.clear, lineWidth: 1.5))
+        .padding(.horizontal, MdSize.rowPad).padding(.vertical, 2)
+        .background(RoundedRectangle(cornerRadius: 10).fill(active ? mdLilac : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(active ? mdLilacBorder.opacity(0.8) : Color.clear, lineWidth: 1))
         .contentShape(Rectangle())
         .onTapGesture { if !solved && !finished { vm.select(row) } }
         .accessibilityElement(children: .contain)
@@ -611,22 +744,10 @@ struct MuddleWordRow: View {
     }
 }
 
-/// The small accent capsule at a row's right (Letter · Solve).
-private func hintCapsule(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-        Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-            .foregroundStyle(muddleAccent)
-            .padding(.horizontal, 8).padding(.vertical, 5)
-            .background(Capsule().fill(muddleAccent.opacity(0.05)))
-            .overlay(Capsule().stroke(muddleAccent.opacity(0.4), lineWidth: 1.5))
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(label)
-}
-
 /// The punchline under a divider, grouped by word, in the light lilac tint with
 /// purple text; its tray is the circled letters in word order. It opens only
-/// after the four words and checks the same way.
+/// after the four words and checks the same way. Compact: label, the tray
+/// (while open) and the ≈ 32 pt tiles stacked tight, the Letter circle at the right.
 struct MuddleFinalRow: View {
     @ObservedObject var vm: MuddleVM
     let finished: Bool
@@ -640,60 +761,58 @@ struct MuddleFinalRow: View {
         let tray = Array(scrambleTray(s, SCRAMBLE_FINAL))
         let dimmed = muddleDimmed(tray: tray, remaining: scrambleRemaining(pool: scrambleTray(s, SCRAMBLE_FINAL), entry: s.entries[SCRAMBLE_FINAL]))
         let active = vm.row == SCRAMBLE_FINAL && !finished
+        let showTray = open && !solved && !finished
         let pattern = s.final.pattern
         let total = max(1, pattern.reduce(0, +))
-        let width = min(UIScreen.main.bounds.width, 420) - 20 - 16
-        let side = max(28, min(44, floor((width - 6 * CGFloat(total - pattern.count) - 16 * CGFloat(pattern.count - 1)) / CGFloat(total))))
+        // One line when it fits: the column minus the single hint target at the right.
+        let width = muddleColumnWidth() + MdSize.hitTarget
+        let side = max(MdSize.punchTileFloor, min(MdSize.punchTile,
+                       floor((width - MdSize.punchGap * CGFloat(total - pattern.count) - MdSize.punchWordGap * CGFloat(pattern.count - 1)) / CGFloat(total))))
         let starts = muddleStarts(pattern)
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        HStack(alignment: .center, spacing: MdSize.gap) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(open || finished ? "THE PUNCHLINE" : "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE")
-                    .font(Brand.font(10, .black)).tracking(1.5).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(Theme.textMuted)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                Spacer(minLength: 6)
-                if open && !solved && !finished {
-                    hintCapsule("Letter", "lightbulb") { vm.revealLetter(SCRAMBLE_FINAL) }
-                }
-            }
-            if open && !solved && !finished {
-                WordWrapLayout(spacing: 10, lineSpacing: 6) {
-                    ForEach(0..<tray.count, id: \.self) { i in
-                        Button { vm.tapTile(SCRAMBLE_FINAL, String(tray[i])) } label: {
-                            Text(String(tray[i])).font(Brand.font(22, .black)).foregroundStyle(mdLilacText)
-                                .opacity(dimmed[i] ? 0.25 : 1)
-                                .frame(minWidth: 20)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(dimmed[i])
-                        .accessibilityLabel("Place \(tray[i])")
-                    }
-                }
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel("Circled letters")
-            }
-            WordWrapLayout(spacing: 16, lineSpacing: 8) {
-                ForEach(0..<pattern.count, id: \.self) { wi in
-                    HStack(spacing: 6) {
-                        ForEach(0..<pattern[wi], id: \.self) { k in
-                            let idx = starts[wi] + k
-                            let ch: String = (solved || finished) ? (idx < target.count ? String(target[idx]) : "")
-                                : (idx < entry.count ? String(entry[idx]) : "")
-                            let filled = !ch.isEmpty
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8).fill(filled ? mdLilac : Theme.surface)
-                                RoundedRectangle(cornerRadius: 8).strokeBorder(filled ? mdLilacBorder : Theme.border, lineWidth: 2)
-                                Text(ch).font(Brand.font(side * 0.5, .black)).foregroundStyle(mdLilacText)
-                                Circle().stroke(mdPurple, lineWidth: 2).padding(4).opacity(filled ? 0.9 : 0.35)
+                if showTray {
+                    WordWrapLayout(spacing: 6, lineSpacing: 2) {
+                        ForEach(0..<tray.count, id: \.self) { i in
+                            trayLetter(tray[i], size: MdSize.scrambleFont, color: mdLilacText, dimmed: dimmed[i]) {
+                                vm.tapTile(SCRAMBLE_FINAL, String(tray[i]))
                             }
-                            .frame(width: side, height: side)
-                            .accessibilityLabel(ch.isEmpty ? "empty" : ch)
+                        }
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Circled letters")
+                }
+                WordWrapLayout(spacing: MdSize.punchWordGap, lineSpacing: 4) {
+                    ForEach(0..<pattern.count, id: \.self) { wi in
+                        HStack(spacing: MdSize.punchGap) {
+                            ForEach(0..<pattern[wi], id: \.self) { k in
+                                let idx = starts[wi] + k
+                                let ch: String = (solved || finished) ? (idx < target.count ? String(target[idx]) : "")
+                                    : (idx < entry.count ? String(entry[idx]) : "")
+                                let filled = !ch.isEmpty
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 7).fill(filled ? mdLilac : Theme.surface)
+                                    RoundedRectangle(cornerRadius: 7).strokeBorder(filled ? mdLilacBorder : Theme.border, lineWidth: 1.5)
+                                    Text(ch).font(Brand.font(max(17, side * 0.55), .black)).foregroundStyle(mdLilacText)
+                                    Circle().stroke(mdPurple, lineWidth: 1.5).padding(side * 0.2).opacity(filled ? 0.9 : 0.35)
+                                }
+                                .frame(width: side, height: side)
+                                .accessibilityLabel(ch.isEmpty ? "empty" : ch)
+                            }
                         }
                     }
                 }
+            }
+            if showTray {
+                Spacer(minLength: 0)
+                hintButton("Reveal a letter", "lightbulb") { vm.revealLetter(SCRAMBLE_FINAL) }
             }
         }
-        .padding(.horizontal, 8).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(active ? muddleAccent.opacity(0.05) : Color.clear))
+        .padding(.horizontal, MdSize.rowPad).padding(.top, 8).padding(.bottom, 4)
+        .background(RoundedRectangle(cornerRadius: 10).fill(active ? mdLilac.opacity(0.7) : Color.clear))
         .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1.5).padding(.horizontal, 4) }
         .opacity(open || finished ? 1 : 0.55)
         .contentShape(Rectangle())

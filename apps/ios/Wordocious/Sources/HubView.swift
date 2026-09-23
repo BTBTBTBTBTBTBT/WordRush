@@ -99,7 +99,8 @@ final class HubVM: ObservableObject {
         dispatch(.submit(word))
         if let r = state.reject {
             flash(rejectCopy(r)); Haptics.error(); SoundManager.shared.playInvalid()
-            shake = true; Task { try? await Task.sleep(nanoseconds: 450_000_000); shake = false }
+            // Like the word games: the rejected entry shakes, then erases so the next word starts clean.
+            shake = true; Task { try? await Task.sleep(nanoseconds: 450_000_000); shake = false; typing = "" }
         } else {
             typing = ""
             if state.words.contains(word) { Haptics.tap(); SoundManager.shared.playSuccess(); flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))") }

@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -272,7 +273,6 @@ fun SpyglassScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SpyglassHeader(session)
-                Spacer(Modifier.weight(1f))
                 SpyglassGrid(session, revealMissing = false) { from, to -> session.select(from, to, onFinished) }
                 WordChips(session)
                 Spacer(Modifier.weight(1f))
@@ -321,22 +321,27 @@ private fun SpyglassHeader(session: SpyglassSession) {
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun WordChips(session: SpyglassSession) {
     val s = session.state
-    val rows = s.words.map { it.w }.chunked(5)
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        for (row in rows) Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            for (w in row) {
-                val found = w in s.found; val hinted = w in s.hinted && !found
-                Text(
-                    w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (found) SPY_INK else WTheme.text,
-                    textDecoration = if (found) TextDecoration.LineThrough else null,
-                    modifier = Modifier.clip(CircleShape).background(if (found) SPY_ACCENT.copy(alpha = 0.14f) else WTheme.surface)
-                        .border(1.dp, if (found) SPY_ACCENT.copy(alpha = 0.35f) else if (hinted) SPY_ACCENT else WTheme.border, CircleShape)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                )
-            }
+    // Chips flow by width and never break inside a word (WOODPECKER used to wrap
+    // to "WOODPECKE / R" in fixed rows of five).
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        for (w in s.words.map { it.w }) {
+            val found = w in s.found; val hinted = w in s.hinted && !found
+            Text(
+                w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (found) SPY_INK else WTheme.text,
+                textDecoration = if (found) TextDecoration.LineThrough else null,
+                maxLines = 1, softWrap = false,
+                modifier = Modifier.clip(CircleShape).background(if (found) SPY_ACCENT.copy(alpha = 0.14f) else WTheme.surface)
+                    .border(1.dp, if (found) SPY_ACCENT.copy(alpha = 0.35f) else if (hinted) SPY_ACCENT else WTheme.border, CircleShape)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            )
         }
     }
 }

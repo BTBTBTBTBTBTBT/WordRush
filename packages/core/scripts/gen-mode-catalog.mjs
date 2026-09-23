@@ -46,6 +46,8 @@ struct GenMode: Identifiable {
     let guessSemantics: String
     /// The perfect guess_count; display shows guess_count − guessBase.
     let guessBase: Int
+    /// Reading order of the home grid (2 × 5). The array order stays the sweep/canonical order.
+    let homeSlot: Int
     /// Compiled in and visible (remote flag may still hide it).
     let enabled: Bool
     let flagKey: String?
@@ -60,7 +62,7 @@ struct GenCategory { let key: String; let title: String }
 
 enum ModeGen {
     static let all: [GenMode] = [
-${modes.map((m) => `        GenMode(id: "${m.id}", dbKey: ${swiftOpt(m.dbKey)}, title: "${m.title}", shortTitle: "${m.shortTitle}", shareLabel: "${m.shareLabel}", desc: "${m.desc}", accentHex: "${m.accentHex}", glyph: ${swiftOpt(m.glyph)}, romanNumeral: ${swiftOpt(m.romanNumeral)}, dailyEligible: ${m.dailyEligible}, group: "${m.group}", sweep: ${m.sweep}, engine: "${m.engine}", guessSemantics: "${m.guessSemantics}", guessBase: ${m.guessBase}, enabled: ${m.enabled}, flagKey: ${swiftOpt(m.flagKey)}, category: ${swiftOpt(m.category)}, guideSlug: ${swiftOpt(m.guideSlug)})`).join(',\n')},
+${modes.map((m) => `        GenMode(id: "${m.id}", dbKey: ${swiftOpt(m.dbKey)}, title: "${m.title}", shortTitle: "${m.shortTitle}", shareLabel: "${m.shareLabel}", desc: "${m.desc}", accentHex: "${m.accentHex}", glyph: ${swiftOpt(m.glyph)}, romanNumeral: ${swiftOpt(m.romanNumeral)}, dailyEligible: ${m.dailyEligible}, group: "${m.group}", sweep: ${m.sweep}, engine: "${m.engine}", guessSemantics: "${m.guessSemantics}", guessBase: ${m.guessBase}, homeSlot: ${m.homeSlot}, enabled: ${m.enabled}, flagKey: ${swiftOpt(m.flagKey)}, category: ${swiftOpt(m.category)}, guideSlug: ${swiftOpt(m.guideSlug)})`).join(',\n')},
     ]
     static func byDbKey(_ k: String) -> GenMode? { all.first { $0.dbKey == k } }
     static func byId(_ i: String) -> GenMode? { all.first { $0.id == i } }
@@ -71,7 +73,7 @@ ${modes.map((m) => `        GenMode(id: "${m.id}", dbKey: ${swiftOpt(m.dbKey)}, 
     /// The current required Daily Sweep set, canonical order.
     static var sweep: [GenMode] { daily.filter { $0.sweep } }
     /// Home grid tiles.
-    static var core: [GenMode] { enabled.filter { $0.group == "core" } }
+    static var core: [GenMode] { enabled.filter { $0.group == "core" }.sorted { $0.homeSlot < $1.homeSlot } }
     /// More Games sheet entries.
     static var more: [GenMode] { enabled.filter { $0.group == "more" } }
     static let moreCategories: [GenCategory] = [
@@ -117,6 +119,8 @@ data class GenMode(
     val guessSemantics: String,
     /** The perfect guess_count; display shows guess_count − guessBase. */
     val guessBase: Int,
+    /** Reading order of the home grid (2 × 5). The list order stays the sweep/canonical order. */
+    val homeSlot: Int,
     /** Compiled in and visible (remote flag may still hide it). */
     val enabled: Boolean,
     val flagKey: String?,
@@ -133,7 +137,7 @@ data class GenCategory(val key: String, val title: String)
 
 object ModeGen {
     val all: List<GenMode> = listOf(
-${modes.map((m) => `        GenMode("${m.id}", ${ktOpt(m.dbKey)}, "${m.title}", "${m.shortTitle}", "${m.shareLabel}", "${m.desc}", "${m.accentHex}", ${ktOpt(m.glyph)}, ${ktOpt(m.romanNumeral)}, ${m.dailyEligible}, "${m.group}", ${m.sweep}, "${m.engine}", "${m.guessSemantics}", ${m.guessBase}, ${m.enabled}, ${ktOpt(m.flagKey)}, ${ktOpt(m.category)}, ${ktOpt(m.guideSlug)})`).join(',\n')},
+${modes.map((m) => `        GenMode("${m.id}", ${ktOpt(m.dbKey)}, "${m.title}", "${m.shortTitle}", "${m.shareLabel}", "${m.desc}", "${m.accentHex}", ${ktOpt(m.glyph)}, ${ktOpt(m.romanNumeral)}, ${m.dailyEligible}, "${m.group}", ${m.sweep}, "${m.engine}", "${m.guessSemantics}", ${m.guessBase}, ${m.homeSlot}, ${m.enabled}, ${ktOpt(m.flagKey)}, ${ktOpt(m.category)}, ${ktOpt(m.guideSlug)})`).join(',\n')},
     )
     fun byDbKey(k: String): GenMode? = all.firstOrNull { it.dbKey == k }
     fun byId(i: String): GenMode? = all.firstOrNull { it.id == i }
@@ -144,7 +148,7 @@ ${modes.map((m) => `        GenMode("${m.id}", ${ktOpt(m.dbKey)}, "${m.title}", 
     /** The current required Daily Sweep set, canonical order. */
     val sweep: List<GenMode> get() = daily.filter { it.sweep }
     /** Home grid tiles. */
-    val core: List<GenMode> get() = enabled.filter { it.group == "core" }
+    val core: List<GenMode> get() = enabled.filter { it.group == "core" }.sortedBy { it.homeSlot }
     /** More Games sheet entries. */
     val more: List<GenMode> get() = enabled.filter { it.group == "more" }
     val moreCategories: List<GenCategory> = listOf(
@@ -188,6 +192,8 @@ export interface ModeMeta {
   guessSemantics: GuessSemantics;
   /** The perfect guess_count; display shows guess_count − guessBase. */
   guessBase: number;
+  /** Reading order of the home grid (2 × 5); the array order stays the sweep/canonical order. */
+  homeSlot: number;
   /** Compiled in and visible (a remote flag may still hide it). */
   enabled: boolean;
   flagKey: string | null;
@@ -212,7 +218,7 @@ export const DAILY_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.dailyEligib
 /** The current required Daily Sweep set, canonical order. */
 export const SWEEP_MODES: ModeMeta[] = DAILY_MODES.filter((m) => m.sweep);
 /** Home grid tiles. */
-export const CORE_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'core');
+export const CORE_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'core').sort((a, b) => a.homeSlot - b.homeSlot);
 /** More Games sheet entries. */
 export const MORE_GAME_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'more');
 export const MORE_CATEGORIES: MoreCategory[] = ${JSON.stringify(moreCategories)};

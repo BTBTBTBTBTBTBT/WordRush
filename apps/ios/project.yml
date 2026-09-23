@@ -14,13 +14,19 @@ packages:
   SocketIO:
     url: https://github.com/socketio/socket.io-client-swift
     from: 16.1.0
-  # §252: AdMob is gone for good — Google banned the publisher entity on
-  # 2026-09-01. AppLovin MAX is the replacement (separate company, separate
-  # policy). Its SPM package also links AppTrackingTransparency for us, since
-  # AppLovin's CMP presents the ATT prompt as part of its consent flow.
-  AppLovinSDK:
-    url: https://github.com/AppLovin/AppLovin-MAX-Swift-Package
-    from: 13.6.0
+  # Ads: Unity LevelPlay (ironSource mediation) — see docs/LEVELPLAY_SETUP.md.
+  # AdMob died with the publisher entity (Google ban, 2026-09-01); AppLovin MAX
+  # was the §252 replacement but its account never activated (AppLovin stopped
+  # taking signups, 2026-09-23). The AdMob/Google adapter must NEVER be added
+  # here. Official SPM package (docs.unity.com → LevelPlay → iOS → SDK
+  # integration): product `UnityMediationSDK`, exact-version pinned; SPM needs
+  # SDK ≥ 9.3.0. Mediation adapters come as separate packages named
+  # LevelPlay-<Network>-Adapter-Swift-Package, added when the account exists.
+  # The manifest cannot carry `-ObjC` itself (SPM forbids unsafeFlags in
+  # versioned deps), so OTHER_LDFLAGS below adds it as the docs require.
+  LevelPlaySDK:
+    url: https://github.com/ironsource-mobile/LevelPlay-Swift-Package
+    exactVersion: 9.6.0
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 7.1.0
@@ -44,8 +50,8 @@ targets:
         product: Supabase
       - package: SocketIO
         product: SocketIO
-      - package: AppLovinSDK
-        product: AppLovinSDK
+      - package: LevelPlaySDK
+        product: UnityMediationSDK
       - package: GoogleSignIn
         product: GoogleSignIn
       - package: Sentry
@@ -81,20 +87,24 @@ targets:
           - CFBundleURLName: com.wordocious.app.google
             CFBundleURLSchemes:
               - com.googleusercontent.apps.193086095286-4ftdf92g8cnsur8kd7odqq0jueqq5oog
-        # (§252: GADApplicationIdentifier removed with AdMob. The AppLovin SDK
-        # key is NOT a plist key — it is passed to ALSdkInitializationConfiguration
-        # in AdsManager.swift.)
-        # App Tracking Transparency prompt copy. AppLovin's CMP presents this
-        # prompt itself as the last step of its consent flow.
+        # (GADApplicationIdentifier left with AdMob. The LevelPlay app key is
+        # NOT a plist key — it is passed to LPMInitRequestBuilder in
+        # AdsManager.swift.)
+        # App Tracking Transparency prompt copy. AdsManager requests ATT itself,
+        # once, before the LevelPlay SDK initializes (LevelPlay has no CMP).
         NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
         # Camera permission — used only when taking a new profile photo.
         NSCameraUsageDescription: Take a photo for your Wordocious profile picture.
-        # SKAdNetwork attribution. ludvb6z3bs is AppLovin's own; every mediated
-        # network needs its own entry or its installs go unattributed. Paste the
-        # full current list from AppLovin's dashboard once mediation is live —
-        # MAX > Networks publishes a ready-made plist block.
+        # SKAdNetwork attribution. su67r6k2v3 is ironSource's own id (LevelPlay
+        # iOS SDK-integration docs). Every mediated network needs its own entry
+        # or its installs go unattributed — paste the FULL current list from the
+        # LevelPlay docs (Integration → iOS → SKAdNetwork) once the account
+        # exists and the network stack is chosen. Never add Google's.
         SKAdNetworkItems:
-          - SKAdNetworkIdentifier: ludvb6z3bs.skadnetwork
+          - SKAdNetworkIdentifier: su67r6k2v3.skadnetwork
+        # Universal SKAN reporting: copies of winning install postbacks go to
+        # ironSource, per the same docs page.
+        NSAdvertisingAttributionReportEndpoint: https://postbacks-is.com/
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wordocious.app
@@ -104,10 +114,13 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.30"
-        CURRENT_PROJECT_VERSION: "186"
+        CURRENT_PROJECT_VERSION: "187"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Required by the LevelPlay SDK (Objective-C categories inside the
+        # xcframework); its Package.swift documents that SPM cannot set it.
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
       configs:
         # §256: Release is MANUAL-signed to a named App Store profile. Apple's
         # Individual→Organization conversion kept team Q32F6GRDYG but never
@@ -148,7 +161,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.30"
-        CURRENT_PROJECT_VERSION: "186"
+        CURRENT_PROJECT_VERSION: "187"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES

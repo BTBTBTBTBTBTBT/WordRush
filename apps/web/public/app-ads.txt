@@ -1,17 +1,18 @@
 # Authorized sellers of Wordocious APP inventory (iOS + Android).
 #
-# §252: deliberately empty. The Google line that used to live here
+# Deliberately empty. The Google line that used to live here
 # (google.com, pub-6632322515624356) authorized a publisher account Google
 # terminated on 2026-09-01 — the appeal was denied and the ban is entity-level,
 # so that authorization can never be valid again. Leaving it would vouch for a
-# seller who cannot sell.
+# seller who cannot sell. AppLovin never activated our account (refused
+# 2026-09-23), so no AppLovin lines belong here either.
 #
-# AppLovin MAX replaces it. Do NOT hand-write the replacement lines: the
-# AppLovin dashboard generates them, already populated with our account ID and
+# Unity LevelPlay replaces both. Do NOT hand-write the replacement lines: the
+# LevelPlay dashboard generates them, already populated with our account ID and
 # with a line for every mediated network in the stack (each network has to be
 # authorized separately or its demand will not bid). Copy the whole block from
 #
-#   AppLovin dashboard → Account > General > App-ads.txt Info
+#   LevelPlay dashboard → Setup → app-ads.txt
 #
 # Until those lines are here, buyers treat our app inventory as unauthorized
-# and bids will not clear. See apps/ios/APPLOVIN_SETUP.md.
+# and bids will not clear. See docs/LEVELPLAY_SETUP.md.

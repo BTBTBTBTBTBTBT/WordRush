@@ -185,7 +185,11 @@ class LadderSession(val seed: String, val isDaily: Boolean) {
         val before = state.words.size
         dispatch(LadderAction.Submit(typing), onFinished)
         val r = state.reject
-        if (r != null) { flash(rejectCopy(r)); SoundManager.playInvalid(); invalid = true }
+        if (r != null) {
+            flash(rejectCopy(r)); SoundManager.playInvalid(); invalid = true
+            val rejected = typing
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ if (typing == rejected) typing = "" }, 500)
+        }
         else if (state.words.size > before) { typing = ""; SoundManager.playKeyTap() }
     }
     fun undo(onFinished: () -> Unit) { dispatch(LadderAction.Undo, onFinished); typing = "" }

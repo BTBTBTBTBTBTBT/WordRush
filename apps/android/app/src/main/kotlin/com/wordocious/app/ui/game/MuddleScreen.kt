@@ -6,12 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,13 +63,16 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -141,6 +144,24 @@ private val SKETCH_INK = Color(0xFF1A1A2E)
 private const val COLS = 6
 /** Where the cartoon batch is hosted (the web serves /muddle/<file> from public/muddle). */
 private const val CARTOON_HOST = "https://wordocious.com/muddle/"
+
+// Compact rule sizes (founder, 2026-09-23 — plan §5): the whole puzzle on one screen.
+/** The cartoon's height cap as a fraction of the screen height (~26 %). */
+private const val CARTOON_SCREEN_FRACTION = 0.26f
+/** Below this the cartoon stops shrinking and the picture area scrolls instead (never the keyboard). */
+private val CARTOON_FLOOR = 120.dp
+/** Word tiles on the fixed six-column grid (36–40 dp by the rule). */
+private val WORD_TILE = 36.dp
+/** The punchline tiles (~32 dp). */
+private val FINAL_TILE = 32.dp
+/** Gap between tiles on the grid. */
+private val TILE_GAP = 6.dp
+/** The Letter · Solve icon circles (28–30 dp). */
+private val HINT_CIRCLE = 28.dp
+/** The circled ring is ~60 % of the tile, drawn inside it. */
+private const val RING_FRACTION = 0.60f
+private val CAPTION_FONT = 14.sp
+private val CAPTION_LINE_HEIGHT = 18.sp
 
 /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
 private val HOLIDAY_TITLES = mapOf(
@@ -386,29 +407,45 @@ fun MuddleScreen(
 
     Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         if (session.isFinished) {
+            val cartoonH = LocalConfiguration.current.screenHeightDp.dp * CARTOON_SCREEN_FRACTION
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MuddleHeader(session, tick)
-                MuddleBoard(session, finished = true, onFinished)
+                MuddlePicture(session, finished = true, cartoonHeight = cartoonH)
+                MuddlePuzzle(session, finished = true, onFinished)
                 MuddleResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
             }
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                MuddleHeader(session, tick)
-                Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    MuddleBoard(session, finished = false, onFinished)
+            // Compact rule (founder, 2026-09-23): the WHOLE puzzle on one screen with the
+            // keyboard pinned. Header, the four words, the punchline, Delete · Clear and the
+            // keyboard are fixed-height; the cartoon takes what they leave (capped at ~26 % of
+            // the screen) and shrinks first on shorter phones — only below its floor does the
+            // picture area scroll, and then only the cartoon and caption ever move.
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val cartoonCap = maxHeight * CARTOON_SCREEN_FRACTION
+                Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    MuddleHeader(session, tick)
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                        // Two caption lines (font-scaled) plus the gap under the cartoon.
+                        val captionAllowance = with(LocalDensity.current) { (CAPTION_LINE_HEIGHT * 2).toDp() } + 8.dp
+                        val cartoonH = minOf(cartoonCap, maxWidth * 0.75f, maxOf(maxHeight - captionAllowance, CARTOON_FLOOR))
+                        Column(
+                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                        ) {
+                            MuddlePicture(session, finished = false, cartoonHeight = cartoonH)
+                        }
+                    }
+                    MuddlePuzzle(session, finished = false, onFinished)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Capsule("Delete", Icons.AutoMirrored.Outlined.Backspace) { SoundManager.playKeyTap(); session.back() }
+                        Capsule("Clear", Icons.Filled.Cancel) { SoundManager.playKeyTap(); session.clear() }
+                    }
+                    KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() })
+                    Spacer(Modifier.height(4.dp))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Capsule("Delete", Icons.AutoMirrored.Outlined.Backspace) { SoundManager.playKeyTap(); session.back() }
-                    Capsule("Clear", Icons.Filled.Cancel) { SoundManager.playKeyTap(); session.clear() }
-                }
-                KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() })
-                Spacer(Modifier.height(6.dp))
             }
         }
         session.toast?.let {
@@ -425,20 +462,22 @@ fun MuddleScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MuddleHeader(session: MuddleSession, tick: Int) {
     val s = session.state
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 6.dp)) {
-        Text("MUDDLE", fontSize = 24.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1, modifier = Modifier.padding(horizontal = 52.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            session.holidayTitle?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MUDDLE_ACCENT) }
-            Text("${scrambleBoardsSolved(s)}/$SCRAMBLE_TOTAL_BOARDS solved", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("${session.checksLabel} · ${SCRAMBLE_MAX_CHECKS - s.checks} left", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+    // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) sit either side.
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 2.dp)) {
+        Text("MUDDLE", fontSize = 20.sp, lineHeight = 22.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1, modifier = Modifier.padding(horizontal = 52.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 48.dp)) {
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+            session.holidayTitle?.let { Text(it, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = MUDDLE_ACCENT, maxLines = 1) }
+            Text("${scrambleBoardsSolved(s)}/$SCRAMBLE_TOTAL_BOARDS solved", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+            Text("${session.checksLabel} · ${SCRAMBLE_MAX_CHECKS - s.checks} left", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
             @Suppress("UNUSED_EXPRESSION") tick
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
-                Text(clockText(session.elapsed), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(10.dp))
+                Text(clockText(session.elapsed), fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
             }
         }
     }
@@ -446,13 +485,17 @@ private fun MuddleHeader(session: MuddleSession, tick: Int) {
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** The founder's classic newspaper layout in ONE column: cartoon, caption, the four words, a divider, the punchline. */
+/** The picture half of the founder's newspaper layout: the cartoon (at the height the screen allows) and its caption. */
 @Composable
-private fun MuddleBoard(session: MuddleSession, finished: Boolean, onFinished: () -> Unit) {
-    val s = session.state
+private fun MuddlePicture(session: MuddleSession, finished: Boolean, cartoonHeight: Dp) {
     val puzzle = session.puzzle
-    CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon")
-    Caption(s, finished)
+    CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = cartoonHeight)
+    Caption(session.state, finished)
+}
+
+/** The puzzle half, fixed-height: the four words as compact blocks, a divider, the punchline. */
+@Composable
+private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: () -> Unit) {
     Column(Modifier.fillMaxWidth().widthIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         for (i in 0 until SCRAMBLE_FINAL) {
             WordRow(
@@ -470,16 +513,17 @@ private fun MuddleBoard(session: MuddleSession, finished: Boolean, onFinished: (
 }
 
 /**
- * The cartoon panel (§5/§8): a standard card in the cream paper tone with a 4:3
- * aspect. The puzzle's cartoon loads from the web host when set; until the
- * founder's image batch runs a placeholder sketch stands in. The caption is
- * ALWAYS typeset by the app beneath the panel, never drawn.
+ * The cartoon panel (§5/§8): a standard card in the cream paper tone, always
+ * 4:3, sized from the height the screen leaves it (compact rule: capped at
+ * ~26 % of the screen) and centred. The puzzle's cartoon loads from the web
+ * host when set; until the founder's image batch runs a placeholder sketch
+ * stands in. The caption is ALWAYS typeset by the app beneath the panel.
  */
 @Composable
-private fun CartoonPanel(cartoon: String?, altText: String) {
+private fun CartoonPanel(cartoon: String?, altText: String, height: Dp) {
     val shape = RoundedCornerShape(16.dp)
     Box(
-        Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(4f / 3f).clip(shape).background(PAPER).border(1.dp, WTheme.border, shape),
+        Modifier.size(width = height * 4f / 3f, height = height).clip(shape).background(PAPER).border(1.dp, WTheme.border, shape),
         contentAlignment = Alignment.Center,
     ) {
         if (cartoon != null) {
@@ -542,12 +586,13 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
                     },
                     contentAlignment = Alignment.BottomCenter,
                 ) {
-                    Text(answer, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = LILAC_TEXT, fontFamily = Nunito, maxLines = 1, softWrap = false)
+                    Text(answer, fontSize = CAPTION_FONT, fontWeight = FontWeight.ExtraBold, color = LILAC_TEXT, fontFamily = Nunito, maxLines = 1, softWrap = false)
                 }
             },
         ),
-        fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
-        modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 8.dp),
+        fontSize = CAPTION_FONT, lineHeight = CAPTION_LINE_HEIGHT, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
+        maxLines = 2, overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 6.dp),
     )
 }
 
@@ -558,14 +603,20 @@ private fun usedMask(tray: String, entry: String): List<Boolean> {
 }
 
 /**
- * One word (§5, the classic newspaper layout): the scrambled letters as bold
- * spaced type with the Letter and Solve capsules at the row's right, then the
- * answer boxes directly beneath on ONE fixed six-column grid (the sixth slot
- * simply empty for a five-letter word). A placed letter is a purple tile with
- * white ink, a pinned letter violet; a circled position is a ring drawn INSIDE
- * its box — white on a filled tile, purple on an empty one. Tapping a
- * scrambled letter places it; used letters dim. The active row wears a faint
- * accent wash and border; a wrong row shakes.
+ * One word as ONE compact block (compact rule, §5): the scrambled letters as
+ * 17 sp bold type with light tracking on the left and the Letter · Solve icon
+ * circles on the right, then the answer tiles directly beneath on ONE fixed
+ * six-column grid (the sixth slot simply empty for a five-letter word). A
+ * placed letter is a purple tile with white ink, a pinned letter violet; a
+ * circled position is a ring ~60 % of the tile drawn INSIDE it — white on a
+ * filled tile, purple on an empty one. Tapping a scrambled letter places it;
+ * used letters dim. No card frame per word: the active row wears a light lilac
+ * tint and border only; a wrong row shakes.
+ *
+ * Touch targets: the glyphs are small but every tappable thing carries padding,
+ * and Compose's hit test dispatches a touch within the 48 dp minimum touch
+ * target to the nearest pointer-input node, so a letter or a hint circle still
+ * takes a finger-sized tap without the layout growing to 48 dp.
  */
 @Composable
 private fun WordRow(
@@ -579,62 +630,64 @@ private fun WordRow(
     val dimmed = usedMask(w.scramble, entry)
     val circled = w.circled.toSet()
     val revealed = s.revealed[row]
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(10.dp)
     Column(
         Modifier.fillMaxWidth()
             .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
             .clip(shape)
-            .background(if (active) MUDDLE_ACCENT.copy(alpha = 0.05f) else Color.Transparent)
-            .border(1.5.dp, if (active) MUDDLE_ACCENT.copy(alpha = 0.33f) else Color.Transparent, shape)
+            .background(if (active) LILAC else Color.Transparent)
+            .border(1.dp, if (active) LILAC_BORDER else Color.Transparent, shape)
             .clickableNoRipple { if (!solved && !finished) onSelect() }
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().height(HINT_ROW_HEIGHT), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
                 w.scramble.forEachIndexed { i, ch ->
                     val dim = dimmed[i] || solved
                     Text(
-                        ch.toString(), fontSize = 24.sp, lineHeight = 26.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, letterSpacing = 1.sp,
-                        modifier = Modifier.alpha(if (dim) 0.25f else 1f).then(if (!dim && !finished) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier),
+                        ch.toString(), fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, letterSpacing = 1.sp,
+                        modifier = Modifier.alpha(if (dim) 0.25f else 1f)
+                            .then(if (!dim && !finished) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier)
+                            .padding(horizontal = 3.dp, vertical = 6.dp),
                     )
                 }
             }
             if (!solved && !finished) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SmallCapsule("Letter", Icons.Filled.Lightbulb, onRevealLetter)
-                    SmallCapsule("Solve", Icons.Filled.Visibility, onSolveWord)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    HintCircle(Icons.Filled.Lightbulb, "Reveal a letter", onRevealLetter)
+                    HintCircle(Icons.Filled.Visibility, "Solve this word", onSolveWord)
                 }
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(TILE_GAP)) {
             for (i in 0 until COLS) {
-                if (i >= w.answer.length) { Spacer(Modifier.weight(1f)); continue }
+                if (i >= w.answer.length) { Spacer(Modifier.size(WORD_TILE)); continue }
                 val ch = if (solved) w.answer[i].toString() else entry.getOrNull(i)?.toString() ?: ""
                 val filled = ch.isNotEmpty()
                 val pinned = revealed[i] != '_'
                 val bg = if (solved) PURPLE else if (filled) (if (pinned) HINT else PURPLE) else WTheme.surface
-                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = 22.sp, ringInset = 5.dp, modifier = Modifier.weight(1f))
+                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = 18.sp, modifier = Modifier.size(WORD_TILE))
             }
         }
     }
 }
 
-/** One answer box: rounded, 2dp border, letter centred; the circled ring drawn INSIDE (never an outline around the tile). */
+/** The top line of a word block — the hint circles set its height so the scramble letters never jump when they hide. */
+private val HINT_ROW_HEIGHT = 32.dp
+
+/** One answer tile: rounded, 2dp border, letter centred; the circled ring drawn INSIDE at ~60 % of the tile (never an outline around it). */
 @Composable
 private fun AnswerBox(
     ch: String, bg: Color, border: Color, ink: Color, ring: Boolean, ringColor: Color, ringAlpha: Float,
-    fontSize: androidx.compose.ui.unit.TextUnit, ringInset: Dp, modifier: Modifier = Modifier,
+    fontSize: androidx.compose.ui.unit.TextUnit, modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(8.dp)
+    val shape = RoundedCornerShape(7.dp)
     Box(
-        modifier.aspectRatio(1f).heightIn(max = 56.dp).clip(shape).background(bg).border(2.dp, border, shape)
+        modifier.clip(shape).background(bg).border(2.dp, border, shape)
             .drawWithContent {
                 drawContent()
-                if (ring) {
-                    val inset = ringInset.toPx()
-                    drawCircle(ringColor.copy(alpha = ringAlpha), radius = size.minDimension / 2f - inset, style = Stroke(2.5.dp.toPx()))
-                }
+                if (ring) drawCircle(ringColor.copy(alpha = ringAlpha), radius = size.minDimension * RING_FRACTION / 2f, style = Stroke(2.dp.toPx()))
             },
         contentAlignment = Alignment.Center,
     ) {
@@ -660,48 +713,54 @@ private fun FinalRow(
     val target = scrambleTarget(s, SCRAMBLE_FINAL)
     val tray = scrambleTray(s, SCRAMBLE_FINAL)
     val dimmed = usedMask(tray, entry)
-    val shape = RoundedCornerShape(12.dp)
-    Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+    val shape = RoundedCornerShape(10.dp)
+    val playable = open && !solved && !finished
+    Column(Modifier.fillMaxWidth().padding(top = 2.dp)) {
         HorizontalDivider(color = WTheme.border, thickness = 1.5.dp)
         Column(
             Modifier.fillMaxWidth()
                 .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
                 .clip(shape)
-                .background(if (active) MUDDLE_ACCENT.copy(alpha = 0.05f) else Color.Transparent)
+                .background(if (active) LILAC else Color.Transparent)
+                .border(1.dp, if (active) LILAC_BORDER else Color.Transparent, shape)
                 .alpha(if (open || finished) 1f else 0.55f)
-                .clickableNoRipple { if (open && !solved && !finished) onSelect() }
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .clickableNoRipple { if (playable) onSelect() }
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            // One line: the heading, then (once open) the circled-letter tray and the Letter circle.
+            Row(Modifier.fillMaxWidth().heightIn(min = if (playable) HINT_ROW_HEIGHT else 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (open || finished) "THE PUNCHLINE" else "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE",
-                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.5.sp, modifier = Modifier.weight(1f),
+                    if (open || finished) "PUNCHLINE" else "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE",
+                    fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp, maxLines = 1,
+                    modifier = if (playable) Modifier else Modifier.weight(1f),
                 )
-                if (open && !solved && !finished) SmallCapsule("Letter", Icons.Filled.Lightbulb, onRevealLetter)
-            }
-            if (open && !solved && !finished) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    tray.forEachIndexed { i, ch ->
-                        Text(
-                            ch.toString(), fontSize = 22.sp, lineHeight = 24.sp, fontWeight = FontWeight.Black, color = LILAC_TEXT, fontFamily = Nunito,
-                            modifier = Modifier.alpha(if (dimmed[i]) 0.25f else 1f).then(if (!dimmed[i]) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier),
-                        )
+                if (playable) {
+                    FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.Center) {
+                        tray.forEachIndexed { i, ch ->
+                            Text(
+                                ch.toString(), fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black, color = LILAC_TEXT, fontFamily = Nunito, letterSpacing = 1.sp,
+                                modifier = Modifier.alpha(if (dimmed[i]) 0.25f else 1f)
+                                    .then(if (!dimmed[i]) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier)
+                                    .padding(horizontal = 3.dp, vertical = 6.dp),
+                            )
+                        }
                     }
+                    HintCircle(Icons.Filled.Lightbulb, "Reveal a letter", onRevealLetter)
                 }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var pos = 0
                 for (len in s.final.pattern) {
                     val start = pos; pos += len
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         for (k in 0 until len) {
                             val idx = start + k
                             val ch = if (solved || finished) target.getOrNull(idx)?.toString() ?: "" else entry.getOrNull(idx)?.toString() ?: ""
                             val filled = ch.isNotEmpty()
                             AnswerBox(
                                 ch, if (filled) LILAC else WTheme.surface, if (filled) LILAC_BORDER else WTheme.border, LILAC_TEXT,
-                                ring = true, ringColor = PURPLE, ringAlpha = if (filled) 0.9f else 0.35f, fontSize = 18.sp, ringInset = 4.dp, modifier = Modifier.size(36.dp),
+                                ring = true, ringColor = PURPLE, ringAlpha = if (filled) 0.9f else 0.35f, fontSize = 17.sp, modifier = Modifier.size(FINAL_TILE),
                             )
                         }
                     }
@@ -711,27 +770,34 @@ private fun FinalRow(
     }
 }
 
-/** The in-row hint capsule (Letter / Solve): accent ink on a 5% accent wash. */
+/**
+ * The in-row hint control (Letter = lightbulb, Solve = eye): a 28 dp accent
+ * circle, icon only — the label lives in the content description (and the
+ * guide). It sits in a 40 × 32 dp touch box, and Compose's 48 dp minimum touch
+ * target rounds the rest out.
+ */
 @Composable
-private fun SmallCapsule(label: String, icon: ImageVector, onClick: () -> Unit) {
-    Row(
-        Modifier.clip(CircleShape).background(MUDDLE_ACCENT.copy(alpha = 0.05f)).border(1.dp, MUDDLE_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple(onClick).padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = MUDDLE_ACCENT, modifier = Modifier.size(12.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = MUDDLE_ACCENT, maxLines = 1, softWrap = false)
+private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Unit) {
+    Box(Modifier.size(width = 40.dp, height = HINT_ROW_HEIGHT).clickableNoRipple(onClick), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.size(HINT_CIRCLE).clip(CircleShape).background(MUDDLE_ACCENT.copy(alpha = 0.08f)).border(1.dp, MUDDLE_ACCENT.copy(alpha = 0.45f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = description, tint = MUDDLE_ACCENT, modifier = Modifier.size(15.dp))
+        }
     }
 }
 
+/** Delete · Clear: 30 dp capsules on one row. */
 @Composable
 private fun Capsule(label: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
-        Modifier.clip(CircleShape)
+        Modifier.height(30.dp)
+            .clip(CircleShape)
             .background(MUDDLE_ACCENT.copy(alpha = 0.05f))
             .border(1.5.dp, MUDDLE_ACCENT.copy(alpha = 0.4f), CircleShape)
             .clickableNoRipple(onClick)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(icon, null, tint = MUDDLE_ACCENT, modifier = Modifier.size(13.dp))

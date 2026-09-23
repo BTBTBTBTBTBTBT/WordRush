@@ -77,8 +77,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var colorblind by remember { mutableStateOf(SettingsPref.get(SettingsPref.COLORBLIND, false)) }
     var reducedMotion by remember { mutableStateOf(SettingsPref.get(SettingsPref.REDUCED_MOTION, false)) }
     val context = androidx.compose.ui.platform.LocalContext.current
-    // Resolved once: outside a consent region Google's form has nothing to
-    // show, so the row would be a dead end rather than a choice.
+    // Resolved once. Always false today: LevelPlay has no consent UI of its
+    // own and consent regions never initialize ads (ConsentGate), so the row
+    // would be a dead end. Returns true again once the phase-2 CMP lands.
     val privacyOptionsRequired = remember {
         (context as? android.app.Activity)
             ?.let { com.wordocious.app.data.AdsManager.privacyOptionsRequired(it) } ?: false
@@ -252,11 +253,11 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                     // older copy). Section opens with Help & Support, like iOS.
                     LinkRow("Help & Support") { onOpenInfo("support") }; Divider()
                     LinkRow("Privacy Policy") { onOpenInfo("privacy") }; Divider()
-                    // Ad-consent withdrawal. UMP requires a PERSISTENT entry
+                    // Ad-consent withdrawal. GDPR requires a PERSISTENT entry
                     // point — a form shown once at first launch is not a
                     // choice the user can revisit, and our own privacy policy
-                    // promised one. Hidden outside consent regions, where
-                    // Google's form would have nothing to show.
+                    // promised one. Hidden while there is nothing to show
+                    // (no CMP yet — see AdsManager.privacyOptionsRequired).
                     if (privacyOptionsRequired) {
                         LinkRow("Ad Privacy Settings") {
                             val activity = context as? android.app.Activity ?: return@LinkRow

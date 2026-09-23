@@ -1,5 +1,5 @@
 {
-  "_comment": "Canonical mode catalog — the single source of truth for mode metadata across web/iOS/Android. Edit here, then run `pnpm gen:modes` to regenerate the native files (ModeCatalog.generated.swift / .kt), the web TS and the SQL era functions. Icons stay platform-native; only data lives here. Board/guess counts live in the engine, not here. Fields: group = home grid tile (core) or More Games sheet (more); sweep = counts toward the Daily Sweep / Flawless; engine = shared word reducer or the mode's own view; guessSemantics = what guess_count means for labels; guessBase = the perfect guess_count (display shows guess_count − guessBase); enabled = compiled in and visible; flagKey = remote kill switch; category = More Games sheet section; guideSlug = lib/guide-content.ts entry. Ids and dbKeys are generic and rename-proof — only title/shortTitle/shareLabel carry a brand.",
+  "_comment": "Canonical mode catalog \u2014 the single source of truth for mode metadata across web/iOS/Android. Edit here, then run `pnpm gen:modes` to regenerate the native files (ModeCatalog.generated.swift / .kt), the web TS and the SQL era functions. Icons stay platform-native; only data lives here. Board/guess counts live in the engine, not here. Fields: group = home grid tile (core) or More Games sheet (more); sweep = counts toward the Daily Sweep / Flawless; engine = shared word reducer or the mode's own view; guessSemantics = what guess_count means for labels; guessBase = the perfect guess_count (display shows guess_count \u2212 guessBase); enabled = compiled in and visible; flagKey = remote kill switch; category = More Games sheet section; guideSlug = lib/guide-content.ts entry. Ids and dbKeys are generic and rename-proof \u2014 only title/shortTitle/shareLabel carry a brand.",
   "modes": [
     {
       "id": "practice",
@@ -20,7 +20,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "classic"
+      "guideSlug": "classic",
+      "homeSlot": 0
     },
     {
       "id": "vs",
@@ -41,7 +42,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": null
+      "guideSlug": null,
+      "homeSlot": 8
     },
     {
       "id": "quordle",
@@ -62,7 +64,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "quadword"
+      "guideSlug": "quadword",
+      "homeSlot": 2
     },
     {
       "id": "octordle",
@@ -83,7 +86,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "octoword"
+      "guideSlug": "octoword",
+      "homeSlot": 3
     },
     {
       "id": "sequence",
@@ -104,7 +108,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "succession"
+      "guideSlug": "succession",
+      "homeSlot": 4
     },
     {
       "id": "rescue",
@@ -125,7 +130,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "deliverance"
+      "guideSlug": "deliverance",
+      "homeSlot": 5
     },
     {
       "id": "six",
@@ -146,7 +152,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "six"
+      "guideSlug": "six",
+      "homeSlot": 6
     },
     {
       "id": "seven",
@@ -167,7 +174,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "seven"
+      "guideSlug": "seven",
+      "homeSlot": 7
     },
     {
       "id": "gauntlet",
@@ -188,7 +196,8 @@
       "enabled": true,
       "flagKey": null,
       "category": null,
-      "guideSlug": "gauntlet"
+      "guideSlug": "gauntlet",
+      "homeSlot": 1
     },
     {
       "id": "propernoundle",
@@ -209,7 +218,8 @@
       "enabled": true,
       "flagKey": null,
       "category": "trivia",
-      "guideSlug": "propernoundle"
+      "guideSlug": "propernoundle",
+      "homeSlot": 109
     },
     {
       "id": "more",
@@ -230,7 +240,8 @@
       "enabled": true,
       "flagKey": "menu.more",
       "category": null,
-      "guideSlug": null
+      "guideSlug": null,
+      "homeSlot": 9
     },
     {
       "id": "sudoku",
@@ -251,7 +262,8 @@
       "enabled": true,
       "flagKey": "mode.sudoku",
       "category": "logic",
-      "guideSlug": "sudocious"
+      "guideSlug": "sudocious",
+      "homeSlot": 111
     },
     {
       "id": "scramble",
@@ -272,7 +284,8 @@
       "enabled": true,
       "flagKey": "mode.scramble",
       "category": "word",
-      "guideSlug": "muddle"
+      "guideSlug": "muddle",
+      "homeSlot": 112
     },
     {
       "id": "hub",
@@ -293,7 +306,8 @@
       "enabled": true,
       "flagKey": "mode.hub",
       "category": "word",
-      "guideSlug": "hubbub"
+      "guideSlug": "hubbub",
+      "homeSlot": 113
     },
     {
       "id": "crossword",
@@ -314,7 +328,8 @@
       "enabled": true,
       "flagKey": "mode.crossword",
       "category": "trivia",
-      "guideSlug": "crosswordocious"
+      "guideSlug": "crosswordocious",
+      "homeSlot": 114
     },
     {
       "id": "groups",
@@ -335,7 +350,8 @@
       "enabled": true,
       "flagKey": "mode.groups",
       "category": "logic",
-      "guideSlug": "kindred"
+      "guideSlug": "kindred",
+      "homeSlot": 115
     },
     {
       "id": "ladder",
@@ -356,7 +372,8 @@
       "enabled": true,
       "flagKey": "mode.ladder",
       "category": "word",
-      "guideSlug": "letter-ladder"
+      "guideSlug": "letter-ladder",
+      "homeSlot": 116
     },
     {
       "id": "cryptogram",
@@ -377,7 +394,8 @@
       "enabled": true,
       "flagKey": "mode.cryptogram",
       "category": "logic",
-      "guideSlug": "codebreaker"
+      "guideSlug": "codebreaker",
+      "homeSlot": 117
     },
     {
       "id": "wordsearch",
@@ -398,7 +416,8 @@
       "enabled": true,
       "flagKey": "mode.wordsearch",
       "category": "word",
-      "guideSlug": "spyglass"
+      "guideSlug": "spyglass",
+      "homeSlot": 118
     },
     {
       "id": "regions",
@@ -419,10 +438,11 @@
       "enabled": true,
       "flagKey": "mode.regions",
       "category": "logic",
-      "guideSlug": "starsweep"
+      "guideSlug": "starsweep",
+      "homeSlot": 119
     }
   ],
-  "_sweepEras_comment": "Newest first, append-only. Each row: the first local day (YYYY-MM-DD) it applies and the dbKeys that made up the required Daily Sweep from that day. 2026-05-21 is when Six/Seven dailies shipped (7 → 9). The launch row (8 word games, ProperNoundle out) is appended at Stage 9 with LAUNCH_DAY; until then the top row MUST equal modes.filter(sweep), which the codegen test asserts. Past days are never recomputed.",
+  "_sweepEras_comment": "Newest first, append-only. Each row: the first local day (YYYY-MM-DD) it applies and the dbKeys that made up the required Daily Sweep from that day. 2026-05-21 is when Six/Seven dailies shipped (7 \u2192 9). The launch row (8 word games, ProperNoundle out) is appended at Stage 9 with LAUNCH_DAY; until then the top row MUST equal modes.filter(sweep), which the codegen test asserts. Past days are never recomputed.",
   "sweepEras": [
     {
       "since": "2026-09-23",

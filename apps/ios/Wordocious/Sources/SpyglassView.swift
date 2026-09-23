@@ -159,8 +159,7 @@ struct SpyglassView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    Spacer(minLength: 4)
-                    SpyglassGridView(vm: vm, revealMissing: false).padding(.horizontal, 6)
+                    SpyglassGridView(vm: vm, revealMissing: false).padding(.horizontal, 6).padding(.top, 2)
                     wordChips
                     Spacer(minLength: 4)
                     HStack(spacing: 8) {
@@ -259,6 +258,7 @@ struct SpyglassView: View {
         return FlowChips(items: s.words.map(\.w)) { w in
             let found = s.found.contains(w), hinted = s.hinted.contains(w) && !found
             Text(w).font(Brand.font(11, .bold)).strikethrough(found)
+                .lineLimit(1).fixedSize(horizontal: true, vertical: false)
                 .foregroundStyle(found ? spyglassInk : Theme.textPrimary)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(Capsule().fill(found ? spyglassAccent.opacity(0.14) : Theme.surface))
@@ -307,17 +307,52 @@ struct SpyglassView: View {
     }
 }
 
-/// A wrapping row of chips (the word list).
+/// A wrapping row of chips (the word list): chips flow by width and each line is
+/// centred, so a long word (WOODPECKER) pushes its neighbours to the next line
+/// instead of breaking mid-word. (Fixed rows of five did the latter.)
 private struct FlowChips<Content: View>: View {
     let items: [String]
     @ViewBuilder let content: (String) -> Content
     var body: some View {
-        // Two rows of five keep the list compact on a phone; longer lists wrap.
-        let rows = stride(from: 0, to: items.count, by: 5).map { Array(items[$0..<min($0 + 5, items.count)]) }
-        VStack(spacing: 5) {
-            ForEach(0..<rows.count, id: \.self) { r in
-                HStack(spacing: 5) { ForEach(rows[r], id: \.self) { content($0) } }
+        WrapLayout(spacing: 5, lineSpacing: 5) { ForEach(items, id: \.self) { content($0) } }
+    }
+}
+
+private struct WrapLayout: Layout {
+    var spacing: CGFloat
+    var lineSpacing: CGFloat
+
+    private func lines(_ subviews: Subviews, width: CGFloat) -> [[(Int, CGSize)]] {
+        var lines: [[(Int, CGSize)]] = [[]]
+        var x: CGFloat = 0
+        for (i, v) in subviews.enumerated() {
+            let size = v.sizeThatFits(.unspecified)
+            if x > 0 && x + size.width > width { lines.append([]); x = 0 }
+            lines[lines.count - 1].append((i, size))
+            x += size.width + spacing
+        }
+        return lines
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 10_000
+        let ls = lines(subviews, width: width)
+        let height = ls.reduce(0) { $0 + ($1.map(\.1.height).max() ?? 0) } + lineSpacing * CGFloat(max(0, ls.count - 1))
+        let widest = ls.map { line in line.reduce(0) { $0 + $1.1.width } + spacing * CGFloat(max(0, line.count - 1)) }.max() ?? 0
+        return CGSize(width: proposal.width ?? widest, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for line in lines(subviews, width: bounds.width) {
+            let lineW = line.reduce(0) { $0 + $1.1.width } + spacing * CGFloat(max(0, line.count - 1))
+            let lineH = line.map(\.1.height).max() ?? 0
+            var x = bounds.minX + max(0, (bounds.width - lineW) / 2)
+            for (i, size) in line {
+                subviews[i].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
             }
+            y += lineH + lineSpacing
         }
     }
 }

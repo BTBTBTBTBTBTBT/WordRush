@@ -108,7 +108,7 @@ final class LadderVM: ObservableObject {
         if let r = state.reject {
             flash(rejectCopy(r)); Haptics.error(); SoundManager.shared.playInvalid()
             invalid = true
-            Task { try? await Task.sleep(nanoseconds: 500_000_000); invalid = false }
+            Task { try? await Task.sleep(nanoseconds: 500_000_000); invalid = false; typing = "" }
         } else if state.words.count > before {
             typing = ""; SoundManager.shared.playKeyTap()
         }
