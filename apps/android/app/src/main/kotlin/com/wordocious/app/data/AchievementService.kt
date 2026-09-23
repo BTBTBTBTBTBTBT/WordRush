@@ -241,6 +241,13 @@ object AchievementService {
             }
         }
 
+        // Codebreaker (More Games §18c): first crack, clean (no Check), swift.
+        if (gameMode == "CRYPTOGRAM" && won) {
+            tryUnlock("cryptogram_first")
+            if (guessCount == 1) tryUnlock("cryptogram_clean")
+            if (timeSeconds < 180) tryUnlock("cryptogram_swift")
+        }
+
         // Sudoku: first solve, clean sheet (0 mistakes, 0 hints), sprint.
         if (gameMode == "SUDOKU" && won) {
             tryUnlock("sudoku_first")
@@ -367,6 +374,7 @@ object AchievementService {
             Triple("ladder_regular", "LADDER", 50),
             Triple("wordsearch_regular", "WORDSEARCH", 50),
             Triple("hub_regular", "HUB", 50),
+            Triple("cryptogram_regular", "CRYPTOGRAM", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -676,7 +684,7 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
@@ -686,6 +694,7 @@ object AchievementService {
                 "LADDER" -> "ladder"
                 "WORDSEARCH" -> "wordsearch"
                 "HUB" -> "hub"
+                "CRYPTOGRAM" -> "cryptogram"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"

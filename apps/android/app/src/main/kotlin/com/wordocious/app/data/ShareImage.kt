@@ -784,6 +784,111 @@ object ShareImage {
         return bmp
     }
 
+    // ── Codebreaker card (More Games §18d) ────────────────────────────────────
+
+    /** The CIPHERTEXT only — blank rounded cells with the code letter beneath
+     *  each, words wrapped whole, no plain letters (no spoilers). `meta` is the
+     *  stats line ("#12 · No checks · 2:45"); `checks` drives the sub-headline. */
+    fun renderCryptogram(context: Context, cipher: String, checks: Int, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFF92400E.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("CODEBREAKER", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+
+        // Words wrapped whole; the cell size shrinks until the block fits above the headline.
+        val words = cipher.split(" ").filter { it.isNotEmpty() }
+        val margin = 80f
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        fun widthOf(w: String, cell: Float, gap: Float): Float =
+            w.sumOf { ch -> (if (ch in 'A'..'Z') cell + gap else cell * 0.45f + gap).toDouble() }.toFloat() - gap
+        var cell = 64f
+        var lines: List<List<String>> = emptyList()
+        var lineH = 0f
+        while (cell >= 24f) {
+            val gap = cell * 0.12f; val wordGap = cell * 0.7f
+            lineH = cell * 1.14f + cell * 0.42f + cell * 0.3f
+            val out = ArrayList<MutableList<String>>(); var cur = ArrayList<String>(); var curW = 0f
+            for (w in words) {
+                val ww = widthOf(w, cell, gap)
+                if (cur.isNotEmpty() && curW + wordGap + ww > W - margin * 2) { out.add(cur); cur = ArrayList(); curW = 0f }
+                curW += (if (cur.isEmpty()) 0f else wordGap) + ww; cur.add(w)
+            }
+            if (cur.isNotEmpty()) out.add(cur)
+            lines = out
+            // Greedy wrap only overflows when a single word is wider than the row.
+            val fits = words.all { widthOf(it, cell, gap) <= W - margin * 2 } && out.size * lineH <= areaBottom - areaTop
+            if (fits) break
+            cell -= 4f
+        }
+        val gap = cell * 0.12f; val wordGap = cell * 0.7f
+        val cellH = cell * 1.14f
+        val rad = maxOf(6f, cell * 0.14f)
+        val blockH = lines.size * lineH
+        var y = areaTop + (areaBottom - areaTop - blockH) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() }
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = 0xFFD1D5DB.toInt() }
+        val mono = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); textSize = cell * 0.36f; color = TEXT_MUTED }
+        val punct = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = black; textSize = cell * 0.6f; color = 0xFF1F2937.toInt() }
+        for (line in lines) {
+            val lineW = line.sumOf { widthOf(it, cell, gap).toDouble() }.toFloat() + (line.size - 1) * wordGap
+            var x = cx - lineW / 2f
+            for ((wi, w) in line.withIndex()) {
+                for (ch in w) {
+                    if (ch in 'A'..'Z') {
+                        val rect = RectF(x, y, x + cell, y + cellH)
+                        c.drawRoundRect(rect, rad, rad, fill); c.drawRoundRect(rect, rad, rad, stroke)
+                        c.drawText(ch.toString(), rect.centerX(), y + cellH + cell * 0.38f, mono)
+                        x += cell + gap
+                    } else {
+                        val pw = cell * 0.45f
+                        c.drawText(ch.toString(), x + pw / 2f, y + cellH - cell * 0.2f, punct)
+                        x += pw + gap
+                    }
+                }
+                if (wi < line.size - 1) x += wordGap - gap
+            }
+            y += lineH
+        }
+
+        p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
+        c.drawText(if (won) "CODE CRACKED" else "ANSWER REVEALED", cx, height - 150f, p)
+        p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
+        c.drawText(if (checks == 0) "No checks" else "$checks check${if (checks == 1) "" else "s"}", cx, height - 104f, p)
+        p.textSize = 22f; p.color = FOOT
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {
