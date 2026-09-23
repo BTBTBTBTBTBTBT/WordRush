@@ -1,0 +1,148 @@
+{
+  "newyear": [
+    { "word": "RESOLVE", "sense": 4 },
+    { "word": "TOAST", "sense": 0 },
+    { "word": "CHIME", "definition": "The ringing sound of a bell or clock, such as the strokes that mark midnight as one year turns into the next.", "partOfSpeech": "noun" }
+  ],
+  "mlkday": [
+    { "word": "DREAM", "sense": 1 },
+    { "word": "JUSTICE", "sense": 0 },
+    { "word": "MARCH", "sense": 2 }
+  ],
+  "groundhog": [
+    { "word": "SHADOW", "sense": 0 },
+    { "word": "BURROW", "sense": 0 },
+    { "word": "PREDICT", "sense": 0 }
+  ],
+  "valentines": [
+    { "word": "HEART", "definition": "A rounded, pointed shape standing for love and affection, printed on cards and sweets given to someone dear.", "partOfSpeech": "noun" },
+    { "word": "ADORE", "sense": 1 },
+    { "word": "SMITTEN", "sense": 2 }
+  ],
+  "presidents": [
+    { "word": "LEADER", "sense": 2 },
+    { "word": "GOVERN", "sense": 0 },
+    { "word": "BALLOT", "sense": 0 }
+  ],
+  "leapday": [
+    { "word": "EXTRA", "sense": 0 },
+    { "word": "BONUS", "sense": 0 },
+    { "word": "RARITY", "definition": "The quality of being uncommon; something that comes around only once in a long while.", "partOfSpeech": "noun" }
+  ],
+  "mardigras": [
+    { "word": "PARADE", "sense": 1 },
+    { "word": "REVEL", "sense": 0 },
+    { "word": "INDULGE", "sense": 0 }
+  ],
+  "stpatricks": [
+    { "word": "CLOVER", "sense": 0 },
+    { "word": "LUCKY", "sense": 0 },
+    { "word": "EMERALD", "sense": 3 }
+  ],
+  "aprilfools": [
+    { "word": "PRANK", "sense": 0 },
+    { "word": "TRICK", "sense": 0 },
+    { "word": "JESTER", "sense": 1 }
+  ],
+  "easter": [
+    { "word": "BUNNY", "sense": 0 },
+    { "word": "BASKET", "sense": 0 },
+    { "word": "BLOOM", "sense": 0 }
+  ],
+  "earthday": [
+    { "word": "PLANET", "definition": "A large body that travels around a star; especially the Earth, the one that is home to all known life.", "partOfSpeech": "noun" },
+    { "word": "RECYCLE", "sense": 0 },
+    { "word": "NATURE", "definition": "The living world of plants, animals, land, water and weather, as distinct from the things people make.", "partOfSpeech": "noun" }
+  ],
+  "cincodemayo": [
+    { "word": "FIESTA", "sense": 1 },
+    { "word": "SALSA", "sense": 0 },
+    { "word": "DANCE", "sense": 0 }
+  ],
+  "mothersday": [
+    { "word": "NURTURE", "sense": 0 },
+    { "word": "CHERISH", "sense": 0 },
+    { "word": "TENDER", "definition": "Gentle, caring and affectionate toward someone.", "partOfSpeech": "adjective" }
+  ],
+  "memorial": [
+    { "word": "HONOR", "sense": 0 },
+    { "word": "TRIBUTE", "sense": 0 },
+    { "word": "SOLEMN", "sense": 1 }
+  ],
+  "fathersday": [
+    { "word": "FATHER", "sense": 0 },
+    { "word": "GUIDE", "sense": 1 },
+    { "word": "STEADY", "sense": 1 }
+  ],
+  "juneteenth": [
+    { "word": "FREEDOM", "definition": "The state of being free; release from bondage, control or oppression.", "partOfSpeech": "noun" },
+    { "word": "JUBILEE", "definition": "A joyful celebration of an anniversary, especially one marking a release from bondage.", "partOfSpeech": "noun" },
+    { "word": "LIBERTY", "sense": 1 }
+  ],
+  "july4": [
+    { "word": "SPARK", "sense": 2 },
+    { "word": "ROCKET", "sense": 1 },
+    { "word": "ANTHEM", "sense": 2 }
+  ],
+  "labor": [
+    { "word": "CRAFT", "sense": 3 },
+    { "word": "UNION", "definition": "An organized association of workers formed to protect their pay, hours and working conditions.", "partOfSpeech": "noun" },
+    { "word": "SKILL", "sense": 0 }
+  ],
+  "indigenous": [
+    { "word": "ELDER", "sense": 2 },
+    { "word": "STEWARD", "definition": "One who cares for and protects land or resources, keeping them healthy for those who come after.", "partOfSpeech": "noun" },
+    { "word": "LEGACY", "sense": 1 }
+  ],
+  "halloween": [
+    { "word": "GHOST", "sense": 0 },
+    { "word": "SPOOKY", "sense": 0 },
+    { "word": "WITCH", "sense": 0 },
+    { "word": "PUMPKIN", "sense": 1 },
+    { "word": "HAUNT", "sense": 0 }
+  ],
+  "veterans": [
+    { "word": "VALOR", "definition": "Great courage in the face of danger, especially in battle.", "partOfSpeech": "noun" },
+    { "word": "SALUTE", "sense": 0 },
+    { "word": "SERVICE", "sense": 2 }
+  ],
+  "thanksgiving": [
+    { "word": "FEAST", "sense": 1 },
+    { "word": "GRAVY", "sense": 1 },
+    { "word": "TURKEY", "sense": 1 },
+    { "word": "PLENTY", "sense": 0 },
+    { "word": "GATHER", "definition": "To come together in one place, as family and friends do around a shared table.", "partOfSpeech": "verb" }
+  ],
+  "christmas": [
+    { "word": "HOLLY", "sense": 0 },
+    { "word": "CAROL", "sense": 2 },
+    { "word": "TINSEL", "definition": "Thin strips of glittering metallic foil hung on a tree or around a room as festive decoration.", "partOfSpeech": "noun" },
+    { "word": "MERRY", "sense": 1 },
+    { "word": "SLEIGH", "sense": 0 }
+  ],
+  "kwanzaa": [
+    { "word": "UNITY", "sense": 0 },
+    { "word": "HARVEST", "sense": 4 },
+    { "word": "PURPOSE", "sense": 2 }
+  ],
+  "lunarnewyear": [
+    { "word": "LANTERN", "sense": 0 },
+    { "word": "DRAGON", "sense": 2 },
+    { "word": "FORTUNE", "sense": 0 }
+  ],
+  "passover": [
+    { "word": "MATZO", "sense": 0 },
+    { "word": "EXODUS", "definition": "A departure of a great many people from a place, especially a journey out of bondage toward freedom.", "partOfSpeech": "noun" },
+    { "word": "BITTER", "definition": "Having a sharp, harsh taste; said of the herbs eaten at the Passover meal to recall the hardship of slavery.", "partOfSpeech": "adjective" }
+  ],
+  "diwali": [
+    { "word": "LIGHT", "definition": "Brightness that makes things visible; the glow of lamps and candles lit in celebration of good prevailing over darkness.", "partOfSpeech": "noun" },
+    { "word": "RADIANT", "sense": 0 },
+    { "word": "TRIUMPH", "sense": 0 }
+  ],
+  "hanukkah": [
+    { "word": "CANDLE", "sense": 0 },
+    { "word": "MIRACLE", "sense": 0 },
+    { "word": "KINDLE", "sense": 0 }
+  ]
+}
