@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { buildCopy, MODE_ROUTE, parseLeaderboardShare, type SP } from '@/lib/share-page-copy';
 import LiveBoardSection from '@/components/share/live-board-section';
 import { GetAppBadges } from '@/components/share/get-app-badges';
+import { ShareLandingBeacon } from '@/components/share/share-landing-beacon';
 
 // Per-result share landing page. The Share button (lib/share-utils.ts, plus
 // the iOS/Android ShareService mirrors) uploads the result PNG to the public
@@ -92,6 +93,11 @@ export default function SharePage(
         backgroundColor: 'var(--color-bg)',
       }}
     >
+      {/* Share-outcome tracking: logs the landing to landing_visits and drops
+          the first-touch wr_src=share cookie so a signup that follows counts
+          as share-attributed on the admin Marketing page. Client-only, so
+          social scrapers fetching the unfurl never register as visits. */}
+      <ShareLandingBeacon mode={mode} />
       <h1
         className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500"
         style={{ textAlign: 'center' }}

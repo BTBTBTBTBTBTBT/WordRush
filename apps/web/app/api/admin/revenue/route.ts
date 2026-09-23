@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createSign } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { PRO_PLANS } from '@/lib/payment/types';
+import { buildAscJwt, missingAscEnv, type AscEnvVar } from '@/lib/asc-jwt';
 import {
   REFERRAL_TRIAL_DAYS,
   INSTANT_REWARD_DAYS,
@@ -22,10 +22,15 @@ export const dynamic = 'force-dynamic';
 //   Subscriptions DB-derived — profiles is the entitlement authority all three
 //                 clients read, so counts here are the truth about who HAS Pro,
 //                 regardless of which store billed them.
-//   AdMob/AdSense LIVE API only after a ONE-TIME user OAuth grant: Google does
-//                 not allow service accounts for either reporting API, so until
-//                 the founder runs scripts/revenue-oauth.mjs the cards say
+//   AdMob         LIVE API only after a ONE-TIME user OAuth grant: Google does
+//                 not allow service accounts for its reporting API, so until
+//                 the founder runs scripts/revenue-oauth.mjs the card says
 //                 "not connected" instead of showing fabricated zeros.
+//   Web ads       NOT CONNECTED by design (2026-09-23): both AdSense accounts
+//                 are permanently closed (§252), so the AdSense fetch is gone.
+//                 The replacement provider is unchosen; its card will need a
+//                 server-side reporting credential in env plus a daily
+//                 earnings endpoint — see the Web ads card on the page.
 //
 // Store DOLLARS come in two tiers of honesty:
 //
@@ -61,10 +66,10 @@ const PLAN_MONTHLY_CENTS: Record<string, number> = {
 // Apple/Google commission on subscriptions — 15% small-business tier (§194).
 const STORE_CUT = 0.15;
 
-async function googleAccessToken(refreshOverride?: string): Promise<string | null> {
+async function googleAccessToken(): Promise<string | null> {
   const id = process.env.REVENUE_GOOGLE_CLIENT_ID;
   const secret = process.env.REVENUE_GOOGLE_CLIENT_SECRET;
-  const refresh = refreshOverride ?? process.env.REVENUE_GOOGLE_REFRESH_TOKEN;
+  const refresh = process.env.REVENUE_GOOGLE_REFRESH_TOKEN;
   if (!id || !secret || !refresh) return null;
   try {
     const r = await fetch('https://oauth2.googleapis.com/token', {
@@ -129,46 +134,15 @@ async function fetchAdmob(token: string) {
   };
 }
 
-/** AdSense earnings, last 30 days — same grant, adsense.readonly scope. */
-async function fetchAdsense(token: string) {
-  const acctRes = await fetch('https://adsense.googleapis.com/v2/accounts', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!acctRes.ok) return { error: `AdSense accounts: HTTP ${acctRes.status}` };
-  const accts = (await acctRes.json()) as { accounts?: { name: string }[] };
-  const account = accts.accounts?.[0];
-  if (!account) return { error: 'No AdSense account visible to this grant (application may still be under review)' };
-
-  const repRes = await fetch(
-    `https://adsense.googleapis.com/v2/${account.name}/reports:generate?dateRange=LAST_30_DAYS&metrics=ESTIMATED_EARNINGS&metrics=IMPRESSIONS`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!repRes.ok) return { error: `AdSense report: HTTP ${repRes.status}` };
-  const rep = (await repRes.json()) as { totals?: { cells?: { value?: string }[] } };
-  return {
-    total30d: Number(rep.totals?.cells?.[0]?.value ?? 0),
-    impressions: Number(rep.totals?.cells?.[1]?.value ?? 0),
-  };
-}
-
 // ── Apple App Store Connect: real subscription revenue ──────────────────────
 // The salesReports SUBSCRIPTION report is a daily snapshot of every active
 // subscription with Apple's own price and proceeds figures. Auth is an ES256
-// JWT signed with an App Store Connect API key. All four env vars must be
-// present server-side (the .p8 lives only on the founder's machine, never in
-// the repo): ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY (PEM, \n-escaped ok),
-// ASC_VENDOR_NUMBER (from App Store Connect → Payments and Financial Reports).
-
-function ascJwt(keyId: string, issuerId: string, privateKeyPem: string): string {
-  const b64url = (s: string | Buffer) => Buffer.from(s).toString('base64url');
-  const iat = Math.floor(Date.now() / 1000);
-  const header = b64url(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' }));
-  const payload = b64url(JSON.stringify({ iss: issuerId, iat, exp: iat + 20 * 60, aud: 'appstoreconnect-v1' }));
-  const signer = createSign('SHA256');
-  signer.update(`${header}.${payload}`);
-  const sig = signer.sign({ key: privateKeyPem.replace(/\\n/g, '\n'), dsaEncoding: 'ieee-p1363' });
-  return `${header}.${payload}.${b64url(sig)}`;
-}
+// JWT signed with an App Store Connect API key (lib/asc-jwt.ts — tested with a
+// throwaway key; the real .p8 lives only in Vercel env and on the founder's
+// machine, never in the repo). All four env vars must be present server-side:
+// ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY (PEM, \n-escaped ok),
+// ASC_VENDOR_NUMBER — where each comes from is documented in lib/asc-jwt.ts
+// and on the card itself.
 
 interface AppleReportRow { name: string; duration: string; price: number; proceeds: number; active: number }
 
@@ -206,14 +180,31 @@ function parseAppleSubscriptionReport(tsv: string) {
   };
 }
 
-async function fetchAppleSubscriptions() {
-  const keyId = process.env.ASC_KEY_ID;
-  const issuerId = process.env.ASC_ISSUER_ID;
-  const privateKey = process.env.ASC_PRIVATE_KEY;
-  const vendor = process.env.ASC_VENDOR_NUMBER;
-  if (!keyId || !issuerId || !privateKey || !vendor) return { connected: false as const };
+async function fetchAppleSubscriptions(): Promise<
+  | { connected: false; missing: AscEnvVar[] }
+  | { connected: true; error: string }
+  | ({ connected: true; reportDate: string } & ReturnType<typeof parseAppleSubscriptionReport>)
+> {
+  const missing = missingAscEnv();
+  if (missing.length > 0) return { connected: false as const, missing };
+  // A key that won't parse is the likeliest first-run failure (a paste that
+  // lost its newlines, or quotes around the PEM) — name it instead of
+  // surfacing node:crypto's decoder message.
+  let jwt: string;
   try {
-    const jwt = ascJwt(keyId, issuerId, privateKey);
+    jwt = buildAscJwt({
+      keyId: process.env.ASC_KEY_ID!,
+      issuerId: process.env.ASC_ISSUER_ID!,
+      privateKey: process.env.ASC_PRIVATE_KEY!,
+    });
+  } catch {
+    return {
+      connected: true as const,
+      error: 'ASC_PRIVATE_KEY is not a readable PEM — paste the whole AuthKey_<KEY_ID>.p8 including the BEGIN/END lines (\\n-escaped newlines and surrounding quotes are fine).',
+    };
+  }
+  const vendor = process.env.ASC_VENDOR_NUMBER!.trim();
+  try {
     // Daily reports appear with ~1 day lag; walk back a few days to the most
     // recent one that exists (404 = not published yet / no activity).
     for (let daysAgo = 1; daysAgo <= 4; daysAgo++) {
@@ -463,18 +454,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── Google ad networks: live only once the one-time grant exists ──────────
-  // AdMob lives under bterchin@gmail; AdSense (the Wordocious application)
-  // lives under bt@showloud — two logins, so optionally two refresh tokens.
-  // The _ADSENSE token wins for AdSense when present; otherwise both use the
-  // main grant.
+  // ── AdMob: live only once the one-time grant exists ───────────────────────
+  // (The AdSense half of this block is gone — both accounts are permanently
+  // closed; the web-ads card explains what a replacement needs.)
   const token = await googleAccessToken();
-  const adsenseToken = process.env.REVENUE_GOOGLE_REFRESH_TOKEN_ADSENSE
-    ? await googleAccessToken(process.env.REVENUE_GOOGLE_REFRESH_TOKEN_ADSENSE)
-    : token;
-  const [admob, adsense, apple] = await Promise.all([
+  const [admob, apple] = await Promise.all([
     token ? fetchAdmob(token) : Promise.resolve(null),
-    adsenseToken ? fetchAdsense(adsenseToken) : Promise.resolve(null),
     fetchAppleSubscriptions(),
   ]);
 
@@ -495,7 +480,9 @@ export async function GET(request: NextRequest) {
     stripe,
     apple,
     admob: token ? admob : { connected: false },
-    adsense: token ? adsense : { connected: false },
+    // No web ad provider is wired; the page renders a neutral "not connected"
+    // card from this flag alone so a future provider slots in here.
+    webAds: { connected: false as const },
     adsConnected: !!token,
   });
 }
