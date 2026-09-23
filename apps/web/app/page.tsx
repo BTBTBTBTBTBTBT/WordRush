@@ -23,13 +23,15 @@ import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
 import { shareDailySweep } from '@/lib/daily-share';
 import { MODES } from '@/lib/modes.generated';
-import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAPS } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE, SOLUTION_SWAPS, SOLUTION_SWAPS_2 } from '@wordle-duel/core';
 
 /** Offline Word-of-the-Day fallback: same index math as lib/word-of-day.ts,
  *  including the §265 answer swaps from their cutover date on. */
 function offlineWotd(list: string[], dayIndex: number, dayKey: string): string {
-  const w = list[dayIndex % list.length];
-  return dayKey >= SOLUTION_SWAP_CUTOVER_DATE ? (SOLUTION_SWAPS[w.toUpperCase()] ?? w) : w;
+  let w = list[dayIndex % list.length];
+  if (dayKey >= SOLUTION_SWAP_CUTOVER_DATE) w = SOLUTION_SWAPS[w.toUpperCase()] ?? w;
+  if (dayKey >= SOLUTION_SWAP_2_CUTOVER_DATE) w = SOLUTION_SWAPS_2[w.toUpperCase()] ?? w;
+  return w;
 }
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
