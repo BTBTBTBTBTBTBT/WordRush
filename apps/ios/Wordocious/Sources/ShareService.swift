@@ -145,6 +145,11 @@ enum ShareService {
             if let points { q["pts"] = "\(points)" }
             if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
             q["mk"] = "\(mistakes)"; q["bs"] = "\(solvedTiers.count)"; q["tb"] = "\(GROUPS_TOTAL_BOARDS)"
+        case let .crossword(_, _, _, checks, _):
+            // Check-scored (§18d): the unfurl names score, time and checks.
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+            q["ck"] = "\(checks)"
         case .single:
             break
         }

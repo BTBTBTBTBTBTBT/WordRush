@@ -130,6 +130,10 @@ struct HomeView: View {
     struct KindredGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
     @State private var kindredGame: KindredGame?
     private func freshKindredSeed() -> String { "unlimited-GROUPS-\(Int(Date().timeIntervalSince1970))" }
+    /// A Crosswordocious run (own view): nil seed = today's daily.
+    struct CrosswordGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var crosswordGame: CrosswordGame?
+    private func freshCrosswordSeed() -> String { "unlimited-CROSSWORD-\(Int(Date().timeIntervalSince1970))" }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -295,6 +299,12 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
+            .fullScreenCover(item: $crosswordGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    CrosswordView(seed: g.seed, onPlayAgain: { crosswordGame = CrosswordGame(seed: freshCrosswordSeed()) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -324,6 +334,8 @@ struct HomeView: View {
                         CodebreakerView()
                     } else if m.id == "groups" {
                         KindredView()
+                    } else if m.id == "crossword" {
+                        CrosswordView()
                     }
                 }
             }
@@ -893,6 +905,8 @@ struct HomeView: View {
             codebreakerGame = CodebreakerGame(seed: effectiveMode == .unlimited ? freshCodebreakerSeed() : nil)
         } else if mode.id == "groups" {
             kindredGame = KindredGame(seed: effectiveMode == .unlimited ? freshKindredSeed() : nil)
+        } else if mode.id == "crossword" {
+            crosswordGame = CrosswordGame(seed: effectiveMode == .unlimited ? freshCrosswordSeed() : nil)
         } else {
             comingSoon = mode.title
         }

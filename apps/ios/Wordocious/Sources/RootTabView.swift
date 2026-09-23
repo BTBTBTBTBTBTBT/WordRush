@@ -69,6 +69,7 @@ struct RootTabView: View {
             case "hub": return "unlimited-HUB-\(ts)"
             case "cryptogram": return "unlimited-CRYPTOGRAM-\(ts)"
             case "groups": return "unlimited-GROUPS-\(ts)"
+            case "crossword": return "unlimited-CROSSWORD-\(ts)"
             default: return "unlimited-PROPERNOUNDLE-\(ts)"
             }
         }
@@ -244,6 +245,11 @@ struct RootTabView: View {
                     .id(g.seed)
                 } else if g.mode.id == "groups" {
                     KindredView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "crossword" {
+                    CrosswordView(seed: g.seed, onPlayAgain: {
                         unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
                     })
                     .id(g.seed)

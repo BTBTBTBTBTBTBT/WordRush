@@ -37,6 +37,9 @@ struct ShareCardView: View {
         /// Kindred (More Games §18d): the solved groups as tier bars in solve order (pips, never words),
         /// the missed tiers dashed beneath on a loss, then the four mistake dots.
         case groups(solvedTiers: [Int], mistakes: Int, maxMistakes: Int, puzzleNumber: Int?)
+        /// Crosswordocious (More Games §18d): the grid silhouette only — purple tiles where letters are,
+        /// nothing where blocks are; no letters, no numbers.
+        case crossword(w: Int, h: Int, solution: String, checks: Int, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -71,7 +74,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram, .groups: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram, .groups, .crossword: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -147,6 +150,11 @@ struct ShareCardView: View {
             // Mistake-scored (More Games §11): groups found and mistakes, never "guesses".
             let num = number.map { "#\($0) · " } ?? ""
             return "\(num)\(solvedTiers.count)/\(GROUPS_TOTAL_BOARDS) groups · \(mistakes) mistake\(mistakes == 1 ? "" : "s") · \(t) · \(dateStr)"
+        case .crossword(_, _, _, let checks, let number):
+            // Check-scored (More Games §11): clean / checks, never "guesses"; a loss is a reveal.
+            let num = number.map { "#\($0) · " } ?? ""
+            let c = checks == 0 ? "Clean" : "\(checks) check\(checks == 1 ? "" : "s")"
+            return "\(num)\(won ? c : "Revealed") · \(t) · \(dateStr)"
         }
     }
 
@@ -189,6 +197,36 @@ struct ShareCardView: View {
             cryptogramCard(cipher: cipher)
         case .groups(let solvedTiers, let mistakes, let maxMistakes, _):
             groupsCard(solvedTiers: solvedTiers, mistakes: mistakes, maxMistakes: maxMistakes)
+        case .crossword(let w, let h, let solution, _, _):
+            crosswordCard(w: w, h: h, solution: solution)
+        }
+    }
+
+    /// Web drawCrossword parity: the grid silhouette — a purple tile (#ede9fe,
+    /// #c4b5fd border) wherever the solution has a letter, nothing where it has
+    /// a block; the largest cell that fits the area, centred. No letters, no
+    /// numbers — the card spoils nothing.
+    private func crosswordCard(w: Int, h: Int, solution: String) -> some View {
+        let fill = Color(hex: 0xEDE9FE), border = Color(hex: 0xC4B5FD)
+        let gap: CGFloat = 6, areaHeight: CGFloat = 660
+        let cell = floor(min((1080 - 160 - gap * CGFloat(w - 1)) / CGFloat(max(1, w)), (areaHeight - 60 - gap * CGFloat(h - 1)) / CGFloat(max(1, h))))
+        let radius = max(5, cell * 0.16)
+        let sol = Array(solution)
+        return VStack(spacing: gap) {
+            ForEach(0..<h, id: \.self) { r in
+                HStack(spacing: gap) {
+                    ForEach(0..<w, id: \.self) { c in
+                        let i = r * w + c
+                        if i < sol.count, sol[i] != "." {
+                            RoundedRectangle(cornerRadius: radius).fill(fill)
+                                .overlay(RoundedRectangle(cornerRadius: radius).stroke(border, lineWidth: 3))
+                                .frame(width: cell, height: cell)
+                        } else {
+                            Color.clear.frame(width: cell, height: cell)
+                        }
+                    }
+                }
+            }
         }
     }
 
