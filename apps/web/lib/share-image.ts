@@ -47,6 +47,7 @@ export type ShareMode =
   | 'Letter Ladder'
   | 'Spyglass'
   | 'Hubbub'
+  | 'Codebreaker'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -181,6 +182,18 @@ export interface ShareHubInput extends ShareBase {
   wordsFound: number;
   wordCount: number;
   pangramsFound: number;
+  puzzleNumber?: number;
+}
+
+/**
+ * Codebreaker (More Games §18d): the CIPHERTEXT only — blank cells with the code
+ * letter under each, words kept whole — so the card spoils nothing and invites
+ * a try. Stat line reads "#12 · No checks · 2:05".
+ */
+export interface ShareCryptogramInput extends ShareBase {
+  layout: 'cryptogram';
+  cipher: string;
+  checks: number;
   puzzleNumber?: number;
 }
 
@@ -329,6 +342,7 @@ export type ShareImageInput =
   | ShareLadderInput
   | ShareWordsearchInput
   | ShareHubInput
+  | ShareCryptogramInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -688,7 +702,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -748,6 +762,10 @@ function drawHeader(
   } else if (input.layout === 'hub') {
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     statsText = `${num}${input.rankName} · ${input.pct}% · ${input.wordsFound} word${input.wordsFound === 1 ? '' : 's'} · ${input.pangramsFound} pangram${input.pangramsFound === 1 ? '' : 's'} · ${dateStr}`;
+  } else if (input.layout === 'cryptogram') {
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    const c = input.checks === 0 ? 'No checks' : `${input.checks} check${input.checks === 1 ? '' : 's'}`;
+    statsText = `${num}${input.won ? c : 'Revealed'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -1022,6 +1040,65 @@ function drawWordsearch(
 
 // Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the centre
 // filled in the accent, the rank name large beneath, then % of max. No letters.
+// Codebreaker (More Games §18d): the ciphertext as rows of blank cells with the
+// code letter beneath each, words wrapped whole. No plain letters.
+function drawCryptogram(
+  ctx: CanvasRenderingContext2D,
+  input: ShareCryptogramInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const ACCENT = '#92400e', EMPTY = '#ffffff', EMPTY_BORDER = '#d1d5db', CODE = '#9ca3af';
+  const words = input.cipher.split(' ');
+  const areaHeight = footerTop - headerBottom;
+  const margin = 70;
+  const maxW = width - margin * 2;
+  // Pick the largest cell size whose wrapped rows fit the area.
+  let cell = 58, gap = 6, wordGap = 22, rowH = 0, rows: string[][] = [];
+  for (; cell >= 26; cell -= 4) {
+    rowH = cell + 22 + 18;
+    rows = [];
+    let cur: string[] = [], curW = 0;
+    for (const w of words) {
+      const letters = [...w].filter((ch) => /[A-Z]/.test(ch)).length, puncts = w.length - letters;
+      const ww = letters * (cell + gap) + puncts * (cell * 0.45) - gap;
+      if (cur.length && curW + wordGap + ww > maxW) { rows.push(cur); cur = []; curW = 0; }
+      curW += (cur.length ? wordGap : 0) + ww; cur.push(w);
+    }
+    if (cur.length) rows.push(cur);
+    if (rows.length * rowH + (rows.length - 1) * 10 <= areaHeight - 40) break;
+  }
+  const totalH = rows.length * rowH + (rows.length - 1) * 10;
+  let y = headerBottom + (areaHeight - totalH) / 2;
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const row of rows) {
+    const widths = row.map((w) => { const letters = [...w].filter((ch) => /[A-Z]/.test(ch)).length; return letters * (cell + gap) + (w.length - letters) * (cell * 0.45) - gap; });
+    const rowW = widths.reduce((a, b) => a + b, 0) + wordGap * (row.length - 1);
+    let x = (width - rowW) / 2;
+    row.forEach((w, i) => {
+      for (const ch of w) {
+        if (/[A-Z]/.test(ch)) {
+          const radius = Math.max(5, cell * 0.16);
+          ctx.fillStyle = EMPTY; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.fill();
+          ctx.lineWidth = 3; ctx.strokeStyle = EMPTY_BORDER; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.stroke();
+          ctx.fillStyle = CODE; ctx.font = `800 ${Math.floor(cell * 0.34)}px ui-monospace, Menlo, monospace`;
+          ctx.fillText(ch, x + cell / 2, y + cell + 14);
+          x += cell + gap;
+        } else {
+          ctx.fillStyle = ACCENT; ctx.font = `900 ${Math.floor(cell * 0.6)}px ${SHARE_FONT_STACK}`;
+          ctx.fillText(ch, x + cell * 0.22, y + cell / 2 + 2);
+          x += cell * 0.45;
+        }
+      }
+      x += wordGap - gap;
+    });
+    y += rowH + 10;
+  }
+  ctx.restore();
+}
+
 function drawHub(
   ctx: CanvasRenderingContext2D,
   input: ShareHubInput,
@@ -2003,6 +2080,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawWordsearch(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'hub') {
     drawHub(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'cryptogram') {
+    drawCryptogram(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

@@ -24,11 +24,11 @@ describe('More Games sheet helpers', () => {
   });
 
   it('the enabled set drives the sheet and the tile count (five titles compiled in)', () => {
-    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['sudoku', 'hub', 'ladder', 'wordsearch', 'regions']);
-    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['word', ['hub', 'ladder', 'wordsearch']], ['logic', ['sudoku', 'regions']]]);
-    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 5 });
-    expect(morePlayedCount(['REGIONS', 'SUDOKU', 'LADDER', 'WORDSEARCH', 'HUB'])).toEqual({ played: 5, total: 5 });
-    expect(morePlayedCount([])).toEqual({ played: 0, total: 5 });
+    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['sudoku', 'hub', 'ladder', 'cryptogram', 'wordsearch', 'regions']);
+    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['word', ['hub', 'ladder', 'wordsearch']], ['logic', ['sudoku', 'cryptogram', 'regions']]]);
+    expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 6 });
+    expect(morePlayedCount(['REGIONS', 'SUDOKU', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM'])).toEqual({ played: 6, total: 6 });
+    expect(morePlayedCount([])).toEqual({ played: 0, total: 6 });
   });
 
   it('counts only More Games dailies the player has recorded today', () => {

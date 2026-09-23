@@ -25,6 +25,7 @@ export const MODE_ROUTE: Record<string, string> = {
   'Letter Ladder': '/letter-ladder',
   Spyglass: '/spyglass',
   Hubbub: '/hubbub',
+  Codebreaker: '/codebreaker',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',
@@ -399,6 +400,25 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const description = won
       ? `I cleared ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
       : `I played ${name} on Wordocious — ${stats}. Think you can clear it? ${PLAY_HOOK}`;
+    return { mode, modeDisp: name, won, stats, title, description };
+  }
+
+  // Check-scored modes (Codebreaker — guessSemantics "checks", base 1): g = checks + 1
+  // capped at 4, so 1 reads "No checks" and 3 reads "2 checks"; a loss is a reveal.
+  if (meta?.guessSemantics === 'checks' && meta.guessBase === 1) {
+    const pts = Number(str(sp.pts)) || 0;
+    const n = Number(str(sp.n)) || 0;
+    const ck = str(sp.ck) ? Number(str(sp.ck)) : Math.max(0, g - 1);
+    const name = n > 0 ? `${modeDisp} #${n}` : modeDisp;
+    const bits: string[] = [];
+    if (pts > 0) bits.push(`Score ${pts.toLocaleString()} pts`);
+    bits.push(`Time ${fmtTime(t)}`);
+    bits.push(won ? (ck === 0 ? 'No checks' : `${ck} check${ck === 1 ? '' : 's'}`) : 'Answer revealed');
+    const stats = bits.join(' · ');
+    const title = `Wordocious ${name} — ${stats}`;
+    const description = won
+      ? `I cracked ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
+      : `I played ${name} on Wordocious — ${stats}. Think you can crack it? ${PLAY_HOOK}`;
     return { mode, modeDisp: name, won, stats, title, description };
   }
 

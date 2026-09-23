@@ -681,6 +681,62 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['classic', 'spyglass', 'letter-ladder'],
   },
+  // ── More Games (§16) — Codebreaker ───────────────────────────────────────
+  {
+    slug: 'codebreaker',
+    title: 'Codebreaker',
+    accent: '#92400e',
+    tagline: 'A well-known saying in a letter-for-letter code — work out which letter stands for which and crack it',
+    metaDescription:
+      'Wordocious Codebreaker guide: how the daily cryptogram works, why the three given letters matter, why pencilled letters are free, what Check, Hint and Reveal cost, the exact scoring formula, and the strategy that cracks a code fast.',
+    facts: [
+      { label: 'Puzzle', value: 'One everyday saying, 30–90 letters, in a substitution code' },
+      { label: 'Given', value: 'The three most frequent letters, filled in and locked' },
+      { label: 'Pencil', value: 'Set, change and clear letters freely — never judged' },
+      { label: 'Time bonus cap', value: '20:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'Every letter of the saying has been swapped for another letter, the same way throughout: if K stands for E, every K in the code is an E. The small letter under each box is the code letter; the box above it is where you write what you think it really is. The three most common letters of the saying are already filled in and locked, in the game\'s colour, so there is always a way in.',
+      'Tap any box (or its code letter in the strip below) and type. The letter goes into every box with that code letter at once, and the selection moves on to the next open letter. Change your mind as often as you like: typing over a letter replaces it everywhere, Delete clears it everywhere, and nothing is marked or counted while you experiment. If you use the same plain letter for two different code letters, both read red until you change one — a saying cannot have two letters that both mean E.',
+      'Check is the only thing that counts against you. It looks at every letter you have pencilled: right ones lock in the game\'s colour, wrong ones are cleared with a red flash, and the check is recorded. Hint fills in the most frequent letter you have not yet solved. Reveal appears after five minutes; it shows the whole answer and records the puzzle as a loss. The puzzle completes itself the moment every letter is right — there is nothing to submit.',
+      'The daily is the same for everyone and counts once on the leaderboard. On a holiday the saying belongs to the day (Christmas, Thanksgiving, Fourth of July and the rest). Codebreaker lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A crack is worth a 1,000-point base plus a flat 200 for finishing. Checks are what separate players: the game treats your finish as (checks + 1) out of a budget of 4, and every unused check is worth 250 points, so a crack with no Check banks 750 in check bonus, one Check 500, two Checks 250, three or more 0. Speed is the tiebreaker: up to 240 points scaled by how far under the 20-minute cap you finish, which can never outweigh a Check — a cleaner crack always outranks a faster one.',
+      'Each Hint costs 100 points and never counts as a Check. Hints never lose you the puzzle, but a crack with any hint is not a Perfect run and does not count toward the Pure Codebreaker achievements. A revealed puzzle records a loss but still earns credit for the time you put in, so it is always worth trying.',
+    ],
+    controls: [
+      { icon: 'delete', label: 'Delete', body: 'Clears the pencilled letter from the selected code letter everywhere it appears. Free. Locked letters cannot be cleared.' },
+      { icon: 'check-check', label: 'Check', body: 'Marks every pencilled letter: right ones lock, wrong ones are cleared. Each Check counts — none is perfect, and the bonus falls 250 points per Check up to three.' },
+      { icon: 'lightbulb', label: 'Hint', body: 'Fills in the most frequent letter you have not solved and locks it. Costs 100 points of score, never a Check, and rules out a Perfect run.' },
+      { icon: 'eye', label: 'Reveal', body: 'Available after five minutes. Shows the whole saying and records the puzzle as a loss.' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Moves the selection to the next open letter without changing anything. Free.' },
+    ],
+    tips: [
+      {
+        heading: 'Start from the short words',
+        body: 'A one-letter word is A or I. A three-letter word ending in the given E is very often THE, and the code letter that starts it is then T wherever it appears. Two-letter words (OF, TO, IN, IT, IS, AS) hand you vowels.',
+      },
+      {
+        heading: 'Trust the frequency strip',
+        body: 'The letters that appear most are almost always E, T, A, O, I, N and S. Three are already given; the next most common code letters are your best guesses for the rest of that list.',
+      },
+      {
+        heading: 'Look for apostrophes and doubles',
+        body: 'A letter after an apostrophe is nearly always S or T (DON\'T, IT\'S). Two identical code letters side by side are usually LL, SS, EE, OO or TT.',
+      },
+      {
+        heading: 'Pencil boldly, Check rarely',
+        body: 'Pencilling is free, so try a whole word and read the sentence back — a wrong guess usually looks wrong at once. Save Check for the moment you are almost done and want the last few letters confirmed; the bonus falls with every Check, not with every wrong letter.',
+      },
+      {
+        heading: 'Read the saying, not the letters',
+        body: 'These are sayings everyone knows. Once four or five words are readable, say the sentence aloud and the rest usually finishes itself.',
+      },
+    ],
+    related: ['classic', 'hubbub', 'letter-ladder'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {

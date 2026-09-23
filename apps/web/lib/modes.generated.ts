@@ -411,7 +411,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "checks",
     "guessBase": 1,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.cryptogram",
     "category": "logic",
     "guideSlug": "codebreaker"

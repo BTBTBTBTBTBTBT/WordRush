@@ -177,6 +177,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_hub_initiate', name: 'Pure Hubbub',        description: 'Reach Hubbub rank without using any hints',          category: 'skill', icon: 'star' },
   { key: 'pure_hub_adept',    name: 'Pure Hubbub Adept',  description: 'Reach Hubbub rank on 10 puzzles without hints',      category: 'skill', icon: 'star' },
   { key: 'pure_hub_master',   name: 'Pure Hubbub Master', description: 'Reach Hubbub rank on 50 puzzles without hints',      category: 'skill', icon: 'crown' },
+  // Codebreaker (More Games §18c)
+  { key: 'cryptogram_first',   name: 'Code Cracked',         description: 'Crack a Codebreaker saying',                            category: 'beginner', icon: 'key-round' },
+  { key: 'cryptogram_regular', name: 'Codebreaker Regular',  description: 'Crack 50 Codebreaker sayings',                          category: 'skill',    icon: 'key-round' },
+  { key: 'cryptogram_clean',   name: 'Clean Crack',          description: 'Crack a Codebreaker saying without using Check',         category: 'skill',    icon: 'sparkles' },
+  { key: 'cryptogram_swift',   name: 'Swift Codebreaker',    description: 'Crack a Codebreaker saying in under 3 minutes',          category: 'skill',    icon: 'zap' },
+  { key: 'pure_cryptogram_initiate', name: 'Pure Codebreaker',        description: 'Crack a Codebreaker saying without using any hints', category: 'skill', icon: 'star' },
+  { key: 'pure_cryptogram_adept',    name: 'Pure Codebreaker Adept',  description: 'Crack 10 Codebreaker sayings without hints',         category: 'skill', icon: 'star' },
+  { key: 'pure_cryptogram_master',   name: 'Pure Codebreaker Master', description: 'Crack 50 Codebreaker sayings without hints',         category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -301,6 +309,13 @@ export async function checkAchievements(
     await tryUnlock('wordsearch_first');
     if (guessCount <= 10) await tryUnlock('wordsearch_eagle_eye');
     if (timeSeconds < 120) await tryUnlock('wordsearch_swift');
+  }
+
+  // Codebreaker (More Games §18c): first crack, clean (no Check), swift.
+  if (gameMode === 'CRYPTOGRAM' && won) {
+    await tryUnlock('cryptogram_first');
+    if (guessCount === 1) await tryUnlock('cryptogram_clean');
+    if (timeSeconds < 180) await tryUnlock('cryptogram_swift');
   }
 
   // Letter Ladder (More Games §18c): first climb, on par, seven daily pars in a row.
@@ -478,6 +493,7 @@ export async function checkAchievements(
     ['sudoku_scholar', 'SUDOKU', 50],
     ['regions_regular', 'REGIONS', 50],
     ['ladder_regular', 'LADDER', 50],
+    ['cryptogram_regular', 'CRYPTOGRAM', 50],
     ['wordsearch_regular', 'WORDSEARCH', 50],
     ['hub_regular', 'HUB', 50],
     ['classic_master', 'DUEL', 100],
@@ -833,10 +849,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : mode === 'CRYPTOGRAM' ? 'cryptogram' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

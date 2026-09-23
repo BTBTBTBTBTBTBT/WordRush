@@ -58,7 +58,7 @@ object ModeGen {
         GenMode("crossword", "CROSSWORD", "Crosswordocious", "Crossword", "Crosswordocious", "Fill-in sayings crossword", "#475569", "X", null, true, "more", false, "custom", "checks", 1, false, "mode.crossword", "trivia", "crosswordocious"),
         GenMode("groups", "GROUPS", "Kindred", "Kindred", "Kindred", "Four groups of four", "#9f1239", "K", null, true, "more", false, "custom", "guesses", 4, false, "mode.groups", "logic", "kindred"),
         GenMode("ladder", "LADDER", "Letter Ladder", "Ladder", "Letter Ladder", "One letter at a time", "#0284c7", "L", null, true, "more", false, "custom", "overPar", 1, true, "mode.ladder", "word", "letter-ladder"),
-        GenMode("cryptogram", "CRYPTOGRAM", "Codebreaker", "Code", "Codebreaker", "Crack the coded saying", "#92400e", "?", null, true, "more", false, "custom", "checks", 1, false, "mode.cryptogram", "logic", "codebreaker"),
+        GenMode("cryptogram", "CRYPTOGRAM", "Codebreaker", "Code", "Codebreaker", "Crack the coded saying", "#92400e", "?", null, true, "more", false, "custom", "checks", 1, true, "mode.cryptogram", "logic", "codebreaker"),
         GenMode("wordsearch", "WORDSEARCH", "Spyglass", "Spyglass", "Spyglass", "Themed word search", "#4d7c0f", "W", null, true, "more", false, "custom", "misses", 10, true, "mode.wordsearch", "word", "spyglass"),
         GenMode("regions", "REGIONS", "Starsweep", "Stars", "Starsweep", "One star per colour region", "#ca8a04", "*", null, true, "more", false, "custom", "mistakes", 1, true, "mode.regions", "logic", "starsweep"),
     )
