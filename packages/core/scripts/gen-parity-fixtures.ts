@@ -26,6 +26,7 @@ import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTo
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 import { bankIndexForDay, bankIndexForSeed, bankDayIndex, holidayKeyForDay, holidayOccurrence, bankHolidayPick, type HolidayTable } from '../src/bank';
+import { crosswordPuzzleForDay, crosswordPuzzleForSeed, crosswordDailyNumber, crosswordSolution, crosswordEntryCells, createCrosswordState, crosswordReduce, crosswordMatchRow, reconstructCrossword, crosswordGuessCount, crosswordCorrectCount, crosswordLetterCount, type CrosswordBank, type CrosswordAction } from '../src/games/crossword';
 import { groupsPuzzleForDay, groupsPuzzleForSeed, groupsDailyNumber, groupsTileOrder, createGroupsState, groupsReduce, groupsMatchRow, reconstructGroups, groupsGuessCount, groupsBoardsSolved, groupsLabelTarget, groupsPairTarget, type GroupsBank, type GroupsAction } from '../src/games/groups';
 import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, cryptogramEncipher, cryptogramCodeLetters, cryptogramFrequencies, cryptogramHintTarget, cryptogramGuessCount, cryptogramConflicts, cryptogramCorrectCount, createCryptogramState, cryptogramReduce, cryptogramMatchRow, reconstructCryptogram, type CryptogramBank, type CryptogramAction } from '../src/games/cryptogram';
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
@@ -457,6 +458,45 @@ export function renderCryptogramFixtures() {
 }
 const CRYPTOGRAM_ALPHABET_LOCAL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+export function renderCrosswordFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'crossword-puzzles.json'), 'utf8')) as CrosswordBank;
+  const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2026-09-22', 'nope', '2026-12-25', '2026-11-26', '2026-01-19', '2027-07-04']
+    .map((day) => ({ day, id: crosswordPuzzleForDay(bank, day, table)?.id ?? null, plainId: crosswordPuzzleForDay(bank, day, null)?.id ?? null, number: crosswordDailyNumber(day) }));
+  const seeds = ['unlimited-CROSSWORD-1', 'unlimited-CROSSWORD-1758578400000', 'x'].map((seed) => ({ seed, id: crosswordPuzzleForSeed(bank, seed)?.id ?? null }));
+  const p = bank.daily[0];
+  const sol = crosswordSolution(p);
+  const cellsOf = (i: number) => crosswordEntryCells(p, p.entries[i]);
+  const e0 = p.entries[0], e1 = p.entries[1], e2 = p.entries[2];
+  const c0 = cellsOf(0), c1 = cellsOf(1);
+  const wrongLetter = (ch: string) => (ch === 'Z' ? 'Y' : 'Z');
+  const fillAll: CrosswordAction[] = []; for (let i = 0; i < sol.length; i++) if (sol[i] !== '.') fillAll.push({ type: 'SET', cell: i, letter: sol[i] });
+  const scripts: Array<{ name: string; actions: CrosswordAction[] }> = [
+    { name: 'set-clear-noops', actions: [{ type: 'SET', cell: c0[0], letter: e0.answer[0].toLowerCase() }, { type: 'SET', cell: c0[0], letter: e0.answer[0] }, { type: 'SET', cell: c0[1], letter: '1' }, { type: 'SET', cell: -1, letter: 'A' }, { type: 'SET', cell: 9999, letter: 'A' }, { type: 'CLEAR', cell: c0[1] }, { type: 'SET', cell: c0[1], letter: wrongLetter(e0.answer[1]) }, { type: 'CLEAR', cell: c0[1] }] },
+    { name: 'check', actions: [{ type: 'SET', cell: c0[0], letter: e0.answer[0] }, { type: 'SET', cell: c0[1], letter: wrongLetter(e0.answer[1]) }, { type: 'SET', cell: c1[c1.length - 1], letter: e1.answer[e1.answer.length - 1] }, { type: 'CHECK' }, { type: 'CLEAR', cell: c0[0] }, { type: 'CHECK' }] },
+    { name: 'reveals', actions: [{ type: 'REVEAL_LETTER', cell: c0[0] }, { type: 'REVEAL_LETTER', cell: c0[0] }, { type: 'REVEAL_LETTER', cell: 0 }, { type: 'REVEAL_WORD', n: e1.n, dir: e1.dir }, { type: 'REVEAL_WORD', n: e1.n, dir: e1.dir }, { type: 'REVEAL_WORD', n: 99, dir: 'A' }, { type: 'REVEAL_LETTER', cell: cellsOf(2)[0] }] },
+    { name: 'solve', actions: [...fillAll, { type: 'SET', cell: c0[0], letter: 'Q' }, { type: 'CHECK' }, { type: 'FINISH' }] },
+    { name: 'solve-after-a-check', actions: [{ type: 'SET', cell: c0[0], letter: wrongLetter(e0.answer[0]) }, { type: 'CHECK' }, ...fillAll] },
+    { name: 'reveal-puzzle', actions: [{ type: 'SET', cell: c0[0], letter: e0.answer[0] }, { type: 'REVEAL_WORD', n: e2.n, dir: e2.dir }, { type: 'REVEAL_PUZZLE' }, { type: 'SET', cell: c1[0], letter: 'Q' }, { type: 'FINISH' }] },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createCrosswordState(p, 'fixture', 0);
+    for (const a of sc.actions) s = crosswordReduce(s, a, 1000);
+    const row = crosswordMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { fill: s.fill, locked: s.locked, revealed: s.revealed, checks: s.checks, hintsUsed: s.hintsUsed, lastWrong: s.lastWrong, events: s.events, status: s.status, ended: s.ended, endTime: s.endTime, guessCount: crosswordGuessCount(s.checks), correct: crosswordCorrectCount(s), total: crosswordLetterCount(s) },
+      row, reconstruct: reconstructCrossword(row.solutions, row.guesses),
+    };
+  });
+  return {
+    epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, holidayKeys: Object.keys(bank.holiday ?? {}), days, seeds,
+    puzzle: p, solution: sol, entryCells: p.entries.map((e) => ({ n: e.n, dir: e.dir, cells: crosswordEntryCells(p, e) })),
+    guessCounts: [0, 1, 2, 5, 6, 98, 99, 500].map((c) => ({ checks: c, guessCount: crosswordGuessCount(c) })),
+    reducer, malformed: [reconstructCrossword(['x|y', 'ABC'], []), reconstructCrossword(['x|y|2x2', 'ABC', 'AB'], []), reconstructCrossword(['x|y|1x2', 'AB', 'AB'], ['=A_', 'hl.', 'c2'])],
+  };
+}
+
 export function renderGroupsFixtures() {
   const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'groups-puzzles.json'), 'utf8')) as GroupsBank;
   const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
@@ -500,6 +540,7 @@ const FILES: Array<[string, unknown]> = [
   ['hub-fixtures.json', renderHubFixtures()],
   ['cryptogram-fixtures.json', renderCryptogramFixtures()],
   ['groups-fixtures.json', renderGroupsFixtures()],
+  ['crossword-fixtures.json', renderCrosswordFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

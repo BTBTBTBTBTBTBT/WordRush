@@ -16,3 +16,5 @@ export * from './games/wordsearch';
 export * from './games/hub';
 export * from './games/cryptogram';
 export * from './games/groups';
+export * from './games/crossword';
+export * from './games/crossword';

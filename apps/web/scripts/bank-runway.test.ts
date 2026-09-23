@@ -16,7 +16,7 @@ describe('daily bank runway', () => {
   const rows = bankRunwayReport(today);
 
   it('registers every bundled bank', () => {
-    expect(rows.map((r) => r.game).sort()).toEqual(['cryptogram', 'groups', 'hub', 'ladder', 'wordsearch']);
+    expect(rows.map((r) => r.game).sort()).toEqual(['crossword', 'cryptogram', 'groups', 'hub', 'ladder', 'wordsearch']);
   });
 
   for (const r of rows) {

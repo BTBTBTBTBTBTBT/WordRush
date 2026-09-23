@@ -1,0 +1,1620 @@
+{
+  "epoch": "2026-09-23",
+  "dailyCount": 410,
+  "extraCount": 82,
+  "holidayKeys": [
+    "aprilfools",
+    "christmas",
+    "cincodemayo",
+    "diwali",
+    "earthday",
+    "easter",
+    "fathersday",
+    "groundhog",
+    "halloween",
+    "hanukkah",
+    "indigenous",
+    "july4",
+    "juneteenth",
+    "kwanzaa",
+    "labor",
+    "leapday",
+    "lunarnewyear",
+    "mardigras",
+    "memorial",
+    "mlkday",
+    "mothersday",
+    "newyear",
+    "passover",
+    "presidents",
+    "stpatricks",
+    "thanksgiving",
+    "valentines",
+    "veterans"
+  ],
+  "days": [
+    {
+      "day": "2026-09-23",
+      "id": "cw-j5uksg",
+      "plainId": "cw-j5uksg",
+      "number": 1
+    },
+    {
+      "day": "2026-09-24",
+      "id": "cw-1352du",
+      "plainId": "cw-1352du",
+      "number": 2
+    },
+    {
+      "day": "2026-10-05",
+      "id": "cw-kzdl08",
+      "plainId": "cw-kzdl08",
+      "number": 13
+    },
+    {
+      "day": "2027-01-01",
+      "id": "cw-t3f58z",
+      "plainId": "cw-77jxfh",
+      "number": 101
+    },
+    {
+      "day": "2026-09-22",
+      "id": "cw-8b1g8m",
+      "plainId": "cw-8b1g8m",
+      "number": 1
+    },
+    {
+      "day": "nope",
+      "id": "cw-j5uksg",
+      "plainId": "cw-j5uksg",
+      "number": 1
+    },
+    {
+      "day": "2026-12-25",
+      "id": "cw-pwyvyk",
+      "plainId": "cw-gt4x5h",
+      "number": 94
+    },
+    {
+      "day": "2026-11-26",
+      "id": "cw-a8lp63",
+      "plainId": "cw-i91z0s",
+      "number": 65
+    },
+    {
+      "day": "2026-01-19",
+      "id": "cw-1ghmv2",
+      "plainId": "cw-453qdg",
+      "number": 1
+    },
+    {
+      "day": "2027-07-04",
+      "id": "cw-q52ndt",
+      "plainId": "cw-6bh16t",
+      "number": 285
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-CROSSWORD-1",
+      "id": "cw-lob87x"
+    },
+    {
+      "seed": "unlimited-CROSSWORD-1758578400000",
+      "id": "cw-q1101y"
+    },
+    {
+      "seed": "x",
+      "id": "cw-2d5dx4"
+    }
+  ],
+  "puzzle": {
+    "id": "cw-j5uksg",
+    "title": "Head to Toe",
+    "theme": "body",
+    "w": 9,
+    "h": 11,
+    "entries": [
+      {
+        "n": 1,
+        "dir": "D",
+        "r": 0,
+        "c": 4,
+        "answer": "MOUTH",
+        "clue": "Word of ____"
+      },
+      {
+        "n": 2,
+        "dir": "A",
+        "r": 1,
+        "c": 2,
+        "answer": "BOOTS",
+        "clue": "Too big for your ____"
+      },
+      {
+        "n": 2,
+        "dir": "D",
+        "r": 1,
+        "c": 2,
+        "answer": "BRAINS",
+        "clue": "Rack your ____"
+      },
+      {
+        "n": 3,
+        "dir": "D",
+        "r": 2,
+        "c": 0,
+        "answer": "CHEST",
+        "clue": "Get it off your ____"
+      },
+      {
+        "n": 4,
+        "dir": "D",
+        "r": 2,
+        "c": 7,
+        "answer": "HAIR",
+        "clue": "Let your ____ down"
+      },
+      {
+        "n": 5,
+        "dir": "A",
+        "r": 3,
+        "c": 0,
+        "answer": "HEARTBEAT",
+        "clue": "In a ____"
+      },
+      {
+        "n": 6,
+        "dir": "A",
+        "r": 5,
+        "c": 5,
+        "answer": "EAR",
+        "clue": "Keep your ____ to the ground"
+      },
+      {
+        "n": 6,
+        "dir": "D",
+        "r": 5,
+        "c": 5,
+        "answer": "ELBOW",
+        "clue": "More power to your ____"
+      },
+      {
+        "n": 7,
+        "dir": "A",
+        "r": 6,
+        "c": 0,
+        "answer": "TEST",
+        "clue": "Stand the ____ of time"
+      },
+      {
+        "n": 8,
+        "dir": "D",
+        "r": 6,
+        "c": 3,
+        "answer": "TABLE",
+        "clue": "Put your cards on the ____"
+      },
+      {
+        "n": 9,
+        "dir": "A",
+        "r": 8,
+        "c": 0,
+        "answer": "EYEBROW",
+        "clue": "Raise an ____"
+      },
+      {
+        "n": 9,
+        "dir": "D",
+        "r": 8,
+        "c": 0,
+        "answer": "EAT",
+        "clue": "Have your cake and ____ it too"
+      },
+      {
+        "n": 10,
+        "dir": "A",
+        "r": 10,
+        "c": 2,
+        "answer": "TEA",
+        "clue": "Not my cup of ____"
+      }
+    ]
+  },
+  "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+  "entryCells": [
+    {
+      "n": 1,
+      "dir": "D",
+      "cells": [
+        4,
+        13,
+        22,
+        31,
+        40
+      ]
+    },
+    {
+      "n": 2,
+      "dir": "A",
+      "cells": [
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "n": 2,
+      "dir": "D",
+      "cells": [
+        11,
+        20,
+        29,
+        38,
+        47,
+        56
+      ]
+    },
+    {
+      "n": 3,
+      "dir": "D",
+      "cells": [
+        18,
+        27,
+        36,
+        45,
+        54
+      ]
+    },
+    {
+      "n": 4,
+      "dir": "D",
+      "cells": [
+        25,
+        34,
+        43,
+        52
+      ]
+    },
+    {
+      "n": 5,
+      "dir": "A",
+      "cells": [
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ]
+    },
+    {
+      "n": 6,
+      "dir": "A",
+      "cells": [
+        50,
+        51,
+        52
+      ]
+    },
+    {
+      "n": 6,
+      "dir": "D",
+      "cells": [
+        50,
+        59,
+        68,
+        77,
+        86
+      ]
+    },
+    {
+      "n": 7,
+      "dir": "A",
+      "cells": [
+        54,
+        55,
+        56,
+        57
+      ]
+    },
+    {
+      "n": 8,
+      "dir": "D",
+      "cells": [
+        57,
+        66,
+        75,
+        84,
+        93
+      ]
+    },
+    {
+      "n": 9,
+      "dir": "A",
+      "cells": [
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78
+      ]
+    },
+    {
+      "n": 9,
+      "dir": "D",
+      "cells": [
+        72,
+        81,
+        90
+      ]
+    },
+    {
+      "n": 10,
+      "dir": "A",
+      "cells": [
+        92,
+        93,
+        94
+      ]
+    }
+  ],
+  "guessCounts": [
+    {
+      "checks": 0,
+      "guessCount": 1
+    },
+    {
+      "checks": 1,
+      "guessCount": 2
+    },
+    {
+      "checks": 2,
+      "guessCount": 3
+    },
+    {
+      "checks": 5,
+      "guessCount": 6
+    },
+    {
+      "checks": 6,
+      "guessCount": 7
+    },
+    {
+      "checks": 98,
+      "guessCount": 99
+    },
+    {
+      "checks": 99,
+      "guessCount": 99
+    },
+    {
+      "checks": 500,
+      "guessCount": 99
+    }
+  ],
+  "reducer": [
+    {
+      "name": "set-clear-noops",
+      "id": "cw-j5uksg",
+      "actions": [
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "m"
+        },
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "M"
+        },
+        {
+          "type": "SET",
+          "cell": 13,
+          "letter": "1"
+        },
+        {
+          "type": "SET",
+          "cell": -1,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 9999,
+          "letter": "A"
+        },
+        {
+          "type": "CLEAR",
+          "cell": 13
+        },
+        {
+          "type": "SET",
+          "cell": 13,
+          "letter": "Z"
+        },
+        {
+          "type": "CLEAR",
+          "cell": 13
+        }
+      ],
+      "expect": {
+        "fill": "....M......_____.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+        "locked": "....0......00000..0.0.0..0.0000000000.0.0..0.0.0..000.0000.0......0.0...0000000..0..0.0...0.000....",
+        "revealed": "...................................................................................................",
+        "checks": 0,
+        "hintsUsed": 0,
+        "lastWrong": [],
+        "events": [
+          "=0,4:M",
+          "=1,4:Z",
+          "-1,4"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "correct": 1,
+        "total": 49
+      },
+      "row": {
+        "solutions": [
+          "cw-j5uksg|Head to Toe|9x11",
+          "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "guesses": [
+          "=....M......_____.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+          "h...................................................................................................",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cw-j5uksg",
+        "title": "Head to Toe",
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "answers": [
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "fill": "....M......_____.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+        "revealed": "...................................................................................................",
+        "checks": 0,
+        "correct": 1,
+        "total": 49,
+        "hintsUsed": 0,
+        "revealedPuzzle": false,
+        "solved": false
+      }
+    },
+    {
+      "name": "check",
+      "id": "cw-j5uksg",
+      "actions": [
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "M"
+        },
+        {
+          "type": "SET",
+          "cell": 13,
+          "letter": "Z"
+        },
+        {
+          "type": "SET",
+          "cell": 15,
+          "letter": "S"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "CLEAR",
+          "cell": 4
+        },
+        {
+          "type": "CHECK"
+        }
+      ],
+      "expect": {
+        "fill": "....M......____S.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+        "locked": "....1......00001..0.0.0..0.0000000000.0.0..0.0.0..000.0000.0......0.0...0000000..0..0.0...0.000....",
+        "revealed": "...................................................................................................",
+        "checks": 2,
+        "hintsUsed": 0,
+        "lastWrong": [],
+        "events": [
+          "=0,4:M",
+          "=1,4:Z",
+          "=1,6:S",
+          "#1",
+          "#0"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 3,
+        "correct": 2,
+        "total": 49
+      },
+      "row": {
+        "solutions": [
+          "cw-j5uksg|Head to Toe|9x11",
+          "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "guesses": [
+          "=....M......____S.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+          "h...................................................................................................",
+          "c2"
+        ]
+      },
+      "reconstruct": {
+        "id": "cw-j5uksg",
+        "title": "Head to Toe",
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "answers": [
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "fill": "....M......____S.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+        "revealed": "...................................................................................................",
+        "checks": 2,
+        "correct": 2,
+        "total": 49,
+        "hintsUsed": 0,
+        "revealedPuzzle": false,
+        "solved": false
+      }
+    },
+    {
+      "name": "reveals",
+      "id": "cw-j5uksg",
+      "actions": [
+        {
+          "type": "REVEAL_LETTER",
+          "cell": 4
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "cell": 4
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "cell": 0
+        },
+        {
+          "type": "REVEAL_WORD",
+          "n": 2,
+          "dir": "A"
+        },
+        {
+          "type": "REVEAL_WORD",
+          "n": 2,
+          "dir": "A"
+        },
+        {
+          "type": "REVEAL_WORD",
+          "n": 99,
+          "dir": "A"
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "cell": 11
+        }
+      ],
+      "expect": {
+        "fill": "....M......BOOTS.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+        "locked": "....1......11111..0.0.0..0.0000000000.0.0..0.0.0..000.0000.0......0.0...0000000..0..0.0...0.000....",
+        "revealed": "....l......wwwww...................................................................................",
+        "checks": 0,
+        "hintsUsed": 3,
+        "lastWrong": [],
+        "events": [
+          "?0,4",
+          "!2A"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "correct": 6,
+        "total": 49
+      },
+      "row": {
+        "solutions": [
+          "cw-j5uksg|Head to Toe|9x11",
+          "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "guesses": [
+          "=....M......BOOTS.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+          "h....l......wwwww...................................................................................",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cw-j5uksg",
+        "title": "Head to Toe",
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "answers": [
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "fill": "....M......BOOTS.._._._.._.__________._._.._._._..___.____._......_._..._______.._.._._..._.___....",
+        "revealed": "....l......wwwww...................................................................................",
+        "checks": 0,
+        "correct": 6,
+        "total": 49,
+        "hintsUsed": 3,
+        "revealedPuzzle": false,
+        "solved": false
+      }
+    },
+    {
+      "name": "solve",
+      "id": "cw-j5uksg",
+      "actions": [
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "M"
+        },
+        {
+          "type": "SET",
+          "cell": 11,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 12,
+          "letter": "O"
+        },
+        {
+          "type": "SET",
+          "cell": 13,
+          "letter": "O"
+        },
+        {
+          "type": "SET",
+          "cell": 14,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 15,
+          "letter": "S"
+        },
+        {
+          "type": "SET",
+          "cell": 18,
+          "letter": "C"
+        },
+        {
+          "type": "SET",
+          "cell": 20,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 22,
+          "letter": "U"
+        },
+        {
+          "type": "SET",
+          "cell": 25,
+          "letter": "H"
+        },
+        {
+          "type": "SET",
+          "cell": 27,
+          "letter": "H"
+        },
+        {
+          "type": "SET",
+          "cell": 28,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 29,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 30,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 31,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 32,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 33,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 34,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 35,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 36,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 38,
+          "letter": "I"
+        },
+        {
+          "type": "SET",
+          "cell": 40,
+          "letter": "H"
+        },
+        {
+          "type": "SET",
+          "cell": 43,
+          "letter": "I"
+        },
+        {
+          "type": "SET",
+          "cell": 45,
+          "letter": "S"
+        },
+        {
+          "type": "SET",
+          "cell": 47,
+          "letter": "N"
+        },
+        {
+          "type": "SET",
+          "cell": 50,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 51,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 52,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 54,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 55,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 56,
+          "letter": "S"
+        },
+        {
+          "type": "SET",
+          "cell": 57,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 59,
+          "letter": "L"
+        },
+        {
+          "type": "SET",
+          "cell": 66,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 68,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 72,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 73,
+          "letter": "Y"
+        },
+        {
+          "type": "SET",
+          "cell": 74,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 75,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 76,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 77,
+          "letter": "O"
+        },
+        {
+          "type": "SET",
+          "cell": 78,
+          "letter": "W"
+        },
+        {
+          "type": "SET",
+          "cell": 81,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 84,
+          "letter": "L"
+        },
+        {
+          "type": "SET",
+          "cell": 86,
+          "letter": "W"
+        },
+        {
+          "type": "SET",
+          "cell": 90,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 92,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 93,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 94,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "Q"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "locked": "....0......00000..0.0.0..0.0000000000.0.0..0.0.0..000.0000.0......0.0...0000000..0..0.0...0.000....",
+        "revealed": "...................................................................................................",
+        "checks": 0,
+        "hintsUsed": 0,
+        "lastWrong": [],
+        "events": [
+          "=0,4:M",
+          "=1,2:B",
+          "=1,3:O",
+          "=1,4:O",
+          "=1,5:T",
+          "=1,6:S",
+          "=2,0:C",
+          "=2,2:R",
+          "=2,4:U",
+          "=2,7:H",
+          "=3,0:H",
+          "=3,1:E",
+          "=3,2:A",
+          "=3,3:R",
+          "=3,4:T",
+          "=3,5:B",
+          "=3,6:E",
+          "=3,7:A",
+          "=3,8:T",
+          "=4,0:E",
+          "=4,2:I",
+          "=4,4:H",
+          "=4,7:I",
+          "=5,0:S",
+          "=5,2:N",
+          "=5,5:E",
+          "=5,6:A",
+          "=5,7:R",
+          "=6,0:T",
+          "=6,1:E",
+          "=6,2:S",
+          "=6,3:T",
+          "=6,5:L",
+          "=7,3:A",
+          "=7,5:B",
+          "=8,0:E",
+          "=8,1:Y",
+          "=8,2:E",
+          "=8,3:B",
+          "=8,4:R",
+          "=8,5:O",
+          "=8,6:W",
+          "=9,0:A",
+          "=9,3:L",
+          "=9,5:W",
+          "=10,0:T",
+          "=10,2:T",
+          "=10,3:E",
+          "=10,4:A"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 1,
+        "correct": 49,
+        "total": 49
+      },
+      "row": {
+        "solutions": [
+          "cw-j5uksg|Head to Toe|9x11",
+          "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "guesses": [
+          "=....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "h...................................................................................................",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cw-j5uksg",
+        "title": "Head to Toe",
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "answers": [
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "revealed": "...................................................................................................",
+        "checks": 0,
+        "correct": 49,
+        "total": 49,
+        "hintsUsed": 0,
+        "revealedPuzzle": false,
+        "solved": true
+      }
+    },
+    {
+      "name": "solve-after-a-check",
+      "id": "cw-j5uksg",
+      "actions": [
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "Z"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "M"
+        },
+        {
+          "type": "SET",
+          "cell": 11,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 12,
+          "letter": "O"
+        },
+        {
+          "type": "SET",
+          "cell": 13,
+          "letter": "O"
+        },
+        {
+          "type": "SET",
+          "cell": 14,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 15,
+          "letter": "S"
+        },
+        {
+          "type": "SET",
+          "cell": 18,
+          "letter": "C"
+        },
+        {
+          "type": "SET",
+          "cell": 20,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 22,
+          "letter": "U"
+        },
+        {
+          "type": "SET",
+          "cell": 25,
+          "letter": "H"
+        },
+        {
+          "type": "SET",
+          "cell": 27,
+          "letter": "H"
+        },
+        {
+          "type": "SET",
+          "cell": 28,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 29,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 30,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 31,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 32,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 33,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 34,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 35,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 36,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 38,
+          "letter": "I"
+        },
+        {
+          "type": "SET",
+          "cell": 40,
+          "letter": "H"
+        },
+        {
+          "type": "SET",
+          "cell": 43,
+          "letter": "I"
+        },
+        {
+          "type": "SET",
+          "cell": 45,
+          "letter": "S"
+        },
+        {
+          "type": "SET",
+          "cell": 47,
+          "letter": "N"
+        },
+        {
+          "type": "SET",
+          "cell": 50,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 51,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 52,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 54,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 55,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 56,
+          "letter": "S"
+        },
+        {
+          "type": "SET",
+          "cell": 57,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 59,
+          "letter": "L"
+        },
+        {
+          "type": "SET",
+          "cell": 66,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 68,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 72,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 73,
+          "letter": "Y"
+        },
+        {
+          "type": "SET",
+          "cell": 74,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 75,
+          "letter": "B"
+        },
+        {
+          "type": "SET",
+          "cell": 76,
+          "letter": "R"
+        },
+        {
+          "type": "SET",
+          "cell": 77,
+          "letter": "O"
+        },
+        {
+          "type": "SET",
+          "cell": 78,
+          "letter": "W"
+        },
+        {
+          "type": "SET",
+          "cell": 81,
+          "letter": "A"
+        },
+        {
+          "type": "SET",
+          "cell": 84,
+          "letter": "L"
+        },
+        {
+          "type": "SET",
+          "cell": 86,
+          "letter": "W"
+        },
+        {
+          "type": "SET",
+          "cell": 90,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 92,
+          "letter": "T"
+        },
+        {
+          "type": "SET",
+          "cell": 93,
+          "letter": "E"
+        },
+        {
+          "type": "SET",
+          "cell": 94,
+          "letter": "A"
+        }
+      ],
+      "expect": {
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "locked": "....0......00000..0.0.0..0.0000000000.0.0..0.0.0..000.0000.0......0.0...0000000..0..0.0...0.000....",
+        "revealed": "...................................................................................................",
+        "checks": 1,
+        "hintsUsed": 0,
+        "lastWrong": [],
+        "events": [
+          "=0,4:Z",
+          "#1",
+          "=0,4:M",
+          "=1,2:B",
+          "=1,3:O",
+          "=1,4:O",
+          "=1,5:T",
+          "=1,6:S",
+          "=2,0:C",
+          "=2,2:R",
+          "=2,4:U",
+          "=2,7:H",
+          "=3,0:H",
+          "=3,1:E",
+          "=3,2:A",
+          "=3,3:R",
+          "=3,4:T",
+          "=3,5:B",
+          "=3,6:E",
+          "=3,7:A",
+          "=3,8:T",
+          "=4,0:E",
+          "=4,2:I",
+          "=4,4:H",
+          "=4,7:I",
+          "=5,0:S",
+          "=5,2:N",
+          "=5,5:E",
+          "=5,6:A",
+          "=5,7:R",
+          "=6,0:T",
+          "=6,1:E",
+          "=6,2:S",
+          "=6,3:T",
+          "=6,5:L",
+          "=7,3:A",
+          "=7,5:B",
+          "=8,0:E",
+          "=8,1:Y",
+          "=8,2:E",
+          "=8,3:B",
+          "=8,4:R",
+          "=8,5:O",
+          "=8,6:W",
+          "=9,0:A",
+          "=9,3:L",
+          "=9,5:W",
+          "=10,0:T",
+          "=10,2:T",
+          "=10,3:E",
+          "=10,4:A"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 2,
+        "correct": 49,
+        "total": 49
+      },
+      "row": {
+        "solutions": [
+          "cw-j5uksg|Head to Toe|9x11",
+          "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "guesses": [
+          "=....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "h...................................................................................................",
+          "c1"
+        ]
+      },
+      "reconstruct": {
+        "id": "cw-j5uksg",
+        "title": "Head to Toe",
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "answers": [
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "revealed": "...................................................................................................",
+        "checks": 1,
+        "correct": 49,
+        "total": 49,
+        "hintsUsed": 0,
+        "revealedPuzzle": false,
+        "solved": true
+      }
+    },
+    {
+      "name": "reveal-puzzle",
+      "id": "cw-j5uksg",
+      "actions": [
+        {
+          "type": "SET",
+          "cell": 4,
+          "letter": "M"
+        },
+        {
+          "type": "REVEAL_WORD",
+          "n": 2,
+          "dir": "D"
+        },
+        {
+          "type": "REVEAL_PUZZLE"
+        },
+        {
+          "type": "SET",
+          "cell": 11,
+          "letter": "Q"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "locked": "....1......11111..1.1.1..1.1111111111.1.1..1.1.1..111.1111.1......1.1...1111111..1..1.1...1.111....",
+        "revealed": "....p......wpppp..p.w.p..p.ppwppppppp.w.p..p.p.w..ppp.ppwp.p......p.p...ppppppp..p..p.p...p.ppp....",
+        "checks": 0,
+        "hintsUsed": 2,
+        "lastWrong": [],
+        "events": [
+          "=0,4:M",
+          "!2D",
+          "!!"
+        ],
+        "status": "lost",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 1,
+        "correct": 49,
+        "total": 49
+      },
+      "row": {
+        "solutions": [
+          "cw-j5uksg|Head to Toe|9x11",
+          "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "guesses": [
+          "=....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+          "h....p......wpppp..p.w.p..p.ppwppppppp.w.p..p.p.w..ppp.ppwp.p......p.p...ppppppp..p..p.p...p.ppp....",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cw-j5uksg",
+        "title": "Head to Toe",
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "answers": [
+          "MOUTH",
+          "BOOTS",
+          "BRAINS",
+          "CHEST",
+          "HAIR",
+          "HEARTBEAT",
+          "EAR",
+          "ELBOW",
+          "TEST",
+          "TABLE",
+          "EYEBROW",
+          "EAT",
+          "TEA"
+        ],
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "revealed": "....p......wpppp..p.w.p..p.ppwppppppp.w.p..p.p.w..ppp.ppwp.p......p.p...ppppppp..p..p.p...p.ppp....",
+        "checks": 0,
+        "correct": 49,
+        "total": 49,
+        "hintsUsed": 2,
+        "revealedPuzzle": true,
+        "solved": false
+      }
+    }
+  ],
+  "malformed": [
+    null,
+    null,
+    {
+      "id": "x",
+      "title": "y",
+      "w": 1,
+      "h": 2,
+      "solution": "AB",
+      "answers": [
+        "AB"
+      ],
+      "fill": "A_",
+      "revealed": "l.",
+      "checks": 2,
+      "correct": 1,
+      "total": 2,
+      "hintsUsed": 1,
+      "revealedPuzzle": false,
+      "solved": false
+    }
+  ]
+}
