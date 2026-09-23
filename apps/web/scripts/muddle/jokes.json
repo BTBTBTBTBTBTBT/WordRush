@@ -590,7 +590,7 @@
  {
   "final": "TENTS SITUATION",
   "caption": "When the campsite overbooked, the ranger called it a ____.",
-  "scene": "A jumble of overlapping canvas shelters crammed onto one small patch of grass, guy ropes tangled, while a ranger scratches his head.",
+  "scene": "A heap of overlapping canvas shelters crammed onto one small patch of grass, guy ropes tangled, while a ranger scratches his head.",
   "altText": "A ranger scratches his head at a tangle of camping shelters crammed together."
  },
  {
@@ -714,10 +714,10 @@
   "altText": "A small shelled creature wearing a post bag delivers a letter to a tiny toadstool door."
  },
  {
-  "final": "SPELLING BEE",
-  "caption": "The hive's brightest pupil won the school ____.",
-  "scene": "A bee with a medal round its neck stands at a microphone on a school stage while an audience of bees buzzes with applause.",
-  "altText": "A bee wearing a medal stands at a microphone on a school stage."
+  "final": "BUSY AS A BEE",
+  "caption": "The hive's hardest worker never took a break; the others said she was ____.",
+  "scene": "A bee in a tiny apron rushes between flowers with a watering can in one leg and a broom in another while the other bees lounge on a leaf.",
+  "altText": "One insect hurries about with tools while the others lounge on a leaf."
  },
  {
   "final": "PLAYING KETCHUP",
