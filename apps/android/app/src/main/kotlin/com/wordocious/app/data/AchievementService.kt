@@ -94,6 +94,9 @@ object AchievementService {
     private data class ParRow(val day: String, val completed: Boolean = false, @SerialName("guess_count") val guessCount: Int = 0)
 
     @Serializable
+    private data class HubMatchRow(val solutions: List<String>? = null, @SerialName("player1_guesses") val player1Guesses: List<String>? = null)
+
+    @Serializable
     private data class DailyTimedRow(
         @SerialName("game_mode") val gameMode: String,
         @SerialName("time_seconds") val timeSeconds: Int? = 0,
@@ -182,6 +185,32 @@ object AchievementService {
         // Perfectionist is a WORD-mode feat: every mode whose guess_count means
         // something else (mistakes, par, checks…) is excluded through the catalog.
         if (won && guessCount == 1 && (com.wordocious.app.ModeGen.byDbKey(gameMode)?.guessSemantics ?: "guesses") == "guesses") tryUnlock("perfectionist")
+
+        // Hubbub (More Games §18c): first Hubbub, Pandemonium, pangram (from the matches row), seven Uproar days in a row.
+        if (gameMode == "HUB" && won) {
+            tryUnlock("hub_first")
+            if (guessCount == 1) tryUnlock("hub_pandemonium")
+            if (seed != null && "hub_pangram" !in alreadyUnlocked) {
+                val m = runCatching {
+                    client.postgrest["matches"].select(Columns.raw("solutions, player1_guesses")) {
+                        filter { eq("player1_id", userId); eq("game_mode", "HUB"); eq("seed", seed) }; limit(1)
+                    }.decodeList<HubMatchRow>().firstOrNull()
+                }.getOrNull()
+                val letters = m?.solutions?.getOrNull(1) ?: ""
+                val found = (m?.player1Guesses ?: emptyList()).filter { it.startsWith("+") || it.startsWith("!") }.map { it.substring(1) }
+                if (letters.length == 7 && found.any { w -> letters.all { it in w } }) tryUnlock("hub_pangram")
+            }
+            if (guessCount <= 3 && isDaily && "hub_uproar_streak" !in alreadyUnlocked) {
+                val rows = runCatching {
+                    client.postgrest["daily_results"].select(Columns.raw("day, completed, guess_count")) {
+                        filter { eq("user_id", userId); eq("game_mode", "HUB") }; order("day", Order.DESCENDING); limit(7)
+                    }.decodeList<ParRow>()
+                }.getOrDefault(emptyList())
+                val all = rows.size == 7 && rows.all { it.completed && it.guessCount <= 3 }
+                val consecutive = (1 until rows.size).all { com.wordocious.core.Bank.dayIndex(rows[it - 1].day, rows[it].day) == 1 }
+                if (all && consecutive) tryUnlock("hub_uproar_streak")
+            }
+        }
 
         // Spyglass (More Games §18c): first clear, eagle eye (no misses), swift.
         if (gameMode == "WORDSEARCH" && won) {
@@ -337,6 +366,7 @@ object AchievementService {
             Triple("regions_regular", "REGIONS", 50),
             Triple("ladder_regular", "LADDER", 50),
             Triple("wordsearch_regular", "WORDSEARCH", 50),
+            Triple("hub_regular", "HUB", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -646,7 +676,7 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
@@ -655,6 +685,7 @@ object AchievementService {
                 "REGIONS" -> "regions"
                 "LADDER" -> "ladder"
                 "WORDSEARCH" -> "wordsearch"
+                "HUB" -> "hub"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"

@@ -93,6 +93,28 @@ object GameResultsService {
             .isSuccess
     }
 
+    /** More Games §11: the idempotent IMPROVE path (Hubbub rank-ups after the
+     *  first finalisation). Touches ONLY the score-bearing rows — daily_results
+     *  via recordDailyResult (already only-better) and this seed's matches row
+     *  (player1_score = the guess-count bucket, lower = better) — never games,
+     *  wins, XP, level or streaks. Safe to call any number of times. */
+    suspend fun improve(
+        gameMode: GameMode, seed: String, completed: Boolean, guessCount: Int, timeSeconds: Int,
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int, guesses: List<String>,
+    ) {
+        DailyResultsService.recordDailyResult(gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed, seed)
+        val uid = AuthService.userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return
+        runCatching {
+            client.postgrest["matches"].update({
+                set("player1_score", guessCount)
+                set("player1_time", timeSeconds)
+                set("winner_id", if (completed) uid else null)
+                set("hints_used", hintsUsed)
+                set("player1_guesses", guesses)
+            }) { filter { eq("player1_id", uid); eq("game_mode", gameMode.name); eq("seed", seed); gt("player1_score", guessCount) } }
+        }.onFailure { DailyResultsService.reportSwallowedWrite("improve", gameMode.name, it) }
+    }
+
     // ── Gauntlet per-stage breakdown (iOS/web parity) ─────────────────────────────
     /** Persist the Gauntlet stage-by-stage breakdown onto the matches row so the
      *  results screen can render cross-device (web ↔ iOS ↔ Android). Written as a

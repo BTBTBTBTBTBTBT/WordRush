@@ -720,6 +720,70 @@ object ShareImage {
         return bmp
     }
 
+    // ── Hubbub card (More Games §18d) ─────────────────────────────────────────
+
+    /** The blank 2-3-2 silhouette with the centre in the accent, the rank name
+     *  large beneath, then % of the maximum. No letters. */
+    fun renderHub(context: Context, rankName: String, pct: Int, won: Boolean, meta: String): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFFC026D3.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("HUBBUB", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+        val tile = 150f; val gap = 18f
+        val clusterH = tile * 3 + gap * 2
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val y0 = areaTop + (areaBottom - areaTop - clusterH - 200f) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 4f; color = 0xFFD1D5DB.toInt() }
+        val rows = listOf(listOf(false, false), listOf(false, true, false), listOf(false, false))
+        rows.forEachIndexed { r, row ->
+            val rowW = row.size * tile + (row.size - 1) * gap
+            row.forEachIndexed { i, centre ->
+                val x = cx - rowW / 2f + i * (tile + gap); val y = y0 + r * (tile + gap)
+                val rect = RectF(x, y, x + tile, y + tile); val rad = tile * 0.14f
+                if (centre) { fill.color = accent; c.drawRoundRect(rect, rad, rad, fill) }
+                else { fill.color = 0xFFFFFFFF.toInt(); c.drawRoundRect(rect, rad, rad, fill); c.drawRoundRect(rect, rad, rad, stroke) }
+            }
+        }
+        p.typeface = black; p.textSize = 64f; p.color = accent
+        c.drawText(rankName.uppercase(), cx, y0 + clusterH + 96f, p)
+        p.typeface = bold; p.textSize = 30f; p.color = TEXT_MUTED
+        c.drawText("$pct% of the maximum", cx, y0 + clusterH + 146f, p)
+        p.textSize = 22f; p.color = FOOT
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {
