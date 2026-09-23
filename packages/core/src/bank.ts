@@ -61,6 +61,51 @@ export function bankRunway(day: string, n: number, epoch: string): { daysLeft: n
   return { daysLeft, recyclesOn: recycles.toISOString().slice(0, 10), recycling: idx >= n };
 }
 
+// ── Holidays (More Games §20) ──────────────────────────────────────────────
+
+/**
+ * The shared holiday calendar, emitted as DATA by
+ * apps/web/scripts/holidays/gen-holiday-days.mjs (apps/web/data/holiday-days.json,
+ * bundled on every platform and sha-guarded): `days` maps YYYY-MM-DD to a
+ * holiday key ("christmas", "mlkday", …). No platform ports the date rules.
+ */
+export interface HolidayTable { version: number; from: string; to: string; days: Record<string, string> }
+
+/** The holiday key that owns `day`, or null on an ordinary day (or outside the table). */
+export function holidayKeyForDay(day: string, table: HolidayTable | null | undefined): string | null {
+  return table?.days?.[day] ?? null;
+}
+
+/**
+ * How many days owned by `key` fall strictly BEFORE `day` in the table — the
+ * k-th outing of a holiday (Christmas Eve 0, Christmas Day 1, Boxing Day 2 in
+ * the first year; 3, 4, 5 the next). Banks pick holiday entry k mod n, so a
+ * holiday with several entries walks through them in calendar order and a
+ * holiday with one entry repeats it. Deterministic on every platform.
+ */
+export function holidayOccurrence(day: string, key: string, table: HolidayTable | null | undefined): number {
+  if (!table?.days) return 0;
+  let n = 0;
+  for (const d of Object.keys(table.days)) if (d < day && table.days[d] === key) n++;
+  return n;
+}
+
+/**
+ * The holiday entry a bank should serve on `day`: `entries[k mod n]` where k is
+ * the occurrence, or null when the day is ordinary or the bank has nothing for
+ * that holiday (then the ordinary epoch index applies — the everyday entry that
+ * a holiday displaces is simply never dated, so `bankIndexForDay` and the
+ * runway maths are untouched).
+ */
+export function bankHolidayPick<T>(day: string, table: HolidayTable | null | undefined, holiday: Record<string, T[]> | null | undefined): { key: string; index: number; entry: T } | null {
+  const key = holidayKeyForDay(day, table);
+  if (!key) return null;
+  const entries = holiday?.[key];
+  if (!entries || !entries.length) return null;
+  const index = holidayOccurrence(day, key, table) % entries.length;
+  return { key, index, entry: entries[index] };
+}
+
 /**
  * Index into a bank of `n` entries for an Unlimited seed. Deterministic per
  * seed (same seed → same puzzle on every platform). If `avoid` is given and

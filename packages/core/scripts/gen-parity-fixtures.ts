@@ -25,7 +25,8 @@ import { fileURLToPath } from 'node:url';
 import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTodayForTests } from '../src/dictionary';
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
-import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../src/bank';
+import { bankIndexForDay, bankIndexForSeed, bankDayIndex, holidayKeyForDay, holidayOccurrence, bankHolidayPick, type HolidayTable } from '../src/bank';
+import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, cryptogramEncipher, cryptogramCodeLetters, cryptogramFrequencies, cryptogramHintTarget, cryptogramGuessCount, cryptogramConflicts, cryptogramCorrectCount, createCryptogramState, cryptogramReduce, cryptogramMatchRow, reconstructCryptogram, type CryptogramBank, type CryptogramAction } from '../src/games/cryptogram';
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
@@ -109,10 +110,18 @@ const BANK_SEED_CASES: Array<[string, number, number | undefined]> = [
   ['unlimited-LADDER-1', 1000, undefined], ['avoid-me', 5, undefined], ['avoid-me', 5, 3], ['avoid-me', 5, 4], ['avoid-me', 1, 0],
 ];
 export function renderBankFixtures() {
+  // Holidays (§20): the shared calendar is data; these cases pin key lookup, the
+  // occurrence count (k-th outing) and the pick into a 3-entry holiday list.
+  const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
+  const three = { christmas: ['c0', 'c1', 'c2'], halloween: ['h0', 'h1', 'h2'], mlkday: ['m0', 'm1', 'm2'] };
+  const holidayDays = ['2026-09-23', '2026-12-24', '2026-12-25', '2026-12-26', '2027-12-25', '2028-12-26', '2026-10-30', '2026-10-31', '2027-10-31', '2026-01-19', '2027-01-18', '2026-07-04', '2030-12-31', '2031-01-01', 'nope']
+    .map((day) => { const pick = bankHolidayPick(day, table, three); return { day, key: holidayKeyForDay(day, table), occurrence: holidayKeyForDay(day, table) ? holidayOccurrence(day, holidayKeyForDay(day, table)!, table) : 0, pick: pick ? { key: pick.key, index: pick.index, entry: pick.entry } : null }; });
   return {
     epoch: BANK_EPOCH,
     days: BANK_DAY_CASES.map(([day, n]) => ({ day, n, dayIndex: bankDayIndex(day, BANK_EPOCH), index: bankIndexForDay(day, n, BANK_EPOCH) })),
     seeds: BANK_SEED_CASES.map(([seed, n, avoid]) => ({ seed, n, avoid: avoid ?? null, index: bankIndexForSeed(seed, n, avoid) })),
+    holidayTable: { version: table.version, from: table.from, to: table.to, dayCount: Object.keys(table.days).length },
+    holidayDays,
   };
 }
 
@@ -400,6 +409,53 @@ export function renderHubFixtures() {
   return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, scoring, thresholds, scores, reducer, malformed: reconstructHub(['x', 'ABC', '1'], []) };
 }
 
+export function renderCryptogramFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'cryptogram-puzzles.json'), 'utf8')) as CryptogramBank;
+  const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2026-09-22', 'nope', '2026-12-25', '2026-12-24', '2027-12-25', '2026-11-26', '2026-01-19', '2027-07-04']
+    .map((day) => ({ day, id: cryptogramPuzzleForDay(bank, day, table)?.id ?? null, plainId: cryptogramPuzzleForDay(bank, day, null)?.id ?? null, number: cryptogramDailyNumber(day) }));
+  const seeds = ['unlimited-CRYPTOGRAM-1', 'unlimited-CRYPTOGRAM-1758578400000', 'x'].map((seed) => ({ seed, id: cryptogramPuzzleForSeed(bank, seed)?.id ?? null }));
+  const p = bank.daily[0];
+  const cipher = cryptogramEncipher(p.text, p.key);
+  const codes = cryptogramCodeLetters(cipher);
+  const init = createCryptogramState(p, 'fixture', 0);
+  const truth = (code: string) => CRYPTOGRAM_ALPHABET_LOCAL[p.key.indexOf(code)];
+  const free = codes.filter((c) => !init.locked.includes(c));
+  // Scripts: pencil right and wrong, clear, a check that locks and clears, hints, a solve, a reveal, and no-ops on locked/ended letters.
+  const solveAll: CryptogramAction[] = free.map((c) => ({ type: 'SET', code: c, plain: truth(c) }));
+  const scripts: Array<{ name: string; actions: CryptogramAction[] }> = [
+    { name: 'pencil-and-clear', actions: [
+      { type: 'SET', code: free[0], plain: truth(free[0]) }, { type: 'SET', code: free[1], plain: truth(free[0]) }, { type: 'SET', code: free[1], plain: null },
+      { type: 'SET', code: init.locked[0], plain: 'Q' }, { type: 'SET', code: free[2], plain: 'z' }, { type: 'SET', code: '1', plain: 'A' }, { type: 'SET', code: free[2], plain: null }, { type: 'SET', code: free[2], plain: null },
+    ] },
+    { name: 'check-locks-and-clears', actions: [
+      { type: 'SET', code: free[0], plain: truth(free[0]) }, { type: 'SET', code: free[1], plain: truth(free[1]) === 'Z' ? 'Y' : 'Z' }, { type: 'CHECK' }, { type: 'SET', code: free[0], plain: 'A' }, { type: 'CHECK' }, { type: 'CHECK' }, { type: 'CHECK' },
+    ] },
+    { name: 'hints', actions: [{ type: 'HINT' }, { type: 'HINT' }, { type: 'SET', code: free[3] ?? free[0], plain: 'Q' }, { type: 'HINT' }] },
+    { name: 'solve', actions: [...solveAll, { type: 'SET', code: free[0], plain: 'Q' }, { type: 'CHECK' }, { type: 'FINISH' }] },
+    { name: 'solve-with-a-check', actions: [{ type: 'CHECK' }, ...solveAll] },
+    { name: 'reveal', actions: [{ type: 'SET', code: free[0], plain: truth(free[0]) }, { type: 'REVEAL' }, { type: 'HINT' }, { type: 'SET', code: free[1], plain: 'Q' }, { type: 'FINISH' }] },
+    { name: 'hint-everything', actions: Array.from({ length: codes.length + 1 }, () => ({ type: 'HINT' }) as CryptogramAction) },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createCryptogramState(p, 'fixture', 0);
+    for (const a of sc.actions) s = cryptogramReduce(s, a, 1000);
+    const row = cryptogramMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { mapping: s.mapping, locked: s.locked, hinted: s.hinted, hintsUsed: s.hintsUsed, checks: s.checks, lastWrong: s.lastWrong, events: s.events, status: s.status, ended: s.ended, endTime: s.endTime, guessCount: cryptogramGuessCount(s.checks), conflicts: cryptogramConflicts(s.mapping), correct: cryptogramCorrectCount(s), hintTarget: cryptogramHintTarget(s) },
+      row, reconstruct: reconstructCryptogram(row.solutions, row.guesses),
+    };
+  });
+  return {
+    epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, holidayKeys: Object.keys(bank.holiday ?? {}), days, seeds,
+    puzzle: p, cipher, codes, frequencies: cryptogramFrequencies(cipher), initial: { mapping: init.mapping, locked: init.locked, hintTarget: cryptogramHintTarget(init) },
+    guessCounts: [0, 1, 2, 3, 4, 9].map((c) => ({ checks: c, guessCount: cryptogramGuessCount(c) })),
+    reducer, malformed: [reconstructCryptogram(['x', 'ABC'], []), reconstructCryptogram(['Hi there.', 'AABCDEFGHIJKLMNOPQRSTUVWXY', 'id'], [])],
+  };
+}
+const CRYPTOGRAM_ALPHABET_LOCAL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -409,6 +465,7 @@ const FILES: Array<[string, unknown]> = [
   ['ladder-fixtures.json', renderLadderFixtures()],
   ['wordsearch-fixtures.json', renderWordsearchFixtures()],
   ['hub-fixtures.json', renderHubFixtures()],
+  ['cryptogram-fixtures.json', renderCryptogramFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

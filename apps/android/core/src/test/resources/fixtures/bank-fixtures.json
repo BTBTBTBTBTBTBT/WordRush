@@ -129,5 +129,139 @@
       "avoid": 0,
       "index": 0
     }
+  ],
+  "holidayTable": {
+    "version": 1,
+    "from": "2026-01-01",
+    "to": "2030-12-31",
+    "dayCount": 160
+  },
+  "holidayDays": [
+    {
+      "day": "2026-09-23",
+      "key": null,
+      "occurrence": 0,
+      "pick": null
+    },
+    {
+      "day": "2026-12-24",
+      "key": "christmas",
+      "occurrence": 0,
+      "pick": {
+        "key": "christmas",
+        "index": 0,
+        "entry": "c0"
+      }
+    },
+    {
+      "day": "2026-12-25",
+      "key": "christmas",
+      "occurrence": 1,
+      "pick": {
+        "key": "christmas",
+        "index": 1,
+        "entry": "c1"
+      }
+    },
+    {
+      "day": "2026-12-26",
+      "key": "christmas",
+      "occurrence": 2,
+      "pick": {
+        "key": "christmas",
+        "index": 2,
+        "entry": "c2"
+      }
+    },
+    {
+      "day": "2027-12-25",
+      "key": "hanukkah",
+      "occurrence": 1,
+      "pick": null
+    },
+    {
+      "day": "2028-12-26",
+      "key": "christmas",
+      "occurrence": 7,
+      "pick": {
+        "key": "christmas",
+        "index": 1,
+        "entry": "c1"
+      }
+    },
+    {
+      "day": "2026-10-30",
+      "key": "halloween",
+      "occurrence": 0,
+      "pick": {
+        "key": "halloween",
+        "index": 0,
+        "entry": "h0"
+      }
+    },
+    {
+      "day": "2026-10-31",
+      "key": "halloween",
+      "occurrence": 1,
+      "pick": {
+        "key": "halloween",
+        "index": 1,
+        "entry": "h1"
+      }
+    },
+    {
+      "day": "2027-10-31",
+      "key": "halloween",
+      "occurrence": 3,
+      "pick": {
+        "key": "halloween",
+        "index": 0,
+        "entry": "h0"
+      }
+    },
+    {
+      "day": "2026-01-19",
+      "key": "mlkday",
+      "occurrence": 0,
+      "pick": {
+        "key": "mlkday",
+        "index": 0,
+        "entry": "m0"
+      }
+    },
+    {
+      "day": "2027-01-18",
+      "key": "mlkday",
+      "occurrence": 1,
+      "pick": {
+        "key": "mlkday",
+        "index": 1,
+        "entry": "m1"
+      }
+    },
+    {
+      "day": "2026-07-04",
+      "key": "july4",
+      "occurrence": 0,
+      "pick": null
+    },
+    {
+      "day": "2030-12-31",
+      "key": "newyear",
+      "occurrence": 9,
+      "pick": null
+    },
+    {
+      "day": "2031-01-01",
+      "key": null,
+      "occurrence": 0,
+      "pick": null
+    },
+    {
+      "day": "nope",
+      "key": null,
+      "occurrence": 0,
+      "pick": null
+    }
   ]
 }

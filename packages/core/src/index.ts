@@ -14,3 +14,4 @@ export * from './games/regions';
 export * from './games/ladder';
 export * from './games/wordsearch';
 export * from './games/hub';
+export * from './games/cryptogram';

@@ -1,0 +1,1114 @@
+{
+  "epoch": "2026-09-23",
+  "dailyCount": 372,
+  "extraCount": 60,
+  "holidayKeys": [
+    "aprilfools",
+    "christmas",
+    "cincodemayo",
+    "diwali",
+    "earthday",
+    "easter",
+    "fathersday",
+    "groundhog",
+    "halloween",
+    "hanukkah",
+    "indigenous",
+    "july4",
+    "juneteenth",
+    "kwanzaa",
+    "labor",
+    "leapday",
+    "lunarnewyear",
+    "mardigras",
+    "memorial",
+    "mlkday",
+    "mothersday",
+    "newyear",
+    "passover",
+    "presidents",
+    "stpatricks",
+    "thanksgiving",
+    "valentines",
+    "veterans"
+  ],
+  "days": [
+    {
+      "day": "2026-09-23",
+      "id": "cg-s25sr7",
+      "plainId": "cg-s25sr7",
+      "number": 1
+    },
+    {
+      "day": "2026-09-24",
+      "id": "cg-85nlsf",
+      "plainId": "cg-85nlsf",
+      "number": 2
+    },
+    {
+      "day": "2026-10-05",
+      "id": "cg-8anld7",
+      "plainId": "cg-8anld7",
+      "number": 13
+    },
+    {
+      "day": "2027-01-01",
+      "id": "cg-wnz1i1",
+      "plainId": "cg-5bvewu",
+      "number": 101
+    },
+    {
+      "day": "2026-09-22",
+      "id": "cg-vimvr7",
+      "plainId": "cg-vimvr7",
+      "number": 1
+    },
+    {
+      "day": "nope",
+      "id": "cg-s25sr7",
+      "plainId": "cg-s25sr7",
+      "number": 1
+    },
+    {
+      "day": "2026-12-25",
+      "id": "cg-bwnj7t",
+      "plainId": "cg-4e0mjy",
+      "number": 94
+    },
+    {
+      "day": "2026-12-24",
+      "id": "cg-6qwx4t",
+      "plainId": "cg-ken7w7",
+      "number": 93
+    },
+    {
+      "day": "2027-12-25",
+      "id": "cg-glfl00",
+      "plainId": "cg-c9ideq",
+      "number": 459
+    },
+    {
+      "day": "2026-11-26",
+      "id": "cg-mgev53",
+      "plainId": "cg-kdwy69",
+      "number": 65
+    },
+    {
+      "day": "2026-01-19",
+      "id": "cg-17jica",
+      "plainId": "cg-4bcpkx",
+      "number": 1
+    },
+    {
+      "day": "2027-07-04",
+      "id": "cg-40obxc",
+      "plainId": "cg-hlivsg",
+      "number": 285
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-CRYPTOGRAM-1",
+      "id": "cg-x9iee7"
+    },
+    {
+      "seed": "unlimited-CRYPTOGRAM-1758578400000",
+      "id": "cg-x0vm6l"
+    },
+    {
+      "seed": "x",
+      "id": "cg-3epccn"
+    }
+  ],
+  "puzzle": {
+    "id": "cg-s25sr7",
+    "text": "Give him an inch and he'll take a mile.",
+    "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+    "given": [
+      "A",
+      "E",
+      "I"
+    ]
+  },
+  "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+  "codes": [
+    "A",
+    "F",
+    "H",
+    "I",
+    "J",
+    "K",
+    "M",
+    "N",
+    "P",
+    "Q",
+    "S",
+    "T",
+    "X"
+  ],
+  "frequencies": {
+    "S": 1,
+    "M": 4,
+    "J": 1,
+    "K": 4,
+    "A": 3,
+    "T": 2,
+    "I": 4,
+    "X": 3,
+    "H": 1,
+    "Q": 1,
+    "F": 3,
+    "N": 1,
+    "P": 1
+  },
+  "initial": {
+    "mapping": {
+      "I": "A",
+      "K": "E",
+      "M": "I"
+    },
+    "locked": [
+      "I",
+      "K",
+      "M"
+    ],
+    "hintTarget": "A"
+  },
+  "guessCounts": [
+    {
+      "checks": 0,
+      "guessCount": 1
+    },
+    {
+      "checks": 1,
+      "guessCount": 2
+    },
+    {
+      "checks": 2,
+      "guessCount": 3
+    },
+    {
+      "checks": 3,
+      "guessCount": 4
+    },
+    {
+      "checks": 4,
+      "guessCount": 4
+    },
+    {
+      "checks": 9,
+      "guessCount": 4
+    }
+  ],
+  "reducer": [
+    {
+      "name": "pencil-and-clear",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "H"
+        },
+        {
+          "type": "SET",
+          "code": "F",
+          "plain": "H"
+        },
+        {
+          "type": "SET",
+          "code": "F",
+          "plain": null
+        },
+        {
+          "type": "SET",
+          "code": "I",
+          "plain": "Q"
+        },
+        {
+          "type": "SET",
+          "code": "H",
+          "plain": "z"
+        },
+        {
+          "type": "SET",
+          "code": "1",
+          "plain": "A"
+        },
+        {
+          "type": "SET",
+          "code": "H",
+          "plain": null
+        },
+        {
+          "type": "SET",
+          "code": "H",
+          "plain": null
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "I": "A",
+          "K": "E",
+          "M": "I",
+          "A": "H"
+        },
+        "locked": [
+          "I",
+          "K",
+          "M"
+        ],
+        "hinted": [],
+        "hintsUsed": 0,
+        "checks": 0,
+        "lastWrong": [],
+        "events": [
+          "=A:H",
+          "=F:H",
+          "-F",
+          "=H:Z",
+          "-H"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "conflicts": [],
+        "correct": 4,
+        "hintTarget": "A"
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H.......A.E.I.............",
+          "h........g.g.g.............",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "I": "A",
+          "K": "E",
+          "M": "I"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [],
+        "revealed": false,
+        "checks": 0,
+        "correct": 4,
+        "total": 13,
+        "solved": false
+      }
+    },
+    {
+      "name": "check-locks-and-clears",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "H"
+        },
+        {
+          "type": "SET",
+          "code": "F",
+          "plain": "Z"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "A"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "CHECK"
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "I": "A",
+          "K": "E",
+          "M": "I",
+          "A": "H"
+        },
+        "locked": [
+          "A",
+          "I",
+          "K",
+          "M"
+        ],
+        "hinted": [],
+        "hintsUsed": 0,
+        "checks": 4,
+        "lastWrong": [],
+        "events": [
+          "=A:H",
+          "=F:Z",
+          "#1",
+          "#0",
+          "#0",
+          "#0"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 4,
+        "conflicts": [],
+        "correct": 4,
+        "hintTarget": "F"
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H.......A.E.I.............",
+          "hl.......g.g.g.............",
+          "c4"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "I": "A",
+          "K": "E",
+          "M": "I"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [],
+        "revealed": false,
+        "checks": 4,
+        "correct": 4,
+        "total": 13,
+        "solved": false
+      }
+    },
+    {
+      "name": "hints",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "SET",
+          "code": "J",
+          "plain": "Q"
+        },
+        {
+          "type": "HINT"
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "I": "A",
+          "K": "E",
+          "M": "I",
+          "A": "H",
+          "F": "L",
+          "J": "Q",
+          "X": "N"
+        },
+        "locked": [
+          "A",
+          "F",
+          "I",
+          "K",
+          "M",
+          "X"
+        ],
+        "hinted": [
+          "A",
+          "F",
+          "X"
+        ],
+        "hintsUsed": 3,
+        "checks": 0,
+        "lastWrong": [],
+        "events": [
+          "?A",
+          "?F",
+          "=J:Q",
+          "?X"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "conflicts": [],
+        "correct": 6,
+        "hintTarget": "T"
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H....L..AQE.I..........N..",
+          "hh....h..g.g.g..........h..",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "F": "L",
+          "I": "A",
+          "J": "Q",
+          "K": "E",
+          "M": "I",
+          "X": "N"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [
+          "A",
+          "F",
+          "X"
+        ],
+        "revealed": false,
+        "checks": 0,
+        "correct": 6,
+        "total": 13,
+        "solved": false
+      }
+    },
+    {
+      "name": "solve",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "H"
+        },
+        {
+          "type": "SET",
+          "code": "F",
+          "plain": "L"
+        },
+        {
+          "type": "SET",
+          "code": "H",
+          "plain": "C"
+        },
+        {
+          "type": "SET",
+          "code": "J",
+          "plain": "V"
+        },
+        {
+          "type": "SET",
+          "code": "N",
+          "plain": "T"
+        },
+        {
+          "type": "SET",
+          "code": "P",
+          "plain": "K"
+        },
+        {
+          "type": "SET",
+          "code": "Q",
+          "plain": "D"
+        },
+        {
+          "type": "SET",
+          "code": "S",
+          "plain": "G"
+        },
+        {
+          "type": "SET",
+          "code": "T",
+          "plain": "M"
+        },
+        {
+          "type": "SET",
+          "code": "X",
+          "plain": "N"
+        },
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "Q"
+        },
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "I": "A",
+          "K": "E",
+          "M": "I",
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "J": "V",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "locked": [
+          "I",
+          "K",
+          "M"
+        ],
+        "hinted": [],
+        "hintsUsed": 0,
+        "checks": 0,
+        "lastWrong": [],
+        "events": [
+          "=A:H",
+          "=F:L",
+          "=H:C",
+          "=J:V",
+          "=N:T",
+          "=P:K",
+          "=Q:D",
+          "=S:G",
+          "=T:M",
+          "=X:N"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 1,
+        "conflicts": [],
+        "correct": 13,
+        "hintTarget": "A"
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H....L.CAVE.IT.KD.GM...N..",
+          "h........g.g.g.............",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "I": "A",
+          "J": "V",
+          "K": "E",
+          "M": "I",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [],
+        "revealed": false,
+        "checks": 0,
+        "correct": 13,
+        "total": 13,
+        "solved": true
+      }
+    },
+    {
+      "name": "solve-with-a-check",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "CHECK"
+        },
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "H"
+        },
+        {
+          "type": "SET",
+          "code": "F",
+          "plain": "L"
+        },
+        {
+          "type": "SET",
+          "code": "H",
+          "plain": "C"
+        },
+        {
+          "type": "SET",
+          "code": "J",
+          "plain": "V"
+        },
+        {
+          "type": "SET",
+          "code": "N",
+          "plain": "T"
+        },
+        {
+          "type": "SET",
+          "code": "P",
+          "plain": "K"
+        },
+        {
+          "type": "SET",
+          "code": "Q",
+          "plain": "D"
+        },
+        {
+          "type": "SET",
+          "code": "S",
+          "plain": "G"
+        },
+        {
+          "type": "SET",
+          "code": "T",
+          "plain": "M"
+        },
+        {
+          "type": "SET",
+          "code": "X",
+          "plain": "N"
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "I": "A",
+          "K": "E",
+          "M": "I",
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "J": "V",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "locked": [
+          "I",
+          "K",
+          "M"
+        ],
+        "hinted": [],
+        "hintsUsed": 0,
+        "checks": 1,
+        "lastWrong": [],
+        "events": [
+          "#0",
+          "=A:H",
+          "=F:L",
+          "=H:C",
+          "=J:V",
+          "=N:T",
+          "=P:K",
+          "=Q:D",
+          "=S:G",
+          "=T:M",
+          "=X:N"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 2,
+        "conflicts": [],
+        "correct": 13,
+        "hintTarget": "A"
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H....L.CAVE.IT.KD.GM...N..",
+          "h........g.g.g.............",
+          "c1"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "I": "A",
+          "J": "V",
+          "K": "E",
+          "M": "I",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [],
+        "revealed": false,
+        "checks": 1,
+        "correct": 13,
+        "total": 13,
+        "solved": true
+      }
+    },
+    {
+      "name": "reveal",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "SET",
+          "code": "A",
+          "plain": "H"
+        },
+        {
+          "type": "REVEAL"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "SET",
+          "code": "F",
+          "plain": "Q"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "I": "A",
+          "J": "V",
+          "K": "E",
+          "M": "I",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "locked": [
+          "A",
+          "F",
+          "H",
+          "I",
+          "J",
+          "K",
+          "M",
+          "N",
+          "P",
+          "Q",
+          "S",
+          "T",
+          "X"
+        ],
+        "hinted": [],
+        "hintsUsed": 0,
+        "checks": 0,
+        "lastWrong": [],
+        "events": [
+          "=A:H",
+          "!"
+        ],
+        "status": "lost",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 1,
+        "conflicts": [],
+        "correct": 13,
+        "hintTarget": null
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H....L.CAVE.IT.KD.GM...N..",
+          "hr....r.rgrg.gr.rr.rr...r..",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "I": "A",
+          "J": "V",
+          "K": "E",
+          "M": "I",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [],
+        "revealed": true,
+        "checks": 0,
+        "correct": 13,
+        "total": 13,
+        "solved": false
+      }
+    },
+    {
+      "name": "hint-everything",
+      "id": "cg-s25sr7",
+      "actions": [
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        },
+        {
+          "type": "HINT"
+        }
+      ],
+      "expect": {
+        "mapping": {
+          "I": "A",
+          "K": "E",
+          "M": "I",
+          "A": "H",
+          "F": "L",
+          "X": "N",
+          "T": "M",
+          "H": "C",
+          "J": "V",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G"
+        },
+        "locked": [
+          "A",
+          "F",
+          "H",
+          "I",
+          "J",
+          "K",
+          "M",
+          "N",
+          "P",
+          "Q",
+          "S",
+          "T",
+          "X"
+        ],
+        "hinted": [
+          "A",
+          "F",
+          "X",
+          "T",
+          "H",
+          "J",
+          "N",
+          "P",
+          "Q",
+          "S"
+        ],
+        "hintsUsed": 10,
+        "checks": 0,
+        "lastWrong": [],
+        "events": [
+          "?A",
+          "?F",
+          "?X",
+          "?T",
+          "?H",
+          "?J",
+          "?N",
+          "?P",
+          "?Q",
+          "?S"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 1,
+        "conflicts": [],
+        "correct": 13,
+        "hintTarget": null
+      },
+      "row": {
+        "solutions": [
+          "Give him an inch and he'll take a mile.",
+          "IEHQKGSAMCPFTXDWYURNOJZVBL",
+          "cg-s25sr7"
+        ],
+        "guesses": [
+          "=H....L.CAVE.IT.KD.GM...N..",
+          "hh....h.hghg.gh.hh.hh...h..",
+          "c0"
+        ]
+      },
+      "reconstruct": {
+        "id": "cg-s25sr7",
+        "text": "Give him an inch and he'll take a mile.",
+        "key": "IEHQKGSAMCPFTXDWYURNOJZVBL",
+        "cipher": "SMJK AMT IX MXHA IXQ AK'FF NIPK I TMFK.",
+        "mapping": {
+          "A": "H",
+          "F": "L",
+          "H": "C",
+          "I": "A",
+          "J": "V",
+          "K": "E",
+          "M": "I",
+          "N": "T",
+          "P": "K",
+          "Q": "D",
+          "S": "G",
+          "T": "M",
+          "X": "N"
+        },
+        "given": [
+          "A",
+          "E",
+          "I"
+        ],
+        "hinted": [
+          "A",
+          "F",
+          "H",
+          "J",
+          "N",
+          "P",
+          "Q",
+          "S",
+          "T",
+          "X"
+        ],
+        "revealed": false,
+        "checks": 0,
+        "correct": 13,
+        "total": 13,
+        "solved": true
+      }
+    }
+  ],
+  "malformed": [
+    null,
+    null
+  ]
+}

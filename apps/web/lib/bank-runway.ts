@@ -2,6 +2,7 @@ import { bankRunway } from '@wordle-duel/core';
 import ladder from '@/data/ladder-puzzles.json';
 import wordsearch from '@/data/wordsearch-puzzles.json';
 import hub from '@/data/hub-puzzles.json';
+import cryptogram from '@/data/cryptogram-puzzles.json';
 
 /**
  * Every epoch-indexed daily bank the app bundles, with its content runway
@@ -31,6 +32,7 @@ const BANKS: { game: string; title: string; bank: BundledBank; source: string }[
   { game: 'ladder', title: 'Letter Ladder', bank: ladder as BundledBank, source: 'apps/web/scripts/ladder/build-bank.mjs' },
   { game: 'wordsearch', title: 'Spyglass', bank: wordsearch as BundledBank, source: 'apps/web/scripts/wordsearch/build-bank.mjs' },
   { game: 'hub', title: 'Hubbub', bank: hub as BundledBank, source: 'apps/web/scripts/hub/build-bank.mjs' },
+  { game: 'cryptogram', title: 'Codebreaker', bank: cryptogram as unknown as BundledBank, source: 'apps/web/scripts/cryptogram/build-bank.mjs' },
 ];
 
 export interface RunwayRow {

@@ -33,3 +33,45 @@ public enum Bank {
         return idx
     }
 }
+
+// MARK: - Holidays (More Games §20)
+
+/// The shared holiday calendar — DATA emitted by apps/web/scripts/holidays/
+/// gen-holiday-days.mjs (holiday-days.json, bundled on every platform and
+/// sha-guarded): `days` maps yyyy-MM-dd to a holiday key ("christmas",
+/// "mlkday", …). No platform ports the date rules. Port of bank.ts.
+public struct HolidayTable: Decodable {
+    public let version: Int
+    public let from: String
+    public let to: String
+    public let days: [String: String]
+    public init(version: Int, from: String, to: String, days: [String: String]) { self.version = version; self.from = from; self.to = to; self.days = days }
+    public static func load(from data: Data) -> HolidayTable? { try? JSONDecoder().decode(HolidayTable.self, from: data) }
+    /// The app-bundled calendar (Resources/holiday-days.json); nil where the app bundle lacks it.
+    public static let bundled: HolidayTable? = {
+        guard let url = Bundle.main.url(forResource: "holiday-days", withExtension: "json"), let data = try? Data(contentsOf: url) else { return nil }
+        return load(from: data)
+    }()
+}
+
+/// The holiday key that owns `day`, or nil on an ordinary day (or outside the table).
+public func holidayKeyForDay(_ day: String, table: HolidayTable?) -> String? { table?.days[day] }
+
+/// How many days owned by `key` fall strictly BEFORE `day` in the table — the
+/// k-th outing of a holiday (Christmas Eve 0, Christmas Day 1, Boxing Day 2 in
+/// the first year; 3, 4, 5 the next). Plain string comparison, as in bank.ts.
+public func holidayOccurrence(_ day: String, key: String, table: HolidayTable?) -> Int {
+    guard let days = table?.days else { return 0 }
+    var n = 0
+    for (d, k) in days where d < day && k == key { n += 1 }
+    return n
+}
+
+/// The holiday entry a bank should serve on `day`: `entries[k mod n]` where k is
+/// the occurrence, or nil when the day is ordinary or the bank has nothing for
+/// that holiday (then the ordinary epoch index applies).
+public func bankHolidayPick<T>(day: String, table: HolidayTable?, holiday: [String: [T]]?) -> (key: String, index: Int, entry: T)? {
+    guard let key = holidayKeyForDay(day, table: table), let entries = holiday?[key], !entries.isEmpty else { return nil }
+    let index = holidayOccurrence(day, key: key, table: table) % entries.count
+    return (key, index, entries[index])
+}
