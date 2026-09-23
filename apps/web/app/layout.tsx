@@ -17,7 +17,6 @@ import { PwaProvider } from '@/components/providers/pwa-provider';
 import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
-import { AdSenseLoader } from '@/components/ads/adsense-loader';
 import { ReferralRedeemer } from '@/components/referrals/referral-redeemer';
 import { ConfirmDialogHost } from '@/components/ui/confirm-dialog';
 import { AnnouncementsBanner } from '@/components/ui/announcements-banner';
@@ -148,11 +147,12 @@ export default function RootLayout({
             window.location.reload();
           }, 8000);
         ` }} />
-        {/* Google AdSense loader moved to <AdSenseLoader/> (inside AuthProvider)
-            so it loads ONLY for signed-in free users. The unconditional Script
-            here loaded ads for Pro too — and Auto-ads' anchor overlays set an
-            inline transform on <html>, detaching every position:fixed element
-            (BottomNav) from the viewport. See adsense-loader.tsx. */}
+        {/* No web ad script is loaded (2026-09-23): both AdSense accounts are
+            permanently closed, so the loader that injected adsbygoogle.js for
+            free users is gone — a dead publisher serves nothing and the script
+            was wasted weight. When a new web provider is chosen, its loader
+            belongs inside <AuthProvider> so it can gate on Pro/tester status
+            the way the old one did (Pro = no ad script at all). */}
         <DailyBoundaryReload />
         {/* Dismiss the static #app-loader overlay as soon as React hydrates,
             regardless of auth state. Must live OUTSIDE <AuthGate> — otherwise
@@ -173,7 +173,6 @@ export default function RootLayout({
                     <ShareVariantHost />
                     <PwaProvider />
                     <Toaster />
-                    <AdSenseLoader />
                     <AdBanner />
                     <ReferralRedeemer />
                     <ConfirmDialogHost />

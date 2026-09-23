@@ -14,6 +14,42 @@ interface MarketingLink {
   signups: number;
 }
 
+interface BreakdownRow { label: string; count: number; pct: number }
+
+// Mirrors lib/admin/share-analytics.ts (the route's aggregation helper).
+// null on a visit-derived number means "landing_visits not applied / no
+// deploy yet", which the UI must show as such — never as 0.
+interface SharesBlock {
+  windowDays: number;
+  since: string;
+  breakdown: {
+    total: number;
+    byKind: BreakdownRow[];
+    byPlatformKind: (BreakdownRow & { platform: string; kind: string })[];
+    byMode: BreakdownRow[];
+    bySurface: BreakdownRow[];
+  };
+  outcomes: {
+    invites: {
+      shared: number;
+      sharedReferral: number;
+      created: number;
+      opens: number | null;
+      codesOpened: number | null;
+      redeemed: number;
+      converted: number;
+    };
+    results: {
+      shared: number;
+      landingVisits: number | null;
+      landingVisitsByMode: BreakdownRow[];
+      signups: number | null;
+    };
+  };
+  landingVisitsTracked: boolean;
+  truncated: boolean;
+}
+
 interface MarketingData {
   links: MarketingLink[];
   signupsBySource: Record<string, number>;
@@ -22,6 +58,7 @@ interface MarketingData {
   referralsRedeemed: number;
   shares30d: number;
   invites30d: number;
+  shares?: SharesBlock;
 }
 
 /**
@@ -86,7 +123,7 @@ export default function AdminMarketingPage() {
       {/* Channel scoreboard */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <ScoreCard icon={Users} label="Attributed signups" value={data?.attributedSignups ?? 0}
-          sub="via /go links, first-touch" />
+          sub="via /go links + share pages, first-touch" />
         <ScoreCard icon={BellRing} label="Push reach" value={data?.pushDevices ?? 0}
           sub="devices opted in" />
         <ScoreCard icon={Gift} label="Referrals redeemed" value={data?.referralsRedeemed ?? 0}
@@ -94,6 +131,9 @@ export default function AdminMarketingPage() {
         <ScoreCard icon={Share2} label="Shares (30d)" value={data?.shares30d ?? 0}
           sub={`${data?.invites30d ?? 0} invite links sent`} />
       </div>
+
+      {/* Shares: provenance + outcome (JP, 2026-09-23) */}
+      <SharesSection shares={data?.shares} />
 
       {/* Link builder & attribution — LIVE */}
       <section className="bg-white rounded-xl border border-gray-200 p-5">
@@ -225,6 +265,168 @@ export default function AdminMarketingPage() {
         tracking (no paid until organic LTV exists). Email appears only after an opt-in list does.
       </p>
     </div>
+  );
+}
+
+// ── Shares: where they came from, what came of them ─────────────────────────
+// Same table vocabulary as LINKS & ATTRIBUTION above — no new visual language.
+// Provenance is share_events (one row per Share tap). Outcomes join referrals
+// (invite links) and landing_visits + profiles.signup_source (result shares);
+// a null cell means the landing_visits migration/deploy hasn't happened yet.
+
+const TH = 'py-2 pr-2 text-[10px] font-black tracking-wider text-gray-400';
+const TD = 'py-1.5 pr-2';
+
+function BreakdownTable({ title, rows, total }: { title: string; rows: BreakdownRow[]; total: number }) {
+  return (
+    <div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left border-b border-gray-100">
+            <th className={TH}>{title}</th>
+            <th className={`${TH} text-right`}>COUNT</th>
+            <th className={`${TH} text-right`}>SHARE</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label} className="border-b border-gray-50">
+              <td className={`${TD} font-bold text-gray-700 font-mono text-xs`}>{r.label}</td>
+              <td className={`${TD} text-right font-black tabular-nums`}>{r.count}</td>
+              <td className={`${TD} text-right font-semibold tabular-nums text-gray-500`}>{r.pct}%</td>
+            </tr>
+          ))}
+          {rows.length === 0 && (
+            <tr><td colSpan={3} className="py-4 text-center text-gray-400 font-semibold text-xs">
+              No shares in the window.
+            </td></tr>
+          )}
+          {rows.length > 0 && (
+            <tr>
+              <td className={`${TD} text-[11px] font-black tracking-wider text-gray-400`}>TOTAL</td>
+              <td className={`${TD} text-right font-black tabular-nums`}>{total}</td>
+              <td className={`${TD} text-right font-semibold tabular-nums text-gray-400`}>100%</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+type OutcomeRow = { label: string; value: number | null; note?: string };
+
+function OutcomeTable({ title, rows, tracked }: { title: string; rows: OutcomeRow[]; tracked: boolean }) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-left border-b border-gray-100">
+          <th className={TH}>{title}</th>
+          <th className={`${TH} text-right`}>30D</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.label} className="border-b border-gray-50">
+            <td className={`${TD} font-bold text-gray-700`}>
+              {r.label}
+              {r.note && <div className="text-[11px] text-gray-400 font-semibold">{r.note}</div>}
+            </td>
+            <td className={`${TD} text-right font-black tabular-nums`}>
+              {r.value === null ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-700 bg-amber-50 rounded-full px-2 py-0.5"
+                      title={tracked ? 'No data yet' : 'landing_visits migration not applied yet'}>
+                  <CircleDashed className="w-3 h-3" /> {tracked ? 'NONE YET' : 'FROM DEPLOY'}
+                </span>
+              ) : r.value}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function SharesSection({ shares }: { shares?: SharesBlock }) {
+  if (!shares) {
+    return (
+      <section className="bg-white rounded-xl border border-gray-200 p-5">
+        <SectionTitle icon={Share2} title="Shares — where from, what happened" />
+        <p className="text-sm text-gray-400 font-semibold py-4 text-center">Share detail unavailable.</p>
+      </section>
+    );
+  }
+  const b = shares.breakdown;
+  const inv = shares.outcomes.invites;
+  const res = shares.outcomes.results;
+  const tracked = shares.landingVisitsTracked;
+  const pctOf = (n: number, d: number) => (d > 0 ? ` (${Math.round((n / d) * 100)}%)` : '');
+
+  return (
+    <section className="bg-white rounded-xl border border-gray-200 p-5">
+      <SectionTitle icon={Share2} title={`Shares (${shares.windowDays}d) — where from, what happened`}
+        badge="LIVE" badgeClass="bg-green-50 text-green-700" />
+      <p className="text-xs text-gray-500 font-semibold mb-3">
+        Every Share-button tap on web, iOS, and Android logs one row: platform, kind (text · image ·
+        link_invite · other), the game, and the screen it was tapped on. {b.total.toLocaleString()} in
+        the last {shares.windowDays} days. Below: where they came from, then what they led to.
+      </p>
+
+      <div className="grid md:grid-cols-3 gap-x-6 gap-y-4">
+        <BreakdownTable title="PLATFORM × KIND" rows={b.byPlatformKind} total={b.total} />
+        <BreakdownTable title="GAME" rows={b.byMode} total={b.total} />
+        <BreakdownTable title="SURFACE" rows={b.bySurface} total={b.total} />
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-gray-100">
+        <p className="text-[10px] font-black tracking-wider text-gray-400 mb-2">OUTCOMES</p>
+        <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+          <OutcomeTable
+            title="INVITE LINKS → REFERRALS"
+            tracked={tracked}
+            rows={[
+              { label: 'Invite links shared', value: inv.shared,
+                note: `${inv.sharedReferral} from the Gift Pro panel · ${inv.shared - inv.sharedReferral} VS match invites` },
+              { label: 'Referral codes created', value: inv.created },
+              { label: 'Invite pages opened', value: inv.opens,
+                note: inv.codesOpened === null ? undefined : `${inv.codesOpened} distinct codes` },
+              { label: 'Friends joined (redeemed)', value: inv.redeemed,
+                note: inv.codesOpened ? `of opened codes${pctOf(inv.redeemed, inv.codesOpened)}` : undefined },
+              { label: 'Subscribed (converted)', value: inv.converted,
+                note: inv.redeemed ? `of redemptions${pctOf(inv.converted, inv.redeemed)}` : undefined },
+            ]}
+          />
+          <OutcomeTable
+            title="RESULT SHARES → SIGNUPS"
+            tracked={tracked}
+            rows={[
+              { label: 'Text + image shares', value: res.shared },
+              { label: 'Share-page visits (/s/…)', value: res.landingVisits,
+                note: res.landingVisitsByMode.length
+                  ? res.landingVisitsByMode.slice(0, 4).map((m) => `${m.label} ${m.count}`).join(' · ')
+                  : undefined },
+              { label: 'Signups via a share page', value: res.signups,
+                note: res.landingVisits ? `of visits${pctOf(res.signups ?? 0, res.landingVisits)}` : 'signup_source = share' },
+            ]}
+          />
+        </div>
+      </div>
+
+      <p className="text-[11px] text-gray-400 font-semibold mt-4 leading-relaxed">
+        <span className="font-black text-gray-500">How this is counted.</span> Window is the last{' '}
+        {shares.windowDays} days by each event&apos;s own timestamp. Provenance rows are share_events; a
+        share counts once per tap even if the sheet was cancelled after. Invite outcomes come from the
+        referrals table exactly as the Referrals page counts them — &quot;joined&quot; is status redeemed or
+        converted with redeemed_at in the window, &quot;subscribed&quot; is converted_at in the window — so an
+        old invite that pays off this month counts here, and the three rows are not a funnel of the same
+        codes. VS match invites have no referral row and show only as shared. Invite opens and share-page
+        visits are landing_visits rows written by the /join and /s pages in a real browser (scrapers
+        fetching the unfurl never run it){tracked ? '' : ' — the table is not applied yet, so those cells read FROM DEPLOY'}.
+        Share signups are brand-new accounts stamped signup_source=share by the same first-touch cookie
+        the /go links use; a visitor who came through a /go link first keeps that channel.
+        {shares.truncated && ' Row fetch hit its cap — totals are a floor.'}
+      </p>
+    </section>
   );
 }
 

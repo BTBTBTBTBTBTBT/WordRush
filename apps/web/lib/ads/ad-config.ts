@@ -2,14 +2,10 @@ export const AD_CONFIG = {
   /** Master switch — set NEXT_PUBLIC_ADS_ENABLED=true in Vercel env to activate */
   enabled: process.env.NEXT_PUBLIC_ADS_ENABLED === 'true',
 
-  /** Google AdSense publisher ID (ca-pub-XXXXXXXXXXXXXXXX) */
-  adSenseClientId: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || '',
-
-  /** AdSense ad-unit / slot ID for the interstitial */
-  interstitialSlotId: process.env.NEXT_PUBLIC_AD_INTERSTITIAL_SLOT || '',
-
-  /** AdSense ad-unit / slot ID for the bottom anchor banner */
-  bannerSlotId: process.env.NEXT_PUBLIC_AD_BANNER_SLOT || '',
+  // 2026-09-23: the AdSense publisher/slot ids (NEXT_PUBLIC_ADSENSE_CLIENT_ID,
+  // NEXT_PUBLIC_AD_INTERSTITIAL_SLOT, NEXT_PUBLIC_AD_BANNER_SLOT) are gone —
+  // both accounts are permanently closed and no component reads them. A new
+  // web provider adds its own public slot config here, next to the switch.
 
   /** Seconds the countdown runs before "Continue" button appears */
   countdownSeconds: 5,
