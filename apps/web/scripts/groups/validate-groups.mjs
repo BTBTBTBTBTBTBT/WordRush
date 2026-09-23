@@ -5,7 +5,9 @@
 // than one cover means the puzzle is ambiguous; zero means the key is broken.
 import path from 'node:path';
 import { WEB, REPO, readJSON, writeSample, wordset } from '../more-games/lib.mjs';
-const puzzles = readJSON(path.join(WEB, 'scripts', 'groups', 'puzzles.sample.json'));
+const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+const IN = argOf('--in', path.join(WEB, 'scripts', 'groups', 'puzzles.sample.json')), OUT = argOf('--out', 'kindred.json');
+const puzzles = readJSON(IN);
 const hard = new Set([...wordset('profanity-exact.generated.txt'), ...wordset('offensive-blocklist.txt')]);
 const lex = readJSON(path.join(REPO, 'scripts', 'data', 'lexicon-all.json'));
 const known = new Set([...lex.common, ...lex.extended, ...lex.acceptOnly]);
@@ -33,5 +35,5 @@ puzzles.forEach((p, i) => {
   out.push({ id, ...p, solutions: n, problems });
   console.log(`${id} ${problems.length ? 'FAIL ' + problems.join('; ') : 'ok'}  — ${p.groups.map((g) => g.label).join(' · ')}`);
 });
-console.log(`${puzzles.length - failed}/${puzzles.length} valid; wrote`, writeSample('kindred.json', { generatedBy: 'apps/web/scripts/groups/validate-groups.mjs', puzzles: out }));
+console.log(`${puzzles.length - failed}/${puzzles.length} valid; wrote`, writeSample(OUT, { generatedBy: 'apps/web/scripts/groups/validate-groups.mjs', puzzles: out }));
 process.exit(failed ? 1 : 0);

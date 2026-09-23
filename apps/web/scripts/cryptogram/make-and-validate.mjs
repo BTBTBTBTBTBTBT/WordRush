@@ -13,7 +13,9 @@ import { WEB, readJSON, rngFor, shuffle, writeSample, wordset } from '../more-ga
 const BANK = process.argv.includes('--classic') ? 'quotes.sample.json' : 'sayings.sample.json';
 const CLASSIC = BANK === 'quotes.sample.json';
 const [MINLEN, MAXLEN, MINLET] = CLASSIC ? [60, 120, 12] : [30, 90, 10];
-const quotes = readJSON(path.join(WEB, 'scripts', 'cryptogram', BANK));
+const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+const IN = argOf('--in', path.join(WEB, 'scripts', 'cryptogram', BANK)), OUT = argOf('--out', 'cryptogram.json');
+const quotes = readJSON(IN);
 const hard = [...wordset('profanity-exact.generated.txt'), ...wordset('offensive-blocklist.txt')];
 const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 function makeKey(id) {
@@ -21,7 +23,7 @@ function makeKey(id) {
   for (;;) { const p = shuffle(A.split(''), rng); if (p.every((c, i) => c !== A[i])) return p.join(''); }
 }
 const encipher = (text, key) => text.toUpperCase().replace(/[A-Z]/g, (c) => key[c.charCodeAt(0) - 65]);
-const out = [], rejects = [];
+const out = [], rejects = [], seenText = new Set();
 quotes.forEach((q, i) => {
   const id = `cg${String(i + 1).padStart(4, '0')}`, t = q.text, problems = [];
   const letters = new Set(t.toUpperCase().replace(/[^A-Z]/g, ''));
@@ -32,7 +34,8 @@ quotes.forEach((q, i) => {
   if (CLASSIC && !(q.deathYear <= 1950)) problems.push(`author died ${q.deathYear} (must be ≤ 1950)`);
   if (CLASSIC && !q.source) problems.push('no source');
   const words = t.toUpperCase().split(/[^A-Z']+/); if (hard.some((h) => words.includes(h))) problems.push('blocked term');
-  if (problems.length) { rejects.push({ id, author: q.author, problems }); return; }
+  const norm = t.toUpperCase().replace(/[^A-Z]/g, ''); if (seenText.has(norm)) problems.push('duplicate saying'); seenText.add(norm);
+  if (problems.length) { rejects.push({ id, author: q.author, text: t, problems }); return; }
   const key = makeKey(id);
   if (![...key].every((c, k) => c !== A[k]) || new Set(key).size !== 26) throw new Error('bad key');
   // Given letters: the three most frequent (ties → alphabetical), so the start is never a blank wall.
@@ -40,6 +43,6 @@ quotes.forEach((q, i) => {
   const given = Object.keys(freq).sort((a, b) => freq[b] - freq[a] || a.localeCompare(b)).slice(0, CLASSIC ? 0 : 3);
   out.push({ id, ...q, kind: CLASSIC ? 'quotation' : 'saying', verified: !CLASSIC, key, given, cipher: encipher(t, key), distinctLetters: letters.size });
 });
-const file = writeSample('cryptogram.json', { generatedBy: 'apps/web/scripts/cryptogram/make-and-validate.mjs', puzzles: out, rejects });
-console.log(`${out.length} valid, ${rejects.length} rejected`); for (const r of rejects) console.log('  REJECT', r.id, r.author, '—', r.problems.join('; '));
+const file = writeSample(OUT, { generatedBy: 'apps/web/scripts/cryptogram/make-and-validate.mjs', puzzles: out, rejects });
+console.log(`${out.length} valid, ${rejects.length} rejected`); for (const r of rejects) console.log('  REJECT', r.id, JSON.stringify(r.text), '—', r.problems.join('; '));
 console.log('sample:', out[0].cipher); console.log('wrote', file);

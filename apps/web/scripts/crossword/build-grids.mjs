@@ -7,7 +7,9 @@ import path from 'node:path';
 import { WEB, REPO, readJSON, rngFor, below, shuffle, writeSample, wordset } from '../more-games/lib.mjs';
 
 const MAXW = 10, MAXH = 11, MIN_ENTRIES = 10, MAX_ENTRIES = 13, SIZE = 40, MID = 20;
-const bank = readJSON(path.join(WEB, 'scripts', 'crossword', 'phrases.sample.json'));
+const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+const IN = argOf('--in', path.join(WEB, 'scripts', 'crossword', 'phrases.sample.json')), OUT = argOf('--out', 'crossword.json'), PER = +argOf('--per', 2);
+const bank = readJSON(IN);
 const lex = readJSON(path.join(REPO, 'scripts', 'data', 'lexicon-all.json'));
 const common = new Set(lex.common), hard = new Set([...wordset('profanity-exact.generated.txt'), ...wordset('offensive-blocklist.txt')]);
 
@@ -16,7 +18,7 @@ const pairs = [], rejected = [];
 for (const [theme, t] of Object.entries(bank)) for (const [clue, raw] of t.pairs) {
   const answer = raw.replace(/\d+$/, ''), why = [];
   if (!/^[A-Z]{3,9}$/.test(answer)) why.push('answer must be 3–9 letters');
-  if (!common.has(answer)) why.push('answer not in the common lexicon tier');
+  if (!common.has(answer) && !(t.allow || []).map((w) => w.toUpperCase()).includes(answer)) why.push('answer not in the common lexicon tier (add it to the theme\'s "allow" list only if every player knows it)');
   if (hard.has(answer)) why.push('blocked term');
   if ((clue.match(/____/g) || []).length !== 1) why.push('clue needs exactly one blank');
   if (new RegExp(`\\b${answer}\\b`, 'i').test(clue)) why.push('answer appears in its own clue');
@@ -81,7 +83,7 @@ function number(p) {
   p.entries.sort((a, b) => a.n - b.n || a.dir.localeCompare(b.dir));
 }
 const out = [];
-for (const theme of Object.keys(bank)) for (const serial of [1, 2]) {
+for (const theme of Object.keys(bank)) for (let serial = 1; serial <= PER; serial++) {
   let best = null;
   for (let t = 0; t < 300; t++) {
     const p = tryBuild(theme, `cw-${theme}-${serial}-${t}-v1`);
@@ -91,11 +93,11 @@ for (const theme of Object.keys(bank)) for (const serial of [1, 2]) {
   }
   if (!best) { console.log(`  ${theme} #${serial}: no grid met the rules`); continue; }
   number(best);
-  out.push({ id: `cw-${theme}-${serial}`, theme, title: bank[theme].title, w: best.w, h: best.h, crossings: best.crossings,
+  out.push({ id: `cw-${theme}-${serial}`, theme, title: bank[theme].title, holiday: bank[theme].holiday, w: best.w, h: best.h, crossings: best.crossings,
     entries: best.entries.map(({ n, dir, r, c, answer, clue, theme: th }) => ({ n, dir, r, c, answer, clue, onTheme: th === theme })) });
 }
 const p = out[0];
 if (p) { const g = Array.from({ length: p.h }, () => Array(p.w).fill('·')); for (const e of p.entries) for (let k = 0; k < e.answer.length; k++) g[e.r + (e.dir === 'D' ? k : 0)][e.c + (e.dir === 'A' ? k : 0)] = e.answer[k];
   console.log(`\n${p.title} — ${p.entries.length} entries, ${p.crossings} crossings, ${p.w}×${p.h}`); for (const row of g) console.log('  ' + row.join(' ')); for (const e of p.entries) console.log(`  ${e.n}${e.dir} ${e.clue}`); }
 console.log(`\nbuilt ${out.length} grids: ` + out.map((x) => `${x.id}(${x.entries.length}e/${x.crossings}x ${x.w}×${x.h})`).join(' '));
-console.log('wrote', writeSample('crossword.json', { generatedBy: 'apps/web/scripts/crossword/build-grids.mjs', accepted: pairs.length, rejected, puzzles: out }));
+console.log('wrote', writeSample(OUT, { generatedBy: 'apps/web/scripts/crossword/build-grids.mjs', accepted: pairs.length, rejected, puzzles: out }));

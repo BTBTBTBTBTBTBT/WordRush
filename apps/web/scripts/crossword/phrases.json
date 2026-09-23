@@ -1,0 +1,5972 @@
+{
+ "weather": {
+  "title": "Under the Weather",
+  "pairs": [
+   [
+    "Every cloud has a ____ lining",
+    "SILVER"
+   ],
+   [
+    "It never rains but it ____",
+    "POURS"
+   ],
+   [
+    "Make hay while the ____ shines",
+    "SUN"
+   ],
+   [
+    "A ____ in a teacup",
+    "STORM"
+   ],
+   [
+    "Save it for a ____ day",
+    "RAINY"
+   ],
+   [
+    "On ____ nine",
+    "CLOUD"
+   ],
+   [
+    "Steal someone's ____",
+    "THUNDER"
+   ],
+   [
+    "Snowed ____",
+    "UNDER"
+   ],
+   [
+    "Break the ____",
+    "ICE"
+   ],
+   [
+    "Chasing ____",
+    "RAINBOWS"
+   ],
+   [
+    "Right as ____",
+    "RAIN"
+   ],
+   [
+    "Throw caution to the ____",
+    "WIND"
+   ],
+   [
+    "A bolt from the ____",
+    "BLUE"
+   ],
+   [
+    "Head in the ____",
+    "CLOUDS"
+   ],
+   [
+    "Come rain or ____",
+    "SHINE"
+   ],
+   [
+    "Calm before the ____",
+    "STORM2"
+   ]
+  ]
+ },
+ "animals": {
+  "title": "Animal Instincts",
+  "pairs": [
+   [
+    "Let the ____ out of the bag",
+    "CAT"
+   ],
+   [
+    "The early bird catches the ____",
+    "WORM"
+   ],
+   [
+    "Hold your ____",
+    "HORSES"
+   ],
+   [
+    "A wolf in ____ clothing",
+    "SHEEPS"
+   ],
+   [
+    "Kill two ____ with one stone",
+    "BIRDS"
+   ],
+   [
+    "The elephant in the ____",
+    "ROOM"
+   ],
+   [
+    "Let sleeping ____ lie",
+    "DOGS"
+   ],
+   [
+    "Busy as a ____",
+    "BEE"
+   ],
+   [
+    "The lion's ____",
+    "SHARE"
+   ],
+   [
+    "A fish out of ____",
+    "WATER"
+   ],
+   [
+    "Straight from the horse's ____",
+    "MOUTH"
+   ],
+   [
+    "Curiosity killed the ____",
+    "CAT2"
+   ],
+   [
+    "Wild ____ chase",
+    "GOOSE"
+   ],
+   [
+    "Crocodile ____",
+    "TEARS"
+   ],
+   [
+    "Smell a ____",
+    "RAT"
+   ],
+   [
+    "Take the bull by the ____",
+    "HORNS"
+   ]
+  ]
+ },
+ "kitchen": {
+  "title": "Kitchen Wisdom",
+  "pairs": [
+   [
+    "Too many cooks spoil the ____",
+    "BROTH"
+   ],
+   [
+    "The proof of the pudding is in the ____",
+    "EATING"
+   ],
+   [
+    "Out of the frying pan into the ____",
+    "FIRE"
+   ],
+   [
+    "Don't cry over spilt ____",
+    "MILK"
+   ],
+   [
+    "A watched pot never ____",
+    "BOILS"
+   ],
+   [
+    "Bring home the ____",
+    "BACON"
+   ],
+   [
+    "Have your cake and ____ it",
+    "EAT"
+   ],
+   [
+    "Butter wouldn't melt in his ____",
+    "MOUTH2"
+   ],
+   [
+    "Take it with a pinch of ____",
+    "SALT"
+   ],
+   [
+    "Cool as a ____",
+    "CUCUMBER"
+   ],
+   [
+    "Full of ____",
+    "BEANS"
+   ],
+   [
+    "Bite off more than you can ____",
+    "CHEW"
+   ],
+   [
+    "The best thing since sliced ____",
+    "BREAD"
+   ],
+   [
+    "Sell like hot ____",
+    "CAKES"
+   ],
+   [
+    "Egg on your ____",
+    "FACE"
+   ],
+   [
+    "In a ____",
+    "PICKLE"
+   ]
+  ]
+ },
+ "money": {
+  "title": "Money Talks",
+  "pairs": [
+   [
+    "A penny saved is a penny ____",
+    "EARNED"
+   ],
+   [
+    "Money doesn't grow on ____",
+    "TREES"
+   ],
+   [
+    "Born with a silver ____ in his mouth",
+    "SPOON"
+   ],
+   [
+    "A fool and his money are soon ____",
+    "PARTED"
+   ],
+   [
+    "Time is ____",
+    "MONEY"
+   ],
+   [
+    "Pay through the ____",
+    "NOSE"
+   ],
+   [
+    "Worth its weight in ____",
+    "GOLD"
+   ],
+   [
+    "Penny wise, pound ____",
+    "FOOLISH"
+   ],
+   [
+    "Break the ____",
+    "BANK"
+   ],
+   [
+    "Cost an arm and a ____",
+    "LEG"
+   ],
+   [
+    "Rob Peter to pay ____",
+    "PAUL"
+   ],
+   [
+    "Put your money where your ____ is",
+    "MOUTH3"
+   ],
+   [
+    "In for a penny, in for a ____",
+    "POUND"
+   ],
+   [
+    "Cash ____",
+    "COW"
+   ],
+   [
+    "A pretty ____",
+    "PENNY"
+   ],
+   [
+    "Foot the ____",
+    "BILL"
+   ]
+  ]
+ },
+ "time": {
+  "title": "Only Time Will Tell",
+  "pairs": [
+   [
+    "A stitch in time saves ____",
+    "NINE"
+   ],
+   [
+    "Better late than ____",
+    "NEVER"
+   ],
+   [
+    "Rome wasn't built in a ____",
+    "DAY"
+   ],
+   [
+    "The ____ hour",
+    "ELEVENTH"
+   ],
+   [
+    "Once in a blue ____",
+    "MOON"
+   ],
+   [
+    "Time ____ when you're having fun",
+    "FLIES"
+   ],
+   [
+    "Beat the ____",
+    "CLOCK"
+   ],
+   [
+    "Strike while the iron is ____",
+    "HOT"
+   ],
+   [
+    "Burn the midnight ____",
+    "OIL"
+   ],
+   [
+    "At the drop of a ____",
+    "HAT"
+   ],
+   [
+    "Third time's the ____",
+    "CHARM"
+   ],
+   [
+    "Against the ____",
+    "GRAIN"
+   ],
+   [
+    "In the nick of ____",
+    "TIME"
+   ],
+   [
+    "Call it a ____",
+    "NIGHT"
+   ],
+   [
+    "Turn back the ____",
+    "CLOCK2"
+   ],
+   [
+    "Day in, day ____",
+    "OUT"
+   ]
+  ]
+ },
+ "home": {
+  "title": "Home Truths",
+  "pairs": [
+   [
+    "Home is where the ____ is",
+    "HEART"
+   ],
+   [
+    "People in glass houses shouldn't throw ____",
+    "STONES"
+   ],
+   [
+    "Hit the ____ on the head",
+    "NAIL"
+   ],
+   [
+    "Bring the house ____",
+    "DOWN"
+   ],
+   [
+    "A ____ over your head",
+    "ROOF"
+   ],
+   [
+    "Get your foot in the ____",
+    "DOOR"
+   ],
+   [
+    "Sweep it under the ____",
+    "RUG"
+   ],
+   [
+    "Safe as ____",
+    "HOUSES"
+   ],
+   [
+    "Everything but the kitchen ____",
+    "SINK"
+   ],
+   [
+    "Burn the candle at both ____",
+    "ENDS"
+   ],
+   [
+    "Make your bed and ____ in it",
+    "LIE"
+   ],
+   [
+    "Drive up the ____",
+    "WALL"
+   ],
+   [
+    "Throw in the ____",
+    "TOWEL"
+   ],
+   [
+    "On the ____",
+    "SHELF"
+   ],
+   [
+    "The writing is on the ____",
+    "WALL2"
+   ],
+   [
+    "Up the garden ____",
+    "PATH"
+   ]
+  ]
+ },
+ "love": {
+  "title": "Love and Romance",
+  "pairs": [
+   [
+    "Love is ____",
+    "BLIND"
+   ],
+   [
+    "Love ____ no bounds",
+    "KNOWS"
+   ],
+   [
+    "Love conquers ____",
+    "ALL"
+   ],
+   [
+    "Better to have loved and ____",
+    "LOST"
+   ],
+   [
+    "Faint heart never won fair ____",
+    "LADY"
+   ],
+   [
+    "Love me, love my ____",
+    "DOG"
+   ],
+   [
+    "Marry in haste, repent at ____",
+    "LEISURE"
+   ],
+   [
+    "The course of true love never did run ____",
+    "SMOOTH"
+   ],
+   [
+    "Love at first ____",
+    "SIGHT"
+   ],
+   [
+    "Head over ____",
+    "HEELS"
+   ],
+   [
+    "Tie the ____",
+    "KNOT"
+   ],
+   [
+    "Pop the ____",
+    "QUESTION"
+   ],
+   [
+    "Love makes the world go ____",
+    "ROUND"
+   ],
+   [
+    "All is fair in love and ____",
+    "WAR"
+   ],
+   [
+    "Down on one ____",
+    "KNEE"
+   ],
+   [
+    "Sealed with a ____",
+    "KISS"
+   ],
+   [
+    "Steal someone's ____",
+    "HEART"
+   ],
+   [
+    "Carry a ____ for someone",
+    "TORCH"
+   ],
+   [
+    "Kiss and ____",
+    "TELL"
+   ],
+   [
+    "Star-crossed ____",
+    "LOVERS"
+   ],
+   [
+    "A ____ romance",
+    "WHIRLWIND"
+   ],
+   [
+    "An old ____",
+    "FLAME"
+   ],
+   [
+    "Happily ever ____",
+    "AFTER"
+   ],
+   [
+    "Cupid's ____",
+    "ARROW"
+   ],
+   [
+    "Till death do us ____",
+    "PART"
+   ],
+   [
+    "Play the ____",
+    "FIELD"
+   ],
+   [
+    "A hopeless ____",
+    "ROMANTIC"
+   ],
+   [
+    "Fools rush in where angels fear to ____",
+    "TREAD"
+   ],
+   [
+    "The apple of my ____",
+    "EYE"
+   ],
+   [
+    "The light of my ____",
+    "LIFE"
+   ],
+   [
+    "My better ____",
+    "HALF"
+   ],
+   [
+    "The way to a man's heart is through his ____",
+    "STOMACH"
+   ],
+   [
+    "The ____ is over",
+    "HONEYMOON"
+   ]
+  ]
+ },
+ "work": {
+  "title": "Hard at Work",
+  "pairs": [
+   [
+    "All work and no play makes Jack a dull ____",
+    "BOY"
+   ],
+   [
+    "A bad workman blames his ____",
+    "TOOLS"
+   ],
+   [
+    "Roll up your ____",
+    "SLEEVES"
+   ],
+   [
+    "Put your shoulder to the ____",
+    "WHEEL"
+   ],
+   [
+    "Work your fingers to the ____",
+    "BONE"
+   ],
+   [
+    "Climb the ____",
+    "LADDER"
+   ],
+   [
+    "Learn the ____",
+    "ROPES"
+   ],
+   [
+    "Pull your ____",
+    "WEIGHT"
+   ],
+   [
+    "Business before ____",
+    "PLEASURE"
+   ],
+   [
+    "If a job's worth doing, it's worth doing ____",
+    "WELL"
+   ],
+   [
+    "Healthy, wealthy and ____",
+    "WISE"
+   ],
+   [
+    "Jack of all trades, master of ____",
+    "NONE"
+   ],
+   [
+    "The devil finds work for idle ____",
+    "HANDS"
+   ],
+   [
+    "Don't put off till tomorrow what you can do ____",
+    "TODAY"
+   ],
+   [
+    "A woman's work is never ____",
+    "DONE"
+   ],
+   [
+    "Earn your ____",
+    "STRIPES"
+   ],
+   [
+    "The daily ____",
+    "GRIND"
+   ],
+   [
+    "Grist to the ____",
+    "MILL"
+   ],
+   [
+    "Elbow ____",
+    "GREASE"
+   ],
+   [
+    "A labour of ____",
+    "LOVE"
+   ],
+   [
+    "By the sweat of your ____",
+    "BROW"
+   ],
+   [
+    "No rest for the ____",
+    "WICKED"
+   ],
+   [
+    "Blood, sweat and ____",
+    "TEARS"
+   ],
+   [
+    "Too many irons in the ____",
+    "FIRE"
+   ],
+   [
+    "Take up the ____",
+    "SLACK"
+   ],
+   [
+    "A golden ____",
+    "HANDSHAKE"
+   ],
+   [
+    "A fair day's wage for a fair day's ____",
+    "WORK"
+   ],
+   [
+    "Ply your ____",
+    "TRADE"
+   ],
+   [
+    "Keep your ____ to the grindstone",
+    "NOSE"
+   ],
+   [
+    "Put your best foot ____",
+    "FORWARD"
+   ],
+   [
+    "An eager ____",
+    "BEAVER"
+   ],
+   [
+    "Asleep on the ____",
+    "JOB"
+   ],
+   [
+    "Hand in your ____",
+    "NOTICE"
+   ]
+  ]
+ },
+ "travel": {
+  "title": "On the Road",
+  "pairs": [
+   [
+    "A journey of a thousand miles begins with a single ____",
+    "STEP"
+   ],
+   [
+    "Fly by the seat of your ____",
+    "PANTS"
+   ],
+   [
+    "Off the beaten ____",
+    "TRACK"
+   ],
+   [
+    "Live out of a ____",
+    "SUITCASE"
+   ],
+   [
+    "Just the ____",
+    "TICKET"
+   ],
+   [
+    "Hitch a ____",
+    "RIDE"
+   ],
+   [
+    "Go the extra ____",
+    "MILE"
+   ],
+   [
+    "There and back ____",
+    "AGAIN"
+   ],
+   [
+    "Don't look ____",
+    "BACK"
+   ],
+   [
+    "Go with the ____",
+    "FLOW"
+   ],
+   [
+    "Get your ____",
+    "BEARINGS"
+   ],
+   [
+    "The middle of ____",
+    "NOWHERE"
+   ],
+   [
+    "Take a wrong ____",
+    "TURN"
+   ],
+   [
+    "Travel far and ____",
+    "WIDE"
+   ],
+   [
+    "Ride off into the ____",
+    "SUNSET"
+   ],
+   [
+    "A ____ in the road",
+    "FORK"
+   ],
+   [
+    "Take the scenic ____",
+    "ROUTE"
+   ],
+   [
+    "Pack your ____",
+    "BAGS"
+   ],
+   [
+    "Hit the ____ running",
+    "GROUND"
+   ],
+   [
+    "One for the ____",
+    "ROAD"
+   ],
+   [
+    "Get this ____ on the road",
+    "SHOW"
+   ],
+   [
+    "Journey's ____",
+    "END"
+   ],
+   [
+    "Cross that ____ when you come to it",
+    "BRIDGE"
+   ],
+   [
+    "Go your separate ____",
+    "WAYS"
+   ],
+   [
+    "A hop, skip and a ____",
+    "JUMP"
+   ],
+   [
+    "Bon ____",
+    "VOYAGE"
+   ],
+   [
+    "A change of ____",
+    "SCENERY"
+   ],
+   [
+    "Put on the ____",
+    "MAP"
+   ],
+   [
+    "Up hill and down ____",
+    "DALE"
+   ],
+   [
+    "Head for the ____",
+    "HILLS"
+   ],
+   [
+    "A pit ____",
+    "STOP"
+   ],
+   [
+    "Beyond the ____",
+    "HORIZON"
+   ],
+   [
+    "In it for the long ____",
+    "HAUL"
+   ]
+  ]
+ },
+ "garden": {
+  "title": "In the Garden",
+  "pairs": [
+   [
+    "Lead someone up the garden ____",
+    "PATH"
+   ],
+   [
+    "The grass is always ____ on the other side",
+    "GREENER"
+   ],
+   [
+    "Nip it in the ____",
+    "BUD"
+   ],
+   [
+    "As you sow, so shall you ____",
+    "REAP"
+   ],
+   [
+    "A ____ by any other name",
+    "ROSE"
+   ],
+   [
+    "Fresh as a ____",
+    "DAISY"
+   ],
+   [
+    "A shrinking ____",
+    "VIOLET"
+   ],
+   [
+    "A thorn in the ____",
+    "SIDE"
+   ],
+   [
+    "Go to ____",
+    "SEED"
+   ],
+   [
+    "Everything in the garden is ____",
+    "ROSY"
+   ],
+   [
+    "Garden ____",
+    "VARIETY"
+   ],
+   [
+    "Mighty oaks from little acorns ____",
+    "GROW"
+   ],
+   [
+    "Peas in a ____",
+    "POD"
+   ],
+   [
+    "Turn over a new ____",
+    "LEAF"
+   ],
+   [
+    "Put down ____",
+    "ROOTS"
+   ],
+   [
+    "Grow like a ____",
+    "WEED"
+   ],
+   [
+    "A ____ in the grass",
+    "SNAKE"
+   ],
+   [
+    "Hedge your ____",
+    "BETS"
+   ],
+   [
+    "Beat about the ____",
+    "BUSH"
+   ],
+   [
+    "In full ____",
+    "BLOOM"
+   ],
+   [
+    "Keep off the ____",
+    "GRASS"
+   ],
+   [
+    "Forbidden ____",
+    "FRUIT"
+   ],
+   [
+    "The birds and the ____",
+    "BEES"
+   ],
+   [
+    "Thin as a ____",
+    "RAKE"
+   ],
+   [
+    "A hard row to ____",
+    "HOE"
+   ],
+   [
+    "Sit on the ____",
+    "FENCE"
+   ],
+   [
+    "Mow the ____",
+    "LAWN"
+   ],
+   [
+    "Wither on the ____",
+    "VINE"
+   ],
+   [
+    "Common or ____",
+    "GARDEN"
+   ],
+   [
+    "The cream of the ____",
+    "CROP"
+   ],
+   [
+    "At a snail's ____",
+    "PACE"
+   ],
+   [
+    "In ____",
+    "CLOVER"
+   ],
+   [
+    "Mother ____",
+    "NATURE"
+   ]
+  ]
+ },
+ "sea": {
+  "title": "Down by the Sea",
+  "pairs": [
+   [
+    "Any port in a ____",
+    "STORM"
+   ],
+   [
+    "Plenty more ____ in the sea",
+    "FISH"
+   ],
+   [
+    "All at ____",
+    "SEA"
+   ],
+   [
+    "A drop in the ____",
+    "OCEAN"
+   ],
+   [
+    "Rock the ____",
+    "BOAT"
+   ],
+   [
+    "Batten down the ____",
+    "HATCHES"
+   ],
+   [
+    "Sink or ____",
+    "SWIM"
+   ],
+   [
+    "Make ____",
+    "WAVES"
+   ],
+   [
+    "Man ____",
+    "OVERBOARD"
+   ],
+   [
+    "All hands on ____",
+    "DECK"
+   ],
+   [
+    "Full steam ____",
+    "AHEAD"
+   ],
+   [
+    "Run a tight ____",
+    "SHIP"
+   ],
+   [
+    "Ships that pass in the ____",
+    "NIGHT"
+   ],
+   [
+    "Walk the ____",
+    "PLANK"
+   ],
+   [
+    "Shiver me ____",
+    "TIMBERS"
+   ],
+   [
+    "Take the ____",
+    "PLUNGE"
+   ],
+   [
+    "High and ____",
+    "DRY"
+   ],
+   [
+    "Drop ____",
+    "ANCHOR"
+   ],
+   [
+    "Sail close to the ____",
+    "WIND"
+   ],
+   [
+    "Plain ____",
+    "SAILING"
+   ],
+   [
+    "Find your sea ____",
+    "LEGS"
+   ],
+   [
+    "Happy as a ____",
+    "CLAM"
+   ],
+   [
+    "The world is your ____",
+    "OYSTER"
+   ],
+   [
+    "Come out of your ____",
+    "SHELL"
+   ],
+   [
+    "Time and ____ wait for no man",
+    "TIDE"
+   ],
+   [
+    "Worth your ____",
+    "SALT"
+   ],
+   [
+    "Still waters run ____",
+    "DEEP"
+   ],
+   [
+    "On an even ____",
+    "KEEL"
+   ],
+   [
+    "Nail your colours to the ____",
+    "MAST"
+   ],
+   [
+    "A sea ____",
+    "CHANGE"
+   ],
+   [
+    "A message in a ____",
+    "BOTTLE"
+   ],
+   [
+    "The coast is ____",
+    "CLEAR"
+   ],
+   [
+    "Red sky at night, sailors' ____",
+    "DELIGHT"
+   ]
+  ]
+ },
+ "school": {
+  "title": "School Days",
+  "pairs": [
+   [
+    "Teacher's ____",
+    "PET"
+   ],
+   [
+    "Stand the ____ of time",
+    "TEST"
+   ],
+   [
+    "Top of the ____",
+    "CLASS"
+   ],
+   [
+    "Back to the drawing ____",
+    "BOARD"
+   ],
+   [
+    "A dunce's ____",
+    "CAP"
+   ],
+   [
+    "Teach an old dog new ____",
+    "TRICKS"
+   ],
+   [
+    "The school of hard ____",
+    "KNOCKS"
+   ],
+   [
+    "Hit the ____",
+    "BOOKS"
+   ],
+   [
+    "An apple for the ____",
+    "TEACHER"
+   ],
+   [
+    "Chalk and ____",
+    "CHEESE"
+   ],
+   [
+    "Live and ____",
+    "LEARN"
+   ],
+   [
+    "Sharpen your ____",
+    "PENCIL"
+   ],
+   [
+    "Saved by the ____",
+    "BELL"
+   ],
+   [
+    "Do your ____",
+    "HOMEWORK"
+   ],
+   [
+    "Teach someone a ____",
+    "LESSON"
+   ],
+   [
+    "Full ____",
+    "MARKS"
+   ],
+   [
+    "Make the ____",
+    "GRADE"
+   ],
+   [
+    "Rule of ____",
+    "THUMB"
+   ],
+   [
+    "A star ____",
+    "PUPIL"
+   ],
+   [
+    "The pen is mightier than the ____",
+    "SWORD"
+   ],
+   [
+    "Put pen to ____",
+    "PAPER"
+   ],
+   [
+    "Don't judge a book by its ____",
+    "COVER"
+   ],
+   [
+    "Wipe the ____ clean",
+    "SLATE"
+   ],
+   [
+    "Pick someone's ____",
+    "BRAINS"
+   ],
+   [
+    "Pay ____",
+    "ATTENTION"
+   ],
+   [
+    "Know all the ____",
+    "ANSWERS"
+   ],
+   [
+    "There's no such thing as a free ____",
+    "LUNCH"
+   ],
+   [
+    "Read between the ____",
+    "LINES"
+   ],
+   [
+    "Practice makes ____",
+    "PERFECT"
+   ],
+   [
+    "Knowledge is ____",
+    "POWER"
+   ],
+   [
+    "Eyes on the ____",
+    "PRIZE"
+   ],
+   [
+    "A for ____",
+    "EFFORT"
+   ],
+   [
+    "The exception that proves the ____",
+    "RULE"
+   ]
+  ]
+ },
+ "music": {
+  "title": "Music and Song",
+  "pairs": [
+   [
+    "Music to my ____",
+    "EARS"
+   ],
+   [
+    "Face the ____",
+    "MUSIC"
+   ],
+   [
+    "Strike a ____",
+    "CHORD"
+   ],
+   [
+    "Blow your own ____",
+    "TRUMPET"
+   ],
+   [
+    "Change your ____",
+    "TUNE"
+   ],
+   [
+    "Fit as a ____",
+    "FIDDLE"
+   ],
+   [
+    "Sing for your ____",
+    "SUPPER"
+   ],
+   [
+    "Off ____",
+    "KEY"
+   ],
+   [
+    "Bang the ____",
+    "DRUM"
+   ],
+   [
+    "Swan ____",
+    "SONG"
+   ],
+   [
+    "All that ____",
+    "JAZZ"
+   ],
+   [
+    "Hit the right ____",
+    "NOTE"
+   ],
+   [
+    "Pull out all the ____",
+    "STOPS"
+   ],
+   [
+    "Clean as a ____",
+    "WHISTLE"
+   ],
+   [
+    "____ on about something",
+    "HARP"
+   ],
+   [
+    "Get into the ____ of things",
+    "SWING"
+   ],
+   [
+    "Lead someone a merry ____",
+    "DANCE"
+   ],
+   [
+    "It takes two to ____",
+    "TANGO"
+   ],
+   [
+    "Sing from the same hymn ____",
+    "SHEET"
+   ],
+   [
+    "Like a broken ____",
+    "RECORD"
+   ],
+   [
+    "Safe and ____",
+    "SOUND"
+   ],
+   [
+    "In perfect ____",
+    "HARMONY"
+   ],
+   [
+    "Don't miss a ____",
+    "BEAT"
+   ],
+   [
+    "Stage ____",
+    "FRIGHT"
+   ],
+   [
+    "Pull ____",
+    "STRINGS"
+   ],
+   [
+    "Put that in your ____ and smoke it",
+    "PIPE"
+   ],
+   [
+    "Curtain ____",
+    "CALL"
+   ],
+   [
+    "A round of ____",
+    "APPLAUSE"
+   ],
+   [
+    "At the top of your ____",
+    "VOICE"
+   ],
+   [
+    "Take a ____",
+    "BOW"
+   ],
+   [
+    "Pass the ____",
+    "BATON"
+   ],
+   [
+    "In ____",
+    "CONCERT"
+   ],
+   [
+    "Set the ____",
+    "TONE"
+   ]
+  ]
+ },
+ "colours": {
+  "title": "A Splash of Colour",
+  "pairs": [
+   [
+    "Out of the ____",
+    "BLUE"
+   ],
+   [
+    "Green with ____",
+    "ENVY"
+   ],
+   [
+    "Roll out the red ____",
+    "CARPET"
+   ],
+   [
+    "Paint the town ____",
+    "RED"
+   ],
+   [
+    "White as ____",
+    "SNOW"
+   ],
+   [
+    "The black ____ of the family",
+    "SHEEP"
+   ],
+   [
+    "Tickled ____",
+    "PINK"
+   ],
+   [
+    "Born to the ____",
+    "PURPLE"
+   ],
+   [
+    "Every cloud has a silver ____",
+    "LINING"
+   ],
+   [
+    "All that glitters is not ____",
+    "GOLD"
+   ],
+   [
+    "Brown as a ____",
+    "BERRY"
+   ],
+   [
+    "A yellow ____",
+    "STREAK"
+   ],
+   [
+    "Rose-tinted ____",
+    "GLASSES"
+   ],
+   [
+    "Give the green ____",
+    "LIGHT"
+   ],
+   [
+    "In black and ____",
+    "WHITE"
+   ],
+   [
+    "The pot calling the kettle ____",
+    "BLACK"
+   ],
+   [
+    "The silver ____",
+    "SCREEN"
+   ],
+   [
+    "Kill the goose that lays the golden ____",
+    "EGGS"
+   ],
+   [
+    "A red-letter ____",
+    "DAY"
+   ],
+   [
+    "Like a red ____ to a bull",
+    "RAG"
+   ],
+   [
+    "A red ____",
+    "HERRING"
+   ],
+   [
+    "Cut through the red ____",
+    "TAPE"
+   ],
+   [
+    "A white ____",
+    "ELEPHANT"
+   ],
+   [
+    "A little white ____",
+    "LIE"
+   ],
+   [
+    "Wave the white ____",
+    "FLAG"
+   ],
+   [
+    "Use your grey ____",
+    "MATTER"
+   ],
+   [
+    "Every colour of the ____",
+    "RAINBOW"
+   ],
+   [
+    "Beyond the ____",
+    "PALE"
+   ],
+   [
+    "Green around the ____",
+    "GILLS"
+   ],
+   [
+    "Red in the ____",
+    "FACE"
+   ],
+   [
+    "Cross my palm with ____",
+    "SILVER"
+   ],
+   [
+    "Tarred with the same ____",
+    "BRUSH"
+   ],
+   [
+    "Dyed-in-the-____",
+    "WOOL"
+   ]
+  ]
+ },
+ "numbers": {
+  "title": "By the Numbers",
+  "pairs": [
+   [
+    "Two's company, three's a ____",
+    "CROWD"
+   ],
+   [
+    "Two heads are better than ____",
+    "ONE"
+   ],
+   [
+    "Six of one and half a ____ of the other",
+    "DOZEN"
+   ],
+   [
+    "At sixes and ____",
+    "SEVENS"
+   ],
+   [
+    "The whole nine ____",
+    "YARDS"
+   ],
+   [
+    "Break ____",
+    "EVEN"
+   ],
+   [
+    "Seventh ____",
+    "HEAVEN"
+   ],
+   [
+    "Third time ____",
+    "LUCKY"
+   ],
+   [
+    "Two ____ don't make a right",
+    "WRONGS"
+   ],
+   [
+    "Ten a ____",
+    "PENNY"
+   ],
+   [
+    "First come, first ____",
+    "SERVED"
+   ],
+   [
+    "On second ____",
+    "THOUGHTS"
+   ],
+   [
+    "Odd one ____",
+    "OUT"
+   ],
+   [
+    "Sixth ____",
+    "SENSE"
+   ],
+   [
+    "Give someone the third ____",
+    "DEGREE"
+   ],
+   [
+    "Half a ____ is better than none",
+    "LOAF"
+   ],
+   [
+    "One good turn deserves ____",
+    "ANOTHER"
+   ],
+   [
+    "Two ____ in a pod",
+    "PEAS"
+   ],
+   [
+    "Take ____",
+    "FIVE"
+   ],
+   [
+    "Behind the eight ____",
+    "BALL"
+   ],
+   [
+    "One in a ____",
+    "MILLION"
+   ],
+   [
+    "Double or ____",
+    "QUITS"
+   ],
+   [
+    "On the ____",
+    "DOUBLE"
+   ],
+   [
+    "Once bitten, twice ____",
+    "SHY"
+   ],
+   [
+    "Four score and seven ____ ago",
+    "YEARS"
+   ],
+   [
+    "Safety in ____",
+    "NUMBERS"
+   ],
+   [
+    "Add ____ to injury",
+    "INSULT"
+   ],
+   [
+    "Count to ____",
+    "TEN"
+   ],
+   [
+    "A one-track ____",
+    "MIND"
+   ],
+   [
+    "A one-horse ____",
+    "TOWN"
+   ],
+   [
+    "Two shakes of a lamb's ____",
+    "TAIL"
+   ],
+   [
+    "In one fell ____",
+    "SWOOP"
+   ],
+   [
+    "____ upon a time",
+    "ONCE"
+   ]
+  ]
+ },
+ "family": {
+  "title": "All in the Family",
+  "pairs": [
+   [
+    "Blood is thicker than ____",
+    "WATER"
+   ],
+   [
+    "Like father, like ____",
+    "SON"
+   ],
+   [
+    "The apple doesn't fall far from the ____",
+    "TREE"
+   ],
+   [
+    "Charity begins at ____",
+    "HOME"
+   ],
+   [
+    "Necessity is the mother of ____",
+    "INVENTION"
+   ],
+   [
+    "Spare the rod and spoil the ____",
+    "CHILD"
+   ],
+   [
+    "Trouble and ____",
+    "STRIFE"
+   ],
+   [
+    "Out of the mouths of ____",
+    "BABES"
+   ],
+   [
+    "A chip off the old ____",
+    "BLOCK"
+   ],
+   [
+    "Like a mother ____",
+    "HEN"
+   ],
+   [
+    "Under one ____",
+    "ROOF"
+   ],
+   [
+    "Bob's your ____",
+    "UNCLE"
+   ],
+   [
+    "Mum's the ____",
+    "WORD"
+   ],
+   [
+    "Am I my brother's ____",
+    "KEEPER"
+   ],
+   [
+    "Sisters under the ____",
+    "SKIN"
+   ],
+   [
+    "Mother knows ____",
+    "BEST"
+   ],
+   [
+    "The hand that rocks the ____",
+    "CRADLE"
+   ],
+   [
+    "Grandfather ____",
+    "CLOCK"
+   ],
+   [
+    "Fly the ____",
+    "NEST"
+   ],
+   [
+    "Wear the ____ in the family",
+    "TROUSERS"
+   ],
+   [
+    "Heir ____",
+    "APPARENT"
+   ],
+   [
+    "Kissing ____",
+    "COUSINS"
+   ],
+   [
+    "Agony ____",
+    "AUNT"
+   ],
+   [
+    "Always the bridesmaid, never the ____",
+    "BRIDE"
+   ],
+   [
+    "Pride and ____",
+    "JOY"
+   ],
+   [
+    "Spitting ____",
+    "IMAGE"
+   ],
+   [
+    "It runs in the ____",
+    "FAMILY"
+   ],
+   [
+    "Born and ____",
+    "BRED"
+   ],
+   [
+    "The ties that ____",
+    "BIND"
+   ],
+   [
+    "An old wives' ____",
+    "TALE"
+   ],
+   [
+    "Little ____ have big ears",
+    "PITCHERS"
+   ],
+   [
+    "Respect your ____",
+    "ELDERS"
+   ],
+   [
+    "The child is father of the ____",
+    "MAN"
+   ]
+  ]
+ },
+ "body": {
+  "title": "Head to Toe",
+  "pairs": [
+   [
+    "Keep a stiff upper ____",
+    "LIP"
+   ],
+   [
+    "Turn a blind ____",
+    "EYE"
+   ],
+   [
+    "Keep your ____ to the ground",
+    "EAR"
+   ],
+   [
+    "Shoot from the ____",
+    "HIP"
+   ],
+   [
+    "Twist someone's ____",
+    "ARM"
+   ],
+   [
+    "Put your best ____ forward",
+    "FOOT"
+   ],
+   [
+    "A pain in the ____",
+    "NECK"
+   ],
+   [
+    "Keep your ____ up",
+    "CHIN"
+   ],
+   [
+    "Get under your ____",
+    "SKIN"
+   ],
+   [
+    "Let your ____ down",
+    "HAIR"
+   ],
+   [
+    "Off the top of my ____",
+    "HEAD"
+   ],
+   [
+    "Keep you on your ____",
+    "TOES"
+   ],
+   [
+    "Cut off your ____ to spite your face",
+    "NOSE"
+   ],
+   [
+    "Head over ____",
+    "HEELS"
+   ],
+   [
+    "Get it off your ____",
+    "CHEST"
+   ],
+   [
+    "By the skin of your ____",
+    "TEETH"
+   ],
+   [
+    "Long in the ____",
+    "TOOTH"
+   ],
+   [
+    "Word of ____",
+    "MOUTH"
+   ],
+   [
+    "Make no ____ about it",
+    "BONES"
+   ],
+   [
+    "Rule of ____",
+    "THUMB"
+   ],
+   [
+    "Two ____ are better than one",
+    "HEADS"
+   ],
+   [
+    "Send shivers down my ____",
+    "SPINE"
+   ],
+   [
+    "A slap on the ____",
+    "WRIST"
+   ],
+   [
+    "More power to your ____",
+    "ELBOW"
+   ],
+   [
+    "Fire in your ____",
+    "BELLY"
+   ],
+   [
+    "Hold your ____",
+    "TONGUE"
+   ],
+   [
+    "Wrap around your little ____",
+    "FINGER"
+   ],
+   [
+    "Save your ____",
+    "BREATH"
+   ],
+   [
+    "Jump down someone's ____",
+    "THROAT"
+   ],
+   [
+    "Rack your ____",
+    "BRAINS"
+   ],
+   [
+    "Butterflies in your ____",
+    "STOMACH"
+   ],
+   [
+    "Raise an ____",
+    "EYEBROW"
+   ],
+   [
+    "Give someone the cold ____",
+    "SHOULDER"
+   ],
+   [
+    "In a ____",
+    "HEARTBEAT"
+   ]
+  ]
+ },
+ "health": {
+  "title": "In Good Health",
+  "pairs": [
+   [
+    "An apple a day keeps the ____ away",
+    "DOCTOR"
+   ],
+   [
+    "Laughter is the best ____",
+    "MEDICINE"
+   ],
+   [
+    "Feed a cold, starve a ____",
+    "FEVER"
+   ],
+   [
+    "Healthy, wealthy and ____",
+    "WISE"
+   ],
+   [
+    "An ounce of prevention is worth a pound of ____",
+    "CURE"
+   ],
+   [
+    "Fit as a ____",
+    "FIDDLE"
+   ],
+   [
+    "In sickness and in ____",
+    "HEALTH"
+   ],
+   [
+    "Under the ____",
+    "WEATHER"
+   ],
+   [
+    "A ____ of your own medicine",
+    "DOSE"
+   ],
+   [
+    "Time heals all ____",
+    "WOUNDS"
+   ],
+   [
+    "Physician, ____ thyself",
+    "HEAL"
+   ],
+   [
+    "Just what the doctor ____",
+    "ORDERED"
+   ],
+   [
+    "Alive and ____",
+    "KICKING"
+   ],
+   [
+    "In the ____ of health",
+    "PINK"
+   ],
+   [
+    "Hale and ____",
+    "HEARTY"
+   ],
+   [
+    "A bitter ____ to swallow",
+    "PILL"
+   ],
+   [
+    "Catch your death of ____",
+    "COLD"
+   ],
+   [
+    "Break out in a cold ____",
+    "SWEAT"
+   ],
+   [
+    "On the ____",
+    "MEND"
+   ],
+   [
+    "Nothing to ____ at",
+    "SNEEZE"
+   ],
+   [
+    "Green around the ____",
+    "GILLS"
+   ],
+   [
+    "Work up an ____",
+    "APPETITE"
+   ],
+   [
+    "Get a second ____",
+    "OPINION"
+   ],
+   [
+    "Tender loving ____",
+    "CARE"
+   ],
+   [
+    "You are what you ____",
+    "EAT"
+   ],
+   [
+    "A sound mind in a sound ____",
+    "BODY"
+   ],
+   [
+    "Worried ____",
+    "SICK"
+   ],
+   [
+    "What can't be cured must be ____",
+    "ENDURED"
+   ],
+   [
+    "Finger on the ____",
+    "PULSE"
+   ],
+   [
+    "Risk life and ____",
+    "LIMB"
+   ],
+   [
+    "A tower of ____",
+    "STRENGTH"
+   ],
+   [
+    "Road to ____",
+    "RECOVERY"
+   ],
+   [
+    "In peak ____",
+    "CONDITION"
+   ],
+   [
+    "Take a turn for the ____",
+    "WORSE"
+   ]
+  ]
+ },
+ "food": {
+  "title": "Good Eating",
+  "pairs": [
+   [
+    "You can't make an omelette without breaking ____",
+    "EGGS"
+   ],
+   [
+    "Half a ____ is better than none",
+    "LOAF"
+   ],
+   [
+    "Bread and ____",
+    "BUTTER"
+   ],
+   [
+    "Variety is the ____ of life",
+    "SPICE"
+   ],
+   [
+    "One man's meat is another man's ____",
+    "POISON"
+   ],
+   [
+    "Don't put all your eggs in one ____",
+    "BASKET"
+   ],
+   [
+    "Easy as ____",
+    "PIE"
+   ],
+   [
+    "The icing on the ____",
+    "CAKE"
+   ],
+   [
+    "Cheap as ____",
+    "CHIPS"
+   ],
+   [
+    "Two ____ in a pod",
+    "PEAS"
+   ],
+   [
+    "Like chalk and ____",
+    "CHEESE"
+   ],
+   [
+    "Hunger is the best ____",
+    "SAUCE"
+   ],
+   [
+    "Meat and ____",
+    "POTATOES"
+   ],
+   [
+    "A hot ____",
+    "POTATO"
+   ],
+   [
+    "In a ____",
+    "NUTSHELL"
+   ],
+   [
+    "Bed and ____",
+    "BREAKFAST"
+   ],
+   [
+    "The ____ of my eye",
+    "APPLE"
+   ],
+   [
+    "Forbidden ____",
+    "FRUIT"
+   ],
+   [
+    "Sour ____",
+    "GRAPES"
+   ],
+   [
+    "Go ____",
+    "BANANAS"
+   ],
+   [
+    "Life is just a bowl of ____",
+    "CHERRIES"
+   ],
+   [
+    "Land of milk and ____",
+    "HONEY"
+   ],
+   [
+    "Cut the ____",
+    "MUSTARD"
+   ],
+   [
+    "Over-egg the ____",
+    "PUDDING"
+   ],
+   [
+    "Spill the ____",
+    "BEANS"
+   ],
+   [
+    "The world is your ____",
+    "OYSTER"
+   ],
+   [
+    "Feast or ____",
+    "FAMINE"
+   ],
+   [
+    "There's no such thing as a free ____",
+    "LUNCH"
+   ],
+   [
+    "Sing for your ____",
+    "SUPPER"
+   ],
+   [
+    "Catch more flies with honey than with ____",
+    "VINEGAR"
+   ],
+   [
+    "Take the ____",
+    "BISCUIT"
+   ],
+   [
+    "Flat as a ____",
+    "PANCAKE"
+   ],
+   [
+    "When life gives you lemons, make ____",
+    "LEMONADE"
+   ],
+   [
+    "The cream of the ____",
+    "CROP"
+   ]
+  ]
+ },
+ "drink": {
+  "title": "Raise a Glass",
+  "pairs": [
+   [
+    "Eat, drink and be ____",
+    "MERRY"
+   ],
+   [
+    "Water, water everywhere, nor any drop to ____",
+    "DRINK"
+   ],
+   [
+    "A watched ____ never boils",
+    "POT"
+   ],
+   [
+    "Not my cup of ____",
+    "TEA"
+   ],
+   [
+    "Wake up and smell the ____",
+    "COFFEE"
+   ],
+   [
+    "Drown your ____",
+    "SORROWS"
+   ],
+   [
+    "The ____ of human kindness",
+    "MILK"
+   ],
+   [
+    "My ____ runneth over",
+    "CUP"
+   ],
+   [
+    "Hair of the ____",
+    "DOG"
+   ],
+   [
+    "Read the tea ____",
+    "LEAVES"
+   ],
+   [
+    "A ____ in the ocean",
+    "DROP"
+   ],
+   [
+    "New wine in old ____",
+    "BOTTLES"
+   ],
+   [
+    "Life isn't all ____ and skittles",
+    "BEER"
+   ],
+   [
+    "Cakes and ____",
+    "ALE"
+   ],
+   [
+    "Pleased as ____",
+    "PUNCH"
+   ],
+   [
+    "Gin and ____",
+    "TONIC"
+   ],
+   [
+    "Drink a ____ to",
+    "TOAST"
+   ],
+   [
+    "Quench your ____",
+    "THIRST"
+   ],
+   [
+    "Sober as a ____",
+    "JUDGE"
+   ],
+   [
+    "Dutch ____",
+    "COURAGE"
+   ],
+   [
+    "Tea and ____",
+    "SYMPATHY"
+   ],
+   [
+    "Drink like a ____",
+    "FISH"
+   ],
+   [
+    "Wet your ____",
+    "WHISTLE"
+   ],
+   [
+    "Pour oil on troubled ____",
+    "WATERS"
+   ],
+   [
+    "Trouble is ____",
+    "BREWING"
+   ],
+   [
+    "The cat that got the ____",
+    "CREAM"
+   ],
+   [
+    "Is the glass half empty or half ____",
+    "FULL"
+   ],
+   [
+    "The pot calling the ____ black",
+    "KETTLE"
+   ],
+   [
+    "Water under the ____",
+    "BRIDGE"
+   ],
+   [
+    "Down the ____",
+    "HATCH"
+   ],
+   [
+    "In high ____",
+    "SPIRITS"
+   ],
+   [
+    "Stew in your own ____",
+    "JUICE"
+   ],
+   [
+    "Scrape the bottom of the ____",
+    "BARREL"
+   ],
+   [
+    "Still waters run ____",
+    "DEEP"
+   ]
+  ]
+ },
+ "sport": {
+  "title": "Fair Play",
+  "pairs": [
+   [
+    "It's how you play the ____",
+    "GAME"
+   ],
+   [
+    "The ball is in your ____",
+    "COURT"
+   ],
+   [
+    "Watch from the ____",
+    "SIDELINES"
+   ],
+   [
+    "A level playing ____",
+    "FIELD"
+   ],
+   [
+    "Throw your hat in the ____",
+    "RING"
+   ],
+   [
+    "Hit below the ____",
+    "BELT"
+   ],
+   [
+    "Saved by the ____",
+    "BELL"
+   ],
+   [
+    "Down for the ____",
+    "COUNT"
+   ],
+   [
+    "On the ____",
+    "ROPES"
+   ],
+   [
+    "Jump the ____",
+    "GUN"
+   ],
+   [
+    "Par for the ____",
+    "COURSE"
+   ],
+   [
+    "Keep your eye on the ____",
+    "BALL"
+   ],
+   [
+    "Get the ball ____",
+    "ROLLING"
+   ],
+   [
+    "A game of two ____",
+    "HALVES"
+   ],
+   [
+    "Hat ____",
+    "TRICK"
+   ],
+   [
+    "Score an own ____",
+    "GOAL"
+   ],
+   [
+    "Take one for the ____",
+    "TEAM"
+   ],
+   [
+    "A sticky ____",
+    "WICKET"
+   ],
+   [
+    "It's just not ____",
+    "CRICKET"
+   ],
+   [
+    "Knocked for ____",
+    "SIX"
+   ],
+   [
+    "Roll with the ____",
+    "PUNCHES"
+   ],
+   [
+    "Punch above your ____",
+    "WEIGHT"
+   ],
+   [
+    "Slow and steady wins the ____",
+    "RACE"
+   ],
+   [
+    "Out of your ____",
+    "LEAGUE"
+   ],
+   [
+    "Step up to the ____",
+    "PLATE"
+   ],
+   [
+    "Cover all the ____",
+    "BASES"
+   ],
+   [
+    "Front ____",
+    "RUNNER"
+   ],
+   [
+    "Hit your ____",
+    "STRIDE"
+   ],
+   [
+    "Photo ____",
+    "FINISH"
+   ],
+   [
+    "Pole ____",
+    "POSITION"
+   ],
+   [
+    "Game, set and ____",
+    "MATCH"
+   ],
+   [
+    "Sink or ____",
+    "SWIM"
+   ],
+   [
+    "Right up your ____",
+    "STREET"
+   ],
+   [
+    "Pass the ____",
+    "BATON"
+   ]
+  ]
+ },
+ "birds": {
+  "title": "For the Birds",
+  "pairs": [
+   [
+    "A bird in the hand is worth two in the ____",
+    "BUSH"
+   ],
+   [
+    "Birds of a ____ flock together",
+    "FEATHER"
+   ],
+   [
+    "Don't count your ____ before they hatch",
+    "CHICKENS"
+   ],
+   [
+    "Kill two birds with one ____",
+    "STONE"
+   ],
+   [
+    "One ____ doesn't make a summer",
+    "SWALLOW"
+   ],
+   [
+    "As the ____ flies",
+    "CROW"
+   ],
+   [
+    "Water off a duck's ____",
+    "BACK"
+   ],
+   [
+    "Lame ____",
+    "DUCK"
+   ],
+   [
+    "Take to it like a duck to ____",
+    "WATER"
+   ],
+   [
+    "Get your ducks in a ____",
+    "ROW"
+   ],
+   [
+    "Proud as a ____",
+    "PEACOCK"
+   ],
+   [
+    "A wise old ____",
+    "OWL"
+   ],
+   [
+    "Spread your ____",
+    "WINGS"
+   ],
+   [
+    "Feather your own ____",
+    "NEST"
+   ],
+   [
+    "Which came first, the ____ or the egg",
+    "CHICKEN"
+   ],
+   [
+    "Cold ____",
+    "TURKEY"
+   ],
+   [
+    "Mad as a wet ____",
+    "HEN"
+   ],
+   [
+    "Put the cat among the ____",
+    "PIGEONS"
+   ],
+   [
+    "Sick as a ____",
+    "PARROT"
+   ],
+   [
+    "High as a ____",
+    "KITE"
+   ],
+   [
+    "Watch like a ____",
+    "HAWK"
+   ],
+   [
+    "Ruffle a few ____",
+    "FEATHERS"
+   ],
+   [
+    "Fly the ____",
+    "COOP"
+   ],
+   [
+    "Take someone under your ____",
+    "WING"
+   ],
+   [
+    "The goose that laid the golden ____",
+    "EGG"
+   ],
+   [
+    "A little ____ told me",
+    "BIRD"
+   ],
+   [
+    "Rule the ____",
+    "ROOST"
+   ],
+   [
+    "Pecking ____",
+    "ORDER"
+   ],
+   [
+    "Knock off your ____",
+    "PERCH"
+   ],
+   [
+    "Sing like a ____",
+    "CANARY"
+   ],
+   [
+    "Cloud ____ land",
+    "CUCKOO"
+   ],
+   [
+    "An ____ eye",
+    "EAGLE"
+   ],
+   [
+    "Our ____ friends",
+    "FEATHERED"
+   ],
+   [
+    "Cook someone's ____",
+    "GOOSE"
+   ]
+  ]
+ },
+ "flowers": {
+  "title": "Trees and Flowers",
+  "pairs": [
+   [
+    "A ____ by any other name",
+    "ROSE"
+   ],
+   [
+    "Not a bed of ____",
+    "ROSES"
+   ],
+   [
+    "Can't see the wood for the ____",
+    "TREES"
+   ],
+   [
+    "The apple never falls far from the ____",
+    "TREE"
+   ],
+   [
+    "Fresh as a ____",
+    "DAISY"
+   ],
+   [
+    "Poison ____",
+    "IVY"
+   ],
+   [
+    "A shrinking ____",
+    "VIOLET"
+   ],
+   [
+    "Mighty ____ from little acorns grow",
+    "OAKS"
+   ],
+   [
+    "Strong as an ____",
+    "OAK"
+   ],
+   [
+    "Nip it in the ____",
+    "BUD"
+   ],
+   [
+    "Speak softly and carry a big ____",
+    "STICK"
+   ],
+   [
+    "Turn over a new ____",
+    "LEAF"
+   ],
+   [
+    "In full ____",
+    "BLOOM"
+   ],
+   [
+    "Cherry ____",
+    "BLOSSOM"
+   ],
+   [
+    "Hold out an olive ____",
+    "BRANCH"
+   ],
+   [
+    "Put down ____",
+    "ROOTS"
+   ],
+   [
+    "A snake in the ____",
+    "GRASS"
+   ],
+   [
+    "Grow like a ____",
+    "WEED"
+   ],
+   [
+    "Go to ____",
+    "SEED"
+   ],
+   [
+    "Out of the ____",
+    "WOODS"
+   ],
+   [
+    "Weeping ____",
+    "WILLOW"
+   ],
+   [
+    "Spring up like ____",
+    "MUSHROOMS"
+   ],
+   [
+    "An old ____",
+    "CHESTNUT"
+   ],
+   [
+    "In the ____ of youth",
+    "FLOWER"
+   ],
+   [
+    "Lily of the ____",
+    "VALLEY"
+   ],
+   [
+    "April showers bring May ____",
+    "FLOWERS"
+   ],
+   [
+    "Not give a ____",
+    "FIG"
+   ],
+   [
+    "Get to the ____ of the problem",
+    "ROOT"
+   ],
+   [
+    "Wither on the ____",
+    "VINE"
+   ],
+   [
+    "Consider the ____ of the field",
+    "LILIES"
+   ],
+   [
+    "An ____ favourite",
+    "EVERGREEN"
+   ],
+   [
+    "Under the ____ tree",
+    "GREENWOOD"
+   ],
+   [
+    "Sow the ____ of doubt",
+    "SEEDS"
+   ],
+   [
+    "Brown as a ____",
+    "BERRY"
+   ]
+  ]
+ },
+ "clothes": {
+  "title": "Dressed Up",
+  "pairs": [
+   [
+    "Wear your heart on your ____",
+    "SLEEVE"
+   ],
+   [
+    "If the ____ fits, wear it",
+    "SHOE"
+   ],
+   [
+    "Pull your ____ up",
+    "SOCKS"
+   ],
+   [
+    "Keep it under your ____",
+    "HAT"
+   ],
+   [
+    "Follow ____",
+    "SUIT"
+   ],
+   [
+    "Fit like a ____",
+    "GLOVE"
+   ],
+   [
+    "Too big for your ____",
+    "BOOTS"
+   ],
+   [
+    "A wolf in sheep's ____",
+    "CLOTHING"
+   ],
+   [
+    "Cut from the same ____",
+    "CLOTH"
+   ],
+   [
+    "Hot under the ____",
+    "COLLAR"
+   ],
+   [
+    "Roll up your ____",
+    "SLEEVES"
+   ],
+   [
+    "Off the ____",
+    "CUFF"
+   ],
+   [
+    "Wear the ____ in the family",
+    "TROUSERS"
+   ],
+   [
+    "Fly by the seat of your ____",
+    "PANTS"
+   ],
+   [
+    "Keep your ____ on",
+    "SHIRT"
+   ],
+   [
+    "Tied to her ____ strings",
+    "APRON"
+   ],
+   [
+    "Burn a hole in your ____",
+    "POCKET"
+   ],
+   [
+    "Cute as a ____",
+    "BUTTON"
+   ],
+   [
+    "A feather in your ____",
+    "CAP"
+   ],
+   [
+    "Cloak and ____",
+    "DAGGER"
+   ],
+   [
+    "The glass ____",
+    "SLIPPER"
+   ],
+   [
+    "A bee in your ____",
+    "BONNET"
+   ],
+   [
+    "Bursting at the ____",
+    "SEAMS"
+   ],
+   [
+    "Hang by a ____",
+    "THREAD"
+   ],
+   [
+    "Smooth as ____",
+    "SILK"
+   ],
+   [
+    "An iron fist in a ____ glove",
+    "VELVET"
+   ],
+   [
+    "Pull the ____ over your eyes",
+    "WOOL"
+   ],
+   [
+    "From ____ to riches",
+    "RAGS"
+   ],
+   [
+    "Walk a mile in someone's ____",
+    "SHOES"
+   ],
+   [
+    "Handle with kid ____",
+    "GLOVES"
+   ],
+   [
+    "The emperor's new ____",
+    "CLOTHES"
+   ],
+   [
+    "Little Red Riding ____",
+    "HOOD"
+   ],
+   [
+    "Earn your ____",
+    "STRIPES"
+   ],
+   [
+    "Old-____",
+    "FASHIONED"
+   ]
+  ]
+ },
+ "sleep": {
+  "title": "Sweet Dreams",
+  "pairs": [
+   [
+    "Sleep like a ____",
+    "LOG"
+   ],
+   [
+    "Early to bed and early to ____",
+    "RISE"
+   ],
+   [
+    "Not sleep a ____",
+    "WINK"
+   ],
+   [
+    "Sleep ____",
+    "TIGHT"
+   ],
+   [
+    "When the bough breaks the cradle will ____",
+    "FALL"
+   ],
+   [
+    "Fast ____",
+    "ASLEEP"
+   ],
+   [
+    "Sleeping ____",
+    "BEAUTY"
+   ],
+   [
+    "Cat ____",
+    "NAP"
+   ],
+   [
+    "Hit the ____",
+    "HAY"
+   ],
+   [
+    "Land of ____",
+    "NOD"
+   ],
+   [
+    "Wide ____",
+    "AWAKE"
+   ],
+   [
+    "Dead to the ____",
+    "WORLD"
+   ],
+   [
+    "Out like a ____",
+    "LIGHT"
+   ],
+   [
+    "Counting ____",
+    "SHEEP"
+   ],
+   [
+    "Snug as a bug in a ____",
+    "RUG"
+   ],
+   [
+    "Bright-eyed and bushy-____",
+    "TAILED"
+   ],
+   [
+    "Rise and ____",
+    "SHINE"
+   ],
+   [
+    "Toss and ____",
+    "TURN"
+   ],
+   [
+    "A dream come ____",
+    "TRUE"
+   ],
+   [
+    "Beyond your wildest ____",
+    "DREAMS"
+   ],
+   [
+    "A pipe ____",
+    "DREAM"
+   ],
+   [
+    "Get up on the wrong side of the ____",
+    "BED"
+   ],
+   [
+    "White as a ____",
+    "SHEET"
+   ],
+   [
+    "The hand that rocks the ____",
+    "CRADLE"
+   ],
+   [
+    "No rest for the ____",
+    "WICKED"
+   ],
+   [
+    "Caught ____",
+    "NAPPING"
+   ],
+   [
+    "Bedtime ____",
+    "STORY"
+   ],
+   [
+    "A living ____",
+    "NIGHTMARE"
+   ],
+   [
+    "Rest ____",
+    "ASSURED"
+   ],
+   [
+    "Not lose any ____ over it",
+    "SLEEP"
+   ],
+   [
+    "Ships that pass in the ____",
+    "NIGHT"
+   ],
+   [
+    "The crack of ____",
+    "DAWN"
+   ],
+   [
+    "The princess and the ____",
+    "PEA"
+   ],
+   [
+    "A ____ night",
+    "SLEEPLESS"
+   ]
+  ]
+ },
+ "luck": {
+  "title": "Luck of the Draw",
+  "pairs": [
+   [
+    "Beginner's ____",
+    "LUCK"
+   ],
+   [
+    "Third time ____",
+    "LUCKY"
+   ],
+   [
+    "Break a ____",
+    "LEG"
+   ],
+   [
+    "Knock on ____",
+    "WOOD"
+   ],
+   [
+    "Fingers ____",
+    "CROSSED"
+   ],
+   [
+    "A four-leaf ____",
+    "CLOVER"
+   ],
+   [
+    "A lucky ____",
+    "CHARM"
+   ],
+   [
+    "Born under a lucky ____",
+    "STAR"
+   ],
+   [
+    "A roll of the ____",
+    "DICE"
+   ],
+   [
+    "The die is ____",
+    "CAST"
+   ],
+   [
+    "Hedge your ____",
+    "BETS"
+   ],
+   [
+    "Against all ____",
+    "ODDS"
+   ],
+   [
+    "Fat ____",
+    "CHANCE"
+   ],
+   [
+    "Fortune favours the ____",
+    "BRAVE"
+   ],
+   [
+    "A blessing in ____",
+    "DISGUISE"
+   ],
+   [
+    "Count your ____",
+    "BLESSINGS"
+   ],
+   [
+    "A winning ____",
+    "STREAK"
+   ],
+   [
+    "A small ____",
+    "FORTUNE"
+   ],
+   [
+    "Play your ____ right",
+    "CARDS"
+   ],
+   [
+    "An ____ up your sleeve",
+    "ACE"
+   ],
+   [
+    "Heads or ____",
+    "TAILS"
+   ],
+   [
+    "Hang a ____ over the door",
+    "HORSESHOE"
+   ],
+   [
+    "A black cat crossing your ____",
+    "PATH"
+   ],
+   [
+    "Walk under a ____",
+    "LADDER"
+   ],
+   [
+    "Seven years' bad luck for breaking a ____",
+    "MIRROR"
+   ],
+   [
+    "Make a ____",
+    "WISH"
+   ],
+   [
+    "Lightning never strikes ____",
+    "TWICE"
+   ],
+   [
+    "A good ____",
+    "OMEN"
+   ],
+   [
+    "Unlucky ____",
+    "THIRTEEN"
+   ],
+   [
+    "Win the ____",
+    "LOTTERY"
+   ],
+   [
+    "Bet your bottom ____",
+    "DOLLAR"
+   ],
+   [
+    "Tempt ____",
+    "FATE"
+   ],
+   [
+    "Stack the ____",
+    "DECK"
+   ],
+   [
+    "Draw the short ____",
+    "STRAW"
+   ]
+  ]
+ },
+ "truth": {
+  "title": "The Honest Truth",
+  "pairs": [
+   [
+    "Honesty is the best ____",
+    "POLICY"
+   ],
+   [
+    "The truth will ____",
+    "OUT"
+   ],
+   [
+    "Truth is stranger than ____",
+    "FICTION"
+   ],
+   [
+    "Honest as the day is ____",
+    "LONG"
+   ],
+   [
+    "Give it to me ____",
+    "STRAIGHT"
+   ],
+   [
+    "Nothing but the ____",
+    "TRUTH"
+   ],
+   [
+    "A little white ____",
+    "LIE"
+   ],
+   [
+    "Actions speak louder than ____",
+    "WORDS"
+   ],
+   [
+    "Get your ____ straight",
+    "FACTS"
+   ],
+   [
+    "Wipe the slate ____",
+    "CLEAN"
+   ],
+   [
+    "Spill the ____",
+    "BEANS"
+   ],
+   [
+    "Cut to the ____",
+    "CHASE"
+   ],
+   [
+    "Loose ____ sink ships",
+    "LIPS"
+   ],
+   [
+    "Don't ____ a book by its cover",
+    "JUDGE"
+   ],
+   [
+    "Seeing is ____",
+    "BELIEVING"
+   ],
+   [
+    "Many a true word is spoken in ____",
+    "JEST"
+   ],
+   [
+    "Cheats never ____",
+    "PROSPER"
+   ],
+   [
+    "Practise what you ____",
+    "PREACH"
+   ],
+   [
+    "Swear an ____",
+    "OATH"
+   ],
+   [
+    "Truth be ____",
+    "TOLD"
+   ],
+   [
+    "Fair and ____",
+    "SQUARE"
+   ],
+   [
+    "Open and above ____",
+    "BOARD"
+   ],
+   [
+    "To be perfectly ____",
+    "HONEST"
+   ],
+   [
+    "Take it as ____",
+    "GOSPEL"
+   ],
+   [
+    "Nothing to ____",
+    "HIDE"
+   ],
+   [
+    "Pull the ____ over someone's eyes",
+    "WOOL"
+   ],
+   [
+    "Smoke and ____",
+    "MIRRORS"
+   ],
+   [
+    "Honest to ____",
+    "GOODNESS"
+   ],
+   [
+    "Too good to be ____",
+    "TRUE"
+   ],
+   [
+    "Wear your heart on your ____",
+    "SLEEVE"
+   ],
+   [
+    "Take it at face ____",
+    "VALUE"
+   ],
+   [
+    "Put your cards on the ____",
+    "TABLE"
+   ],
+   [
+    "Speak your ____",
+    "MIND"
+   ]
+  ]
+ },
+ "wisdom": {
+  "title": "Words of Wisdom",
+  "pairs": [
+   [
+    "A word to the ____ is enough",
+    "WISE"
+   ],
+   [
+    "Knowledge is ____",
+    "POWER"
+   ],
+   [
+    "Look before you ____",
+    "LEAP"
+   ],
+   [
+    "Fools rush in where angels fear to ____",
+    "TREAD"
+   ],
+   [
+    "Live and ____",
+    "LEARN"
+   ],
+   [
+    "Experience is the best ____",
+    "TEACHER"
+   ],
+   [
+    "You can't teach an old dog new ____",
+    "TRICKS"
+   ],
+   [
+    "Still waters run ____",
+    "DEEP"
+   ],
+   [
+    "Two heads are better than ____",
+    "ONE"
+   ],
+   [
+    "Great minds think ____",
+    "ALIKE"
+   ],
+   [
+    "Better safe than ____",
+    "SORRY"
+   ],
+   [
+    "The pen is mightier than the ____",
+    "SWORD"
+   ],
+   [
+    "Don't count your chickens before they ____",
+    "HATCH"
+   ],
+   [
+    "Necessity is the mother of ____",
+    "INVENTION"
+   ],
+   [
+    "Wise as an ____",
+    "OWL"
+   ],
+   [
+    "Birds of a feather flock ____",
+    "TOGETHER"
+   ],
+   [
+    "Don't put all your eggs in one ____",
+    "BASKET"
+   ],
+   [
+    "Once bitten, twice ____",
+    "SHY"
+   ],
+   [
+    "Half a loaf is better than ____",
+    "NONE"
+   ],
+   [
+    "Where there's a will there's a ____",
+    "WAY"
+   ],
+   [
+    "A bird in the hand is worth two in the ____",
+    "BUSH"
+   ],
+   [
+    "There's no such thing as a free ____",
+    "LUNCH"
+   ],
+   [
+    "Silence is ____",
+    "GOLDEN"
+   ],
+   [
+    "Practice makes ____",
+    "PERFECT"
+   ],
+   [
+    "Even a stopped clock is right ____ a day",
+    "TWICE"
+   ],
+   [
+    "Familiarity breeds ____",
+    "CONTEMPT"
+   ],
+   [
+    "One good turn deserves ____",
+    "ANOTHER"
+   ],
+   [
+    "Cut your coat according to your ____",
+    "CLOTH"
+   ],
+   [
+    "A chain is only as strong as its weakest ____",
+    "LINK"
+   ],
+   [
+    "Prevention is better than ____",
+    "CURE"
+   ],
+   [
+    "Don't ____ the hand that feeds you",
+    "BITE"
+   ],
+   [
+    "Better the devil you ____",
+    "KNOW"
+   ],
+   [
+    "Empty vessels make the most ____",
+    "NOISE"
+   ]
+  ]
+ },
+ "patience": {
+  "title": "Patience, Patience",
+  "pairs": [
+   [
+    "Patience is a ____",
+    "VIRTUE"
+   ],
+   [
+    "Good things come to those who ____",
+    "WAIT"
+   ],
+   [
+    "Slow and steady wins the ____",
+    "RACE"
+   ],
+   [
+    "Wait and ____",
+    "SEE"
+   ],
+   [
+    "Patience is bitter, but its fruit is ____",
+    "SWEET"
+   ],
+   [
+    "Don't ____ the gun",
+    "JUMP"
+   ],
+   [
+    "Haste makes ____",
+    "WASTE"
+   ],
+   [
+    "More haste, less ____",
+    "SPEED"
+   ],
+   [
+    "Sit ____",
+    "TIGHT"
+   ],
+   [
+    "Count to ____",
+    "TEN"
+   ],
+   [
+    "Grin and ____ it",
+    "BEAR"
+   ],
+   [
+    "Let the dust ____",
+    "SETTLE"
+   ],
+   [
+    "Time heals all ____",
+    "WOUNDS"
+   ],
+   [
+    "Learn to walk before you ____",
+    "RUN"
+   ],
+   [
+    "Wait your ____",
+    "TURN"
+   ],
+   [
+    "If at first you don't ____, try, try again",
+    "SUCCEED"
+   ],
+   [
+    "A journey of a thousand miles begins with a single ____",
+    "STEP"
+   ],
+   [
+    "Make haste ____",
+    "SLOWLY"
+   ],
+   [
+    "Don't hold your ____",
+    "BREATH"
+   ],
+   [
+    "Let ____ take its course",
+    "NATURE"
+   ],
+   [
+    "Bite your ____",
+    "TONGUE"
+   ],
+   [
+    "Keep ____ and carry on",
+    "CALM"
+   ],
+   [
+    "Cool, calm and ____",
+    "COLLECTED"
+   ],
+   [
+    "Life is a ____, not a sprint",
+    "MARATHON"
+   ],
+   [
+    "Slowly but ____",
+    "SURELY"
+   ],
+   [
+    "The patience of a ____",
+    "SAINT"
+   ],
+   [
+    "Play the waiting ____",
+    "GAME"
+   ],
+   [
+    "In due ____",
+    "COURSE"
+   ],
+   [
+    "____ is another day",
+    "TOMORROW"
+   ],
+   [
+    "A ____ pot never boils",
+    "WATCHED"
+   ],
+   [
+    "Cross that bridge when you ____ to it",
+    "COME"
+   ],
+   [
+    "Wait in the ____",
+    "WINGS"
+   ],
+   [
+    "Ants in your ____",
+    "PANTS"
+   ]
+  ]
+ },
+ "courage": {
+  "title": "Brave Hearts",
+  "pairs": [
+   [
+    "Fortune favours the ____",
+    "BRAVE"
+   ],
+   [
+    "Faint heart never won fair ____",
+    "LADY"
+   ],
+   [
+    "Bite the ____",
+    "BULLET"
+   ],
+   [
+    "Face the ____",
+    "MUSIC"
+   ],
+   [
+    "Hold the ____",
+    "FORT"
+   ],
+   [
+    "Screw your courage to the sticking ____",
+    "PLACE"
+   ],
+   [
+    "Nothing ventured, nothing ____",
+    "GAINED"
+   ],
+   [
+    "He who hesitates is ____",
+    "LOST"
+   ],
+   [
+    "Stand your ____",
+    "GROUND"
+   ],
+   [
+    "Stick to your ____",
+    "GUNS"
+   ],
+   [
+    "Keep a stiff upper ____",
+    "LIP"
+   ],
+   [
+    "Put on a brave ____",
+    "FACE"
+   ],
+   [
+    "Bold as ____",
+    "BRASS"
+   ],
+   [
+    "Once more unto the ____",
+    "BREACH"
+   ],
+   [
+    "Grit your ____",
+    "TEETH"
+   ],
+   [
+    "Cold hands, warm ____",
+    "HEART"
+   ],
+   [
+    "Pluck up ____",
+    "COURAGE"
+   ],
+   [
+    "Nerves of ____",
+    "STEEL"
+   ],
+   [
+    "Go down with all guns ____",
+    "BLAZING"
+   ],
+   [
+    "Throw down the ____",
+    "GAUNTLET"
+   ],
+   [
+    "Into the lion's ____",
+    "DEN"
+   ],
+   [
+    "Grace under ____",
+    "PRESSURE"
+   ],
+   [
+    "Never say ____",
+    "DIE"
+   ],
+   [
+    "Full steam ____",
+    "AHEAD"
+   ],
+   [
+    "Who dares ____",
+    "WINS"
+   ],
+   [
+    "Stand up and be ____",
+    "COUNTED"
+   ],
+   [
+    "Go out on a ____",
+    "LIMB"
+   ],
+   [
+    "Take the ____",
+    "PLUNGE"
+   ],
+   [
+    "A leap of ____",
+    "FAITH"
+   ],
+   [
+    "Rise to the ____",
+    "OCCASION"
+   ],
+   [
+    "Go for ____",
+    "BROKE"
+   ],
+   [
+    "Sink or ____",
+    "SWIM"
+   ],
+   [
+    "No guts, no ____",
+    "GLORY"
+   ],
+   [
+    "Courage in the face of ____",
+    "ADVERSITY"
+   ]
+  ]
+ },
+ "farm": {
+  "title": "Down on the Farm",
+  "pairs": [
+   [
+    "Don't put the cart before the ____",
+    "HORSE"
+   ],
+   [
+    "Make ____ while the sun shines",
+    "HAY"
+   ],
+   [
+    "You reap what you ____",
+    "SOW"
+   ],
+   [
+    "As you sow, so shall you ____",
+    "REAP"
+   ],
+   [
+    "Shut the stable door after the horse has ____",
+    "BOLTED"
+   ],
+   [
+    "Till the cows come ____",
+    "HOME"
+   ],
+   [
+    "Ruffle a few ____",
+    "FEATHERS"
+   ],
+   [
+    "The grass is always greener on the other side of the ____",
+    "FENCE"
+   ],
+   [
+    "The black ____ of the family",
+    "SHEEP"
+   ],
+   [
+    "Don't look a gift horse in the ____",
+    "MOUTH"
+   ],
+   [
+    "Chickens come home to ____",
+    "ROOST"
+   ],
+   [
+    "Running around like a headless ____",
+    "CHICKEN"
+   ],
+   [
+    "Which came first, the chicken or the ____",
+    "EGG"
+   ],
+   [
+    "Cock of the ____",
+    "WALK"
+   ],
+   [
+    "Pigs might ____",
+    "FLY"
+   ],
+   [
+    "Sow your wild ____",
+    "OATS"
+   ],
+   [
+    "Get your ____ in a row",
+    "DUCKS"
+   ],
+   [
+    "A wild ____ chase",
+    "GOOSE"
+   ],
+   [
+    "Old MacDonald had a ____",
+    "FARM"
+   ],
+   [
+    "Mary had a little ____",
+    "LAMB"
+   ],
+   [
+    "The little red ____",
+    "HEN"
+   ],
+   [
+    "Like a red rag to a ____",
+    "BULL"
+   ],
+   [
+    "Run to ____",
+    "SEED"
+   ],
+   [
+    "Reap a rich ____",
+    "HARVEST"
+   ],
+   [
+    "The cream of the ____",
+    "CROP"
+   ],
+   [
+    "The ____ always rises to the top",
+    "CREAM"
+   ],
+   [
+    "Kill the fatted ____",
+    "CALF"
+   ],
+   [
+    "Talk the hind legs off a ____",
+    "DONKEY"
+   ],
+   [
+    "Stubborn as a ____",
+    "MULE"
+   ],
+   [
+    "Were you born in a ____?",
+    "BARN"
+   ],
+   [
+    "The land of ____ and honey",
+    "MILK"
+   ],
+   [
+    "Put out to ____",
+    "PASTURE"
+   ],
+   [
+    "Put your hand to the ____",
+    "PLOUGH"
+   ],
+   [
+    "A level playing ____",
+    "FIELD"
+   ]
+  ]
+ },
+ "city": {
+  "title": "City Streets",
+  "pairs": [
+   [
+    "The streets are paved with ____",
+    "GOLD"
+   ],
+   [
+    "Paint the town ____",
+    "RED"
+   ],
+   [
+    "Concrete ____",
+    "JUNGLE"
+   ],
+   [
+    "The wrong side of the ____",
+    "TRACKS"
+   ],
+   [
+    "The talk of the ____",
+    "TOWN"
+   ],
+   [
+    "Word on the ____",
+    "STREET"
+   ],
+   [
+    "Drawn to the bright ____",
+    "LIGHTS"
+   ],
+   [
+    "Rush ____",
+    "HOUR"
+   ],
+   [
+    "The city that never ____",
+    "SLEEPS"
+   ],
+   [
+    "A ____ set on a hill",
+    "CITY"
+   ],
+   [
+    "A trip down memory ____",
+    "LANE"
+   ],
+   [
+    "Just around the ____",
+    "CORNER"
+   ],
+   [
+    "An ivory ____",
+    "TOWER"
+   ],
+   [
+    "You can't fight city ____",
+    "HALL"
+   ],
+   [
+    "A flea ____",
+    "MARKET"
+   ],
+   [
+    "Traffic ____",
+    "JAM"
+   ],
+   [
+    "Zebra ____",
+    "CROSSING"
+   ],
+   [
+    "Hail a ____",
+    "CAB"
+   ],
+   [
+    "Miss the ____",
+    "BUS"
+   ],
+   [
+    "Mind the ____",
+    "GAP"
+   ],
+   [
+    "From pillar to ____",
+    "POST"
+   ],
+   [
+    "Take to the ____",
+    "STREETS"
+   ],
+   [
+    "A bobby on the ____",
+    "BEAT"
+   ],
+   [
+    "Explore every ____",
+    "AVENUE"
+   ],
+   [
+    "Water under the ____",
+    "BRIDGE"
+   ],
+   [
+    "Town and ____",
+    "COUNTRY"
+   ],
+   [
+    "The ____ of the town",
+    "TOAST"
+   ],
+   [
+    "Stool ____",
+    "PIGEON"
+   ],
+   [
+    "Bricks and ____",
+    "MORTAR"
+   ],
+   [
+    "A walk in the ____",
+    "PARK"
+   ],
+   [
+    "Far from the madding ____",
+    "CROWD"
+   ],
+   [
+    "Skid ____",
+    "ROW"
+   ],
+   [
+    "See the ____",
+    "SIGHTS"
+   ]
+  ]
+ },
+ "books": {
+  "title": "Between the Covers",
+  "pairs": [
+   [
+    "Never judge a book by its ____",
+    "COVER"
+   ],
+   [
+    "Turn over a new ____",
+    "LEAF"
+   ],
+   [
+    "An open ____",
+    "BOOK"
+   ],
+   [
+    "The ____ is mightier than the sword",
+    "PEN"
+   ],
+   [
+    "Put pen to ____",
+    "PAPER"
+   ],
+   [
+    "Every picture tells a ____",
+    "STORY"
+   ],
+   [
+    "Once upon a ____",
+    "TIME"
+   ],
+   [
+    "They all lived happily ever ____",
+    "AFTER"
+   ],
+   [
+    "Chapter and ____",
+    "VERSE"
+   ],
+   [
+    "On the same ____",
+    "PAGE"
+   ],
+   [
+    "Send shivers down your ____",
+    "SPINE"
+   ],
+   [
+    "A ____ in the tale",
+    "TWIST"
+   ],
+   [
+    "Poetic ____",
+    "JUSTICE"
+   ],
+   [
+    "Passages of purple ____",
+    "PROSE"
+   ],
+   [
+    "A fairy ____",
+    "TALE"
+   ],
+   [
+    "Speak ____",
+    "VOLUMES"
+   ],
+   [
+    "Pen and ____",
+    "INK"
+   ],
+   [
+    "Silence in the ____",
+    "LIBRARY"
+   ],
+   [
+    "The great American ____",
+    "NOVEL"
+   ],
+   [
+    "Without rhyme or ____",
+    "REASON"
+   ],
+   [
+    "A nursery ____",
+    "RHYME"
+   ],
+   [
+    "Start a new ____",
+    "CHAPTER"
+   ],
+   [
+    "A ____ in history",
+    "FOOTNOTE"
+   ],
+   [
+    "A ghost ____",
+    "WRITER"
+   ],
+   [
+    "Writer's ____",
+    "BLOCK"
+   ],
+   [
+    "Read the small ____",
+    "PRINT"
+   ],
+   [
+    "An urban ____",
+    "MYTH"
+   ],
+   [
+    "The ____ of the story",
+    "MORAL"
+   ],
+   [
+    "Lose the ____",
+    "PLOT"
+   ],
+   [
+    "An unsung ____",
+    "HERO"
+   ],
+   [
+    "A happy ____",
+    "ENDING"
+   ],
+   [
+    "Acting out of ____",
+    "CHARACTER"
+   ],
+   [
+    "Read it and ____",
+    "WEEP"
+   ]
+  ]
+ },
+ "seasons": {
+  "title": "The Turning Year",
+  "pairs": [
+   [
+    "One swallow doesn't make a ____",
+    "SUMMER"
+   ],
+   [
+    "April showers bring May ____",
+    "FLOWERS"
+   ],
+   [
+    "In the dead of ____",
+    "WINTER"
+   ],
+   [
+    "Hope ____ eternal",
+    "SPRINGS"
+   ],
+   [
+    "A carpet of autumn ____",
+    "LEAVES"
+   ],
+   [
+    "A year and a ____",
+    "DAY"
+   ],
+   [
+    "Spring has ____",
+    "SPRUNG"
+   ],
+   [
+    "Christmas comes but once a ____",
+    "YEAR"
+   ],
+   [
+    "Season's ____",
+    "GREETINGS"
+   ],
+   [
+    "To everything there is a ____",
+    "SEASON"
+   ],
+   [
+    "Sunshine and ____",
+    "SHOWERS"
+   ],
+   [
+    "As pure as the driven ____",
+    "SNOW"
+   ],
+   [
+    "Pride comes before a ____",
+    "FALL"
+   ],
+   [
+    "The roses are in full ____",
+    "BLOOM"
+   ],
+   [
+    "Nip it in the ____",
+    "BUD"
+   ],
+   [
+    "The time is ____",
+    "RIPE"
+   ],
+   [
+    "There's a ____ in the air",
+    "CHILL"
+   ],
+   [
+    "In the ____ of your years",
+    "AUTUMN"
+   ],
+   [
+    "No ____ chicken",
+    "SPRING"
+   ],
+   [
+    "A snowball ____",
+    "EFFECT"
+   ],
+   [
+    "A ____ Christmas",
+    "WHITE"
+   ],
+   [
+    "A yule ____",
+    "LOG"
+   ],
+   [
+    "A busman's ____",
+    "HOLIDAY"
+   ],
+   [
+    "Eat, drink and be ____",
+    "MERRY"
+   ],
+   [
+    "The holly and the ____",
+    "IVY"
+   ],
+   [
+    "Cherry ____",
+    "BLOSSOM"
+   ],
+   [
+    "Go cold ____",
+    "TURKEY"
+   ],
+   [
+    "A place in the ____",
+    "SUN"
+   ],
+   [
+    "A touch of spring ____",
+    "FEVER"
+   ],
+   [
+    "A hardy ____",
+    "PERENNIAL"
+   ],
+   [
+    "Left out in the ____",
+    "COLD"
+   ],
+   [
+    "In the ____ of the moment",
+    "HEAT"
+   ],
+   [
+    "Jack ____",
+    "FROST"
+   ]
+  ]
+ },
+ "light": {
+  "title": "Light and Dark",
+  "pairs": [
+   [
+    "Light at the end of the ____",
+    "TUNNEL"
+   ],
+   [
+    "The darkest hour is just before the ____",
+    "DAWN"
+   ],
+   [
+    "Put someone in the ____",
+    "SHADE"
+   ],
+   [
+    "A shot in the ____",
+    "DARK"
+   ],
+   [
+    "Can't hold a ____ to it",
+    "CANDLE"
+   ],
+   [
+    "Bright as a ____",
+    "BUTTON"
+   ],
+   [
+    "Lit up like a Christmas ____",
+    "TREE"
+   ],
+   [
+    "Bright-eyed and bushy-____",
+    "TAILED"
+   ],
+   [
+    "A glimmer of ____",
+    "HOPE"
+   ],
+   [
+    "Afraid of your own ____",
+    "SHADOW"
+   ],
+   [
+    "Beyond a shadow of a ____",
+    "DOUBT"
+   ],
+   [
+    "Twinkle, twinkle, little ____",
+    "STAR"
+   ],
+   [
+    "The ____ is made of green cheese",
+    "MOON"
+   ],
+   [
+    "Ships that pass in the ____",
+    "NIGHT"
+   ],
+   [
+    "Ride off into the ____",
+    "SUNSET"
+   ],
+   [
+    "In broad ____",
+    "DAYLIGHT"
+   ],
+   [
+    "Carry a ____ for someone",
+    "TORCH"
+   ],
+   [
+    "Rekindle an old ____",
+    "FLAME"
+   ],
+   [
+    "Not exactly a bright ____",
+    "SPARK"
+   ],
+   [
+    "Play with ____",
+    "FIRE"
+   ],
+   [
+    "Rise and ____",
+    "SHINE"
+   ],
+   [
+    "Doom and ____",
+    "GLOOM"
+   ],
+   [
+    "Take a ____ view",
+    "DIM"
+   ],
+   [
+    "Look on the ____ side",
+    "BRIGHT"
+   ],
+   [
+    "The pot calling the kettle ____",
+    "BLACK"
+   ],
+   [
+    "____ never strikes twice",
+    "LIGHTNING"
+   ],
+   [
+    "Hog the ____",
+    "LIMELIGHT"
+   ],
+   [
+    "The ____ years",
+    "TWILIGHT"
+   ],
+   [
+    "Burn the ____ oil",
+    "MIDNIGHT"
+   ],
+   [
+    "Light as a ____",
+    "FEATHER"
+   ],
+   [
+    "High ____",
+    "NOON"
+   ],
+   [
+    "A ____ of light",
+    "BEAM"
+   ],
+   [
+    "A shining ____",
+    "EXAMPLE"
+   ]
+  ]
+ },
+ "hands": {
+  "title": "Hands and Feet",
+  "pairs": [
+   [
+    "Many ____ make light work",
+    "HANDS"
+   ],
+   [
+    "Put your best ____ forward",
+    "FOOT"
+   ],
+   [
+    "Head over ____",
+    "HEELS"
+   ],
+   [
+    "Twiddle your ____",
+    "THUMBS"
+   ],
+   [
+    "Green ____",
+    "FINGERS"
+   ],
+   [
+    "Fits like a ____",
+    "GLOVE"
+   ],
+   [
+    "Caught red-____",
+    "HANDED"
+   ],
+   [
+    "Toe the ____",
+    "LINE"
+   ],
+   [
+    "Dip your ____ in the water",
+    "TOE"
+   ],
+   [
+    "Pull your ____ up",
+    "SOCKS"
+   ],
+   [
+    "If the ____ fits, wear it",
+    "SHOE"
+   ],
+   [
+    "Too big for your ____",
+    "BOOTS"
+   ],
+   [
+    "The bee's ____",
+    "KNEES"
+   ],
+   [
+    "Break a ____",
+    "LEG"
+   ],
+   [
+    "Keep at arm's ____",
+    "LENGTH"
+   ],
+   [
+    "Twist someone's ____",
+    "ARM"
+   ],
+   [
+    "Elbow ____",
+    "GREASE"
+   ],
+   [
+    "More power to your ____",
+    "ELBOW"
+   ],
+   [
+    "A slap on the ____",
+    "WRIST"
+   ],
+   [
+    "Grease someone's ____",
+    "PALM"
+   ],
+   [
+    "A rap on the ____",
+    "KNUCKLES"
+   ],
+   [
+    "An iron ____ in a velvet glove",
+    "FIST"
+   ],
+   [
+    "Fight tooth and ____",
+    "NAIL"
+   ],
+   [
+    "A chip on your ____",
+    "SHOULDER"
+   ],
+   [
+    "Follow in someone's ____",
+    "FOOTSTEPS"
+   ],
+   [
+    "Twist an ____",
+    "ANKLE"
+   ],
+   [
+    "On an equal ____",
+    "FOOTING"
+   ],
+   [
+    "Alive and ____",
+    "KICKING"
+   ],
+   [
+    "Take it in your ____",
+    "STRIDE"
+   ],
+   [
+    "A ____ on the back",
+    "PAT"
+   ],
+   [
+    "Get a ____",
+    "GRIP"
+   ],
+   [
+    "The glass ____",
+    "SLIPPER"
+   ],
+   [
+    "Two ____ feet",
+    "LEFT"
+   ]
+  ]
+ },
+ "heart": {
+  "title": "Matters of the Heart",
+  "pairs": [
+   [
+    "A whirlwind ____",
+    "ROMANCE"
+   ],
+   [
+    "Cross my heart and hope to ____",
+    "DIE"
+   ],
+   [
+    "Wear your heart on your ____",
+    "SLEEVE"
+   ],
+   [
+    "Eat your heart ____",
+    "OUT"
+   ],
+   [
+    "Faint heart never won fair ____",
+    "LADY"
+   ],
+   [
+    "The heart has its ____",
+    "REASONS"
+   ],
+   [
+    "Heart and ____",
+    "SOUL"
+   ],
+   [
+    "To your heart's ____",
+    "CONTENT"
+   ],
+   [
+    "Learn it by ____",
+    "HEART"
+   ],
+   [
+    "The heart of the ____",
+    "MATTER"
+   ],
+   [
+    "My heart was in my ____",
+    "MOUTH"
+   ],
+   [
+    "My heart skipped a ____",
+    "BEAT"
+   ],
+   [
+    "The way to a man's heart is through his ____",
+    "STOMACH"
+   ],
+   [
+    "Head over ____",
+    "HEELS"
+   ],
+   [
+    "An ____ of the heart",
+    "AFFAIR"
+   ],
+   [
+    "Heartfelt ____",
+    "THANKS"
+   ],
+   [
+    "Hope ____ eternal",
+    "SPRINGS"
+   ],
+   [
+    "A hopeless ____",
+    "ROMANTIC"
+   ],
+   [
+    "Cupid's ____",
+    "ARROW"
+   ],
+   [
+    "Hearts and ____",
+    "FLOWERS"
+   ],
+   [
+    "Win hearts and ____",
+    "MINDS"
+   ],
+   [
+    "A heart-to-heart ____",
+    "TALK"
+   ],
+   [
+    "My heart ____ for you",
+    "BLEEDS"
+   ],
+   [
+    "Your heart's in the right ____",
+    "PLACE"
+   ],
+   [
+    "Love me, love my ____",
+    "DOG"
+   ],
+   [
+    "The course of true love never did run ____",
+    "SMOOTH"
+   ],
+   [
+    "Love at first ____",
+    "SIGHT"
+   ],
+   [
+    "Marry in haste, repent at ____",
+    "LEISURE"
+   ],
+   [
+    "Sealed with a ____",
+    "KISS"
+   ],
+   [
+    "I'd do it in a ____",
+    "HEARTBEAT"
+   ],
+   [
+    "The object of my ____",
+    "AFFECTION"
+   ],
+   [
+    "Love is ____",
+    "BLIND"
+   ]
+  ]
+ },
+ "tales": {
+  "title": "Once Upon a Time",
+  "pairs": [
+   [
+    "Once upon a ____",
+    "TIME"
+   ],
+   [
+    "Mirror, mirror, on the ____",
+    "WALL"
+   ],
+   [
+    "The elves and the ____",
+    "SHOEMAKER"
+   ],
+   [
+    "I'll huff and I'll puff and I'll ____ your house down",
+    "BLOW"
+   ],
+   [
+    "Let down your ____",
+    "HAIR"
+   ],
+   [
+    "The emperor's new ____",
+    "CLOTHES"
+   ],
+   [
+    "The ____ of the story",
+    "MORAL"
+   ],
+   [
+    "The goose that laid the golden ____",
+    "EGG"
+   ],
+   [
+    "Sour ____",
+    "GRAPES"
+   ],
+   [
+    "Slow and steady wins the ____",
+    "RACE"
+   ],
+   [
+    "The ____ and the hare",
+    "TORTOISE"
+   ],
+   [
+    "The ____ and the grasshopper",
+    "ANT"
+   ],
+   [
+    "Happily ever ____",
+    "AFTER"
+   ],
+   [
+    "The princess and the ____",
+    "PEA"
+   ],
+   [
+    "Rub the magic ____",
+    "LAMP"
+   ],
+   [
+    "Little Red Riding ____",
+    "HOOD"
+   ],
+   [
+    "Fee, fi, fo, fum, roared the ____",
+    "GIANT"
+   ],
+   [
+    "Goldilocks and the three ____",
+    "BEARS"
+   ],
+   [
+    "The flying ____",
+    "CARPET"
+   ],
+   [
+    "The clock struck ____",
+    "MIDNIGHT"
+   ],
+   [
+    "The glass ____",
+    "SLIPPER"
+   ],
+   [
+    "The three little ____",
+    "PIGS"
+   ],
+   [
+    "Beauty and the ____",
+    "BEAST"
+   ],
+   [
+    "Sleeping ____",
+    "BEAUTY"
+   ],
+   [
+    "Snow White and the seven ____",
+    "DWARFS"
+   ],
+   [
+    "The brave little ____",
+    "TAILOR"
+   ],
+   [
+    "The town mouse and the ____ mouse",
+    "COUNTRY"
+   ],
+   [
+    "Spin straw into ____",
+    "GOLD"
+   ],
+   [
+    "The steadfast tin ____",
+    "SOLDIER"
+   ],
+   [
+    "Open ____!",
+    "SESAME"
+   ],
+   [
+    "From rags to ____",
+    "RICHES"
+   ],
+   [
+    "Granted three ____",
+    "WISHES"
+   ],
+   [
+    "The miller's ____",
+    "DAUGHTER"
+   ],
+   [
+    "The coach turned back into a ____",
+    "PUMPKIN"
+   ]
+  ]
+ },
+ "rhymes": {
+  "title": "Nursery Rhymes",
+  "pairs": [
+   [
+    "All the king's horses and all the king's ____",
+    "MEN"
+   ],
+   [
+    "Jack and Jill went up the ____",
+    "HILL"
+   ],
+   [
+    "To fetch a pail of ____",
+    "WATER"
+   ],
+   [
+    "Jack fell down and broke his ____",
+    "CROWN"
+   ],
+   [
+    "Georgie Porgie, ____ and pie",
+    "PUDDING"
+   ],
+   [
+    "Eating her curds and ____",
+    "WHEY"
+   ],
+   [
+    "Along came a ____",
+    "SPIDER"
+   ],
+   [
+    "Mary had a little ____",
+    "LAMB"
+   ],
+   [
+    "Baa, baa, black ____",
+    "SHEEP"
+   ],
+   [
+    "Twinkle, twinkle, little ____",
+    "STAR"
+   ],
+   [
+    "Like a ____ in the sky",
+    "DIAMOND"
+   ],
+   [
+    "Hey diddle diddle, the cat and the ____",
+    "FIDDLE"
+   ],
+   [
+    "The dish ran away with the ____",
+    "SPOON"
+   ],
+   [
+    "Old Mother Hubbard went to the ____",
+    "CUPBOARD"
+   ],
+   [
+    "Seven, eight, lay them ____",
+    "STRAIGHT"
+   ],
+   [
+    "A pocket full of ____",
+    "RYE"
+   ],
+   [
+    "Ring-a-ring o' ____",
+    "ROSES"
+   ],
+   [
+    "She had so many ____ she didn't know what to do",
+    "CHILDREN"
+   ],
+   [
+    "When the bough breaks, the ____ will fall",
+    "CRADLE"
+   ],
+   [
+    "Peter Piper picked a peck of pickled ____",
+    "PEPPERS"
+   ],
+   [
+    "Hot cross ____",
+    "BUNS"
+   ],
+   [
+    "Polly put the ____ on",
+    "KETTLE"
+   ],
+   [
+    "Oranges and ____",
+    "LEMONS"
+   ],
+   [
+    "Three blind ____",
+    "MICE"
+   ],
+   [
+    "Mary, Mary, quite ____",
+    "CONTRARY"
+   ],
+   [
+    "Little Tommy Tucker sings for his ____",
+    "SUPPER"
+   ],
+   [
+    "It's raining, it's pouring, the old man is ____",
+    "SNORING"
+   ],
+   [
+    "Upstairs and downstairs and in my lady's ____",
+    "CHAMBER"
+   ],
+   [
+    "Bye, baby bunting, daddy's gone a-____",
+    "HUNTING"
+   ],
+   [
+    "Rub-a-dub-dub, three men in a ____",
+    "TUB"
+   ],
+   [
+    "Round and round the ____ bush",
+    "MULBERRY"
+   ],
+   [
+    "Ten green ____ hanging on the wall",
+    "BOTTLES"
+   ],
+   [
+    "Pop goes the ____",
+    "WEASEL"
+   ],
+   [
+    "Pussycat, pussycat, I've been to London to see the ____",
+    "QUEEN"
+   ]
+  ]
+ },
+ "opposites": {
+  "title": "Opposites Attract",
+  "pairs": [
+   [
+    "What goes up must come ____",
+    "DOWN"
+   ],
+   [
+    "Out with the old, in with the ____",
+    "NEW"
+   ],
+   [
+    "Through thick and ____",
+    "THIN"
+   ],
+   [
+    "The long and the ____ of it",
+    "SHORT"
+   ],
+   [
+    "Blow hot and ____",
+    "COLD"
+   ],
+   [
+    "For richer, for ____",
+    "POORER"
+   ],
+   [
+    "In sickness and in ____",
+    "HEALTH"
+   ],
+   [
+    "Now or ____",
+    "NEVER"
+   ],
+   [
+    "Sooner or ____",
+    "LATER"
+   ],
+   [
+    "Feast or ____",
+    "FAMINE"
+   ],
+   [
+    "All or ____",
+    "NOTHING"
+   ],
+   [
+    "Sink or ____",
+    "SWIM"
+   ],
+   [
+    "Make or ____",
+    "BREAK"
+   ],
+   [
+    "Friend or ____",
+    "FOE"
+   ],
+   [
+    "Here today, gone ____",
+    "TOMORROW"
+   ],
+   [
+    "A thin line between love and ____",
+    "HATE"
+   ],
+   [
+    "Move heaven and ____",
+    "EARTH"
+   ],
+   [
+    "Work night and ____",
+    "DAY"
+   ],
+   [
+    "Like chalk and ____",
+    "CHEESE"
+   ],
+   [
+    "Two ____ don't make a right",
+    "WRONGS"
+   ],
+   [
+    "The first shall be ____",
+    "LAST"
+   ],
+   [
+    "Heads or ____",
+    "TAILS"
+   ],
+   [
+    "An open-and-____ case",
+    "SHUT"
+   ],
+   [
+    "Search high and ____",
+    "LOW"
+   ],
+   [
+    "From top to ____",
+    "BOTTOM"
+   ],
+   [
+    "From dawn to ____",
+    "DUSK"
+   ],
+   [
+    "Truth is ____ than fiction",
+    "STRANGER"
+   ],
+   [
+    "Is the glass half full or half ____?",
+    "EMPTY"
+   ],
+   [
+    "Wanted, dead or ____",
+    "ALIVE"
+   ],
+   [
+    "Innocent until proven ____",
+    "GUILTY"
+   ],
+   [
+    "United we stand, divided we ____",
+    "FALL"
+   ],
+   [
+    "Neither a borrower nor a ____ be",
+    "LENDER"
+   ],
+   [
+    "Something old, something new, something ____",
+    "BORROWED"
+   ],
+   [
+    "Master and ____",
+    "SERVANT"
+   ]
+  ]
+ },
+ "tools": {
+  "title": "The Right Tool",
+  "pairs": [
+   [
+    "The right tool for the ____",
+    "JOB"
+   ],
+   [
+    "A bad workman blames his ____",
+    "TOOLS"
+   ],
+   [
+    "Hit the nail on the ____",
+    "HEAD"
+   ],
+   [
+    "A monkey ____",
+    "WRENCH"
+   ],
+   [
+    "Bury the ____",
+    "HATCHET"
+   ],
+   [
+    "The ____ is mightier than the sword",
+    "PEN"
+   ],
+   [
+    "Come under the ____",
+    "HAMMER"
+   ],
+   [
+    "Put your shoulder to the ____",
+    "WHEEL"
+   ],
+   [
+    "Have an ____ to grind",
+    "AXE"
+   ],
+   [
+    "Measure twice, cut ____",
+    "ONCE"
+   ],
+   [
+    "Nuts and ____",
+    "BOLTS"
+   ],
+   [
+    "Rule of ____",
+    "THUMB"
+   ],
+   [
+    "Twist the ____",
+    "KNIFE"
+   ],
+   [
+    "Have a ____ loose",
+    "SCREW"
+   ],
+   [
+    "Too many irons in the ____",
+    "FIRE"
+   ],
+   [
+    "Climb the ____",
+    "LADDER"
+   ],
+   [
+    "Give him enough ____",
+    "ROPE"
+   ],
+   [
+    "A ____ in a haystack",
+    "NEEDLE"
+   ],
+   [
+    "Hang by a ____",
+    "THREAD"
+   ],
+   [
+    "Don't run with ____",
+    "SCISSORS"
+   ],
+   [
+    "A drop in the ____",
+    "BUCKET"
+   ],
+   [
+    "Fight tooth and ____",
+    "NAIL"
+   ],
+   [
+    "You could hear a ____ drop",
+    "PIN"
+   ],
+   [
+    "A ____ is only as strong as its weakest link",
+    "CHAIN"
+   ],
+   [
+    "____, line and sinker",
+    "HOOK"
+   ],
+   [
+    "The thin end of the ____",
+    "WEDGE"
+   ],
+   [
+    "Fly off the ____",
+    "HANDLE"
+   ],
+   [
+    "Pull out all the ____",
+    "STOPS"
+   ],
+   [
+    "A ____ for success",
+    "BLUEPRINT"
+   ],
+   [
+    "Fair and ____",
+    "SQUARE"
+   ],
+   [
+    "Tip the ____",
+    "SCALES"
+   ],
+   [
+    "A square ____ in a round hole",
+    "PEG"
+   ],
+   [
+    "____-sharp",
+    "RAZOR"
+   ],
+   [
+    "Made to ____",
+    "MEASURE"
+   ]
+  ]
+ },
+ "road": {
+  "title": "The Long Road",
+  "pairs": [
+   [
+    "Hit the ____",
+    "ROAD"
+   ],
+   [
+    "____ robbery",
+    "HIGHWAY"
+   ],
+   [
+    "Beat a ____ to his door",
+    "PATH"
+   ],
+   [
+    "The straight and ____",
+    "NARROW"
+   ],
+   [
+    "A journey of a thousand miles begins with a single ____",
+    "STEP"
+   ],
+   [
+    "Go the extra ____",
+    "MILE"
+   ],
+   [
+    "Water under the ____",
+    "BRIDGE"
+   ],
+   [
+    "Just around the ____",
+    "CORNER"
+   ],
+   [
+    "Take a wrong ____",
+    "TURN"
+   ],
+   [
+    "Off the beaten ____",
+    "TRACK"
+   ],
+   [
+    "Blaze a ____",
+    "TRAIL"
+   ],
+   [
+    "A trip down memory ____",
+    "LANE"
+   ],
+   [
+    "The man in the ____",
+    "STREET"
+   ],
+   [
+    "Explore every ____",
+    "AVENUE"
+   ],
+   [
+    "Where there's a will there's a ____",
+    "WAY"
+   ],
+   [
+    "Set the wheels in ____",
+    "MOTION"
+   ],
+   [
+    "Put the cart before the ____",
+    "HORSE"
+   ],
+   [
+    "Fall off the ____",
+    "WAGON"
+   ],
+   [
+    "Walk before you can ____",
+    "RUN"
+   ],
+   [
+    "Take it in your ____",
+    "STRIDE"
+   ],
+   [
+    "Follow in his ____",
+    "FOOTSTEPS"
+   ],
+   [
+    "A step in the right ____",
+    "DIRECTION"
+   ],
+   [
+    "Bite the ____",
+    "DUST"
+   ],
+   [
+    "Back in the ____",
+    "SADDLE"
+   ],
+   [
+    "Stuck in a ____",
+    "RUT"
+   ],
+   [
+    "A last-____ effort",
+    "DITCH"
+   ],
+   [
+    "The road less ____",
+    "TRAVELED"
+   ],
+   [
+    "Meet me ____",
+    "HALFWAY"
+   ],
+   [
+    "Homeward ____",
+    "BOUND"
+   ],
+   [
+    "Reach a ____",
+    "MILESTONE"
+   ],
+   [
+    "Two roads diverged in a yellow ____",
+    "WOOD"
+   ],
+   [
+    "Journey's ____",
+    "END"
+   ],
+   [
+    "Full speed ____",
+    "AHEAD"
+   ],
+   [
+    "Onward and ____",
+    "UPWARD"
+   ]
+  ]
+ },
+ "sky": {
+  "title": "Up in the Sky",
+  "pairs": [
+   [
+    "The sky's the ____",
+    "LIMIT"
+   ],
+   [
+    "Pie in the ____",
+    "SKY"
+   ],
+   [
+    "Thank your lucky ____",
+    "STARS"
+   ],
+   [
+    "By the light of the silvery ____",
+    "MOON"
+   ],
+   [
+    "Nothing new under the ____",
+    "SUN"
+   ],
+   [
+    "Star-crossed ____",
+    "LOVERS"
+   ],
+   [
+    "In seventh ____",
+    "HEAVEN"
+   ],
+   [
+    "On cloud ____",
+    "NINE"
+   ],
+   [
+    "Under a ____",
+    "CLOUD"
+   ],
+   [
+    "A ray of ____",
+    "SUNLIGHT"
+   ],
+   [
+    "Watch this ____",
+    "SPACE"
+   ],
+   [
+    "Build castles in the ____",
+    "AIR"
+   ],
+   [
+    "Put on ____",
+    "AIRS"
+   ],
+   [
+    "A ____ of fancy",
+    "FLIGHT"
+   ],
+   [
+    "Pigs might ____",
+    "FLY"
+   ],
+   [
+    "Spread your ____",
+    "WINGS"
+   ],
+   [
+    "Go fly a ____",
+    "KITE"
+   ],
+   [
+    "When the ____ goes up",
+    "BALLOON"
+   ],
+   [
+    "On the ____",
+    "HORIZON"
+   ],
+   [
+    "____ never strikes twice",
+    "LIGHTNING"
+   ],
+   [
+    "Ride off into the ____",
+    "SUNSET"
+   ],
+   [
+    "The crack of ____",
+    "DAWN"
+   ],
+   [
+    "The ____ years",
+    "TWILIGHT"
+   ],
+   [
+    "Fools rush in where ____ fear to tread",
+    "ANGELS"
+   ],
+   [
+    "A bird's-eye ____",
+    "VIEW"
+   ],
+   [
+    "Free as a ____",
+    "BIRD"
+   ],
+   [
+    "Over the ____",
+    "TOP"
+   ],
+   [
+    "In broad ____",
+    "DAYLIGHT"
+   ],
+   [
+    "A ____ body",
+    "HEAVENLY"
+   ],
+   [
+    "Heavens ____!",
+    "ABOVE"
+   ],
+   [
+    "Stars in your ____",
+    "EYES"
+   ],
+   [
+    "The northern ____",
+    "LIGHTS"
+   ],
+   [
+    "High ____",
+    "NOON"
+   ],
+   [
+    "Total ____",
+    "ECLIPSE"
+   ]
+  ]
+ },
+ "peace": {
+  "title": "War and Peace",
+  "pairs": [
+   [
+    "All's fair in love and ____",
+    "WAR"
+   ],
+   [
+    "Jump the ____",
+    "GUN"
+   ],
+   [
+    "Hold your ____",
+    "PEACE"
+   ],
+   [
+    "Peace and ____",
+    "QUIET"
+   ],
+   [
+    "Extend an olive ____",
+    "BRANCH"
+   ],
+   [
+    "Turn the other ____",
+    "CHEEK"
+   ],
+   [
+    "Live by the ____",
+    "SWORD"
+   ],
+   [
+    "Up in ____",
+    "ARMS"
+   ],
+   [
+    "Half the ____",
+    "BATTLE"
+   ],
+   [
+    "Old soldiers never die, they simply ____ away",
+    "FADE"
+   ],
+   [
+    "Call a ____",
+    "TRUCE"
+   ],
+   [
+    "Unconditional ____",
+    "SURRENDER"
+   ],
+   [
+    "Beat a hasty ____",
+    "RETREAT"
+   ],
+   [
+    "Wave the white ____",
+    "FLAG"
+   ],
+   [
+    "Divide and ____",
+    "CONQUER"
+   ],
+   [
+    "To the victor go the ____",
+    "SPOILS"
+   ],
+   [
+    "A peace ____",
+    "OFFERING"
+   ],
+   [
+    "Smoke the peace ____",
+    "PIPE"
+   ],
+   [
+    "Know your ____",
+    "ENEMY"
+   ],
+   [
+    "Bite the ____",
+    "BULLET"
+   ],
+   [
+    "Under ____",
+    "SIEGE"
+   ],
+   [
+    "Hold the ____",
+    "FORT"
+   ],
+   [
+    "Snatch ____ from the jaws of defeat",
+    "VICTORY"
+   ],
+   [
+    "Keep your ____ dry",
+    "POWDER"
+   ],
+   [
+    "Cool, calm and ____",
+    "COLLECTED"
+   ],
+   [
+    "Still waters run ____",
+    "DEEP"
+   ],
+   [
+    "Live in ____",
+    "HARMONY"
+   ],
+   [
+    "Blessed are the ____",
+    "MEEK"
+   ],
+   [
+    "Make ____",
+    "AMENDS"
+   ],
+   [
+    "Forgive and ____",
+    "FORGET"
+   ],
+   [
+    "Send in the ____",
+    "CAVALRY"
+   ],
+   [
+    "An ____ marches on its stomach",
+    "ARMY"
+   ],
+   [
+    "Peace at any ____",
+    "PRICE"
+   ],
+   [
+    "Cloak and ____",
+    "DAGGER"
+   ]
+  ]
+ },
+ "friends": {
+  "title": "Friends and Neighbours",
+  "pairs": [
+   [
+    "A friend in need is a friend ____",
+    "INDEED"
+   ],
+   [
+    "Love thy ____",
+    "NEIGHBOR"
+   ],
+   [
+    "Birds of a feather flock ____",
+    "TOGETHER"
+   ],
+   [
+    "A friend to all is a friend to ____",
+    "NONE"
+   ],
+   [
+    "Friends in high ____",
+    "PLACES"
+   ],
+   [
+    "Man's best ____",
+    "FRIEND"
+   ],
+   [
+    "Thick as ____",
+    "THIEVES"
+   ],
+   [
+    "Two's company, three's a ____",
+    "CROWD"
+   ],
+   [
+    "Band of ____",
+    "BROTHERS"
+   ],
+   [
+    "Misery loves ____",
+    "COMPANY"
+   ],
+   [
+    "A man is known by the company he ____",
+    "KEEPS"
+   ],
+   [
+    "Idle ____",
+    "GOSSIP"
+   ],
+   [
+    "One good turn deserves ____",
+    "ANOTHER"
+   ],
+   [
+    "The grass is always greener on the other side of the ____",
+    "FENCE"
+   ],
+   [
+    "Partners in ____",
+    "CRIME"
+   ],
+   [
+    "A kindred ____",
+    "SPIRIT"
+   ],
+   [
+    "A soul ____",
+    "MATE"
+   ],
+   [
+    "Pen ____",
+    "PAL"
+   ],
+   [
+    "Don't talk to ____",
+    "STRANGERS"
+   ],
+   [
+    "Outstay your ____",
+    "WELCOME"
+   ],
+   [
+    "Be my ____",
+    "GUEST"
+   ],
+   [
+    "Lend a helping ____",
+    "HAND"
+   ],
+   [
+    "A ____ to cry on",
+    "SHOULDER"
+   ],
+   [
+    "A sympathetic ____",
+    "EAR"
+   ],
+   [
+    "Inner ____",
+    "CIRCLE"
+   ],
+   [
+    "On your own ____",
+    "DOORSTEP"
+   ],
+   [
+    "The girl next ____",
+    "DOOR"
+   ],
+   [
+    "The milk of human ____",
+    "KINDNESS"
+   ],
+   [
+    "A constant ____",
+    "COMPANION"
+   ],
+   [
+    "Am I my brother's ____?",
+    "KEEPER"
+   ],
+   [
+    "Can you keep a ____?",
+    "SECRET"
+   ],
+   [
+    "Hand in ____",
+    "GLOVE"
+   ],
+   [
+    "Like two peas in a ____",
+    "POD"
+   ],
+   [
+    "Joined at the ____",
+    "HIP"
+   ]
+  ]
+ },
+ "age": {
+  "title": "Young and Old",
+  "pairs": [
+   [
+    "You can't teach an old dog new ____",
+    "TRICKS"
+   ],
+   [
+    "Youth is wasted on the ____",
+    "YOUNG"
+   ],
+   [
+    "Old habits die ____",
+    "HARD"
+   ],
+   [
+    "There's no fool like an ____ fool",
+    "OLD"
+   ],
+   [
+    "Wise beyond his ____",
+    "YEARS"
+   ],
+   [
+    "Act your ____",
+    "AGE"
+   ],
+   [
+    "The good old ____",
+    "DAYS"
+   ],
+   [
+    "Long in the ____",
+    "TOOTH"
+   ],
+   [
+    "Second ____",
+    "CHILDHOOD"
+   ],
+   [
+    "The fountain of ____",
+    "YOUTH"
+   ],
+   [
+    "In the ____ of life",
+    "PRIME"
+   ],
+   [
+    "Out of the mouths of ____",
+    "BABES"
+   ],
+   [
+    "Like taking candy from a ____",
+    "BABY"
+   ],
+   [
+    "I wasn't born ____",
+    "YESTERDAY"
+   ],
+   [
+    "Wet behind the ____",
+    "EARS"
+   ],
+   [
+    "An old wives' ____",
+    "TALE"
+   ],
+   [
+    "The older the fiddle, the sweeter the ____",
+    "TUNE"
+   ],
+   [
+    "As old as the ____",
+    "HILLS"
+   ],
+   [
+    "Respect your ____",
+    "ELDERS"
+   ],
+   [
+    "Growing ____",
+    "PAINS"
+   ],
+   [
+    "No spring ____",
+    "CHICKEN"
+   ],
+   [
+    "A ____ year",
+    "VINTAGE"
+   ],
+   [
+    "The grandfather ____",
+    "CLOCK"
+   ],
+   [
+    "With age comes ____",
+    "WISDOM"
+   ],
+   [
+    "That's old ____",
+    "HAT"
+   ],
+   [
+    "That old ____",
+    "CHESTNUT"
+   ],
+   [
+    "Older and ____",
+    "WISER"
+   ],
+   [
+    "Sweet ____",
+    "SIXTEEN"
+   ],
+   [
+    "All the world's a ____",
+    "STAGE"
+   ],
+   [
+    "The child is father of the ____",
+    "MAN"
+   ],
+   [
+    "Many happy ____",
+    "RETURNS"
+   ],
+   [
+    "____ history",
+    "ANCIENT"
+   ],
+   [
+    "The age-old ____",
+    "QUESTION"
+   ]
+  ]
+ }
+}

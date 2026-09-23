@@ -1,0 +1,974 @@
+[
+ {
+  "final": "ABOUT TIME",
+  "caption": "When the clock factory workers finally went back to work, everyone said it was ____.",
+  "scene": "A row of relieved workers clocking in under a wall crowded with clocks, each showing a different time.",
+  "altText": "Factory workers file in beneath a wall covered in clocks."
+ },
+ {
+  "final": "CURRENT EVENTS",
+  "caption": "The electrician always read the paper first thing; she liked to keep up with ____.",
+  "scene": "An electrician in overalls sits on a toolbox reading a newspaper, a coil of cable over her shoulder, sparks fizzing from an open fuse box behind her.",
+  "altText": "An electrician reads a newspaper beside a sparking fuse box."
+ },
+ {
+  "final": "BASS LINE",
+  "caption": "The fishermen's band sounded thin until they finally added a good ____.",
+  "scene": "Three fishermen in waders play instruments on a dock; one proudly holds a fishing rod like a guitar with a large fish on the hook.",
+  "altText": "Fishermen play music on a dock, one strumming a fishing rod."
+ },
+ {
+  "final": "ATMOSPHERE",
+  "caption": "The restaurant on the moon had wonderful food, but the critic said it had no ____.",
+  "scene": "A food critic in a space helmet sits at a candlelit table on the moon, a waiter in a spacesuit floating a tray toward him, Earth in the sky.",
+  "altText": "A diner in a space helmet is served dinner on the moon."
+ },
+ {
+  "final": "HEART AND SOLE",
+  "caption": "The old cobbler loved his work. Every pair of shoes got his ____.",
+  "scene": "A smiling cobbler at a cluttered workbench holds up a finished boot, shelves of shoes behind him.",
+  "altText": "A cobbler proudly holds up a boot at his workbench."
+ },
+ {
+  "final": "SQUARE ROOTS",
+  "caption": "The maths teacher's vegetable garden was famous for its ____.",
+  "scene": "A teacher in a cardigan pulls a perfectly cube-shaped carrot from a tidy vegetable bed while a neighbour stares over the fence.",
+  "altText": "A gardener pulls a cube-shaped carrot from the soil as a neighbour looks on."
+ },
+ {
+  "final": "OUTSTANDING",
+  "caption": "The scarecrow won the farm's top award. Everyone agreed he was ____ in his field.",
+  "scene": "A scarecrow wearing a first-prize ribbon stands in a wheat field while crows politely applaud from a fence.",
+  "altText": "A scarecrow wearing a prize ribbon stands in a field as crows clap."
+ },
+ {
+  "final": "HOLE THING",
+  "caption": "The baker quit making doughnuts. He said he was tired of the ____.",
+  "scene": "A weary baker slumps beside a tray of doughnuts, peering at a customer through the hole of one he is holding up.",
+  "altText": "A tired baker peers through a doughnut he is holding up."
+ },
+ {
+  "final": "SALAD DRESSING",
+  "caption": "The tomato turned bright red when it walked in on the ____.",
+  "scene": "A blushing tomato covers its eyes at an open fridge door where a bowl of lettuce is pulling on a tiny coat.",
+  "altText": "A blushing tomato covers its eyes at an open fridge."
+ },
+ {
+  "final": "GROWN INTO IT",
+  "caption": "The gardener wasn't sure about the job at first, but she had ____.",
+  "scene": "A gardener in a sun hat stands knee-deep in an enormous overgrown pumpkin patch, a watering can in hand, vines curling around her boots.",
+  "altText": "A gardener stands among giant pumpkin vines with a watering can."
+ },
+ {
+  "final": "WELL DONE",
+  "caption": "The apprentice cooked her first steak and the head chef declared it ____.",
+  "scene": "A head chef gives a big thumbs-up to a nervous apprentice holding up a plate with a thoroughly charred steak.",
+  "altText": "A chef gives a thumbs-up to an apprentice holding a charred steak on a plate."
+ },
+ {
+  "final": "RISING STAR",
+  "caption": "Her dough proved it: the bakery's newest apprentice was a ____.",
+  "scene": "A young baker beams beside a mixing bowl from which a mound of dough has risen right up to the ceiling, a paper star pinned to her apron.",
+  "altText": "A young baker stands beside a bowl of dough that has risen to the ceiling."
+ },
+ {
+  "final": "PIPE DREAM",
+  "caption": "The plumber always wanted to play in an orchestra, but he knew it was only a ____.",
+  "scene": "A plumber dozes on his toolbox, a thought bubble showing him in a tuxedo playing a grand organ built from copper drainpipes.",
+  "altText": "A plumber naps on a toolbox while imagining himself playing an organ made of plumbing."
+ },
+ {
+  "final": "UNDER PRESSURE",
+  "caption": "The plumber fixing the burst main insisted she always worked best ____.",
+  "scene": "A plumber braces both boots against a wall while gripping a wrench on a pipe spraying water in every direction, grinning through the spray.",
+  "altText": "A plumber grips a wrench on a pipe that is spraying water everywhere."
+ },
+ {
+  "final": "BRIGHT SPARK",
+  "caption": "The apprentice rewired the whole shop on day one; the boss called her a real ____.",
+  "scene": "An electrician boss claps as a young apprentice holds up a glowing light bulb, a perfectly tidy fuse box behind them.",
+  "altText": "An electrician applauds an apprentice holding a glowing light bulb."
+ },
+ {
+  "final": "WELL GROUNDED",
+  "caption": "The electrician never panicked in a crisis; her crew said she was ____.",
+  "scene": "An electrician calmly sips tea beside an open fuse box, her boots planted on a thick copper plate while sparks fizz around her.",
+  "altText": "An electrician sips tea beside a sparking fuse box, standing on a copper plate."
+ },
+ {
+  "final": "HEMMED IN",
+  "caption": "The tailor's tiny shop was squeezed between two towers; he felt rather ____.",
+  "scene": "A narrow tailor's shop is wedged between two skyscrapers, the tailor peering out the door with pins in his mouth and a tape measure round his neck.",
+  "altText": "A tailor peers out of a narrow shop wedged between two skyscrapers."
+ },
+ {
+  "final": "CUT ABOVE",
+  "caption": "The barber's rivals had to admit her work was a ____ the rest.",
+  "scene": "A barber stands on a stepladder to trim the hair of a very tall customer while three shorter barbers look up admiringly.",
+  "altText": "A barber on a stepladder trims a very tall customer's hair as others watch."
+ },
+ {
+  "final": "CLOSE SHAVE",
+  "caption": "The barber leapt onto the bus just as the doors shut; he called it a ____.",
+  "scene": "A barber in an apron leaps aboard a departing bus, a razor in one hand and a beard of foam still on his own chin.",
+  "altText": "A barber with foam on his chin leaps onto a departing bus."
+ },
+ {
+  "final": "HAIR RAISING",
+  "caption": "The barber's tales were so thrilling that customers found them ____.",
+  "scene": "A customer in a barber's chair sits with his hair standing straight up as the barber gestures dramatically with scissors mid-story.",
+  "altText": "A customer's locks stand straight up as a barber tells a story with scissors in hand."
+ },
+ {
+  "final": "FILLING IN",
+  "caption": "With the receptionist away, the dentist said he didn't mind ____.",
+  "scene": "A dentist in a mask sits at the front desk answering the phone, a drill still buzzing in his other hand, patients waiting politely.",
+  "altText": "A dentist answers the front-desk phone while holding a drill."
+ },
+ {
+  "final": "BRACE YOURSELF",
+  "caption": "The orthodontist gave every nervous patient the same two words of advice: ____.",
+  "scene": "An orthodontist holds up a tiny set of braces while a wide-eyed patient grips the arms of the chair.",
+  "altText": "An orthodontist holds up a small dental appliance to a nervous patient in the chair."
+ },
+ {
+  "final": "OPEN WIDE",
+  "caption": "The dentist replaced his front door with an enormous one; the sign on it simply read ____.",
+  "scene": "A dentist waves from the doorway of a surgery whose front door is comically broad, a line of patients strolling in side by side.",
+  "altText": "A dentist waves from a doorway that is far broader than it is tall."
+ },
+ {
+  "final": "TOOTH AND NAIL",
+  "caption": "The dentist argued with the carpenter over the last parking space ____.",
+  "scene": "A dentist holding a giant molar and a carpenter holding a giant nail glare at each other across a single empty parking space.",
+  "altText": "A dentist and a carpenter face off over one empty parking space."
+ },
+ {
+  "final": "BRANCH MANAGER",
+  "caption": "The gardener was promoted to run the tree nursery; her new title was ____.",
+  "scene": "A gardener sits at a desk in a treehouse with a brass nameplate, branches poking in through the windows and a squirrel taking notes.",
+  "altText": "A gardener sits at a desk in a treehouse with leaves poking through the windows."
+ },
+ {
+  "final": "RAKING IT IN",
+  "caption": "The gardener's autumn leaf-clearing business was so busy she was ____.",
+  "scene": "A gardener leans on her rake beside a wheelbarrow overflowing with leaves and gold coins, a queue of customers along the street.",
+  "altText": "A gardener with a rake stands by a wheelbarrow piled with leaves and coins."
+ },
+ {
+  "final": "FIELD DAY",
+  "caption": "When the old tractor finally started, the farmer had a ____.",
+  "scene": "A farmer whoops with joy as his rusty tractor rears up on its back wheels across a ploughed meadow.",
+  "altText": "A farmer cheers as his tractor rears up in a meadow."
+ },
+ {
+  "final": "UDDER NONSENSE",
+  "caption": "The farmer said the cow's speech about milking times was complete ____.",
+  "scene": "A cow stands at a lectern lecturing a farmer, who leans on a milk pail with his arms folded and one eyebrow raised.",
+  "altText": "A cow speaks from a lectern while a skeptical farmer leans on a milk pail."
+ },
+ {
+  "final": "STIRRING SPEECH",
+  "caption": "The head chef's pep talk before the dinner rush was a truly ____.",
+  "scene": "A chef stands on a stool addressing a line of rapt kitchen staff while stirring an enormous pot with a ladle like a conductor.",
+  "altText": "A chef on a stool mixes a huge pot while addressing the kitchen staff."
+ },
+ {
+  "final": "HALF BAKED",
+  "caption": "The pastry chef's plan for a second shop was, everyone agreed, ____.",
+  "scene": "A pastry chef proudly presents a plan scribbled on a napkin while a pie with one raw side sits smoking on the counter behind him.",
+  "altText": "A pastry chef shows a napkin sketch beside a pie cooked on one side only."
+ },
+ {
+  "final": "SEASONED PRO",
+  "caption": "The chef had run kitchens for forty years; the critic called her a ____.",
+  "scene": "An elderly chef sprinkles salt with a grand flourish, a wall of spice jars behind her and a critic scribbling approvingly.",
+  "altText": "An older chef sprinkles salt with a flourish while a critic takes notes."
+ },
+ {
+  "final": "BOILING POINT",
+  "caption": "The chef's patience with the slow kitchen was fast approaching ____.",
+  "scene": "A red-faced chef stands beside a bubbling stockpot, steam whistling from his ears as a kitchen porter ambles past with one spoon.",
+  "altText": "A red-faced chef stands beside a steaming pot as a helper strolls by."
+ },
+ {
+  "final": "BOOKED SOLID",
+  "caption": "The librarian's diary had no free slots left; she was ____.",
+  "scene": "A librarian peers over a fortress of tall book stacks completely surrounding her desk, a diary open in front of her.",
+  "altText": "A librarian peeks over towering stacks of volumes surrounding her desk."
+ },
+ {
+  "final": "SHELF LIFE",
+  "caption": "The library's ancient ladder had lasted a century; the librarian said it had a long ____.",
+  "scene": "A librarian perches at the top of a wobbling, ancient wooden ladder reaching for a high book, cobwebs on the rungs.",
+  "altText": "A librarian reaches for a high book from the top of a rickety old ladder."
+ },
+ {
+  "final": "SPEAK VOLUMES",
+  "caption": "The librarian never raised her voice, but one raised eyebrow could ____.",
+  "scene": "A librarian arches a single eyebrow at two whispering readers, who freeze as books on the shelves seem to tremble.",
+  "altText": "A librarian raises an eyebrow at two whispering readers."
+ },
+ {
+  "final": "SOUND ADVICE",
+  "caption": "Before the concert, the old conductor gave the young violinist some ____.",
+  "scene": "A white-haired conductor whispers to a nervous young violinist while tapping his baton on her music stand.",
+  "altText": "A conductor whispers to a young violinist beside a music stand."
+ },
+ {
+  "final": "DRUM ROLL",
+  "caption": "The percussionist's favourite lunch was, naturally, a ____.",
+  "scene": "A percussionist bites into a bread roll shaped like a snare drum, drumsticks tucked behind her ears.",
+  "altText": "A percussionist bites into a bun shaped like a snare."
+ },
+ {
+  "final": "SHARP DRESSER",
+  "caption": "The pianist's suit had pointed lapels and spiky cuffs; critics called him a ____.",
+  "scene": "A pianist plays in a suit made entirely of jagged points, a sharp sign embroidered on the lapel.",
+  "altText": "A pianist plays in a suit covered in jagged points."
+ },
+ {
+  "final": "BAND TOGETHER",
+  "caption": "When the orchestra's bus broke down, the musicians had to ____.",
+  "scene": "A row of musicians in evening dress push a stalled coach up a hill, the tuba player at the back still playing.",
+  "altText": "Musicians in evening dress push a stalled coach up a hill."
+ },
+ {
+  "final": "NAILED IT",
+  "caption": "The carpenter finished the deck in a single afternoon and announced she had ____.",
+  "scene": "A carpenter strikes a triumphant pose on a gleaming new deck, hammer raised, one last nail shining in the boards.",
+  "altText": "A carpenter poses with a hammer on a finished wooden deck."
+ },
+ {
+  "final": "SAW IT COMING",
+  "caption": "The carpenter wasn't surprised when the plank snapped; he said he ____.",
+  "scene": "A carpenter shrugs calmly, saw in hand, as a plank splits in two and sawdust puffs into the air.",
+  "altText": "A carpenter shrugs with a handsaw as a plank splits in half."
+ },
+ {
+  "final": "BOARD MEETING",
+  "caption": "The carpenters gathered every Monday morning for the ____.",
+  "scene": "Six carpenters sit on planks around a table made of planks, the one at the head banging a spirit level like a gavel.",
+  "altText": "Carpenters sit on planks around a plank table, one tapping a spirit level."
+ },
+ {
+  "final": "LEVEL HEADED",
+  "caption": "The carpenter never panicked on site; his crew called him ____.",
+  "scene": "A carpenter stands serenely amid chaos on a building site, a spirit level balanced perfectly on top of his hard hat.",
+  "altText": "A carpenter stands calmly with a measuring tool balanced on his hard hat."
+ },
+ {
+  "final": "TIRED OUT",
+  "caption": "After changing wheels all day, the mechanic was completely ____.",
+  "scene": "A mechanic snores inside a tower of stacked tyres, a wrench dangling from one hand.",
+  "altText": "A mechanic sleeps inside a stack of tyres with a wrench in hand."
+ },
+ {
+  "final": "BRAKE TIME",
+  "caption": "The mechanic paused halfway through the job and declared it ____.",
+  "scene": "A mechanic sips tea perched on a car bonnet, using a brake disc as a saucer with a biscuit balanced on the edge.",
+  "altText": "A mechanic sips tea on a car bonnet with a biscuit beside her."
+ },
+ {
+  "final": "SHIFT WORK",
+  "caption": "The mechanic only fixed gearboxes at night; she called it ____.",
+  "scene": "A mechanic in a headlamp works on a gear lever under a full moon, an owl watching from the garage rafters.",
+  "altText": "A mechanic wearing a headlamp repairs a gear lever at night."
+ },
+ {
+  "final": "COUNTER OFFER",
+  "caption": "The shopkeeper haggled by sliding notes back and forth across the till; she called it a ____.",
+  "scene": "A shopkeeper and a customer lean across a shop counter, each pushing a folded note toward the other, noses nearly touching.",
+  "altText": "A shopkeeper and a customer push folded notes across the till toward each other."
+ },
+ {
+  "final": "TAKING STOCK",
+  "caption": "After a slow year, the grocer spent the whole weekend ____.",
+  "scene": "A grocer with a clipboard stares thoughtfully at a shelf lined entirely with cartons of soup stock.",
+  "altText": "A grocer with a clipboard studies a shelf of soup cartons."
+ },
+ {
+  "final": "TOP BANANA",
+  "caption": "The greengrocer's boss insisted on being introduced as the ____.",
+  "scene": "A greengrocer in a paper crown sits proudly atop a towering pyramid of bananas while an assistant gestures to customers.",
+  "altText": "A greengrocer in a paper crown sits atop a pile of yellow fruit."
+ },
+ {
+  "final": "IN A PICKLE",
+  "caption": "The deli owner slipped on the dropped lid and found herself ____.",
+  "scene": "A deli owner sits waist-deep inside an enormous jar of gherkins, still holding the lid, customers peering in.",
+  "altText": "A deli owner sits inside a giant jar of gherkins holding the lid."
+ },
+ {
+  "final": "SAVING GRACE",
+  "caption": "The teller caught every coin before it hit the floor; the manager called her the branch's ____.",
+  "scene": "A teller dives to catch a cascade of coins from a toppled tray while the manager applauds from his office door.",
+  "altText": "A teller dives to catch falling coins as a manager applauds."
+ },
+ {
+  "final": "SMALL CHANGE",
+  "caption": "The teller asked for a promotion and got a new name badge instead; it was ____.",
+  "scene": "A teller stares at a tiny new name badge in her palm while a jar of coins on the counter seems to snicker.",
+  "altText": "A teller holds a very tiny name badge beside a jar of coins."
+ },
+ {
+  "final": "MONEY TALKS",
+  "caption": "The teller could name a coin's year from its jingle alone; he always said ____.",
+  "scene": "A teller holds a coin up to his ear with a knowing smile while a customer watches, the coin sporting a tiny speech bubble.",
+  "altText": "A teller listens closely to a coin held up to his ear."
+ },
+ {
+  "final": "VESTED INTEREST",
+  "caption": "The manager wore his favourite waistcoat to the savings-rate meeting; he had a ____.",
+  "scene": "A manager in a splendid embroidered waistcoat points proudly to a chart of climbing rates while the board admires his buttons.",
+  "altText": "A man in an embroidered waistcoat points at a rising chart."
+ },
+ {
+  "final": "FIRST CLASS",
+  "caption": "The postal worker got top marks in her sorting exam; the report said she was ____.",
+  "scene": "A postal worker proudly holds up a report card covered in stamps and a gold star, her manager pinning a ribbon on her bag.",
+  "altText": "A postal worker holds up a report card decorated with stamps."
+ },
+ {
+  "final": "STAMP OF APPROVAL",
+  "caption": "The postmaster liked the new uniforms and gave them his ____.",
+  "scene": "A postmaster brings a giant rubber stamp down on the shoulder of a grinning worker modelling the new uniform.",
+  "altText": "A postmaster presses a large rubber marker onto a worker's shoulder."
+ },
+ {
+  "final": "SPECIAL DELIVERY",
+  "caption": "The postal worker turned up with a pizza by mistake; the customer called it a ____.",
+  "scene": "A postal worker on a doorstep holds out a steaming pizza box from among the letters in his bag while the customer's eyes light up.",
+  "altText": "A postal worker on a doorstep offers a pizza box from his mailbag."
+ },
+ {
+  "final": "RETURN TO SENDER",
+  "caption": "When the boomerang arrived with no address, the sorting office marked it ____.",
+  "scene": "A sorting-office worker ducks as a boomerang whizzes back out through the window it just came in, letters flying.",
+  "altText": "A worker ducks as a boomerang flies back out of a sorting-office window."
+ },
+ {
+  "final": "LEARNING THE ROPES",
+  "caption": "Our new deckhand spent his entire first week ____.",
+  "scene": "A young deckhand hangs upside down, hopelessly tangled in a web of rigging, still squinting at a manual.",
+  "altText": "A young sailor hangs tangled in rigging while reading a manual."
+ },
+ {
+  "final": "ROCK THE BOAT",
+  "caption": "Sailors politely asked their ship's drummer not to ____.",
+  "scene": "A drummer pounds away on the deck of a small boat that tilts wildly, sailors clinging to the rails with green faces.",
+  "altText": "A drummer plays on a tilting vessel while sailors cling to the rails."
+ },
+ {
+  "final": "PLAIN SAILING",
+  "caption": "The ferry captain looked at the glassy sea and promised the crossing would be ____.",
+  "scene": "A captain yawns at the wheel of a ferry gliding over a perfectly flat sea, a seagull asleep on the rail.",
+  "altText": "A captain yawns at the wheel of a ferry on a perfectly flat sea."
+ },
+ {
+  "final": "FLYING COLOURS",
+  "caption": "The trainee pilot passed her final exam with ____.",
+  "scene": "A small plane loops through the sky trailing rainbow streamers, the pilot waving a certificate from the cockpit.",
+  "altText": "A small plane trails rainbow streamers as the pilot waves a certificate."
+ },
+ {
+  "final": "WINGING IT",
+  "caption": "The pilot admitted he hadn't read the new manual; he was ____.",
+  "scene": "A pilot stands on the wing of a parked plane, shrugging, with an unopened manual tucked under his arm.",
+  "altText": "A pilot shrugs while standing on the wing of a parked aeroplane."
+ },
+ {
+  "final": "CLASS ACT",
+  "caption": "The drama teacher's pupils put on a show; the local paper called it a ____.",
+  "scene": "A drama teacher bows on a school stage surrounded by pupils in cardboard costumes, one still stuck in a tree outfit.",
+  "altText": "A teacher bows on a stage with pupils in cardboard costumes."
+ },
+ {
+  "final": "HISTORY REPEATS",
+  "caption": "The teacher gave the very same lecture every year; his pupils joked that ____ itself.",
+  "scene": "A history teacher reads from a yellowed, tattered scroll while a room of pupils mouth the words along with him.",
+  "altText": "A teacher reads from a tattered scroll as pupils mouth the words along."
+ },
+ {
+  "final": "CHAIN REACTION",
+  "caption": "The chemist nudged one beaker and the whole shelf toppled in a ____.",
+  "scene": "A row of bubbling beakers topple one after another like dominoes across a lab bench as a chemist winces with one finger outstretched.",
+  "altText": "Beakers topple like dominoes across a lab bench as a chemist winces."
+ },
+ {
+  "final": "GOOD CHEMISTRY",
+  "caption": "The two lab partners got along famously; everyone said they had ____.",
+  "scene": "Two scientists laugh together at a lab bench while the vapour from their beakers curls into the shape of a heart.",
+  "altText": "Two scientists laugh at a lab bench as beaker vapour forms a heart."
+ },
+ {
+  "final": "IN THEORY",
+  "caption": "The physicist's home-made bicycle worked perfectly, at least ____.",
+  "scene": "A physicist gestures proudly at a bicycle with square wheels, chalk equations covering the blackboard behind him.",
+  "altText": "A physicist presents a bicycle with square wheels beside a chalkboard."
+ },
+ {
+  "final": "LIGHT READING",
+  "caption": "The astronomer's bedtime book was all about stars; she called it ____.",
+  "scene": "An astronomer reads in bed by the glow of a single bright star shining through the window, a telescope in the corner.",
+  "altText": "An astronomer reads in bed by the glow of a star through the window."
+ },
+ {
+  "final": "ROCKET SCIENCE",
+  "caption": "The astrophysicist's cooking was simple; she liked to say it wasn't exactly ____.",
+  "scene": "An astrophysicist fries an egg in a pan held over the flame of a small rocket engine on a launch pad.",
+  "altText": "A scientist fries an egg over the flame of a small engine on a launch pad."
+ },
+ {
+  "final": "FAIR WARNING",
+  "caption": "The forecaster promised sunshine for the village fete, then added a ____.",
+  "scene": "A weather forecaster points at a big sun symbol hovering over a map of a fairground with a ferris wheel and bunting.",
+  "altText": "A forecaster points at a sun symbol above a map of a fete."
+ },
+ {
+  "final": "CLOUD NINE",
+  "caption": "When the forecaster landed her dream job on television, she was on ____.",
+  "scene": "A beaming forecaster sits cross-legged on a fluffy cloud floating in front of a weather map, pointing at a sun.",
+  "altText": "A forecaster sits on a fluffy puff of white floating before a weather map."
+ },
+ {
+  "final": "COLD FRONT",
+  "caption": "The weather station's reception desk was always chilly; staff named it the ____.",
+  "scene": "A receptionist in a scarf and mittens sits behind a desk fringed with icicles, a weather map glowing behind her.",
+  "altText": "A receptionist in a scarf sits behind a desk fringed with icicles."
+ },
+ {
+  "final": "UPPER CRUST",
+  "caption": "The baker's poshest customers would only ever buy the ____.",
+  "scene": "A customer in a monocle and top hat points at the top of a loaf while the baker slices it, the bottom halves piled up unwanted behind.",
+  "altText": "A customer in a top hat points at the top of a loaf as the baker slices it."
+ },
+ {
+  "final": "ROLLING IN DOUGH",
+  "caption": "The bakery had its best year ever; the owner was, quite literally, ____.",
+  "scene": "A gleeful baker tumbles head over heels through an enormous mound of soft bread mixture on the bakery floor.",
+  "altText": "A baker tumbles joyfully through a huge mound of bread mixture."
+ },
+ {
+  "final": "LOAFING AROUND",
+  "caption": "The baker caught his apprentice ____ the back of the shop.",
+  "scene": "An apprentice lounges on a heap of fresh loaves, feet up, while the baker frowns in the doorway with a rolling pin.",
+  "altText": "An apprentice lounges on a heap of bread as the baker frowns."
+ },
+ {
+  "final": "FLUSHED WITH PRIDE",
+  "caption": "The plumber stepped back from the newly installed toilet ____.",
+  "scene": "A pink-cheeked plumber stands beaming beside a gleaming toilet, arms folded, a bow tied around the cistern.",
+  "altText": "A pink-cheeked plumber stands proudly beside a gleaming toilet."
+ },
+ {
+  "final": "TAP DANCING",
+  "caption": "The plumber's hobby involved quick footwork and a lot of splashing; he called it ____.",
+  "scene": "A plumber in a bow tie dances across a row of taps, water spraying with every step, a rubber duck applauding.",
+  "altText": "A plumber in a bow tie dances across a row of spouting faucets."
+ },
+ {
+  "final": "SWITCHED ON",
+  "caption": "The electrician's new apprentice was quick and clever; the boss said she was really ____.",
+  "scene": "An apprentice electrician grins as a light bulb glows brightly above her head, the boss giving a nod of approval.",
+  "altText": "An apprentice grins as a bulb glows above her head while her boss nods."
+ },
+ {
+  "final": "MEASURED RESPONSE",
+  "caption": "Asked how long the suit would take, the tailor gave a very ____.",
+  "scene": "A tailor holds a tape measure up to a customer's speech bubble as if sizing up the question, pins in his mouth.",
+  "altText": "A tailor holds a tape up to a customer's speech bubble."
+ },
+ {
+  "final": "PRESSING MATTER",
+  "caption": "The tailor sprinted to the ironing board; it was a ____.",
+  "scene": "A tailor dashes toward a steaming iron with a rumpled wedding suit flapping over his shoulder, the clock reading five to.",
+  "altText": "A tailor runs toward a steaming iron carrying a rumpled suit."
+ },
+ {
+  "final": "THORNY ISSUE",
+  "caption": "The rose grower's pricing dispute with the florist became a ____.",
+  "scene": "A rose grower in thick gloves holds out a prickly stem and an invoice to a florist who is wincing.",
+  "altText": "A gardener in thick gloves offers a prickly stem and a bill to a florist."
+ },
+ {
+  "final": "PIECE OF CAKE",
+  "caption": "The apprentice asked how hard the wedding order would be; the pastry chef said it was a ____.",
+  "scene": "A pastry chef hands a nervous apprentice a single slice from a towering seven-tier wedding gateau.",
+  "altText": "A pastry chef hands an apprentice a single slice of a tall wedding gateau."
+ },
+ {
+  "final": "SPILL THE BEANS",
+  "caption": "Our cafe's clumsy waiter was always first to ____.",
+  "scene": "A waiter trips with a tray, sending a sack of coffee beans cascading across the cafe floor as customers lift their feet.",
+  "altText": "A waiter trips and sends coffee scattering across a cafe floor."
+ },
+ {
+  "final": "TOO MANY COOKS",
+  "caption": "The restaurant hired a fourth head chef and soon learned the trouble with ____.",
+  "scene": "Four chefs jostle around one small pot, ladles clashing, each trying to add a different ingredient.",
+  "altText": "Four chefs crowd around one small pot with ladles clashing."
+ },
+ {
+  "final": "BUDDING TALENT",
+  "caption": "The head gardener could tell the new apprentice was a ____.",
+  "scene": "An apprentice gardener kneels at a flower bed while tiny flower buds sprout from her straw hat, the head gardener applauding.",
+  "altText": "An apprentice kneels at a flower bed as blossoms sprout from her hat."
+ },
+ {
+  "final": "OVER THE MOON",
+  "caption": "When her new telescope finally arrived, our astronomer was ____.",
+  "scene": "An astronomer leaps for joy beside a huge new telescope, framed by the full moon rising in the window behind her.",
+  "altText": "An astronomer leaps for joy beside a large new telescope."
+ },
+ {
+  "final": "STROKE OF GENIUS",
+  "caption": "The decorator finished the ceiling with one flourish; the client called it a ____.",
+  "scene": "A decorator on a ladder sweeps a single dramatic arc of colour across a ceiling while the client gasps in delight.",
+  "altText": "A decorator on a ladder sweeps a single arc of colour across a ceiling."
+ },
+ {
+  "final": "SECOND HAND",
+  "caption": "The watchmaker's assistant took on every little job; she called him her ____.",
+  "scene": "A watchmaker peers through a loupe into a tiny watch while her assistant hands her tweezers, both surrounded by ticking clocks.",
+  "altText": "A watchmaker peers into a tiny watch as her assistant passes tweezers."
+ },
+ {
+  "final": "TIPPING POINT",
+  "caption": "The waiter's tray leaned further with every plate until it reached its ____.",
+  "scene": "A waiter crosses the dining room with a tray tilted at an alarming angle, plates sliding toward the edge, diners holding their breath.",
+  "altText": "A waiter carries a steeply tilted tray with plates sliding toward the edge."
+ },
+ {
+  "final": "RAISING THE BAR",
+  "caption": "Coach kept cranking his gymnasts' practice higher; he called it ____.",
+  "scene": "A coach on a stepladder winches a high bar toward the gym ceiling while a tiny gymnast with chalked hands stares up at it.",
+  "altText": "A coach on a stepladder hoists a gymnastics beam higher while a small gymnast watches."
+ },
+ {
+  "final": "HOLD YOUR HORSES",
+  "caption": "At the fairground carousel, the attendant told the eager children to ____.",
+  "scene": "A carousel attendant wraps both arms around two painted ponies as a crowd of children surges forward waving tickets.",
+  "altText": "An attendant hugs two carousel ponies while children crowd forward waving tickets."
+ },
+ {
+  "final": "GOING BANANAS",
+  "caption": "When breakfast was late, the zoo's monkeys started ____.",
+  "scene": "Monkeys swing wildly from the bars and hang upside down while a zookeeper sprints toward them with a crate of yellow fruit.",
+  "altText": "A zookeeper hurries toward a cage of excited monkeys with a crate of fruit."
+ },
+ {
+  "final": "ON THE FENCE",
+  "caption": "Unable to choose which garden to nap in, Whiskers stayed ____.",
+  "scene": "A cat perches along a wooden garden fence with a flower bed on either side, while two neighbours each pat a cushion to tempt her down.",
+  "altText": "A cat sits along a wooden garden divider while two neighbours pat cushions."
+ },
+ {
+  "final": "FELINE FINE",
+  "caption": "After a long nap in a sunny window, the kitten woke up ____.",
+  "scene": "A kitten stretches luxuriously in a sunbeam on a windowsill, eyes half closed in bliss, a potted plant nudged askew.",
+  "altText": "A kitten stretches happily in a sunbeam on a windowsill."
+ },
+ {
+  "final": "SEASON TICKETS",
+  "caption": "Spring, Summer, Autumn and Winter never missed a home game; they had ____.",
+  "scene": "Four fans in a stadium row: one in a flower crown, one in sunglasses, one in a scarf of falling leaves, one in a snow-dusted parka, all cheering.",
+  "altText": "Four fans dressed for different kinds of weather cheer together in a stadium row."
+ },
+ {
+  "final": "TIDE AND SEEK",
+  "caption": "The crabs' favourite beach game was ____.",
+  "scene": "Crabs duck behind rocks and buckets as a wave rolls up the sand, while one crab with claws over its eyes counts to ten.",
+  "altText": "Crabs hide behind rocks as one covers its eyes while a wave rolls in."
+ },
+ {
+  "final": "CASTING A SPELL",
+  "caption": "The wizard's fishing trip took an unexpected turn once he started ____.",
+  "scene": "A wizard in a pointed hat sits on a riverbank with his rod bent double, sparkles flying off the line as a fish rises wearing a tiny crown.",
+  "altText": "A wizard fishes from a riverbank as sparkles fly from his line."
+ },
+ {
+  "final": "TENTS SITUATION",
+  "caption": "When the campsite overbooked, the ranger called it a ____.",
+  "scene": "A jumble of overlapping canvas shelters crammed onto one small patch of grass, guy ropes tangled, while a ranger scratches his head.",
+  "altText": "A ranger scratches his head at a tangle of camping shelters crammed together."
+ },
+ {
+  "final": "LIGHTEN UP",
+  "caption": "The thundercloud sulked all morning until the sun told it to ____.",
+  "scene": "A scowling grey cloud with folded arms hangs over a garden while a grinning sun leans in and nudges it.",
+  "altText": "A grumpy grey cloud is nudged by a smiling sun above a garden."
+ },
+ {
+  "final": "UNDER THE WEATHER",
+  "caption": "Nobody could cheer up that rooster on Grandpa's roof; he always seemed a bit ____.",
+  "scene": "A drooping rooster perches on a rooftop wind vane with one small raincloud drizzling directly over him while blue sky stretches everywhere else.",
+  "altText": "A glum rooster sits on a roof vane beneath one small raincloud in a clear sky."
+ },
+ {
+  "final": "SNOW PROBLEM",
+  "caption": "The plough driver had one cheerful answer to every call for help: ____.",
+  "scene": "A cheerful driver leans from a plough cab giving a thumbs up, mountains of white drifts piled behind him and a family waving from a buried doorway.",
+  "altText": "A driver gives a thumbs up from a plough cab beside towering drifts."
+ },
+ {
+  "final": "FROSTY RECEPTION",
+  "caption": "The snowman's dinner party got off to a ____.",
+  "scene": "A snowman in a bow tie welcomes shivering guests at an igloo door, holding a tray of ice lollies with icicles hanging from it.",
+  "altText": "A snowman in a bow tie greets shivering guests at an igloo door."
+ },
+ {
+  "final": "HAPPY RETURNS",
+  "caption": "The tennis club's birthday card wished her many ____.",
+  "scene": "A woman with a racket cheerfully volleys back a wrapped present that has been served over the net, balloons tied to the posts.",
+  "altText": "A woman with a racket bats back a wrapped gift flying over a net."
+ },
+ {
+  "final": "PRESENT TENSE",
+  "caption": "Waiting to open his birthday gifts, the grammar teacher's son was in a state of ____.",
+  "scene": "A boy sits rigid with anticipation before a heap of wrapped gifts, fingers drumming, while a wall clock's hands crawl.",
+  "altText": "A boy sits stiff with anticipation in front of a heap of wrapped gifts."
+ },
+ {
+  "final": "HIT THE HAY",
+  "caption": "After a long day in Grandpa's fields, his baseball team was ready to ____.",
+  "scene": "Exhausted players in uniforms flop onto bales in a barn, one still swinging a bat at a bale that bursts into a cloud of straw.",
+  "altText": "Tired baseball players sprawl on bales in a barn as one swings a bat."
+ },
+ {
+  "final": "SUNNY SIDE UP",
+  "caption": "Once the clouds cleared, the hens' morning mood was ____.",
+  "scene": "Hens bask along a fence rail at sunrise, one holding a frying pan with a fried egg in it, all beaming at the sky.",
+  "altText": "Hens sit on a fence at sunrise while one holds a frying pan."
+ },
+ {
+  "final": "FOWL PLAY",
+  "caption": "The henhouse drama club's spring production was a ____.",
+  "scene": "Hens in tiny costumes act on a straw-bale stage lit by a lantern while a rooster in the front row wipes away a tear.",
+  "altText": "Hens in costumes perform on a straw-bale stage for a rooster."
+ },
+ {
+  "final": "COUNTING SHEEP",
+  "caption": "The shepherd never had trouble dozing off at work; he was always ____.",
+  "scene": "A shepherd slumps asleep against a gate while his flock files past, one lamb with a clipboard tallying the others.",
+  "altText": "A shepherd naps against a gate as his flock files past."
+ },
+ {
+  "final": "SHEAR DELIGHT",
+  "caption": "For the flock, the spring haircut was ____.",
+  "scene": "A fluffy sheep grins in a barber's chair under a striped cape, wool tumbling to the floor as the farmer trims.",
+  "altText": "A grinning sheep sits in a barber's chair as a farmer trims its wool."
+ },
+ {
+  "final": "PIGS MIGHT FLY",
+  "caption": "Watching his hogs on the new trampoline, the farmer whispered, '____.'",
+  "scene": "Pigs bounce on a trampoline, one at the top of its leap with legs spread like wings, while the farmer watches with a hand over his mouth.",
+  "altText": "Farm animals bounce on a trampoline as a farmer watches with a hand over his mouth."
+ },
+ {
+  "final": "HOGGING THE COVERS",
+  "caption": "Nobody wanted to share a bed with our newest farm pet; he kept ____.",
+  "scene": "A large pig sprawls under a patchwork quilt taking up the whole bed while a child perches on the edge clutching one corner.",
+  "altText": "A pig sprawls under a quilt while a child clings to one corner of the bed."
+ },
+ {
+  "final": "KIDDING AROUND",
+  "caption": "The nanny goat's twins spent all morning ____.",
+  "scene": "Two baby goats bounce off hay bales and headbutt an upturned bucket while their mother sighs in the barn doorway.",
+  "altText": "Two baby goats bounce off hay bales while their mother sighs in a doorway."
+ },
+ {
+  "final": "CANDLEPOWER",
+  "caption": "Grandma's hundredth birthday cake lit the whole street with sheer ____.",
+  "scene": "A tiny old lady in a party hat squints behind a cake blazing with a hundred candles while the room glows like midday.",
+  "altText": "A small elderly woman in a party hat faces a cake blazing with light."
+ },
+ {
+  "final": "LIONS SHARE",
+  "caption": "At the zoo picnic, the big cat took the ____.",
+  "scene": "A lion at a picnic table with a plate heaped to the sky while a zebra and a meerkat stare at their single crumbs.",
+  "altText": "A big cat sits at a picnic table with a heaped plate as smaller animals stare at crumbs."
+ },
+ {
+  "final": "TAKING THE PLUNGE",
+  "caption": "Our penguin chick stared at that icy pool for an hour before finally ____.",
+  "scene": "A small penguin teeters on the edge of an ice ledge, flippers out, while its family cheers from the water below.",
+  "altText": "A small penguin teeters on an ice ledge as its family cheers from the water."
+ },
+ {
+  "final": "TALL ORDER",
+  "caption": "Feeding the zoo's giraffe was always a ____.",
+  "scene": "A zookeeper at the top of a very tall ladder passes a bucket of leaves to a giraffe that still has to bend down for it.",
+  "altText": "A zookeeper on a very high ladder hands a bucket of leaves to a giraffe."
+ },
+ {
+  "final": "BEAR WITH ME",
+  "caption": "The ranger said the campsite tour would take a while and asked everyone to ____.",
+  "scene": "A ranger leads a line of campers along a trail while a large brown bear trots beside her carrying the picnic basket.",
+  "altText": "A ranger leads campers along a trail as a large furry animal carries a picnic basket beside her."
+ },
+ {
+  "final": "SNAIL MAIL",
+  "caption": "The garden postal service was reliable, but everyone knew it was ____.",
+  "scene": "A snail with a tiny post bag slides up to a toadstool door with a letter in its mouth while a ladybird taps her foot.",
+  "altText": "A small shelled creature wearing a post bag delivers a letter to a tiny toadstool door."
+ },
+ {
+  "final": "SPELLING BEE",
+  "caption": "The hive's brightest pupil won the school ____.",
+  "scene": "A bee with a medal round its neck stands at a microphone on a school stage while an audience of bees buzzes with applause.",
+  "altText": "A bee wearing a medal stands at a microphone on a school stage."
+ },
+ {
+  "final": "PLAYING KETCHUP",
+  "caption": "The tomato was late for the picnic and spent the whole afternoon ____.",
+  "scene": "A tomato with little legs races after a picnic blanket where hot dogs and burgers have already been served.",
+  "altText": "A tomato races toward a picnic blanket where hot dogs wait."
+ },
+ {
+  "final": "FULL OF BEANS",
+  "caption": "After Grandma's famous soup, the toddler was absolutely ____.",
+  "scene": "A toddler bounces in a high chair, an empty bowl on the tray and green beans stuck in his hair.",
+  "altText": "A toddler bounces in a high chair beside an empty bowl."
+ },
+ {
+  "final": "USE YOUR NOODLE",
+  "caption": "When the spaghetti wouldn't fit the pot, Mum told him to ____.",
+  "scene": "A boy stuffs long dry spaghetti into a tiny saucepan while his mother taps her temple.",
+  "altText": "A boy struggles to fit long pasta into a small pan as his mother taps her head."
+ },
+ {
+  "final": "TABLE MANNERS",
+  "caption": "The dining set never slurped or elbowed anyone; it had perfect ____.",
+  "scene": "A dining table sits up straight with a napkin tucked at its edge and its chairs pushed neatly in, while the family dog watches from the doorway.",
+  "altText": "A dining set sits neatly with a napkin tucked in while a dog watches from a doorway."
+ },
+ {
+  "final": "WHISKED AWAY",
+  "caption": "The egg didn't stay at the party long; before dessert it was ____.",
+  "scene": "An egg in a party hat, mid-wave, is scooped up by a giant whisk hovering over a mixing bowl.",
+  "altText": "An egg in a party hat is scooped up by a large kitchen utensil."
+ },
+ {
+  "final": "BUTTERED UP",
+  "caption": "The toast knew the knife wanted something; it was being ____.",
+  "scene": "A smooth-talking knife spreads compliments and a golden layer across a nervous slice of toast at the breakfast table.",
+  "altText": "A knife spreads a golden layer across a nervous slice of toast."
+ },
+ {
+  "final": "ROMAINE CALM",
+  "caption": "When the fridge door flew open, the head of the salad told everyone to ____.",
+  "scene": "A lettuce with leafy arms raised soothes panicked vegetables on a fridge shelf as light floods in.",
+  "altText": "A lettuce with raised arms soothes other vegetables inside a fridge."
+ },
+ {
+  "final": "PEAS OF MIND",
+  "caption": "Grandma always said her tidy vegetable patch gave her ____.",
+  "scene": "A grandmother sits serenely on a stool among neat rows of pea plants, eyes closed, a single pod balanced on her head.",
+  "altText": "A grandmother sits calmly among rows of climbing plants with a pod balanced on her head."
+ },
+ {
+  "final": "MINT CONDITION",
+  "caption": "The herb garden's prize plant was kept in ____.",
+  "scene": "A gardener polishes the glossy leaves of a small plant displayed under a glass dome on a trophy stand.",
+  "altText": "A gardener polishes a leafy plant displayed under a glass dome."
+ },
+ {
+  "final": "COLD SNAP",
+  "caption": "The snowman took up photography just to capture the ____.",
+  "scene": "A snowman photographer with icicles on his lens takes a picture of frosty trees while a shivering robin poses.",
+  "altText": "A snowman holds a camera with icicles on the lens in a frosty wood."
+ },
+ {
+  "final": "BUDDING ARTIST",
+  "caption": "The garden's newest tulip spent all spring at the easel, a real ____.",
+  "scene": "A tulip bud holds a paintbrush in its leaf and paints at an easel among the flower beds while bees admire the canvas.",
+  "altText": "A flower bud with a paintbrush works at an easel in a garden."
+ },
+ {
+  "final": "GARDEN VARIETY",
+  "caption": "The vegetables' talent show was nothing special, just ____.",
+  "scene": "Vegetables perform on a tiny stage in a vegetable patch while a man in a sun hat yawns in a deckchair.",
+  "altText": "Vegetables perform on a small stage while a man in a sun hat yawns."
+ },
+ {
+  "final": "SPRING CLEANING",
+  "caption": "Every March the old mattress got a scrub; Mum called it ____.",
+  "scene": "A mother scrubs the coiled springs of an old mattress with a brush in the garden, suds flying everywhere.",
+  "altText": "A woman scrubs the metal coils of a mattress in a garden, suds flying."
+ },
+ {
+  "final": "LEAF ME ALONE",
+  "caption": "The grumpy old oak had one message for the raking squirrels: ____.",
+  "scene": "An oak tree with a scowling face in its bark looms over a squad of squirrels with rakes.",
+  "altText": "A frowning oak tree looms over squirrels raking beneath it."
+ },
+ {
+  "final": "LAWN AND ORDER",
+  "caption": "The new neighbour trimmed every blade to the same height; he was a stickler for ____.",
+  "scene": "A man in a judge's wig pushes a mower across perfectly striped grass while a garden gnome stands guard.",
+  "altText": "A man in a judge's wig pushes a mower across perfectly striped grass."
+ },
+ {
+  "final": "MAKING THE GRADE",
+  "caption": "That mountain road to school was steep, but every morning our bus was ____.",
+  "scene": "A school bus chugs up a steep hill, children inside cheering and waving report cards out of the windows.",
+  "altText": "A school bus climbs a steep road as children inside cheer."
+ },
+ {
+  "final": "ANCIENT HISTORY",
+  "caption": "The homework the dog buried last year was now ____.",
+  "scene": "A dog digs up a crumbling, fossil-like sheet of paper in the back garden while a boy with a shovel looks on.",
+  "altText": "A dog digs up a crumbling sheet of paper in a back garden as a boy watches."
+ },
+ {
+  "final": "TAKING NOTES",
+  "caption": "During her first piano lesson, the girl kept ____.",
+  "scene": "A girl at a piano plucks musical symbols off the sheet music and stuffs them into her schoolbag while the teacher gasps.",
+  "altText": "A girl at a piano plucks symbols off a page and puts them in a bag."
+ },
+ {
+  "final": "GRAND SLAM",
+  "caption": "When Gramps smashed the winning shot in the family tennis match, they called it a ____.",
+  "scene": "An elderly man leaps over a tennis net with his racket held high while children cheer from the sidelines.",
+  "altText": "An elderly man leaps over a tennis net with his racket raised as children cheer."
+ },
+ {
+  "final": "CHILLED OUT",
+  "caption": "After a night in the fridge, the cucumber was totally ____.",
+  "scene": "A cucumber in sunglasses lounges in a tiny deckchair on a fridge shelf while a shivering carrot looks on.",
+  "altText": "A cucumber in sunglasses lounges in a deckchair on a fridge shelf."
+ },
+ {
+  "final": "BOWLED OVER",
+  "caption": "When the family surprised Dad with a birthday party at the lanes, he was ____.",
+  "scene": "A dad lies flat on his back beside a giant gift-wrapped bowling ball while his family cheers and holds up a cake.",
+  "altText": "A man lies flat on his back beside a huge gift-wrapped bowling ball as his family cheers."
+ },
+ {
+  "final": "DRIVING RANGE",
+  "caption": "The farmer's golf lesson took place where he kept his cattle: the ____.",
+  "scene": "A farmer swings a golf club in a wide pasture while cows watch from behind him and a tractor waits with the bag of clubs.",
+  "altText": "A farmer swings a golf club in a wide pasture as cows watch."
+ },
+ {
+  "final": "HOLE IN ONE",
+  "caption": "The golfer's sock drawer had a problem: every pair had a ____.",
+  "scene": "A golfer holds up a sock with a gaping toe as a golf ball rolls straight through it into a cup on the floor.",
+  "altText": "A golfer holds up a sock with a gap in the toe as a ball rolls through."
+ },
+ {
+  "final": "CHASING RAINBOWS",
+  "caption": "The puppy spent every drizzly afternoon ____.",
+  "scene": "A puppy bounds across a wet meadow toward the end of a huge rainbow while its owner waits with a lead.",
+  "altText": "A puppy bounds across a wet meadow toward a colourful arc in the sky."
+ },
+ {
+  "final": "HAVING A BALL",
+  "caption": "By the end of the puppy's birthday party, every dog was ____.",
+  "scene": "Dogs in party hats bound around a garden strung with streamers, each clutching a tennis ball.",
+  "altText": "Dogs in party hats bound around a garden with streamers, each holding a round toy."
+ },
+ {
+  "final": "PAWS FOR THOUGHT",
+  "caption": "Before choosing a treat, the puppy always liked to ____.",
+  "scene": "A puppy sits with one paw raised to its chin like a thinker, studying two treats laid on the kitchen floor.",
+  "altText": "A puppy sits with one foot raised to its chin, studying two treats on the floor."
+ },
+ {
+  "final": "DOGGY BAG",
+  "caption": "After dinner at the fancy restaurant, the poodle asked for a ____.",
+  "scene": "A poodle in a bow tie at a restaurant table receives a paper sack from a waiter while other diners peer over.",
+  "altText": "A poodle in a bow tie at a restaurant receives a paper sack from a waiter."
+ },
+ {
+  "final": "PECKING ORDER",
+  "caption": "At the bird feeder, the sparrows always knew the ____.",
+  "scene": "Sparrows queue neatly at a garden bird feeder behind a plump pigeon while a robin with a clipboard checks them off.",
+  "altText": "Sparrows queue at a garden bird feeder behind a plump pigeon."
+ },
+ {
+  "final": "TWEET DREAMS",
+  "caption": "At bedtime, the mother bird wished her chicks ____.",
+  "scene": "A mother bird tucks three chicks under a leaf blanket in a nest beneath a crescent moon.",
+  "altText": "A mother bird tucks three chicks under a leaf blanket in a nest at night."
+ },
+ {
+  "final": "NIGHT OWL",
+  "caption": "The zoo's newest arrival never went to bed on time; the keepers called him a ____.",
+  "scene": "An owl in pyjamas sits wide awake reading by torchlight under a blanket while the other birds sleep on their perches.",
+  "altText": "An owl in pyjamas reads by torchlight while other birds sleep."
+ },
+ {
+  "final": "PLAYING BY EAR",
+  "caption": "The elephant never learned to read music; it just kept ____.",
+  "scene": "An elephant sits at a piano, flapping one enormous ear to turn the page as it plays.",
+  "altText": "An elephant plays a piano, turning the page with one enormous ear."
+ },
+ {
+  "final": "SECOND FIDDLE",
+  "caption": "At the twins' recital, the younger violinist always played ____.",
+  "scene": "Two girls with violins stand on a small stage, the smaller one a step behind her sister and holding a slightly smaller instrument.",
+  "altText": "Two girls with violins stand on a stage, the smaller one a step behind."
+ },
+ {
+  "final": "STRIKING A CHORD",
+  "caption": "The drummer's first piano lesson ended with him ____.",
+  "scene": "A drummer raises both sticks over a piano keyboard while his teacher winces and covers her ears.",
+  "altText": "A drummer raises his sticks over a piano keyboard as his teacher winces."
+ },
+ {
+  "final": "PARTY ANIMAL",
+  "caption": "The zoo's birthday celebrations were never complete without the hyena, a real ____.",
+  "scene": "A hyena in a party hat dances on a table among streamers while other animals cheer and a tortoise covers its eyes.",
+  "altText": "A hyena in a pointed hat dances on a table among streamers."
+ },
+ {
+  "final": "PLANE SAILING",
+  "caption": "With the airport so quiet, the family's holiday getaway was ____.",
+  "scene": "A small aeroplane with a sail hoisted on its wing glides down a runway while the family waves from the windows.",
+  "altText": "A small aircraft with a sail on its wing glides down a runway."
+ },
+ {
+  "final": "TRAVEL BUG",
+  "caption": "On their first trip abroad, the whole family caught the ____.",
+  "scene": "A beetle with a tiny suitcase and camera hitches a ride on the family car's roof rack as it heads for the ferry.",
+  "altText": "A beetle with a suitcase and camera perches on a car's roof rack."
+ },
+ {
+  "final": "FLIGHT OF FANCY",
+  "caption": "The pigeon's dream holiday abroad was pure ____.",
+  "scene": "A pigeon in a beret and sunglasses daydreams on a rooftop with a suitcase beside it, gazing at the horizon.",
+  "altText": "A pigeon in a beret and sunglasses daydreams on a rooftop beside a suitcase."
+ },
+ {
+  "final": "SHORE THING",
+  "caption": "Ask the lifeguard whether tomorrow will be sunny and he'll tell you it's a ____.",
+  "scene": "A lifeguard in his tall chair gives a confident thumbs up to a family setting up beach umbrellas below.",
+  "altText": "A lifeguard in a tall chair gives a confident thumbs up to a family on the sand."
+ },
+ {
+  "final": "SEA YOU LATER",
+  "caption": "The crab's farewell to the summer visitors was always the same: ____.",
+  "scene": "A crab on a rock waves a claw at a family packing their car at the edge of the beach, the sunset behind.",
+  "altText": "A crab on a rock waves a claw at a family packing up their car."
+ },
+ {
+  "final": "PITCH PERFECT",
+  "caption": "The tent went up in thirty seconds flat; the scout leader called it ____.",
+  "scene": "Scouts salute beside a perfectly taut tent while their leader checks a stopwatch in astonishment.",
+  "altText": "Scouts salute beside a taut tent while their leader holds a stopwatch."
+ },
+ {
+  "final": "ROUGHING IT",
+  "caption": "The family insisted camping meant ____, yet Grandma packed her feather pillow.",
+  "scene": "A grandmother reclines on a four-poster bed with lace pillows inside a tent while the rest of the family lies in sleeping bags outside.",
+  "altText": "A grandmother reclines on a fancy bed inside a tent while others lie in sleeping bags outside."
+ },
+ {
+  "final": "STAR STRUCK",
+  "caption": "On their first night camping, the twins lay awake completely ____.",
+  "scene": "Two children lie flat on their backs outside a tent, mouths open, gazing up at a sky crammed with stars, marshmallows forgotten.",
+  "altText": "Two children lie outside a tent gazing up at a sky full of twinkling lights."
+ }
+]

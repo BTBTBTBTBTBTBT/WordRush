@@ -4,14 +4,18 @@
 //   node scripts/muddle/compose.mjs
 import path from 'node:path';
 import { WEB, readJSON, upperList, neverAnswer, rngFor, below, shuffle, writeSample, wordset } from '../more-games/lib.mjs';
-const jokes = readJSON(path.join(WEB, 'scripts', 'muddle', 'jokes.sample.json'));
+const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+const IN = argOf('--in', path.join(WEB, 'scripts', 'muddle', 'jokes.sample.json')), OUT = argOf('--out', 'muddle.json');
+const jokes = readJSON(IN);
 const never = neverAnswer(), hard = new Set([...wordset('profanity-exact.generated.txt'), ...wordset('offensive-blocklist.txt')]);
 const sig = (w) => w.split('').sort().join('');
 const anagramCount = new Map();
 for (const w of [...upperList('allowed.json'), ...upperList('allowed-6.json')]) anagramCount.set(sig(w), (anagramCount.get(sig(w)) || 0) + 1);
 // Answer words: curated answers only, no anagram twin anywhere in the guess lists, no doubled-up letters galore.
 // Family-newspaper tone: real words the word games may deal, but not a cartoon puzzle.
-const TONE = new Set(['MURDER','THEFT','KILLER','CORPSE','WEAPON','BULLET','POISON','SUICIDE','DEADLY','BLOODY','CANCER','RIFLE','KNIFE','PISTOL','GRAVE','DEATH','DYING','CRIME','DRUNK','ABUSE','TERROR','HATRED','TUMOR']);
+// Extended 2026-09-23 after the first full compose surfaced off-tone scramble words (RACISM, GUNMEN, WHISKY, FELON …).
+const TONE = new Set(['MURDER','THEFT','KILLER','CORPSE','WEAPON','BULLET','POISON','SUICIDE','DEADLY','BLOODY','CANCER','RIFLE','KNIFE','PISTOL','GRAVE','DEATH','DYING','CRIME','DRUNK','ABUSE','TERROR','HATRED','TUMOR',
+  'RACISM','RACIST','GUNMEN','GUNMAN','INJURY','SUCKED','INFECT','SEPTIC','MUCOUS','MUCUS','WHISKY','COGNAC','BRANDY','VODKA','DRANK','DRINKS','BOOZE','FELON','FELONY','JAILED','PRISON','CASINO','ABUSED','ABUSER','IDIOT','IDIOTS','PUNISH','GUILTY','SPANK','PELVIC','PELVIS','UNISEX','FLESHY','WASTED','VIRUS','VIRAL','BRAWL','FIGHT','FIGHTS','SIEGE','WRECK','HATING','HATED','CREEPY','SORROW','PAROLE','DEBTOR','VOMIT','NAKED','SEXUAL','SEXIST','BIGOT','NAZIS','SLAVE','SLAVES','TORTURE','RAPED','KILLED','KILLS','SHOOT','SHOTGUN','STABBED','WOUND','WOUNDS','BLEED','FUNERAL','COFFIN','WIDOW','ORPHAN','DIVORCE','DISEASE','SICKLY','CHOLERA','PLAGUE','LEPER','TUMORS','STROKE','SEIZURE','ADDICT','HEROIN','COCAINE','OPIUM','ARSON','THIEF','THIEVES','ROBBER','MUGGER','HOSTAGE','BOMBER','BOMBED','GRENADE','NUKES','RIOTS','LOOTED','TERRORS','DEMON','DEMONS','SATAN','HELLISH','DAMNED','CURSED','SLUTTY','PERVERT','LECHER','BOSOM','NIPPLE','URINE','FECES','DIAPER','TOILET','SEWAGE','GARBAGE','VERMIN','MAGGOT','LEECH','FUNGUS','WART','ACNE','PIMPLE','BELCH','FART','SNOT','PHLEGM','SPIT','DROOL','SWEATY','STINKY','SMELLY','ROTTEN','MOLDY','PUTRID','DECAY','ROTTING','CORPSES','GRAVES','MORGUE','AUTOPSY','SUICIDAL','HANGED','LYNCH','GALLOWS','NOOSE','EXECUTE','GUILLOTINE']);
 const pool = [...upperList('solutions.json'), ...upperList('solutions-6.json')].filter((w) => !never.has(w) && !TONE.has(w) && anagramCount.get(sig(w)) === 1);
 const allowedAll = new Set([...upperList('allowed.json'), ...upperList('allowed-6.json')]);
 
@@ -62,9 +66,10 @@ jokes.forEach((j, n) => {
   const circ = puzzle.words.flatMap((w) => w.circled.map((i) => w.answer[i])).sort().join('');
   if (circ !== letters.slice().sort().join('')) throw new Error(`${id}: circled letters ≠ final answer`);
   for (const w of puzzle.words) if (sig(w.scramble) !== sig(w.answer) || w.scramble === w.answer) throw new Error(`${id}: bad scramble`);
-  if (j.caption.length < 20 || j.caption.length > 110 || (j.caption.match(/____/g) || []).length !== 1) throw new Error(`${id}: caption shape`);
-  if (j.final.split(' ').some((x) => j.altText.toUpperCase().includes(x) && x.length > 3)) throw new Error(`${id}: altText leaks the answer`);
+  if (j.caption.length < 20 || j.caption.length > 110 || (j.caption.match(/____/g) || []).length !== 1) { console.log(id, 'REJECT caption shape (20–110 chars, exactly one ____)', JSON.stringify(j.caption)); return; }
+  if (j.final.split(' ').some((x) => j.altText.toUpperCase().includes(x) && x.length > 3)) { console.log(id, 'REJECT altText leaks the answer', j.final); return; }
+  if (!/^[A-Z ]+$/.test(j.final)) { console.log(id, 'REJECT final must be capital letters and spaces only', j.final); return; }
   out.push(puzzle);
   console.log(`${id}  ${puzzle.words.map((w) => `${w.scramble}→${[...w.answer].map((c, i) => (w.circled.includes(i) ? `(${c})` : c)).join('')}`).join('  ')}   ⇒ ${j.final}`);
 });
-console.log(`${out.length}/${jokes.length} composed; wrote`, writeSample('muddle.json', { generatedBy: 'apps/web/scripts/muddle/compose.mjs', answerPool: pool.length, puzzles: out }));
+console.log(`${out.length}/${jokes.length} composed; wrote`, writeSample(OUT, { generatedBy: 'apps/web/scripts/muddle/compose.mjs', answerPool: pool.length, puzzles: out }));
