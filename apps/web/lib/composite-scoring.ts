@@ -229,7 +229,7 @@ export function computeScoreBreakdown(
 }
 
 /** Modes that expose hint buttons — the only ones where hints_used is meaningful. */
-export const HINT_BEARING_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS']);
+export const HINT_BEARING_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD']);
 
 /**
  * Short hint label for leaderboard/summary rows. Returns null for modes

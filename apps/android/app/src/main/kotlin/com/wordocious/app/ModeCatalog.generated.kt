@@ -55,7 +55,7 @@ object ModeGen {
         GenMode("sudoku", "SUDOKU", "Sudoku", "Sudoku", "Sudoku", "Daily number logic", "#1e40af", "9", null, true, "more", false, "custom", "mistakes", 1, true, "mode.sudoku", "logic", "sudoku"),
         GenMode("scramble", "SCRAMBLE", "Muddle", "Muddle", "Muddle", "Unscramble the punchline", "#f97316", "M", null, true, "more", false, "custom", "checks", 5, false, "mode.scramble", "word", "muddle"),
         GenMode("hub", "HUB", "Hubbub", "Hubbub", "Hubbub", "Seven letters, one hub", "#c026d3", "H", null, true, "more", false, "custom", "rank", 1, true, "mode.hub", "word", "hubbub"),
-        GenMode("crossword", "CROSSWORD", "Crosswordocious", "Crossword", "Crosswordocious", "Fill-in sayings crossword", "#475569", "X", null, true, "more", false, "custom", "checks", 1, false, "mode.crossword", "trivia", "crosswordocious"),
+        GenMode("crossword", "CROSSWORD", "Crosswordocious", "Crossword", "Crosswordocious", "Fill-in sayings crossword", "#475569", "X", null, true, "more", false, "custom", "checks", 1, true, "mode.crossword", "trivia", "crosswordocious"),
         GenMode("groups", "GROUPS", "Kindred", "Kindred", "Kindred", "Four groups of four", "#9f1239", "K", null, true, "more", false, "custom", "guesses", 4, true, "mode.groups", "logic", "kindred"),
         GenMode("ladder", "LADDER", "Letter Ladder", "Ladder", "Letter Ladder", "One letter at a time", "#0284c7", "L", null, true, "more", false, "custom", "overPar", 1, true, "mode.ladder", "word", "letter-ladder"),
         GenMode("cryptogram", "CRYPTOGRAM", "Codebreaker", "Code", "Codebreaker", "Crack the coded saying", "#92400e", "?", null, true, "more", false, "custom", "checks", 1, true, "mode.cryptogram", "logic", "codebreaker"),

@@ -199,6 +199,7 @@ struct GuideSheet: View {
         case "check-circle-2": return "checkmark.circle.fill"
         case "tag": return "tag"
         case "link-2": return "link"
+        case "arrow-left-right": return "arrow.left.arrow.right"
         default: return "circle"
         }
     }

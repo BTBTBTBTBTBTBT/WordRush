@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Visibility
@@ -177,6 +178,7 @@ private fun controlIcon(lucide: String): androidx.compose.ui.graphics.vector.Ima
     "check-circle-2" -> Icons.Filled.CheckCircle
     "tag" -> Icons.Filled.Label
     "link-2" -> Icons.Filled.Link
+    "arrow-left-right" -> Icons.Filled.SwapHoriz
     else -> Icons.Filled.Circle
 }
 

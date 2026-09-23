@@ -27,6 +27,7 @@ export const MODE_ROUTE: Record<string, string> = {
   Hubbub: '/hubbub',
   Codebreaker: '/codebreaker',
   Kindred: '/kindred',
+  Crosswordocious: '/crosswordocious',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',

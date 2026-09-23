@@ -186,6 +186,32 @@ Tick a cell only after checking, in order:
 - Content: 380 everyday dailies + 80 Unlimited + 56 holiday puzzles from the bank you are reviewing;
   your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three copies.
 
+## Crosswordocious — what to look for (built 2026-09-23)
+
+- Daily "#N" counts from 2026-09-23; the first grid is "Opposites Attract" (10 × 11, 13 entries).
+  Same grid everywhere on a date (bank bundled on both natives, sha-guarded). 82 evergreen themes
+  rotate so a theme never returns within 13 days; **on a holiday the grid belongs to the day** (28
+  holiday themes — Christmas, Hanukkah, MLK Day, Diwali and the rest) and the header shows its name.
+- **The look you asked for:** every cell is the purple tile tint with a purple clue number in the
+  corner, letters centred like Classic tiles, the board centred at every width, Across and Down as
+  two columns beneath it (capped near 700 px on desktop). Nothing marks which answers are on theme.
+- Tap a cell or a clue and type; the selection walks the entry and jumps to the next unfinished
+  clue at the end. Tap a cell twice (or Space) to switch Across/Down; the **active-clue bar** above
+  the keyboard shows the clue you are on. Letters are free to place, replace and Delete.
+- **Check** locks right letters (deeper purple) and clears wrong ones with a red flash; each Check
+  counts (score row "Check bonus": 1,000 / 800 / 600 / 400 / 200 / 0). **Letter** (60) reveals the
+  selected cell in violet; **Word** (120) reveals the active entry; **Reveal all** (tap twice) fills
+  the grid and records a loss. The grid completes itself when every cell is right.
+- Finished screen: the filled grid with every answer shown beside its clue, "Grid finished clean" /
+  "Grid finished" / "Puzzle revealed" + checks · time · hints. Victory card shows CHECKS · TIME ·
+  POINTS. Pro "Keep playing: Unlimited Crosswordocious" on all three.
+- Share card: the grid silhouette in purple — no letters, no numbers. Caption "Score · Time · Clean".
+- Achievements: Grid Finished, 50 grids, Clean Grid (no Check), Swift Crossword (under 4:00),
+  pure 1/10/50 (no reveals).
+- Content: 410 everyday grids + 82 Unlimited + 84 holiday grids built from the phrase bank you are
+  reviewing (3,535 pairs); your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three
+  copies. American spellings in answers (NEIGHBOR, HONOR).
+
 ## Content banks awaiting your veto pass (drafted overnight 2026-09-22 → 23)
 
 The four titles that need authored content now have first-draft banks, machine-validated, packaged

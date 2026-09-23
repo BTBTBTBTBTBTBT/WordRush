@@ -49,6 +49,7 @@ export type ShareMode =
   | 'Hubbub'
   | 'Codebreaker'
   | 'Kindred'
+  | 'Crosswordocious'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -212,6 +213,20 @@ export interface ShareGroupsInput extends ShareBase {
   puzzleNumber?: number;
 }
 
+/**
+ * Crosswordocious (More Games §18d): the grid silhouette in purple with no
+ * letters or numbers. Stat line reads "#12 · Clean · 3:20".
+ */
+export interface ShareCrosswordInput extends ShareBase {
+  layout: 'crossword';
+  w: number;
+  h: number;
+  /** w*h characters, "." for a block. */
+  solution: string;
+  checks: number;
+  puzzleNumber?: number;
+}
+
 export interface ShareMultiBoard {
   grid: TileStateString[][];
   /** Per-row letters matching `grid` ('' for empty tiles). Required for `reveal`. */
@@ -359,6 +374,7 @@ export type ShareImageInput =
   | ShareHubInput
   | ShareCryptogramInput
   | ShareGroupsInput
+  | ShareCrosswordInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -718,7 +734,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput | ShareCrosswordInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -785,6 +801,10 @@ function drawHeader(
   } else if (input.layout === 'groups') {
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     statsText = `${num}${input.solvedTiers.length}/4 groups · ${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'crossword') {
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    const c = input.checks === 0 ? 'Clean' : `${input.checks} check${input.checks === 1 ? '' : 's'}`;
+    statsText = `${num}${input.won ? c : 'Revealed'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -1059,6 +1079,32 @@ function drawWordsearch(
 
 // Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the centre
 // filled in the accent, the rank name large beneath, then % of max. No letters.
+// Crosswordocious (More Games §18d): the grid silhouette — purple tiles where
+// the letters are, nothing where the blocks are, no letters, no numbers.
+function drawCrossword(
+  ctx: CanvasRenderingContext2D,
+  input: ShareCrosswordInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const FILL = '#ede9fe', BORDER = '#c4b5fd';
+  const areaHeight = footerTop - headerBottom;
+  const gap = 6;
+  const cell = Math.floor(Math.min((width - 160 - gap * (input.w - 1)) / input.w, (areaHeight - 60 - gap * (input.h - 1)) / input.h));
+  const boardW = input.w * cell + (input.w - 1) * gap, boardH = input.h * cell + (input.h - 1) * gap;
+  const x0 = (width - boardW) / 2, y0 = headerBottom + (areaHeight - boardH) / 2;
+  ctx.save();
+  ctx.lineWidth = 3;
+  for (let r = 0; r < input.h; r++) for (let c = 0; c < input.w; c++) {
+    if (input.solution[r * input.w + c] === '.') continue;
+    const x = x0 + c * (cell + gap), y = y0 + r * (cell + gap), radius = Math.max(5, cell * 0.16);
+    ctx.fillStyle = FILL; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.fill();
+    ctx.strokeStyle = BORDER; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // Kindred (More Games §18d): four tier bars in solve order with pips, unsolved
 // tiers dashed beneath on a loss, then the mistake dots. No words.
 const GROUPS_TIER_FILL: Record<number, [string, string]> = { 1: ['#ddd6fe', '#3b0764'], 2: ['#a78bfa', '#1a1a2e'], 3: ['#7c3aed', '#ffffff'], 4: ['#1a1a2e', '#ffffff'] };
@@ -2151,6 +2197,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawCryptogram(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'groups') {
     drawGroups(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'crossword') {
+    drawCrossword(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

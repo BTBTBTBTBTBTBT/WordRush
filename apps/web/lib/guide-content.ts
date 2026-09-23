@@ -793,6 +793,64 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['classic', 'codebreaker', 'hubbub'],
   },
+  // ── More Games (§13) — Crosswordocious ───────────────────────────────────
+  {
+    slug: 'crosswordocious',
+    title: 'Crosswordocious',
+    accent: '#475569',
+    tagline: 'A themed crossword where every clue is a familiar saying with one word missing',
+    metaDescription:
+      'Wordocious Crosswordocious guide: how the daily fill-in sayings crossword works, why most answers fit the title, why letters are free to change, what Check and the reveals cost, the exact scoring formula, and the strategy that fills a grid fast.',
+    facts: [
+      { label: 'Grid', value: '10–13 entries, at most 10 × 11 cells' },
+      { label: 'Clues', value: 'Familiar sayings with one blank' },
+      { label: 'Theme', value: 'The title — most answers fit it, a few are other sayings' },
+      { label: 'Time bonus cap', value: '15:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'Every clue is a saying you know with one word blanked out — "Calm before the ____" — and the answer is the missing word. The grid is a sparse criss-cross where every answer crosses at least one other, so each letter you place helps twice. The title is the theme: most answers belong to it, a few are simply other sayings, and nothing on the board tells you which is which.',
+      'Tap a cell or a clue and type; the selection moves along the entry as you go and jumps to the next unfinished clue at the end. Tap a cell twice (or press Space) to switch between Across and Down. Letters are free: type over them, Delete them, change your mind as often as you like — nothing is judged while you work. The active clue sits above the keyboard so you never scroll to read it; the two clue columns below the grid are for browsing.',
+      'Check is the only thing that counts against you: it locks every letter that is right and clears every letter that is wrong with a red flash. Reveal letter fills the selected cell; Reveal word fills the active entry; both lock what they fill. Reveal all shows the whole grid and records the puzzle as a loss — tap it twice, so a slip never costs you the day. The grid completes itself the moment every cell is right.',
+      'The daily is the same for everyone and counts once on the leaderboard. On a holiday the puzzle belongs to the day. Crosswordocious lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A finished grid is worth a 1,000-point base plus a flat 200 for finishing. Checks are what separate players: the game treats your finish as (checks + 1) out of a budget of 6, and every unused check is worth 200 points, so a grid finished with no Check banks 1,000 in check bonus, one Check 800, two 600, and so on down to nothing at five. Speed is the tiebreaker: up to 240 points scaled by how far under the 15-minute cap you finish, which can never outweigh a Check — a cleaner grid always outranks a faster one.',
+      'Revealing a letter costs 60 points and revealing a word 120; neither counts as a Check. Reveals never lose you the puzzle, but a grid with any reveal is not a Perfect run and does not count toward the Pure Crosswordocious achievements. A revealed puzzle records a loss but still earns credit for the time you put in.',
+    ],
+    controls: [
+      { icon: 'check-check', label: 'Check', body: 'Marks every filled letter: right ones lock, wrong ones are cleared. Each Check counts — none is perfect, and the bonus falls 200 points per Check.' },
+      { icon: 'lightbulb', label: 'Letter', body: 'Reveals and locks the selected letter. Costs 60 points of score, never a Check, and rules out a Perfect run.' },
+      { icon: 'eye', label: 'Word', body: 'Reveals and locks the whole active entry. Costs two hints (120 points), never a Check, and rules out a Perfect run.' },
+      { icon: 'flag', label: 'Reveal all', body: 'Tap twice to fill the entire grid and record the puzzle as a loss. Use it when you would rather see the answers than keep going.' },
+      { icon: 'arrow-left-right', label: 'Active clue bar', body: 'Shows the clue you are on; tap it (or press Space) to switch between Across and Down at the same cell. Free.' },
+      { icon: 'delete', label: 'Delete', body: 'Clears the selected letter, or steps back one cell if it is already empty. Free. Locked letters cannot be cleared.' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Jumps to the next unfinished clue without changing anything. Free.' },
+    ],
+    tips: [
+      {
+        heading: 'Read the title first',
+        body: 'Most answers belong to the theme. If the title is "Down by the Sea", expect ANCHOR, TIDE and SAILS before you expect anything else — and when a clue does not fit the sea, it is one of the few plain sayings.',
+      },
+      {
+        heading: 'Say the saying aloud',
+        body: 'These are phrases you already know. Read the clue as a sentence and let the blank fill itself; the letter count in the grid confirms it. Trying to reason letter by letter is slower than simply hearing the saying.',
+      },
+      {
+        heading: 'Fill the long ones early',
+        body: 'An eight- or nine-letter answer crosses more entries than a four-letter one. Two long answers placed early hand you a letter in half the grid.',
+      },
+      {
+        heading: 'Change letters freely, Check rarely',
+        body: 'Placing and replacing letters is free, so try a word and see whether the crossings still read. Save Check for when the grid is nearly done and you want the last doubtful letters confirmed — the bonus falls per Check, not per wrong letter.',
+      },
+      {
+        heading: 'Use the crossings, not the reveals',
+        body: 'When a clue will not come, fill its crossing entries instead; a word with three letters showing usually reads itself. Reveal a letter only when a single crossing is blocking a whole corner.',
+      },
+    ],
+    related: ['classic', 'codebreaker', 'kindred'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {
