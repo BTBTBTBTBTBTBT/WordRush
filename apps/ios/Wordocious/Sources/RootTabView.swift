@@ -66,6 +66,7 @@ struct RootTabView: View {
             case "regions": return "unlimited-REGIONS-\(ts)-8"
             case "ladder": return "unlimited-LADDER-\(ts)"
             case "wordsearch": return "unlimited-WORDSEARCH-\(ts)"
+            case "hub": return "unlimited-HUB-\(ts)"
             default: return "unlimited-PROPERNOUNDLE-\(ts)"
             }
         }
@@ -226,6 +227,11 @@ struct RootTabView: View {
                     .id(g.seed)
                 } else if g.mode.id == "wordsearch" {
                     SpyglassView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    .id(g.seed)
+                } else if g.mode.id == "hub" {
+                    HubView(seed: g.seed, onPlayAgain: {
                         unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
                     })
                     .id(g.seed)

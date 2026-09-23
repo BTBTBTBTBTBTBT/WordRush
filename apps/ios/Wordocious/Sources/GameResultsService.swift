@@ -108,6 +108,30 @@ enum GameResultsService {
     /// pending-record part BEFORE the network write and clears it on success,
     /// so a kill/offline finish is re-run by PendingRecords.drain() next
     /// launch (web stats-service.ts recordSoloMatch parity).
+    /// More Games §11: the idempotent IMPROVE path (Hubbub rank-ups after the
+    /// first finalisation). Touches ONLY the score-bearing rows — daily_results
+    /// via DailyResultsService.record (already only-better) and this seed's
+    /// matches row (player1_score = the guess-count bucket, lower = better) —
+    /// never games, wins, XP, level or streaks. Safe to call any number of times.
+    static func improve(
+        gameMode: GameMode, seed: String, completed: Bool, guessCount: Int, timeSeconds: Int,
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int, guesses: [String]
+    ) async {
+        _ = await DailyResultsService.record(gameMode: gameMode, completed: completed, guessCount: guessCount, timeSeconds: timeSeconds,
+                                             boardsSolved: boardsSolved, totalBoards: totalBoards, hintsUsed: hintsUsed, seed: seed)
+        guard let userId = localUserId() else { return }
+        struct Patch: Encodable { let player1_score: Int; let player1_time: Int; let winner_id: String?; let hints_used: Int; let player1_guesses: [String] }
+        let patch = Patch(player1_score: guessCount, player1_time: timeSeconds, winner_id: completed ? userId : nil, hints_used: hintsUsed, player1_guesses: guesses)
+        do {
+            try await AuthService.shared.client.from("matches").update(patch)
+                .eq("player1_id", value: userId).eq("game_mode", value: gameMode.rawValue).eq("seed", value: seed)
+                .gt("player1_score", value: guessCount)
+                .execute()
+        } catch {
+            reportRejectedWrite("improve", gameMode: gameMode.rawValue, error)
+        }
+    }
+
     static func recordSoloMatch(
         gameMode: GameMode, won: Bool, score: Int, timeSeconds: Int,
         seed: String, solutions: [String], guesses: [String], hintsUsed: Int = 0

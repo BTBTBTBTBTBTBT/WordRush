@@ -127,6 +127,10 @@ enum ShareService {
             if let points { q["pts"] = "\(points)" }
             if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
             q["bs"] = "\(found.count)"; q["tb"] = "\(words.count)"
+        case let .hub(_, pct, wordsFound, wordCount, _, _):
+            if let points { q["pts"] = "\(points)" }
+            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
+            q["pct"] = "\(pct)"; q["bs"] = "\(wordsFound)"; q["tb"] = "\(wordCount)"
         case .single:
             break
         }

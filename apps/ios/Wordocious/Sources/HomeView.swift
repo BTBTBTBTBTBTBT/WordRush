@@ -118,6 +118,10 @@ struct HomeView: View {
     struct SpyglassGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
     @State private var spyglassGame: SpyglassGame?
     private func freshSpyglassSeed() -> String { "unlimited-WORDSEARCH-\(Int(Date().timeIntervalSince1970))" }
+    /// A Hubbub run (own view): nil seed = today's daily.
+    struct HubGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
+    @State private var hubGame: HubGame?
+    private func freshHubSeed() -> String { "unlimited-HUB-\(Int(Date().timeIntervalSince1970))" }
 
     private func freshPNSeed() -> String {
         "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
@@ -265,6 +269,12 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
+            .fullScreenCover(item: $hubGame, onDismiss: { reloadDaily() }) { g in
+                NavigationStack {
+                    HubView(seed: g.seed, onPlayAgain: { hubGame = HubGame(seed: freshHubSeed()) })
+                        .id(g.id)
+                }
+            }
             .sheet(isPresented: $showMoreGames, onDismiss: {
                 if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
             }) {
@@ -288,6 +298,8 @@ struct HomeView: View {
                         LadderView()
                     } else if m.id == "wordsearch" {
                         SpyglassView()
+                    } else if m.id == "hub" {
+                        HubView()
                     }
                 }
             }
@@ -851,6 +863,8 @@ struct HomeView: View {
             ladderGame = LadderGame(seed: effectiveMode == .unlimited ? freshLadderSeed() : nil)
         } else if mode.id == "wordsearch" {
             spyglassGame = SpyglassGame(seed: effectiveMode == .unlimited ? freshSpyglassSeed() : nil)
+        } else if mode.id == "hub" {
+            hubGame = HubGame(seed: effectiveMode == .unlimited ? freshHubSeed() : nil)
         } else {
             comingSoon = mode.title
         }

@@ -30,6 +30,8 @@ struct ShareCardView: View {
         case ladder(start: String, end: String, words: [String], hintMask: String, par: Int, moves: Int, puzzleNumber: Int?)
         /// Spyglass (More Games §18d): a dot grid with the found words as accent capsules — no letters.
         case wordsearch(n: Int, words: [WordsearchPlacement], found: [String], misses: Int, title: String, puzzleNumber: Int?)
+        /// Hubbub (More Games §18d): the blank 2-3-2 silhouette with the centre filled, rank, % of max — no letters.
+        case hub(rankName: String, pct: Int, wordsFound: Int, wordCount: Int, pangramsFound: Int, puzzleNumber: Int?)
     }
 
     let kind: Kind
@@ -64,7 +66,7 @@ struct ShareCardView: View {
         switch kind {
         case .gauntlet: return CGSize(width: 1080, height: 1350)
         case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder, .wordsearch: return CGSize(width: 1080, height: 1080)
+        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub: return CGSize(width: 1080, height: 1080)
         }
     }
 
@@ -128,6 +130,9 @@ struct ShareCardView: View {
         case .wordsearch(_, let words, let found, let misses, _, let number):
             let num = number.map { "#\($0) · " } ?? ""
             return "\(num)\(found.count)/\(words.count) · \(misses) miss\(misses == 1 ? "" : "es") · \(t) · \(dateStr)"
+        case .hub(let rankName, let pct, let wordsFound, _, let pangramsFound, let number):
+            let num = number.map { "#\($0) · " } ?? ""
+            return "\(num)\(rankName) · \(pct)% · \(wordsFound) word\(wordsFound == 1 ? "" : "s") · \(pangramsFound) pangram\(pangramsFound == 1 ? "" : "s") · \(dateStr)"
         }
     }
 
@@ -164,6 +169,24 @@ struct ShareCardView: View {
             ladderCard(start: start, end: end, words: words, hintMask: hintMask)
         case .wordsearch(let n, let words, let found, _, _, _):
             wordsearchCard(n: n, words: words, found: found)
+        case .hub(let rankName, let pct, _, _, _, _):
+            hubCard(rankName: rankName, pct: pct)
+        }
+    }
+
+    /// Web drawHub parity: the 2-3-2 cluster as blank tiles with the centre in
+    /// the accent, the rank name large beneath, then % of the maximum.
+    private func hubCard(rankName: String, pct: Int) -> some View {
+        let tile: CGFloat = 150, gap: CGFloat = 18, accent = Color(hex: 0xC026D3)
+        func blank() -> some View { RoundedRectangle(cornerRadius: tile * 0.14).fill(Color.white).overlay(RoundedRectangle(cornerRadius: tile * 0.14).stroke(Color(hex: 0xD1D5DB), lineWidth: 4)).frame(width: tile, height: tile) }
+        return VStack(spacing: 24) {
+            VStack(spacing: gap) {
+                HStack(spacing: gap) { blank(); blank() }
+                HStack(spacing: gap) { blank(); RoundedRectangle(cornerRadius: tile * 0.14).fill(accent).frame(width: tile, height: tile); blank() }
+                HStack(spacing: gap) { blank(); blank() }
+            }
+            Text(rankName.uppercased()).font(Brand.font(64, .black)).foregroundStyle(accent)
+            Text("\(pct)% of the maximum").font(Brand.font(30, .bold)).foregroundStyle(textMuted)
         }
     }
 
