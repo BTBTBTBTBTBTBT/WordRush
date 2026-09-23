@@ -83,7 +83,7 @@ object ModeGen {
     )
     /** Sweep eras, newest first. Which dbKeys formed the required sweep on a given local day. */
     val sweepEras: List<GenSweepEra> = listOf(
-        GenSweepEra("2026-09-23", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "DUEL_6", "DUEL_7")),
+        GenSweepEra("2026-09-25", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "DUEL_6", "DUEL_7")),
         GenSweepEra("2026-05-21", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7")),
         GenSweepEra("0000-00-00", listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE")),
     )

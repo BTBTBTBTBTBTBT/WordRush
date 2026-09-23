@@ -924,13 +924,15 @@ export function getGuide(slug: string): ModeGuide | undefined {
 /**
  * The guides the PUBLIC surfaces list (/guides, /guides/[slug], sitemap,
  * mode landings, /api/guides): a mode's guide is public once its catalog
- * record is compiled in AND no longer remote-gated (More Games §19: nothing
- * leaks a game before the founder releases it). The in-game "?" sheet uses
- * getGuide() and sees every guide, gated or not.
+ * record is compiled in. Until the More Games launch (2026-09-25) this also
+ * required "no remote flag", so nothing leaked before the founder released
+ * the games; merging the branch to main IS that release, so from here the
+ * flags are a kill switch only and every enabled mode's guide is public. The
+ * in-game "?" sheet uses getGuide() and sees every guide regardless.
  */
 export const PUBLIC_MODE_GUIDES: ModeGuide[] = MODE_GUIDES.filter((g) => {
   const mode = MODES.find((m) => m.guideSlug === g.slug);
-  return !mode || (mode.enabled && !mode.flagKey);
+  return !mode || mode.enabled;
 });
 
 export function getPublicGuide(slug: string): ModeGuide | undefined {

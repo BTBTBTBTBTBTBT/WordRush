@@ -499,7 +499,7 @@ export const MORE_GAME_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group =
 export const MORE_CATEGORIES: MoreCategory[] = [{"key":"word","title":"Word"},{"key":"trivia","title":"Trivia"},{"key":"logic","title":"Logic"}];
 
 /** Sweep eras, newest first: which dbKeys formed the required sweep on a given local day. Append-only. */
-export const SWEEP_ERAS: SweepEra[] = [{"since":"2026-09-23","modes":["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","GAUNTLET","DUEL_6","DUEL_7"]},{"since":"2026-05-21","modes":["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","GAUNTLET","PROPERNOUNDLE","DUEL_6","DUEL_7"]},{"since":"0000-00-00","modes":["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","GAUNTLET","PROPERNOUNDLE"]}];
+export const SWEEP_ERAS: SweepEra[] = [{"since":"2026-09-25","modes":["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","GAUNTLET","DUEL_6","DUEL_7"]},{"since":"2026-05-21","modes":["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","GAUNTLET","PROPERNOUNDLE","DUEL_6","DUEL_7"]},{"since":"0000-00-00","modes":["DUEL","QUORDLE","OCTORDLE","SEQUENCE","RESCUE","GAUNTLET","PROPERNOUNDLE"]}];
 
 /** The dbKeys a player had to record on `day` (local YYYY-MM-DD) for a sweep. ISO string compare is safe. */
 export function sweepModesFor(day: string): string[] {

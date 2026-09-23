@@ -56,7 +56,8 @@ describe('guide content', () => {
   });
 
   it('flag-gated titles stay off the public index until launch', () => {
-    const gated = new Set(MODES.filter((m) => m.flagKey || !m.enabled).map((m) => m.guideSlug).filter(Boolean));
+    // Since the More Games launch the flags are a kill switch, not a launch gate: only disabled modes stay unlisted.
+    const gated = new Set(MODES.filter((m) => !m.enabled).map((m) => m.guideSlug).filter(Boolean));
     for (const g of PUBLIC_MODE_GUIDES) expect(gated.has(g.slug), g.slug).toBe(false);
     for (const slug of ['classic', 'six', 'seven', 'quadword', 'octoword', 'succession', 'deliverance', 'gauntlet', 'propernoundle']) {
       expect(PUBLIC_MODE_GUIDES.some((g) => g.slug === slug), slug).toBe(true);

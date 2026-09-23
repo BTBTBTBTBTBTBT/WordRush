@@ -79,7 +79,7 @@ enum ModeGen {
     ]
     /// Sweep eras, newest first. Which dbKeys formed the required sweep on a given local day.
     static let sweepEras: [GenSweepEra] = [
-        GenSweepEra(since: "2026-09-23", modes: ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "DUEL_6", "DUEL_7"]),
+        GenSweepEra(since: "2026-09-25", modes: ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "DUEL_6", "DUEL_7"]),
         GenSweepEra(since: "2026-05-21", modes: ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7"]),
         GenSweepEra(since: "0000-00-00", modes: ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE"]),
     ]

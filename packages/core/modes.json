@@ -1,5 +1,5 @@
 {
-  "_comment": "Canonical mode catalog \u2014 the single source of truth for mode metadata across web/iOS/Android. Edit here, then run `pnpm gen:modes` to regenerate the native files (ModeCatalog.generated.swift / .kt), the web TS and the SQL era functions. Icons stay platform-native; only data lives here. Board/guess counts live in the engine, not here. Fields: group = home grid tile (core) or More Games sheet (more); sweep = counts toward the Daily Sweep / Flawless; engine = shared word reducer or the mode's own view; guessSemantics = what guess_count means for labels; guessBase = the perfect guess_count (display shows guess_count \u2212 guessBase); enabled = compiled in and visible; flagKey = remote kill switch; category = More Games sheet section; guideSlug = lib/guide-content.ts entry. Ids and dbKeys are generic and rename-proof \u2014 only title/shortTitle/shareLabel carry a brand.",
+  "_comment": "Canonical mode catalog — the single source of truth for mode metadata across web/iOS/Android. Edit here, then run `pnpm gen:modes` to regenerate the native files (ModeCatalog.generated.swift / .kt), the web TS and the SQL era functions. Icons stay platform-native; only data lives here. Board/guess counts live in the engine, not here. Fields: group = home grid tile (core) or More Games sheet (more); sweep = counts toward the Daily Sweep / Flawless; engine = shared word reducer or the mode's own view; guessSemantics = what guess_count means for labels; guessBase = the perfect guess_count (display shows guess_count − guessBase); enabled = compiled in and visible; flagKey = remote kill switch; category = More Games sheet section; guideSlug = lib/guide-content.ts entry. Ids and dbKeys are generic and rename-proof — only title/shortTitle/shareLabel carry a brand.",
   "modes": [
     {
       "id": "practice",
@@ -442,10 +442,10 @@
       "homeSlot": 119
     }
   ],
-  "_sweepEras_comment": "Newest first, append-only. Each row: the first local day (YYYY-MM-DD) it applies and the dbKeys that made up the required Daily Sweep from that day. 2026-05-21 is when Six/Seven dailies shipped (7 \u2192 9). The launch row (8 word games, ProperNoundle out) is appended at Stage 9 with LAUNCH_DAY; until then the top row MUST equal modes.filter(sweep), which the codegen test asserts. Past days are never recomputed.",
+  "_sweepEras_comment": "Newest first, append-only. Each row: the first local day (YYYY-MM-DD) it applies and the dbKeys that made up the required Daily Sweep from that day. 2026-05-21 is when Six/Seven dailies shipped (7 → 9). The launch row (8 word games, ProperNoundle out) is appended at Stage 9 with LAUNCH_DAY; until then the top row MUST equal modes.filter(sweep), which the codegen test asserts. Past days are never recomputed.",
   "sweepEras": [
     {
-      "since": "2026-09-23",
+      "since": "2026-09-25",
       "modes": [
         "DUEL",
         "QUORDLE",
