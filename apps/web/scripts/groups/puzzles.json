@@ -20290,5 +20290,5687 @@
   ],
   "redHerrings": "BLADE is a shoulder blade; WORD reads as a talking word and becomes a sword; STRAP looks like TRAP with an S.",
   "source": "shard-08"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ways to cook",
+    "words": [
+     "BAKE",
+     "STEAM",
+     "BROIL",
+     "SIMMER"
+    ],
+    "alsoFits": [
+     "GRILL",
+     "ROAST"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Criticize harshly",
+    "words": [
+     "ROAST",
+     "SLAM",
+     "TRASH",
+     "KNOCK"
+    ],
+    "alsoFits": [
+     "PAN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Punch ___",
+    "words": [
+     "BOWL",
+     "LINE",
+     "BAG",
+     "CARD"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Kitchenware that is also a verb",
+    "words": [
+     "PAN",
+     "GRILL",
+     "DISH",
+     "SPOON"
+    ],
+    "alsoFits": [
+     "BOWL"
+    ]
+   }
+  ],
+  "redHerrings": "ROAST, PAN and GRILL all read as ways to cook; BOWL is kitchenware.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Spring bulbs",
+    "words": [
+     "TULIP",
+     "DAFFODIL",
+     "CROCUS",
+     "HYACINTH"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Grow well",
+    "words": [
+     "THRIVE",
+     "FLOURISH",
+     "BLOOM",
+     "PROSPER"
+    ],
+    "alsoFits": [
+     "BUD"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Rose ___",
+    "words": [
+     "BUD",
+     "HIP",
+     "WATER",
+     "BUSH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Anagrams of vegetables",
+    "words": [
+     "KEEL",
+     "LAKE",
+     "BANE",
+     "APE"
+    ]
+   }
+  ],
+  "redHerrings": "BUD and BLOOM both belong in the garden; WATER and BUSH read as garden words; LAKE sits beside WATER.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Musical works",
+    "words": [
+     "SONATA",
+     "SYMPHONY",
+     "CONCERTO",
+     "OVERTURE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Go on and on",
+    "words": [
+     "DRONE",
+     "RAMBLE",
+     "RANT",
+     "PRATTLE"
+    ],
+    "alsoFits": [
+     "HARP"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Rock ___",
+    "words": [
+     "SALT",
+     "GARDEN",
+     "CANDY",
+     "BOTTOM"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Instruments that are also verbs",
+    "words": [
+     "DRUM",
+     "FIDDLE",
+     "TRUMPET",
+     "HARP"
+    ]
+   }
+  ],
+  "redHerrings": "HARP means to nag and DRONE is a bagpipe pipe; SALT and CANDY read as food; ROCK hints at music.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Gym moves",
+    "words": [
+     "SQUAT",
+     "LUNGE",
+     "PLANK",
+     "CRUNCH"
+    ],
+    "alsoFits": [
+     "PRESS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Flatten",
+    "words": [
+     "CRUSH",
+     "SQUASH",
+     "MASH",
+     "PRESS"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Free ___",
+    "words": [
+     "THROW",
+     "FALL",
+     "STYLE",
+     "KICK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Said two ways",
+    "words": [
+     "MINUTE",
+     "RECORD",
+     "DESERT",
+     "REFUSE"
+    ]
+   }
+  ],
+  "redHerrings": "PRESS is a gym move; SQUASH is a sport; THROW and KICK read as workout verbs; RECORD hints at sport.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "States of matter",
+    "words": [
+     "SOLID",
+     "LIQUID",
+     "GAS",
+     "PLASMA"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Dependable",
+    "words": [
+     "STEADY",
+     "SOUND",
+     "RELIABLE",
+     "STURDY"
+    ],
+    "alsoFits": [
+     "SOLID"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Lab ___",
+    "words": [
+     "COAT",
+     "RAT",
+     "PARTNER",
+     "BENCH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Contain all five vowels",
+    "words": [
+     "EDUCATION",
+     "EQUATION",
+     "DIALOGUE",
+     "AUTHORIZE"
+    ]
+   }
+  ],
+  "redHerrings": "SOLID is dependable; EQUATION and SOUND read as science; RAT is an animal.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Scared",
+    "words": [
+     "AFRAID",
+     "FEARFUL",
+     "TERRIFIED",
+     "PETRIFIED"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Excited, informally",
+    "words": [
+     "HYPED",
+     "STOKED",
+     "PUMPED",
+     "THRILLED"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Heart___",
+    "words": [
+     "BEAT",
+     "BREAK",
+     "BURN",
+     "THROB"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Words that are their own opposite",
+    "words": [
+     "DUST",
+     "TRIM",
+     "CLIP",
+     "BOLT"
+    ]
+   }
+  ],
+  "redHerrings": "STOKED and BURN both suggest fire; BREAK and THROB sound like feelings; BOLT reads as a movement.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Pottery words",
+    "words": [
+     "CLAY",
+     "KILN",
+     "GLAZE",
+     "WHEEL"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Steal quietly",
+    "words": [
+     "PINCH",
+     "SWIPE",
+     "LIFT",
+     "POCKET"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Wax ___",
+    "words": [
+     "PAPER",
+     "SEAL",
+     "MUSEUM",
+     "CRAYON"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Two pairs of double letters",
+    "words": [
+     "BALLOON",
+     "COFFEE",
+     "TATTOO",
+     "RACCOON"
+    ]
+   }
+  ],
+  "redHerrings": "SEAL and RACCOON are both animals; GLAZE and COFFEE sit together; WHEEL and LIFT are ways to move things.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Holds a drink",
+    "words": [
+     "JUG",
+     "FLASK",
+     "CANTEEN",
+     "PITCHER"
+    ],
+    "alsoFits": [
+     "CAN"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Baseball positions",
+    "words": [
+     "CATCHER",
+     "SHORTSTOP",
+     "FIELDER",
+     "BATTER"
+    ],
+    "alsoFits": [
+     "PITCHER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Trash ___",
+    "words": [
+     "CAN",
+     "BAG",
+     "TALK",
+     "HEAP"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent B",
+    "words": [
+     "CLIMB",
+     "THUMB",
+     "DOUBT",
+     "DEBT"
+    ]
+   }
+  ],
+  "redHerrings": "PITCHER is both a jug and a ballplayer; CAN holds a drink; BATTER is a kitchen word.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Round things",
+    "words": [
+     "RING",
+     "HOOP",
+     "WHEEL",
+     "DISC"
+    ],
+    "alsoFits": [
+     "TIRE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Get in touch",
+    "words": [
+     "CALL",
+     "DIAL",
+     "BUZZ",
+     "TEXT"
+    ],
+    "alsoFits": [
+     "RING"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Spare ___",
+    "words": [
+     "TIRE",
+     "CHANGE",
+     "ROOM",
+     "RIB"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ARC",
+    "words": [
+     "MARCH",
+     "PARCEL",
+     "SEARCH",
+     "CHARCOAL"
+    ]
+   }
+  ],
+  "redHerrings": "RING is also a phone call; TIRE is round; RIB and CHANGE look like they belong elsewhere.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Spin",
+    "words": [
+     "TWIRL",
+     "ROTATE",
+     "WHIRL",
+     "PIVOT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Sudden movements",
+    "words": [
+     "JERK",
+     "TWITCH",
+     "JOLT",
+     "LURCH"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Quick___",
+    "words": [
+     "SAND",
+     "SILVER",
+     "STEP",
+     "LIME"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Letters in reverse alphabetical order",
+    "words": [
+     "SPONGE",
+     "WRONG",
+     "SPOON",
+     "POLKA"
+    ]
+   }
+  ],
+  "redHerrings": "STEP and POLKA read as dance moves next to TWIRL; SILVER and LIME look like colours; SPONGE is kitchenware.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Signs of autumn",
+    "words": [
+     "ACORN",
+     "PUMPKIN",
+     "FOLIAGE",
+     "HARVEST"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Collect",
+    "words": [
+     "GATHER",
+     "REAP",
+     "GLEAN",
+     "AMASS"
+    ],
+    "alsoFits": [
+     "HARVEST",
+     "STACK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Hay___",
+    "words": [
+     "STACK",
+     "WIRE",
+     "LOFT",
+     "RIDE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent N",
+    "words": [
+     "AUTUMN",
+     "COLUMN",
+     "HYMN",
+     "SOLEMN"
+    ]
+   }
+  ],
+  "redHerrings": "HARVEST means to collect; AUTUMN looks like the season group; STACK and LOFT read as gathering and storing.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "At a wedding",
+    "words": [
+     "BRIDE",
+     "USHER",
+     "VOWS",
+     "BOUQUET"
+    ],
+    "alsoFits": [
+     "GROOM"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Get someone ready",
+    "words": [
+     "GROOM",
+     "PRIME",
+     "TRAIN",
+     "COACH"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Master ___",
+    "words": [
+     "KEY",
+     "PLAN",
+     "PIECE",
+     "MIND"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Start with a pronoun",
+    "words": [
+     "HERON",
+     "ITEM",
+     "WEEP",
+     "THEME"
+    ],
+    "alsoFits": [
+     "USHER"
+    ]
+   }
+  ],
+  "redHerrings": "GROOM is at the wedding and USHER starts with US; HERON is a bird; WEEP fits a wedding too.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Small hills",
+    "words": [
+     "KNOLL",
+     "MOUND",
+     "RIDGE",
+     "BLUFF"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Deceive",
+    "words": [
+     "DUPE",
+     "CON",
+     "MISLEAD",
+     "FOOL"
+    ],
+    "alsoFits": [
+     "BLUFF"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Ground ___",
+    "words": [
+     "FLOOR",
+     "ZERO",
+     "CREW",
+     "BEEF"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Three of the same letter",
+    "words": [
+     "BANANA",
+     "PEPPER",
+     "BUBBLE",
+     "MAMMAL"
+    ]
+   }
+  ],
+  "redHerrings": "BLUFF is both a hill and a con; PEPPER and BEEF are food; FLOOR and MOUND are surfaces.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Bell sounds",
+    "words": [
+     "CHIME",
+     "PEAL",
+     "CLANG",
+     "DING"
+    ],
+    "alsoFits": [
+     "TOLL"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Fee",
+    "words": [
+     "TOLL",
+     "CHARGE",
+     "FARE",
+     "LEVY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Alarm ___",
+    "words": [
+     "CLOCK",
+     "BELL",
+     "SYSTEM",
+     "CALL"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "No A, E, I, O or U",
+    "words": [
+     "MYTH",
+     "GYM",
+     "HYMN",
+     "LYNX"
+    ]
+   }
+  ],
+  "redHerrings": "TOLL is a bell sound and a fee; BELL sits beside the bell sounds; HYMN suggests a church bell; LYNX is an animal.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Huge",
+    "words": [
+     "VAST",
+     "IMMENSE",
+     "COLOSSAL",
+     "GIGANTIC"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "A tiny amount",
+    "words": [
+     "SPECK",
+     "MITE",
+     "TRACE",
+     "IOTA"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Mini___",
+    "words": [
+     "BUS",
+     "SKIRT",
+     "VAN",
+     "GOLF"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Anagrams of insects",
+    "words": [
+     "LEAF",
+     "SWAP",
+     "TANG",
+     "THRONE"
+    ]
+   }
+  ],
+  "redHerrings": "MITE is an insect beside the insect anagrams; BUS and VAN are vehicles; TRACE and TANG read as flavours.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Slow",
+    "words": [
+     "SLUGGISH",
+     "LEISURELY",
+     "UNHURRIED",
+     "PLODDING"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Hurry",
+    "words": [
+     "DASH",
+     "RACE",
+     "HASTEN",
+     "SCURRY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fast ___",
+    "words": [
+     "FOOD",
+     "LANE",
+     "TRACK",
+     "FORWARD"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Three alphabet neighbours in a row",
+    "words": [
+     "FIRST",
+     "STUDY",
+     "DEFT",
+     "CANOPY"
+    ]
+   }
+  ],
+  "redHerrings": "FIRST and TRACK read as race words; DEFT hints at speed; DASH is also a pinch of food.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Morning routine",
+    "words": [
+     "SHAVE",
+     "BRUSH",
+     "DRESS",
+     "FLOSS"
+    ],
+    "alsoFits": [
+     "SHOWER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Fall like rain",
+    "words": [
+     "SHOWER",
+     "POUR",
+     "SPRINKLE",
+     "DRIZZLE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Breakfast ___",
+    "words": [
+     "BAR",
+     "NOOK",
+     "BURRITO",
+     "CLUB"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Garments that are also verbs",
+    "words": [
+     "SOCK",
+     "SKIRT",
+     "CUFF",
+     "COLLAR"
+    ],
+    "alsoFits": [
+     "DRESS"
+    ]
+   }
+  ],
+  "redHerrings": "SHOWER is part of a morning routine; DRESS is a garment; BAR and CLUB look like they go together.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Sauces",
+    "words": [
+     "GRAVY",
+     "KETCHUP",
+     "MUSTARD",
+     "RELISH"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Cut into",
+    "words": [
+     "CARVE",
+     "SLICE",
+     "PARE",
+     "HACK"
+    ],
+    "alsoFits": [
+     "SAW"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Steam ___",
+    "words": [
+     "ENGINE",
+     "ROOM",
+     "ROLLER",
+     "BATH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Tools that are also verbs",
+    "words": [
+     "HAMMER",
+     "DRILL",
+     "SAW",
+     "FILE"
+    ]
+   }
+  ],
+  "redHerrings": "SAW cuts into things; RELISH means to enjoy; ROLLER and HAMMER look like tools; FILE and HACK read as computer words.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Windstorms",
+    "words": [
+     "GALE",
+     "TORNADO",
+     "CYCLONE",
+     "TYPHOON"
+    ],
+    "alsoFits": [
+     "STORM"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Beat",
+    "words": [
+     "THRASH",
+     "LASH",
+     "POUND",
+     "WHIP"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Thunder___",
+    "words": [
+     "BOLT",
+     "CLAP",
+     "STORM",
+     "CLOUD"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Anagrams of trees",
+    "words": [
+     "PANES",
+     "CARED",
+     "AMPLE",
+     "TAKE"
+    ]
+   }
+  ],
+  "redHerrings": "STORM is a windstorm; LASH and WHIP suggest wind; CLAP and POUND both mean to strike.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ways to pay",
+    "words": [
+     "CASH",
+     "CARD",
+     "WIRE",
+     "TRANSFER"
+    ],
+    "alsoFits": [
+     "CHECK"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Make sure of",
+    "words": [
+     "CHECK",
+     "CONFIRM",
+     "INSPECT",
+     "AUDIT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Money ___",
+    "words": [
+     "BAG",
+     "BELT",
+     "MARKET",
+     "TREE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add an S for a new meaning",
+    "words": [
+     "NEW",
+     "GOOD",
+     "CUSTOM",
+     "ODD"
+    ]
+   }
+  ],
+  "redHerrings": "CHECK is a way to pay; AUDIT and MARKET are money words; GOOD looks like a judgement, not wordplay.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Flower parts",
+    "words": [
+     "PETAL",
+     "STAMEN",
+     "POLLEN",
+     "NECTAR"
+    ],
+    "alsoFits": [
+     "STEM",
+     "BUD"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Stop the flow",
+    "words": [
+     "STEM",
+     "DAM",
+     "STAUNCH",
+     "PLUG"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Hedge ___",
+    "words": [
+     "FUND",
+     "TRIMMER",
+     "HOG",
+     "MAZE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Plant parts that are also verbs",
+    "words": [
+     "ROOT",
+     "BRANCH",
+     "LEAF",
+     "BUD"
+    ],
+    "alsoFits": [
+     "STEM"
+    ]
+   }
+  ],
+  "redHerrings": "STEM is a plant part that also means to stop; BUD belongs to a flower; HOG is an animal; TRIMMER and PLUG read as garden and kitchen tools.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ways to sing",
+    "words": [
+     "SCAT",
+     "YODEL",
+     "CROON",
+     "WARBLE"
+    ],
+    "alsoFits": [
+     "HUM"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Vibrate",
+    "words": [
+     "HUM",
+     "BUZZ",
+     "THROB",
+     "QUIVER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Swing ___",
+    "words": [
+     "SET",
+     "SHIFT",
+     "VOTE",
+     "STATE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "OUGH said four ways",
+    "words": [
+     "THOUGH",
+     "THROUGH",
+     "TOUGH",
+     "COUGH"
+    ]
+   }
+  ],
+  "redHerrings": "HUM is a way to sing; COUGH is a sound like BUZZ; SET and SHIFT look like music and work words.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Soccer terms",
+    "words": [
+     "CORNER",
+     "PENALTY",
+     "DRIBBLE",
+     "TACKLE"
+    ],
+    "alsoFits": [
+     "GOAL"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Aim",
+    "words": [
+     "GOAL",
+     "TARGET",
+     "OBJECTIVE",
+     "INTENT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Team ___",
+    "words": [
+     "WORK",
+     "MATE",
+     "SPIRIT",
+     "PLAYER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Vehicles that are also verbs",
+    "words": [
+     "SHIP",
+     "FERRY",
+     "CART",
+     "TRUCK"
+    ]
+   }
+  ],
+  "redHerrings": "GOAL is a soccer word and an aim; PLAYER and TACKLE sit with soccer; TARGET could be sporting gear; CART looks like TACKLE gear.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Parts of an atom",
+    "words": [
+     "PROTON",
+     "NEUTRON",
+     "ELECTRON",
+     "NUCLEUS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Optimistic",
+    "words": [
+     "POSITIVE",
+     "UPBEAT",
+     "HOPEFUL",
+     "SUNNY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Solar ___",
+    "words": [
+     "PANEL",
+     "FLARE",
+     "SYSTEM",
+     "ECLIPSE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Typed on a keyboard's top row",
+    "words": [
+     "TYPEWRITER",
+     "PROPERTY",
+     "POTTERY",
+     "PUPPET"
+    ]
+   }
+  ],
+  "redHerrings": "POSITIVE is a charge like PROTON; SUNNY belongs beside SOLAR; SYSTEM reads as science.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Sad",
+    "words": [
+     "GLUM",
+     "MOROSE",
+     "DOWNCAST",
+     "FORLORN"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Cheerful",
+    "words": [
+     "CHIPPER",
+     "JOLLY",
+     "MERRY",
+     "PERKY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Mood ___",
+    "words": [
+     "RING",
+     "SWING",
+     "BOARD",
+     "MUSIC"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Body parts that are also verbs",
+    "words": [
+     "SHOULDER",
+     "ELBOW",
+     "STOMACH",
+     "THUMB"
+    ]
+   }
+  ],
+  "redHerrings": "SWING and DOWNCAST both suggest mood swings; UPBEAT is a music word beside MUSIC; SHOULDER hints at carrying a burden.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Cake decorations",
+    "words": [
+     "ICING",
+     "SPRINKLES",
+     "FONDANT",
+     "MARZIPAN"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Finishing touches",
+    "words": [
+     "GARNISH",
+     "TRIM",
+     "FLOURISH",
+     "POLISH"
+    ],
+    "alsoFits": [
+     "ICING",
+     "SPRINKLES"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Chocolate ___",
+    "words": [
+     "CHIP",
+     "BAR",
+     "MOUSSE",
+     "MILK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Mammals that are also verbs",
+    "words": [
+     "BADGER",
+     "HOUND",
+     "WOLF",
+     "APE"
+    ]
+   }
+  ],
+  "redHerrings": "ICING and SPRINKLES are finishing touches; WOLF means to eat greedily beside the sweets; MILK and CHIP read as kitchen words.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Kinds of bag",
+    "words": [
+     "TOTE",
+     "SATCHEL",
+     "DUFFEL",
+     "POUCH"
+    ],
+    "alsoFits": [
+     "CLUTCH"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Hold tightly",
+    "words": [
+     "CLUTCH",
+     "GRIP",
+     "GRASP",
+     "CLENCH"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pocket ___",
+    "words": [
+     "KNIFE",
+     "WATCH",
+     "MONEY",
+     "CHANGE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Start and end with the same letter",
+    "words": [
+     "WINDOW",
+     "TENANT",
+     "HEALTH",
+     "COMIC"
+    ]
+   }
+  ],
+  "redHerrings": "CLUTCH is a bag and a grip; TOTE means to carry; WATCH and MONEY could go in a bag.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Packed for the beach",
+    "words": [
+     "TOWEL",
+     "UMBRELLA",
+     "SANDALS",
+     "LOTION"
+    ],
+    "alsoFits": [
+     "COOLER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Keeps things cold",
+    "words": [
+     "ICEBOX",
+     "FREEZER",
+     "COOLER",
+     "CHILLER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Lemon ___",
+    "words": [
+     "DROP",
+     "ZEST",
+     "GRASS",
+     "PEEL"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden garments",
+    "words": [
+     "PROBE",
+     "BOOTH",
+     "SOCKET",
+     "VESTIBULE"
+    ]
+   }
+  ],
+  "redHerrings": "COOLER goes to the beach; SANDALS are a garment; GRASS and DROP read as outdoor words; PEEL suggests sunburn.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On a film set",
+    "words": [
+     "DIRECTOR",
+     "GRIP",
+     "GAFFER",
+     "PRODUCER"
+    ],
+    "alsoFits": [
+     "EXTRA",
+     "STAR"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Additional",
+    "words": [
+     "EXTRA",
+     "SPARE",
+     "SURPLUS",
+     "BONUS"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Film ___",
+    "words": [
+     "STAR",
+     "CREW",
+     "BUFF",
+     "STRIP"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent T",
+    "words": [
+     "CASTLE",
+     "WHISTLE",
+     "LISTEN",
+     "FASTEN"
+    ]
+   }
+  ],
+  "redHerrings": "EXTRA and STAR are on a film set; GRIP is a job here, not a hold; WHISTLE and LISTEN sound like set directions.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Wooded places",
+    "words": [
+     "JUNGLE",
+     "GROVE",
+     "THICKET",
+     "WOODLAND"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Chaos",
+    "words": [
+     "MAYHEM",
+     "BEDLAM",
+     "HAVOC",
+     "TURMOIL"
+    ],
+    "alsoFits": [
+     "JUNGLE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Trail ___",
+    "words": [
+     "MIX",
+     "HEAD",
+     "BLAZER",
+     "MARKER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden fruit",
+    "words": [
+     "SPEAR",
+     "SLIME",
+     "PLUMBER",
+     "FIGURE"
+    ]
+   }
+  ],
+  "redHerrings": "JUNGLE can mean chaos; SPEAR and BLAZER suggest a jungle expedition; MIX hints at TURMOIL.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Soft sounds",
+    "words": [
+     "WHISPER",
+     "MURMUR",
+     "RUSTLE",
+     "PATTER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Sales talk",
+    "words": [
+     "PITCH",
+     "SPIEL",
+     "BLURB",
+     "PLUG"
+    ],
+    "alsoFits": [
+     "PATTER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fog ___",
+    "words": [
+     "HORN",
+     "LIGHT",
+     "BANK",
+     "MACHINE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden OAT",
+    "words": [
+     "THROAT",
+     "BLOATED",
+     "OATH",
+     "GLOAT"
+    ]
+   }
+  ],
+  "redHerrings": "PATTER is both a soft sound and sales talk; HORN is a loud sound; PITCH is also a musical sound; THROAT is where soft sounds come from; GLOAT sounds like sales bragging.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Careful",
+    "words": [
+     "CAUTIOUS",
+     "WARY",
+     "PRUDENT",
+     "GUARDED"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Fast, informally",
+    "words": [
+     "ZIPPY",
+     "NIPPY",
+     "SNAPPY",
+     "SPEEDY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Express ___",
+    "words": [
+     "TRAIN",
+     "LANE",
+     "MAIL",
+     "DELIVERY"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden NET",
+    "words": [
+     "PLANET",
+     "MAGNET",
+     "CABINET",
+     "HORNET"
+    ]
+   }
+  ],
+  "redHerrings": "EXPRESS and SPEEDY point the same way; TRAIN and LANE read as fast travel; HORNET is an insect that is NIPPY.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Leather goods",
+    "words": [
+     "WALLET",
+     "SADDLE",
+     "HOLSTER",
+     "HARNESS"
+    ],
+    "alsoFits": [
+     "BELT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Thrash",
+    "words": [
+     "BELT",
+     "WALLOP",
+     "PUMMEL",
+     "THUMP"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Brick___",
+    "words": [
+     "LAYER",
+     "WORK",
+     "YARD",
+     "WALL"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add a C at the front",
+    "words": [
+     "HAIR",
+     "LOCK",
+     "RUST",
+     "LEAN"
+    ]
+   }
+  ],
+  "redHerrings": "BELT is leather and also means to hit; LOCK and HAIR suggest a leather strap; WALL and WALLOP look alike.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Go under water",
+    "words": [
+     "DIVE",
+     "PLUNGE",
+     "SUBMERGE",
+     "SINK"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Sharp fall",
+    "words": [
+     "SLUMP",
+     "PLUMMET",
+     "DIP",
+     "CRASH"
+    ],
+    "alsoFits": [
+     "PLUNGE",
+     "DIVE",
+     "SINK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Deep ___",
+    "words": [
+     "END",
+     "FREEZE",
+     "DISH",
+     "SPACE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent L",
+    "words": [
+     "SALMON",
+     "CALF",
+     "HALF",
+     "YOLK"
+    ]
+   }
+  ],
+  "redHerrings": "PLUNGE, DIVE and SINK all describe a sharp fall too; SALMON dives upstream; DISH and YOLK are kitchen words.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Storage chests",
+    "words": [
+     "TRUNK",
+     "COFFER",
+     "CHEST",
+     "LOCKER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Elephant features",
+    "words": [
+     "TUSK",
+     "HIDE",
+     "EAR",
+     "TAIL"
+    ],
+    "alsoFits": [
+     "TRUNK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Lock___",
+    "words": [
+     "SMITH",
+     "DOWN",
+     "JAW",
+     "STEP"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ARROW",
+    "words": [
+     "NARROW",
+     "SPARROW",
+     "MARROW",
+     "BARROW"
+    ]
+   }
+  ],
+  "redHerrings": "TRUNK is an elephant feature; SPARROW is an animal; JAW sits beside the body parts; LOCKER hides a lock.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Bowling words",
+    "words": [
+     "PIN",
+     "LANE",
+     "SPARE",
+     "GUTTER"
+    ],
+    "alsoFits": [
+     "STRIKE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Job action",
+    "words": [
+     "STRIKE",
+     "WALKOUT",
+     "PICKET",
+     "BOYCOTT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Safety ___",
+    "words": [
+     "NET",
+     "GLASS",
+     "BELT",
+     "RAZOR"
+    ],
+    "alsoFits": [
+     "PIN"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent W",
+    "words": [
+     "SWORD",
+     "ANSWER",
+     "TWO",
+     "WHOLE"
+    ]
+   }
+  ],
+  "redHerrings": "STRIKE is a bowling word and a job action; PIN is a safety item; TWO looks like a score; SWORD and RAZOR are blades.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Kinds of milk",
+    "words": [
+     "WHOLE",
+     "POWDERED",
+     "CONDENSED",
+     "BUTTERMILK"
+    ],
+    "alsoFits": [
+     "SKIM"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Read quickly",
+    "words": [
+     "SKIM",
+     "SCAN",
+     "FLIP",
+     "LEAF"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Cream ___",
+    "words": [
+     "CHEESE",
+     "PUFF",
+     "SODA",
+     "TEA"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Furniture that is also a verb",
+    "words": [
+     "TABLE",
+     "CHAIR",
+     "COUCH",
+     "BENCH"
+    ]
+   }
+  ],
+  "redHerrings": "SKIM is a kind of milk; TEA and SODA take milk or cream; LEAF is what a TABLE has; CHEESE is dairy.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Lawn care",
+    "words": [
+     "MOW",
+     "RAKE",
+     "MULCH",
+     "EDGE"
+    ],
+    "alsoFits": [
+     "WEED",
+     "PRUNE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Remove the unwanted",
+    "words": [
+     "WEED",
+     "PRUNE",
+     "CULL",
+     "PURGE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Rain___",
+    "words": [
+     "BOW",
+     "COAT",
+     "DROP",
+     "CHECK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden TON",
+    "words": [
+     "BUTTON",
+     "CARTON",
+     "PISTON",
+     "MUTTON"
+    ]
+   }
+  ],
+  "redHerrings": "WEED and PRUNE are lawn care too; DROP means to cut like CULL; BOW and BUTTON are clothing words; MUTTON is meat.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Hair tools",
+    "words": [
+     "BRUSH",
+     "ROLLER",
+     "TRIMMER",
+     "CURLER"
+    ],
+    "alsoFits": [
+     "COMB"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Search thoroughly",
+    "words": [
+     "COMB",
+     "SCOUR",
+     "RANSACK",
+     "RUMMAGE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Dust ___",
+    "words": [
+     "BUNNY",
+     "JACKET",
+     "STORM",
+     "MITE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ARM",
+    "words": [
+     "CHARM",
+     "ALARM",
+     "HARMONY",
+     "SWARM"
+    ]
+   }
+  ],
+  "redHerrings": "COMB is a hair tool and a way to search; SWARM and MITE are bug words; BRUSH and SCOUR both clean; STORM and ALARM suggest danger.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Sound a guitar string",
+    "words": [
+     "STRUM",
+     "PLUCK",
+     "BOW",
+     "TAP"
+    ],
+    "alsoFits": [
+     "PICK"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Choose",
+    "words": [
+     "PICK",
+     "SELECT",
+     "OPT",
+     "ELECT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Piano ___",
+    "words": [
+     "BAR",
+     "KEY",
+     "WIRE",
+     "TUNER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Anagrams of seasonings",
+    "words": [
+     "AGES",
+     "ACME",
+     "SLAT",
+     "BAILS"
+    ]
+   }
+  ],
+  "redHerrings": "PICK plays a string and means to choose; BAR and KEY are music words; TAP and BOW have several meanings; SLAT and WIRE read as hardware.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Out in space",
+    "words": [
+     "COMET",
+     "NEBULA",
+     "GALAXY",
+     "ASTEROID"
+    ],
+    "alsoFits": [
+     "ORBIT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Area of influence",
+    "words": [
+     "ORBIT",
+     "REALM",
+     "DOMAIN",
+     "PROVINCE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Rocket ___",
+    "words": [
+     "SHIP",
+     "FUEL",
+     "SCIENCE",
+     "BOOSTER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent G",
+    "words": [
+     "SIGN",
+     "REIGN",
+     "DESIGN",
+     "CAMPAIGN"
+    ]
+   }
+  ],
+  "redHerrings": "ORBIT is a space word; REIGN and REALM both suggest a kingdom; SIGN could be a star sign; SHIP sails through space.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Confused",
+    "words": [
+     "BAFFLED",
+     "PUZZLED",
+     "MUDDLED",
+     "PERPLEXED"
+    ],
+    "alsoFits": [
+     "DAZED"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Knocked silly",
+    "words": [
+     "DAZED",
+     "GROGGY",
+     "WOOZY",
+     "DIZZY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Mind ___",
+    "words": [
+     "GAMES",
+     "READER",
+     "MAP",
+     "TRICK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent P",
+    "words": [
+     "RECEIPT",
+     "RASPBERRY",
+     "CUPBOARD",
+     "CORPS"
+    ]
+   }
+  ],
+  "redHerrings": "DAZED is a kind of confused; TRICK and PUZZLED go together; RASPBERRY and CUPBOARD are kitchen words; MAP suggests a puzzle.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Pastries",
+    "words": [
+     "ECLAIR",
+     "STRUDEL",
+     "TURNOVER",
+     "DOUGHNUT"
+    ],
+    "alsoFits": [
+     "TART"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Sharp-tasting",
+    "words": [
+     "TART",
+     "TANGY",
+     "SOUR",
+     "ACIDIC"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fruit ___",
+    "words": [
+     "FLY",
+     "SALAD",
+     "BAT",
+     "PUNCH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden CAMP",
+    "words": [
+     "CAMPAIGN",
+     "SCAMPER",
+     "CAMPUS",
+     "CAMPHOR"
+    ]
+   }
+  ],
+  "redHerrings": "TART is a pastry and a taste; FLY and BAT are animals; PUNCH and TURNOVER have sporting and business meanings; SCAMPER is a movement.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Waterways",
+    "words": [
+     "CANAL",
+     "STRAIT",
+     "INLET",
+     "ESTUARY"
+    ],
+    "alsoFits": [
+     "CHANNEL"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Direct",
+    "words": [
+     "CHANNEL",
+     "STEER",
+     "GUIDE",
+     "FUNNEL"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Ocean ___",
+    "words": [
+     "LINER",
+     "VIEW",
+     "BREEZE",
+     "FLOOR"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Anagrams of drinks",
+    "words": [
+     "COAL",
+     "MADE",
+     "CRIED",
+     "EAT"
+    ]
+   }
+  ],
+  "redHerrings": "CHANNEL is a waterway; STEER is also cattle; FUNNEL is a ship's chimney beside LINER; FLOOR and COAL suggest a mine.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Old trades",
+    "words": [
+     "COOPER",
+     "MILLER",
+     "TANNER",
+     "WEAVER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "What a cooper makes",
+    "words": [
+     "BARREL",
+     "CASK",
+     "KEG",
+     "TUB"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Trade ___",
+    "words": [
+     "MARK",
+     "WIND",
+     "SHOW",
+     "SECRET"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Anagrams of fish",
+    "words": [
+     "TUTOR",
+     "DASH",
+     "AMBER",
+     "MELTS"
+    ]
+   }
+  ],
+  "redHerrings": "TUTOR is a trade; AMBER and TANNER both suggest brown; SHOW and MARK are things a trade leaves; DASH is a movement.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Winter sports gear",
+    "words": [
+     "SLED",
+     "LUGE",
+     "SKATES",
+     "TOBOGGAN"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Smooth and slippery",
+    "words": [
+     "SLICK",
+     "GLASSY",
+     "ICY",
+     "GREASY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Winter ___",
+    "words": [
+     "COAT",
+     "BREAK",
+     "SOLSTICE",
+     "SQUASH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden MIST",
+    "words": [
+     "MISTAKE",
+     "OPTIMIST",
+     "CHEMIST",
+     "MISTRUST"
+    ]
+   }
+  ],
+  "redHerrings": "ICY belongs with winter; SQUASH is a sport; COAT can mean a slick layer; CHEMIST is a job like the other trades.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Cooking vessels",
+    "words": [
+     "WOK",
+     "KETTLE",
+     "SKILLET",
+     "STEAMER"
+    ],
+    "alsoFits": [
+     "CROCK"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Nonsense",
+    "words": [
+     "CROCK",
+     "BUNK",
+     "HOKUM",
+     "DRIVEL"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Bucket ___",
+    "words": [
+     "LIST",
+     "SEAT",
+     "HAT",
+     "BRIGADE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent H",
+    "words": [
+     "GHOST",
+     "RHYME",
+     "RHYTHM",
+     "RHUBARB"
+    ]
+   }
+  ],
+  "redHerrings": "CROCK is a pot and nonsense; RHUBARB is food; BUNK is a bed beside SEAT; HAT is a garment.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Curves",
+    "words": [
+     "ARC",
+     "CURVE",
+     "CRESCENT",
+     "LOOP"
+    ],
+    "alsoFits": [
+     "BEND"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Give way",
+    "words": [
+     "BEND",
+     "YIELD",
+     "BUCKLE",
+     "SAG"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Square ___",
+    "words": [
+     "DANCE",
+     "ROOT",
+     "MEAL",
+     "KNOT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add a P at the front",
+    "words": [
+     "LATE",
+     "RICE",
+     "LUMP",
+     "INCH"
+    ]
+   }
+  ],
+  "redHerrings": "BEND is a curve; BUCKLE and KNOT are fasteners; RICE and MEAL are food; LUMP and SAG describe shapes.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ways to jump",
+    "words": [
+     "SPRING",
+     "SKIP",
+     "POUNCE",
+     "BOUND"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Upper limit",
+    "words": [
+     "CAP",
+     "CEILING",
+     "MAXIMUM",
+     "QUOTA"
+    ],
+    "alsoFits": [
+     "BOUND"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Long ___",
+    "words": [
+     "SHOT",
+     "HAUL",
+     "DIVISION",
+     "WEEKEND"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden LEG",
+    "words": [
+     "ELEGANT",
+     "COLLEGE",
+     "DELEGATE",
+     "PRIVILEGE"
+    ]
+   }
+  ],
+  "redHerrings": "BOUND is a jump and a limit; CAP is a garment beside a hidden body part; SHOT and SKIP are sporting words; HAUL is a movement; SPRING is also a season.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Nightwear",
+    "words": [
+     "PAJAMAS",
+     "NIGHTGOWN",
+     "ROBE",
+     "SLIPPERS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Cheat out of money",
+    "words": [
+     "FLEECE",
+     "SWINDLE",
+     "BILK",
+     "SCAM"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pillow ___",
+    "words": [
+     "CASE",
+     "TALK",
+     "FIGHT",
+     "FORT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden VAN",
+    "words": [
+     "VANISH",
+     "ADVANCE",
+     "CANVAS",
+     "RELEVANT"
+    ]
+   }
+  ],
+  "redHerrings": "FLEECE is a warm fabric beside the nightwear; CASE and CANVAS are bag words; FIGHT and SCAM suggest trouble.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Hot drinks",
+    "words": [
+     "COCOA",
+     "TODDY",
+     "CIDER",
+     "ESPRESSO"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Brew",
+    "words": [
+     "STEEP",
+     "INFUSE",
+     "FERMENT",
+     "PERCOLATE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Root ___",
+    "words": [
+     "BEER",
+     "CANAL",
+     "CELLAR",
+     "VEGETABLE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add a W at the front",
+    "words": [
+     "HEAT",
+     "ARM",
+     "EDGE",
+     "ITCH"
+    ]
+   }
+  ],
+  "redHerrings": "BEER is a drink; FERMENT makes CIDER; HEAT and ARM (warm) suit hot drinks; CELLAR stores drink.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Evergreens",
+    "words": [
+     "PINE",
+     "FIR",
+     "CEDAR",
+     "HEMLOCK"
+    ],
+    "alsoFits": [
+     "SPRUCE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Tidy up",
+    "words": [
+     "SPRUCE",
+     "TIDY",
+     "GROOM",
+     "STRAIGHTEN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Wood___",
+    "words": [
+     "PECKER",
+     "WIND",
+     "CHUCK",
+     "LAND"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silent C",
+    "words": [
+     "MUSCLE",
+     "SCENE",
+     "SCENT",
+     "SCIENCE"
+    ]
+   }
+  ],
+  "redHerrings": "SPRUCE is an evergreen; SCENT suggests pine; PINE also means to long for; LAND and WIND read as outdoors.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Piano words",
+    "words": [
+     "PEDAL",
+     "CHORD",
+     "OCTAVE",
+     "SHARP"
+    ],
+    "alsoFits": [
+     "SCALE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Size or extent",
+    "words": [
+     "SCALE",
+     "SCOPE",
+     "RANGE",
+     "MAGNITUDE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Sound ___",
+    "words": [
+     "BITE",
+     "CHECK",
+     "WAVE",
+     "BARRIER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add a G at the front",
+    "words": [
+     "RAIN",
+     "LOVE",
+     "HOST",
+     "RATE"
+    ]
+   }
+  ],
+  "redHerrings": "SCALE is a piano word and a measure of extent; RANGE is also a stove and a mountain chain; WAVE and RAIN are weather; HOST hints at a party.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Fencing moves",
+    "words": [
+     "PARRY",
+     "LUNGE",
+     "THRUST",
+     "FEINT"
+    ],
+    "alsoFits": [
+     "FOIL",
+     "BLOCK"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Thwart",
+    "words": [
+     "FOIL",
+     "STYMIE",
+     "HINDER",
+     "BLOCK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Iron ___",
+    "words": [
+     "CURTAIN",
+     "AGE",
+     "FIST",
+     "MAIDEN"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add an F at the front",
+    "words": [
+     "LAME",
+     "RIGHT",
+     "EAST",
+     "LOCK"
+    ]
+   }
+  ],
+  "redHerrings": "FOIL is a fencing sword and BLOCK a fencing move; FIST suggests fighting; LOCK and BLOCK look alike; AGE sits near IRON AGE.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "The senses",
+    "words": [
+     "SIGHT",
+     "TASTE",
+     "SMELL",
+     "HEARING"
+    ],
+    "alsoFits": [
+     "TOUCH"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "A little bit",
+    "words": [
+     "TOUCH",
+     "TAD",
+     "DASH",
+     "HINT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Nose ___",
+    "words": [
+     "DIVE",
+     "RING",
+     "JOB",
+     "CONE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add an M at the front",
+    "words": [
+     "ANGLE",
+     "OTHER",
+     "ARCH",
+     "ORAL"
+    ]
+   }
+  ],
+  "redHerrings": "TOUCH is a sense; ORAL points to TASTE; NOSE points to SMELL; RING and ARCH are shapes.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Kind",
+    "words": [
+     "GENTLE",
+     "CARING",
+     "WARM",
+     "KINDLY"
+    ],
+    "alsoFits": [
+     "TENDER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Sore",
+    "words": [
+     "TENDER",
+     "RAW",
+     "ACHY",
+     "INFLAMED"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Soft ___",
+    "words": [
+     "SPOT",
+     "DRINK",
+     "SERVE",
+     "LANDING"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add an H at the front",
+    "words": [
+     "EAT",
+     "OWL",
+     "ANGER",
+     "ALE"
+    ]
+   }
+  ],
+  "redHerrings": "TENDER is kind and sore; SOFT sits beside GENTLE; RAW and EAT and DRINK are food words; ANGER is a feeling.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Desert sights",
+    "words": [
+     "DUNE",
+     "MIRAGE",
+     "MESA",
+     "CAMEL"
+    ],
+    "alsoFits": [
+     "OASIS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Refuge",
+    "words": [
+     "OASIS",
+     "HAVEN",
+     "SANCTUARY",
+     "RETREAT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Gold ___",
+    "words": [
+     "RUSH",
+     "MINE",
+     "MEDAL",
+     "LEAF"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Add a B at the front",
+    "words": [
+     "RIDE",
+     "EACH",
+     "LEND",
+     "RACE"
+    ]
+   }
+  ],
+  "redHerrings": "OASIS is a desert sight; RACE and RUSH both mean hurry; RIDE fits CAMEL; LEAF is out of place in a desert.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Crowd noises",
+    "words": [
+     "ROAR",
+     "CHEER",
+     "CHANT",
+     "APPLAUSE"
+    ],
+    "alsoFits": [
+     "JEER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Mock",
+    "words": [
+     "JEER",
+     "TAUNT",
+     "MOCK",
+     "RIDICULE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fan ___",
+    "words": [
+     "BASE",
+     "CLUB",
+     "MAIL",
+     "BELT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden PIE",
+    "words": [
+     "SPIED",
+     "OCCUPIED",
+     "PIETY",
+     "MAGPIE"
+    ]
+   }
+  ],
+  "redHerrings": "JEER is a crowd noise; MAGPIE is a bird; BELT and CLUB could mean to hit; BASE is sporting.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ice-cream treats",
+    "words": [
+     "SHERBET",
+     "SUNDAE",
+     "PARFAIT",
+     "FLOAT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Layers",
+    "words": [
+     "TIER",
+     "STRATUM",
+     "COAT",
+     "PLY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Cherry ___",
+    "words": [
+     "TOMATO",
+     "BLOSSOM",
+     "PICKER",
+     "WOOD"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ROCK",
+    "words": [
+     "FROCK",
+     "CROCKERY",
+     "SHAMROCK",
+     "BEDROCK"
+    ]
+   }
+  ],
+  "redHerrings": "PARFAIT is layered; FLOAT reads as a movement; CROCKERY and WOOD are kitchen materials; COAT and FROCK are clothing; STRATUM sits near BEDROCK.",
+  "source": "shard-09"
+ },
+ {
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On an envelope",
+    "words": [
+     "SEAL",
+     "STAMP",
+     "ADDRESS",
+     "POSTMARK"
+    ],
+    "alsoFits": [
+     "FLAP"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Commotion",
+    "words": [
+     "FLAP",
+     "STIR",
+     "UPROAR",
+     "RUCKUS"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Letter ___",
+    "words": [
+     "HEAD",
+     "OPENER",
+     "GRADE",
+     "PRESS"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden PATH",
+    "words": [
+     "SYMPATHY",
+     "APATHY",
+     "EMPATHY",
+     "PATHETIC"
+    ]
+   }
+  ],
+  "redHerrings": "FLAP is part of an envelope; HEAD and ADDRESS both start a letter; SEAL is an animal; STIR and PRESS are actions; SYMPATHY is what a letter can carry.",
+  "source": "shard-09"
+ },
+ {
+  "holiday": "newyear",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "New Year's party kit",
+    "words": [
+     "HAT",
+     "HORN",
+     "STREAMER",
+     "SPARKLER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Resolution verbs",
+    "words": [
+     "QUIT",
+     "SAVE",
+     "DIET",
+     "READ"
+    ],
+    "alsoFits": [
+     "DROP",
+     "RUN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Ball ___",
+    "words": [
+     "ROOM",
+     "GOWN",
+     "PARK",
+     "DROP"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Midnight ___",
+    "words": [
+     "SNACK",
+     "OIL",
+     "SUN",
+     "RUN"
+    ]
+   }
+  ],
+  "redHerrings": "DROP and RUN both read as resolutions; SNACK is the enemy of DIET; the ball DROP hides inside a compound group.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "newyear",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "At the midnight toast",
+    "words": [
+     "CHEERS",
+     "CLINK",
+     "BUBBLY",
+     "FLUTE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Start over",
+    "words": [
+     "RESET",
+     "RESTART",
+     "REDO",
+     "RENEW"
+    ],
+    "alsoFits": [
+     "START"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Kinds of clock",
+    "words": [
+     "WALL",
+     "ALARM",
+     "CUCKOO",
+     "GRANDFATHER"
+    ],
+    "alsoFits": [
+     "FACE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Fresh ___",
+    "words": [
+     "AIR",
+     "START",
+     "PAINT",
+     "FACE"
+    ]
+   }
+  ],
+  "redHerrings": "START reads as a fresh start; FACE belongs on a clock; FLUTE looks like an instrument and CUCKOO like a bird.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "mlkday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ways to serve",
+    "words": [
+     "VOLUNTEER",
+     "DONATE",
+     "MENTOR",
+     "TUTOR"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Peaceful gatherings",
+    "words": [
+     "MARCH",
+     "RALLY",
+     "VIGIL",
+     "PROTEST"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Dream ___",
+    "words": [
+     "TEAM",
+     "HOUSE",
+     "JOB",
+     "BIG"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Equal ___",
+    "words": [
+     "SIGN",
+     "PAY",
+     "FOOTING",
+     "PARTS"
+    ]
+   }
+  ],
+  "redHerrings": "MARCH reads as a month and RALLY as tennis; SIGN sits next to PROTEST; PAY tempts beside JOB.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "mlkday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Words for the dream",
+    "words": [
+     "HOPE",
+     "VISION",
+     "IDEAL",
+     "GOAL"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Tools of a peaceful movement",
+    "words": [
+     "BOYCOTT",
+     "PETITION",
+     "SERMON",
+     "SPEECH"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Free ___",
+    "words": [
+     "WILL",
+     "FALL",
+     "THROW",
+     "AGENT"
+    ],
+    "alsoFits": [
+     "SPEECH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden RIGHT",
+    "words": [
+     "BRIGHT",
+     "FRIGHT",
+     "UPRIGHT",
+     "FORTHRIGHT"
+    ]
+   }
+  ],
+  "redHerrings": "SPEECH is also free speech; WILL and GOAL both read as resolve; BRIGHT tempts as a hopeful word.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "groundhog",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Groundhog Day verbs",
+    "words": [
+     "EMERGE",
+     "PEEK",
+     "PREDICT",
+     "RETREAT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Burrowers",
+    "words": [
+     "MARMOT",
+     "GOPHER",
+     "BADGER",
+     "MOLE"
+    ],
+    "alsoFits": [
+     "HOG"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Again and again",
+    "words": [
+     "REPEAT",
+     "RERUN",
+     "REPLAY",
+     "ENCORE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Ground ___",
+    "words": [
+     "FLOOR",
+     "SWELL",
+     "ZERO",
+     "HOG"
+    ]
+   }
+  ],
+  "redHerrings": "HOG looks like an animal; BADGER and MOLE double as verb and spy; RETREAT and REPEAT are near-twins.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "groundhog",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Groundhog Day words",
+    "words": [
+     "BURROW",
+     "SHADOW",
+     "FORECAST",
+     "OMEN"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Six more weeks of it",
+    "words": [
+     "SNOW",
+     "SLEET",
+     "ICE",
+     "CHILL"
+    ],
+    "alsoFits": [
+     "WIND"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Wood___",
+    "words": [
+     "CHUCK",
+     "LAND",
+     "WIND",
+     "WORK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "A quick look",
+    "words": [
+     "GLANCE",
+     "PEEP",
+     "GANDER",
+     "SQUINT"
+    ]
+   }
+  ],
+  "redHerrings": "WIND is also winter weather; SHADOW and FORECAST both look ahead like a GLANCE; GANDER is a bird beside the wildlife of Groundhog Day; CHILL reads as a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "valentines",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Valentine's Day gifts",
+    "words": [
+     "ROSES",
+     "CHOCOLATE",
+     "CARD",
+     "JEWELRY"
+    ],
+    "alsoFits": [
+     "GLOVE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Cupid's kit",
+    "words": [
+     "ARROW",
+     "WINGS",
+     "QUIVER",
+     "BLINDFOLD"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Heart___",
+    "words": [
+     "ACHE",
+     "FELT",
+     "LAND",
+     "STRINGS"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden LOVE",
+    "words": [
+     "GLOVE",
+     "CLOVER",
+     "PLOVER",
+     "SLOVENLY"
+    ]
+   }
+  ],
+  "redHerrings": "GLOVE could be a gift; FELT and BLINDFOLD read as fabric beside GLOVE; STRINGS tempts as archery gear next to ARROW and QUIVER; CLOVER is a plant beside ROSES.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "valentines",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Head over heels",
+    "words": [
+     "SMITTEN",
+     "BESOTTED",
+     "ENAMORED",
+     "INFATUATED"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Inside a chocolate",
+    "words": [
+     "TRUFFLE",
+     "CARAMEL",
+     "NOUGAT",
+     "FONDANT"
+    ],
+    "alsoFits": [
+     "DATE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Blind ___",
+    "words": [
+     "DATE",
+     "SPOT",
+     "SIDE",
+     "FAITH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "___mate",
+    "words": [
+     "SOUL",
+     "CLASS",
+     "ROOM",
+     "CHECK"
+    ]
+   }
+  ],
+  "redHerrings": "DATE is also a sweet filling; SOUL and FAITH sit close; CHECK and SPOT both read as verbs.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "presidents",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Powers of the office",
+    "words": [
+     "VETO",
+     "PARDON",
+     "APPOINT",
+     "SIGN"
+    ],
+    "alsoFits": [
+     "SELECT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Election season",
+    "words": [
+     "BALLOT",
+     "CAMPAIGN",
+     "DEBATE",
+     "POLL"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Cabinet departments",
+    "words": [
+     "STATE",
+     "TREASURY",
+     "DEFENSE",
+     "INTERIOR"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ELECT",
+    "words": [
+     "SELECT",
+     "DIALECT",
+     "ELECTRIC",
+     "INTELLECT"
+    ]
+   }
+  ],
+  "redHerrings": "SELECT reads as a presidential power; STATE and INTERIOR are everyday words; SIGN and POLL both belong on a lawn in election season.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "presidents",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Inauguration Day",
+    "words": [
+     "OATH",
+     "PARADE",
+     "BALL",
+     "ADDRESS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Elected leaders",
+    "words": [
+     "PRESIDENT",
+     "GOVERNOR",
+     "MAYOR",
+     "SENATOR"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Log ___",
+    "words": [
+     "CABIN",
+     "JAM",
+     "ROLL",
+     "BOOK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden presidents",
+    "words": [
+     "POLKA",
+     "AMBUSH",
+     "AFFORD",
+     "GRANTED"
+    ]
+   }
+  ],
+  "redHerrings": "BALL and ROLL both bounce; ADDRESS and BOOK read as everyday nouns; POLKA looks like a dance for the inaugural BALL.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "leapday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Take a leap",
+    "words": [
+     "SPRING",
+     "LUNGE",
+     "POUNCE",
+     "HURDLE"
+    ],
+    "alsoFits": [
+     "HOP"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Animals that leap",
+    "words": [
+     "FROG",
+     "KANGAROO",
+     "CRICKET",
+     "HARE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "One more",
+    "words": [
+     "BONUS",
+     "SPARE",
+     "EXTRA",
+     "SURPLUS"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Skip",
+    "words": [
+     "HOP",
+     "OMIT",
+     "MISS",
+     "PASS"
+    ]
+   }
+  ],
+  "redHerrings": "HOP is both a leap and a skip; CRICKET is a sport; SPARE and PASS both belong in bowling; SPRING is a season.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "leapday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Rare as February 29",
+    "words": [
+     "RARE",
+     "SELDOM",
+     "SCARCE",
+     "UNCOMMON"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "___ jump",
+    "words": [
+     "BUNGEE",
+     "BROAD",
+     "TRIPLE",
+     "SKI"
+    ],
+    "alsoFits": [
+     "QUAD"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Groups of four",
+    "words": [
+     "QUARTET",
+     "QUAD",
+     "FOURSOME",
+     "QUATRAIN"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ODD",
+    "words": [
+     "TODDLER",
+     "CODDLE",
+     "SHODDY",
+     "FODDER"
+    ]
+   }
+  ],
+  "redHerrings": "QUAD is also a skating jump; TRIPLE reads as a number word next to the fours; RARE and SHODDY both judge quality.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "mardigras",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Thrown from a Mardi Gras float",
+    "words": [
+     "BEADS",
+     "CUPS",
+     "COINS",
+     "TRINKETS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Fat Tuesday treats",
+    "words": [
+     "PANCAKE",
+     "FRITTER",
+     "PRALINE",
+     "DOUGHNUT"
+    ],
+    "alsoFits": [
+     "CAKE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "King ___",
+    "words": [
+     "CAKE",
+     "SIZE",
+     "CRAB",
+     "COBRA"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Cover up",
+    "words": [
+     "DISGUISE",
+     "VEIL",
+     "CLOAK",
+     "SCREEN"
+    ]
+   }
+  ],
+  "redHerrings": "CAKE is a treat and half of PANCAKE; CRAB reads as food; CUPS could be a measure in the kitchen.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "mardigras",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Mardi Gras spirit",
+    "words": [
+     "REVEL",
+     "FEAST",
+     "PARADE",
+     "MASQUERADE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Along the parade route",
+    "words": [
+     "BALCONY",
+     "LADDER",
+     "CURB",
+     "BARRIER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fat ___",
+    "words": [
+     "CAT",
+     "CHANCE",
+     "LIP",
+     "FARM"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Let loose",
+    "words": [
+     "FROLIC",
+     "ROMP",
+     "CELEBRATE",
+     "UNWIND"
+    ],
+    "alsoFits": [
+     "REVEL"
+    ]
+   }
+  ],
+  "redHerrings": "REVEL also means let loose; FEAST and CELEBRATE are cousins; CAT reads as an animal and LIP as a body part.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "stpatricks",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "St. Patrick's Day symbols",
+    "words": [
+     "SHAMROCK",
+     "LEPRECHAUN",
+     "RAINBOW",
+     "HARP"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Good-luck tokens",
+    "words": [
+     "HORSESHOE",
+     "WISHBONE",
+     "PENNY",
+     "TALISMAN"
+    ],
+    "alsoFits": [
+     "SHAMROCK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pot ___",
+    "words": [
+     "LUCK",
+     "ROAST",
+     "HOLE",
+     "PIE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden PAT",
+    "words": [
+     "SPATULA",
+     "SPATTER",
+     "DISPATCH",
+     "SYMPATHY"
+    ]
+   }
+  ],
+  "redHerrings": "SHAMROCK is also a lucky charm; LUCK sits beside the tokens; HARP is an instrument; PIE and ROAST read as dinner.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "stpatricks",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Lucky",
+    "words": [
+     "FORTUNATE",
+     "CHARMED",
+     "BLESSED",
+     "FAVORED"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Leprechaun's outfit",
+    "words": [
+     "HAT",
+     "BUCKLE",
+     "BREECHES",
+     "VEST"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Gold___",
+    "words": [
+     "FISH",
+     "MINE",
+     "RUSH",
+     "LEAF"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Ends in BOW",
+    "words": [
+     "ELBOW",
+     "RAINBOW",
+     "OXBOW",
+     "LONGBOW"
+    ]
+   }
+  ],
+  "redHerrings": "RAINBOW looks like the holiday symbol; LEAF hints at a four-leaf clover; MINE and RUSH read as verbs.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "aprilfools",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "April Fools' fare",
+    "words": [
+     "PRANK",
+     "HOAX",
+     "GAG",
+     "SPOOF"
+    ],
+    "alsoFits": [
+     "SHAM"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Taken in",
+    "words": [
+     "DUPED",
+     "FOOLED",
+     "CONNED",
+     "HOODWINKED"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fake",
+    "words": [
+     "SHAM",
+     "BOGUS",
+     "PHONY",
+     "COUNTERFEIT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Silly",
+    "words": [
+     "DAFT",
+     "GOOFY",
+     "ZANY",
+     "WACKY"
+    ]
+   }
+  ],
+  "redHerrings": "SHAM is also a hoax; GAG reads as a verb; GOOFY and FOOLED both sound like being fooled.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "aprilfools",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Novelty-shop classics",
+    "words": [
+     "CUSHION",
+     "BUZZER",
+     "NOSE",
+     "GLASSES"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Easily fooled",
+    "words": [
+     "NAIVE",
+     "TRUSTING",
+     "CREDULOUS",
+     "GREEN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Jokes",
+    "words": [
+     "PUN",
+     "QUIP",
+     "JEST",
+     "RIDDLE"
+    ],
+    "alsoFits": [
+     "GOOF"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Slip-ups",
+    "words": [
+     "GAFFE",
+     "BLUNDER",
+     "FLUB",
+     "GOOF"
+    ]
+   }
+  ],
+  "redHerrings": "GOOF is also a bit of fun; GREEN is a colour; NOSE and GLASSES read as body part and eyewear; RIDDLE is also a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "easter",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Easter Sunday",
+    "words": [
+     "EGG",
+     "LAMB",
+     "LILY",
+     "HUNT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Hunt for eggs",
+    "words": [
+     "SEARCH",
+     "SEEK",
+     "SCOUR",
+     "FORAGE"
+    ],
+    "alsoFits": [
+     "HUNT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pastels",
+    "words": [
+     "LILAC",
+     "PEACH",
+     "MINT",
+     "LAVENDER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden EGG",
+    "words": [
+     "BEGGAR",
+     "LEGGING",
+     "PEGGED",
+     "BOOTLEGGER"
+    ]
+   }
+  ],
+  "redHerrings": "HUNT is also a search verb; LILY and LILAC look alike; PEACH and MINT read as food; EGG sits beside its hidden cousins.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "easter",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Egg-decorating kit",
+    "words": [
+     "DYE",
+     "WAX",
+     "STICKER",
+     "GLITTER"
+    ],
+    "alsoFits": [
+     "EGG"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "In a hot cross bun",
+    "words": [
+     "FLOUR",
+     "YEAST",
+     "RAISINS",
+     "CINNAMON"
+    ],
+    "alsoFits": [
+     "EGG",
+     "MILK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "What a bunny does",
+    "words": [
+     "HOP",
+     "TWITCH",
+     "NIBBLE",
+     "BURROW"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Chocolate ___",
+    "words": [
+     "CHIP",
+     "BAR",
+     "MILK",
+     "EGG"
+    ]
+   }
+  ],
+  "redHerrings": "EGG belongs with the decorating kit and in the bun dough, and MILK in the dough too; CHIP and BAR read as snacks; WAX and DYE are verbs like HOP and TWITCH.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "earthday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Earth Day verbs",
+    "words": [
+     "REDUCE",
+     "REUSE",
+     "RECYCLE",
+     "COMPOST"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Renewable power",
+    "words": [
+     "SOLAR",
+     "WIND",
+     "GEOTHERMAL",
+     "WAVE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Compost-bin scraps",
+    "words": [
+     "PEEL",
+     "CORE",
+     "RIND",
+     "HUSK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden PINE",
+    "words": [
+     "SPINE",
+     "OPINE",
+     "ALPINE",
+     "SUPINE"
+    ]
+   }
+  ],
+  "redHerrings": "COMPOST sits beside the scraps; SPINE and CORE are both centers; PEEL reads as a verb like REDUCE; WIND could be a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "earthday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Earth-friendly habits",
+    "words": [
+     "UNPLUG",
+     "BIKE",
+     "PLANT",
+     "CONSERVE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Wild places to protect",
+    "words": [
+     "REEF",
+     "PRAIRIE",
+     "FOREST",
+     "GLACIER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Carbon ___",
+    "words": [
+     "FOOTPRINT",
+     "COPY",
+     "DATING",
+     "PAPER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Litter",
+    "words": [
+     "RUBBISH",
+     "REFUSE",
+     "WASTE",
+     "DEBRIS"
+    ],
+    "alsoFits": [
+     "PAPER"
+    ]
+   }
+  ],
+  "redHerrings": "PAPER is also litter; PLANT could be a wild thing; REFUSE and WASTE read as verbs like UNPLUG.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "cincodemayo",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Cinco de Mayo fiesta",
+    "words": [
+     "FIESTA",
+     "SOMBRERO",
+     "MARACAS",
+     "GUITAR"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Guacamole makings",
+    "words": [
+     "AVOCADO",
+     "ONION",
+     "TOMATO",
+     "GARLIC"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "___ pepper",
+    "words": [
+     "BELL",
+     "CHILI",
+     "BLACK",
+     "SWEET"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden LIME",
+    "words": [
+     "SLIME",
+     "SUBLIME",
+     "LIMELIGHT",
+     "LIMESTONE"
+    ]
+   }
+  ],
+  "redHerrings": "CHILI and SWEET read as food beside the guacamole; BELL looks like an instrument next to MARACAS; LIME hides four times but never appears alone.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "cincodemayo",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On the Mexican flag",
+    "words": [
+     "GREEN",
+     "WHITE",
+     "RED",
+     "EAGLE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Mariachi instruments",
+    "words": [
+     "TRUMPET",
+     "VIOLIN",
+     "GUITAR",
+     "HARP"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Fiesta",
+    "words": [
+     "PARTY",
+     "BASH",
+     "JAMBOREE",
+     "BLAST"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden OLE",
+    "words": [
+     "WHOLE",
+     "VIOLET",
+     "CONSOLE",
+     "PAROLE"
+    ]
+   }
+  ],
+  "redHerrings": "VIOLET is a colour beside GREEN, WHITE and RED, and looks like VIOLIN; BASH and BLAST read as hits and explosions; CONSOLE as a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "mothersday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Breakfast in bed for Mom",
+    "words": [
+     "TRAY",
+     "TOAST",
+     "JUICE",
+     "WAFFLE"
+    ],
+    "alsoFits": [
+     "BANANA"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Mother's Day treats",
+    "words": [
+     "BOUQUET",
+     "BRUNCH",
+     "SPA",
+     "PERFUME"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Mother___",
+    "words": [
+     "BOARD",
+     "LAND",
+     "LODE",
+     "HOOD"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden NAN",
+    "words": [
+     "BANANA",
+     "FINANCE",
+     "PENNANT",
+     "TENANT"
+    ]
+   }
+  ],
+  "redHerrings": "BANANA belongs on a breakfast tray; BRUNCH is a meal like TOAST and WAFFLE; TOAST reads as a verb; HOOD and BOARD look ordinary.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "mothersday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "___mother",
+    "words": [
+     "STEP",
+     "GRAND",
+     "GOD",
+     "FOSTER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Mother's Day bouquet",
+    "words": [
+     "CARNATION",
+     "PEONY",
+     "ROSE",
+     "LILY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pamper Mom",
+    "words": [
+     "SPOIL",
+     "INDULGE",
+     "CODDLE",
+     "TREAT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden AUNT",
+    "words": [
+     "HAUNT",
+     "DAUNT",
+     "JAUNT",
+     "FLAUNT"
+    ]
+   }
+  ],
+  "redHerrings": "FOSTER reads as a verb like SPOIL; TREAT could be a gift like a bouquet; ROSE is also a verb; HAUNT tempts as a spooky outlier.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "memorial",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Memorial Day tributes",
+    "words": [
+     "WREATH",
+     "FLAG",
+     "SALUTE",
+     "POPPY"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Ways to honor",
+    "words": [
+     "TRIBUTE",
+     "HOMAGE",
+     "EULOGY",
+     "DEDICATION"
+    ],
+    "alsoFits": [
+     "SALUTE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Remember",
+    "words": [
+     "RECALL",
+     "REMINISCE",
+     "RETAIN",
+     "COMMEMORATE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Half-___",
+    "words": [
+     "MAST",
+     "TIME",
+     "MOON",
+     "WAY"
+    ]
+   }
+  ],
+  "redHerrings": "SALUTE is also a way to honor; FLAG belongs on a MAST; DEDICATION and COMMEMORATE are close; RECALL reads as a product notice.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "memorial",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Memorial Day weekend",
+    "words": [
+     "PARADE",
+     "CEREMONY",
+     "COOKOUT",
+     "PICNIC"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Those who served",
+    "words": [
+     "SOLDIER",
+     "SAILOR",
+     "MARINE",
+     "AIRMAN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Memorials",
+    "words": [
+     "STATUE",
+     "PLAQUE",
+     "OBELISK",
+     "MONUMENT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "___stone",
+    "words": [
+     "MILE",
+     "KEY",
+     "CORNER",
+     "SAND"
+    ]
+   }
+  ],
+  "redHerrings": "MARINE reads as a sea word beside SAND; CEREMONY tempts as a memorial; KEY and CORNER look ordinary; a monument is often stone.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "fathersday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Classic Dad gifts",
+    "words": [
+     "TIE",
+     "WALLET",
+     "SOCKS",
+     "MUG"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Dad's happy places",
+    "words": [
+     "GRILL",
+     "GARAGE",
+     "RECLINER",
+     "WORKBENCH"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Father___",
+    "words": [
+     "HOOD",
+     "LAND",
+     "FIGURE",
+     "TIME"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Like a dad joke",
+    "words": [
+     "CORNY",
+     "CHEESY",
+     "HOKEY",
+     "STALE"
+    ]
+   }
+  ],
+  "redHerrings": "GRILL and MUG both read as verbs and kitchen things; TIE and FIGURE are everyday words; STALE tempts as a leftover from the GRILL.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "fathersday",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Father's Day outings",
+    "words": [
+     "FISHING",
+     "GOLF",
+     "BARBECUE",
+     "BOWLING"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Fatherly",
+    "words": [
+     "PATERNAL",
+     "DOTING",
+     "PROTECTIVE",
+     "SUPPORTIVE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Neck___",
+    "words": [
+     "TIE",
+     "LACE",
+     "LINE",
+     "BAND"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Fly___",
+    "words": [
+     "PAPER",
+     "WHEEL",
+     "TRAP",
+     "LEAF"
+    ],
+    "alsoFits": [
+     "FISHING"
+    ]
+   }
+  ],
+  "redHerrings": "FISHING is also fly fishing; LINE and TRAP read as fishing gear; BAND could be the music at a BARBECUE; LEAF looks like the outdoors.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "juneteenth",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Juneteenth watchwords",
+    "words": [
+     "FREEDOM",
+     "LIBERTY",
+     "EMANCIPATION",
+     "JUBILEE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Red on the Juneteenth table",
+    "words": [
+     "WATERMELON",
+     "STRAWBERRY",
+     "SODA",
+     "PUNCH"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Juneteenth gatherings",
+    "words": [
+     "COOKOUT",
+     "PICNIC",
+     "PARADE",
+     "RODEO"
+    ],
+    "alsoFits": [
+     "MARCH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden ARC",
+    "words": [
+     "MARCH",
+     "MONARCH",
+     "STARCH",
+     "PARCHMENT"
+    ]
+   }
+  ],
+  "redHerrings": "MARCH is also a gathering; PARCHMENT hints at the proclamation read aloud; PUNCH reads as a verb; JUBILEE could be a celebration like a PICNIC.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "juneteenth",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On the Juneteenth flag",
+    "words": [
+     "STAR",
+     "ARC",
+     "RED",
+     "BLUE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "At the family reunion",
+    "words": [
+     "COUSINS",
+     "ELDERS",
+     "STORIES",
+     "HUGS"
+    ],
+    "alsoFits": [
+     "BABY"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pitmaster verbs",
+    "words": [
+     "GRILL",
+     "SMOKE",
+     "BASTE",
+     "RUB"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "___ ribs",
+    "words": [
+     "SPARE",
+     "BABY",
+     "SHORT",
+     "PRIME"
+    ]
+   }
+  ],
+  "redHerrings": "BABY could join the family reunion; RUB and SMOKE read as nouns; STAR, RED and BLUE tempt beside PRIME as descriptions.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "july4",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Fourth of July fixtures",
+    "words": [
+     "PARADE",
+     "FIREWORKS",
+     "FLAG",
+     "COOKOUT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Fireworks sounds",
+    "words": [
+     "CRACKLE",
+     "WHISTLE",
+     "FIZZ",
+     "BOOM"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Self-government",
+    "words": [
+     "AUTONOMY",
+     "FREEDOM",
+     "SOVEREIGNTY",
+     "INDEPENDENCE"
+    ],
+    "alsoFits": [
+     "LIBERTY"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "___ bell",
+    "words": [
+     "DOOR",
+     "COW",
+     "DINNER",
+     "LIBERTY"
+    ]
+   }
+  ],
+  "redHerrings": "LIBERTY reads as self-government but rings a bell; WHISTLE and BOOM are things as well as sounds; DINNER tempts beside COOKOUT.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "july4",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Cookout plate",
+    "words": [
+     "BURGER",
+     "CORN",
+     "COLESLAW",
+     "PICKLE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Words from 1776",
+    "words": [
+     "COLONY",
+     "CONGRESS",
+     "DECLARATION",
+     "REVOLUTION"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Rocket ___",
+    "words": [
+     "SHIP",
+     "FUEL",
+     "SCIENCE",
+     "BOOSTER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Bald ___",
+    "words": [
+     "EAGLE",
+     "SPOT",
+     "TIRE",
+     "PATCH"
+    ]
+   }
+  ],
+  "redHerrings": "EAGLE reads as patriotic beside CONGRESS; PICKLE and PATCH are also verbs; SHIP and COLONY both sail toward 1776.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "labor",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Labor movement words",
+    "words": [
+     "UNION",
+     "PICKET",
+     "STRIKE",
+     "WAGE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Labor Day weekend",
+    "words": [
+     "BEACH",
+     "PARADE",
+     "SALE",
+     "GRILL"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Time off",
+    "words": [
+     "REST",
+     "BREAK",
+     "LEAVE",
+     "HOLIDAY"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Work___",
+    "words": [
+     "SHOP",
+     "LOAD",
+     "BENCH",
+     "HORSE"
+    ]
+   }
+  ],
+  "redHerrings": "STRIKE and BREAK both stop work; SHOP tempts beside SALE; HORSE and BENCH look like the park; LEAVE reads as a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "labor",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On-the-job gear",
+    "words": [
+     "APRON",
+     "OVERALLS",
+     "GOGGLES",
+     "HELMET"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "On the timesheet",
+    "words": [
+     "SHIFT",
+     "OVERTIME",
+     "PAYDAY",
+     "WEEKEND"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Office day",
+    "words": [
+     "CUBICLE",
+     "MEMO",
+     "DEADLINE",
+     "PRINTER"
+    ],
+    "alsoFits": [
+     "SUIT"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Union ___",
+    "words": [
+     "JACK",
+     "SUIT",
+     "CARD",
+     "HALL"
+    ]
+   }
+  ],
+  "redHerrings": "SUIT is office wear too; SHIFT reads as a verb; JACK and CARD look like a card game; HELMET and HALL sit near each other.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "indigenous",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Crops first grown in the Americas",
+    "words": [
+     "CORN",
+     "SQUASH",
+     "POTATO",
+     "TOMATO"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Words from Indigenous languages",
+    "words": [
+     "CANOE",
+     "KAYAK",
+     "MOCCASIN",
+     "TOBOGGAN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "At a powwow",
+    "words": [
+     "DRUM",
+     "DANCE",
+     "SONG",
+     "REGALIA"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden LAND",
+    "words": [
+     "BLAND",
+     "GLAND",
+     "ISLAND",
+     "GARLAND"
+    ]
+   }
+  ],
+  "redHerrings": "SQUASH reads as a verb and a sport; CANOE and KAYAK could be one group with ISLAND; BLAND tempts beside the food words.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "indigenous",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Indigenous Peoples' Day themes",
+    "words": [
+     "HERITAGE",
+     "CULTURE",
+     "HISTORY",
+     "RESILIENCE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Traditional arts",
+    "words": [
+     "BEADWORK",
+     "WEAVING",
+     "POTTERY",
+     "CARVING"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Animal names from Algonquian",
+    "words": [
+     "MOOSE",
+     "RACCOON",
+     "SKUNK",
+     "CHIPMUNK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Drum___",
+    "words": [
+     "STICK",
+     "BEAT",
+     "ROLL",
+     "HEAD"
+    ]
+   }
+  ],
+  "redHerrings": "ROLL and STICK read as bread and wood; BEAT tempts as a verb like CARVING; HEAD is a body part; CULTURE could be an art.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "halloween",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Porch on Halloween",
+    "words": [
+     "PUMPKIN",
+     "COBWEB",
+     "SKELETON",
+     "TOMBSTONE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Haunted-house sounds",
+    "words": [
+     "CREAK",
+     "MOAN",
+     "HOWL",
+     "SHRIEK"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Carving a pumpkin",
+    "words": [
+     "CARVE",
+     "SCOOP",
+     "GRIN",
+     "GLOW"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden BOO",
+    "words": [
+     "TABOO",
+     "BAMBOO",
+     "CABOOSE",
+     "SCRAPBOOK"
+    ]
+   }
+  ],
+  "redHerrings": "PUMPKIN sits beside the carving verbs; HOWL and MOAN read as verbs like CARVE; SCRAPBOOK tempts as a porch prop; GLOW is a noun too.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "halloween",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Trick-or-treating kit",
+    "words": [
+     "COSTUME",
+     "BUCKET",
+     "FLASHLIGHT",
+     "MASK"
+    ],
+    "alsoFits": [
+     "PATCH"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Spooky",
+    "words": [
+     "EERIE",
+     "CREEPY",
+     "GHOSTLY",
+     "MACABRE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Pumpkin ___",
+    "words": [
+     "PIE",
+     "PATCH",
+     "SEED",
+     "SPICE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden IMP",
+    "words": [
+     "SHRIMP",
+     "GLIMPSE",
+     "SIMPLE",
+     "CRIMP"
+    ]
+   }
+  ],
+  "redHerrings": "PATCH could be an eye patch in the costume kit; SHRIMP and PIE read as food; MASK and SEED are verbs too.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "veterans",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Ways to honor a veteran",
+    "words": [
+     "SALUTE",
+     "HANDSHAKE",
+     "TRIBUTE",
+     "APPLAUSE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Uniformed services",
+    "words": [
+     "ARMY",
+     "NAVY",
+     "MARINES",
+     "RESERVES"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Worn on a uniform",
+    "words": [
+     "MEDAL",
+     "RIBBON",
+     "BADGE",
+     "INSIGNIA"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden VET",
+    "words": [
+     "VELVET",
+     "DUVET",
+     "RIVET",
+     "CIVET"
+    ]
+   }
+  ],
+  "redHerrings": "NAVY is also a colour beside VELVET; RIBBON could be a fabric; RESERVES reads as a verb; CIVET is an animal.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "veterans",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Armistice Day",
+    "words": [
+     "ARMISTICE",
+     "TRUCE",
+     "PEACE",
+     "POPPY"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "A stint in uniform",
+    "words": [
+     "TOUR",
+     "HITCH",
+     "DEPLOYMENT",
+     "ENLISTMENT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Homecoming",
+    "words": [
+     "WELCOME",
+     "EMBRACE",
+     "BANNER",
+     "CHEER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "___ of duty",
+    "words": [
+     "CALL",
+     "LINE",
+     "SENSE",
+     "BREACH"
+    ],
+    "alsoFits": [
+     "TOUR"
+    ]
+   }
+  ],
+  "redHerrings": "TOUR is also a tour of duty; HITCH and CALL read as verbs; PEACE and TRUCE look like a pair with EMBRACE; POPPY is a flower.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "thanksgiving",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Thanksgiving pies",
+    "words": [
+     "PUMPKIN",
+     "PECAN",
+     "APPLE",
+     "MINCE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Turkey parts and sounds",
+    "words": [
+     "WATTLE",
+     "DRUMSTICK",
+     "WISHBONE",
+     "GOBBLE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Grateful",
+    "words": [
+     "THANKFUL",
+     "OBLIGED",
+     "INDEBTED",
+     "BEHOLDEN"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden PIE",
+    "words": [
+     "MAGPIE",
+     "OCCUPIED",
+     "COPIED",
+     "SPIED"
+    ]
+   }
+  ],
+  "redHerrings": "MINCE and GOBBLE both read as ways to eat; MAGPIE is a bird beside the turkey words; APPLE tempts as a stuffing; OCCUPIED reads as a full table.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "thanksgiving",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Thanksgiving Day itinerary",
+    "words": [
+     "PARADE",
+     "FOOTBALL",
+     "FEAST",
+     "NAP"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Cranberry ___",
+    "words": [
+     "SAUCE",
+     "JUICE",
+     "BOG",
+     "RELISH"
+    ],
+    "alsoFits": [
+     "JAM"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Harvest verbs",
+    "words": [
+     "REAP",
+     "PICK",
+     "THRESH",
+     "SHUCK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Stuff",
+    "words": [
+     "CRAM",
+     "PACK",
+     "JAM",
+     "WEDGE"
+    ]
+   }
+  ],
+  "redHerrings": "JAM is also a cranberry spread; RELISH reads as a verb; FEAST and CRAM both describe overeating; PICK and WEDGE look like tools; SHUCK sits beside the corn on the table.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "christmas",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On a wreath",
+    "words": [
+     "HOLLY",
+     "RIBBON",
+     "BERRIES",
+     "BOW"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Christmas treats",
+    "words": [
+     "EGGNOG",
+     "FRUITCAKE",
+     "GINGERBREAD",
+     "PEPPERMINT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Santa's look",
+    "words": [
+     "BEARD",
+     "BELLY",
+     "SACK",
+     "BOOTS"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden BELL",
+    "words": [
+     "BELLOW",
+     "REBELLION",
+     "EMBELLISH",
+     "DUMBBELL"
+    ],
+    "alsoFits": [
+     "BELLY"
+    ]
+   }
+  ],
+  "redHerrings": "BELLY hides a BELL; BOW and RIBBON could decorate Santa's SACK; BERRIES and PEPPERMINT both read as flavours; DUMBBELL tempts as a weight.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "christmas",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Under the tree",
+    "words": [
+     "PRESENT",
+     "PARCEL",
+     "PACKAGE",
+     "BUNDLE"
+    ],
+    "alsoFits": [
+     "GIFT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Christmas-tree evergreens",
+    "words": [
+     "FIR",
+     "SPRUCE",
+     "PINE",
+     "CEDAR"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Sing",
+    "words": [
+     "CAROL",
+     "CHANT",
+     "CROON",
+     "WARBLE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Words meaning 'present'",
+    "words": [
+     "GIFT",
+     "NOW",
+     "HERE",
+     "CURRENT"
+    ]
+   }
+  ],
+  "redHerrings": "GIFT belongs under the tree too; PRESENT is the answer to the fourth group but sits in the first; PINE reads as a verb like CROON; SPRUCE means tidy up.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "kwanzaa",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Kwanzaa principles",
+    "words": [
+     "UNITY",
+     "PURPOSE",
+     "CREATIVITY",
+     "FAITH"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Set out for Kwanzaa",
+    "words": [
+     "MAT",
+     "CANDLES",
+     "CORN",
+     "CUP"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "The harvest",
+    "words": [
+     "YIELD",
+     "BOUNTY",
+     "HARVEST",
+     "ABUNDANCE"
+    ],
+    "alsoFits": [
+     "CORN"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden UNITY",
+    "words": [
+     "COMMUNITY",
+     "IMMUNITY",
+     "OPPORTUNITY",
+     "IMPUNITY"
+    ],
+    "alsoFits": [
+     "UNITY"
+    ]
+   }
+  ],
+  "redHerrings": "UNITY hides inside the fourth group as well as leading the first; CORN is harvest too; YIELD and PURPOSE both read as abstract nouns; MAT is a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "kwanzaa",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Kwanzaa celebration",
+    "words": [
+     "FEAST",
+     "DRUMMING",
+     "POETRY",
+     "GIFTS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Working together",
+    "words": [
+     "TEAMWORK",
+     "SOLIDARITY",
+     "COLLECTIVE",
+     "PARTNERSHIP"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Light the candle",
+    "words": [
+     "KINDLE",
+     "IGNITE",
+     "SPARK",
+     "STRIKE"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Come in sevens",
+    "words": [
+     "WEEK",
+     "RAINBOW",
+     "SEAS",
+     "CONTINENTS"
+    ]
+   }
+  ],
+  "redHerrings": "STRIKE tempts as collective action; SPARK reads as a noun; FEAST and WEEK both mark time; COLLECTIVE could be a noun for a gathering.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "lunarnewyear",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Lunar New Year sights",
+    "words": [
+     "LANTERN",
+     "DRAGON",
+     "ENVELOPE",
+     "FIRECRACKER"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Zodiac animals",
+    "words": [
+     "TIGER",
+     "RABBIT",
+     "HORSE",
+     "ROOSTER"
+    ],
+    "alsoFits": [
+     "DRAGON"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Lucky ___",
+    "words": [
+     "CHARM",
+     "BREAK",
+     "NUMBER",
+     "STREAK"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden OX",
+    "words": [
+     "BOXER",
+     "TOXIC",
+     "PROXY",
+     "FOXGLOVE"
+    ]
+   }
+  ],
+  "redHerrings": "DRAGON is a zodiac animal too; BOXER is a dog and FOXGLOVE hides a fox; BREAK and STREAK look like a pair; NUMBER reads as a verb.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "lunarnewyear",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Lunar New Year customs",
+    "words": [
+     "FEAST",
+     "REUNION",
+     "SWEEPING",
+     "FIREWORKS"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Lucky New Year foods",
+    "words": [
+     "DUMPLING",
+     "ORANGE",
+     "FISH",
+     "NOODLE"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Zodiac animals",
+    "words": [
+     "SNAKE",
+     "GOAT",
+     "MONKEY",
+     "PIG"
+    ],
+    "alsoFits": [
+     "FISH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Full ___",
+    "words": [
+     "MOON",
+     "HOUSE",
+     "STOP",
+     "CIRCLE"
+    ]
+   }
+  ],
+  "redHerrings": "FISH is an animal too; ORANGE is a colour; HOUSE tempts beside SWEEPING and REUNION; STOP and CIRCLE read as verbs.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "passover",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "On the Seder plate",
+    "words": [
+     "EGG",
+     "PARSLEY",
+     "SHANK",
+     "LETTUCE"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Passover vocabulary",
+    "words": [
+     "MATZO",
+     "EXODUS",
+     "PLAGUES",
+     "LEAVEN"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Bitter",
+    "words": [
+     "ACRID",
+     "HARSH",
+     "TART",
+     "BITING"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden CUP",
+    "words": [
+     "HICCUP",
+     "OCCUPY",
+     "TEACUP",
+     "BUTTERCUP"
+    ]
+   }
+  ],
+  "redHerrings": "TART reads as a pastry beside the plate; LETTUCE and PARSLEY are the bitter herbs; TEACUP and BUTTERCUP tempt as table items; LEAVEN is a verb too.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "passover",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "At the Seder we...",
+    "words": [
+     "RECLINE",
+     "RETELL",
+     "DIP",
+     "SING"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Plagues of Egypt",
+    "words": [
+     "FROGS",
+     "LOCUSTS",
+     "HAIL",
+     "DARKNESS"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Flat as matzo",
+    "words": [
+     "LEVEL",
+     "EVEN",
+     "PLANE",
+     "SMOOTH"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Part",
+    "words": [
+     "SPLIT",
+     "DIVIDE",
+     "SEPARATE",
+     "CLEAVE"
+    ]
+   }
+  ],
+  "redHerrings": "HAIL looks like a greeting and DARKNESS like a mood; PLANE reads as a tool or aircraft; DIP as a snack; EVEN and LEVEL could be verbs like SPLIT.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "diwali",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "A Diwali lamp",
+    "words": [
+     "LAMP",
+     "WICK",
+     "FLAME",
+     "OIL"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Diwali sights",
+    "words": [
+     "FIREWORKS",
+     "MARIGOLD",
+     "LOTUS",
+     "SWEETS"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Prosperity",
+    "words": [
+     "WEALTH",
+     "FORTUNE",
+     "PLENTY",
+     "RICHES"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden LIGHT",
+    "words": [
+     "DELIGHT",
+     "TWILIGHT",
+     "FLIGHT",
+     "SLIGHT"
+    ]
+   }
+  ],
+  "redHerrings": "OIL and WEALTH both suggest riches; FLAME and FIREWORKS both burn; LOTUS and MARIGOLD are one pair of flowers; SLIGHT and PLENTY are opposites.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "diwali",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Lit for Diwali",
+    "words": [
+     "LANTERN",
+     "SPARKLER",
+     "CANDLE",
+     "LAMP"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "What Diwali celebrates",
+    "words": [
+     "VICTORY",
+     "TRIUMPH",
+     "GOODNESS",
+     "RENEWAL"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Sweet",
+    "words": [
+     "SUGARY",
+     "HONEYED",
+     "SYRUPY",
+     "CANDIED"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Shine",
+    "words": [
+     "GLOW",
+     "GLISTEN",
+     "TWINKLE",
+     "RADIATE"
+    ]
+   }
+  ],
+  "redHerrings": "GLOW and TWINKLE describe what a LAMP does; CANDIED and CANDLE look alike; VICTORY and TRIUMPH are twins; HONEYED could describe a voice.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "hanukkah",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "The Hanukkah story",
+    "words": [
+     "TEMPLE",
+     "OIL",
+     "MIRACLE",
+     "EIGHT"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Hanukkah kitchen",
+    "words": [
+     "POTATO",
+     "ONION",
+     "APPLESAUCE",
+     "DOUGHNUT"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Spin like a dreidel",
+    "words": [
+     "TWIRL",
+     "REVOLVE",
+     "SWIVEL",
+     "TURN"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden EIGHT",
+    "words": [
+     "WEIGHT",
+     "HEIGHT",
+     "FREIGHT",
+     "SLEIGHT"
+    ],
+    "alsoFits": [
+     "EIGHT"
+    ]
+   }
+  ],
+  "redHerrings": "EIGHT is also hidden in the fourth group; OIL belongs in the kitchen; SLEIGHT looks like a sleigh; TEMPLE is a body part too.",
+  "source": "shard-holidays"
+ },
+ {
+  "holiday": "hanukkah",
+  "groups": [
+   {
+    "tier": 1,
+    "label": "Hanukkah gelt",
+    "words": [
+     "CHOCOLATE",
+     "COINS",
+     "FOIL",
+     "GOLD"
+    ]
+   },
+   {
+    "tier": 2,
+    "label": "Lighting the candles",
+    "words": [
+     "WICK",
+     "FLAME",
+     "MATCH",
+     "TAPER"
+    ]
+   },
+   {
+    "tier": 3,
+    "label": "Things in eights",
+    "words": [
+     "OCTET",
+     "OCTAGON",
+     "OCTOPUS",
+     "SPIDER"
+    ]
+   },
+   {
+    "tier": 4,
+    "label": "Hidden TOP",
+    "words": [
+     "UTOPIA",
+     "ISOTOPE",
+     "AUTOPILOT",
+     "TOPAZ"
+    ],
+    "alsoFits": [
+     "OCTOPUS"
+    ]
+   }
+  ],
+  "redHerrings": "OCTOPUS hides a TOP too; TOPAZ and GOLD read as treasures; MATCH and FOIL are verbs and fencing words; TAPER means to narrow.",
+  "source": "shard-holidays"
  }
 ]

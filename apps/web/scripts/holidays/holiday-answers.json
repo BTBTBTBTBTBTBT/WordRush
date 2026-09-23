@@ -1,0 +1,142 @@
+{
+  "newyear": {
+    "5": ["TOAST", "PARTY", "CLOCK", "CHIME", "FRESH", "START", "BEGIN", "GOALS", "COUNT", "SLATE"],
+    "6": ["BUBBLY", "TWELVE", "FUTURE", "TOASTS"],
+    "7": ["RESOLVE", "PROMISE", "EVENING", "REFRESH"]
+  },
+  "mlkday": {
+    "5": ["DREAM", "MARCH", "EQUAL", "UNITY", "PEACE", "SPEAK", "CIVIL", "HOPES", "CAUSE", "STAND"],
+    "6": ["RIGHTS", "SPEECH", "CHANGE", "DREAMS"],
+    "7": ["JUSTICE", "DIGNITY", "COURAGE", "PROTEST"]
+  },
+  "groundhog": {
+    "5": ["CLOUD", "SUNNY", "SLEEP", "FURRY", "SHADE", "EARLY", "CHILL", "WEEKS", "PEEKS", "WAKES"],
+    "6": ["SHADOW", "BURROW", "WINTER", "RODENT"],
+    "7": ["PREDICT", "WEATHER", "EMERGES", "SLEEPER"]
+  },
+  "valentines": {
+    "5": ["HEART", "ROSES", "LOVER", "SWEET", "CRUSH", "ADORE", "BLUSH", "ARROW", "WOOED", "HONEY"],
+    "6": ["CUDDLE", "FLOWER", "HEARTS", "SMOOCH", "KISSES"],
+    "7": ["ROMANCE", "PASSION", "DARLING", "BOUQUET"]
+  },
+  "presidents": {
+    "5": ["VOTES", "CHIEF", "TERMS", "ELECT", "LEADS", "CIVIC", "STATE", "OATHS", "POWER", "HOUSE"],
+    "6": ["OFFICE", "NATION", "BALLOT", "GOVERN"],
+    "7": ["CABINET", "ELECTED", "PRESIDE", "COUNTRY"]
+  },
+  "leapday": {
+    "5": ["LEAPS", "YEARS", "EXTRA", "BONUS", "JUMPS", "ORBIT", "MONTH", "SKIPS", "ADDED", "DATES"],
+    "6": ["BOUNCE", "YEARLY", "LEAPED", "JUMPER"],
+    "7": ["ALMANAC", "LEAPING", "SPECIAL", "JUMPING"]
+  },
+  "mardigras": {
+    "5": ["BEADS", "MASKS", "FLOAT", "JAZZY", "CAKES", "HORNS", "BRASS", "DANCE", "THROW", "REVEL"],
+    "6": ["PARADE", "PURPLE", "FLOATS", "MASKED"],
+    "7": ["REVELRY", "PARADES", "TRUMPET", "DANCING"]
+  },
+  "stpatricks": {
+    "5": ["GREEN", "LUCKY", "PINCH", "PINTS", "CHARM", "HARPS", "STOUT", "BREWS", "FAIRY", "ISLES"],
+    "6": ["CLOVER", "FIDDLE", "GREENS", "BREWER"],
+    "7": ["EMERALD", "RAINBOW", "LUCKILY", "FIDDLES"]
+  },
+  "aprilfools": {
+    "5": ["PRANK", "JOKES", "FOOLS", "LAUGH", "SILLY", "TEASE", "STUNT", "SPOOF", "GOOFY", "FUNNY", "WITTY"],
+    "6": ["PRANKS", "GIGGLE", "JESTER", "FOOLED"],
+    "7": ["PRANKED", "KIDDING", "FOOLISH", "GIGGLES"]
+  },
+  "easter": {
+    "5": ["BUNNY", "CHICK", "TULIP", "BLOOM", "HATCH", "HUNTS", "RISEN", "DAISY", "FLUFF", "SHELL"],
+    "6": ["BASKET", "PASTEL", "SPRING", "BONNET"],
+    "7": ["BUNNIES", "BLOSSOM", "RABBITS", "HATCHED"]
+  },
+  "earthday": {
+    "5": ["EARTH", "PLANT", "TREES", "OCEAN", "CLEAN", "SOLAR", "REUSE", "GLOBE", "RIVER", "WORLD", "WATER", "FLORA"],
+    "6": ["PLANET", "NATURE", "FOREST", "ENERGY"],
+    "7": ["RECYCLE", "CLIMATE", "HABITAT", "COMPOST"]
+  },
+  "cincodemayo": {
+    "5": ["SALSA", "TACOS", "CHIPS", "LIMES", "SPICY", "CHILI", "MANGO", "BEANS", "MUSIC", "SAUCE"],
+    "6": ["FIESTA", "BATTLE", "GUITAR", "NACHOS"],
+    "7": ["VICTORY", "BURRITO", "AVOCADO", "FLAVORS"]
+  },
+  "mothersday": {
+    "5": ["MAMAS", "CARDS", "LOVED", "CARES", "LILAC", "SPOIL", "PETAL", "VASES", "RAISE", "NURSE"],
+    "6": ["MOTHER", "BRUNCH", "PAMPER", "HUGGED"],
+    "7": ["CHERISH", "FLOWERS", "NURTURE", "DEVOTED"]
+  },
+  "memorial": {
+    "5": ["HONOR", "POPPY", "BRAVE", "VALOR", "BUGLE", "MOURN", "TROOP", "NOBLE", "LIVES", "VIGIL"],
+    "6": ["FALLEN", "HEROES", "SOLEMN", "BUGLES"],
+    "7": ["TRIBUTE", "HEROISM", "BRAVERY", "HONORED"]
+  },
+  "fathersday": {
+    "5": ["DADDY", "GRILL", "TOOLS", "CATCH", "COACH", "FIXES", "SOCKS", "STEAK", "BEARD", "TRUCK"],
+    "6": ["FATHER", "WRENCH", "HAMMER", "GADGET"],
+    "7": ["NECKTIE", "TOOLBOX", "FISHING", "GRILLED"]
+  },
+  "juneteenth": {
+    "5": ["FREED", "PRIDE", "ROOTS", "STORY", "TRUTH", "HYMNS", "RODEO", "SONGS", "PROUD", "VOICE"],
+    "6": ["LEGACY", "JOYFUL", "PICNIC", "GOSPEL"],
+    "7": ["FREEDOM", "LIBERTY", "JUBILEE", "REJOICE"]
+  },
+  "july4": {
+    "5": ["FLAGS", "STARS", "BOOMS", "SPARK", "BURST", "GLORY", "EAGLE", "FLARE", "BANDS", "BANGS"],
+    "6": ["STRIPE", "ROCKET", "ANTHEM", "FOURTH"],
+    "7": ["PATRIOT", "ROCKETS", "SPARKLE", "COOKOUT", "FANFARE"]
+  },
+  "labor": {
+    "5": ["UNION", "WORKS", "WAGES", "SHIFT", "CRAFT", "TRADE", "SKILL", "CREWS", "HANDS", "BUILD"],
+    "6": ["WORKER", "EFFORT", "CAREER", "TOILED"],
+    "7": ["WORKERS", "WEEKEND", "WORKING", "LABORER"]
+  },
+  "indigenous": {
+    "5": ["MAIZE", "LANDS", "ELDER", "CEDAR", "CANOE", "DRUMS", "SEEDS", "BISON", "TRIBE", "GRAIN"],
+    "6": ["NATIVE", "SQUASH", "PLAINS", "SACRED", "ELDERS"],
+    "7": ["HARVEST", "RESPECT", "PEOPLES", "STORIES"]
+  },
+  "halloween": {
+    "5": ["CANDY", "TRICK", "TREAT", "GHOST", "WITCH", "SCARY", "SPOOK", "BONES", "SKULL", "BROOM", "FANGS", "HAUNT"],
+    "6": ["SPOOKY", "GOBLIN", "ZOMBIE", "COBWEB"],
+    "7": ["COSTUME", "MONSTER", "HAUNTED", "VAMPIRE"]
+  },
+  "veterans": {
+    "5": ["MEDAL", "RANKS", "BADGE", "CORPS", "UNITS", "FLEET", "DRILL", "PILOT", "ARMOR", "SERVE"],
+    "6": ["SALUTE", "TROOPS", "SERVED", "MEDALS"],
+    "7": ["VETERAN", "SERVICE", "UNIFORM", "SOLDIER"]
+  },
+  "thanksgiving": {
+    "5": ["FEAST", "GRAVY", "BASTE", "GOURD", "TABLE", "GRACE", "ROAST", "CIDER", "BREAD", "CRUST"],
+    "6": ["TURKEY", "THANKS", "GOBBLE", "PLENTY"],
+    "7": ["TURKEYS", "GOBBLER", "STUFFED", "PUMPKIN"]
+  },
+  "christmas": {
+    "5": ["HOLLY", "CAROL", "ANGEL", "MERRY", "ELVES", "JOLLY", "SNOWY", "CHEER", "FROST", "BELLS"],
+    "6": ["WREATH", "TINSEL", "SLEIGH", "JINGLE"],
+    "7": ["PRESENT", "HOLIDAY", "SNOWMAN", "MITTENS"]
+  },
+  "kwanzaa": {
+    "5": ["SEVEN", "CROPS", "FRUIT", "FIRST", "SHARE", "FAITH", "GIFTS", "TRUST", "UNITE", "VALUE"],
+    "6": ["FAMILY", "VALUES", "BOUNTY", "GATHER"],
+    "7": ["PURPOSE", "CANDLES", "KINSHIP", "SHARING"]
+  },
+  "lunarnewyear": {
+    "5": ["LUNAR", "MOONS", "TIGER", "SNAKE", "HORSE", "LIONS", "SWEEP", "CYCLE", "GOATS", "SIGNS"],
+    "6": ["DRAGON", "ZODIAC", "NOODLE", "RABBIT"],
+    "7": ["LANTERN", "REUNION", "FORTUNE", "DRAGONS"]
+  },
+  "passover": {
+    "5": ["MATZO", "LAMBS", "HERBS", "PLATE", "TALES", "SALTY", "WAVES", "FREES", "FROGS", "SPARE"],
+    "6": ["EXODUS", "BITTER", "LEAVEN", "PLAGUE", "RETELL", "GOBLET"],
+    "7": ["JOURNEY", "PLAGUES", "PHARAOH", "PARTING"]
+  },
+  "diwali": {
+    "5": ["LAMPS", "LIGHT", "COLOR", "GLEAM", "LOTUS", "SHINY", "BLAZE", "GLINT", "BEAMS", "AGLOW"],
+    "6": ["SWEETS", "BRIGHT", "DAZZLE", "ALIGHT"],
+    "7": ["RADIANT", "GARLAND", "TRIUMPH", "GLOWING"]
+  },
+  "hanukkah": {
+    "5": ["EIGHT", "NIGHT", "SHINE", "FLAME", "COINS", "SPINS", "WICKS", "TORCH", "FRIED", "GLOWS"],
+    "6": ["CANDLE", "KINDLE", "DONUTS", "GOLDEN"],
+    "7": ["MIRACLE", "PANCAKE", "LIGHTED", "MENORAH"]
+  }
+}

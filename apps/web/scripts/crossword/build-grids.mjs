@@ -8,7 +8,7 @@ import { WEB, REPO, readJSON, rngFor, below, shuffle, writeSample, wordset } fro
 
 const MAXW = 10, MAXH = 11, MIN_ENTRIES = 10, MAX_ENTRIES = 13, SIZE = 40, MID = 20;
 const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
-const IN = argOf('--in', path.join(WEB, 'scripts', 'crossword', 'phrases.sample.json')), OUT = argOf('--out', 'crossword.json'), PER = +argOf('--per', 2);
+const IN = argOf('--in', path.join(WEB, 'scripts', 'crossword', 'phrases.sample.json')), OUT = argOf('--out', 'crossword.json'), PER = +argOf('--per', 2), PER_HOLIDAY = +argOf('--per-holiday', PER);
 const bank = readJSON(IN);
 const lex = readJSON(path.join(REPO, 'scripts', 'data', 'lexicon-all.json'));
 const common = new Set(lex.common), hard = new Set([...wordset('profanity-exact.generated.txt'), ...wordset('offensive-blocklist.txt')]);
@@ -89,7 +89,7 @@ function number(p) {
   p.entries.sort((a, b) => a.n - b.n || a.dir.localeCompare(b.dir));
 }
 const out = [];
-for (const theme of Object.keys(bank)) for (let serial = 1; serial <= PER; serial++) {
+for (const theme of Object.keys(bank)) for (let serial = 1; serial <= (bank[theme].holiday ? PER_HOLIDAY : PER); serial++) {
   let best = null;
   const prev = out.filter((g) => g.theme === theme), clues = (g) => g.entries.map((e) => e.clue);
   const recent = { last: new Set(prev.length ? clues(prev[prev.length - 1]) : []), older: new Set(prev.slice(0, -1).flatMap(clues)) };

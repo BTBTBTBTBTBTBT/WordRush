@@ -12,7 +12,13 @@ import { WEB, readJSON } from './lib.mjs';
 const RUN = !process.argv.includes('--no-run');
 const shards = (game, pattern) => fs.readdirSync(path.join(WEB, 'scripts', game, 'bank')).filter((f) => pattern.test(f)).sort().map((f) => path.join(WEB, 'scripts', game, 'bank', f));
 const write = (rel, obj) => { const p = path.join(WEB, 'scripts', rel); fs.writeFileSync(p, JSON.stringify(obj, null, 1) + '\n'); return p; };
-const run = (cmd) => { console.log('\n$ ' + cmd); const out = execSync(cmd, { cwd: WEB, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); console.log(out.trim().split('\n').slice(-3).join('\n')); };
+let failures = 0;
+const run = (cmd) => {
+  console.log('\n$ ' + cmd);
+  try { const out = execSync(cmd, { cwd: WEB, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); console.log(out.trim().split('\n').slice(-3).join('\n')); }
+  catch (e) { failures++; const out = String(e.stdout || ''); console.log(out.trim().split('\n').filter((l) => /FAIL|REJECT|valid/.test(l)).slice(0, 20).join('\n')); console.log(`!! validator failed (${cmd.split(' ')[1]}) — fix the shard and re-run`); }
+};
+process.on('exit', () => { if (failures) { console.log(`\n${failures} validator(s) failed`); process.exitCode = 1; } });
 
 // ---- Kindred (groups): array of puzzles; dedupe on the sorted 16-word set ----
 {
@@ -51,7 +57,7 @@ const run = (cmd) => { console.log('\n$ ' + cmd); const out = execSync(cmd, { cw
   }
   console.log(`Crosswordocious: ${Object.keys(out).length} themes, ${pairs} pairs merged (includes the 6 Phase 0 themes)`);
   write('crossword/phrases.json', out);
-  if (RUN && pairs) run('node scripts/crossword/build-grids.mjs --in scripts/crossword/phrases.json --out crossword-bank.json --per 3');
+  if (RUN && pairs) run('node scripts/crossword/build-grids.mjs --in scripts/crossword/phrases.json --out crossword-bank.json --per 5 --per-holiday 3');   // 82 evergreen × 5 + 28 holiday × 3 ≈ a year and a half
 }
 // ---- Muddle (scramble): array of jokes; dedupe on the final answer ----
 {
