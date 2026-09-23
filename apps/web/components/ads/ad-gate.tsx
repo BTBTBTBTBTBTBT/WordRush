@@ -25,8 +25,9 @@ export function AdGate({ children }: AdGateProps) {
   // with the site never approved, free players have been sitting through a
   // blank countdown wall since June. A reviewer hitting that wall is one
   // credible reason every review came back "low value content". The native
-  // apps keep their AdMob game-start interstitial (a different policy regime).
-  // Web monetization is the banner plus Auto ads once approved.
+  // apps keep their game-start interstitial (a different policy regime).
+  // Web monetization waits on a new provider (both AdSense accounts are closed
+  // for good, 2026-09-23); the gate's Pro/ad-free logic is unchanged either way.
   const WEB_INTERSTITIAL_ENABLED = false;
   const shouldShowAd = WEB_INTERSTITIAL_ENABLED && !isPro && AD_CONFIG.enabled;
 

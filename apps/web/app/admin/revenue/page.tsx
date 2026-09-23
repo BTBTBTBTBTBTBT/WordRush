@@ -7,8 +7,9 @@ import { EXPENSES, expenseTotals } from '@/lib/expenses';
 
 // Revenue across every rail, each number labeled by its source: Stripe is a
 // live API, subscription counts come from the entitlement DB (the cross-rail
-// truth), and the ad networks are live only after the one-time OAuth grant —
-// until then they say "not connected" instead of showing fabricated zeros.
+// truth), AdMob is live only after the one-time OAuth grant, and web ads are
+// NOT CONNECTED by design until a provider replaces the closed AdSense
+// accounts — every unconnected card says so instead of showing fabricated zeros.
 interface StoreRailEstimate { count: number; mrr: number; mrrIfAllYearly: number }
 
 // Active non-Stripe Pro split into comped ($0: admin gifts, referral trials,
@@ -40,6 +41,8 @@ interface RevenueData {
   combined: { mrr: number; stripeActual: boolean; estimated: boolean };
   apple: {
     connected: boolean;
+    /** Which of the four ASC_* env vars are absent (only when not connected). */
+    missing?: AscEnvName[];
     error?: string;
     reportDate?: string;
     rows?: { name: string; duration: string; price: number; proceeds: number; active: number }[];
@@ -59,9 +62,22 @@ interface RevenueData {
     dayPasses30d?: number;
   };
   admob: { connected?: boolean; error?: string; currency?: string; total30d?: number; apps?: { app: string; earnings: number; impressions: number }[] } | null;
-  adsense: { connected?: boolean; error?: string; total30d?: number; impressions?: number } | null;
+  webAds: { connected: boolean };
   adsConnected: boolean;
 }
+
+type AscEnvName = 'ASC_KEY_ID' | 'ASC_ISSUER_ID' | 'ASC_PRIVATE_KEY' | 'ASC_VENDOR_NUMBER';
+
+// The four server env vars the Apple card needs and where each one lives in
+// App Store Connect. Kept in the page (not imported from lib/asc-jwt, which
+// pulls node:crypto into a client bundle) — the names are asserted equal by
+// lib/asc-jwt.test.ts.
+const ASC_ENV: { name: AscEnvName; from: string }[] = [
+  { name: 'ASC_KEY_ID', from: 'Users and Access → Integrations → App Store Connect API → the key\u2019s Key ID' },
+  { name: 'ASC_ISSUER_ID', from: 'same page → Issuer ID (one per team, shown above the key list)' },
+  { name: 'ASC_PRIVATE_KEY', from: 'the downloaded AuthKey_<KEY_ID>.p8, BEGIN/END lines included — multi-line or \\n-escaped both work' },
+  { name: 'ASC_VENDOR_NUMBER', from: 'Payments and Financial Reports → Vendor # at the top' },
+];
 
 const usd = (n?: number) => (n == null ? '—' : `$${n.toFixed(2)}`);
 
@@ -193,21 +209,31 @@ export default function AdminRevenuePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-              <Globe className="w-4 h-4" /> AdSense (web)
+              <Globe className="w-4 h-4" /> Web ads
             </h2>
-            <SourceTag kind={data.adsConnected && !data.adsense?.error ? 'live' : 'off'} />
+            <SourceTag kind={data.webAds?.connected ? 'live' : 'off'} />
           </div>
-          {!data.adsConnected ? (
-            <p className="text-xs font-bold text-gray-400 leading-relaxed">
-              Same one-time grant lights this up too (the script requests both scopes). AdSense is
-              still under Google review, so expect $0 until approval either way.
-              <a href="https://www.google.com/adsense" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">AdSense dashboard <ExternalLink className="w-3 h-3" /></a>
-            </p>
-          ) : data.adsense?.error ? (
-            <p className="text-sm font-bold text-amber-600">{data.adsense.error}</p>
-          ) : (
-            <p className="text-2xl font-black text-gray-900">{usd(data.adsense?.total30d)} <span className="text-xs font-bold text-gray-400">last 30 days · {data.adsense?.impressions?.toLocaleString() ?? 0} impressions</span></p>
-          )}
+          <p className="text-xs font-bold text-gray-400 leading-relaxed">
+            No web ad network is connected. Both AdSense accounts are permanently closed, so that card
+            and its report fetch are gone; the replacement provider is being chosen. When it is, its card
+            needs two things from the provider:
+          </p>
+          <ul className="mt-2 space-y-1 text-xs font-bold text-gray-500 list-disc pl-4">
+            <li>
+              a <span className="text-gray-700">server-side reporting credential</span> stored as Vercel env
+              vars (an API key or service account for reporting — never the publisher/site key that ships
+              to browsers);
+            </li>
+            <li>
+              a <span className="text-gray-700">daily earnings endpoint</span> the route can call for the last
+              30 days — estimated earnings plus impressions, ideally per site — to fill the same
+              &quot;$ last 30 days · impressions&quot; line the other ad card shows.
+            </li>
+          </ul>
+          <p className="text-[11px] font-bold text-gray-300 mt-2">
+            The public site loads no ad script meanwhile; the AdGate / ad-free logic is unchanged and Pro
+            still means no ads.
+          </p>
         </div>
       </div>
 
@@ -317,17 +343,31 @@ function AppleSalesCard({ apple }: { apple: RevenueData['apple'] }) {
         <SourceTag kind={apple?.connected && !apple.error ? 'live' : 'off'} />
       </div>
       {!apple?.connected ? (
-        <p className="text-xs font-bold text-gray-400 leading-relaxed">
-          Apple&apos;s salesReports API can supply its own subscription prices and active counts, but the
-          credentials aren&apos;t on the server yet: set
-          <code className="mx-1 px-1 bg-gray-100 rounded">ASC_KEY_ID</code>
-          <code className="mr-1 px-1 bg-gray-100 rounded">ASC_ISSUER_ID</code>
-          <code className="mr-1 px-1 bg-gray-100 rounded">ASC_PRIVATE_KEY</code>
-          <code className="mr-1 px-1 bg-gray-100 rounded">ASC_VENDOR_NUMBER</code>
-          in Vercel (key contents from the local .p8; vendor number from App Store Connect →
-          Payments and Financial Reports). Until then:
-          <a href="https://appstoreconnect.apple.com/trends" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">App Store Connect <ExternalLink className="w-3 h-3" /></a>
-        </p>
+        <div className="text-xs font-bold text-gray-400 leading-relaxed">
+          <p>
+            Apple&apos;s salesReports API can supply its own subscription prices and active counts once
+            these four server env vars exist in Vercel (Settings → Environment Variables, Production):
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {ASC_ENV.map((v) => {
+              const isMissing = !apple?.missing || apple.missing.includes(v.name);
+              return (
+                <li key={v.name} className="flex flex-wrap items-baseline gap-x-2">
+                  <code className={`px-1 rounded ${isMissing ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>{v.name}</code>
+                  <span className={`text-[10px] font-black uppercase ${isMissing ? 'text-amber-600' : 'text-green-600'}`}>
+                    {isMissing ? 'missing' : 'set'}
+                  </span>
+                  <span className="text-gray-400">App Store Connect → {v.from}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2">
+            Vercel applies server env on the next deployment, so redeploy once all four are saved; the
+            card then connects on its next load (a key that won&apos;t parse reports itself here). Until then:
+            <a href="https://appstoreconnect.apple.com/trends" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">App Store Connect <ExternalLink className="w-3 h-3" /></a>
+          </p>
+        </div>
       ) : apple.error ? (
         <p className="text-sm font-bold text-red-500">{apple.error}</p>
       ) : (

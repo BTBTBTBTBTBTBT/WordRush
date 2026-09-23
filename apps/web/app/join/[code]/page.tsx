@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Gift, Crown } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { logLandingVisit } from '@/lib/landing-visits';
 
 // Referral landing — wordocious.com/join/<CODE>. Modeled on vs/join/[code]
 // (same centered card) but for the Pro gift-trial program. Signed-out
@@ -26,6 +27,9 @@ export default function JoinReferralPage() {
     // wanders next. Not httpOnly — the redeemer nudge reads it client-side,
     // and a referral code is shareable by design, not a secret.
     document.cookie = `wr_ref=${code}; max-age=2592000; path=/; SameSite=Lax`;
+    // Invite-link outcome tracking for the admin Marketing page: this open is
+    // what turns a "link_invite shared" into "invite opened" (landing_visits).
+    logLandingVisit('join', code);
     (async () => {
       try {
         const res = await fetch(`/api/referrals/lookup?code=${code}`);
