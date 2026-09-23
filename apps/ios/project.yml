@@ -103,7 +103,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
-        MARKETING_VERSION: "1.29"
+        MARKETING_VERSION: "1.29.1"
         CURRENT_PROJECT_VERSION: "176"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
@@ -147,7 +147,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
-        MARKETING_VERSION: "1.29"
+        MARKETING_VERSION: "1.29.1"
         CURRENT_PROJECT_VERSION: "176"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"

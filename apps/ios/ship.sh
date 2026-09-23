@@ -132,7 +132,15 @@ done
 zip -qr Wordocious-resigned.ipa Payload
 
 echo "== VALIDATE =="
-xcrun altool --validate-app -f Wordocious-resigned.ipa -t ios $KEY 2>&1 | tail -2
+# The pipe hands set -e tail's exit code, not altool's — 1.29.1 (176) nearly
+# shipped past a closed-train 409 this way. Check altool's own status and
+# abort with its full output before anything is uploaded.
+xcrun altool --validate-app -f Wordocious-resigned.ipa -t ios $KEY 2>&1 | tee validate.log | tail -2
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+  echo "altool validation failed — aborting before upload. Full output:" >&2
+  cat validate.log >&2
+  exit 1
+fi
 echo "== UPLOAD =="
 xcrun altool --upload-app -f Wordocious-resigned.ipa -t ios $KEY 2>&1 | tail -2
 
