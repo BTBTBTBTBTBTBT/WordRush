@@ -26,6 +26,7 @@ import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTo
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 import { bankIndexForDay, bankIndexForSeed, bankDayIndex, holidayKeyForDay, holidayOccurrence, bankHolidayPick, type HolidayTable } from '../src/bank';
+import { scramblePuzzleForDay, scramblePuzzleForSeed, scrambleDailyNumber, scrambleFinalLetters, scrambleFinalTray, scrambleRemaining, scrambleTarget, createScrambleState, scrambleReduce, scrambleMatchRow, reconstructScramble, scrambleGuessCount, scrambleBoardsSolved, scrambleActiveRow, scrambleFinalOpen, type ScrambleBank, type ScrambleAction } from '../src/games/scramble';
 import { crosswordPuzzleForDay, crosswordPuzzleForSeed, crosswordDailyNumber, crosswordSolution, crosswordEntryCells, createCrosswordState, crosswordReduce, crosswordMatchRow, reconstructCrossword, crosswordGuessCount, crosswordCorrectCount, crosswordLetterCount, type CrosswordBank, type CrosswordAction } from '../src/games/crossword';
 import { groupsPuzzleForDay, groupsPuzzleForSeed, groupsDailyNumber, groupsTileOrder, createGroupsState, groupsReduce, groupsMatchRow, reconstructGroups, groupsGuessCount, groupsBoardsSolved, groupsLabelTarget, groupsPairTarget, type GroupsBank, type GroupsAction } from '../src/games/groups';
 import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, cryptogramEncipher, cryptogramCodeLetters, cryptogramFrequencies, cryptogramHintTarget, cryptogramGuessCount, cryptogramConflicts, cryptogramCorrectCount, createCryptogramState, cryptogramReduce, cryptogramMatchRow, reconstructCryptogram, type CryptogramBank, type CryptogramAction } from '../src/games/cryptogram';
@@ -458,6 +459,44 @@ export function renderCryptogramFixtures() {
 }
 const CRYPTOGRAM_ALPHABET_LOCAL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+export function renderScrambleFixtures() {
+  const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'scramble-puzzles.json'), 'utf8')) as ScrambleBank;
+  const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
+  const days = ['2026-09-23', '2026-09-24', '2026-10-05', '2027-01-01', '2026-09-22', 'nope', '2026-12-25', '2026-11-26', '2026-01-19', '2027-07-04']
+    .map((day) => ({ day, id: scramblePuzzleForDay(bank, day, table)?.id ?? null, plainId: scramblePuzzleForDay(bank, day, null)?.id ?? null, number: scrambleDailyNumber(day) }));
+  const seeds = ['unlimited-SCRAMBLE-1', 'unlimited-SCRAMBLE-1758578400000', 'x'].map((seed) => ({ seed, id: scramblePuzzleForSeed(bank, seed)?.id ?? null }));
+  const p = bank.daily[0];
+  const s0 = createScrambleState(p, 'fixture', 0);
+  const type = (row: number, word: string): ScrambleAction[] => [...word].map((ch) => ({ type: 'TYPE', row, letter: ch }) as ScrambleAction);
+  const wrongFor = (row: number) => { const w = s0.words[row]; const rev = [...w.answer].reverse().join(''); return rev === w.answer ? w.scramble : rev; };
+  const finalLetters = scrambleFinalLetters(p);
+  const scripts: Array<{ name: string; actions: ScrambleAction[] }> = [
+    { name: 'tray-rules', actions: [{ type: 'TYPE', row: 4, letter: finalLetters[0] }, { type: 'TYPE', row: 0, letter: '1' }, { type: 'TYPE', row: 0, letter: s0.words[0].scramble[0].toLowerCase() }, { type: 'TYPE', row: 0, letter: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').find((c) => !s0.words[0].scramble.includes(c))! }, { type: 'BACK', row: 0 }, { type: 'BACK', row: 0 }, { type: 'CLEAR', row: 0 }, { type: 'TYPE', row: 9, letter: 'A' }] },
+    { name: 'wrong-then-right', actions: [...type(0, wrongFor(0)), ...type(0, s0.words[0].answer.slice(0, 2)), { type: 'BACK', row: 0 }, { type: 'CLEAR', row: 0 }, ...type(0, s0.words[0].answer)] },
+    { name: 'hints', actions: [{ type: 'REVEAL_LETTER', row: 0 }, { type: 'BACK', row: 0 }, { type: 'TYPE', row: 0, letter: 'Q' }, { type: 'REVEAL_LETTER', row: 0 }, { type: 'SOLVE_WORD', row: 1 }, { type: 'SOLVE_WORD', row: 1 }, { type: 'REVEAL_LETTER', row: 4 }] },
+    { name: 'reveal-all-letters-of-a-word', actions: Array.from({ length: s0.words[2].answer.length + 1 }, () => ({ type: 'REVEAL_LETTER', row: 2 }) as ScrambleAction) },
+    { name: 'win', actions: [...type(0, s0.words[0].answer), ...type(1, s0.words[1].answer), ...type(2, s0.words[2].answer), ...type(3, s0.words[3].answer), ...type(4, finalLetters), { type: 'TYPE', row: 0, letter: 'A' }, { type: 'FINISH' }] },
+    { name: 'win-with-mistakes-and-hints', actions: [...type(0, wrongFor(0)), ...type(0, s0.words[0].answer), { type: 'SOLVE_WORD', row: 1 }, ...type(2, s0.words[2].answer), { type: 'REVEAL_LETTER', row: 3 }, ...type(3, s0.words[3].answer.slice(1)), ...type(4, finalLetters.slice(0, 3)), ...type(4, finalLetters.slice(3).split('').reverse().join('')), ...type(4, finalLetters), { type: 'FINISH' }] },
+    { name: 'lose', actions: [...type(0, s0.words[0].answer), ...Array.from({ length: 13 }, () => type(1, wrongFor(1))).flat(), { type: 'TYPE', row: 2, letter: s0.words[2].scramble[0] }, { type: 'FINISH' }] },
+  ];
+  const reducer = scripts.map((sc) => {
+    let s = createScrambleState(p, 'fixture', 0);
+    for (const a of sc.actions) s = scrambleReduce(s, a, 1000);
+    const row = scrambleMatchRow(s);
+    return {
+      name: sc.name, id: p.id, actions: sc.actions,
+      expect: { entries: s.entries, solved: s.solved, revealed: s.revealed, checks: s.checks, mistakes: s.mistakes, hintsUsed: s.hintsUsed, lastRow: s.lastRow, lastResult: s.lastResult, events: s.events, status: s.status, ended: s.ended, endTime: s.endTime, guessCount: scrambleGuessCount(s), boardsSolved: scrambleBoardsSolved(s), activeRow: scrambleActiveRow(s), finalOpen: scrambleFinalOpen(s) },
+      row, reconstruct: reconstructScramble(row.solutions, row.guesses),
+    };
+  });
+  return {
+    epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, holidayKeys: Object.keys(bank.holiday ?? {}), days, seeds,
+    puzzle: p, finalLetters, finalTray: scrambleFinalTray(p), targets: [0, 1, 2, 3, 4].map((r) => scrambleTarget(s0, r)),
+    remaining: [['ABCA', 'A'], ['ABCA', 'AA'], ['ABC', 'Z'], ['ABC', '']].map(([pool, entry]) => ({ pool, entry, left: scrambleRemaining(pool, entry) })),
+    reducer, malformed: [reconstructScramble(['A', 'B'], []), reconstructScramble(['ABCDE', 'ABCDE', 'ABCDE', 'ABCDE', 'ab'], []), reconstructScramble(['MOTOR', 'EXILED', 'BATTEN', 'FRAUD', 'ABOUT TIME'], ['0✓MOTOR', '1✗XXXXXX', '2h__T___', '3H', '4✓ABOUTTIME', 'junk'])],
+  };
+}
+
 export function renderCrosswordFixtures() {
   const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'crossword-puzzles.json'), 'utf8')) as CrosswordBank;
   const table = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'holiday-days.json'), 'utf8')) as HolidayTable;
@@ -541,6 +580,7 @@ const FILES: Array<[string, unknown]> = [
   ['cryptogram-fixtures.json', renderCryptogramFixtures()],
   ['groups-fixtures.json', renderGroupsFixtures()],
   ['crossword-fixtures.json', renderCrosswordFixtures()],
+  ['scramble-fixtures.json', renderScrambleFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

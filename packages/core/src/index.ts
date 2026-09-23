@@ -17,4 +17,5 @@ export * from './games/hub';
 export * from './games/cryptogram';
 export * from './games/groups';
 export * from './games/crossword';
+export * from './games/scramble';
 export * from './games/crossword';

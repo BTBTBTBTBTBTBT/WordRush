@@ -5,6 +5,7 @@ import hub from '@/data/hub-puzzles.json';
 import cryptogram from '@/data/cryptogram-puzzles.json';
 import groups from '@/data/groups-puzzles.json';
 import crossword from '@/data/crossword-puzzles.json';
+import scramble from '@/data/scramble-puzzles.json';
 
 /**
  * Every epoch-indexed daily bank the app bundles, with its content runway
@@ -37,6 +38,7 @@ const BANKS: { game: string; title: string; bank: BundledBank; source: string }[
   { game: 'cryptogram', title: 'Codebreaker', bank: cryptogram as unknown as BundledBank, source: 'apps/web/scripts/cryptogram/build-bank.mjs' },
   { game: 'groups', title: 'Kindred', bank: groups as unknown as BundledBank, source: 'apps/web/scripts/groups/build-bank.mjs' },
   { game: 'crossword', title: 'Crosswordocious', bank: crossword as unknown as BundledBank, source: 'apps/web/scripts/crossword/build-bank.mjs' },
+  { game: 'scramble', title: 'Muddle', bank: scramble as unknown as BundledBank, source: 'apps/web/scripts/muddle/build-bank.mjs' },
 ];
 
 export interface RunwayRow {

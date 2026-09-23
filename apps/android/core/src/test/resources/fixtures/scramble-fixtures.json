@@ -1,0 +1,1821 @@
+{
+  "epoch": "2026-09-23",
+  "dailyCount": 365,
+  "extraCount": 21,
+  "holidayKeys": [
+    "aprilfools",
+    "christmas",
+    "cincodemayo",
+    "diwali",
+    "earthday",
+    "easter",
+    "fathersday",
+    "groundhog",
+    "halloween",
+    "hanukkah",
+    "indigenous",
+    "july4",
+    "juneteenth",
+    "kwanzaa",
+    "labor",
+    "leapday",
+    "lunarnewyear",
+    "mardigras",
+    "memorial",
+    "mlkday",
+    "mothersday",
+    "newyear",
+    "passover",
+    "presidents",
+    "stpatricks",
+    "thanksgiving",
+    "valentines",
+    "veterans"
+  ],
+  "days": [
+    {
+      "day": "2026-09-23",
+      "id": "md-7rgkt5",
+      "plainId": "md-7rgkt5",
+      "number": 1
+    },
+    {
+      "day": "2026-09-24",
+      "id": "md-vzav95",
+      "plainId": "md-vzav95",
+      "number": 2
+    },
+    {
+      "day": "2026-10-05",
+      "id": "md-4fx5mn",
+      "plainId": "md-4fx5mn",
+      "number": 13
+    },
+    {
+      "day": "2027-01-01",
+      "id": "md-4gkvf0",
+      "plainId": "md-r7k8u6",
+      "number": 101
+    },
+    {
+      "day": "2026-09-22",
+      "id": "md-l0e29n",
+      "plainId": "md-l0e29n",
+      "number": 1
+    },
+    {
+      "day": "nope",
+      "id": "md-7rgkt5",
+      "plainId": "md-7rgkt5",
+      "number": 1
+    },
+    {
+      "day": "2026-12-25",
+      "id": "md-mxy8nz",
+      "plainId": "md-vwxzim",
+      "number": 94
+    },
+    {
+      "day": "2026-11-26",
+      "id": "md-6wdq2g",
+      "plainId": "md-lm5yyo",
+      "number": 65
+    },
+    {
+      "day": "2026-01-19",
+      "id": "md-lb74cu",
+      "plainId": "md-nyluqm",
+      "number": 1
+    },
+    {
+      "day": "2027-07-04",
+      "id": "md-iqmcxd",
+      "plainId": "md-bmixqf",
+      "number": 285
+    }
+  ],
+  "seeds": [
+    {
+      "seed": "unlimited-SCRAMBLE-1",
+      "id": "md-ubfj9s"
+    },
+    {
+      "seed": "unlimited-SCRAMBLE-1758578400000",
+      "id": "md-gzu4v4"
+    },
+    {
+      "seed": "x",
+      "id": "md-5b5bdp"
+    }
+  ],
+  "puzzle": {
+    "id": "md-7rgkt5",
+    "words": [
+      {
+        "answer": "FATTEN",
+        "scramble": "TNTFAE",
+        "circled": [
+          0,
+          2,
+          4,
+          5
+        ]
+      },
+      {
+        "answer": "THYME",
+        "scramble": "MYETH",
+        "circled": [
+          1,
+          3
+        ]
+      },
+      {
+        "answer": "CARRY",
+        "scramble": "RRYCA",
+        "circled": [
+          0,
+          1,
+          2,
+          4
+        ]
+      },
+      {
+        "answer": "PROPER",
+        "scramble": "RPROPE",
+        "circled": [
+          0,
+          1,
+          2,
+          4
+        ]
+      }
+    ],
+    "final": {
+      "answer": "PERFECT HARMONY",
+      "pattern": [
+        7,
+        7
+      ]
+    },
+    "caption": "The choir shared one changing room without a single squabble; they lived in ____.",
+    "altText": "Twelve choir singers in robes share one mirror and pass hairpins along the line.",
+    "cartoon": null
+  },
+  "finalLetters": "PERFECTHARMONY",
+  "finalTray": "FTENHMCARYPROE",
+  "targets": [
+    "FATTEN",
+    "THYME",
+    "CARRY",
+    "PROPER",
+    "PERFECTHARMONY"
+  ],
+  "remaining": [
+    {
+      "pool": "ABCA",
+      "entry": "A",
+      "left": "BCA"
+    },
+    {
+      "pool": "ABCA",
+      "entry": "AA",
+      "left": "BC"
+    },
+    {
+      "pool": "ABC",
+      "entry": "Z",
+      "left": "ABC"
+    },
+    {
+      "pool": "ABC",
+      "entry": "",
+      "left": "ABC"
+    }
+  ],
+  "reducer": [
+    {
+      "name": "tray-rules",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "1"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "t"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "B"
+        },
+        {
+          "type": "BACK",
+          "row": 0
+        },
+        {
+          "type": "BACK",
+          "row": 0
+        },
+        {
+          "type": "CLEAR",
+          "row": 0
+        },
+        {
+          "type": "TYPE",
+          "row": 9,
+          "letter": "A"
+        }
+      ],
+      "expect": {
+        "entries": [
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "solved": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "revealed": [
+          "______",
+          "_____",
+          "_____",
+          "______",
+          "______________"
+        ],
+        "checks": 0,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "lastRow": null,
+        "lastResult": null,
+        "events": [],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "boardsSolved": 0,
+        "activeRow": 0,
+        "finalOpen": false
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": []
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "checks": 0,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "solvedByHint": [],
+        "boardsSolved": 0,
+        "lost": false,
+        "won": false
+      }
+    },
+    {
+      "name": "wrong-then-right",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "BACK",
+          "row": 0
+        },
+        {
+          "type": "CLEAR",
+          "row": 0
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "N"
+        }
+      ],
+      "expect": {
+        "entries": [
+          "FATTEN",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "solved": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ],
+        "revealed": [
+          "______",
+          "_____",
+          "_____",
+          "______",
+          "______________"
+        ],
+        "checks": 2,
+        "mistakes": 1,
+        "hintsUsed": 0,
+        "lastRow": 0,
+        "lastResult": "correct",
+        "events": [
+          "0✗NETTAF",
+          "0✓FATTEN"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 2,
+        "boardsSolved": 1,
+        "activeRow": 1,
+        "finalOpen": false
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": [
+          "0✗NETTAF",
+          "0✓FATTEN"
+        ]
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ],
+        "checks": 2,
+        "mistakes": 1,
+        "hintsUsed": 0,
+        "solvedByHint": [],
+        "boardsSolved": 1,
+        "lost": false,
+        "won": false
+      }
+    },
+    {
+      "name": "hints",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "REVEAL_LETTER",
+          "row": 0
+        },
+        {
+          "type": "BACK",
+          "row": 0
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "Q"
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 0
+        },
+        {
+          "type": "SOLVE_WORD",
+          "row": 1
+        },
+        {
+          "type": "SOLVE_WORD",
+          "row": 1
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 4
+        }
+      ],
+      "expect": {
+        "entries": [
+          "FA",
+          "THYME",
+          "",
+          "",
+          ""
+        ],
+        "solved": [
+          false,
+          true,
+          false,
+          false,
+          false
+        ],
+        "revealed": [
+          "FA____",
+          "THYME",
+          "_____",
+          "______",
+          "______________"
+        ],
+        "checks": 0,
+        "mistakes": 0,
+        "hintsUsed": 4,
+        "lastRow": 1,
+        "lastResult": "correct",
+        "events": [
+          "0hF_____",
+          "0hFA____",
+          "1H"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "boardsSolved": 1,
+        "activeRow": 0,
+        "finalOpen": false
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": [
+          "0hF_____",
+          "0hFA____",
+          "1H"
+        ]
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          false,
+          true,
+          false,
+          false,
+          false
+        ],
+        "checks": 0,
+        "mistakes": 0,
+        "hintsUsed": 4,
+        "solvedByHint": [
+          1
+        ],
+        "boardsSolved": 1,
+        "lost": false,
+        "won": false
+      }
+    },
+    {
+      "name": "reveal-all-letters-of-a-word",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "REVEAL_LETTER",
+          "row": 2
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 2
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 2
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 2
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 2
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 2
+        }
+      ],
+      "expect": {
+        "entries": [
+          "",
+          "",
+          "CARRY",
+          "",
+          ""
+        ],
+        "solved": [
+          false,
+          false,
+          true,
+          false,
+          false
+        ],
+        "revealed": [
+          "______",
+          "_____",
+          "CARRY",
+          "______",
+          "______________"
+        ],
+        "checks": 1,
+        "mistakes": 0,
+        "hintsUsed": 5,
+        "lastRow": 2,
+        "lastResult": "correct",
+        "events": [
+          "2hC____",
+          "2hCA___",
+          "2hCAR__",
+          "2hCARR_",
+          "2hCARRY",
+          "2✓CARRY"
+        ],
+        "status": "playing",
+        "ended": false,
+        "endTime": null,
+        "guessCount": 1,
+        "boardsSolved": 1,
+        "activeRow": 0,
+        "finalOpen": false
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": [
+          "2hC____",
+          "2hCA___",
+          "2hCAR__",
+          "2hCARR_",
+          "2hCARRY",
+          "2✓CARRY"
+        ]
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          false,
+          false,
+          true,
+          false,
+          false
+        ],
+        "checks": 1,
+        "mistakes": 0,
+        "hintsUsed": 5,
+        "solvedByHint": [],
+        "boardsSolved": 1,
+        "lost": false,
+        "won": false
+      }
+    },
+    {
+      "name": "win",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "C"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "O"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "C"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "O"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "entries": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECTHARMONY"
+        ],
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "revealed": [
+          "______",
+          "_____",
+          "_____",
+          "______",
+          "______________"
+        ],
+        "checks": 5,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "lastRow": 4,
+        "lastResult": "correct",
+        "events": [
+          "0✓FATTEN",
+          "1✓THYME",
+          "2✓CARRY",
+          "3✓PROPER",
+          "4✓PERFECTHARMONY"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 5,
+        "boardsSolved": 5,
+        "activeRow": null,
+        "finalOpen": true
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": [
+          "0✓FATTEN",
+          "1✓THYME",
+          "2✓CARRY",
+          "3✓PROPER",
+          "4✓PERFECTHARMONY"
+        ]
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "checks": 5,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "solvedByHint": [],
+        "boardsSolved": 5,
+        "lost": false,
+        "won": true
+      }
+    },
+    {
+      "name": "win-with-mistakes-and-hints",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "N"
+        },
+        {
+          "type": "SOLVE_WORD",
+          "row": 1
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "C"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "Y"
+        },
+        {
+          "type": "REVEAL_LETTER",
+          "row": 3
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "O"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 3,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "O"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "C"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "P"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "C"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "R"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "O"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 4,
+          "letter": "Y"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "entries": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECTHARMONY"
+        ],
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "revealed": [
+          "______",
+          "THYME",
+          "_____",
+          "P_____",
+          "______________"
+        ],
+        "checks": 6,
+        "mistakes": 2,
+        "hintsUsed": 3,
+        "lastRow": 4,
+        "lastResult": "correct",
+        "events": [
+          "0✗NETTAF",
+          "0✓FATTEN",
+          "1H",
+          "2✓CARRY",
+          "3hP_____",
+          "3✓PROPER",
+          "4✗PERYNOMRAHTCEF",
+          "4✓PERFECTHARMONY"
+        ],
+        "status": "won",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 6,
+        "boardsSolved": 5,
+        "activeRow": null,
+        "finalOpen": true
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": [
+          "0✗NETTAF",
+          "0✓FATTEN",
+          "1H",
+          "2✓CARRY",
+          "3hP_____",
+          "3✓PROPER",
+          "4✗PERYNOMRAHTCEF",
+          "4✓PERFECTHARMONY"
+        ]
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "checks": 6,
+        "mistakes": 2,
+        "hintsUsed": 3,
+        "solvedByHint": [
+          1
+        ],
+        "boardsSolved": 5,
+        "lost": false,
+        "won": true
+      }
+    },
+    {
+      "name": "lose",
+      "id": "md-7rgkt5",
+      "actions": [
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "F"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "A"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 0,
+          "letter": "N"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "E"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "M"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "Y"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "H"
+        },
+        {
+          "type": "TYPE",
+          "row": 1,
+          "letter": "T"
+        },
+        {
+          "type": "TYPE",
+          "row": 2,
+          "letter": "R"
+        },
+        {
+          "type": "FINISH"
+        }
+      ],
+      "expect": {
+        "entries": [
+          "FATTEN",
+          "EMYHT",
+          "",
+          "",
+          ""
+        ],
+        "solved": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ],
+        "revealed": [
+          "______",
+          "_____",
+          "_____",
+          "______",
+          "______________"
+        ],
+        "checks": 13,
+        "mistakes": 12,
+        "hintsUsed": 0,
+        "lastRow": 1,
+        "lastResult": "wrong",
+        "events": [
+          "0✓FATTEN",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT"
+        ],
+        "status": "lost",
+        "ended": true,
+        "endTime": 1000,
+        "guessCount": 13,
+        "boardsSolved": 1,
+        "activeRow": 1,
+        "finalOpen": false
+      },
+      "row": {
+        "solutions": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "guesses": [
+          "0✓FATTEN",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT",
+          "1✗EMYHT"
+        ]
+      },
+      "reconstruct": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ],
+        "checks": 13,
+        "mistakes": 12,
+        "hintsUsed": 0,
+        "solvedByHint": [],
+        "boardsSolved": 1,
+        "lost": true,
+        "won": false
+      }
+    }
+  ],
+  "malformed": [
+    null,
+    null,
+    {
+      "words": [
+        "MOTOR",
+        "EXILED",
+        "BATTEN",
+        "FRAUD"
+      ],
+      "final": "ABOUT TIME",
+      "solved": [
+        true,
+        false,
+        false,
+        true,
+        true
+      ],
+      "checks": 3,
+      "mistakes": 1,
+      "hintsUsed": 3,
+      "solvedByHint": [
+        3
+      ],
+      "boardsSolved": 3,
+      "lost": false,
+      "won": true
+    }
+  ]
+}
