@@ -43,6 +43,25 @@ export function bankIndexForDay(day: string, n: number, epoch: string): number {
 }
 
 /**
+ * Content runway for a bank of `n` dailies on `day`: how many unplayed
+ * dailies remain after today, and the date the bank starts RECYCLING.
+ *
+ * Recycling is the modulo fallback in `bankIndexForDay`: once every entry has
+ * run, day n replays entry 0, day n+1 entry 1, and so on — the oldest puzzle
+ * first, a full lap later, deterministic on every platform. Appending new
+ * entries before that date pushes the lap out without moving any dated day.
+ * The founder is told BEFORE recycling begins (2026-09-23): a CI test fails
+ * under 60 days, the nightly integrity cron flags under 90 days, and the
+ * admin Ops page shows every bank's runway.
+ */
+export function bankRunway(day: string, n: number, epoch: string): { daysLeft: number; recyclesOn: string; recycling: boolean } {
+  const idx = bankDayIndex(day, epoch) ?? 0;
+  const daysLeft = n - idx - 1;
+  const recycles = new Date(Date.parse(`${epoch}T00:00:00Z`) + n * 86400000);
+  return { daysLeft, recyclesOn: recycles.toISOString().slice(0, 10), recycling: idx >= n };
+}
+
+/**
  * Index into a bank of `n` entries for an Unlimited seed. Deterministic per
  * seed (same seed → same puzzle on every platform). If `avoid` is given and
  * the hash lands on it, step to the next entry so Unlimited never repeats the

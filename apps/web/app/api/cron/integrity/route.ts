@@ -5,6 +5,8 @@ import { sweepAll } from '@/lib/supabase-sweep';
 import { wordOfDay, dateKey } from '@/lib/word-of-day';
 import { isCircular, isStub } from '@/lib/sense-rank';
 import { isPlausibleDailyResult, MAX_TIME_SECONDS } from '@/lib/plausibility';
+import { bankRunwayReport, SENTRY_RUNWAY_DAYS } from '@/lib/bank-runway';
+import * as Sentry from '@sentry/nextjs';
 
 /**
  * §260: the nightly data-integrity sweep. Every check here is a bug class
@@ -89,6 +91,24 @@ export async function GET(req: NextRequest) {
     const { count: yesterdayCount } = await admin.from('daily_results').select('id', { count: 'exact', head: true }).eq('day', dateKey(new Date(today.getTime() - 86400000)));
     checked.push(`results today ${todayCount ?? 0}, yesterday ${yesterdayCount ?? 0}`);
     if ((yesterdayCount ?? 0) === 0) findings.push('no daily_results recorded yesterday — write path or clients may be failing');
+  }
+
+  // 6. Content runway (More Games §11; founder 2026-09-23): every bundled
+  //    daily bank has enough unplayed puzzles left. Under WARN days it is a
+  //    finding (red heartbeat on Ops); under SENTRY days it also goes to
+  //    Sentry so the founder is emailed, not just shown a red row. A bank
+  //    that has started recycling is reported every night until it grows.
+  {
+    const rows = bankRunwayReport(todayKey);
+    checked.push(`content runway: ${rows.map((r) => `${r.game} ${r.daysLeft}d`).join(', ')}`);
+    for (const r of rows) {
+      if (r.level === 'ok') continue;
+      const msg = r.recycling
+        ? `${r.title} dailies are RECYCLING (bank of ${r.dailies} exhausted on ${r.recyclesOn}) — author more via ${r.source}`
+        : `${r.title} has ${r.daysLeft} days of unplayed dailies left (recycles ${r.recyclesOn}) — author more via ${r.source}`;
+      findings.push(msg);
+      if (r.recycling || r.daysLeft < SENTRY_RUNWAY_DAYS) Sentry.captureMessage(`Content runway: ${msg}`, 'warning');
+    }
   }
 
   const ok = findings.length === 0;

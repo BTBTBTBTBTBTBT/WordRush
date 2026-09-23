@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, Webhook, Swords, ExternalLink } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
 import { FlagsCard } from '../components/flags-card';
+import { RunwayCard } from '../components/runway-card';
 import { modeLabel } from '@/lib/mode-labels';
 
 // Operational health — the "is anything quietly broken" page: cron heartbeats,
@@ -55,6 +56,9 @@ export default function AdminOpsPage() {
 
       {/* Remote feature flags — the More Games kill switch + tester gate */}
       <FlagsCard />
+
+      {/* Content runway — days of unplayed dailies left in every bundled bank */}
+      <RunwayCard />
 
       {/* Cron heartbeats */}
       <div className="bg-white border border-gray-200 rounded-xl p-4">
