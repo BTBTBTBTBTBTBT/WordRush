@@ -212,6 +212,33 @@ Tick a cell only after checking, in order:
   reviewing (3,535 pairs); your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three
   copies. American spellings in answers (NEIGHBOR, HONOR).
 
+## Muddle — what to look for (built 2026-09-23)
+
+- Daily "#N" counts from 2026-09-23; the first puzzle's punchline is PERFECT HARMONY (the choir
+  changing room). Same puzzle everywhere on a date (bank bundled on both natives, sha-guarded).
+  **On a holiday the joke belongs to the day** and the header shows the holiday's name.
+- **The cartoon panel is a placeholder** until you run the image batch with your own key
+  (`node apps/web/scripts/muddle/cartoons.mjs --limit 10`, then `--limit 500`); the puzzle plays
+  fully without it. The caption sits beneath the panel with the blank underlined; the punchline
+  fills it in when you solve.
+- The classic layout you asked for: one column; four words on the same left edge — the scrambled
+  letters as bold spaced type, the answer boxes directly under them on one six-column grid (the
+  sixth slot empty for a five-letter word); a ringed box means that letter goes to the punchline;
+  the punchline row sits under a divider, grouped by word, in the lilac tint.
+- Tap a scrambled letter (or type) to place it; a full word checks itself — right locks, wrong shakes
+  and the letters go back. **Every check counts** (5 is perfect: four words + the punchline; the
+  13th loses). Per-word **Letter** (75) pins the next correct letter and **Solve** (150) fills the
+  word; neither counts as a check. Delete · Clear under the board.
+- Finished screen: everything filled, "Muddle solved clean" / "Muddle solved" / "Out of checks" +
+  x/5 solved · checks · time · hints. Victory card shows CHECKS · TIME · POINTS (score row "Check
+  bonus": 150 per unused check of 13). Pro "Keep playing: Unlimited Muddle" on all three.
+- Share card: the four rows of blank ringed tiles and the punchline row — no letters, no cartoon
+  (it would spoil the joke). Caption "Score · Time · x/5 solved · n checks".
+- Achievements: Unmuddled, 50 solves, Clean Muddle (five checks), Swift Muddle (under 90 s),
+  pure 1/10/50.
+- Content: 365 everyday dailies + 21 Unlimited + 56 holiday puzzles from the 442 puns you are
+  reviewing; your cuts flow through `merge-banks.mjs` → `build-bank.mjs` → the three copies.
+
 ## Content banks awaiting your veto pass (drafted overnight 2026-09-22 → 23)
 
 The four titles that need authored content now have first-draft banks, machine-validated, packaged

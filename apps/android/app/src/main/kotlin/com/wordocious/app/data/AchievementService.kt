@@ -255,6 +255,13 @@ object AchievementService {
             if (timeSeconds < 240) tryUnlock("crossword_swift")
         }
 
+        // Muddle (More Games §18c): first solve, clean (five checks, the perfect game), swift.
+        if (gameMode == "SCRAMBLE" && won) {
+            tryUnlock("scramble_first")
+            if (guessCount == 5) tryUnlock("scramble_clean")
+            if (timeSeconds < 90) tryUnlock("scramble_swift")
+        }
+
         // Kindred (More Games §18c): first win, flawless (4 submissions, no hints),
         // hardest first (the tier-4 group was the first one solved — from the matches row).
         if (gameMode == "GROUPS" && won) {
@@ -400,6 +407,7 @@ object AchievementService {
             Triple("cryptogram_regular", "CRYPTOGRAM", 50),
             Triple("groups_regular", "GROUPS", 50),
             Triple("crossword_regular", "CROSSWORD", 50),
+            Triple("scramble_regular", "SCRAMBLE", 50),
             Triple("classic_master", "DUEL", 100),
         )
         for ((key, mode, threshold) in modeMasteryChecks) {
@@ -709,7 +717,7 @@ object AchievementService {
         // Hintless wins per mode, queried from `matches` so both daily and
         // practice games count. Only fires after a hintless win in one of
         // the three hint-bearing modes.
-        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS", "CROSSWORD")
+        val pureModes = listOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS", "CROSSWORD", "SCRAMBLE")
         if (won && hintsUsed == 0 && gameMode in pureModes) {
             val slug = when (gameMode) {
                 "DUEL_6" -> "six"
@@ -722,6 +730,7 @@ object AchievementService {
                 "CRYPTOGRAM" -> "cryptogram"
                 "GROUPS" -> "groups"
                 "CROSSWORD" -> "crossword"
+                "SCRAMBLE" -> "scramble"
                 else -> "proper"
             }
             fun tierKey(tier: String) = "pure_${slug}_$tier"

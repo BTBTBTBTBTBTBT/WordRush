@@ -1067,6 +1067,110 @@ object ShareImage {
         return bmp
     }
 
+    // ── Muddle card (More Games §18d) ─────────────────────────────────────────
+
+    /** Four rows of blank white tiles on one six-column grid with the circled
+     *  positions ringed in purple, a divider, then the punchline row grouped by
+     *  word in the lilac tint with purple rings — no letters, no cartoon (no
+     *  spoilers). Mirrors web drawScramble. `meta` is the stats line
+     *  ("#12 · 5/5 solved · 5 checks · 2:45"). */
+    fun renderScramble(
+        context: Context, wordLengths: List<Int>, circled: List<List<Int>>, pattern: List<Int>,
+        checks: Int, solvedCount: Int, won: Boolean, meta: String,
+    ): Bitmap {
+        val height = 1080
+        val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val accent = 0xFFF97316.toInt()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+        p.typeface = black; p.textSize = 56f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText("MUDDLE", cx, 152f, p)
+        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
+        val metaText = "$meta · $date"
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.textSize = 24f
+        val metaW = p.measureText(metaText)
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        var rowX = cx - (metaW + resultW + rowGap) / 2f
+        p.textAlign = Paint.Align.LEFT; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(metaText, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            c.drawRoundRect(rect, 10f, 10f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() })
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+
+        // The board (web drawScramble): four rows on ONE six-column grid, then the punchline row.
+        val emptyFill = 0xFFFFFFFF.toInt(); val ring = 0xFF7C3AED.toInt()
+        val lilac = 0xFFF5F3FF.toInt(); val lilacBorder = 0xFFC4B5FD.toInt()
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        val areaH = areaBottom - areaTop
+        val gap = 10f; val rowGapT = 26f; val cols = 6
+        val tile = minOf(84f, floor((W - 200f - gap * (cols - 1)) / cols), floor((areaH - 120f - rowGapT * 5) / 5))
+        val boardW = cols * tile + (cols - 1) * gap
+        val x0 = cx - boardW / 2f
+        val totalH = 4 * tile + 3 * rowGapT + 40f + tile
+        var y = areaTop + (areaH - totalH) / 2f
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f }
+        val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 4f; color = ring }
+        for ((wi, len) in wordLengths.withIndex()) {
+            val rings = circled.getOrNull(wi) ?: emptyList()
+            val rad = max(6f, tile * 0.14f)
+            for (i in 0 until len.coerceAtMost(cols)) {
+                val x = x0 + i * (tile + gap)
+                val rect = RectF(x, y, x + tile, y + tile)
+                fill.color = emptyFill; c.drawRoundRect(rect, rad, rad, fill)
+                stroke.color = EMPTY_BORDER; c.drawRoundRect(rect, rad, rad, stroke)
+                if (i in rings) c.drawCircle(x + tile / 2f, y + tile / 2f, tile * 0.34f, ringPaint)
+            }
+            y += tile + rowGapT
+        }
+        // Divider
+        y += 6f
+        stroke.color = EMPTY_BORDER; stroke.strokeWidth = 2f
+        c.drawLine(x0, y, x0 + boardW, y, stroke)
+        stroke.strokeWidth = 3f
+        y += 34f
+        val small = floor(tile * 0.78f); val wordGap = 26f
+        val totalLetters = pattern.sum()
+        val rowW = totalLetters * small + (totalLetters - pattern.size) * 6f + (pattern.size - 1) * wordGap
+        var x = cx - rowW / 2f
+        ringPaint.strokeWidth = 3f
+        for (len in pattern) {
+            val rad = max(5f, small * 0.14f)
+            for (i in 0 until len) {
+                val rect = RectF(x, y, x + small, y + small)
+                fill.color = lilac; c.drawRoundRect(rect, rad, rad, fill)
+                stroke.color = lilacBorder; c.drawRoundRect(rect, rad, rad, stroke)
+                c.drawCircle(x + small / 2f, y + small / 2f, small * 0.32f, ringPaint)
+                x += small + 6f
+            }
+            x += wordGap - 6f
+        }
+
+        p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
+        c.drawText(if (won) "MUDDLE SOLVED" else "OUT OF CHECKS", cx, height - 150f, p)
+        p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
+        c.drawText("$solvedCount/5 solved · $checks check${if (checks == 1) "" else "s"}", cx, height - 104f, p)
+        p.textSize = 22f; p.color = FOOT
+        c.drawText("wordocious.com", cx, height - 40f, p)
+        return bmp
+    }
+
     /** Share a rendered bitmap with caption text (no hosted /s URL — the image is the card). */
     fun shareBitmap(context: Context, bitmap: Bitmap, text: String) {
         val uri = runCatching {
