@@ -30,15 +30,21 @@ public final class GameDictionary {
     private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String], legacySolutions: [String])] = [:]
     private var lengthAllowedArrays: [Int: [String]] = [:]
     private var frozenPrefixes: [Int: [String]] = [:]
-    /// §265 swap gate: cached swapped copies of the curated pools, by length.
-    /// Invalidated by the init functions (arrays are values — no identity check).
-    private var swappedPools: [Int: [String]] = [:]
+    /// §265 swap gate: cached swapped copies of the curated pools, by length and
+    /// then by how many swap batches the date has reached (1 = batch 1 only, from
+    /// SOLUTION_SWAP_CUTOVER_DATE; 2 = batch 1 then batch 2, from
+    /// SOLUTION_SWAP_2_CUTOVER_DATE). Dated seeds gate on the seed's date, undated
+    /// seeds on wall-clock UTC. Invalidated by the init functions (arrays are
+    /// values — no identity check).
+    private var swappedPools: [Int: [Int: [String]]] = [:]
 
     private func swapped(_ length: Int, _ source: [String], dateKey: String?) -> [String] {
-        if (dateKey ?? todayUTC()) < SOLUTION_SWAP_CUTOVER_DATE { return source }
-        if let hit = swappedPools[length] { return hit }
-        let out = applySolutionSwaps(source)
-        swappedPools[length] = out
+        let date = dateKey ?? todayUTC()
+        if date < SOLUTION_SWAP_CUTOVER_DATE { return source }
+        let batches = date < SOLUTION_SWAP_2_CUTOVER_DATE ? 1 : 2
+        if let hit = swappedPools[length]?[batches] { return hit }
+        let out = batches == 1 ? applySolutionSwaps(source) : applyAllSolutionSwaps(source)
+        swappedPools[length, default: [:]][batches] = out
         return out
     }
 
