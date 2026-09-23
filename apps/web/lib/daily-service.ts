@@ -1065,7 +1065,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
 
 /** Modes whose rows carry a hints segment — mirrors composite-scoring's
  *  HINT_BEARING_MODES without importing it (that module imports this one). */
-const HINT_RECORD_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD']);
+const HINT_RECORD_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD', 'SCRAMBLE']);
 
 // ============================================================
 // Time Helpers

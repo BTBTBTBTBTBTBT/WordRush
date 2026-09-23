@@ -201,6 +201,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_crossword_initiate', name: 'Pure Crosswordocious',        description: 'Finish a grid without revealing anything',      category: 'skill', icon: 'star' },
   { key: 'pure_crossword_adept',    name: 'Pure Crosswordocious Adept',  description: 'Finish 10 grids without revealing anything',    category: 'skill', icon: 'star' },
   { key: 'pure_crossword_master',   name: 'Pure Crosswordocious Master', description: 'Finish 50 grids without revealing anything',    category: 'skill', icon: 'crown' },
+  // Muddle (More Games §18c)
+  { key: 'scramble_first',   name: 'Unmuddled',        description: 'Solve a Muddle',                                         category: 'beginner', icon: 'shuffle' },
+  { key: 'scramble_regular', name: 'Muddle Regular',   description: 'Solve 50 Muddles',                                       category: 'skill',    icon: 'shuffle' },
+  { key: 'scramble_clean',   name: 'Clean Muddle',     description: 'Solve a Muddle in five checks — no wrong words',           category: 'skill',    icon: 'sparkles' },
+  { key: 'scramble_swift',   name: 'Swift Muddle',     description: 'Solve a Muddle in under 90 seconds',                       category: 'skill',    icon: 'zap' },
+  { key: 'pure_scramble_initiate', name: 'Pure Muddle',        description: 'Solve a Muddle without using any hints',          category: 'skill', icon: 'star' },
+  { key: 'pure_scramble_adept',    name: 'Pure Muddle Adept',  description: 'Solve 10 Muddles without hints',                  category: 'skill', icon: 'star' },
+  { key: 'pure_scramble_master',   name: 'Pure Muddle Master', description: 'Solve 50 Muddles without hints',                  category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -325,6 +333,13 @@ export async function checkAchievements(
     await tryUnlock('wordsearch_first');
     if (guessCount <= 10) await tryUnlock('wordsearch_eagle_eye');
     if (timeSeconds < 120) await tryUnlock('wordsearch_swift');
+  }
+
+  // Muddle (More Games §18c): first solve, clean (five checks), swift.
+  if (gameMode === 'SCRAMBLE' && won) {
+    await tryUnlock('scramble_first');
+    if (guessCount === 5) await tryUnlock('scramble_clean');
+    if (timeSeconds < 90) await tryUnlock('scramble_swift');
   }
 
   // Crosswordocious (More Games §18c): first grid, clean (no Check), swift.
@@ -530,6 +545,7 @@ export async function checkAchievements(
     ['cryptogram_regular', 'CRYPTOGRAM', 50],
     ['groups_regular', 'GROUPS', 50],
     ['crossword_regular', 'CROSSWORD', 50],
+    ['scramble_regular', 'SCRAMBLE', 50],
     ['wordsearch_regular', 'WORDSEARCH', 50],
     ['hub_regular', 'HUB', 50],
     ['classic_master', 'DUEL', 100],
@@ -885,10 +901,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD', 'SCRAMBLE'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : mode === 'CRYPTOGRAM' ? 'cryptogram' : mode === 'GROUPS' ? 'groups' : mode === 'CROSSWORD' ? 'crossword' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : mode === 'CRYPTOGRAM' ? 'cryptogram' : mode === 'GROUPS' ? 'groups' : mode === 'CROSSWORD' ? 'crossword' : mode === 'SCRAMBLE' ? 'scramble' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

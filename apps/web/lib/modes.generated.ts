@@ -306,7 +306,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "checks",
     "guessBase": 5,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.scramble",
     "category": "word",
     "guideSlug": "muddle"

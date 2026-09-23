@@ -50,6 +50,7 @@ export type ShareMode =
   | 'Codebreaker'
   | 'Kindred'
   | 'Crosswordocious'
+  | 'Muddle'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -227,6 +228,20 @@ export interface ShareCrosswordInput extends ShareBase {
   puzzleNumber?: number;
 }
 
+/**
+ * Muddle (More Games §18d): four rows of blank tiles with the circled positions
+ * ringed, then the punchline row blank with word gaps. The cartoon is NOT on
+ * the card (it would spoil the joke). Stat line reads "#12 · 5 checks · 1:52".
+ */
+export interface ShareScrambleInput extends ShareBase {
+  layout: 'scramble';
+  words: { length: number; circled: number[] }[];
+  pattern: number[];
+  checks: number;
+  solvedCount: number;
+  puzzleNumber?: number;
+}
+
 export interface ShareMultiBoard {
   grid: TileStateString[][];
   /** Per-row letters matching `grid` ('' for empty tiles). Required for `reveal`. */
@@ -375,6 +390,7 @@ export type ShareImageInput =
   | ShareCryptogramInput
   | ShareGroupsInput
   | ShareCrosswordInput
+  | ShareScrambleInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -734,7 +750,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput | ShareCrosswordInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput | ShareCrosswordInput | ShareScrambleInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -805,6 +821,9 @@ function drawHeader(
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     const c = input.checks === 0 ? 'Clean' : `${input.checks} check${input.checks === 1 ? '' : 's'}`;
     statsText = `${num}${input.won ? c : 'Revealed'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'scramble') {
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}${input.solvedCount}/5 solved · ${input.checks} check${input.checks === 1 ? '' : 's'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -1079,6 +1098,56 @@ function drawWordsearch(
 
 // Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the centre
 // filled in the accent, the rank name large beneath, then % of max. No letters.
+// Muddle (More Games §18d): four rows of blank tiles (circled positions ringed)
+// on one six-column grid, a divider, then the punchline row grouped by word in
+// the lilac tint. No letters, no cartoon.
+function drawScramble(
+  ctx: CanvasRenderingContext2D,
+  input: ShareScrambleInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const EMPTY = '#ffffff', EMPTY_BORDER = '#d1d5db', RING = '#7c3aed', LILAC = '#f5f3ff', LILAC_BORDER = '#c4b5fd';
+  const areaHeight = footerTop - headerBottom;
+  const gap = 10, rowGap = 26, cols = 6;
+  const tile = Math.min(84, Math.floor((width - 200 - gap * (cols - 1)) / cols), Math.floor((areaHeight - 120 - rowGap * 5) / 5));
+  const boardW = cols * tile + (cols - 1) * gap;
+  const x0 = (width - boardW) / 2;
+  const totalH = 4 * tile + 3 * rowGap + 40 + tile;
+  let y = headerBottom + (areaHeight - totalH) / 2;
+  ctx.save();
+  ctx.lineWidth = 3;
+  for (const w of input.words) {
+    for (let i = 0; i < w.length; i++) {
+      const x = x0 + i * (tile + gap), radius = Math.max(6, tile * 0.14);
+      ctx.fillStyle = EMPTY; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
+      ctx.strokeStyle = EMPTY_BORDER; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke();
+      if (w.circled.includes(i)) { ctx.strokeStyle = RING; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x + tile / 2, y + tile / 2, tile * 0.34, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 3; }
+    }
+    y += tile + rowGap;
+  }
+  // divider
+  y += 6;
+  ctx.strokeStyle = EMPTY_BORDER; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + boardW, y); ctx.stroke();
+  y += 34;
+  const small = Math.floor(tile * 0.78), wordGap = 26;
+  const totalLetters = input.pattern.reduce((a, b) => a + b, 0);
+  const rowW = totalLetters * small + (totalLetters - input.pattern.length) * 6 + (input.pattern.length - 1) * wordGap;
+  let x = (width - rowW) / 2;
+  for (const len of input.pattern) {
+    for (let i = 0; i < len; i++) {
+      const radius = Math.max(5, small * 0.14);
+      ctx.fillStyle = LILAC; drawRoundRect(ctx, x, y, small, small, radius); ctx.fill();
+      ctx.strokeStyle = LILAC_BORDER; ctx.lineWidth = 3; drawRoundRect(ctx, x, y, small, small, radius); ctx.stroke();
+      ctx.strokeStyle = RING; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x + small / 2, y + small / 2, small * 0.32, 0, Math.PI * 2); ctx.stroke();
+      x += small + 6;
+    }
+    x += wordGap - 6;
+  }
+  ctx.restore();
+}
+
 // Crosswordocious (More Games §18d): the grid silhouette — purple tiles where
 // the letters are, nothing where the blocks are, no letters, no numbers.
 function drawCrossword(
@@ -2199,6 +2268,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawGroups(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'crossword') {
     drawCrossword(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'scramble') {
+    drawScramble(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

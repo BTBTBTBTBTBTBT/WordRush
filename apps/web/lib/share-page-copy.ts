@@ -28,6 +28,7 @@ export const MODE_ROUTE: Record<string, string> = {
   Codebreaker: '/codebreaker',
   Kindred: '/kindred',
   Crosswordocious: '/crosswordocious',
+  Muddle: '/muddle',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',
@@ -423,6 +424,26 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const description = won
       ? `I found all four groups on ${name} at Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
       : `I played ${name} on Wordocious — ${stats}. Think you can find all four? ${PLAY_HOOK}`;
+    return { mode, modeDisp: name, won, stats, title, description };
+  }
+
+  // Muddle (guessSemantics "checks", base 5): g = checks — four words and the punchline
+  // are five checks when perfect. The unfurl names Score · Time · solved · checks.
+  if (meta?.guessSemantics === 'checks' && meta.guessBase === 5) {
+    const pts = Number(str(sp.pts)) || 0;
+    const n = Number(str(sp.n)) || 0;
+    const bs = Number(str(sp.bs)) || 0;
+    const name = n > 0 ? `${modeDisp} #${n}` : modeDisp;
+    const bits: string[] = [];
+    if (pts > 0) bits.push(`Score ${pts.toLocaleString()} pts`);
+    bits.push(`Time ${fmtTime(t)}`);
+    if (str(sp.bs)) bits.push(`${bs}/5 solved`);
+    bits.push(won ? `${g} check${g === 1 ? '' : 's'}` : 'Out of checks');
+    const stats = bits.join(' · ');
+    const title = `Wordocious ${name} — ${stats}`;
+    const description = won
+      ? `I solved ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
+      : `I played ${name} on Wordocious — ${stats}. Think you can unscramble it? ${PLAY_HOOK}`;
     return { mode, modeDisp: name, won, stats, title, description };
   }
 

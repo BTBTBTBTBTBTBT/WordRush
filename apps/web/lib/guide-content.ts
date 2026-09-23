@@ -851,6 +851,62 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['classic', 'codebreaker', 'kindred'],
   },
+  // ── More Games (§5) — Muddle ─────────────────────────────────────────────
+  {
+    slug: 'muddle',
+    title: 'Muddle',
+    accent: '#f97316',
+    tagline: 'Unscramble four words, then spell the pun from their circled letters to finish the joke',
+    metaDescription:
+      'Wordocious Muddle guide: how the daily scramble works, why a full word checks itself, what the circled letters do, how the punchline row opens, what the hints cost, the exact scoring formula, and the strategy that unscrambles fast.',
+    facts: [
+      { label: 'Words', value: 'Four, of five or six letters, then the punchline' },
+      { label: 'Checks', value: 'Every full word counts — 5 is perfect, 13 loses' },
+      { label: 'Punchline', value: 'Spelled from the circled letters, opens after the four words' },
+      { label: 'Time bonus cap', value: '8:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'A cartoon sits at the top with a caption that has one blank. Beneath it are four scrambled words. Tap the scrambled letters (or type) to fill the boxes under each word; when the boxes are full the word checks itself. Right, and it locks, and its ringed letters go down to the punchline row. Wrong, and the row shakes, the letters go back to the scramble, and a check is spent.',
+      'Some boxes carry a ring. Those letters, in word order, are exactly the letters of the punchline — the pun that fills the caption\'s blank. Once all four words are solved the punchline row opens: spell it from the ringed letters the same way, and it checks itself when full.',
+      'Every check counts, right or wrong: four words plus the punchline is five, the perfect run; the thirteenth check loses the puzzle and the answers are shown. Two hints never count as checks: "Letter" places the next correct letter of a word and pins it there; "Solve" fills the word for you. Delete takes back the last letter you placed and Clear empties the row (pinned letters stay).',
+      'The daily is the same for everyone and counts once on the leaderboard. On a holiday the joke belongs to the day. Muddle lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A solve is worth a 1,000-point base plus a flat 200 for finishing. Checks are what separate players: the game treats your finish as the number of checks out of a budget of 13, and every unused check is worth 150 points, so a perfect five-check solve banks 1,200 in check bonus, one wrong word 1,050, two 900, and so on. Speed is the tiebreaker: up to 240 points scaled by how far under the 8-minute cap you finish, which can never outweigh a wrong word — a cleaner solve always outranks a faster one. A lost puzzle still earns credit for each of the five rows you solved.',
+      'Placing a letter costs 75 points and solving a word 150; neither counts as a check. Hints never lose you the puzzle, but a solve with any hint is not a Perfect run and does not count toward the Pure Muddle achievements.',
+    ],
+    controls: [
+      { icon: 'lightbulb', label: 'Letter', body: 'Places the next correct letter of that word (or the punchline) and pins it. Costs 75 points of score, never a check, and rules out a Perfect run.' },
+      { icon: 'eye', label: 'Solve', body: 'Fills that word for you and sends its ringed letters down to the punchline. Costs two hints (150 points), never a check, and rules out a Perfect run.' },
+      { icon: 'delete', label: 'Delete', body: 'Takes back the last letter you placed in the active row. Free. Pinned letters stay.' },
+      { icon: 'x-circle', label: 'Clear', body: 'Empties the active row so you can start the word again. Free. Pinned letters stay.' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Moves to the next unsolved row without changing anything. Free.' },
+    ],
+    tips: [
+      {
+        heading: 'Look for the ending first',
+        body: 'Five- and six-letter words usually end in -ED, -ER, -LY, -ING or -S. Spot the ending in the scramble, set it aside in your head, and the rest of the word often falls into place.',
+      },
+      {
+        heading: 'Pair the consonants',
+        body: 'Clusters like TH, CH, ST, BR and PL travel together. Find one in the scramble and try it at the front, then at the end.',
+      },
+      {
+        heading: 'Read the caption before the punchline',
+        body: 'The pun is a familiar phrase that fits the picture. Once you have two or three words, say the caption aloud and guess the punchline — its letter pattern then tells you which ringed letters go where.',
+      },
+      {
+        heading: 'Skip a stubborn word',
+        body: 'Tap another row and solve the easy ones first; their ringed letters shrink the punchline puzzle, and the punchline often reveals the missing word backwards.',
+      },
+      {
+        heading: 'A letter hint is cheaper than a wrong word',
+        body: 'A wrong full word costs 150 points of check bonus; placing one correct letter costs 75. If a word has beaten you twice, take the letter.',
+      },
+    ],
+    related: ['classic', 'letter-ladder', 'hubbub'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {
