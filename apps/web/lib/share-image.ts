@@ -46,6 +46,7 @@ export type ShareMode =
   | 'Starsweep'
   | 'Letter Ladder'
   | 'Spyglass'
+  | 'Hubbub'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -165,6 +166,21 @@ export interface ShareWordsearchInput extends ShareBase {
   found: string[];
   misses: number;
   title: string;
+  puzzleNumber?: number;
+}
+
+/**
+ * Hubbub (More Games §18d): the blank 2-3-2 tile silhouette with the centre
+ * filled, the rank name, % of max, words and pangrams — no letters.
+ * Stat line reads "#12 · Uproar · 72% · 18 words · 1 pangram".
+ */
+export interface ShareHubInput extends ShareBase {
+  layout: 'hub';
+  rankName: string;
+  pct: number;
+  wordsFound: number;
+  wordCount: number;
+  pangramsFound: number;
   puzzleNumber?: number;
 }
 
@@ -312,6 +328,7 @@ export type ShareImageInput =
   | ShareRegionsInput
   | ShareLadderInput
   | ShareWordsearchInput
+  | ShareHubInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -671,7 +688,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -728,6 +745,9 @@ function drawHeader(
   } else if (input.layout === 'wordsearch') {
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     statsText = `${num}${input.found.length}/${input.words.length} · ${input.misses} miss${input.misses === 1 ? '' : 'es'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'hub') {
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}${input.rankName} · ${input.pct}% · ${input.wordsFound} word${input.wordsFound === 1 ? '' : 's'} · ${input.pangramsFound} pangram${input.pangramsFound === 1 ? '' : 's'} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -997,6 +1017,43 @@ function drawWordsearch(
     ctx.arc(x0 + cardPad + (c + 0.5) * cell, y0 + cardPad + (r + 0.5) * cell, cell * 0.12, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.restore();
+}
+
+// Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the centre
+// filled in the accent, the rank name large beneath, then % of max. No letters.
+function drawHub(
+  ctx: CanvasRenderingContext2D,
+  input: ShareHubInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const areaHeight = footerTop - headerBottom;
+  const ACCENT = '#c026d3';
+  const tile = Math.min(150, Math.floor((areaHeight - 260) / 3.4)), gap = 18;
+  const cx = width / 2;
+  const clusterH = tile * 3 + gap * 2;
+  const y0 = headerBottom + (areaHeight - clusterH - 200) / 2;
+  const rows: Array<Array<'o' | 'c'>> = [['o', 'o'], ['o', 'c', 'o'], ['o', 'o']];
+  ctx.save();
+  rows.forEach((row, r) => {
+    const rowW = row.length * tile + (row.length - 1) * gap;
+    row.forEach((kind, i) => {
+      const x = cx - rowW / 2 + i * (tile + gap), y = y0 + r * (tile + gap);
+      const radius = Math.max(8, tile * 0.14);
+      if (kind === 'c') { ctx.fillStyle = ACCENT; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill(); }
+      else {
+        ctx.fillStyle = '#ffffff'; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#d1d5db'; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke();
+      }
+    });
+  });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 64px ${SHARE_FONT_STACK}`; ctx.fillStyle = ACCENT;
+  ctx.fillText(input.rankName.toUpperCase(), cx, y0 + clusterH + 96);
+  ctx.font = `700 30px ${SHARE_FONT_STACK}`; ctx.fillStyle = TEXT_MUTED;
+  ctx.fillText(`${input.pct}% of the maximum`, cx, y0 + clusterH + 146);
   ctx.restore();
 }
 
@@ -1944,6 +2001,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawLadder(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'wordsearch') {
     drawWordsearch(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'hub') {
+    drawHub(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

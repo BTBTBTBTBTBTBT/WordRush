@@ -11,6 +11,7 @@ export function guessBonusLabel(gameMode: string): string {
     case 'checks': return 'Check bonus';
     case 'misses': return 'Miss bonus';
     case 'overPar': return 'Par bonus';
+    case 'rank': return 'Rank bonus';
     default: return 'Guess bonus';
   }
 }

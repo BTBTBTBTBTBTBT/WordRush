@@ -67,6 +67,13 @@ describe('buildCopy', () => {
     expect(lost.title).toBe('Wordocious Spyglass — Time 5:00 · 6/10 found · 0 misses');
   });
 
+  it('names the rank, percentage and words for Hubbub', () => {
+    const c = buildCopy({ m: 'Hubbub', won: '1', g: '3', mg: '10', t: '600', pts: '1650', n: '5', pct: '72', bs: '18', tb: '25' }, ['u', 'Hubbub-2026-09-27']);
+    expect(c.title).toBe('Wordocious Hubbub #5 — Rank Uproar · 72% of the maximum · 18/25 words · Score 1,650 pts');
+    const lost = buildCopy({ m: 'Hubbub', won: '0', g: '7', mg: '10', t: '300', pct: '21' }, ['u', 'Hubbub-2026-09-27']);
+    expect(lost.title).toBe('Wordocious Hubbub — Rank Banter · 21% of the maximum');
+  });
+
   it('builds a multi-board card with boards solved', () => {
     const c = buildCopy(
       { m: 'OctoWord', won: '1', g: '12', mg: '13', t: '600', bs: '8', tb: '8' },

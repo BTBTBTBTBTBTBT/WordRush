@@ -624,6 +624,63 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     related: ['classic', 'letter-ladder', 'deliverance'],
   },
+  // ── More Games (§12) — Hubbub ────────────────────────────────────────────
+  {
+    slug: 'hubbub',
+    title: 'Hubbub',
+    accent: '#c026d3',
+    tagline: 'Seven letters, one hub — make words of four letters or more, climb the ranks, find the pangram',
+    metaDescription:
+      'Wordocious Hubbub guide: the seven-letter hub rules, how words and pangrams score, what every rank means, why the game keeps going after you win, how the two hints work, and the strategy that reaches Pandemonium.',
+    facts: [
+      { label: 'Letters', value: '7, one required centre letter, repeats allowed' },
+      { label: 'Words', value: '4 letters = 1 point, longer = its length, pangram +7' },
+      { label: 'Solved at', value: 'Hubbub — half the maximum score' },
+      { label: 'Time bonus cap', value: '30:00' },
+      { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
+    ],
+    rules: [
+      'You get seven letters in a cluster with one letter in the middle. Make words of four letters or more using only those letters; you may repeat a letter as often as you like, but every word must use the centre letter. Tap the tiles or type, then press Enter. A four-letter word scores 1 point, a longer word scores its length, and a word that uses all seven letters — a pangram — scores 7 extra. Every puzzle has at least one.',
+      'Words are checked against a friendly list. Common words score and together set the puzzle\'s maximum. Rarer real words are accepted as bonus words for 0 points, so a genuine word is never turned away and the maximum never needs an obscure one. Your rank climbs with your share of the maximum: Hush, Murmur, Chatter, Banter, Clamor, Racket, then Hubbub at 50%, Uproar at 70%, Thunder at 85% and Pandemonium at 100% — every word found.',
+      'Reaching Hubbub solves the puzzle and records your result once. The board stays open: keep hunting and every rank you climb afterwards raises your leaderboard score in place, without earning XP twice. If you stop short of Hubbub, "End puzzle and see answers" records a loss with the rank you reached and shows every word.',
+      'The daily is the same for everyone and counts once on the leaderboard. Hubbub lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
+    ],
+    scoring: [
+      'A solve is worth a 1,000-point base plus a flat 200 for finishing. Your rank is what separates players: the game treats your rank position as your finish (Pandemonium 1, Thunder 2, Uproar 3, Hubbub 4) out of a budget of 5, and every rank above Hubbub is worth 300 points, so Pandemonium banks 1,200 in rank bonus, Thunder 900, Uproar 600, Hubbub 300. Speed is the tiebreaker: up to 240 points scaled by how far under the 30-minute cap you reached your rank, which can never outweigh a rank — a higher rank always beats a faster one. A puzzle ended below Hubbub still earns credit for the share of the maximum you found, in twenty steps.',
+      'Each "Starts with…" hint costs 50 points and shows the first two letters and the length of the next word you have not found; "Reveal a word" costs two hints (100 points) and places that word, points included. Hints never count against your rank, but a solve with any hint is not a Perfect run and does not count toward the Pure Hubbub achievements.',
+    ],
+    controls: [
+      { icon: 'delete', label: 'Delete', body: 'Removes the last letter you typed. Free.' },
+      { icon: 'shuffle', label: 'Shuffle', body: 'Rearranges the six outer letters so you see new combinations. The centre never moves. Free (Space does the same).' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Submits your word. A word that is too short, misses the centre letter, uses other letters, or is not on the list is turned away for free.' },
+      { icon: 'lightbulb', label: 'Starts with…', body: 'Shows the first two letters and the length of the next word you have not found. Costs 50 points of score, never a mistake, and rules out a Perfect run.' },
+      { icon: 'eye', label: 'Reveal a word', body: 'Places the next unfound word for you, points included. Costs two hints (100 points) and rules out a Perfect run.' },
+      { icon: 'flag', label: 'End puzzle', body: 'Only shown before you reach Hubbub. Records a loss at the rank you reached and shows every word. After Hubbub the puzzle records itself and you simply keep going.' },
+    ],
+    tips: [
+      {
+        heading: 'Find the pangram first',
+        body: 'Every puzzle has a word that uses all seven letters, and it is worth its length plus seven — often a fifth of Hubbub on its own. Look for common endings (-ING, -ER, -ED, -LY) built from the outer letters and see which stem the centre letter completes.',
+      },
+      {
+        heading: 'Milk the prefixes and suffixes',
+        body: 'If UNDER is there, try UNDERLINE, UNDERLINED, UNDERLINING. If a word ends in -ER, try -ERS is out (no S), but -ERED and -ERING often work. Building on a word you have already found is the fastest way to add long, high-value words.',
+      },
+      {
+        heading: 'Four-letter words are worth one point each',
+        body: 'They still count toward Pandemonium, but they will not carry you to Hubbub. Sweep them up at the end; spend your fresh eyes on the six- and seven-letter words that move the rank bar.',
+      },
+      {
+        heading: 'Shuffle when you stall',
+        body: 'Seeing the same arrangement hides words. Shuffle (or press Space) and read the tiles as a new row — the brain finds new pairs when the order changes.',
+      },
+      {
+        heading: 'Bonus words cost nothing to try',
+        body: 'A word you are unsure of is free to test: if it is on the friendly list it is accepted (as a bonus if it is rare), and if it is not, nothing is lost. Only your rank and time matter.',
+      },
+    ],
+    related: ['classic', 'spyglass', 'letter-ladder'],
+  },
 ];
 
 export function getGuide(slug: string): ModeGuide | undefined {

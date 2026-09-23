@@ -1065,7 +1065,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
 
 /** Modes whose rows carry a hints segment — mirrors composite-scoring's
  *  HINT_BEARING_MODES without importing it (that module imports this one). */
-const HINT_RECORD_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH']);
+const HINT_RECORD_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB']);
 
 // ============================================================
 // Time Helpers
@@ -1301,8 +1301,11 @@ export async function improveDailyRun(args: {
   );
   if (typeof score !== 'number') return null;
   try {
+    // matches.player1_score is the GUESS COUNT (the distribution bucket —
+    // for Hubbub the rank position, lower = better), never the composite: a
+    // rank-up lowers it, so only rows still holding a WORSE (higher) count move.
     const patch: Record<string, unknown> = {
-      player1_score: score,
+      player1_score: args.guessCount,
       player1_time: args.timeSeconds,
       winner_id: args.completed ? args.userId : null,
       hints_used: args.hintsUsed ?? 0,
@@ -1314,7 +1317,7 @@ export async function improveDailyRun(args: {
       .eq('player1_id', args.userId)
       .eq('game_mode', args.gameMode)
       .eq('seed', args.seed)
-      .lt('player1_score', score);
+      .gt('player1_score', args.guessCount);
     reportRejectedWrite(`improveDailyRun matches ${args.gameMode}`, error);
   } catch (err) {
     handleSupabaseError(err, 'improveDailyRun');

@@ -327,7 +327,7 @@ export const MODES: ModeMeta[] = [
     "engine": "custom",
     "guessSemantics": "rank",
     "guessBase": 1,
-    "enabled": false,
+    "enabled": true,
     "flagKey": "mode.hub",
     "category": "word",
     "guideSlug": "hubbub"

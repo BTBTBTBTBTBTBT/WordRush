@@ -168,6 +168,15 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_wordsearch_initiate', name: 'Pure Spyglass',        description: 'Clear a Spyglass grid without using any hints', category: 'skill', icon: 'star' },
   { key: 'pure_wordsearch_adept',    name: 'Pure Spyglass Adept',  description: 'Clear 10 Spyglass grids without hints',        category: 'skill', icon: 'star' },
   { key: 'pure_wordsearch_master',   name: 'Pure Spyglass Master', description: 'Clear 50 Spyglass grids without hints',        category: 'skill', icon: 'crown' },
+  // More Games §18c — Hubbub.
+  { key: 'hub_first',         name: 'First Hubbub',     description: 'Reach Hubbub rank on a Hubbub puzzle',                 category: 'beginner', icon: 'star' },
+  { key: 'hub_regular',       name: 'Hubbub Regular',   description: 'Reach Hubbub rank on 50 puzzles',                      category: 'skill',    icon: 'star' },
+  { key: 'hub_pangram',       name: 'Pangram',          description: 'Find a word that uses all seven letters',              category: 'skill',    icon: 'sparkles' },
+  { key: 'hub_pandemonium',   name: 'Pandemonium',      description: 'Find every scoring word in a Hubbub puzzle',           category: 'skill',    icon: 'crown' },
+  { key: 'hub_uproar_streak', name: 'Uproar Week',      description: 'Reach Uproar or better on the daily Hubbub seven days in a row', category: 'skill', icon: 'flame' },
+  { key: 'pure_hub_initiate', name: 'Pure Hubbub',        description: 'Reach Hubbub rank without using any hints',          category: 'skill', icon: 'star' },
+  { key: 'pure_hub_adept',    name: 'Pure Hubbub Adept',  description: 'Reach Hubbub rank on 10 puzzles without hints',      category: 'skill', icon: 'star' },
+  { key: 'pure_hub_master',   name: 'Pure Hubbub Master', description: 'Reach Hubbub rank on 50 puzzles without hints',      category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -260,6 +269,31 @@ export async function checkAchievements(
   // something else (mistakes, par, checks…) is excluded through the catalog.
   if (won && guessCount === 1 && (MODE_BY_DBKEY[gameMode]?.guessSemantics ?? 'guesses') === 'guesses') {
     await tryUnlock('perfectionist');
+  }
+
+  // Hubbub (More Games §18c): first Hubbub, Pandemonium, pangram (from the
+  // matches row: a found word using all seven letters), seven Uproar days in a row.
+  if (gameMode === 'HUB' && won) {
+    await tryUnlock('hub_first');
+    if (guessCount === 1) await tryUnlock('hub_pandemonium');
+    if (seed && !alreadyUnlocked.has('hub_pangram')) {
+      const { data: m } = await (supabase as any)
+        .from('matches').select('solutions, player1_guesses')
+        .eq('player1_id', userId).eq('game_mode', 'HUB').eq('seed', seed).limit(1).maybeSingle();
+      const letters: string = m?.solutions?.[1] ?? '';
+      const found: string[] = (m?.player1_guesses ?? []).filter((e: string) => e[0] === '+' || e[0] === '!').map((e: string) => e.slice(1));
+      if (letters.length === 7 && found.some((w) => [...letters].every((ch) => w.includes(ch)))) await tryUnlock('hub_pangram');
+    }
+    if (guessCount <= 3 && seed?.startsWith('daily-') && !alreadyUnlocked.has('hub_uproar_streak')) {
+      const { data: rows } = await (supabase as any)
+        .from('daily_results').select('day, completed, guess_count')
+        .eq('user_id', userId).eq('game_mode', 'HUB').order('day', { ascending: false }).limit(7);
+      const days: Array<{ day: string; completed: boolean; guess_count: number }> = rows || [];
+      if (days.length === 7 && days.every((r) => r.completed && r.guess_count <= 3)) {
+        const consecutive = days.every((r, i) => i === 0 || (Date.parse(`${days[i - 1].day}T00:00:00Z`) - Date.parse(`${r.day}T00:00:00Z`)) === 86400000);
+        if (consecutive) await tryUnlock('hub_uproar_streak');
+      }
+    }
   }
 
   // Spyglass (More Games §18c): first clear, eagle eye (no misses), swift.
@@ -445,6 +479,7 @@ export async function checkAchievements(
     ['regions_regular', 'REGIONS', 50],
     ['ladder_regular', 'LADDER', 50],
     ['wordsearch_regular', 'WORDSEARCH', 50],
+    ['hub_regular', 'HUB', 50],
     ['classic_master', 'DUEL', 100],
   ];
   for (const [key, mode, threshold] of modeMasteryChecks) {
@@ -798,10 +833,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));
