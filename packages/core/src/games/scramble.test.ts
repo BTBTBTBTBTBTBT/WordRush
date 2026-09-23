@@ -38,7 +38,9 @@ describe('Muddle bank', () => {
       expect([...scrambleFinalTray(p)].sort().join(''), p.id).toBe([...letters].sort().join(''));
       expect(p.final.pattern.reduce((a, b) => a + b, 0)).toBe(letters.length);
       expect((p.caption.match(/____/g) || []).length, p.id).toBe(1);
-      expect(p.cartoon).toBeNull();
+      // Every puzzle carries its hash-named cartoon (the art batch ran 2026-09-23) and the file is in public/muddle.
+      expect(p.cartoon, p.id).toMatch(/^md-[a-z0-9]+-[0-9a-f]{10}\.webp$/);
+      expect(fs.existsSync(new URL(`../../../../apps/web/public/muddle/${p.cartoon}`, import.meta.url)), `${p.id} cartoon file`).toBe(true);
     }
   });
 });
