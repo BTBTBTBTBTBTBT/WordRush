@@ -134,6 +134,40 @@ Tick a cell only after checking, in order:
 - Achievements: first Hubbub, 50 Hubbub days, pangram, Pandemonium, seven Uproar-or-better days in a
   row, pure (no hints) 1/10/50.
 
+## Content banks awaiting your veto pass (drafted overnight 2026-09-22 → 23)
+
+The four titles that need authored content now have first-draft banks, machine-validated, packaged
+for one review sitting. Build the pack with `node apps/web/scripts/more-games/merge-banks.mjs` then
+`node apps/web/scripts/more-games/build-bank-review.mjs`; it lands in `scripts/out/more-games-banks/`
+(`index.html` + one page and one CSV per game; set the CSV `keep` column to `n` to cut a row).
+Sources (committed, the files the real bank builders will read): `apps/web/scripts/groups/puzzles.json`
+(Kindred, 400 puzzles in eight shards under `bank/`), `apps/web/scripts/cryptogram/sayings.json`
+(Codebreaker, 353 sayings, 352 valid), `apps/web/scripts/crossword/phrases.json` (Crosswordocious,
+46 evergreen + 28 holiday themes, 2,354 phrase pairs → 222 grids) and `apps/web/scripts/muddle/jokes.json`
+(Muddle, 162 puns composed into four-word puzzles; cartoons not drawn — that batch needs your image key).
+
+- **Kindred:** every puzzle proves exactly one solution with honest `alsoFits`; tiers 1–4; all words
+  in the app lexicon (the authors had to drop cuisine loanwords, cheeses and most dog breeds — the
+  lexicon is core English). Some tier-4 mechanics recur across the 400 ("sound like numbers" ×6,
+  "hidden numbers" ×6): fine for a year of dailies, flag any you find tired.
+- **Codebreaker:** proverbs only, 30–90 chars, three letters given. The 30-char floor excludes a few
+  classics ("Laughter is the best medicine." is 29); say if you want the floor at 25.
+- **Crosswordocious:** you asked for many more themes and for holiday puzzles on their dates. The
+  evergreen bank is 46 themes; the holiday bank is 28 themes pinned by
+  `apps/web/scripts/crossword/holidays.mjs` (fixed dates, weekday rules, Easter computus; Hanukkah,
+  Passover, Lunar New Year and Diwali tabled 2026–2030 — check those against a calendar before the
+  bank freezes). Holiday grids borrow filler from evergreen themes only. Holiday vocabulary the
+  lexicon lacks sits on a per-theme `allow` list (MENORAH, DREIDEL, SHAMROCK, KINARA, MATZO…);
+  proper nouns are only the holiday's own (SANTA, CUPID, LINCOLN, ABE, MOSES, PHIL, SAM) — cut
+  any you would rather not see. The lexicon is American (NEIGHBOR, TRAVELED); "Friends and
+  Neighbours" as a title may want the US spelling. MLK Day uses general sayings only (Dr King's
+  words are under copyright).
+- **Muddle:** the composer picks the four scrambled words from the Classic answer lists, so the
+  puns are the review; the scrambled words were swept for tone (the blocklist grew after the first
+  pass surfaced RACISM, GUNMEN, WHISKY). Cartoons come later, ten first for a style check.
+- Hubbub, Letter Ladder, Sudoku and Starsweep need no authored content. Spyglass's 180 themes
+  still await your skim (above).
+
 ## Known gaps to close before the gate closes
 
 - **Share link previews ("Solved 2/4", "Played X/4") come from the LIVE website**, not the app: the
