@@ -10,6 +10,10 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Visibility
@@ -169,6 +173,10 @@ private fun controlIcon(lucide: String): androidx.compose.ui.graphics.vector.Ima
     "check-check" -> Icons.Filled.DoneAll
     "flag" -> Icons.Filled.Flag
     "corner-down-left" -> Icons.AutoMirrored.Filled.KeyboardReturn
+    "x-circle" -> Icons.Filled.Cancel
+    "check-circle-2" -> Icons.Filled.CheckCircle
+    "tag" -> Icons.Filled.Label
+    "link-2" -> Icons.Filled.Link
     else -> Icons.Filled.Circle
 }
 

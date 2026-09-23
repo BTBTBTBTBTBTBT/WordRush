@@ -26,6 +26,7 @@ export const MODE_ROUTE: Record<string, string> = {
   Spyglass: '/spyglass',
   Hubbub: '/hubbub',
   Codebreaker: '/codebreaker',
+  Kindred: '/kindred',
   QuadWord: '/quadword',
   OctoWord: '/octoword',
   Succession: '/sequence',
@@ -400,6 +401,27 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const description = won
       ? `I cleared ${name} on Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
       : `I played ${name} on Wordocious — ${stats}. Think you can clear it? ${PLAY_HOOK}`;
+    return { mode, modeDisp: name, won, stats, title, description };
+  }
+
+  // Kindred (guessSemantics "guesses" with base 4): g = submissions, so "Solved 6/7"
+  // says nothing — the unfurl names Score · Time · groups · mistakes (mk= rides the URL).
+  if (meta?.guessSemantics === 'guesses' && meta.guessBase === 4 && str(sp.mk)) {
+    const pts = Number(str(sp.pts)) || 0;
+    const n = Number(str(sp.n)) || 0;
+    const mk = Number(str(sp.mk)) || 0;
+    const bs = Number(str(sp.bs)) || 0;
+    const name = n > 0 ? `${modeDisp} #${n}` : modeDisp;
+    const bits: string[] = [];
+    if (pts > 0) bits.push(`Score ${pts.toLocaleString()} pts`);
+    bits.push(`Time ${fmtTime(t)}`);
+    bits.push(`${bs}/4 groups`);
+    bits.push(won ? `${mk} mistake${mk === 1 ? '' : 's'}` : 'Out of mistakes');
+    const stats = bits.join(' · ');
+    const title = `Wordocious ${name} — ${stats}`;
+    const description = won
+      ? `I found all four groups on ${name} at Wordocious — ${stats}. Can you beat it? ${PLAY_HOOK}`
+      : `I played ${name} on Wordocious — ${stats}. Think you can find all four? ${PLAY_HOOK}`;
     return { mode, modeDisp: name, won, stats, title, description };
   }
 

@@ -185,6 +185,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_cryptogram_initiate', name: 'Pure Codebreaker',        description: 'Crack a Codebreaker saying without using any hints', category: 'skill', icon: 'star' },
   { key: 'pure_cryptogram_adept',    name: 'Pure Codebreaker Adept',  description: 'Crack 10 Codebreaker sayings without hints',         category: 'skill', icon: 'star' },
   { key: 'pure_cryptogram_master',   name: 'Pure Codebreaker Master', description: 'Crack 50 Codebreaker sayings without hints',         category: 'skill', icon: 'crown' },
+  // Kindred (More Games §18c)
+  { key: 'groups_first',         name: 'Kindred Spirits',      description: 'Find all four groups in a Kindred puzzle',                  category: 'beginner', icon: 'group' },
+  { key: 'groups_regular',       name: 'Kindred Regular',      description: 'Find all four groups in 50 Kindred puzzles',                category: 'skill',    icon: 'group' },
+  { key: 'groups_flawless',      name: 'Flawless Kindred',     description: 'Find all four groups without a single mistake or hint',     category: 'skill',    icon: 'sparkles' },
+  { key: 'groups_hardest_first', name: 'Hardest First',        description: 'Solve the four-pip group before any other in Kindred',       category: 'skill',    icon: 'crown' },
+  { key: 'pure_groups_initiate', name: 'Pure Kindred',         description: 'Find all four groups without using any hints',              category: 'skill', icon: 'star' },
+  { key: 'pure_groups_adept',    name: 'Pure Kindred Adept',   description: 'Find all four groups in 10 puzzles without hints',          category: 'skill', icon: 'star' },
+  { key: 'pure_groups_master',   name: 'Pure Kindred Master',  description: 'Find all four groups in 50 puzzles without hints',          category: 'skill', icon: 'crown' },
   { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
   { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
   { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
@@ -309,6 +317,17 @@ export async function checkAchievements(
     await tryUnlock('wordsearch_first');
     if (guessCount <= 10) await tryUnlock('wordsearch_eagle_eye');
     if (timeSeconds < 120) await tryUnlock('wordsearch_swift');
+  }
+
+  // Kindred (More Games §18c): first, flawless (no mistake, no hint), hardest first (from the matches row).
+  if (gameMode === 'GROUPS' && won) {
+    await tryUnlock('groups_first');
+    if (guessCount === 4 && hintsUsed === 0) await tryUnlock('groups_flawless');
+    if (seed && !alreadyUnlocked.has('groups_hardest_first')) {
+      const { data: m } = await (supabase as any).from('matches').select('player1_guesses').eq('player1_id', userId).eq('game_mode', 'GROUPS').eq('seed', seed).limit(1).maybeSingle();
+      const first = ((m?.player1_guesses as string[] | null) ?? []).find((e) => e.startsWith('+'));
+      if (first && first.startsWith('+4:')) await tryUnlock('groups_hardest_first');
+    }
   }
 
   // Codebreaker (More Games §18c): first crack, clean (no Check), swift.
@@ -494,6 +513,7 @@ export async function checkAchievements(
     ['regions_regular', 'REGIONS', 50],
     ['ladder_regular', 'LADDER', 50],
     ['cryptogram_regular', 'CRYPTOGRAM', 50],
+    ['groups_regular', 'GROUPS', 50],
     ['wordsearch_regular', 'WORDSEARCH', 50],
     ['hub_regular', 'HUB', 50],
     ['classic_master', 'DUEL', 100],
@@ -849,10 +869,10 @@ export async function checkAchievements(
   // practice games count. Only fires after a hintless win in one of
   // the three hint-bearing modes so we don't query Supabase on every
   // unrelated game.
-  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM'];
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS'];
   if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
     const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
-      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : mode === 'CRYPTOGRAM' ? 'cryptogram' : 'proper';
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : mode === 'SUDOKU' ? 'sudoku' : mode === 'REGIONS' ? 'regions' : mode === 'LADDER' ? 'ladder' : mode === 'WORDSEARCH' ? 'wordsearch' : mode === 'HUB' ? 'hub' : mode === 'CRYPTOGRAM' ? 'cryptogram' : mode === 'GROUPS' ? 'groups' : 'proper';
       return `pure_${slug}_${tier}`;
     };
     const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));

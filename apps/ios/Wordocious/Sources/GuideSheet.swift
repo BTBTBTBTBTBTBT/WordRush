@@ -195,6 +195,10 @@ struct GuideSheet: View {
         case "corner-down-left": return "return"
         case "check-check": return "checkmark.circle"
         case "flag": return "flag"
+        case "x-circle": return "xmark.circle"
+        case "check-circle-2": return "checkmark.circle.fill"
+        case "tag": return "tag"
+        case "link-2": return "link"
         default: return "circle"
         }
     }

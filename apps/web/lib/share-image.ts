@@ -48,6 +48,7 @@ export type ShareMode =
   | 'Spyglass'
   | 'Hubbub'
   | 'Codebreaker'
+  | 'Kindred'
   /** SWEEP SHARE (§231): the Daily Sweep board's leaderboard card — not a
    *  playable mode, so it has no catalog accent (MODE_ACCENT is empty for it;
    *  the leaderboard card falls back to its variant theme). */
@@ -197,6 +198,20 @@ export interface ShareCryptogramInput extends ShareBase {
   puzzleNumber?: number;
 }
 
+/**
+ * Kindred (More Games §18d): four tier bars in the order solved (one to four
+ * pips each) plus four mistake dots — never a row-per-guess colour grid, and
+ * no words. Stat line reads "#12 · 4/4 groups · 1 mistake · 2:10".
+ */
+export interface ShareGroupsInput extends ShareBase {
+  layout: 'groups';
+  /** Tiers in the order solved (1–4); unsolved tiers are drawn dashed after them on a loss. */
+  solvedTiers: number[];
+  mistakes: number;
+  maxMistakes: number;
+  puzzleNumber?: number;
+}
+
 export interface ShareMultiBoard {
   grid: TileStateString[][];
   /** Per-row letters matching `grid` ('' for empty tiles). Required for `reveal`. */
@@ -343,6 +358,7 @@ export type ShareImageInput =
   | ShareWordsearchInput
   | ShareHubInput
   | ShareCryptogramInput
+  | ShareGroupsInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
@@ -702,7 +718,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -766,6 +782,9 @@ function drawHeader(
     const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
     const c = input.checks === 0 ? 'No checks' : `${input.checks} check${input.checks === 1 ? '' : 's'}`;
     statsText = `${num}${input.won ? c : 'Revealed'} · ${timeStr} · ${dateStr}`;
+  } else if (input.layout === 'groups') {
+    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
+    statsText = `${num}${input.solvedTiers.length}/4 groups · ${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'} · ${timeStr} · ${dateStr}`;
   } else {
     const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
@@ -1040,6 +1059,54 @@ function drawWordsearch(
 
 // Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the centre
 // filled in the accent, the rank name large beneath, then % of max. No letters.
+// Kindred (More Games §18d): four tier bars in solve order with pips, unsolved
+// tiers dashed beneath on a loss, then the mistake dots. No words.
+const GROUPS_TIER_FILL: Record<number, [string, string]> = { 1: ['#ddd6fe', '#3b0764'], 2: ['#a78bfa', '#1a1a2e'], 3: ['#7c3aed', '#ffffff'], 4: ['#1a1a2e', '#ffffff'] };
+function drawGroups(
+  ctx: CanvasRenderingContext2D,
+  input: ShareGroupsInput,
+  width: number,
+  headerBottom: number,
+  footerTop: number,
+): void {
+  const ACCENT = '#9f1239', DOT_OFF = '#e5e7eb';
+  const tiers = [...input.solvedTiers, ...[1, 2, 3, 4].filter((t) => !input.solvedTiers.includes(t))];
+  const areaHeight = footerTop - headerBottom;
+  const barW = Math.min(760, width - 160), barH = 96, gap = 22;
+  const dotsH = 60;
+  const totalH = tiers.length * barH + (tiers.length - 1) * gap + dotsH + 30;
+  const x0 = (width - barW) / 2;
+  let y = headerBottom + (areaHeight - totalH) / 2;
+  ctx.save();
+  ctx.textBaseline = 'middle';
+  tiers.forEach((t) => {
+    const solved = input.solvedTiers.includes(t);
+    const [bg, fg] = GROUPS_TIER_FILL[t];
+    const radius = 22;
+    if (solved) {
+      ctx.fillStyle = bg; drawRoundRect(ctx, x0, y, barW, barH, radius); ctx.fill();
+    } else {
+      ctx.setLineDash([12, 10]); ctx.lineWidth = 4; ctx.strokeStyle = bg; drawRoundRect(ctx, x0, y, barW, barH, radius); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // pips, centred
+    const pipR = 9, pipGap = 14, pipsW = t * pipR * 2 + (t - 1) * pipGap;
+    let px = width / 2 - pipsW / 2 + pipR;
+    ctx.fillStyle = solved ? fg : bg;
+    for (let i = 0; i < t; i++) { ctx.beginPath(); ctx.arc(px, y + barH / 2, pipR, 0, Math.PI * 2); ctx.fill(); px += pipR * 2 + pipGap; }
+    y += barH + gap;
+  });
+  // mistake dots
+  y += 30 - gap;
+  const dotR = 14, dotGap = 26, n = input.maxMistakes, dotsW = n * dotR * 2 + (n - 1) * dotGap;
+  let dx = width / 2 - dotsW / 2 + dotR;
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = i < n - input.mistakes ? ACCENT : DOT_OFF;
+    ctx.beginPath(); ctx.arc(dx, y + dotsH / 2, dotR, 0, Math.PI * 2); ctx.fill();
+    dx += dotR * 2 + dotGap;
+  }
+  ctx.restore();
+}
+
 // Codebreaker (More Games §18d): the ciphertext as rows of blank cells with the
 // code letter beneath each, words wrapped whole. No plain letters.
 function drawCryptogram(
@@ -2082,6 +2149,8 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     drawHub(ctx, input, width, headerBottom, footerTop);
   } else if (input.layout === 'cryptogram') {
     drawCryptogram(ctx, input, width, headerBottom, footerTop);
+  } else if (input.layout === 'groups') {
+    drawGroups(ctx, input, width, headerBottom, footerTop);
   }
 
   // Footer

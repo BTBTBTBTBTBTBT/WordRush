@@ -950,6 +950,93 @@
           "body": "Moves the selection to the next open letter without changing anything. Free."
         }
       ]
+    },
+    {
+      "slug": "kindred",
+      "title": "Kindred",
+      "accent": "#9f1239",
+      "tagline": "Sixteen words, four hidden groups of four — find what they have in common before four mistakes",
+      "facts": [
+        {
+          "label": "Board",
+          "value": "16 words, 4 groups of 4"
+        },
+        {
+          "label": "Mistakes",
+          "value": "4 — the fifth wrong set loses the puzzle"
+        },
+        {
+          "label": "Tiers",
+          "value": "1 pip = plain category … 4 pips = wordplay"
+        },
+        {
+          "label": "Time bonus cap",
+          "value": "10:00"
+        },
+        {
+          "label": "Daily Sweep",
+          "value": "Not counted — More Games are extra"
+        }
+      ],
+      "rules": [
+        "Sixteen words are dealt in a grid. Hidden among them are four groups of four that share something: a category (citrus fruits), a less obvious link (slang for money), a fill-in pattern (Mountain ___) or wordplay (words hiding a body part). Tap four words and press Submit. If they are a group, they lock into a bar at the top with one to four pips showing how hard that group was; the rest of the board closes up.",
+        "If your four are not a group, one mistake is spent. When three of them belong together you are told \"One away…\", which is a real clue. A set you have already tried is free to try again — it costs nothing. Words are chosen to mislead: several will fit two groups until you see the one they truly belong to, so a word that looks obvious in one group may be the odd one out.",
+        "Two hints, both open to everyone and neither costing a mistake: \"Name a category\" shows the label of the easiest group you have not found yet — you still have to find its four words. \"Show a pair\" rings two words that belong together, without saying which group. Either can be used more than once. Four mistakes end the puzzle and the remaining groups are revealed; you still see every answer.",
+        "The daily is the same for everyone and counts once on the leaderboard. On a holiday the puzzle belongs to the day. Kindred lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games."
+      ],
+      "scoring": [
+        "A solve is worth a 1,000-point base plus a flat 200 for finishing. Submissions are what separate players: the game treats your finish as the number of sets you submitted (4 perfect, 7 the worst possible win) out of a budget of 7, and every unused submission is worth 250 points, so a flawless solve banks 750 in guess bonus, one mistake 500, two 250, three 0. Speed is the tiebreaker: up to 240 points scaled by how far under the 10-minute cap you finish, which can never outweigh a mistake — a cleaner solve always outranks a faster one. A lost puzzle still earns credit for each group you found.",
+        "Naming a category costs 100 points and showing a pair costs 200 — both cheaper than the 250 a wrong guess costs, so asking for help beats guessing blind. Hints never count as mistakes, but a solve with any hint is not a Perfect run and does not count toward the Pure Kindred achievements."
+      ],
+      "tips": [
+        {
+          "heading": "Find the odd ones first",
+          "body": "Count how many words could fit each idea you spot. If five words look like fruit, one of them belongs somewhere else — the puzzle is built that way. Solve the group with exactly four candidates before touching the crowded one."
+        },
+        {
+          "heading": "Read every word two ways",
+          "body": "LIME is a fruit and a colour; HUSKY is a dog and a voice. The four-pip group is usually hiding in plain sight as ordinary words with a second reading: a hidden word, a homophone, something that goes before or after a common word."
+        },
+        {
+          "heading": "\"One away\" is information",
+          "body": "When three of your four belong together, swap one word at a time rather than starting over. And remember that a set you already tried is free to resubmit, so you can never be punished twice for the same idea."
+        },
+        {
+          "heading": "Leave the hardest for last — or grab it first",
+          "body": "Once three groups are locked the fourth is whatever remains, so the wordplay group often solves itself. If you can see it early, though, submitting it first earns the Hardest First achievement."
+        },
+        {
+          "heading": "A hint is cheaper than a guess",
+          "body": "A wrong set costs 250 points; naming a category costs 100 and showing a pair 200. When you are down to your last mistake, ask."
+        }
+      ],
+      "controls": [
+        {
+          "icon": "shuffle",
+          "label": "Shuffle",
+          "body": "Rearranges the unsolved words so you see them fresh. Free."
+        },
+        {
+          "icon": "x-circle",
+          "label": "Deselect",
+          "body": "Clears your current selection. Free."
+        },
+        {
+          "icon": "check-circle-2",
+          "label": "Submit",
+          "body": "Checks the four selected words. A group locks in; anything else spends one mistake — unless you have tried that exact set before, which is free."
+        },
+        {
+          "icon": "tag",
+          "label": "Name a category",
+          "body": "Reveals the label of the easiest group you have not yet found. Costs 100 points of score, never a mistake, and rules out a Perfect run."
+        },
+        {
+          "icon": "link-2",
+          "label": "Show a pair",
+          "body": "Rings two words that belong to the same group. Costs 200 points of score, never a mistake, and rules out a Perfect run."
+        }
+      ]
     }
   ]
 }
