@@ -141,10 +141,20 @@ for one review sitting. Build the pack with `node apps/web/scripts/more-games/me
 `node apps/web/scripts/more-games/build-bank-review.mjs`; it lands in `scripts/out/more-games-banks/`
 (`index.html` + one page and one CSV per game; set the CSV `keep` column to `n` to cut a row).
 Sources (committed, the files the real bank builders will read): `apps/web/scripts/groups/puzzles.json`
-(Kindred, 400 puzzles in eight shards under `bank/`), `apps/web/scripts/cryptogram/sayings.json`
-(Codebreaker, 353 sayings, 352 valid), `apps/web/scripts/crossword/phrases.json` (Crosswordocious,
-46 evergreen + 28 holiday themes, 2,354 phrase pairs → 222 grids) and `apps/web/scripts/muddle/jokes.json`
-(Muddle, 162 puns composed into four-word puzzles; cartoons not drawn — that batch needs your image key).
+(Kindred, 516 puzzles = 460 everyday + 56 holiday, in `bank/` shards), `apps/web/scripts/cryptogram/sayings.json`
+(Codebreaker, 516 sayings = 432 everyday + 84 holiday), `apps/web/scripts/crossword/phrases.json` (Crosswordocious,
+82 evergreen + 28 holiday themes, 3,535 phrase pairs → 494 grids = 410 evergreen + 84 holiday) and
+`apps/web/scripts/muddle/jokes.json` (Muddle, 442 puns = 386 everyday + 56 holiday, composed into four-word
+puzzles; cartoons not drawn — that batch needs your image key). Plus the word games' holiday tables:
+`apps/web/scripts/holidays/holiday-answers.json` (514 themed answers for Classic/Six/Seven/QuadWord/OctoWord/Gauntlet)
+and `holiday-wotd.json` (thematic Word of the Day + definition), and the shared calendar
+`apps/web/data/holiday-days.json` (160 holiday days 2026–2030).
+
+**Your three rules, as built (2026-09-23):** every game ships ≥ 365 everyday puzzles (CI fails otherwise);
+when a bank runs out it replays from its first puzzle, oldest first (never breaks), and you are told before
+that: CI red at 60 days, the nightly sweep + admin > Ops **Content runway** card at 90, Sentry email at 30;
+on any of the 28 holidays every game draws from that holiday's own set and the everyday puzzle that day is
+simply never dated.
 
 - **Kindred:** every puzzle proves exactly one solution with honest `alsoFits`; tiers 1–4; all words
   in the app lexicon (the authors had to drop cuisine loanwords, cheeses and most dog breeds — the
