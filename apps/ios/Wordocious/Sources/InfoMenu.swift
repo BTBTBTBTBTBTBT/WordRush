@@ -244,12 +244,18 @@ final class StrategyService: ObservableObject {
         }
     }
 
-    /// Fetch once per launch; cached copy shows immediately, this silently
-    /// refreshes it in the background and persists the fresh payload.
+    /// Cached copy shows immediately; this refreshes it and persists the result.
+    ///
+    /// Same fix as HowToPlayService.load / ContentService.load: this was
+    /// once-per-launch AND on the URL cache (the endpoint sends max-age=3600),
+    /// so a new article on the web — the nine More Games playbooks — could stay
+    /// hidden for an hour and until the next cold launch. Fetch every open and
+    /// go past the URL cache; the payload is a few KB and the screen is rare.
     func load() async {
-        guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/strategy") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         articles = payload.articles
         loaded = true

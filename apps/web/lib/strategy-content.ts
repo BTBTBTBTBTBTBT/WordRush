@@ -14,6 +14,8 @@ export interface StrategyArticle {
   minutes: number;
   sections: { heading: string; body: string[] }[];
   related: string[];
+  /** The mode guide (guide-content.ts slug) this article is the playbook for, when it is about one game. */
+  guide?: string;
 }
 
 export const STRATEGY_ARTICLES: StrategyArticle[] = [
@@ -99,7 +101,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     slug: 'modes-explained',
     title: 'Every Wordocious Mode Explained',
     description:
-      'A plain-English tour of all nine Wordocious modes — Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet, and ProperNoundle — plus real-time VS Battle.',
+      'A plain-English tour of every Wordocious mode — the eight daily word games (Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet), real-time VS Battle, and the ten extra dailies under More Games.',
     dek: 'One daily word is just the start — here is what each mode actually asks of you, and which to play first.',
     minutes: 8,
     sections: [
@@ -131,8 +133,15 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
           'VS Battle is the real-time mode: you and a live opponent race the exact same puzzle, with each other’s progress visible as you go. It is the same deduction skill under pressure, and the fastest way to find out how your solving speed stacks up against another human. Every player worldwide also shares one daily word per mode, so the daily leaderboard is a global, same-word competition.',
         ],
       },
+      {
+        heading: 'More Games: ten extra dailies outside the Sweep',
+        body: [
+          'The More Games tile opens a second shelf of daily puzzles that are not word-guessing at all. Sudocious is a Medium sudoku with three mistakes; Starsweep asks for one star per row, column and colour region with none touching; Letter Ladder climbs one letter at a time against a par; Spyglass hides ten themed words forwards in a 10 × 10 grid; Hubbub builds words from seven letters around a required hub; Codebreaker is a letter-for-letter coded saying; Kindred hides four groups of four among sixteen words; Crosswordocious is a crossword of sayings with one word missing; Muddle is the newspaper scramble with a pun to finish; and ProperNoundle, the famous-names game, now lives here too.',
+          'They earn XP, medals, leaderboard places and achievements like everything else, but they sit outside the Daily Sweep: the sweep and Flawless Victory stay the eight word games on the home grid, so a More Games result never pads or spoils them. Each title has its own playbook in this section and a full guide behind the ? button in play.',
+        ],
+      },
     ],
-    related: ['best-starting-words', 'solve-faster'],
+    related: ['best-starting-words', 'solve-faster', 'sudocious-playbook'],
   },
   {
     slug: 'multi-board-mastery',
@@ -211,6 +220,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       },
     ],
     related: ['multi-board-mastery', 'solve-faster'],
+    guide: 'gauntlet',
   },
   {
     slug: 'propernoundle-playbook',
@@ -249,7 +259,494 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         ],
       },
     ],
-    related: ['modes-explained', 'best-starting-words'],
+    related: ['modes-explained', 'best-starting-words', 'kindred-playbook'],
+    guide: 'propernoundle',
+  },
+  {
+    slug: 'sudocious-playbook',
+    title: 'The Sudocious Playbook: Solving the Daily Sudoku Without Guessing',
+    description:
+      'How to solve the Wordocious daily sudoku by scanning instead of staring — the digit-by-digit cross-hatch, when to pencil Notes, why two mistakes are a budget not a cushion, and when a 100-point Hint beats a 300-point mistake.',
+    dek: 'The daily is Medium and has one solution. Every guess you make is a shortcut with a price, and the price is 300 points.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'Scan digits, not cells',
+        body: [
+          'Beginners pick an empty cell and ask "what goes here?" — a question with up to nine answers and no fast way to check them. Strong solvers ask the reverse: "where does the 7 go in this box?" Pick a digit, find every copy already placed, and cross-hatch the rows and columns those copies occupy. Any 3 × 3 box left with a single open cell for that digit is a free, provable placement. Run 1 through 9 once and you will usually place six to ten digits before you have to think at all.',
+          'Then repeat. Every placement changes the picture for the digits that follow, so a second pass through 1–9 finds placements the first could not. The rhythm — scan, place, rescan — is why the highlight matters: tap any filled digit and every copy lights up, so the cross-hatch is drawn for you.',
+        ],
+      },
+      {
+        heading: 'Hunt the nearly finished lines',
+        body: [
+          'A row or column with seven digits placed has two gaps and two missing digits. One of the two will be blocked in one gap by a crossing column or box, which forces the other — and both fall in a moment. Rows near completion are the cheapest points on the board; when the digit scan stalls, sweep the grid for any line or box with only two or three gaps and finish it.',
+          'The same reasoning works on boxes. A box with two open cells and two missing digits is a pair waiting to be resolved by whichever row or column already contains one of them. Train yourself to see "two gaps" as a flag, not a detail.',
+        ],
+      },
+      {
+        heading: 'Notes are for pairs, not for everything',
+        body: [
+          'Sudocious lets you pencil candidates into any cell for free, and the reflex is to fill every empty cell with every possibility. Do not. A board covered in marks is harder to read than an empty one, and the daily rarely needs it. Use Notes surgically: when a cell is down to exactly two candidates, mark both; when a digit has exactly two possible homes inside a box, mark both cells. Those pairs are precisely what the next placement will resolve, and the game clears a pencilled digit from its row, column and box the moment you place it, so the bookkeeping is done for you.',
+          'A pair of pairs is the Medium puzzle\'s deepest trick. If two cells in a row each hold only the candidates 4 and 9, then 4 and 9 live in those two cells and nowhere else in that row — so you can strike them from every other cell in the line. Spotting a naked pair is usually the moment a stuck grid opens up again.',
+        ],
+      },
+      {
+        heading: 'Two mistakes are a budget, not a cushion',
+        body: [
+          'The scoring is blunt: your finish is counted as mistakes plus one out of a budget of four, and every unused step is worth 300 points. A clean grid banks 900; one mistake drops you to 600; two to 300; the third ends the puzzle. Speed is worth at most 240 points across a 30-minute cap, so no amount of pace recovers a single wrong digit. That arithmetic should change how you play: a placement you cannot prove is not a fast move, it is a 300-point coin flip.',
+          'When two digits both seem possible for a cell, that is a Notes moment, not a placement. The daily is built to be solved by logic alone — if you are stuck, there is a deduction you have not found yet, and the way to find it is to rescan from 1, not to gamble.',
+        ],
+      },
+      {
+        heading: 'When a Hint beats a mistake',
+        body: [
+          'A Hint fills the selected cell (or the first empty one) with the correct digit for 100 points. It never counts as a mistake and never ends the game, though it does rule out a Perfect run and the Pure Sudocious achievements. Compare the prices: a Hint costs 100, a wrong guess costs 300 and moves you a step closer to losing everything. If you have exhausted the scan and are about to guess between two candidates, take the Hint on that exact cell — you keep the 200-point difference and, more importantly, the cell you were stuck on is usually the key that unlocks the rest of the grid.',
+          'The Hint is not for speed. Using it to skip thinking on a cell you could have solved costs you 100 points and the Perfect run for nothing. Use Undo freely instead — it is unlimited and free, though it never refunds a mistake or a hint — and save the Hint for a genuine dead end.',
+        ],
+      },
+      {
+        heading: 'Pace for the leaderboard',
+        body: [
+          'Because everyone plays the same grid, the Sudocious leaderboard is a pure comparison of cleanliness first and time second. Almost every strong finish is a zero-mistake grid, so the podium is decided by the clock — and the clock is won in the opening two minutes, when the digit scan places the easy dozen. Do the first full pass through 1–9 without pausing to think about anything else, then slow down for the pairs.',
+          'Pro Unlimited lets you drill Easy grids (solvable by singles alone) and Hard grids (which demand pencil marks) without touching your daily. The Easy drills make the scan automatic; the Hard drills teach the pair logic the daily only occasionally needs. Like every More Games title, none of it touches your Daily Sweep.',
+        ],
+      },
+    ],
+    related: ['starsweep-playbook', 'kindred-playbook', 'modes-explained'],
+    guide: 'sudocious',
+  },
+  {
+    slug: 'starsweep-playbook',
+    title: 'The Starsweep Playbook: Forced Placements and the Art of Crossing Out',
+    description:
+      'How to clear the Wordocious daily star puzzle by pure logic — smallest-region openings, the region-counting argument that cracks the middle of every 8 × 8, why crosses come before stars, and how the three-mistake budget prices every hunch.',
+    dek: 'One star per row, column and colour region, none touching. The board never needs a guess — it needs you to cross out more cells first.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'Open with the smallest region',
+        body: [
+          'Every region owns exactly one star, and a region of two or three cells has almost nowhere to put it. Whichever of its cells holds the star, every cell that touches all of them is dead — stars cannot share a corner, let alone an edge — so you can cross those neighbours out before you place anything. On a 7 × 7 board a two-cell region often settles its row or column in a single move.',
+          'Then look at the row and column the small region occupies. Its star takes that row, so no other region may place a star in that row: cross every cell of the row that lies outside the small region. That one deduction routinely eliminates five or six cells and pulls the next region into focus.',
+        ],
+      },
+      {
+        heading: 'Count regions against rows',
+        body: [
+          'The argument that breaks the middle of every 8 × 8 is a counting one. If two regions fit entirely inside two rows, those two rows\' stars must belong to those two regions — there are only two stars to go around — so every cell in those rows that belongs to any other region is out. The same holds for columns, and for three regions inside three rows. Look for it whenever a couple of regions sit stacked on top of one another.',
+          'The mirror image is just as useful. If a region spans exactly one column, its star takes that column and no other region may use it: cross the whole column outside the region. Tall thin regions and wide flat regions are gifts, because they own a line outright.',
+        ],
+      },
+      {
+        heading: 'Cross before you star',
+        body: [
+          'Starsweep is won by elimination, not inspiration. Tap a cell once to cross it out; the mark is free, never judged and never counted, and it is where the actual solving happens. Every cross you place is a fact about the board that stays visible, so the more you mark, the less you have to hold in your head. When a row is down to one uncrossed cell, that cell is the star — and it cost you nothing to have been thorough.',
+          'Auto-cross is on by default and does the mechanical half of this for you: place a correct star and its row, column, region and eight neighbours are crossed automatically. Leave it on. Your job is the other half — the crosses that follow from reasoning about regions, not from a star already placed.',
+        ],
+      },
+      {
+        heading: 'Price every hunch at 300 points',
+        body: [
+          'The scoring treats your finish as mistakes plus one out of a budget of four, with every unused step worth 300 points: a clean board banks 900, one mistake 600, two 300, and the third mistake ends the game. Speed is worth at most 240 points across the ten-minute cap, so a faster board can never outrank a cleaner one. Read that as a rule: a star you cannot prove is a 300-point bet with a one-in-two or worse chance of paying off, plus a step toward losing the whole day.',
+          'When two cells both look possible for a region\'s star, do not pick. Cross out something else — look for a neighbouring region\'s forced line, or the counting argument — and one of the two candidates will die on its own. The board is built so that this always works.',
+        ],
+      },
+      {
+        heading: 'The Hint is a row, not a cell',
+        body: [
+          'A Hint places the correct star for the row of the cell you last tapped (or the first row still missing one) for 100 points. It never counts as a mistake, but it rules out a Perfect run and the Pure Starsweep achievements. Because a wrong star costs 300 and a Hint costs 100, the Hint is the right call the moment you are genuinely about to guess — tap a cell in the row you are stuck on first, so the hint lands where you need it.',
+          'Use Undo before you use the Hint. Undo is free and unlimited, walking back stars and crosses alike, and a wrong cross earlier in the solve is the most common reason a board seems to have no legal move. Step back a few actions, recheck the crosses against the region rule, and the "impossible" board usually resolves.',
+        ],
+      },
+      {
+        heading: 'Thursday is a different game',
+        body: [
+          'Monday to Wednesday the board is 7 × 7; Thursday to Sunday it is 8 × 8, and the extra row is more than a 15% increase in difficulty. Eight regions give the counting argument more to bite on and the small-region opening less to work with, so the middle game — regions against rows — is where the weekend boards are decided. If you only have time to practise one thing, practise the count.',
+          'Pro Unlimited adds a 9 × 9 board, which is the best training there is: it forces the counting logic on every board and makes the daily 8 × 8 feel roomy. As with every More Games title, none of this touches your Daily Sweep — Starsweep is extra XP, medals and a leaderboard, not a sweep cell.',
+        ],
+      },
+    ],
+    related: ['sudocious-playbook', 'kindred-playbook', 'modes-explained'],
+    guide: 'starsweep',
+  },
+  {
+    slug: 'letter-ladder-playbook',
+    title: 'The Letter Ladder Playbook: Finding the Shortest Route to Par',
+    description:
+      'How to climb the Wordocious daily word ladder on par — counting the letters that must change, finding the pivot vowel, working backwards from the end word, and why rejected words and Undo are free while every accepted rung costs a move.',
+    dek: 'Par is the shortest route through common words, and every step over it costs 300 points. Plan the climb before you type the first rung.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'Count the differences first',
+        body: [
+          'Before you type anything, line START and END up letter by letter and count the positions that differ. If three letters differ, par is at least three, and an ideal climb changes one of those three letters on every rung and nothing else. A move that changes a letter already matching END is a step backwards — sometimes a necessary detour, but never a free one.',
+          'The count also tells you how much slack you have. Par runs from 4 moves on Monday and Tuesday to 7 on Sunday, and you always get par plus five accepted moves before the ladder is lost. A Sunday ladder with four differing letters and a par of 7 is telling you that the direct route is blocked and three detour moves are built in — so look for the block early rather than discovering it on rung four.',
+        ],
+      },
+      {
+        heading: 'Find the pivot vowel',
+        body: [
+          'Most ladders turn on a vowel swap in the middle of the word, and most blocked routes are blocked because the vowel cannot change yet. STONE to STANE is not a word, but STONE to STORE to STARE is: the consonant change opens a word in which the vowel is free to move. When the letter you want to change produces a non-word, change a neighbouring consonant first and try the vowel again a rung later.',
+          'Think in word families. -ATE, -INE, -OLD, -ARE, -AND are dense neighbourhoods with many one-letter neighbours; -UMP or -ISK are sparse. If your route can pass through a dense family it will find rungs easily, so steer toward one when the direct path stalls.',
+        ],
+      },
+      {
+        heading: 'Climb from both ends',
+        body: [
+          'It is often easier to see which words are one step away from END than to push forward blindly from START. List END\'s neighbours in your head — every word one letter different — and pick the one that shares the most letters with your current rung. Now you are aiming at a target two or three moves closer than END itself.',
+          'When both ends have obvious neighbours, meet in the middle: find a word that is one step from a START-neighbour and one step from an END-neighbour, and the whole ladder is drawn before you type. Planning a five-move route in your head takes twenty seconds; typing it takes ten. Discovering it rung by rung takes three minutes and two Undos.',
+        ],
+      },
+      {
+        heading: 'Rejections are free — spend them',
+        body: [
+          'Letter Ladder turns a word away for three reasons: it is not in the word list, it changes more than one letter (or none), or it is already on your ladder. None of these costs anything — no move, no mistake, no time penalty beyond the second it took to type. Only an ACCEPTED word is a move. So when you are unsure whether a rung is a word, type it. Agonising over whether STANE exists costs more than finding out.',
+          'This also means the word list is your ally. It is built from common words — par is always achievable through everyday vocabulary, and no obscure word can beat it — so if your route needs an unusual word, you are probably on the wrong route rather than short of vocabulary.',
+        ],
+      },
+      {
+        heading: 'Undo early, not late',
+        body: [
+          'Undo removes the last rung so you can go another way. It is free — but the move you spent on that rung stays spent, because the game counts accepted words, not rungs currently on the ladder. That changes when to use it: the moment a rung leads somewhere with no good next step, Undo now. Two more rungs down a dead end are two more moves you can never recover, and the ladder is lost at par plus five.',
+          'The scoring makes the cost concrete. Your finish is counted as moves over par plus one, out of a budget of six, and every unused step is worth 300 points — a climb exactly on par banks 1,500, one over 1,200, two over 900. Speed adds at most 240 points across a ten-minute cap, so a shorter climb always beats a faster one. Every detour you avoid is worth more than any amount of pace.',
+        ],
+      },
+      {
+        heading: 'Hints count as moves',
+        body: [
+          'A Hint places the next word on a shortest route from where you stand, for 100 points of score — and it counts as one of your moves, though never as a mistake, and it rules out a Perfect run. Because the hint is always on a shortest route, it is most valuable when you are on the right path and simply cannot see the next word: it costs 100 points instead of the 300 an extra rung would. It is least valuable when you have already wandered, since it does not undo your detour.',
+          'On a loss the board shows one shortest route. Read it. Ladders reuse the same pivots — the same vowel swaps, the same dense word families — and the route you missed today is the one you will see coming next week. Like every More Games title, Letter Ladder is extra: it earns XP and medals, but your Daily Sweep is the eight word games and this climb never changes it.',
+        ],
+      },
+    ],
+    related: ['best-starting-words', 'muddle-playbook', 'hubbub-playbook'],
+    guide: 'letter-ladder',
+  },
+  {
+    slug: 'spyglass-playbook',
+    title: 'The Spyglass Playbook: Clearing the Daily Word Search Clean and Fast',
+    description:
+      'How to clear the Wordocious daily word search with zero misses — scanning for rare letters and letter pairs, using the forwards-only rule to halve the search, taking long words first, and knowing exactly what a miss is so you never spend one.',
+    dek: 'Nothing reads backwards, only straight lines of four or more can miss, and a clean clear ranks purely on time. Here is how to earn the clean part.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'Forwards only — use it',
+        body: [
+          'In the daily Spyglass grid every word reads forwards: left to right, top to bottom, or along a diagonal from top-left to bottom-right or bottom-left to top-right. Nothing is hidden backwards. That is not a small mercy — it halves the directions you must check from eight to four. Once you find a word\'s first letter you look right, down, down-right and up-right, and nowhere else.',
+          'It also tells you where words can start. A nine-letter word cannot begin in the rightmost eight columns if it runs across, or in the bottom eight rows if it runs down. Long words on a 10 × 10 grid are confined to a small band of possible starting cells, which is why they are the easiest to place once you decide to look for them.',
+        ],
+      },
+      {
+        heading: 'Hunt the rare letter',
+        body: [
+          'Read the word list before you look at the grid, and pick the word with the least common letter — a Q, Z, X, K, J or V. Sweep the whole grid for that one letter. There are usually only two or three copies, and one of them belongs to your word. Checking four directions from three cells is a ten-second job; scanning for a common letter like E or S means checking twenty cells.',
+          'When no word has a rare letter, hunt a rare pair instead. TH, SP, CH, QU, WH stand out far more than a lone T, and a pair points along the word\'s direction at the same time: find the T, look for the H beside it in each of the four forward directions, and you have both the start and the line.',
+        ],
+      },
+      {
+        heading: 'Long words first',
+        body: [
+          'An eight- or nine-letter word has very few places it can fit and, because the grid is only 10 × 10, it usually runs straight through the middle of several shorter words. Finding it first hands you a spine of confirmed letters, and the shorter words then reveal themselves as crossings of that spine. Two long words placed early will often make three or four short ones obvious.',
+          'The theme helps here too. Every grid has a title, and the ten words belong to it; when you have found six, the remaining four are drawn from the same family, so guess what they might be before you read the list and you will spot them faster.',
+        ],
+      },
+      {
+        heading: 'Know exactly what a miss is',
+        body: [
+          'A miss is a straight line of four or more letters that spells no listed word. That is the whole definition. A short drag, a crooked drag, a tap on a single letter, a two-cell line — all free. A listed word dragged in either direction counts as found, so you never miss by dragging the right cells the wrong way. The only way to spend a miss is to commit a real four-plus line that is not a word, and the fix is simple: tap the first letter, look at the list, and only tap the last letter when you are sure.',
+          'Misses never end the game, but they are what separate players. Your finish is counted as ten plus misses out of a budget of fifteen, and every unused step is worth 120 points — a clean clear banks 600, one miss 480, two 360. Speed is worth at most 96 points across the fifteen-minute cap, so a single miss costs more than the entire speed bonus. Looking is free; guessing is not.',
+        ],
+      },
+      {
+        heading: 'Hint and Reveal have different jobs',
+        body: [
+          'Hint pulses the first letter of the next word you have not found. It costs 60 points and never counts as a miss, but it rules out a Perfect run and the Pure Spyglass achievements. Since a miss costs 120, a Hint is half the price of a wrong guess — use it when you have scanned for a word\'s rare letters twice and still cannot see it, and never as a substitute for reading the grid.',
+          'After five minutes a Reveal button appears. It ends the grid as a loss, shows where the missing words were, and keeps credit for everything you found — each of the ten words is its own board, so nine found is still a strong partial score. Reveal is for a grid that has beaten you, not a slow one; a clean clear at fourteen minutes outscores a reveal at six by more than a thousand points.',
+        ],
+      },
+      {
+        heading: 'Pace the clean clear',
+        body: [
+          'Because every strong finish is a zero-miss clear, the Spyglass podium is decided by time, and time is decided by method. Read the list once, rank the words by their rarest letter, take the long words and the rare-letter words first, and let the crossings give you the rest. The last two words are usually short, common-letter words — sweep the grid row by row for their first pair, not their first letter.',
+          'Themes rotate through fifteen families, a theme never returns within four months and no word repeats within six weeks, so you cannot memorise the grid — but you can memorise the method. Like every More Games title, Spyglass earns XP, medals and a leaderboard place while leaving your Daily Sweep exactly where the eight word games put it.',
+        ],
+      },
+    ],
+    related: ['hubbub-playbook', 'crosswordocious-playbook', 'letter-frequency-atlas'],
+    guide: 'spyglass',
+  },
+  {
+    slug: 'hubbub-playbook',
+    title: 'The Hubbub Playbook: Pangram Hunting and the Climb to Pandemonium',
+    description:
+      'How to climb the Wordocious seven-letter hub game — why the pangram comes first, how to build long words from prefixes and suffixes, what each rank threshold means for your score, why the board stays open after you solve, and what the two hints really cost.',
+    dek: 'Hubbub rank solves the puzzle at half the maximum. Every rank after that is worth 300 points, and the pangram is the fastest way there.',
+    minutes: 7,
+    sections: [
+      {
+        heading: 'The pangram is your opening move',
+        body: [
+          'Every Hubbub puzzle contains at least one word that uses all seven letters, and it is worth its length plus seven — a seven-letter pangram scores 14, an eight-letter one 15, against 1 point for a four-letter word. That is often a fifth of the way to Hubbub in a single entry. Spend your first minute on it before you type anything else, while the letters are fresh and you have no half-found words distracting you.',
+          'Hunt it structurally. Look at the six outer letters for a common ending — -ING, -ER, -ED, -LY, -ION — and ask which stem the centre letter completes. If the letters include I, N and G, the pangram almost certainly ends in -ING and you need a four-letter stem from the other four. If they include T, I, O, N, try -TION or -ATION. Most pangrams are an ordinary word wearing a familiar suffix.',
+        ],
+      },
+      {
+        heading: 'Milk every word you find',
+        body: [
+          'A word you have already found is the seed of three more. If UNDER is on the board, try UNDERLINE, UNDERLINED, UNDERLINING. If a verb is there, try its -ED, -ING and -ER forms; if a noun is there, look for its plural if S is in the set (it often is not — Hubbub puzzles are frequently built without an S, precisely so plurals cannot pad the list). Building on a found word is the fastest way to add long, high-value words, because you already know the stem is legal.',
+          'Repeats are allowed, and that matters more than it sounds: LEVEL uses one letter three times, BANANA uses one three times and another twice. When the letters seem exhausted, ask which could be doubled or tripled and try those shapes.',
+        ],
+      },
+      {
+        heading: 'Know the rank thresholds',
+        body: [
+          'Your rank is your share of the puzzle\'s maximum score, which is set by the common words alone. The ranks run Hush, Murmur, Chatter, Banter, Clamor, Racket, and then Hubbub at 50%, Uproar at 70%, Thunder at 85% and Pandemonium at 100% — every scoring word found. Hubbub solves the puzzle and records your result once, and it is the only threshold that changes a loss into a win.',
+          'The scoring runs off those thresholds. A solve is worth the 1,000-point base plus 200 for finishing, and your rank is counted as your finish out of a budget of five: Hubbub banks 300 in rank bonus, Uproar 600, Thunder 900, Pandemonium 1,200. Speed is worth at most 240 points across a thirty-minute cap, so a higher rank always beats a faster one. Reaching Uproar instead of stopping at Hubbub is worth more than the entire speed bonus.',
+        ],
+      },
+      {
+        heading: 'The board stays open — use it',
+        body: [
+          'When you reach Hubbub the puzzle is solved and your result is recorded, but the board does not close. Keep going and every rank you climb afterwards raises your leaderboard score in place, without earning XP twice. This is unusual and it should change your routine: reach Hubbub early in the day, bank the win, and come back later with fresh eyes for Uproar and Thunder. Words you could not see at breakfast are often obvious at lunch.',
+          'If you stop short of Hubbub, "End puzzle and see answers" records a loss at the rank you reached — with credit for your share of the maximum in twenty steps — and shows every word. Do not end early. A loss at Racket is still worth points, but the same puzzle at Hubbub after another ten minutes is worth 1,200 more.',
+        ],
+      },
+      {
+        heading: 'Four-letter words come last',
+        body: [
+          'A four-letter word is worth exactly 1 point, and a puzzle has a lot of them. They still count toward Pandemonium, but they will not carry you to Hubbub — twenty of them equal one good pangram. Spend your sharp early minutes on five-, six- and seven-letter words, which score their length and move the rank bar visibly. Sweep the four-letter words up at the end, when the long words are exhausted and you are hunting the last few percent for Thunder or Pandemonium.',
+          'Shuffle when you stall. Seeing the same arrangement hides words; Shuffle (or Space) rearranges the six outer letters and the brain finds new pairs in the new order. It is free and unlimited, and most players use it far too little.',
+        ],
+      },
+      {
+        heading: 'Hints and bonus words',
+        body: [
+          'Two hints exist and neither counts against your rank. "Starts with…" shows the first two letters and the length of the next word you have not found, for 50 points; "Reveal a word" costs two hints (100 points) and places that word, points included. Both rule out a Perfect run and the Pure Hubbub achievements. The 50-point hint is the better buy almost every time — two letters and a length is usually enough to see the word yourself, and you keep half the price.',
+          'A word you are unsure of is free to try. If it is on the friendly list it is accepted — as a scoring word if it is common, as a 0-point bonus word if it is rare — and if it is not, nothing is lost. There is no penalty for a rejected word in Hubbub, so type everything that looks plausible. Only your rank and your time are recorded, and, like every More Games title, none of it touches your Daily Sweep.',
+        ],
+      },
+    ],
+    related: ['spyglass-playbook', 'letter-frequency-atlas', 'letter-ladder-playbook'],
+    guide: 'hubbub',
+  },
+  {
+    slug: 'codebreaker-playbook',
+    title: 'The Codebreaker Playbook: Frequency, Pattern, and the Cost of a Check',
+    description:
+      'How to crack the Wordocious daily coded saying fast — starting from the three given letters and the short words, reading the frequency strip, using apostrophes and doubles as fixed points, and why you should pencil boldly and Check almost never.',
+    dek: 'Pencilled letters are free and the code cracks itself when every letter is right. The only thing that costs you is asking the game to check your work.',
+    minutes: 7,
+    sections: [
+      {
+        heading: 'Start where the puzzle starts you',
+        body: [
+          'Codebreaker hands you the three most frequent letters of the saying, already filled in and locked in the game\'s colour. Those three are almost always drawn from E, T, A, O, I, N and S, and they touch most of the words in the sentence. Read every word that contains a given letter before you type anything — the puzzle is designed so that a way in is always visible.',
+          'The short words are that way in. A one-letter word is A or I. A two-letter word is one of a dozen — OF, TO, IN, IT, IS, AS, AT, ON, BE, WE, HE, SO — and if it contains a given letter you can usually name it outright. A three-letter word ending in a given E is THE more often than anything else, which fixes T and H everywhere they appear. Two or three of these and a third of the code is broken.',
+        ],
+      },
+      {
+        heading: 'Trust the frequency strip',
+        body: [
+          'The strip of code letters under the board is ordered by how often each appears, and English is stubbornly consistent about frequency: after the three given letters, the next most common code letters almost always stand for the rest of E, T, A, O, I, N, S, H and R. When you have a candidate word with one unknown letter, check the unknown against the strip — a very common code letter is a vowel or one of T, N, S, R, and a code letter that appears exactly once is far more likely to be a B, K, V or W than an E.',
+          'Frequency also settles doubles. Two identical code letters side by side are almost always LL, SS, EE, OO, TT or FF, and if the pair is a common code letter it is EE or OO, while a rare one is a consonant pair. That single rule places two letters at once.',
+        ],
+      },
+      {
+        heading: 'Apostrophes and endings are fixed points',
+        body: [
+          'A letter after an apostrophe is nearly always S or T — IT\'S, DON\'T, CAN\'T, WON\'T, YOU\'RE for the two-letter case. A word ending in a given E preceded by a common code letter is probably -RE, -SE, -TE or -LE. A four-letter word ending in two identical unknowns is very often -ALL, -ILL or -ELL. These endings are patterns you can read off the shape of the word before you know a single letter in it.',
+          'A saying of 30 to 90 letters is a sentence you already know, and sentences have grammar: a three-letter word at the start is often THE or YOU, and the last word is the one the whole sentence points at. Guess the sentence, not the letters.',
+        ],
+      },
+      {
+        heading: 'Pencil boldly',
+        body: [
+          'Every letter you type is a pencil mark. It lands in every box with that code letter, you can type over it, Delete it everywhere at once, and nothing is marked or counted while you experiment. The game only warns you when you have used the same plain letter for two different code letters, turning both red — because a saying cannot have two letters that both mean E. So try a whole word at once and read the sentence back. A wrong guess usually looks wrong immediately, and undoing it is free.',
+          'Pencilling a full hypothesis is faster than being careful: if you think a five-letter word is THERE, type all five and let the other words tell you whether the R holds.',
+        ],
+      },
+      {
+        heading: 'Check almost never',
+        body: [
+          'Check is the only action that counts against you. It looks at every pencilled letter, locks the right ones and clears the wrong ones with a red flash — and it is recorded. Your finish is counted as checks plus one out of a budget of four, with every unused check worth 250 points: no Check banks 750, one Check 500, two 250, three or more nothing. Speed is worth at most 240 points across a twenty-minute cap, so a single Check costs more than the whole speed bonus. The bonus falls per Check, not per wrong letter, which means one Check that catches five errors costs exactly what one Check that catches none does.',
+          'That arithmetic gives you a policy. Never Check early. Pencil the whole saying, read it aloud, fix what reads wrong — the puzzle completes itself the moment every letter is right, so a fully correct board never needs a Check at all. Reserve Check for two or three genuinely doubtful letters, and take one Check, not two.',
+        ],
+      },
+      {
+        heading: 'Hint before Check, Reveal only when beaten',
+        body: [
+          'Hint fills in the most frequent letter you have not yet solved and locks it, for 100 points. It never counts as a Check, though it rules out a Perfect run and the Pure Codebreaker achievements. Because a Check costs 250 and a Hint costs 100, the Hint is the better buy whenever you are stuck rather than merely unsure — it hands you a common letter that usually appears in several words and opens all of them at once.',
+          'Reveal appears after five minutes and shows the whole saying, recording the puzzle as a loss with credit for the time you put in. It is for a puzzle that has beaten you, and those are rare: these are sayings everyone knows, so once four or five words are readable, saying the sentence aloud almost always finishes it. On a holiday the saying belongs to the day, which is one more clue. Like every More Games title, Codebreaker earns XP and medals without touching your Daily Sweep.',
+        ],
+      },
+    ],
+    related: ['crosswordocious-playbook', 'letter-frequency-atlas', 'kindred-playbook'],
+    guide: 'codebreaker',
+  },
+  {
+    slug: 'kindred-playbook',
+    title: 'The Kindred Playbook: Red Herrings, Odd Ones Out, and Hint Economics',
+    description:
+      'How to solve the Wordocious daily groups-of-four puzzle before four mistakes — counting candidates to find the crowded category, reading every word twice, using "One away…" properly, and why a hint is always cheaper than a guess.',
+    dek: 'Sixteen words, four groups, four mistakes. The puzzle is built to mislead you, so count before you commit.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'Count candidates before you touch anything',
+        body: [
+          'Kindred deals sixteen words and hides four groups of four among them, and the setter\'s whole craft is making five or six words look like they belong to the same group. So before you select a single word, name every idea you can see and count how many words fit it. If five words look like fruit, one of them is a red herring that belongs somewhere else. A group with exactly four candidates is safe; a group with five or more is a trap until you find its odd one out.',
+          'Work the safe group first. Locking four words in shrinks the board to twelve and removes one red herring from every crowded category at the same time. The puzzle gets easier with every group you solve, so solve the certain one to earn the uncertain ones.',
+        ],
+      },
+      {
+        heading: 'Read every word two ways',
+        body: [
+          'LIME is a fruit and a colour. HUSKY is a dog and a voice. BASS is a fish and a note. The hardest group — four pips — is nearly always hiding in plain sight as ordinary words with a second reading: words that precede or follow a common word (MOUNTAIN ___, ___ BALL), homophones, anagrams, words that contain a hidden shorter word, things that come in a set. When a word seems to fit nowhere, that is the tell that its meaning is not the one you are reading.',
+          'The pips are information after the fact. A group locks with one to four pips showing how hard it was — one pip is a plain category, four is wordplay — so if your first two groups came up with one and two pips, the remaining eight words hold the three- and four-pip groups, and you should be looking for the sly link, not the obvious one.',
+        ],
+      },
+      {
+        heading: 'Make "One away…" work for you',
+        body: [
+          'When three of your four belong together, the game tells you "One away…", and that is a real clue: keep three, swap one. Do not start over. If you have four candidates for the fourth slot, you can find the right one in at most four swaps — but you will usually find it in one or two, because "One away" also tells you which of your other ideas has been stealing a word from this group.',
+          'A set you have already tried is free to try again. This matters in the endgame: if you are down to eight words and unsure which two-and-two split is right, resubmitting an earlier set costs nothing, so you are never punished twice for the same idea. Be systematic about which swaps you have tried rather than cycling at random.',
+        ],
+      },
+      {
+        heading: 'A hint is always cheaper than a guess',
+        body: [
+          'The scoring counts the sets you submitted — four is perfect, seven is the worst possible win — out of a budget of seven, with every unused submission worth 250 points: a flawless solve banks 750, one mistake 500, two 250, three nothing. Speed is worth at most 240 points across a ten-minute cap, so a single wrong set costs more than the whole speed bonus. Every guess you cannot justify is a 250-point bet.',
+          'Against that, the hints are cheap. "Name a category" reveals the label of the easiest group you have not found for 100 points — you still have to find its four words, but you now know which idea is real. "Show a pair" rings two words that belong together for 200. Neither costs a mistake, both can be used more than once, and both are cheaper than a wrong submission. When you are down to your last mistake and torn between two sets, name a category: it costs 100, tells you which of your two ideas is a real group, and saves the puzzle.',
+        ],
+      },
+      {
+        heading: 'Hardest first, or last — decide on purpose',
+        body: [
+          'Once three groups are locked, the fourth is whatever remains, so the wordplay group very often solves itself — you never have to see the link, only to eliminate the other three. That is the default plan: obvious group, then the next-safest, and let the four-pip group fall out at the end for free.',
+          'The alternative is deliberate. If you can see the wordplay group early — the hidden-word or the fill-in pattern jumps out — submitting it first earns the Hardest First achievement and removes the hardest red herrings from the board in one move. The mistake is doing it on a hunch: a four-pip group submitted with three candidates and a guess is exactly the 250-point bet the whole puzzle is designed to tempt you into.',
+        ],
+      },
+      {
+        heading: 'Shuffle, and read the holiday',
+        body: [
+          'Shuffle rearranges the unsolved words and it is free. Position creates false patterns — three words in a row look like a group because they are in a row — and a shuffle breaks the pattern your eye has fixed on. Use it whenever you have stared at the same twelve words for more than thirty seconds.',
+          'On a holiday the puzzle belongs to the day, which narrows the categories before you read a word. Kindred hints and mistakes never touch your Daily Sweep — like every More Games title it is extra XP, medals and a leaderboard — so a rough day here is a rough day here and nothing more.',
+        ],
+      },
+    ],
+    related: ['codebreaker-playbook', 'sudocious-playbook', 'propernoundle-playbook'],
+    guide: 'kindred',
+  },
+  {
+    slug: 'crosswordocious-playbook',
+    title: 'The Crosswordocious Playbook: Theme First, Crossings Second, Check Last',
+    description:
+      'How to fill the Wordocious daily sayings crossword clean — reading the title as a clue, hearing the saying instead of parsing it, placing the long answers early, and why letters are free to change while every Check costs 200 points.',
+    dek: 'Every clue is a saying you already know with one word missing. The grid completes itself when it is right — so Check is a tax, not a step.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'The title is the first clue',
+        body: [
+          'Crosswordocious is themed, and the theme is the title. Most answers belong to it; a few are simply other sayings, and nothing on the board says which is which. So read the title before the clues and prime the family: if the title is "Down by the Sea", you are expecting ANCHOR, TIDE, SAILS and HARBOUR, and a clue that does not fit the sea is telling you it is one of the plain sayings.',
+          'On a holiday the puzzle belongs to the day, which makes the theme even louder. A Thanksgiving grid will lean on gratitude, harvest and family sayings; a Fourth of July grid on freedom and fireworks. Guess the answers before you read the clues and you will recognise them when you do.',
+        ],
+      },
+      {
+        heading: 'Hear the saying, do not parse it',
+        body: [
+          'Every clue is a familiar phrase with one word blanked out — "Calm before the ____", "A penny for your ____". These are not cryptic clues and they do not reward analysis; they reward recognition. Read the clue aloud, or silently as a sentence, and let the blank fill itself. The letter count in the grid then confirms the word or tells you to reach for the other version of the saying.',
+          'When the saying does not come, do not reason letter by letter — move on. Crossings will give you two or three letters of the stubborn word, and a saying with its missing word half-spelled is a saying you will hear instantly.',
+        ],
+      },
+      {
+        heading: 'Long answers first',
+        body: [
+          'The grid is a sparse criss-cross of ten to thirteen entries in which every answer crosses at least one other. An eight- or nine-letter answer crosses more entries than a four-letter one, so two long answers placed early hand you a letter in half the grid. Scan the clue lists for the longest entries, solve those, and the short entries become fill-in-the-blanks with letters already showing.',
+          'Use the two directions deliberately. Tap a cell twice or press Space to flip between Across and Down at the same cell; the active clue sits above the keyboard so you never scroll to read it. When an Across answer stalls, flip to the Down that crosses its blank cell — a letter from the other direction is the cheapest hint in the game.',
+        ],
+      },
+      {
+        heading: 'Letters are free — change them',
+        body: [
+          'Nothing is judged while you work. Type a letter, type over it, Delete it, try the other version of the saying — none of it costs anything and none of it is recorded. So when two words could fill a blank, type one and read the crossings. If the crossing entries still read as words, keep it; if one turns into nonsense, type the other. You have learned the answer by experiment, for free, in the time a Check would have cost you 200 points.',
+          'The grid completes itself the moment every cell is right. There is no submit button and no final Check required, which means a careful solver can finish a grid without ever paying the Check tax at all.',
+        ],
+      },
+      {
+        heading: 'Check economics',
+        body: [
+          'Check locks every letter that is right and clears every letter that is wrong with a red flash, and each Check is recorded. Your finish is counted as checks plus one out of a budget of six, with every unused check worth 200 points: no Check banks 1,000, one Check 800, two 600, down to nothing at five. Speed is worth at most 240 points across the fifteen-minute cap, so one Check costs almost the entire speed bonus and two cost more than it.',
+          'Because the bonus falls per Check and not per wrong letter, a Check should be a single, late, deliberate act. Fill the whole grid, read every entry back against its saying, fix what reads wrong, and only then — if two or three cells remain genuinely doubtful — take one Check to settle them all at once. A Check on a half-empty grid is the worst move in the game: it costs 200 points to confirm letters the crossings would have confirmed for free.',
+        ],
+      },
+      {
+        heading: 'Reveals, and when to stop',
+        body: [
+          'Reveal letter fills and locks the selected cell for 60 points; Reveal word fills the active entry for 120. Neither counts as a Check, both rule out a Perfect run and the Pure Crosswordocious achievements. A single revealed letter is the right call when one crossing is blocking a whole corner and no saying will come — 60 points to unlock three entries is a bargain — but a revealed word is rarely worth it when its crossings could have spelled it for you.',
+          'Reveal all shows the whole grid and records the puzzle as a loss; you tap it twice, so a slip never costs you the day. Use it only when you would honestly rather see the answers than keep going — a finished grid with two Checks still outscores a reveal by more than a thousand points. And like every More Games title, Crosswordocious earns XP, medals and its own leaderboard without ever touching the eight-game Daily Sweep.',
+        ],
+      },
+    ],
+    related: ['codebreaker-playbook', 'muddle-playbook', 'spyglass-playbook'],
+    guide: 'crosswordocious',
+  },
+  {
+    slug: 'muddle-playbook',
+    title: 'The Muddle Playbook: Circled Letters, Endings, and the Punchline',
+    description:
+      'How to solve the Wordocious daily scramble in five checks — spotting the ending in a scramble, pairing consonants, letting the caption tell you the pun, skipping stubborn words, and why one letter hint is cheaper than one wrong word.',
+    dek: 'Four scrambled words, one pun, and every full word checks itself. Five checks is perfect; here is how to stay near it.',
+    minutes: 6,
+    sections: [
+      {
+        heading: 'Understand what a check is',
+        body: [
+          'Muddle has no submit button. The moment the boxes under a word are full, the word checks itself: right, and it locks and sends its ringed letters down to the punchline row; wrong, and the row shakes, the letters return to the scramble, and one check is spent. Every check counts, right or wrong. Four words plus the punchline is five checks — the perfect run — and the thirteenth check loses the puzzle.',
+          'The scoring follows directly. Your finish is counted as your number of checks out of a budget of thirteen, with every unused check worth 150 points: a perfect five-check solve banks 1,200, one wrong word 1,050, two 900. Speed is worth at most 240 points across an eight-minute cap, so two wrong words cost more than the entire speed bonus. The habit this demands is simple — never let a word fill itself until you believe it.',
+        ],
+      },
+      {
+        heading: 'Find the ending first',
+        body: [
+          'Five- and six-letter English words overwhelmingly end in -ED, -ER, -LY, -ING, -S or -Y. Look at the scramble for those letters, set the ending aside in your head, and the remaining three or four letters are a much smaller puzzle. If the scramble contains I, N and G, the word almost certainly ends in -ING and you are looking for a three-letter stem. If it has an E and a D, try -ED before anything else.',
+          'Do the same at the front. Consonant clusters travel together — TH, CH, SH, ST, BR, PL, TR — so if you can see one in the scramble, try it as the first two letters, then as the last two. Between a likely opening pair and a likely ending you often have four of six letters placed before you have "solved" anything.',
+        ],
+      },
+      {
+        heading: 'Circled letters are the second puzzle',
+        body: [
+          'Some boxes carry a ring. Those letters, taken in word order, are exactly the letters of the punchline — the pun that fills the caption\'s blank. Once all four words are solved the punchline row opens, and you spell it from the ringed letters the same way, checking itself when full. So every word you solve is also feeding you letters for the joke, and the joke is the reason to look at the cartoon.',
+          'Read the caption before you finish the words. The punchline is a familiar phrase or a pun that fits the picture, and once two or three words are locked you usually have enough ringed letters to guess it. That guess then works backwards: if you know the punchline needs an R and a K, the unsolved word\'s ringed boxes must supply them, which tells you where the R and K go in the scramble.',
+        ],
+      },
+      {
+        heading: 'Skip the stubborn word',
+        body: [
+          'You do not have to solve the words in order. Tap another row and solve the easy ones first; their ringed letters shrink the punchline puzzle, and a punchline you can guess will often hand you the missing word backwards. Staring at one scramble for two minutes costs time; solving the other three in that time costs nothing and usually solves the stubborn one for you.',
+          'Delete and Clear are free. Delete takes back the last letter you placed and Clear empties the row (pinned letters stay), so a half-placed word that suddenly looks wrong can be undone before it fills and checks itself. The one thing to avoid is filling the last box on a hunch — that is the only way to spend a check, and it is entirely under your control.',
+        ],
+      },
+      {
+        heading: 'One letter hint beats one wrong word',
+        body: [
+          'Two hints never count as checks. "Letter" places the next correct letter of a word (or the punchline) and pins it there for 75 points; "Solve" fills the whole word for two hints, 150 points. Both rule out a Perfect run and the Pure Muddle achievements. Compare them to a wrong word, which costs 150 points of check bonus and gains you nothing: a Letter hint is half the price and usually enough, because a five-letter scramble with one letter pinned in place is a very different puzzle from a five-letter scramble.',
+          'The rule of thumb: if a word has beaten you twice, take the Letter. If it has beaten you twice and you are on your tenth check, take the Solve — losing the puzzle at thirteen costs far more than 150 points. Never Solve a word you have not yet tried; the hint is for a dead end, not a shortcut.',
+        ],
+      },
+      {
+        heading: 'Pace the perfect five',
+        body: [
+          'Because every strong Muddle finish is a five- or six-check solve, the podium is decided by time inside the eight-minute cap, and time is won by method rather than speed-typing. Endings first, consonant pairs second, caption third, punchline as soon as you can guess it. The whole puzzle fits on one screen so that your eye can move between the cartoon, the words and the ringed letters without scrolling — use all three.',
+          'On a holiday the joke belongs to the day, which narrows the pun before you read a word. Like every More Games title, Muddle earns XP, medals and its own leaderboard while leaving your Daily Sweep exactly where the eight word games put it — so a thirteen-check day here is a bad joke, not a broken sweep.',
+        ],
+      },
+    ],
+    related: ['letter-ladder-playbook', 'crosswordocious-playbook', 'hubbub-playbook'],
+    guide: 'muddle',
   },
   {
     slug: 'daily-sweep-guide',
@@ -270,7 +767,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Sweep the board, then keep it clean',
         body: [
           'Completing every mode\'s daily in one day is a Daily Sweep, worth bonus XP on top of each puzzle\'s score. Winning them all — not just finishing — upgrades it to a Flawless Victory and a bigger bonus. If you are optimizing XP per minute, the sweep bonus means the last unplayed mode of the day is always worth more than replaying a favorite.',
-          'Order matters less than momentum, but a sensible route exists: warm up on Classic, ride the rhythm into Six and Seven while your letter instincts are hot, take the multi-board modes in the middle, and save ProperNoundle for whenever your general-knowledge brain is awake. The Gauntlet, as the longest commitment, deserves an unhurried slot.',
+          'Order matters less than momentum, but a sensible route exists: warm up on Classic, ride the rhythm into Six and Seven while your letter instincts are hot, take the multi-board modes in the middle, and give the Gauntlet, as the longest commitment, an unhurried slot. The sweep is the eight word games on the home grid; ProperNoundle and the other More Games titles are extra dailies that earn XP and medals but never change whether you swept.',
         ],
       },
       {
@@ -376,8 +873,8 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     slug: 'beginner-to-sweeper',
     title: 'From First Guess to Daily Sweeper: A 30-Day Progression Plan',
     description:
-      'A structured month-long roadmap through every Wordocious skill tier: tile-reading fundamentals, an opening system, multi-board scanning, twist-mode adaptation, Gauntlet nerve, and finally the full nine-mode Daily Sweep.',
-    dek: 'The distance from casual solver to nine-for-nine sweeper is about a month of deliberate play. Here’s the curriculum.',
+      'A structured month-long roadmap through every Wordocious skill tier: tile-reading fundamentals, an opening system, multi-board scanning, twist-mode adaptation, Gauntlet nerve, and finally the full eight-mode Daily Sweep.',
+    dek: 'The distance from casual solver to eight-for-eight sweeper is about a month of deliberate play. Here’s the curriculum.',
     minutes: 8,
     sections: [
       {
@@ -404,9 +901,9 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Days 22–30: twists, the Gauntlet, and the Sweep',
         body: [
-          'Fold in the twist modes now. Succession rewards chain-thinking, Deliverance rewards budget discipline, and ProperNoundle deliberately breaks your letter statistics — proper nouns obey different frequency rules, so it trains flexibility more than any other mode. Expect your first ProperNoundle games to feel wrong; that disorientation is the lesson.',
+          'Fold in the twist modes now. Succession rewards chain-thinking and Deliverance rewards budget discipline. For a stretch, open the More Games tile and play ProperNoundle, which deliberately breaks your letter statistics — proper nouns obey different frequency rules, so it trains flexibility more than any word mode. Expect your first ProperNoundle games to feel wrong; that disorientation is the lesson, and it earns XP without touching your sweep.',
           'Gauntlet is the nerve test: five chained stages where one bust ends the run. Enter it only after your Classic average sits comfortably under four guesses, and play it like a mountaineer — conservative information-first guessing on every stage, because the expected cost of a risky guess is the entire run, not one row.',
-          'Finally, assemble the Daily Sweep: all nine modes, one day. Your first sweeps are about stamina and scheduling as much as skill — the composite score that ranks you on the sweep leaderboard rewards both accuracy and pace across the full slate. Once the first sweep lands, the game changes character: the question stops being "can I solve today’s puzzle" and becomes "how clean can the whole day be." That is the sweeper’s mindset, and it is a month away for almost anyone willing to train deliberately.',
+          'Finally, assemble the Daily Sweep: all eight word modes, one day. Your first sweeps are about stamina and scheduling as much as skill — the composite score that ranks you on the sweep leaderboard rewards both accuracy and pace across the full slate. Once the first sweep lands, the game changes character: the question stops being "can I solve today’s puzzle" and becomes "how clean can the whole day be." That is the sweeper’s mindset, and it is a month away for almost anyone willing to train deliberately.',
         ],
       },
     ],
@@ -445,7 +942,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'The rematch meta and daily VS',
         body: [
           'Matches cluster into sessions — rematches against the same opponent are common, and they carry information. An opponent who opened SLATE twice will open it a third time; if you are trailing in a series, varying your own opener denies them the same read. Across a rematch series, the player who adapts openings, risk timing, and even typing cadence holds a real edge over the player who runs one script.',
-          'Daily VS adds a scheduling wrinkle: the day’s VS result is part of your nine-mode Daily Sweep, and it is the one mode you cannot fully control — an opponent has a vote. Sweepers should play their VS match early in the day while focus is fresh, rather than leaving the least controllable mode for a tired midnight attempt. Warm up in Practice, run your tempo opening, and treat the first minute as the whole match — because statistically, it is.',
+          'Daily VS adds a scheduling wrinkle: it sits alongside your eight-mode Daily Sweep rather than inside it, but it is the one daily you cannot fully control — an opponent has a vote. Sweepers should play their VS match early in the day while focus is fresh, rather than leaving the least controllable mode for a tired midnight attempt. Warm up in Practice, run your tempo opening, and treat the first minute as the whole match — because statistically, it is.',
         ],
       },
     ],

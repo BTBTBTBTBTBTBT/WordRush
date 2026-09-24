@@ -115,12 +115,48 @@ export const HOW_TO_PLAY: HTPSection[] = [
         body: 'A five-stage endurance test: The Opening (a single word), then QuadWord, Succession, Deliverance, and finally OctoWord. Each stage is more demanding than the last, and one failed stage ends the run. Completing the full Gauntlet requires consistent performance across every style of play — only the most skilled players finish all five stages.',
       },
       {
-        name: 'ProperNoundle — Famous Names & Cultural References', accent: '#dc2626',
-        body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. With more than 650 puzzles in the pool, every day brings a fresh challenge.',
+        name: 'More Games — Ten Extra Dailies', accent: '#4f46e5',
+        body: 'The More Games tile on the home screen opens a menu of ten extra daily puzzles — number logic, star placement, word ladders, a word search, a hub game, a cryptogram, groups of four, a crossword, a scramble and the famous-names game ProperNoundle. They live outside the Daily Sweep: each one earns XP, medals, leaderboard places and achievements like every other mode, but none of them changes your sweep count or Flawless Victory — those stay the eight word games on the home grid. Every title below has its own full guide behind the ? button in play.',
       },
       {
-        name: 'More Games — Sudocious and Friends', accent: '#4f46e5',
-        body: 'The More Games tile on the home screen opens a menu of extra dailies that live outside the Daily Sweep: they earn XP, medals, leaderboard places and achievements like every other mode, but they never change your sweep count or Flawless Victory. Sudocious is the first, a classic sudoku: one Medium 9 × 9 puzzle a day, three mistakes allowed, pencil Notes for your candidates and a Hint that fills a cell for a score cost. Starsweep is a star-placement logic puzzle: one star in every row, column and colour region with no two stars touching, three mistakes allowed, a 7 × 7 board early in the week and 8 × 8 from Thursday. Letter Ladder is a word ladder: change one letter at a time from the start word to the end word, with par set by the day of the week and five spare moves. Spyglass is a themed word search: ten words hidden forwards in a 10 × 10 grid, race the clock and keep your misses down. Hubbub is a seven-letter hub game: make words of four letters or more that use the centre letter, reach Hubbub rank to solve it and keep climbing toward Pandemonium. Codebreaker is a cryptogram: a well-known saying in a letter-for-letter code with three letters given; pencil freely, Check when you dare, and the code cracks itself the moment every letter is right. Kindred is groups of four: sixteen words hide four groups with something in common, from a plain category to wordplay; find them all with four mistakes to spare, and ask for a category name or a pair if you are stuck. Crosswordocious is a themed fill-in crossword: every clue is a familiar saying with one word missing, most answers fit the title, letters are free to place and change, and Check locks the right ones. Muddle is the newspaper scramble: unscramble four words, then spell the pun from their circled letters to finish the caption under the cartoon; every full word checks itself, and thirteen wrong checks end the day. Every game here has its own full guide behind the ? button in play.',
+        name: 'ProperNoundle — Famous Names & Cultural References', accent: '#dc2626',
+        body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. ProperNoundle now lives under More Games, so it no longer counts toward the Daily Sweep or Flawless Victory — it still earns XP, medals and its own leaderboard every day. With more than 650 puzzles in the pool, every day brings a fresh challenge.',
+      },
+      {
+        name: 'Sudocious — Daily Sudoku, 3 Mistakes', accent: '#1e40af',
+        body: 'A classic nine-by-nine sudoku: fill the grid so every row, column and 3 × 3 box holds the digits 1 to 9 exactly once. The daily is always Medium and has exactly one solution, so careful scanning solves it without a single guess. A wrong digit turns red and counts as a mistake — two are allowed, and the third ends the puzzle. Turn on Notes to pencil candidates into a cell for free, and use Hint to fill a cell for 100 points when you would rather pay than risk a mistake. Every mistake you avoid is worth 300 points, so a clean grid always outranks a fast one.',
+      },
+      {
+        name: 'Starsweep — One Star Per Row, Column & Region', accent: '#ca8a04',
+        body: 'Place exactly one star in every row, every column and every colour region, with no two stars touching — not even at a corner. The board is 7 × 7 from Monday to Wednesday and 8 × 8 from Thursday to Sunday, and every puzzle has one solution you can reach by elimination alone. Tap once to cross a cell out (free, never judged), tap again to place a star; a wrong star turns red and counts as a mistake, and the third mistake ends the game. Auto-cross marks every cell a correct star rules out, and a Hint places one row\'s star for 100 points. Each unused mistake is worth 300 points, with speed as the tiebreaker inside a ten-minute cap.',
+      },
+      {
+        name: 'Letter Ladder — One Letter at a Time', accent: '#0284c7',
+        body: 'Climb from the start word to the end word by changing exactly one letter per rung — STONE to STORE to STARE — with every rung a real five-letter word. Par is the shortest route: 4 moves on Monday and Tuesday, rising to 7 on Sunday, and you have par plus five moves before the ladder is lost. A word that is turned away (not in the list, more than one letter changed, or already used) costs nothing; only accepted words spend moves. Undo is free too, though the move you spent stays spent, and a Hint places the next word on a shortest route for 100 points and one move. Every step under your budget is worth 300 points, so a climb on par banks the full bonus.',
+      },
+      {
+        name: 'Spyglass — Themed Word Search', accent: '#4d7c0f',
+        body: 'Ten words on one theme hide in a 10 × 10 grid, running across, down or diagonally — and in the daily they always read forwards, so nothing is hidden backwards. Tap a word\'s first and last letter, or drag across it, to mark it found. A straight line of four or more letters that spells no listed word is a miss; misses cost score but never end the game, and short or crooked drags are free. Hint pulses the first letter of the next unfound word for 60 points, and after five minutes a Reveal button lets you end the grid as a loss with credit for every word you found. Each miss you avoid is worth 120 points, and a clean clear ranks purely on time inside the fifteen-minute cap.',
+      },
+      {
+        name: 'Hubbub — Seven Letters, One Hub', accent: '#c026d3',
+        body: 'Seven letters sit in a cluster with one in the centre. Make words of four letters or more that use the centre letter — repeats allowed — and watch your rank climb: a four-letter word is worth 1 point, longer words score their length, and a pangram that uses all seven letters earns 7 extra. Rarer real words are accepted as bonus words, so a genuine word is never turned away. Reaching Hubbub rank at half the maximum score solves the puzzle, and the board stays open so you can keep climbing through Uproar (70%) and Thunder (85%) to Pandemonium — every word found — raising your leaderboard score in place. Each rank above Hubbub is worth 300 points; a "Starts with…" hint costs 50 and revealing a word costs 100.',
+      },
+      {
+        name: 'Codebreaker — Crack the Coded Saying', accent: '#92400e',
+        body: 'A well-known saying has had every letter swapped for another, the same way throughout — if K stands for E, every K is an E. The three most common letters are already filled in and locked, so there is always a way in. Type into any box and your letter lands in every box with that code letter; pencilled letters are free to set, change and clear, and nothing is judged while you think. Check is the only thing that counts against you: it locks the right letters and clears the wrong ones, and each Check costs 250 points of bonus (up to three). Hint fills the most frequent unsolved letter for 100 points, Reveal appears after five minutes and records a loss, and the code cracks itself the moment every letter is right.',
+      },
+      {
+        name: 'Kindred — Four Groups of Four', accent: '#9f1239',
+        body: 'Sixteen words hide four groups of four with something in common — a plain category, a sly link, a fill-in-the-blank pattern or pure wordplay. Select four and Submit: a real group locks into a bar with one to four pips showing how tricky it was; anything else spends one of your four mistakes, and the fifth wrong set loses the puzzle. Three of four right earns a "One away…" nudge, and a set you have already tried is free to try again. Two hints never cost a mistake: Name a category (100 points) labels the easiest unsolved group, and Show a pair (200 points) rings two words that belong together — both cheaper than the 250 points a wrong guess costs, so ask before you gamble your last mistake.',
+      },
+      {
+        name: 'Crosswordocious — Fill-In Sayings Crossword', accent: '#475569',
+        body: 'A themed crossword of ten to thirteen entries where every clue is a familiar saying with one word blanked out — "Calm before the ____" — and the answer is the missing word. The title is the theme: most answers belong to it, a few are simply other sayings. Tap a cell or clue and type; letters are free to place, replace and delete, and the grid completes itself the moment every cell is right. Check is the only thing that counts against you — it locks right letters and clears wrong ones, and each Check costs 200 points of bonus. Revealing a letter costs 60 points and revealing a word 120; Reveal all (tap twice) fills the grid and records a loss. Speed breaks ties inside a fifteen-minute cap.',
+      },
+      {
+        name: 'Muddle — Unscramble the Punchline', accent: '#f97316',
+        body: 'The newspaper scramble: a cartoon with a one-word blank in its caption sits above four scrambled words of five or six letters. Tap or type letters into the boxes and each word checks itself the moment it is full — right, and it locks and sends its ringed letters down to the punchline row; wrong, and the letters bounce back and a check is spent. Solve all four and the punchline row opens, spelled from the ringed letters to finish the pun. Every check counts: four words plus the punchline is a perfect five, and the thirteenth check loses the puzzle. Letter places the next correct letter for 75 points and Solve fills a whole word for 150 — neither counts as a check — and each unused check is worth 150 points inside an eight-minute cap.',
       },
     ],
   },
@@ -197,7 +233,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       { strong: 'Loss:', text: ' 25 XP (you still earn XP for trying)' },
       { strong: 'Win streak bonus:', text: ' +50 XP' },
       { strong: 'Daily challenge bonus:', text: ' +50 XP' },
-      { strong: 'Daily Sweep:', text: ' +200 XP for playing all 9 of the day’s puzzles' },
+      { strong: 'Daily Sweep:', text: ' +200 XP for playing every one of the day’s eight word puzzles (the More Games titles are extra and never count)' },
       { strong: 'Flawless Victory:', text: ' +400 XP more for winning every one (600 XP total with the Sweep)' },
       { strong: 'Medal XP:', text: ' Gold +100, Silver +50, Bronze +25' },
     ],

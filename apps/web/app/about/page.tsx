@@ -6,7 +6,7 @@ import { InfoPageHeader } from '@/components/ui/info-page-header';
 export const metadata: Metadata = {
   title: 'About Wordocious — Epic Word Battles',
   description:
-    'Wordocious is a free online word puzzle game with 10 unique game modes including Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, ProperNoundle, and real-time VS Battles. Play daily puzzles, climb leaderboards, and compete with friends.',
+    'Wordocious is a free online puzzle game with nineteen ways to play: Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, real-time VS Battles, and ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Play daily puzzles, climb leaderboards, and compete with friends.',
 };
 
 const CARD = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' } as const;

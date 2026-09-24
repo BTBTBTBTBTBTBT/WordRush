@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { STRATEGY_ARTICLES, getArticle } from '@/lib/strategy-content';
+import { getPublicGuide } from '@/lib/guide-content';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export function generateStaticParams() {
@@ -21,6 +22,8 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 export default function ArticlePage({ params }: { params: { slug: string } }) {
   const a = getArticle(params.slug);
   if (!a) notFound();
+  // The mode guide this playbook belongs to (rules + exact scoring), when it is about one game.
+  const guide = a.guide ? getPublicGuide(a.guide) : undefined;
 
   return (
     <div className="min-h-screen pb-16" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -43,13 +46,18 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
         <div className="rounded-xl p-4 mb-8" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
           <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>
-            Put it into practice — Wordocious gives everyone the same daily word across nine modes, so you can test these
+            Put it into practice — Wordocious gives everyone the same daily puzzle in every mode, so you can test these
             ideas and compare your result on the global leaderboard.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/" className="px-4 py-2 rounded-lg text-white font-black text-sm" style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}>
               Play today&apos;s puzzle
             </Link>
+            {guide && (
+              <Link href={`/guides/${guide.slug}`} className="px-4 py-2 rounded-lg font-black text-sm" style={{ background: 'var(--color-bg)', border: `1.5px solid ${guide.accent}`, color: guide.accent }}>
+                {guide.title} guide
+              </Link>
+            )}
             <Link href="/guides" className="px-4 py-2 rounded-lg font-black text-sm" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
               Mode guides
             </Link>

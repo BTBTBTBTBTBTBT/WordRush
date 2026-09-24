@@ -6,7 +6,7 @@ import { InfoPageHeader } from '@/components/ui/info-page-header';
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
   description:
-    'Learn how to play Wordocious. Complete guide to all 10 game modes: Classic, VS Battle, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, and ProperNoundle. Scoring, streaks, medals, and tips for beginners.',
+    'Learn how to play Wordocious. Complete guide to every game mode: Classic, VS Battle, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, and the ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Scoring, streaks, medals, and tips for beginners.',
 };
 
 function TileExample({ letter, color }: { letter: string; color: HTPTileColor }) {

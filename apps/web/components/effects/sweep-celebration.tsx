@@ -9,25 +9,22 @@ import { computeDailyTotals } from '@/lib/daily-service';
 import { shareDailySweep } from '@/lib/daily-share';
 import type { ShareMode } from '@/lib/share-image';
 import { MODE_SHARE_GLYPH } from '@/lib/share-image';
+import { MODE_BY_DBKEY, sweepModesFor } from '@/lib/modes.generated';
+import { getTodayLocal } from '@/lib/daily-service';
 
-// One-time full-screen celebration shown when the player completes all 9 daily
-// puzzles. Two distinct treatments (NOT the per-game victory confetti, which
-// would look redundant when the final daily was itself a win):
+// One-time full-screen celebration shown when the player completes every daily
+// in the current sweep. Two distinct treatments (NOT the per-game victory
+// confetti, which would look redundant when the final daily was itself a win):
 //   • Daily Sweep      → violet/pink sparkle burst.
 //   • Flawless Victory → gold fireworks + foil shimmer.
 
 interface ModeMeta { dbKey: string; mode: ShareMode; label: string; accent: string }
-const MODES: ModeMeta[] = [
-  { dbKey: 'DUEL', mode: 'Classic', label: 'Classic', accent: '#7c3aed' },
-  { dbKey: 'QUORDLE', mode: 'QuadWord', label: 'QuadWord', accent: '#ec4899' },
-  { dbKey: 'OCTORDLE', mode: 'OctoWord', label: 'OctoWord', accent: '#7e22ce' },
-  { dbKey: 'SEQUENCE', mode: 'Succession', label: 'Succession', accent: '#2563eb' },
-  { dbKey: 'RESCUE', mode: 'Deliverance', label: 'Deliverance', accent: '#059669' },
-  { dbKey: 'DUEL_6', mode: 'Six', label: 'Six', accent: '#06b6d4' },
-  { dbKey: 'DUEL_7', mode: 'Seven', label: 'Seven', accent: '#84cc16' },
-  { dbKey: 'GAUNTLET', mode: 'Gauntlet', label: 'Gauntlet', accent: '#d97706' },
-  { dbKey: 'PROPERNOUNDLE', mode: 'ProperNoundle', label: 'Proper', accent: '#dc2626' },
-];
+// The sweep set comes from the catalog's era table for today, so the tile row
+// is eight word games from 2026-09-25 (ProperNoundle lives under More Games).
+const MODES: ModeMeta[] = sweepModesFor(getTodayLocal())
+  .map((k) => MODE_BY_DBKEY[k])
+  .filter(Boolean)
+  .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex }));
 
 function fmtTime(s: number): string {
   const m = Math.floor(s / 60);

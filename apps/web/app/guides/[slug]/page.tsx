@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PUBLIC_MODE_GUIDES as MODE_GUIDES, getPublicGuide as getGuide } from '@/lib/guide-content';
+import { STRATEGY_ARTICLES } from '@/lib/strategy-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 
@@ -27,6 +28,8 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
   const related = guide.related
     .map((slug) => getGuide(slug))
     .filter((g): g is NonNullable<typeof g> => !!g);
+  // The long-form playbook for this mode on /strategy, when one exists.
+  const playbook = STRATEGY_ARTICLES.find((a) => a.guide === guide.slug);
 
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -80,6 +83,15 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
           <div className="p-5" style={card}>
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Keep reading</h2>
             <div className="flex flex-wrap gap-2">
+              {playbook && (
+                <Link
+                  href={`/strategy/${playbook.slug}`}
+                  className="text-xs font-extrabold px-3 py-1.5 rounded-full text-white"
+                  style={{ background: guide.accent, border: `1.5px solid ${guide.accent}` }}
+                >
+                  {guide.title} playbook
+                </Link>
+              )}
               {related.map((r) => (
                 <Link
                   key={r.slug}

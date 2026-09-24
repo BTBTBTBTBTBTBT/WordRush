@@ -38,7 +38,6 @@ export function DailyLanding() {
     ['Six', 'A six-letter word, with hints on offer.'],
     ['Seven', 'A seven-letter word, the longest daily.'],
     ['Gauntlet', 'Five chained stages — one miss ends the run.'],
-    ['ProperNoundle', 'A proper noun: a person, place, or title.'],
   ];
 
   return (
@@ -52,11 +51,11 @@ export function DailyLanding() {
 
       <section className="text-center px-6 pt-8 pb-8 max-w-2xl mx-auto">
         <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#7c3aed' }}>
-          Nine puzzles a day, one leaderboard
+          Eight word puzzles a day, one leaderboard
         </p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={h}>Daily Challenge</h1>
         <p className="text-base font-bold mb-6 leading-relaxed" style={p}>
-          The same nine words for every player in the world, every day. Solve them, then see exactly where you stand.
+          The same eight words for every player in the world, every day. Solve them, then see exactly where you stand.
         </p>
         <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm" style={ctaStyle}>
           Sign in to see the leaderboards
@@ -74,13 +73,15 @@ export function DailyLanding() {
       <section className="px-5 pb-8 max-w-3xl mx-auto text-sm leading-relaxed" style={p}>
         <h2 className="text-lg font-black mb-2" style={h}>How the Daily Challenge works</h2>
         <p className="mb-4">
-          Every day Wordocious deals one fresh puzzle in each of its nine game modes. The words are
+          Every day Wordocious deals one fresh puzzle in each of its eight daily word games. The words are
           identical for everyone that day, so the leaderboard is a fair race: every player faced exactly
           the same boards. The day rolls over at midnight in your local time zone, and each mode can be
           played once per day — after that it is Unlimited practice, which never touches the boards.
+          The ten More Games titles behind the home tile — ProperNoundle, Sudocious, Starsweep and the
+          rest — have dailies and leaderboards of their own, but they sit outside this board.
         </p>
 
-        <h3 className="font-black mt-5 mb-2" style={h}>The nine modes</h3>
+        <h3 className="font-black mt-5 mb-2" style={h}>The eight modes</h3>
         <ul className="grid sm:grid-cols-3 gap-2 mb-4">
           {modes.map(([name, blurb]) => (
             <li key={name} className="p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
@@ -95,17 +96,17 @@ export function DailyLanding() {
           Each result earns a composite score. Guess efficiency matters most — solving in fewer guesses is
           worth far more than solving quickly — and a time bonus rewards speed on top of it. Multi-board
           modes add a bonus for every board solved, so a loss that cleared seven of eight OctoWord boards
-          still scores well above one that cleared two. Hints in Six, Seven, and ProperNoundle cost points.
+          still scores well above one that cleared two. Hints in Six and Seven cost points.
           Exact ties on score and time share the same rank.
         </p>
 
         <h3 className="font-black mt-5 mb-1" style={h}>The Sweep board</h3>
         <p className="mb-4">
-          Finish all nine modes in a day and you have swept. The Sweep leaderboard ranks sweepers by total
-          points across every mode, with total time as the tiebreaker. Win all nine and your row earns the
-          gold FLAWLESS badge; nine dots under every player show how each mode went — bright for a
+          Finish all eight word games in a day and you have swept. The Sweep leaderboard ranks sweepers by total
+          points across every mode, with total time as the tiebreaker. Win all eight and your row earns the
+          gold FLAWLESS badge; a dot per mode under every player shows how each one went — bright for a
           near-perfect solve, faded for a slow one, red for a loss. Because the ranking is total points,
-          nine slow wins can finish below eight sharp ones.
+          eight slow wins can finish below seven sharp ones. More Games results never count here.
         </p>
 
         <h3 className="font-black mt-5 mb-1" style={h}>Medals, streaks, and friends</h3>

@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
+import {
+  Swords, TrendingUp, Shield, Skull, Crown, Grid3x3, Star, Shuffle, Hexagon, Quote, Group, KeyRound, TextSearch,
+} from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
+import { LadderIcon } from '@/components/ui/ladder-icon';
 import { LoginScreen } from './login-screen';
 import { useAuth } from '@/lib/auth-context';
 
@@ -18,9 +21,12 @@ type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProper
  * "Sign in to play" reveals the existing LoginScreen — gameplay stays
  * login-gated.
  */
-// Icons mirror the signed-in home grid (app/page.tsx MODE_CARDS): real game
-// icons everywhere, except QuadWord/OctoWord which brand with roman numerals.
-const MODES: { title: string; desc: string; accent: string; roman?: string; guide?: string; Icon?: IconCmp }[] = [
+// Icons mirror the signed-in home grid (app/page.tsx MODE_CARDS and
+// components/home/mode-chrome.tsx): real game icons everywhere, except
+// QuadWord/OctoWord which brand with roman numerals.
+type LandingMode = { title: string; desc: string; accent: string; roman?: string; guide?: string; Icon?: IconCmp };
+// The home grid: the eight Daily Sweep word games plus VS Battle.
+const MODES: LandingMode[] = [
   { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed', guide: 'classic', Icon: WordleGridIcon },
   { title: 'VS Battle', desc: 'Race a live opponent on the same puzzle in real time.', accent: '#0d9488', Icon: Swords },
   { title: 'QuadWord', desc: 'Solve four words at once with nine shared guesses.', accent: '#ec4899', roman: 'IV', guide: 'quadword' },
@@ -30,14 +36,48 @@ const MODES: { title: string; desc: string; accent: string; roman?: string; guid
   { title: 'Six', desc: 'Longer six-letter words in seven tries.', accent: '#06b6d4', guide: 'six', Icon: SixIcon },
   { title: 'Seven', desc: 'Seven-letter words in eight tries for word pros.', accent: '#84cc16', guide: 'seven', Icon: SevenIcon },
   { title: 'Gauntlet', desc: 'Five escalating stages chained into one run.', accent: '#d97706', guide: 'gauntlet', Icon: Skull },
-  { title: 'ProperNoundle', desc: 'Guess famous names from a daily category.', accent: '#dc2626', guide: 'propernoundle', Icon: Crown },
 ];
+// The More Games tile: ten extra dailies outside the Daily Sweep (catalog order,
+// accents from lib/modes.generated.ts, icons from components/home/mode-chrome.tsx).
+const MORE_GAMES: LandingMode[] = [
+  { title: 'ProperNoundle', desc: 'Guess famous names from a daily category.', accent: '#dc2626', guide: 'propernoundle', Icon: Crown },
+  { title: 'Sudocious', desc: 'A Medium 9 × 9 sudoku a day — three mistakes, pencil notes, one solution.', accent: '#1e40af', guide: 'sudocious', Icon: Grid3x3 },
+  { title: 'Muddle', desc: 'Unscramble four words, then spell the pun from their circled letters.', accent: '#f97316', guide: 'muddle', Icon: Shuffle },
+  { title: 'Hubbub', desc: 'Seven letters, one hub — make words, find the pangram, climb the ranks.', accent: '#c026d3', guide: 'hubbub', Icon: Hexagon },
+  { title: 'Crosswordocious', desc: 'A themed crossword where every clue is a saying with one word missing.', accent: '#475569', guide: 'crosswordocious', Icon: Quote },
+  { title: 'Kindred', desc: 'Sixteen words hide four groups of four — find them before four mistakes.', accent: '#9f1239', guide: 'kindred', Icon: Group },
+  { title: 'Letter Ladder', desc: 'Change one letter at a time from the start word to the end word, on par.', accent: '#0284c7', guide: 'letter-ladder', Icon: LadderIcon },
+  { title: 'Codebreaker', desc: 'Crack a well-known saying written in a letter-for-letter code.', accent: '#92400e', guide: 'codebreaker', Icon: KeyRound },
+  { title: 'Spyglass', desc: 'Ten themed words hidden forwards in a 10 × 10 grid — clear it clean.', accent: '#4d7c0f', guide: 'spyglass', Icon: TextSearch },
+  { title: 'Starsweep', desc: 'One star in every row, column and colour region, none touching.', accent: '#ca8a04', guide: 'starsweep', Icon: Star },
+];
+
+function ModeCard({ m }: { m: LandingMode }) {
+  return (
+    <div className="relative overflow-hidden p-4 pt-5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
+      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${m.accent}, ${m.accent}88)` }} />
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black" style={{ background: `${m.accent}15`, color: m.accent }}>
+          {m.roman ? m.roman : m.Icon ? <m.Icon className="w-4 h-4" style={{ color: m.accent }} /> : m.title.charAt(0)}
+        </span>
+        <h3 className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{m.title}</h3>
+      </div>
+      <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{m.desc}</p>
+      {m.guide && (
+        <Link href={`/guides/${m.guide}`} className="inline-block text-[11px] font-extrabold mt-1.5" style={{ color: m.accent }}>
+          Rules, scoring &amp; strategy →
+        </Link>
+      )}
+    </div>
+  );
+}
 
 const FAQ: { q: string; a: string }[] = [
   { q: 'Is Wordocious free to play?', a: 'Yes. A new daily puzzle in every mode is free every day. An optional Pro subscription removes ads and unlocks unlimited replays.' },
-  { q: 'How is it different from other word games?', a: 'Wordocious bundles ten ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, name-guessing ProperNoundle, and real-time VS battles — all sharing one daily seed so everyone plays the same words.' },
+  { q: 'How is it different from other word games?', a: 'Wordocious bundles nineteen ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, real-time VS battles, and ten More Games dailies from sudoku and star logic to word searches, cryptograms, crosswords and famous names — all sharing one daily seed so everyone plays the same puzzles.' },
   { q: 'Do I need an account?', a: 'You can read about every mode here without signing in. To play, save your streaks, and climb the daily leaderboards, sign in with Google or email.' },
-  { q: 'How do daily challenges work?', a: 'Each mode has one shared daily puzzle that resets at local midnight. Finish all of them for a Daily Sweep, or win them all for a Flawless Victory and bonus XP.' },
+  { q: 'How do daily challenges work?', a: 'Each mode has one shared daily puzzle that resets at local midnight. Finish all eight word games for a Daily Sweep, or win them all for a Flawless Victory and bonus XP.' },
+  { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each earns XP, medals, achievements and its own leaderboard, but none of them counts toward the Daily Sweep, which stays the eight word games.' },
   { q: 'What are leaderboards and medals?', a: 'Every daily puzzle has a leaderboard ranked by a composite of guesses and solve time. Top finishers earn gold, silver, and bronze medals shown on their profile.' },
 ];
 
@@ -67,12 +107,13 @@ export function Landing() {
       <section className="text-center px-6 pt-8 pb-10 max-w-2xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={wordmarkStyle}>WORDOCIOUS</h1>
         <p className="text-base font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-          One daily word game. Ten ways to play.
+          One daily puzzle game. Nineteen ways to play.
         </p>
         <p className="text-sm font-medium mb-6 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-          A fresh set of word puzzles every day — from the classic five-letter chase to eight-board
-          marathons, a five-stage Gauntlet, and real-time head-to-head battles. Everyone plays the same
-          daily words, climbs the same leaderboards, and chases the same streaks.
+          A fresh set of puzzles every day — from the classic five-letter chase to eight-board
+          marathons, a five-stage Gauntlet, real-time head-to-head battles, and ten More Games dailies
+          from sudoku to cryptograms. Everyone plays the same daily puzzles, climbs the same
+          leaderboards, and chases the same streaks.
         </p>
         <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm" style={ctaStyle}>
           Sign in to play
@@ -90,26 +131,21 @@ export function Landing() {
       {/* Modes */}
       <section className="px-5 pb-10 max-w-3xl mx-auto">
         <h2 className="text-xs font-black uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-muted)' }}>
-          Ten Game Modes
+          The Daily Word Games
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {MODES.map((m) => (
-            <div key={m.title} className="relative overflow-hidden p-4 pt-5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
-              <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${m.accent}, ${m.accent}88)` }} />
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black" style={{ background: `${m.accent}15`, color: m.accent }}>
-                  {m.roman ? m.roman : m.Icon ? <m.Icon className="w-4 h-4" style={{ color: m.accent }} /> : m.title.charAt(0)}
-                </span>
-                <h3 className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{m.title}</h3>
-              </div>
-              <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{m.desc}</p>
-              {m.guide && (
-                <Link href={`/guides/${m.guide}`} className="inline-block text-[11px] font-extrabold mt-1.5" style={{ color: m.accent }}>
-                  Rules, scoring &amp; strategy →
-                </Link>
-              )}
-            </div>
-          ))}
+          {MODES.map((m) => <ModeCard key={m.title} m={m} />)}
+        </div>
+
+        <h2 className="text-xs font-black uppercase tracking-widest mt-8 mb-1" style={{ color: '#4f46e5' }}>
+          More Games
+        </h2>
+        <p className="text-xs font-medium mb-3 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+          Ten extra dailies behind one tile on the home screen. Each earns XP, medals and its own leaderboard;
+          none of them counts toward the Daily Sweep, which stays the eight word games above.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {MORE_GAMES.map((m) => <ModeCard key={m.title} m={m} />)}
         </div>
         <p className="text-xs font-medium mt-3" style={{ color: 'var(--color-text-secondary)' }}>
           Want the deep dives? The <Link href="/guides" style={{ color: '#7c3aed', fontWeight: 800 }}>mode guides</Link> cover

@@ -23,6 +23,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       { q: 'Is Wordocious free?', a: 'Yes — a new daily puzzle in every mode is free, every day. An optional Pro subscription removes ads and unlocks unlimited replays beyond the daily, but the daily puzzles and leaderboards are always free.' },
       { q: 'Do I need an account to play?', a: 'You can browse every mode and read these guides without an account. To play, save streaks, earn medals, and appear on the daily leaderboards, sign in with Google, Apple, or an email address.' },
       { q: 'How often do new puzzles appear?', a: 'Every mode gets one fresh puzzle per day, resetting at your local midnight. Everyone worldwide gets the same daily words, so scores are directly comparable.' },
+      { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra daily puzzles: Sudocious (sudoku), Starsweep (star placement), Letter Ladder, Spyglass (word search), Hubbub (seven-letter hub), Codebreaker (cryptogram), Kindred (groups of four), Crosswordocious (sayings crossword), Muddle (scramble) and ProperNoundle (famous names). Each has one shared daily, its own leaderboard and medals, and a full guide behind the ? button in play.' },
     ],
   },
   {
@@ -45,7 +46,8 @@ export const FAQ_SECTIONS: FaqSection[] = [
   {
     heading: 'Progress, Medals & Pro',
     items: [
-      { q: 'What is a Daily Sweep and a Flawless Victory?', a: 'Completing all of the day’s puzzles earns a Daily Sweep and bonus XP. Winning every one of them (not just completing) earns a Flawless Victory and a larger bonus. Streaks of sweeps and flawless days unlock achievements.' },
+      { q: 'What is a Daily Sweep and a Flawless Victory?', a: 'Completing all eight of the day’s word puzzles — Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet — earns a Daily Sweep and bonus XP. Winning every one of them (not just completing) earns a Flawless Victory and a larger bonus. Streaks of sweeps and flawless days unlock achievements.' },
+      { q: 'Does More Games count toward the Daily Sweep?', a: 'No. The ten More Games titles (including ProperNoundle, which moved under the tile) are extra: they earn XP, medals, achievements and leaderboard places like every other mode, but they never change your sweep count or Flawless Victory, and skipping them never spoils a sweep. The sweep is the eight word games on the home grid.' },
       { q: 'How do medals work?', a: 'Each daily puzzle has a leaderboard; the top finishers earn gold, silver, and bronze medals that accumulate on your profile. Medal counts feed several collection achievements.' },
       { q: 'Are there achievements to earn?', a: 'Yes — 75 achievements span five categories: beginner milestones, consistency (streaks and daily sweeps), skill (speed solves, perfect games, beating the Gauntlet), social (VS wins), and collection (medals). They unlock automatically as you hit each milestone, and your full set — locked and unlocked, with progress toward each — is displayed on your profile, so there is always a next goal to chase.' },
       { q: 'What does Pro unlock?', a: 'Pro removes ads, unlocks unlimited replays of every mode beyond the free daily (free players get one play per mode per day), adds Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches. The daily puzzles stay free for everyone.' },
@@ -66,20 +68,33 @@ export const HELP_MODES: HelpMode[] = [
   { title: 'Six', desc: 'Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.', accent: '#06b6d4', glyph: '6' },
   { title: 'Seven', desc: 'Guess a 7-letter word in 8 tries. The ultimate single-word challenge.', accent: '#84cc16', glyph: '7' },
   { title: 'Gauntlet', desc: '5 stages of increasing difficulty — Classic through OctoWord. Survive them all.', accent: '#d97706' },
-  { title: 'ProperNoundle', desc: 'Guess famous names instead of dictionary words. Themed daily puzzles.', accent: '#dc2626' },
+  // More Games (behind the home tile; outside the Daily Sweep). Catalog order and accents.
+  { title: 'More Games', desc: '10 extra dailies behind one tile. XP, medals and leaderboards — never the Daily Sweep.', accent: '#4f46e5', glyph: '+' },
+  { title: 'ProperNoundle', desc: 'Guess famous names instead of dictionary words. Themed daily puzzles.', accent: '#dc2626', glyph: 'P' },
+  { title: 'Sudocious', desc: 'A Medium 9 × 9 sudoku a day. 3 mistakes, pencil notes, one solution.', accent: '#1e40af', glyph: '9' },
+  { title: 'Muddle', desc: 'Unscramble 4 words, then spell the pun from their circled letters.', accent: '#f97316', glyph: 'M' },
+  { title: 'Hubbub', desc: '7 letters, one hub. Words of 4+ letters, find the pangram, climb the ranks.', accent: '#c026d3', glyph: 'H' },
+  { title: 'Crosswordocious', desc: 'A themed crossword where every clue is a saying with one word missing.', accent: '#475569', glyph: 'X' },
+  { title: 'Kindred', desc: '16 words hide 4 groups of 4. Find them all before 4 mistakes.', accent: '#9f1239', glyph: 'K' },
+  { title: 'Letter Ladder', desc: 'Change one letter at a time from the start word to the end word, on par.', accent: '#0284c7', glyph: 'L' },
+  { title: 'Codebreaker', desc: 'Crack a well-known saying written in a letter-for-letter code.', accent: '#92400e', glyph: '?' },
+  { title: 'Spyglass', desc: '10 themed words hidden forwards in a 10 × 10 grid. Clear it clean.', accent: '#4d7c0f', glyph: 'W' },
+  { title: 'Starsweep', desc: 'One star in every row, column and colour region, none touching. 3 mistakes.', accent: '#ca8a04', glyph: '*' },
 ];
 
 // ── Help sheet: FAQ tab ─────────────────────────────────────────────────────
 export const HELP_FAQ: FaqItem[] = [
   { q: 'How are scores calculated?', a: "Guesses come first: solving earns a 1,000-point base plus a guess bonus for every guess you did not need (300 points each in Classic — other modes scale to their guess budget). Speed is the tiebreaker — a speed bonus scaled by how far under your mode's time cap you finish, always worth less than a single guess, so a faster solve never outranks a more efficient one. A completion bonus of up to 200 is scaled by how many boards you solved. Example: a Classic solve in 3 guesses at 37s scores 1,000 + 900 (guess bonus) + ~210 (speed) + 200 (completion) = ~2,310. A loss still banks a little partial credit for how far you got — correct letters on a single-board near-miss, boards solved on the multi-board modes, or stages reached in the Gauntlet — so a close miss outscores a total whiff. Your daily-leaderboard rank is based on this composite score." },
   { q: 'Do hints affect my score?', a: 'Yes, twice over. In Six, Seven, and ProperNoundle each hint subtracts a flat penalty — 60 points in ProperNoundle and 75 in Six and Seven — and it also occupies a board row, which costs you one full guess-bonus step. Hints never push a winning score below zero, and modes without hint buttons are unaffected.' },
-  { q: 'How do XP and levels work?', a: "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Play all 9 of the day's puzzles for a Daily Sweep (+200 XP), and win every one for a Flawless Victory (+400 XP more — 600 total). Every 1,000 XP = 1 level." },
+  { q: 'How do XP and levels work?', a: "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Play all eight of the day's word puzzles for a Daily Sweep (+200 XP), and win every one for a Flawless Victory (+400 XP more — 600 total); the More Games dailies earn XP too but never count toward the sweep. Every 1,000 XP = 1 level." },
   { q: 'How do medals work?', a: "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile." },
   { q: 'Are there achievements?', a: 'Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.' },
   { q: "What's a streak?", a: 'Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.' },
   { q: 'What are Streak Shields?', a: 'A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.' },
   { q: 'What does Pro unlock?', a: 'Pro removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches.' },
   { q: 'Do daily puzzles use the same words for everyone?', a: 'Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.' },
+  { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each has one shared daily, its own leaderboard, medals and achievements, and a full guide behind the ? button in play.' },
+  { q: 'Does More Games count toward the Daily Sweep?', a: 'No. The sweep and Flawless Victory are the eight word games on the home grid. The More Games titles are extra: they earn XP and medals, but they never change your sweep count, and skipping them never spoils a sweep.' },
 ];
 
 // ── About page ──────────────────────────────────────────────────────────────
@@ -87,12 +102,12 @@ export const ABOUT_SECTIONS: ContentSection[] = [
   {
     heading: 'What is Wordocious?',
     paragraphs: [
-      'Wordocious is a free word puzzle game that goes far beyond the classic five-letter guess. With ten distinct game modes, daily challenges, real-time multiplayer battles, and global leaderboards, Wordocious gives word game fans something new to play every single day.',
+      'Wordocious is a free puzzle game that goes far beyond the classic five-letter guess. With nine core word modes, ten More Games dailies from sudoku to cryptograms, daily challenges, real-time multiplayer battles, and global leaderboards, Wordocious gives puzzle fans something new to play every single day.',
       'Whether you enjoy a quick solo puzzle on your morning commute or a competitive showdown against friends, Wordocious has a mode for you. Every daily puzzle is the same for all players worldwide, so you can compare scores and strategies with anyone.',
     ],
   },
   {
-    heading: '10 Unique Game Modes',
+    heading: 'The Daily Word Games',
     items: [
       { heading: 'Classic', accent: '#7c3aed', body: 'The original word puzzle formula. Guess a single five-letter word in six attempts. After each guess, colored tiles reveal which letters are correct, misplaced, or not in the word at all. A perfect starting point for new players and a daily ritual for veterans.' },
       { heading: 'VS Battle', accent: '#0d9488', body: 'Race against another player in real time. Both players receive the same word and compete to solve it first. Speed and accuracy both matter — the fastest correct solve wins the round. Invite a friend with a link, queue for a live opponent, or battle a built-in bot — each with its own personality and difficulty.' },
@@ -103,7 +118,24 @@ export const ABOUT_SECTIONS: ContentSection[] = [
       { heading: 'Six', accent: '#06b6d4', body: 'Step up from the classic formula with six-letter words and seven guesses. The extra letter opens up a much wider vocabulary, demanding sharper deduction and broader word knowledge. Same rules, bigger challenge.' },
       { heading: 'Seven', accent: '#84cc16', body: 'The ultimate single-word challenge. Seven-letter words with eight guesses push your vocabulary to its limits. With thousands of possible solutions, every guess counts. Only the most dedicated word game masters will conquer Seven consistently.' },
       { heading: 'Gauntlet', accent: '#d97706', body: 'Five stages of increasing difficulty: a single-word Opening, then QuadWord, Succession, Deliverance, and OctoWord. One failed stage ends the run, so completing the Gauntlet takes consistency across every style of play.' },
+    ],
+  },
+  {
+    heading: 'More Games — Ten Extra Dailies',
+    paragraphs: [
+      'The More Games tile on the home screen opens a second shelf of daily puzzles. Each one earns XP, medals, achievements and its own leaderboard like every other mode, but none of them counts toward the Daily Sweep or Flawless Victory — those stay the eight word games above.',
+    ],
+    items: [
       { heading: 'ProperNoundle', accent: '#dc2626', body: 'Instead of dictionary words, guess famous names, places, and cultural references. Each daily puzzle is themed — categories include current events, music, movies, sports, video games, history, and science. With more than 650 unique puzzles, there is always something new to discover.' },
+      { heading: 'Sudocious', accent: '#1e40af', body: 'A classic nine-by-nine sudoku with one Medium puzzle a day and exactly one solution. Two mistakes are allowed and the third ends the game; pencil Notes are free, and a Hint fills a cell for a score cost.' },
+      { heading: 'Muddle', accent: '#f97316', body: 'The newspaper scramble: unscramble four words under a cartoon, then spell the pun from their circled letters to finish the caption. Every full word checks itself — five checks is perfect, thirteen loses.' },
+      { heading: 'Hubbub', accent: '#c026d3', body: 'Seven letters, one required hub. Make words of four letters or more, hunt the pangram, and climb from Hush to Pandemonium. Reaching Hubbub rank solves the puzzle and the board stays open so you can keep climbing.' },
+      { heading: 'Crosswordocious', accent: '#475569', body: 'A themed crossword where every clue is a familiar saying with one word missing. Letters are free to place and change; Check locks the right ones, and the grid completes itself when every cell is right.' },
+      { heading: 'Kindred', accent: '#9f1239', body: 'Sixteen words hide four groups of four — a plain category, a sly link or pure wordplay. Find them all with four mistakes to spare, and ask for a category name or a pair when you are stuck.' },
+      { heading: 'Letter Ladder', accent: '#0284c7', body: 'Change one letter at a time from the start word to the end word, every rung a real word. Par is the shortest route, rejected words are free, and you have par plus five moves.' },
+      { heading: 'Codebreaker', accent: '#92400e', body: 'A well-known saying in a letter-for-letter code with the three most common letters given. Pencil freely, Check when you dare, and the code cracks itself the moment every letter is right.' },
+      { heading: 'Spyglass', accent: '#4d7c0f', body: 'Ten themed words hidden forwards in a 10 × 10 grid. Race the clock and keep your misses down — only a straight line of four or more letters that spells no listed word counts against you.' },
+      { heading: 'Starsweep', accent: '#ca8a04', body: 'Place one star in every row, column and colour region with no two stars touching. A 7 × 7 board early in the week and 8 × 8 from Thursday, three mistakes, and a solution you can always reach by logic alone.' },
     ],
   },
   {
@@ -139,7 +171,7 @@ export const ABOUT_SECTIONS: ContentSection[] = [
 // ── Support page (each Q is a heading, A is the paragraph) ───────────────────
 export const SUPPORT_SECTIONS: ContentSection[] = [
   { heading: 'How do I play Wordocious?', paragraphs: ['Wordocious is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Purple means the letter is correct and in the right spot. Amber means the letter is in the word but in the wrong position. Gray means the letter isn’t in the word at all. Each mode has its own twist — from single-word puzzles to multi-board challenges!'] },
-  { heading: 'What are the different game modes?', paragraphs: ['Wordocious offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve several puzzles at once, the five-stage Gauntlet, famous names in ProperNoundle, and real-time VS Battles against friends, live opponents, or bots. Head to the home page to see every mode and find your favorite.'] },
+  { heading: 'What are the different game modes?', paragraphs: ['Wordocious offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve several puzzles at once, the five-stage Gauntlet, and real-time VS Battles against friends, live opponents, or bots. The More Games tile adds ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and the famous-names game ProperNoundle — which earn XP and medals but sit outside the Daily Sweep. Head to the home page to see every mode and find your favorite.'] },
   { heading: 'How are daily scores calculated?', paragraphs: ['Your daily score is a composite that puts guesses first: a base score of 1,000 points for completing the puzzle, a guess bonus for every guess you did not need (300 points each in Classic — other modes scale to their guess budget), a speed bonus scaled by how far under the time cap you finish (always worth less than one guess, so it breaks ties rather than beating efficiency), and — on multi-board modes — a completion bonus based on how many boards you solved. For example, Classic solved in 3 guesses at 30 seconds: 1,000 base + 900 guess bonus + 216 speed + 200 completion = 2,316 points. A loss still earns a little partial credit for how far you got — correct letters on a single-board near-miss, boards solved on the multi-board modes, or stages reached in the Gauntlet — so a close miss outscores a total whiff.'] },
   { heading: 'How do XP and levels work?', paragraphs: ['You earn XP after every game. Winning awards 100 XP and losing awards 25 XP. You can earn bonus XP from win streaks (+50), completing daily challenges (+50), and earning medals (gold +100, silver +50, bronze +25). Your level is based on your total XP — every 1,000 XP advances you one level. Check your progress on your profile page.'] },
   { heading: 'How do streaks work?', paragraphs: ['Your streak counts how many consecutive days you’ve completed a daily puzzle. Play and solve at least one daily puzzle each day to keep your streak alive. If you miss a day, your current streak resets to zero — but your best streak is always saved. Streaks reset at midnight based on your local time.'] },
