@@ -5,13 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -50,8 +53,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AdsManager
@@ -327,13 +333,13 @@ private fun RankBar(session: HubSession) {
 }
 
 @Composable
-private fun LetterTile(ch: Char, centre: Boolean, enabled: Boolean, onTap: () -> Unit) {
+private fun LetterTile(ch: Char, centre: Boolean, enabled: Boolean, side: androidx.compose.ui.unit.Dp, onTap: () -> Unit) {
     Box(
-        Modifier.size(58.dp).clip(RoundedCornerShape(8.dp)).background(if (centre) HUB_ACCENT else WTheme.surface)
+        Modifier.size(side).clip(RoundedCornerShape(8.dp)).background(if (centre) HUB_ACCENT else WTheme.surface)
             .border(2.dp, if (centre) HUB_ACCENT else WTheme.border, RoundedCornerShape(8.dp))
             .then(if (enabled) Modifier.pressScale { onTap() } else Modifier),
         contentAlignment = Alignment.Center,
-    ) { Text(ch.toString(), fontSize = 26.sp, fontWeight = FontWeight.Black, color = if (centre) Color.White else WTheme.text, fontFamily = Nunito) }
+    ) { Text(ch.toString(), fontSize = (side.value * 0.45f).sp, fontWeight = FontWeight.Black, color = if (centre) Color.White else WTheme.text, fontFamily = Nunito) }
 }
 
 @Composable
@@ -365,24 +371,44 @@ private fun Capsule(label: String, icon: ImageVector, filled: Boolean = false, o
     ) { Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp)); Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg) }
 }
 
+// Founder layout rule (plan §12, 2026-09-24): the 2-3-2 cluster is the hero and
+// scales to the screen. Tile side = clamp((height left after header, rank bar,
+// entry line, the two control rows and the pinned End link) / 3.3, 72, 100 dp)
+// — 3.3 because three tiles plus two proportional gaps (0.15 × tile) stack to
+// 3.3 tiles. On a ~411 × 914 dp phone that lands near 90 dp. The header sits
+// outside HubBoard, so BoxWithConstraints.maxHeight is already "after header".
+private val HUB_RANK_BAR_H = 32.dp     // rank name row + 4 dp gap + 8 dp bar
+private val HUB_ENTRY_H = 44.dp        // entry line min height (28 sp bold)
+private val HUB_CONTROL_ROW_H = 32.dp  // capsule row (7 dp padding × 2 + 11 sp label)
+private val HUB_END_LINK_H = 18.dp     // "End puzzle and see answers"
+private val HUB_ROW_GAP = 8.dp         // Column spacedBy between the stacked rows
+private const val HUB_TILE_GAP_RATIO = 0.15f
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun HubBoard(session: HubSession) {
     val s = session.state
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    BoxWithConstraints(Modifier.fillMaxSize().navigationBarsPadding()) {
+        // Six gaps: rank→entry→cluster→controls→hints→header→(chips)→end. The
+        // found-words header and chips are what the leftover height feeds.
+        val fixed = HUB_RANK_BAR_H + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 + HUB_END_LINK_H + HUB_ROW_GAP * 6 + 6.dp
+        val byHeight = (maxHeight - fixed) / 3.3f
+        val byWidth = maxWidth / (3 + 2 * HUB_TILE_GAP_RATIO) // never wider than three tiles + two gaps
+        val tile = minOf(byHeight, byWidth).coerceIn(72.dp, 100.dp)
+        val gap = tile * HUB_TILE_GAP_RATIO
+        val band = tile * 3.3f
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
             RankBar(session)
-            Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (session.typing.isEmpty()) Text("Tap letters or type", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                else for (ch in session.typing) Box(Modifier.size(34.dp, 42.dp).clip(RoundedCornerShape(6.dp)).background(WTheme.surface).border(2.dp, WTheme.border, RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
-                    Text(ch.toString(), fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (ch == session.centre) HUB_ACCENT else WTheme.text, fontFamily = Nunito)
-                }
-            }
+            HubEntryLine(session)
             val o = session.outer.toList() + List(maxOf(0, 6 - session.outer.size)) { ' ' }
             val enabled = !s.ended
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { LetterTile(o[0], false, enabled) { session.type(o[0]) }; LetterTile(o[1], false, enabled) { session.type(o[1]) } }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { LetterTile(o[2], false, enabled) { session.type(o[2]) }; LetterTile(session.centre, true, enabled) { session.type(session.centre) }; LetterTile(o[3], false, enabled) { session.type(o[3]) } }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { LetterTile(o[4], false, enabled) { session.type(o[4]) }; LetterTile(o[5], false, enabled) { session.type(o[5]) } }
+            // The cluster sits vertically centred in its band between the entry line and the controls.
+            Box(Modifier.fillMaxWidth().height(band), contentAlignment = Alignment.Center) {
+                Column(verticalArrangement = Arrangement.spacedBy(gap), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[0], false, enabled, tile) { session.type(o[0]) }; LetterTile(o[1], false, enabled, tile) { session.type(o[1]) } }
+                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[2], false, enabled, tile) { session.type(o[2]) }; LetterTile(session.centre, true, enabled, tile) { session.type(session.centre) }; LetterTile(o[3], false, enabled, tile) { session.type(o[3]) } }
+                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[4], false, enabled, tile) { session.type(o[4]) }; LetterTile(o[5], false, enabled, tile) { session.type(o[5]) } }
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
@@ -398,15 +424,38 @@ private fun HubBoard(session: HubSession) {
                 for (w in pending) Text("${w.take(2)}… · ${w.length} letters", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     modifier = Modifier.border(1.dp, HUB_ACCENT, CircleShape).padding(horizontal = 8.dp, vertical = 3.dp))
             }
+            // "N OF M WORDS" heads the found-words area directly under the hint capsules;
+            // the chips wrap newest-first and fill the rest, scrolling once they overflow.
             Text("${s.found.size} OF ${s.words.size} WORDS" + (if (s.bonusFound.isEmpty()) "" else " · ${s.bonusFound.size} BONUS"), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
-            ChipRows(session, s.found.sorted())
-            if (s.bonusFound.isNotEmpty()) ChipRows(session, s.bonusFound.sorted(), dim = true)
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    for (w in s.found.asReversed()) Chip(session, w)
+                }
+                if (s.bonusFound.isNotEmpty()) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    for (w in s.bonusFound.asReversed()) Chip(session, w, dim = true)
+                }
+            }
+            // Pinned at the very bottom; the navigation-bar inset is respected by the BoxWithConstraints above.
+            if (s.status == HubStatus.WON) Text("See results", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HUB_ACCENT, modifier = Modifier.clickableNoRipple { session.showResults = true })
+            else Row(Modifier.clickableNoRipple { session.end() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Filled.Flag, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp)); Text("End puzzle and see answers", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
+            Spacer(Modifier.height(6.dp))
         }
-        if (s.status == HubStatus.WON) Text("See results", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HUB_ACCENT, modifier = Modifier.clickableNoRipple { session.showResults = true })
-        else Row(Modifier.clickableNoRipple { session.end() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Icon(Icons.Filled.Flag, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp)); Text("End puzzle and see answers", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        }
-        Spacer(Modifier.height(6.dp))
+    }
+}
+
+/** Current entry: 28 sp bold, centre letter in the accent; placeholder when empty. Erase-on-reject lives in HubSession.submit. */
+@Composable
+private fun HubEntryLine(session: HubSession) {
+    Box(Modifier.fillMaxWidth().heightIn(min = HUB_ENTRY_H), contentAlignment = Alignment.Center) {
+        if (session.typing.isEmpty()) Text("Tap letters or type", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        else Text(
+            buildAnnotatedString {
+                for (ch in session.typing) withStyle(SpanStyle(color = if (ch == session.centre) HUB_ACCENT else WTheme.text)) { append(ch) }
+            },
+            fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, letterSpacing = 1.sp, maxLines = 1, softWrap = false,
+        )
     }
 }
 

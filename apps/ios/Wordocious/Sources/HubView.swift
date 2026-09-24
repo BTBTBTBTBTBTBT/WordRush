@@ -260,10 +260,10 @@ struct HubView: View {
         .accessibilityLabel("Rank \(s.rankName), \(s.points) of \(s.max) points")
     }
 
-    private func letterTile(_ ch: Character, centre: Bool) -> some View {
+    private func letterTile(_ ch: Character, centre: Bool, side: CGFloat) -> some View {
         Button { vm.type(ch); Haptics.tap() } label: {
-            Text(String(ch)).font(Brand.font(26, .black)).foregroundStyle(centre ? .white : Theme.textPrimary)
-                .frame(width: 58, height: 58)
+            Text(String(ch)).font(Brand.font((side * 0.45).rounded(), .black)).foregroundStyle(centre ? .white : Theme.textPrimary)
+                .frame(width: side, height: side)
                 .background(RoundedRectangle(cornerRadius: 8).fill(centre ? hubAccent : Theme.surface))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(centre ? hubAccent : Theme.border, lineWidth: 2))
                 .shadow(color: .black.opacity(0.06), radius: 0, x: 0, y: 2)
@@ -287,48 +287,97 @@ struct HubView: View {
         return VStack(spacing: 5) { ForEach(0..<rows.count, id: \.self) { r in HStack(spacing: 5) { ForEach(rows[r], id: \.self) { chip($0, dim: dim) } } } }
     }
 
+    // MARK: - Board layout (founder rule, plan §12, 2026-09-24)
+    // The 2-3-2 cluster is the hero and scales to the screen. Everything in the
+    // board column other than the cluster and the found-word flow is a fixed
+    // row; their heights are estimated here so the tile can be sized before the
+    // first layout pass: tile = clamp(remaining / 3.3, 72, 100).
+    private static let rankBarHeight: CGFloat = 27      // rank name + 8 pt capsules
+    private static let entryLineHeight: CGFloat = 44    // 28 pt entry, min height
+    private static let controlRowHeight: CGFloat = 27   // one capsule row (×2)
+    private static let foundHeaderHeight: CGFloat = 12  // "N OF M WORDS"
+    private static let endLinkHeight: CGFloat = 22      // pinned End link + bottom pad
+    private static let boardRowSpacing: CGFloat = 8
+    private static let boardFixedRows = 7               // rows around the cluster band
+    private static let tileMin: CGFloat = 72, tileMax: CGFloat = 100
+
+    private static func tileSide(boardHeight h: CGFloat) -> CGFloat {
+        let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + boardRowSpacing * CGFloat(boardFixedRows)
+        let remaining = max(0, h - reserved)
+        return min(tileMax, max(tileMin, (remaining / 3.3).rounded(.down)))
+    }
+
+    /// The word in progress: 28 pt bold, centre letter in the accent, placeholder when
+    /// empty. Shakes on a rejected entry and is erased by the view-model afterwards.
+    private var entryLine: some View {
+        Group {
+            if vm.typing.isEmpty {
+                Text("Tap letters or type").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            } else {
+                vm.typing.reduce(Text("")) { acc, ch in
+                    acc + Text(String(ch)).foregroundColor(ch == vm.centre ? hubAccent : Theme.textPrimary)
+                }
+                .font(Brand.font(28, .bold)).kerning(2).lineLimit(1).minimumScaleFactor(0.5)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: Self.entryLineHeight)
+        .offset(x: vm.shake ? 6 : 0)
+        .animation(vm.shake ? .default.repeatCount(3, autoreverses: true).speed(6) : .default, value: vm.shake)
+        .accessibilityLabel(vm.typing.isEmpty ? "Tap letters or type" : "Entry \(vm.typing)")
+    }
+
+    /// 2-3-2 cluster, centre tile accent-filled, spacing proportional to the tile.
+    private func cluster(side: CGFloat) -> some View {
+        let gap = (side * 0.14).rounded()
+        let o = vm.outer + Array(repeating: Character(" "), count: max(0, 6 - vm.outer.count))
+        return VStack(spacing: gap) {
+            HStack(spacing: gap) { letterTile(o[0], centre: false, side: side); letterTile(o[1], centre: false, side: side) }
+            HStack(spacing: gap) { letterTile(o[2], centre: false, side: side); letterTile(vm.centre, centre: true, side: side); letterTile(o[3], centre: false, side: side) }
+            HStack(spacing: gap) { letterTile(o[4], centre: false, side: side); letterTile(o[5], centre: false, side: side) }
+        }
+    }
+
     private var board: some View {
         let s = vm.state
-        return VStack(spacing: 8) {
-            ScrollView {
-                VStack(spacing: 12) {
-                    rankBar
-                    HStack(spacing: 4) {
-                        if vm.typing.isEmpty { Text("Tap letters or type").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                        else { ForEach(Array(vm.typing.enumerated()), id: \.offset) { _, ch in
-                            Text(String(ch)).font(Brand.font(18, .black)).foregroundStyle(ch == vm.centre ? hubAccent : Theme.textPrimary)
-                                .frame(width: 34, height: 42).background(RoundedRectangle(cornerRadius: 6).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.border, lineWidth: 2))
-                        } }
-                    }
-                    .frame(minHeight: 44).offset(x: vm.shake ? 6 : 0).animation(vm.shake ? .default.repeatCount(3, autoreverses: true).speed(6) : .default, value: vm.shake)
-                    let o = vm.outer + Array(repeating: Character(" "), count: max(0, 6 - vm.outer.count))
-                    VStack(spacing: 8) {
-                        HStack(spacing: 8) { letterTile(o[0], centre: false); letterTile(o[1], centre: false) }
-                        HStack(spacing: 8) { letterTile(o[2], centre: false); letterTile(vm.centre, centre: true); letterTile(o[3], centre: false) }
-                        HStack(spacing: 8) { letterTile(o[4], centre: false); letterTile(o[5], centre: false) }
-                    }
-                    HStack(spacing: 8) {
-                        capsule("Delete", "delete.left") { vm.delete() }
-                        capsule("Shuffle", "shuffle") { vm.shuffle() }
-                        capsule("Enter", "return", filled: true) { vm.submit() }
-                    }
-                    HStack(spacing: 8) {
-                        capsule("Starts with…", "lightbulb") { vm.hintStart() }
-                        capsule("Reveal a word", "eye") { vm.hintReveal() }
-                    }
-                    let pending = s.hinted.filter { !s.found.contains($0) }
-                    if !pending.isEmpty {
-                        HStack(spacing: 6) { ForEach(pending, id: \.self) { w in Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.caption(11)).foregroundStyle(Theme.textMuted).padding(.horizontal, 8).padding(.vertical, 3).overlay(Capsule().stroke(hubAccent, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))) } }
-                    }
-                    Text("\(s.found.count) OF \(s.words.count) WORDS\(s.bonusFound.isEmpty ? "" : " · \(s.bonusFound.count) BONUS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                    chipRows(s.found.sorted())
-                    if !s.bonusFound.isEmpty { chipRows(s.bonusFound.sorted(), dim: true) }
+        return GeometryReader { geo in
+            let side = Self.tileSide(boardHeight: geo.size.height)
+            let pending = s.hinted.filter { !s.found.contains($0) }
+            VStack(spacing: Self.boardRowSpacing) {
+                rankBar
+                entryLine
+                // The cluster band: everything between the entry line and the controls,
+                // cluster centred inside it.
+                cluster(side: side)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                HStack(spacing: 8) {
+                    capsule("Delete", "delete.left") { vm.delete() }
+                    capsule("Shuffle", "shuffle") { vm.shuffle() }
+                    capsule("Enter", "return", filled: true) { vm.submit() }
                 }
-                .padding(.vertical, 4)
+                HStack(spacing: 8) {
+                    capsule("Starts with…", "lightbulb") { vm.hintStart() }
+                    capsule("Reveal a word", "eye") { vm.hintReveal() }
+                }
+                if !pending.isEmpty {
+                    HStack(spacing: 6) { ForEach(pending, id: \.self) { w in Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.caption(11)).foregroundStyle(Theme.textMuted).padding(.horizontal, 8).padding(.vertical, 3).overlay(Capsule().stroke(hubAccent, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))) } }
+                }
+                Text("\(s.found.count) OF \(s.words.count) WORDS\(s.bonusFound.isEmpty ? "" : " · \(s.bonusFound.count) BONUS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                // Found words: newest first in a wrapping flow that fills the lower area
+                // and scrolls once it overflows.
+                ScrollView(showsIndicators: false) {
+                    HubWrapLayout(spacing: 5, lineSpacing: 5) {
+                        ForEach(s.found.reversed(), id: \.self) { chip($0) }
+                        ForEach(s.bonusFound.reversed(), id: \.self) { chip($0, dim: true) }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 2)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if s.status == .won { Button("See results") { vm.showResults = true }.font(Brand.font(12, .bold)).foregroundStyle(hubAccent).underline() }
+                else { Button { vm.end() } label: { Label("End puzzle and see answers", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(Theme.textMuted).buttonStyle(.plain) }
             }
-            if s.status == .won { Button("See results") { vm.showResults = true }.font(Brand.font(12, .bold)).foregroundStyle(hubAccent).underline() }
-            else { Button { vm.end() } label: { Label("End puzzle and see answers", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(Theme.textMuted).buttonStyle(.plain) }
-            Spacer(minLength: 6)
+            .padding(.bottom, 6)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 
@@ -373,5 +422,46 @@ struct HubView: View {
         ShareService.share(kind: .hub(rankName: s.rankName, pct: vm.pct, wordsFound: s.found.count, wordCount: s.words.count, pangramsFound: vm.pangramsFound, puzzleNumber: vm.isDaily ? vm.dailyNumber : nil),
                            mode: .hub, modeLabel: "HUBBUB", accent: hubAccent, won: s.status == .won,
                            guesses: s.guessCount, maxGuesses: 10, timeSeconds: vm.elapsed, points: vm.points, puzzleNumber: vm.isDaily ? vm.dailyNumber : nil)
+    }
+}
+
+// MARK: - Wrapping flow for found-word chips (local copy of SpyglassView's WrapLayout;
+// files never import across each other).
+private struct HubWrapLayout: Layout {
+    var spacing: CGFloat
+    var lineSpacing: CGFloat
+
+    private func lines(_ subviews: Subviews, width: CGFloat) -> [[(Int, CGSize)]] {
+        var lines: [[(Int, CGSize)]] = [[]]
+        var x: CGFloat = 0
+        for (i, v) in subviews.enumerated() {
+            let size = v.sizeThatFits(.unspecified)
+            if x > 0 && x + size.width > width { lines.append([]); x = 0 }
+            lines[lines.count - 1].append((i, size))
+            x += size.width + spacing
+        }
+        return lines
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 10_000
+        let ls = lines(subviews, width: width)
+        let height = ls.reduce(0) { $0 + ($1.map(\.1.height).max() ?? 0) } + lineSpacing * CGFloat(max(0, ls.count - 1))
+        let widest = ls.map { line in line.reduce(0) { $0 + $1.1.width } + spacing * CGFloat(max(0, line.count - 1)) }.max() ?? 0
+        return CGSize(width: proposal.width ?? widest, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for line in lines(subviews, width: bounds.width) {
+            let lineW = line.reduce(0) { $0 + $1.1.width } + spacing * CGFloat(max(0, line.count - 1))
+            let lineH = line.map(\.1.height).max() ?? 0
+            var x = bounds.minX + max(0, (bounds.width - lineW) / 2)
+            for (i, size) in line {
+                subviews[i].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += lineH + lineSpacing
+        }
     }
 }

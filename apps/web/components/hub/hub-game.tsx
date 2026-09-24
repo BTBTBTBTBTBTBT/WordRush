@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -229,6 +229,36 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
   const sortedFound = useMemo(() => state ? [...state.found].sort() : [], [state]);
+  // Board flow shows found words newest first (plan §12 layout rule); results keep the alphabetical list.
+  const newestFound = useMemo(() => state ? [...state.found].reverse() : [], [state]);
+  const newestBonus = useMemo(() => state ? [...state.bonusFound].reverse() : [], [state]);
+
+  // Layout rule (plan §12, founder 2026-09-24): the 2-3-2 cluster is the hero and scales to the
+  // screen. Tile side = clamp((board column height − rank bar − entry line − control rows − found
+  // header − End link) / 3.3, 72px, 100px), measured with a ResizeObserver on the column and its
+  // fixed rows; a width guard (column width / 3.6) keeps three tiles inside a narrow column.
+  // Until the first measurement a CSS clamp with an estimated fixed height stands in.
+  const colRef = useRef<HTMLDivElement>(null);
+  const fixedRefs = useRef<(HTMLElement | null)[]>([]);
+  const setFixed = (i: number) => (el: HTMLElement | null) => { fixedRefs.current[i] = el; };
+  const [tile, setTile] = useState<number | null>(null);
+  const hasState = !!state;
+  useEffect(() => {
+    const col = colRef.current;
+    if (!col || view !== 'board' || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const fixed = fixedRefs.current.reduce((sum, el) => sum + (el?.offsetHeight ?? 0), 0);
+      const free = col.clientHeight - fixed;
+      setTile(Math.round(Math.max(72, Math.min(100, free / 3.3, col.clientWidth / 3.6))));
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(col);
+    fixedRefs.current.forEach((el) => { if (el) ro.observe(el); });
+    measure();
+    return () => ro.disconnect();
+  }, [view, hasState]);
+  const tileCss = tile != null ? `${tile}px` : 'clamp(72px, calc((100dvh - 340px) / 3.3), 100px)';
+
   if (!state) return null;
 
   const centre = state.letters[0];
@@ -241,8 +271,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   const letterTile = (ch: string, isCentre: boolean) => (
     <button key={ch} type="button" onClick={() => { haptic('light'); playKeyTap(); type(ch); }} disabled={state.ended}
-      className="w-14 h-14 sm:w-16 sm:h-16 rounded-[14%] text-2xl font-black flex items-center justify-center active:scale-95 transition-transform select-none"
-      style={isCentre ? { background: HUB_ACCENT, color: '#fff', boxShadow: '0 2px 0 rgba(0,0,0,0.12)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', border: '2px solid var(--color-border)', boxShadow: '0 2px 0 rgba(0,0,0,0.06)' }}
+      className="rounded-[14%] font-black flex items-center justify-center active:scale-95 transition-transform select-none shrink-0"
+      style={{ width: 'var(--tile)', height: 'var(--tile)', fontSize: 'calc(var(--tile) * 0.42)',
+        ...(isCentre ? { background: HUB_ACCENT, color: '#fff', boxShadow: '0 2px 0 rgba(0,0,0,0.12)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', border: '2px solid var(--color-border)', boxShadow: '0 2px 0 rgba(0,0,0,0.06)' }) }}
       aria-label={isCentre ? `${ch}, centre letter` : ch}>
       {ch}
     </button>
@@ -273,22 +304,33 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     );
   });
 
+  // Play screen (plan §12 layout rule): a flex column filling the shell — rank bar, entry line,
+  // cluster band (flex: 1, cluster centred), two control rows, found-words header + wrapping chip
+  // flow (flex: 1, scrolls, newest first), End link pinned at the bottom. The fixed rows carry
+  // refs so the tile formula can subtract them from the column height.
+  const clusterGap = 'calc(var(--tile) * 0.14)';
   const boardView = (
-    <>
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-3 px-3 pb-1 pt-1">
-        {rankBar}
-        {/* Entry row — Classic tiles, the centre letter in the accent. */}
-        <div className={`flex gap-1 justify-center min-h-[44px] items-center ${shake ? 'animate-shake' : ''}`} aria-live="polite" aria-label={typing ? `Typing ${typing}` : 'Type a word'}>
-          {typing ? typing.split('').map((ch, i) => (
-            <div key={i} className="w-9 h-11 sm:w-10 sm:h-12 rounded-[14%] border-2 flex items-center justify-center text-lg font-black uppercase" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)', color: ch === centre ? HUB_ACCENT : 'var(--color-text)' }}>{ch}</div>
-          )) : <div className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Tap letters or type · Space shuffles</div>}
+    <div ref={colRef} className="flex-1 min-h-0 flex flex-col px-3">
+      <div ref={setFixed(0)} className="shrink-0 pt-1 pb-2">{rankBar}</div>
+      {/* Entry line — 28px bold type, the centre letter in the accent; shakes and erases on a rejected word. */}
+      <div ref={setFixed(1)} className="shrink-0 pb-1">
+        <div className={`flex justify-center items-center min-h-[44px] ${shake ? 'animate-shake' : ''}`} aria-live="polite" aria-label={typing ? `Typing ${typing}` : 'Type a word'}>
+          {typing
+            ? <span className="font-black uppercase tracking-wider leading-none break-all text-center" style={{ fontSize: 28, color: 'var(--color-text)' }}>
+                {typing.split('').map((ch, i) => <span key={i} style={ch === centre ? { color: HUB_ACCENT } : undefined}>{ch}</span>)}
+              </span>
+            : <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Tap letters or type · Space shuffles</span>}
         </div>
-        {/* 2-3-2 cluster */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex gap-2">{outer.slice(0, 2).map((ch) => letterTile(ch, false))}</div>
-          <div className="flex gap-2">{letterTile(outer[2] ?? '', false)}{letterTile(centre, true)}{letterTile(outer[3] ?? '', false)}</div>
-          <div className="flex gap-2">{outer.slice(4, 6).map((ch) => letterTile(ch, false))}</div>
+      </div>
+      {/* Cluster band — the hero. --tile drives side, gap and type size together so the 2-3-2 keeps its proportions. */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-col items-center" style={{ '--tile': tileCss, gap: clusterGap } as CSSProperties}>
+          <div className="flex" style={{ gap: clusterGap }}>{outer.slice(0, 2).map((ch) => letterTile(ch, false))}</div>
+          <div className="flex" style={{ gap: clusterGap }}>{letterTile(outer[2] ?? '', false)}{letterTile(centre, true)}{letterTile(outer[3] ?? '', false)}</div>
+          <div className="flex" style={{ gap: clusterGap }}>{outer.slice(4, 6).map((ch) => letterTile(ch, false))}</div>
         </div>
+      </div>
+      <div ref={setFixed(2)} className="shrink-0 flex flex-col items-center gap-2 pt-3 pb-2">
         <div className="flex justify-center gap-2" role="group" aria-label="Entry controls">
           <button type="button" onClick={() => { haptic('light'); playKeyTap(); del(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete"><Delete className="w-3.5 h-3.5" /> Delete</button>
           <button type="button" onClick={shuffle} className={capsule(false)} style={capsuleStyle(false)} aria-label="Shuffle"><Shuffle className="w-3.5 h-3.5" /> Shuffle</button>
@@ -303,19 +345,22 @@ export function HubGame({ isDaily = false }: HubGameProps) {
             {state.hinted.filter((w) => !state.found.includes(w)).map((w) => <span key={w} className="px-2 py-0.5 rounded-full border border-dashed" style={{ borderColor: HUB_ACCENT }}>{w.slice(0, 2)}… · {w.length} letters</span>)}
           </div>
         )}
-        <div className="w-full max-w-md">
-          <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
-            {state.found.length} OF {state.words.length} WORDS{state.bonusFound.length ? ` · ${state.bonusFound.length} BONUS` : ''}
-          </div>
-          <div className="flex flex-wrap justify-center gap-1.5">{wordChips(sortedFound)}{wordChips([...state.bonusFound].sort(), true)}</div>
+      </div>
+      {/* Found words — header, then a wrapping chip flow that fills the lower area and scrolls once it overflows. */}
+      <div className="flex-1 min-h-0 flex flex-col w-full max-w-md mx-auto">
+        <div ref={setFixed(3)} className="shrink-0 text-[10px] font-black tracking-wider pb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
+          {state.found.length} OF {state.words.length} WORDS{state.bonusFound.length ? ` · ${state.bonusFound.length} BONUS` : ''}
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex flex-wrap justify-center gap-1.5 pb-1">{wordChips(newestFound)}{wordChips(newestBonus, true)}</div>
         </div>
       </div>
-      <div className="shrink-0 pb-3 px-2 pt-1 flex justify-center gap-3 text-xs font-bold">
+      <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
         {won
           ? <button type="button" onClick={() => setView('results')} className="underline" style={{ color: HUB_ACCENT }}>See results</button>
           : <button type="button" onClick={endPuzzle} className="underline text-gray-400 flex items-center gap-1"><Flag className="w-3 h-3" /> End puzzle and see answers</button>}
       </div>
-    </>
+    </div>
   );
 
   const resultsView = (
