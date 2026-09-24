@@ -129,7 +129,7 @@
         "r": 1,
         "c": 2,
         "answer": "BOOTS",
-        "clue": "Too big for your ____"
+        "clue": "____ on the ground"
       },
       {
         "n": 2,
@@ -161,7 +161,7 @@
         "r": 3,
         "c": 0,
         "answer": "HEARTBEAT",
-        "clue": "In a ____"
+        "clue": "A ____ away from the presidency"
       },
       {
         "n": 6,
@@ -177,7 +177,7 @@
         "r": 5,
         "c": 5,
         "answer": "ELBOW",
-        "clue": "More power to your ____"
+        "clue": "Good old-fashioned ____ grease"
       },
       {
         "n": 7,
