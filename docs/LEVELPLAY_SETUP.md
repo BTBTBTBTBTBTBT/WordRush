@@ -101,3 +101,12 @@ must stay:
   product decision on what a free player earns (a hint? an Unlimited game?).
   Not wired until Brian decides.
 - **Banners** — off by choice; can be added with one unit and one view later.
+
+## Privacy policy (before the first live impression)
+
+The privacy policy (web `apps/web/app/privacy/page.tsx`, and the hard-coded copies in
+`apps/ios/Wordocious/Sources/InfoPages.swift` and `apps/android/.../HelpInfoScreens.kt`)
+names no ad provider on purpose. When the LevelPlay keys go in, add "Unity LevelPlay"
+as the named advertising partner in the Third-Party Services bullet and the Advertising
+section on all three, bump the effective date, and ship the natives in the same build as
+the keys. The policy promises players we will name the partner whenever ads are active.

@@ -8,7 +8,7 @@ export default function TermsPage() {
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
       <InfoPageHeader title="Terms of Service" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Effective August 1, 2026</p>
+        <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Effective September 24, 2026</p>
 
         <div className="space-y-4">
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
@@ -53,7 +53,7 @@ export default function TermsPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Free Tier &amp; Pro Subscription</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-              Wordocious is free to play. We also offer an optional <strong>Pro subscription</strong> that removes ads and unlocks unlimited replays and other extras. Every game mode and daily puzzle remains free.
+              Wordocious is free to play. We also offer an optional <strong>Pro subscription</strong> that removes any advertising and unlocks unlimited replays and other extras. Every game mode and daily puzzle remains free.
             </p>
             <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>In the mobile apps, Pro is purchased and billed through the <strong>Apple App Store</strong> or <strong>Google Play</strong> via their in-app purchase systems, subject to that store&apos;s terms. On the website, Pro is billed by <strong>Stripe</strong>, our payment processor.</span></li>
@@ -66,7 +66,7 @@ export default function TermsPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Intellectual Property</h2>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              All content, design, graphics, and code that make up Wordocious are owned by us and protected by applicable intellectual property laws. You may not copy, modify, distribute, or reverse-engineer any part of the Service without our written permission.
+              All content, design, graphics, puzzles, artwork, and code that make up Wordocious are owned by us or licensed to us and protected by applicable intellectual property laws. You may not copy, modify, distribute, or reverse-engineer any part of the Service without our written permission.
             </p>
           </div>
 
