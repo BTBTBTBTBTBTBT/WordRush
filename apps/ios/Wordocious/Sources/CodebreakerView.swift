@@ -214,7 +214,8 @@ struct CodebreakerView: View {
                 ScrollView {
                     VStack(spacing: 10) {
                         header
-                        CipherBoardView(vm: vm, finished: true).padding(.horizontal, 6)
+                        CipherBoardView(vm: vm, finished: true, cell: CodebreakerSizing.cell(for: vm.state.cipher, width: UIScreen.main.bounds.width - 32, height: nil))
+                            .padding(.horizontal, 6)
                         Text("“\(vm.state.text)”").font(Brand.font(16, .heavy)).foregroundStyle(Theme.textPrimary)
                             .multilineTextAlignment(.center).frame(maxWidth: 420).padding(.horizontal, 12)
                         result
@@ -224,16 +225,26 @@ struct CodebreakerView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    ScrollView {
-                        VStack(spacing: 10) {
-                            CipherBoardView(vm: vm, finished: false).padding(.horizontal, 6)
-                            let conflicts = vm.conflicts
-                            if !conflicts.isEmpty {
-                                Text("\(conflicts.joined(separator: ", ")) used for two code letters").font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
+                    // Layout rule (founder, 2026-09-24, §16): the board and the
+                    // frequency strip are ONE block centred in the band between
+                    // the header and the capsule row; the cell scales to the band
+                    // (64 pt down to 40 pt) so the cipher's wrapped lines plus the
+                    // strip fit. The ScrollView only ever scrolls if a saying
+                    // still overflows at the floor.
+                    GeometryReader { geo in
+                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12, height: geo.size.height - 8)
+                        ScrollView {
+                            VStack(spacing: 10) {
+                                CipherBoardView(vm: vm, finished: false, cell: cell).padding(.horizontal, 6)
+                                let conflicts = vm.conflicts
+                                if !conflicts.isEmpty {
+                                    Text("\(conflicts.joined(separator: ", ")) used for two code letters").font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
+                                }
+                                FrequencyStripView(vm: vm, fontSize: CodebreakerSizing.chipFont(cell))
                             }
-                            FrequencyStripView(vm: vm)
+                            .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity, minHeight: geo.size.height)
                         }
-                        .padding(.vertical, 4)
                     }
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 8) {
@@ -376,6 +387,110 @@ struct CodebreakerView: View {
     }
 }
 
+// MARK: - Sizing (layout rule, founder 2026-09-24, §16)
+
+/// Pure geometry for the cipher board: the cell side that lets the whole
+/// saying — wrapped word by word, words never split — sit in the band between
+/// the header and the capsule row together with the frequency strip. Start at
+/// 64 pt and step down 4 pt at a time; floor 40 pt. The code letter under each
+/// cell (10–13 pt) and the frequency chips (11–14 pt) scale with the cell.
+enum CodebreakerSizing {
+    static let maxCell: CGFloat = 64
+    static let minCell: CGFloat = 40
+    static let step: CGFloat = 4
+    /// Gap between the letters of one word (the board's HStack spacing).
+    static let letterGap: CGFloat = 3
+    /// Gap between wrapped lines of the board.
+    static let lineGap: CGFloat = 10
+    /// Gap between words on a line.
+    static func wordGap(_ cell: CGFloat) -> CGFloat { cell * 0.5 }
+    /// Cell height (the Classic tile geometry).
+    static func cellHeight(_ cell: CGFloat) -> CGFloat { cell * 1.14 }
+
+    /// 0 at the floor, 1 at the top end.
+    private static func t(_ cell: CGFloat) -> CGFloat { min(1, max(0, (cell - minCell) / (maxCell - minCell))) }
+    /// The monospace code letter under a cell: 10 pt at the floor, 13 pt at the top end.
+    static func codeFont(_ cell: CGFloat) -> CGFloat { (10 + 3 * t(cell)).rounded() }
+    /// The frequency chips: 11 pt at the floor, 14 pt at the top end.
+    static func chipFont(_ cell: CGFloat) -> CGFloat { (11 + 3 * t(cell)).rounded() }
+
+    /// A word's width on the board: letters are cells, punctuation is narrow text.
+    static func wordWidth(_ word: String, cell: CGFloat) -> CGFloat {
+        var w: CGFloat = 0
+        for (i, ch) in word.enumerated() {
+            if i > 0 { w += letterGap }
+            w += CRYPTOGRAM_ALPHABET.contains(String(ch)) ? cell : cell * 0.4 + 2
+        }
+        return w
+    }
+
+    /// How many lines the cipher wraps to at `cell` in `width`. Words never split:
+    /// a word that fits on the current line goes there, otherwise on the next.
+    static func lineCount(cipher: String, cell: CGFloat, width: CGFloat) -> Int {
+        let words = cipher.split(separator: " ").map(String.init)
+        guard !words.isEmpty else { return 1 }
+        var lines = 1, x: CGFloat = 0, first = true
+        for word in words {
+            let w = wordWidth(word, cell: cell)
+            if !first && x + wordGap(cell) + w > width { lines += 1; x = 0; first = true }
+            x += (first ? 0 : wordGap(cell)) + w
+            first = false
+        }
+        return lines
+    }
+
+    /// One board row: the cell, the 2 pt gap, and the code letter's line.
+    static func rowHeight(_ cell: CGFloat) -> CGFloat { cellHeight(cell) + 2 + codeFont(cell) * 1.25 }
+
+    static func boardHeight(cipher: String, cell: CGFloat, width: CGFloat) -> CGFloat {
+        let n = lineCount(cipher: cipher, cell: cell, width: width)
+        return CGFloat(n) * rowHeight(cell) + CGFloat(n - 1) * lineGap
+    }
+
+    /// The frequency strip at the chip size that goes with `cell`, assuming every
+    /// chip already shows its "→ A" suffix so the size never jumps as letters fill.
+    static func stripHeight(cipher: String, cell: CGFloat, width: CGFloat) -> CGFloat {
+        let freq = cryptogramFrequencies(cipher)
+        guard !freq.isEmpty else { return 0 }
+        let f = chipFont(cell)
+        let chipH = f * 1.25 + 8
+        let avail = width - 16
+        var lines = 1, x: CGFloat = 0, first = true
+        for (_, count) in freq {
+            let digits = CGFloat(String(count).count)
+            let w = 16 + 0.65 * f + 4 + 0.65 * f * digits + 4 + 1.4 * f
+            if !first && x + 4 + w > avail { lines += 1; x = 0; first = true }
+            x += (first ? 0 : 4) + w
+            first = false
+        }
+        return CGFloat(lines) * chipH + CGFloat(lines - 1) * 4
+    }
+
+    /// The cell side for a band `width` × `height`. `height == nil` (the results
+    /// page, which scrolls) gives the compact floor size. Below the floor the cell
+    /// only shrinks when the longest word would not fit the width otherwise —
+    /// words never break across lines and never run off the screen.
+    static func cell(for cipher: String, width: CGFloat, height: CGFloat?) -> CGFloat {
+        var cell = height == nil ? minCell : maxCell
+        if let height {
+            // Board + 10 gap + strip, with room for the one-line conflict notice.
+            while cell > minCell {
+                let block = boardHeight(cipher: cipher, cell: cell, width: width) + 10 + stripHeight(cipher: cipher, cell: cell, width: width) + 24
+                if block <= height { break }
+                cell -= step
+            }
+            cell = max(minCell, cell)
+        }
+        let longest = longestWord(cipher)
+        while cell > 20, wordWidth(longest, cell: cell) > width { cell -= 2 }
+        return cell
+    }
+
+    private static func longestWord(_ cipher: String) -> String {
+        cipher.split(separator: " ").map(String.init).max { wordWidth($0, cell: minCell) < wordWidth($1, cell: minCell) } ?? ""
+    }
+}
+
 // MARK: - Board
 
 /// Rows of whole words: each word chunk is placed on the current line when it
@@ -444,7 +559,7 @@ private struct CipherTile: View {
                 .background(RoundedRectangle(cornerRadius: r).fill(fill))
                 .overlay(RoundedRectangle(cornerRadius: r).strokeBorder(border, lineWidth: max(1.5, width * 0.06)))
                 .overlay(selected ? RoundedRectangle(cornerRadius: r + 3).stroke(codebreakerAccent, lineWidth: 2).padding(-3) : nil)
-            Text(code).font(.system(size: 10, weight: .heavy, design: .monospaced)).foregroundStyle(selected ? codebreakerAccent : Theme.textMuted)
+            Text(code).font(.system(size: CodebreakerSizing.codeFont(width), weight: .heavy, design: .monospaced)).foregroundStyle(selected ? codebreakerAccent : Theme.textMuted)
         }
     }
 }
@@ -457,29 +572,24 @@ private struct CipherTile: View {
 struct CipherBoardView: View {
     @ObservedObject var vm: CodebreakerVM
     let finished: Bool
-
-    /// Tile width that lets the longest word sit on one line of a phone.
-    private var tileWidth: CGFloat {
-        let longest = vm.state.cipher.split(separator: " ").map { $0.filter { CRYPTOGRAM_ALPHABET.contains($0) }.count }.max() ?? 1
-        let available = UIScreen.main.bounds.width - 44
-        return min(30, max(20, floor((available - 3 * CGFloat(max(0, longest - 1))) / CGFloat(max(1, longest)))))
-    }
+    /// Cell side from `CodebreakerSizing.cell(for:width:height:)`.
+    let cell: CGFloat
 
     var body: some View {
         let s = vm.state
         let conflicts = Set(vm.conflicts)
         let words = s.cipher.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
-        let tw = tileWidth
-        WordWrapLayout(spacing: tw * 0.5, lineSpacing: 10) {
+        let tw = cell
+        WordWrapLayout(spacing: CodebreakerSizing.wordGap(tw), lineSpacing: CodebreakerSizing.lineGap) {
             ForEach(Array(words.enumerated()), id: \.offset) { _, w in
-                HStack(alignment: .top, spacing: 3) {
+                HStack(alignment: .top, spacing: CodebreakerSizing.letterGap) {
                     ForEach(Array(w.enumerated()), id: \.offset) { _, ch in
                         let code = String(ch)
                         if CRYPTOGRAM_ALPHABET.contains(code) {
                             tile(code, state: s, conflicts: conflicts, width: tw)
                         } else {
                             Text(code).font(Brand.font(tw * 0.6, .black)).foregroundStyle(Theme.textPrimary)
-                                .frame(height: tw * 1.14).padding(.horizontal, 1)
+                                .frame(width: tw * 0.4, height: CodebreakerSizing.cellHeight(tw)).padding(.horizontal, 1)
                         }
                     }
                 }
@@ -514,6 +624,8 @@ struct CipherBoardView: View {
 /// Code letters by how often they occur, with the pencilled letter shown; tap to select.
 struct FrequencyStripView: View {
     @ObservedObject var vm: CodebreakerVM
+    /// Chip type size — scales with the board cell (11 pt at the floor, 14 pt at the top end).
+    var fontSize: CGFloat = 11
 
     var body: some View {
         let s = vm.state
@@ -526,9 +638,9 @@ struct FrequencyStripView: View {
                 let isSel = vm.selected == c
                 Button { vm.select(c) } label: {
                     HStack(spacing: 4) {
-                        Text(c).font(.system(size: 11, weight: .bold, design: .monospaced))
-                        Text("\(freq[c] ?? 0)").font(Brand.font(11, .bold)).opacity(0.7)
-                        if let plain { Text("→\(plain)").font(Brand.font(11, .black)).foregroundStyle(locked ? codebreakerAccent : Theme.textPrimary) }
+                        Text(c).font(.system(size: fontSize, weight: .bold, design: .monospaced))
+                        Text("\(freq[c] ?? 0)").font(Brand.font(fontSize, .bold)).opacity(0.7)
+                        if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerAccent : Theme.textPrimary) }
                     }
                     .foregroundStyle(locked ? codebreakerAccent : Theme.textMuted)
                     .padding(.horizontal, 8).padding(.vertical, 3)

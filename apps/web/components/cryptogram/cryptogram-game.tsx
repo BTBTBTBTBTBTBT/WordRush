@@ -18,6 +18,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { CipherBoard, FrequencyStrip, CRYPTOGRAM_ACCENT } from './cipher-board';
+import { fitCipherCell, cipherMetrics, CIPHER_CELL_MIN } from './cipher-layout';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -211,6 +212,38 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
+  // Layout rule (plan §16, founder 2026-09-24): the board and the frequency strip are one block
+  // centred in the band between the header and the capsule row; the cell side scales to the band —
+  // 64px down in 4px steps until the word-wrapped cipher plus the strip fits, floor 40px. The band
+  // is measured with a ResizeObserver; `fitCipherCell` is pure and the board draws exactly the
+  // lines it measured, so there is nothing to oscillate. Until the first measurement the floor
+  // size with a flex wrap stands in.
+  const bandRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState<{ cell: number; width: number } | null>(null);
+  const cipher = state?.cipher ?? null;
+  const playing = !!state && state.status === 'playing';
+  useEffect(() => {
+    const band = bandRef.current;
+    if (!band || !cipher || !playing || typeof ResizeObserver === 'undefined') return;
+    const chipCount = cryptogramCodeLetters(cipher).length;
+    const measure = () => {
+      const cs = getComputedStyle(band);
+      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const width = Math.min(band.clientWidth - padX, 768);
+      const height = band.clientHeight - padY;
+      if (width <= 0 || height <= 0) return;
+      setFit({ cell: fitCipherCell(cipher, width, height, chipCount), width });
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(band);
+    measure();
+    return () => ro.disconnect();
+  }, [cipher, playing]);
+  const cell = fit?.cell ?? CIPHER_CELL_MIN;
+  const boardWidth = fit?.width ?? null;
+  const chipFont = cipherMetrics(cell).chipFont;
+
   if (!state) return null;
 
   const finished = state.status !== 'playing';
@@ -250,10 +283,13 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
 
       {!finished ? (
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start gap-3 px-2 pb-1 pt-2">
-            <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} />
-            {conflicts.length > 0 && <div className="text-[11px] font-bold" style={{ color: '#dc2626' }}>{conflicts.join(', ')} used for two code letters</div>}
-            <FrequencyStrip state={state} selected={selected} onSelect={(c) => setSelected(c)} />
+          <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
+            {/* Board + strip are one block, centred in the band (my-auto keeps it scrollable if it ever overflows). */}
+            <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
+              <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} />
+              {conflicts.length > 0 && <div className="text-[11px] font-bold" style={{ color: '#dc2626' }}>{conflicts.join(', ')} used for two code letters</div>}
+              <FrequencyStrip state={state} selected={selected} onSelect={(c) => setSelected(c)} chipFont={chipFont} />
+            </div>
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Codebreaker controls">
@@ -277,7 +313,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         <>
           <div className="flex-1 min-h-0 overflow-y-auto">
             <div className="flex flex-col items-center gap-3 px-3 py-3">
-              <CipherBoard state={state} selected={null} onSelect={() => {}} finished />
+              <CipherBoard state={state} selected={null} onSelect={() => {}} finished cell={32} />
               <p className="text-center text-base font-extrabold max-w-md" style={{ color: 'var(--color-text)' }}>“{state.text}”</p>
             </div>
             <div className="px-4 pb-4 animate-fade-in-up">

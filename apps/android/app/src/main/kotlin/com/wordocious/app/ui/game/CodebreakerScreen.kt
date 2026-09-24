@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AdsManager
@@ -341,17 +342,9 @@ fun CodebreakerScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 CodebreakerHeader(session, tick)
-                Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    CipherBoard(session, finished = false)
-                    val conflicts = session.state.conflicts
-                    if (conflicts.isNotEmpty()) {
-                        Text("${conflicts.joinToString(", ")} used for two code letters", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CRYPTOGRAM_WRONG)
-                    }
-                    FrequencyStrip(session)
-                }
+                // The board + frequency strip block is centred in the band between the
+                // header and the capsule row; capsules and keyboard stay pinned below.
+                CipherBand(session, Modifier.weight(1f).fillMaxWidth())
                 @Suppress("UNUSED_EXPRESSION") tick
                 val revealIn = maxOf(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - session.elapsed)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -399,16 +392,158 @@ private fun CodebreakerHeader(session: CodebreakerSession, tick: Int) {
     }
 }
 
+// ── Sizing (§16 layout rule, founder 2026-09-24) ───────────────────────────
+// The cipher board and the frequency strip are ONE block centred vertically in
+// the band between the header and the Delete · Check · Hint · Reveal row. The
+// cell side starts at 64 dp and steps down 4 dp at a time until the whole
+// cipher, wrapped word-by-word at the band's width, fits the band's height
+// together with the strip; floor 40 dp. The code letter under each cell and
+// the frequency chips scale with the cell. Pure dp arithmetic, no Compose, so
+// the wrap and the fit are checkable without a device.
+
+private const val CIPHER_CELL_MAX = 64f
+private const val CIPHER_CELL_MIN = 40f
+private const val CIPHER_CELL_STEP = 4f
+/** Below the 40 dp floor only the WIDTH may push: a word that will not fit one line is worse than a smaller cell. */
+private const val CIPHER_CELL_WIDTH_FLOOR = 20f
+private const val CIPHER_TILE_RING = 6f          // 3 dp ring padding either side of the tile box
+private const val CIPHER_TILE_ASPECT = 1.14f     // tile height / cell side (Classic tile geometry)
+private const val CIPHER_WORD_GAP_RATIO = 0.45f  // gap between word chunks as a fraction of the cell
+private const val CIPHER_LINE_GAP_MIN = 6f
+private const val CIPHER_LINE_GAP_RATIO = 0.15f
+private const val CIPHER_BLOCK_GAP = 10f         // board → conflict slot → strip
+private const val CIPHER_CONFLICT_SLOT = 16f     // fixed-height slot so a conflict appearing never resizes the board
+private const val CIPHER_CHIP_GAP = 4f
+
+/** Code letter under a cell: 10 sp at the floor, 14 sp at the 64 dp top end. */
+internal fun cipherCodeSp(cell: Float): Float =
+    (10f + (cell - CIPHER_CELL_MIN) / (CIPHER_CELL_MAX - CIPHER_CELL_MIN) * 4f).coerceIn(10f, 14f)
+
+/** Frequency chip text: 11 sp at the floor, 14 sp at the 64 dp top end. */
+internal fun cipherChipSp(cell: Float): Float =
+    (11f + (cell - CIPHER_CELL_MIN) / (CIPHER_CELL_MAX - CIPHER_CELL_MIN) * 3f).coerceIn(11f, 14f)
+
+/** Punctuation between cells, as plain bold text: 18 sp up to the old compact cells, growing with the cell. */
+internal fun cipherPunctSp(cell: Float): Float = (cell * 0.45f).coerceIn(18f, 28f)
+
+internal fun cipherLineGap(cell: Float): Float = maxOf(CIPHER_LINE_GAP_MIN, cell * CIPHER_LINE_GAP_RATIO)
+
+/** Height of one wrapped line in dp: tile box (ring included) + 2 dp + the code label. */
+internal fun cipherLineHeight(cell: Float, fontScale: Float): Float =
+    cell * CIPHER_TILE_ASPECT + CIPHER_TILE_RING + 2f + cipherCodeSp(cell) * 1.1f * fontScale
+
+/** Width of one word chunk in dp: letter cells side by side (ring padding included), punctuation as narrow bold text. */
+internal fun cipherWordWidth(word: String, cell: Float): Float {
+    var w = 0f
+    for (ch in word) w += if (ch in CRYPTOGRAM_ALPHABET) cell + CIPHER_TILE_RING else cipherPunctSp(cell) * 0.55f + 4f
+    return w
+}
+
+/** Wrapped line count for the cipher at [cell]: greedy word-by-word at [width]; words never split —
+ *  a word wider than the line takes a line of its own (the fit check catches that case by width). */
+internal fun cipherLineCount(words: List<String>, cell: Float, width: Float): Int {
+    val gap = cell * CIPHER_WORD_GAP_RATIO
+    var lines = 0
+    var x = 0f
+    for (w in words) {
+        val ww = cipherWordWidth(w, cell)
+        when {
+            lines == 0 -> { lines = 1; x = ww }
+            x + gap + ww <= width -> x += gap + ww
+            else -> { lines++; x = ww }
+        }
+    }
+    return lines
+}
+
+/** Frequency strip height in dp: chips wrap greedily at [width]; every chip is costed as if it already
+ *  shows "→X" so the strip cannot outgrow the estimate as letters fill in. */
+internal fun cipherStripHeight(codeCount: Int, freqDigits: Int, cell: Float, width: Float, fontScale: Float): Float {
+    val sp = cipherChipSp(cell) * fontScale
+    val chipH = sp * 1.3f + 8f                              // 3 dp padding × 2 + 1 dp border × 2
+    val chipW = 18f + 6f + sp * 0.65f * (1 + freqDigits + 2) // 8 dp padding × 2 + border, two 3 dp gaps, "B 3 →A"
+    var rows = 0
+    var x = 0f
+    repeat(codeCount) {
+        when {
+            rows == 0 -> { rows = 1; x = chipW }
+            x + CIPHER_CHIP_GAP + chipW <= width -> x += CIPHER_CHIP_GAP + chipW
+            else -> { rows++; x = chipW }
+        }
+    }
+    return rows * chipH + (rows - 1).coerceAtLeast(0) * CIPHER_CHIP_GAP
+}
+
+/** The whole block — board lines, the conflict slot and the strip — at [cell]. */
+internal fun cipherBlockHeight(lines: Int, codeCount: Int, freqDigits: Int, cell: Float, width: Float, fontScale: Float): Float {
+    val board = lines * cipherLineHeight(cell, fontScale) + (lines - 1).coerceAtLeast(0) * cipherLineGap(cell)
+    return board + CIPHER_BLOCK_GAP + CIPHER_CONFLICT_SLOT + CIPHER_BLOCK_GAP + cipherStripHeight(codeCount, freqDigits, cell, width, fontScale)
+}
+
+internal data class CipherFit(val cell: Float, val lines: Int, val fits: Boolean)
+
+/** Cell side for a band of [width] × [height] dp: 64 → 40 in 4 dp steps until the wrapped cipher plus the
+ *  strip fit the height and the widest word fits the width. Below 40 only a too-wide word may push further
+ *  (to 20). [fits] false = even the floor overflows the height; the caller then scrolls instead of centring. */
+internal fun cipherCellFit(words: List<String>, codeCount: Int, freqDigits: Int, width: Float, height: Float, fontScale: Float): CipherFit {
+    var cell = CIPHER_CELL_MAX
+    while (true) {
+        val lines = cipherLineCount(words, cell, width)
+        val wide = (words.maxOfOrNull { cipherWordWidth(it, cell) } ?: 0f) > width
+        val tall = cipherBlockHeight(lines, codeCount, freqDigits, cell, width, fontScale) > height
+        if (!wide && !tall) return CipherFit(cell, lines, fits = true)
+        if (cell <= CIPHER_CELL_MIN && (!wide || cell <= CIPHER_CELL_WIDTH_FLOOR)) return CipherFit(cell, lines, fits = false)
+        cell -= CIPHER_CELL_STEP
+    }
+}
+
 // ── Board ───────────────────────────────────────────────────────────────────
 
+/** The band between the header and the capsule row: the board and the frequency
+ *  strip as one block, centred vertically, with the cell side chosen by
+ *  [cipherCellFit] for the band's measured size. If even the 40 dp floor cannot
+ *  fit the height, the block top-aligns and scrolls. */
+@Composable
+private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
+    val s = session.state
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(modifier.padding(vertical = 4.dp)) {
+        val words = remember(s.cipher) { s.cipher.split(" ") }
+        val codeCount = remember(s.cipher) { cryptogramCodeLetters(s.cipher).size }
+        val freqDigits = remember(s.cipher) { (cryptogramFrequencies(s.cipher).values.maxOrNull() ?: 1).toString().length }
+        // The board caps at 480 dp wide and pads 4 dp a side; wrap against that, not the raw band.
+        val innerWidth = minOf(maxWidth, 480.dp) - 8.dp
+        val fit = remember(s.cipher, maxWidth, maxHeight, fontScale) {
+            cipherCellFit(words, codeCount, freqDigits, innerWidth.value, maxHeight.value, fontScale)
+        }
+        Column(
+            Modifier.fillMaxSize().then(if (fit.fits) Modifier else Modifier.verticalScroll(rememberScrollState())),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(CIPHER_BLOCK_GAP.dp, if (fit.fits) Alignment.CenterVertically else Alignment.Top),
+        ) {
+            CipherBoard(session, finished = false, cell = fit.cell.dp)
+            // Fixed-height slot: the conflict line comes and goes without moving the board.
+            Box(Modifier.height(CIPHER_CONFLICT_SLOT.dp), contentAlignment = Alignment.Center) {
+                val conflicts = s.conflicts
+                if (conflicts.isNotEmpty()) {
+                    Text("${conflicts.joinToString(", ")} used for two code letters", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CRYPTOGRAM_WRONG)
+                }
+            }
+            FrequencyStrip(session, chipSp = cipherChipSp(fit.cell).sp)
+        }
+    }
+}
+
 /** One cipher cell — the Classic tile geometry with the pencilled plain letter
- *  inside and the code letter in small monospace beneath. The selected code
- *  letter wears an accent ring on every occurrence. */
+ *  inside and the code letter in small monospace beneath (scaled with the cell
+ *  by [cipherCodeSp]). The selected code letter wears an accent ring on every
+ *  occurrence. */
 @Composable
 private fun CipherTile(plain: String, code: String, fill: Color, border: Color, ink: Color, selected: Boolean, size: Dp, onClick: () -> Unit) {
     val density = LocalDensity.current
     val fs = with(density) { (size * 0.55f).toSp() }
-    val h = size * 1.14f
+    val codeSp = cipherCodeSp(size.value).sp
+    val h = size * CIPHER_TILE_ASPECT
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.clickableNoRipple(onClick)) {
         Box(
             Modifier.size(size + 6.dp, h + 6.dp)
@@ -420,33 +555,39 @@ private fun CipherTile(plain: String, code: String, fill: Color, border: Color, 
                 contentAlignment = Alignment.Center,
             ) { Text(plain, fontSize = fs, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito) }
         }
-        Text(code, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (selected) CRYPTOGRAM_ACCENT else WTheme.textMuted, lineHeight = 10.sp)
+        Text(code, fontSize = codeSp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (selected) CRYPTOGRAM_ACCENT else WTheme.textMuted, lineHeight = codeSp * 1.1f)
     }
 }
 
 /** The saying as the player sees it: word chunks that never break across lines,
  *  punctuation as plain bold text. Given = accent filled, hinted = violet,
- *  locked by a Check = accent tint, conflict or just-cleared = red. */
+ *  locked by a Check = accent tint, conflict or just-cleared = red.
+ *  [cell] is the side chosen by [cipherCellFit] while playing; the results
+ *  screen passes none and keeps its compact width-driven cells. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CipherBoard(session: CodebreakerSession, finished: Boolean) {
+private fun CipherBoard(session: CodebreakerSession, finished: Boolean, cell: Dp? = null) {
     val s = session.state
     val conflicts = s.conflicts.toSet()
     val words = s.cipher.split(" ")
     val longest = words.maxOfOrNull { w -> w.count { it in CRYPTOGRAM_ALPHABET } + (w.length - w.count { it in CRYPTOGRAM_ALPHABET }) / 2 }?.coerceAtLeast(1) ?: 1
     val selected = if (finished) null else session.selected
+    val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxWidth().widthIn(max = 480.dp)) {
-        val cell = ((maxWidth - 8.dp - 3.dp * (longest - 1)) / longest - 6.dp).coerceIn(18.dp, 30.dp)
+        val side = cell ?: ((maxWidth - 8.dp - 3.dp * (longest - 1)) / longest - 6.dp).coerceIn(18.dp, 30.dp)
+        val punctSp = cipherPunctSp(side.value).sp
+        // Punctuation sits just above the code-label row so it reads against the tile bottoms.
+        val punctBottom = with(density) { (cipherCodeSp(side.value) * 1.1f).sp.toDp() } + 2.dp + side * 0.15f
         FlowRow(
             Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(cell * 0.45f, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(side * CIPHER_WORD_GAP_RATIO, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(cipherLineGap(side.value).dp),
         ) {
             words.forEach { w ->
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     w.forEach { ch ->
                         if (ch !in CRYPTOGRAM_ALPHABET) {
-                            Text(ch.toString(), fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, modifier = Modifier.padding(horizontal = 2.dp).padding(bottom = 22.dp))
+                            Text(ch.toString(), fontSize = punctSp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, modifier = Modifier.padding(horizontal = 2.dp).padding(bottom = punctBottom))
                         } else {
                             val code = ch.toString()
                             val plain = s.mapping[code] ?: ""
@@ -463,7 +604,7 @@ private fun CipherBoard(session: CodebreakerSession, finished: Boolean) {
                                 conflict || wrong -> { border = CRYPTOGRAM_WRONG; ink = CRYPTOGRAM_WRONG }
                                 correct -> ink = CRYPTOGRAM_ACCENT
                             }
-                            CipherTile(plain, code, fill, border, ink, selected == code, cell) { if (!finished) session.select(code) }
+                            CipherTile(plain, code, fill, border, ink, selected == code, side) { if (!finished) session.select(code) }
                         }
                     }
                 }
@@ -472,17 +613,18 @@ private fun CipherBoard(session: CodebreakerSession, finished: Boolean) {
     }
 }
 
-/** Code letters by how often they occur, with the pencilled letter shown; tap to select. */
+/** Code letters by how often they occur, with the pencilled letter shown; tap to select.
+ *  [chipSp] scales with the cell ([cipherChipSp]): 11 sp at the floor, 14 sp at the top end. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FrequencyStrip(session: CodebreakerSession) {
+private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp) {
     val s = session.state
     val freq = cryptogramFrequencies(s.cipher)
     val codes = freq.keys.sortedWith(compareByDescending<String> { freq[it]!! }.thenBy { it })
     FlowRow(
         Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(CIPHER_CHIP_GAP.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(CIPHER_CHIP_GAP.dp),
     ) {
         codes.forEach { c ->
             val plain = s.mapping[c]
@@ -496,9 +638,9 @@ private fun FrequencyStrip(session: CodebreakerSession) {
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Text(c, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted)
-                Text("${freq[c]}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = (if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted).copy(alpha = 0.7f))
-                if (!plain.isNullOrEmpty()) Text("→$plain", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.text)
+                Text(c, fontSize = chipSp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted)
+                Text("${freq[c]}", fontSize = chipSp, fontWeight = FontWeight.Bold, color = (if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted).copy(alpha = 0.7f))
+                if (!plain.isNullOrEmpty()) Text("→$plain", fontSize = chipSp, fontWeight = FontWeight.Black, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.text)
             }
         }
     }
