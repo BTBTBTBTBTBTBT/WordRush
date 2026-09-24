@@ -1,6 +1,16 @@
 import puzzles from '@/data/propernoundle-puzzles.json';
+import holidayPuzzles from '@/data/propernoundle-holidays.json';
+import { bankHolidayPick } from '@wordle-duel/core';
+import { HOLIDAY_TABLE } from '@/lib/holidays';
 import { Puzzle, ThemeCategory } from './types';
 import { getTodayLocal } from '@/lib/daily-service';
+
+// Holiday dailies (More Games §20): on a date the shared calendar names, the
+// daily is drawn from this per-holiday list — the k-th recurrence of the
+// holiday takes entry k (wrapping) — and the ordinary rotation pick is simply
+// skipped that day (never dated, so the rotation below does not shift).
+const HOLIDAY_PUZZLES: Record<string, Puzzle[]> =
+  (holidayPuzzles as { version: number; holiday?: Record<string, Puzzle[]> }).holiday ?? {};
 
 // ISO date-only strings parse as UTC midnight, so epoch and target both sit
 // on UTC midnight and their difference is a clean multiple of 86400000 ms.
@@ -43,8 +53,19 @@ function getDaysSinceEpoch(dateString: string): number {
   return Math.floor((target - epoch) / 86400000);
 }
 
+/**
+ * The holiday key whose puzzle is served on `dateString` (today by default),
+ * or null when the day is ordinary or the holidays file has nothing for that
+ * holiday — so the header only names a holiday when the puzzle really is one.
+ */
+export function dailyHolidayKey(dateString?: string): string | null {
+  return bankHolidayPick(dateString || getTodayLocal(), HOLIDAY_TABLE, HOLIDAY_PUZZLES)?.key ?? null;
+}
+
 export function getDailyPuzzle(dateString?: string): Puzzle {
   const date = dateString || getTodayLocal();
+  const holiday = bankHolidayPick(date, HOLIDAY_TABLE, HOLIDAY_PUZZLES);
+  if (holiday) return holiday.entry;
   const dayNumber = getDaysSinceEpoch(date);
   // Day N's category is the Nth in the alphabetical cycle, so seven-
   // category configs guarantee no two consecutive days repeat. Within

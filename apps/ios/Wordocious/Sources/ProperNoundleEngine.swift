@@ -48,7 +48,44 @@ enum ProperNoundle {
     }()
     private static let categoryCycle: [String] = byCategory.keys.sorted()
 
+    // MARK: Holidays (More Games §20)
+
+    /// propernoundle-holidays.json: `{ version, holiday: { key: [NPuzzle, …] } }`.
+    /// Same shape as every other title's `holiday` map — the k-th recurrence of
+    /// a holiday serves entry k (wrapping). Missing/unparseable resource → empty
+    /// map, so ordinary rotation carries on unchanged.
+    private struct HolidayBank: Decodable {
+        let version: Int
+        let holiday: [String: [NPuzzle]]
+    }
+    private static let holidayBank: [String: [NPuzzle]] = {
+        guard let url = Bundle.main.url(forResource: "propernoundle-holidays", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let bank = try? JSONDecoder().decode(HolidayBank.self, from: data) else { return [:] }
+        return bank.holiday
+    }()
+
+    /// The holiday entry for `date`, or nil on an ordinary day / when the bank
+    /// has nothing for that holiday (shared bankHolidayPick rule, as in
+    /// cryptogramPuzzleForDay etc.). Entries are served as curated — not
+    /// length-filtered like the main bank.
+    private static func holidayPick(date: String) -> (key: String, index: Int, entry: NPuzzle)? {
+        bankHolidayPick(day: date, table: HolidayTable.bundled, holiday: holidayBank)
+    }
+
+    /// The holiday key owning today's daily (nil on an ordinary day or when no
+    /// holiday puzzle exists) — the header shows HolidayTitles.title(key) under
+    /// the title like Codebreaker/Crosswordocious.
+    static func dailyHolidayKey(date: String = LeaderboardService.todayLocal()) -> String? {
+        holidayPick(date: date)?.key
+    }
+
+    /// Today's daily: the holiday's own puzzle when the shared calendar names
+    /// one AND the holiday bank has entries for it; otherwise the category
+    /// rotation. The rotation is NOT shifted by holidays — the ordinary pick is
+    /// simply skipped that day (web parity, §20).
     static func dailyPuzzle(date: String = LeaderboardService.todayLocal()) -> NPuzzle? {
+        if let pick = holidayPick(date: date) { return pick.entry }
         guard !categoryCycle.isEmpty else { return nil }
         let day = daysSinceEpoch(date)
         let cat = categoryCycle[((day % categoryCycle.count) + categoryCycle.count) % categoryCycle.count]

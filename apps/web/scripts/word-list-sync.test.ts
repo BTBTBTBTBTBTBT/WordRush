@@ -70,15 +70,19 @@ describe('bundled word-list copies are identical everywhere', () => {
     });
   }
 
-  it('propernoundle-puzzles.json', () => {
-    const canonical = sha(join(repoRoot, PN_PUZZLE_DIRS[0], 'propernoundle-puzzles.json'));
-    for (const dir of PN_PUZZLE_DIRS.slice(1)) {
-      expect(
-        sha(join(repoRoot, dir, 'propernoundle-puzzles.json')),
-        `${dir}/propernoundle-puzzles.json differs from the web copy — copy apps/web/data/propernoundle-puzzles.json over it`,
-      ).toBe(canonical);
-    }
-  });
+  // propernoundle-holidays.json (two holiday overrides per holiday-days key)
+  // ships beside the main bank: bundles only, no fixture copies.
+  for (const bank of ['propernoundle-puzzles.json', 'propernoundle-holidays.json']) {
+    it(bank, () => {
+      const canonical = sha(join(repoRoot, PN_PUZZLE_DIRS[0], bank));
+      for (const dir of PN_PUZZLE_DIRS.slice(1)) {
+        expect(
+          sha(join(repoRoot, dir, bank)),
+          `${dir}/${bank} differs from the web copy — copy apps/web/data/${bank} over it`,
+        ).toBe(canonical);
+      }
+    });
+  }
 });
 
 /**

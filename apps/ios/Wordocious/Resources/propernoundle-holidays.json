@@ -1,0 +1,509 @@
+{
+  "version": 1,
+  "holiday": {
+    "newyear": [
+      {
+        "id": "hol-newyear-1",
+        "answer": "timessquare",
+        "display": "Times Square",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Times_Square"
+      },
+      {
+        "id": "hol-newyear-2",
+        "answer": "auldlangsyne",
+        "display": "Auld Lang Syne",
+        "category": "other",
+        "themeCategory": "music",
+        "wikiTitle": "Auld_Lang_Syne"
+      }
+    ],
+    "mlkday": [
+      {
+        "id": "hol-mlkday-1",
+        "answer": "rosaparks",
+        "display": "Rosa Parks",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Rosa_Parks"
+      },
+      {
+        "id": "hol-mlkday-2",
+        "answer": "selma",
+        "display": "Selma",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Selma,_Alabama"
+      }
+    ],
+    "groundhog": [
+      {
+        "id": "hol-groundhog-1",
+        "answer": "punxsutawney",
+        "display": "Punxsutawney",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Punxsutawney,_Pennsylvania"
+      },
+      {
+        "id": "hol-groundhog-2",
+        "answer": "billmurray",
+        "display": "Bill Murray",
+        "category": "celebrity",
+        "themeCategory": "movies",
+        "wikiTitle": "Bill_Murray"
+      }
+    ],
+    "valentines": [
+      {
+        "id": "hol-valentines-1",
+        "answer": "cupid",
+        "display": "Cupid",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Cupid"
+      },
+      {
+        "id": "hol-valentines-2",
+        "answer": "saintvalentine",
+        "display": "Saint Valentine",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Saint_Valentine"
+      }
+    ],
+    "presidents": [
+      {
+        "id": "hol-presidents-1",
+        "answer": "abrahamlincoln",
+        "display": "Abraham Lincoln",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Abraham_Lincoln"
+      },
+      {
+        "id": "hol-presidents-2",
+        "answer": "mountrushmore",
+        "display": "Mount Rushmore",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Mount_Rushmore"
+      }
+    ],
+    "leapday": [
+      {
+        "id": "hol-leapday-1",
+        "answer": "juliuscaesar",
+        "display": "Julius Caesar",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Julius_Caesar"
+      },
+      {
+        "id": "hol-leapday-2",
+        "answer": "leapyear",
+        "display": "Leap Year",
+        "category": "other",
+        "themeCategory": "movies",
+        "wikiTitle": "Leap_Year_(2010_film)"
+      }
+    ],
+    "mardigras": [
+      {
+        "id": "hol-mardigras-1",
+        "answer": "neworleans",
+        "display": "New Orleans",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "New_Orleans"
+      },
+      {
+        "id": "hol-mardigras-2",
+        "answer": "bourbonstreet",
+        "display": "Bourbon Street",
+        "category": "geography",
+        "themeCategory": "music",
+        "wikiTitle": "Bourbon_Street"
+      }
+    ],
+    "stpatricks": [
+      {
+        "id": "hol-stpatricks-1",
+        "answer": "saintpatrick",
+        "display": "Saint Patrick",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Saint_Patrick"
+      },
+      {
+        "id": "hol-stpatricks-2",
+        "answer": "dublin",
+        "display": "Dublin",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Dublin"
+      }
+    ],
+    "aprilfools": [
+      {
+        "id": "hol-aprilfools-1",
+        "answer": "siddfinch",
+        "display": "Sidd Finch",
+        "category": "other",
+        "themeCategory": "sports",
+        "wikiTitle": "Sidd_Finch"
+      },
+      {
+        "id": "hol-aprilfools-2",
+        "answer": "tacolibertybell",
+        "display": "Taco Liberty Bell",
+        "category": "other",
+        "themeCategory": "currentevents",
+        "wikiTitle": "Taco_Liberty_Bell"
+      }
+    ],
+    "easter": [
+      {
+        "id": "hol-easter-1",
+        "answer": "easterbunny",
+        "display": "Easter Bunny",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Easter_Bunny"
+      },
+      {
+        "id": "hol-easter-2",
+        "answer": "petercottontail",
+        "display": "Peter Cottontail",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Peter_Cottontail"
+      }
+    ],
+    "earthday": [
+      {
+        "id": "hol-earthday-1",
+        "answer": "rachelcarson",
+        "display": "Rachel Carson",
+        "category": "celebrity",
+        "themeCategory": "science",
+        "wikiTitle": "Rachel_Carson"
+      },
+      {
+        "id": "hol-earthday-2",
+        "answer": "thelorax",
+        "display": "The Lorax",
+        "category": "other",
+        "themeCategory": "movies",
+        "wikiTitle": "The_Lorax"
+      }
+    ],
+    "cincodemayo": [
+      {
+        "id": "hol-cincodemayo-1",
+        "answer": "battleofpuebla",
+        "display": "Battle of Puebla",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Battle_of_Puebla"
+      },
+      {
+        "id": "hol-cincodemayo-2",
+        "answer": "benitojuarez",
+        "display": "Benito Juárez",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Benito_Juárez"
+      }
+    ],
+    "mothersday": [
+      {
+        "id": "hol-mothersday-1",
+        "answer": "annajarvis",
+        "display": "Anna Jarvis",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Anna_Jarvis"
+      },
+      {
+        "id": "hol-mothersday-2",
+        "answer": "whistlersmother",
+        "display": "Whistler's Mother",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Whistler's_Mother"
+      }
+    ],
+    "memorial": [
+      {
+        "id": "hol-memorial-1",
+        "answer": "arlington",
+        "display": "Arlington",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Arlington_National_Cemetery"
+      },
+      {
+        "id": "hol-memorial-2",
+        "answer": "taps",
+        "display": "Taps",
+        "category": "other",
+        "themeCategory": "music",
+        "wikiTitle": "Taps_(bugle_call)"
+      }
+    ],
+    "fathersday": [
+      {
+        "id": "hol-fathersday-1",
+        "answer": "darthvader",
+        "display": "Darth Vader",
+        "category": "other",
+        "themeCategory": "movies",
+        "wikiTitle": "Darth_Vader"
+      },
+      {
+        "id": "hol-fathersday-2",
+        "answer": "atticusfinch",
+        "display": "Atticus Finch",
+        "category": "other",
+        "themeCategory": "movies",
+        "wikiTitle": "Atticus_Finch"
+      }
+    ],
+    "juneteenth": [
+      {
+        "id": "hol-juneteenth-1",
+        "answer": "galveston",
+        "display": "Galveston",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Galveston,_Texas"
+      },
+      {
+        "id": "hol-juneteenth-2",
+        "answer": "harriettubman",
+        "display": "Harriet Tubman",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Harriet_Tubman"
+      }
+    ],
+    "july4": [
+      {
+        "id": "hol-july4-1",
+        "answer": "libertybell",
+        "display": "Liberty Bell",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Liberty_Bell"
+      },
+      {
+        "id": "hol-july4-2",
+        "answer": "thomasjefferson",
+        "display": "Thomas Jefferson",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Thomas_Jefferson"
+      }
+    ],
+    "labor": [
+      {
+        "id": "hol-labor-1",
+        "answer": "rosietheriveter",
+        "display": "Rosie the Riveter",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Rosie_the_Riveter"
+      },
+      {
+        "id": "hol-labor-2",
+        "answer": "motherjones",
+        "display": "Mother Jones",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Mother_Jones"
+      }
+    ],
+    "indigenous": [
+      {
+        "id": "hol-indigenous-1",
+        "answer": "sacagawea",
+        "display": "Sacagawea",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Sacagawea"
+      },
+      {
+        "id": "hol-indigenous-2",
+        "answer": "sittingbull",
+        "display": "Sitting Bull",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Sitting_Bull"
+      }
+    ],
+    "halloween": [
+      {
+        "id": "hol-halloween-1",
+        "answer": "dracula",
+        "display": "Dracula",
+        "category": "other",
+        "themeCategory": "movies",
+        "wikiTitle": "Dracula"
+      },
+      {
+        "id": "hol-halloween-2",
+        "answer": "frankenstein",
+        "display": "Frankenstein",
+        "category": "other",
+        "themeCategory": "movies",
+        "wikiTitle": "Frankenstein"
+      }
+    ],
+    "veterans": [
+      {
+        "id": "hol-veterans-1",
+        "answer": "flandersfields",
+        "display": "Flanders Fields",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Flanders_Fields"
+      },
+      {
+        "id": "hol-veterans-2",
+        "answer": "audiemurphy",
+        "display": "Audie Murphy",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Audie_Murphy"
+      }
+    ],
+    "thanksgiving": [
+      {
+        "id": "hol-thanksgiving-1",
+        "answer": "mayflower",
+        "display": "Mayflower",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Mayflower"
+      },
+      {
+        "id": "hol-thanksgiving-2",
+        "answer": "plymouthrock",
+        "display": "Plymouth Rock",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Plymouth_Rock"
+      }
+    ],
+    "christmas": [
+      {
+        "id": "hol-christmas-1",
+        "answer": "santaclaus",
+        "display": "Santa Claus",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Santa_Claus"
+      },
+      {
+        "id": "hol-christmas-2",
+        "answer": "rudolph",
+        "display": "Rudolph",
+        "category": "other",
+        "themeCategory": "music",
+        "wikiTitle": "Rudolph_the_Red-Nosed_Reindeer"
+      }
+    ],
+    "kwanzaa": [
+      {
+        "id": "hol-kwanzaa-1",
+        "answer": "kinara",
+        "display": "Kinara",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Kinara"
+      },
+      {
+        "id": "hol-kwanzaa-2",
+        "answer": "swahili",
+        "display": "Swahili",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Swahili_language"
+      }
+    ],
+    "lunarnewyear": [
+      {
+        "id": "hol-lunarnewyear-1",
+        "answer": "chinesezodiac",
+        "display": "Chinese zodiac",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Chinese_zodiac"
+      },
+      {
+        "id": "hol-lunarnewyear-2",
+        "answer": "dragondance",
+        "display": "Dragon dance",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Dragon_dance"
+      }
+    ],
+    "passover": [
+      {
+        "id": "hol-passover-1",
+        "answer": "moses",
+        "display": "Moses",
+        "category": "celebrity",
+        "themeCategory": "history",
+        "wikiTitle": "Moses"
+      },
+      {
+        "id": "hol-passover-2",
+        "answer": "redsea",
+        "display": "Red Sea",
+        "category": "geography",
+        "themeCategory": "history",
+        "wikiTitle": "Red_Sea"
+      }
+    ],
+    "diwali": [
+      {
+        "id": "hol-diwali-1",
+        "answer": "lakshmi",
+        "display": "Lakshmi",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Lakshmi"
+      },
+      {
+        "id": "hol-diwali-2",
+        "answer": "rangoli",
+        "display": "Rangoli",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Rangoli"
+      }
+    ],
+    "hanukkah": [
+      {
+        "id": "hol-hanukkah-1",
+        "answer": "maccabees",
+        "display": "Maccabees",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Maccabees"
+      },
+      {
+        "id": "hol-hanukkah-2",
+        "answer": "dreidel",
+        "display": "Dreidel",
+        "category": "other",
+        "themeCategory": "history",
+        "wikiTitle": "Dreidel"
+      }
+    ]
+  }
+}

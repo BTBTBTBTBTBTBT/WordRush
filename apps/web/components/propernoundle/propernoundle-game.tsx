@@ -13,7 +13,8 @@ import { SoundToggle } from '@/components/game/sound-toggle';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
-import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById } from './puzzle-service';
+import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById, dailyHolidayKey } from './puzzle-service';
+import { holidayTitle } from '@/lib/holidays';
 import { useHints, type PersistedHintState } from './use-hints';
 import Image from 'next/image';
 import { fetchWikipediaImage, fetchWikipediaHint } from './wikipedia';
@@ -710,6 +711,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
           {mode === 'daily' && (
             <span className="text-gray-400 text-xs font-bold">#{getDailyPuzzleNumber()}</span>
           )}
+          {mode === 'daily' && holidayTitle(dailyHolidayKey()) && <span className="text-xs font-bold" style={{ color: '#dc2626' }}>{holidayTitle(dailyHolidayKey())}</span>}
           {categoryLabel && (
             <span
               className="text-xs font-bold px-2 py-0.5 rounded-full text-white"

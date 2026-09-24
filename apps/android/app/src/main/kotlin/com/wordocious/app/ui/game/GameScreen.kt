@@ -749,6 +749,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                                 "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
                                 color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                             )
+                            // §20 holiday title beside the number (Codebreaker/Crosswordocious parity).
+                            com.wordocious.core.getDailySeedDate(seed)?.let { com.wordocious.core.ProperNoundle.holidayTitle(it) }?.let { Text(it, color = Color(0xFFDC2626), fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                         }
                         Text(
                             "${board0.solution.length} letters",

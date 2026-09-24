@@ -451,6 +451,7 @@ struct ProperNoundleView: View {
                     }
                 }
             }
+            if vm.isDaily, let holiday = HolidayTitles.title(ProperNoundle.dailyHolidayKey()) { Text(holiday).font(Brand.caption(12)).foregroundStyle(pnAccent) }
             if let clue = vm.clue {
                 Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
                     .multilineTextAlignment(.center).padding(.horizontal, 20)

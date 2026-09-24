@@ -11,6 +11,11 @@
  * own sanitizeHint (ported verbatim from components/propernoundle/wikipedia.ts)
  * and judges the finished string a player would actually read.
  *
+ * Covers BOTH data/propernoundle-puzzles.json (the daily bank) and
+ * data/propernoundle-holidays.json (two overrides per holiday-days key): same
+ * clue checks for every entry, plus answer === letters of display, and the
+ * 4–15 letter cap on holiday answers.
+ *
  * Run: node apps/web/scripts/validate-propernoundle.mjs [--json]
  * Exits non-zero if any entry fails, so it can gate a commit or CI.
  */
@@ -20,9 +25,37 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BANK = path.join(ROOT, 'data', 'propernoundle-puzzles.json');
+const HOLIDAYS = path.join(ROOT, 'data', 'propernoundle-holidays.json');
 const UA = 'WordociousBankValidator/1.0 (https://wordocious.com)';
-const puzzles = JSON.parse(fs.readFileSync(BANK, 'utf8'));
+// Main bank (flat array) + the holiday overrides ({version, holiday: {key: [p, p]}}),
+// flattened into one list so every entry gets the identical clue check. Holiday
+// entries also carry the 4–15 letter cap the holiday board is sized for.
+const HOLIDAY_MAX_LEN = 15;
+const mainBank = JSON.parse(fs.readFileSync(BANK, 'utf8')).map((p) => ({ ...p, source: 'bank' }));
+const holidayFile = JSON.parse(fs.readFileSync(HOLIDAYS, 'utf8'));
+const holidayBank = Object.entries(holidayFile.holiday || {}).flatMap(([key, list]) =>
+  list.map((p) => ({ ...p, source: `hol:${key}` })));
+const puzzles = [...mainBank, ...holidayBank];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---- static shape checks (no network): answer must be exactly the a–z letters of display ----
+const lettersOf = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+function shapeReason(p) {
+  if (!/^[a-z]+$/.test(p.answer || '')) return 'ANSWER NOT a–z ONLY';
+  if (lettersOf(p.display || '') !== p.answer) return `ANSWER "${p.answer}" ≠ LETTERS OF DISPLAY "${lettersOf(p.display || '')}"`;
+  if (p.source !== 'bank' && (p.answer.length < 4 || p.answer.length > HOLIDAY_MAX_LEN)) return `HOLIDAY ANSWER LENGTH ${p.answer.length} (must be 4–${HOLIDAY_MAX_LEN})`;
+  return null;
+}
+{
+  const ids = new Set();
+  for (const p of puzzles) {
+    if (ids.has(p.id)) { console.error(`duplicate id ${p.id}`); process.exit(1); }
+    ids.add(p.id);
+  }
+  for (const [key, list] of Object.entries(holidayFile.holiday || {})) {
+    if (list.length !== 2) { console.error(`holiday "${key}" has ${list.length} puzzles, expected 2`); process.exit(1); }
+  }
+}
 
 // ---- ported verbatim from components/propernoundle/wikipedia.ts ----
 const SINGLE_WORD_ABBREVIATIONS = ['No','Nos','Mr','Mrs','Ms','Dr','Prof','Sr','Jr','St','Mt','Ft',
@@ -109,8 +142,9 @@ const results = puzzles.map((p) => {
   const clue = i.extract ? sanitizeHint(i.extract, p.display, true) : '';
   // What a player actually has to work with, once the blanks are removed.
   const informative = clue.replace(/______/g, ' ').replace(/\s+/g, ' ').trim();
-  let reason = null;
-  if (i.missing) reason = 'NO WIKIPEDIA PAGE';
+  let reason = shapeReason(p);
+  if (reason) { /* static shape failure wins; the clue is still reported below */ }
+  else if (i.missing) reason = 'NO WIKIPEDIA PAGE';
   else if (i.disambig) reason = 'DISAMBIGUATION PAGE';
   else if (!i.extract) reason = 'PAGE HAS NO INTRO TEXT';
   else if (/may (also )?refer to:?\s*$/i.test(clue)) reason = 'STUB "may refer to"';
@@ -126,16 +160,16 @@ const results = puzzles.map((p) => {
       if (m) { reason = `ANSWER LEAK: "${m[2]}"`; break; }
     }
   }
-  return { id: p.id, display: p.display, theme: p.themeCategory, wikiTitle: p.wikiTitle || null, clue, reason };
+  return { id: p.id, source: p.source, display: p.display, theme: p.themeCategory, wikiTitle: p.wikiTitle || null, clue, reason };
 });
 
 const bad = results.filter((r) => r.reason);
 fs.writeFileSync(path.join(ROOT, 'scripts', 'propernoundle-validation.json'), JSON.stringify(results, null, 1));
 if (process.argv.includes('--json')) { console.log(JSON.stringify(bad, null, 1)); }
 else {
-  console.log(`\n${puzzles.length} entries checked, ${bad.length} FAIL\n`);
+  console.log(`\n${puzzles.length} entries checked (${mainBank.length} bank + ${holidayBank.length} holiday), ${bad.length} FAIL\n`);
   for (const r of bad) {
-    console.log(`  ${r.id.padEnd(9)} ${r.display.padEnd(30)} ${r.theme.padEnd(14)} ${r.reason}`);
+    console.log(`  ${r.id.padEnd(18)} ${r.display.padEnd(30)} ${r.theme.padEnd(14)} ${r.reason}`);
     if (r.clue) console.log(`            clue: "${r.clue.slice(0, 110)}"`);
   }
 }

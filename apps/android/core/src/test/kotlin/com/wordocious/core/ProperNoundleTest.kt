@@ -36,6 +36,61 @@ class ProperNoundleTest {
         assertTrue(a!!.answer.length <= 15)
     }
 
+    /**
+     * §20 holiday rule. 2026-12-25 is "christmas" in the bundled holiday-days.json
+     * and its SECOND outing (Christmas Eve 2026-12-24 is the first), so the daily
+     * is holiday entry 1; the rotation is skipped that day, not shifted, and the
+     * daily number is untouched.
+     */
+    @Test
+    fun dailyPuzzle_holiday_first_then_rotation() {
+        val table = HolidayTable.bundled
+        assertNotNull(table)
+        assertEquals("christmas", holidayKeyForDay("2026-12-25", table))
+        val eve = NPuzzle("hol-xmas-0", "santaclaus", "Santa Claus", "Fiction", "history")
+        val day = NPuzzle("hol-xmas-1", "rudolph", "Rudolph", "Fiction", "history")
+        val bank = mapOf("christmas" to listOf(eve, day))
+
+        assertEquals(eve, ProperNoundle.dailyPuzzle("2026-12-24", table, bank))
+        assertEquals(day, ProperNoundle.dailyPuzzle("2026-12-25", table, bank))
+        // Christmas owns 12-24/25/26, so the 2026 run is outings 0,1,2 → entries 0,1,0;
+        // Christmas Eve 2027 is outing 3 → entry 1, wrapping through the two-entry list.
+        assertEquals(eve, ProperNoundle.dailyPuzzle("2026-12-26", table, bank))
+        assertEquals(3, holidayOccurrence("2027-12-24", "christmas", table))
+        assertEquals(day, ProperNoundle.dailyPuzzle("2027-12-24", table, bank))
+
+        // Non-holiday date: identical to the pre-change rotation pick, holiday bank or not.
+        val plain = ProperNoundle.dailyPuzzle("2026-06-05", null, null)
+        assertNotNull(plain)
+        assertEquals(plain, ProperNoundle.dailyPuzzle("2026-06-05", table, bank))
+        // A holiday the bank has nothing for falls through to the rotation.
+        assertEquals(ProperNoundle.dailyPuzzle("2026-07-04", null, null), ProperNoundle.dailyPuzzle("2026-07-04", table, bank))
+        // The day AFTER the holiday run keeps its own rotation slot (no shift).
+        assertEquals(null, holidayKeyForDay("2026-12-28", table))
+        assertEquals(ProperNoundle.dailyPuzzle("2026-12-28", null, null), ProperNoundle.dailyPuzzle("2026-12-28", table, bank))
+        // Daily number is calendar-only.
+        assertEquals(ProperNoundle.dailyPuzzleNumber("2026-12-24") + 1, ProperNoundle.dailyPuzzleNumber("2026-12-25"))
+    }
+
+    /** The bundled propernoundle-holidays.json (when present) actually drives the public daily. */
+    @Test
+    fun dailyPuzzle_uses_bundled_holiday_bank() {
+        val bank = ProperNoundle.holidayPuzzles // empty map, never a crash, when the resource is absent
+        val xmas = bank["christmas"]
+        if (xmas.isNullOrEmpty()) {
+            assertEquals(null, ProperNoundle.holidayKeyForDay("2026-12-25"))
+            assertEquals(ProperNoundle.dailyPuzzle("2026-12-25", null, null), ProperNoundle.dailyPuzzle("2026-12-25"))
+        } else {
+            assertEquals("christmas", ProperNoundle.holidayKeyForDay("2026-12-25"))
+            assertEquals("Christmas", ProperNoundle.holidayTitle("2026-12-25"))
+            assertEquals(xmas[1 % xmas.size], ProperNoundle.dailyPuzzle("2026-12-25"))
+            assertEquals(xmas[0], ProperNoundle.dailyPuzzle("2026-12-24"))
+            // puzzleFor recovers holiday answers for the post-game screen.
+            assertEquals(ProperNoundle.normalize(xmas[0].answer), ProperNoundle.normalize(ProperNoundle.puzzleFor(xmas[0].answer)!!.answer))
+        }
+        assertEquals(null, ProperNoundle.holidayTitle("2026-06-05"))
+    }
+
     @Test
     fun puzzleForSeed_deterministic() {
         val a = ProperNoundle.puzzleForSeed("daily-2026-06-05-PROPERNOUNDLE_VS")

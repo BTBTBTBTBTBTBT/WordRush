@@ -9,6 +9,8 @@ import java.text.Normalizer
  * the answer is a normalized name ("taylorswift"), tiles colour like Wordle, the
  * board lays out word groups from `display` ("Taylor Swift" → 6+5).
  * 1:1 port of iOS `ProperNoundleEngine.swift` / web components/propernoundle/.
+ * On a holiday (§20) the daily comes from the bundled propernoundle-holidays.json
+ * list for that key; the category rotation is skipped that day, never shifted.
  */
 @Serializable
 data class NPuzzle(
@@ -41,6 +43,29 @@ object ProperNoundle {
         all.groupBy { it.themeCategory ?: "general" }
     }
     private val categoryCycle: List<String> by lazy { byCategory.keys.sorted() }
+
+    /** propernoundle-holidays.json: `{ "version": 1, "holiday": { "<key>": [NPuzzle, …] } }`. */
+    @Serializable
+    private data class HolidayBank(val version: Int = 1, val holiday: Map<String, List<NPuzzle>> = emptyMap())
+
+    /** Holiday key → its puzzles, from data/propernoundle-holidays.json (empty when the
+     *  resource is absent or unreadable — every day then falls through to the rotation). */
+    val holidayPuzzles: Map<String, List<NPuzzle>> by lazy {
+        val text = javaClass.classLoader
+            ?.getResourceAsStream("data/propernoundle-holidays.json")
+            ?.bufferedReader()?.use { it.readText() } ?: return@lazy emptyMap()
+        runCatching { json.decodeFromString<HolidayBank>(text).holiday }.getOrElse { emptyMap() }
+    }
+
+    /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
+    private val HOLIDAY_TITLES = mapOf(
+        "newyear" to "New Year", "mlkday" to "MLK Day", "groundhog" to "Groundhog Day", "valentines" to "Valentine's Day", "presidents" to "Presidents' Day",
+        "leapday" to "Leap Day", "mardigras" to "Mardi Gras", "stpatricks" to "St Patrick's Day", "aprilfools" to "April Fools", "easter" to "Easter",
+        "earthday" to "Earth Day", "cincodemayo" to "Cinco de Mayo", "mothersday" to "Mother's Day", "memorial" to "Memorial Day", "fathersday" to "Father's Day",
+        "juneteenth" to "Juneteenth", "july4" to "Fourth of July", "labor" to "Labor Day", "indigenous" to "Harvest Moon", "halloween" to "Halloween",
+        "veterans" to "Veterans Day", "thanksgiving" to "Thanksgiving", "christmas" to "Christmas", "kwanzaa" to "Kwanzaa", "lunarnewyear" to "Lunar New Year",
+        "passover" to "Passover", "diwali" to "Diwali", "hanukkah" to "Hanukkah",
+    )
 
     /** lowercase, strip diacritics + spaces, keep alnum + ' + - (mirrors normalizeString). */
     fun normalize(s: String): String {
@@ -118,8 +143,29 @@ object ProperNoundle {
         return if (groups.isEmpty()) listOf(normalize(display).count { it.isLetter() }) else groups
     }
 
-    /** Daily puzzle — alphabetical category round-robin (epoch 2024-01-01 UTC). */
-    fun dailyPuzzle(date: String): NPuzzle? {
+    /**
+     * Daily puzzle: on a holiday with entries (§20) the k-th recurrence of that
+     * holiday serves entry k (wrapping) via [bankHolidayPick]; otherwise the
+     * alphabetical category round-robin (epoch 2024-01-01 UTC). The rotation is
+     * indexed by the calendar day alone, so a holiday skips its ordinary pick
+     * without shifting any other day. The daily NUMBER is unaffected.
+     */
+    fun dailyPuzzle(date: String): NPuzzle? = dailyPuzzle(date, HolidayTable.bundled, holidayPuzzles)
+
+    /** [dailyPuzzle] with an explicit calendar + holiday bank (tests). */
+    fun dailyPuzzle(date: String, holidays: HolidayTable?, holiday: Map<String, List<NPuzzle>>?): NPuzzle? =
+        bankHolidayPick(date, holidays, holiday)?.entry ?: rotationPuzzle(date)
+
+    /** The holiday key that owns [date] AND has ProperNoundle entries, else null —
+     *  the header shows its title like Codebreaker/Crosswordocious do. */
+    fun holidayKeyForDay(date: String): String? =
+        bankHolidayPick(date, HolidayTable.bundled, holidayPuzzles)?.key
+
+    /** The display title of the holiday whose puzzle [date] serves, or null on an ordinary day. */
+    fun holidayTitle(date: String): String? = holidayKeyForDay(date)?.let { HOLIDAY_TITLES[it] ?: it }
+
+    /** The ordinary (non-holiday) daily — alphabetical category round-robin. */
+    private fun rotationPuzzle(date: String): NPuzzle? {
         if (categoryCycle.isEmpty()) return null
         val day = daysSinceEpoch(date)
         val catIdx = ((day % categoryCycle.size) + categoryCycle.size) % categoryCycle.size
@@ -139,6 +185,7 @@ object ProperNoundle {
     fun puzzleFor(answer: String): NPuzzle? {
         val n = normalize(answer)
         return all.firstOrNull { normalize(it.answer) == n }
+            ?: holidayPuzzles.values.asSequence().flatten().firstOrNull { normalize(it.answer) == n }
     }
 
     /**
