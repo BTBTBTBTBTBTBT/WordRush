@@ -273,16 +273,18 @@ fun SpyglassScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SpyglassHeader(session)
+                // Grid, word chips and the two capsules are one centred block (founder, 2026-09-24).
+                Spacer(Modifier.weight(1f))
                 SpyglassGrid(session, revealMissing = false) { from, to -> session.select(from, to, onFinished) }
                 WordChips(session)
-                Spacer(Modifier.weight(1f))
                 val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
                 @Suppress("UNUSED_EXPRESSION") tick
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
                     Capsule(if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}", Icons.Filled.Visibility, dim = !session.canReveal) { session.reveal(onFinished) }
                 }
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(4.dp))
             }
         }
         session.toast?.let {
@@ -328,19 +330,19 @@ private fun WordChips(session: SpyglassSession) {
     // Chips flow by width and never break inside a word (WOODPECKER used to wrap
     // to "WOODPECKE / R" in fixed rows of five).
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         for (w in s.words.map { it.w }) {
             val found = w in s.found; val hinted = w in s.hinted && !found
             Text(
-                w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (found) SPY_INK else WTheme.text,
+                w, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (found) SPY_INK else WTheme.text,
                 textDecoration = if (found) TextDecoration.LineThrough else null,
                 maxLines = 1, softWrap = false,
                 modifier = Modifier.clip(CircleShape).background(if (found) SPY_ACCENT.copy(alpha = 0.14f) else WTheme.surface)
                     .border(1.dp, if (found) SPY_ACCENT.copy(alpha = 0.35f) else if (hinted) SPY_ACCENT else WTheme.border, CircleShape)
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
     }

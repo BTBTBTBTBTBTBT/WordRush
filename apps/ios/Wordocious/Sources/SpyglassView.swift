@@ -159,16 +159,19 @@ struct SpyglassView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    SpyglassGridView(vm: vm, revealMissing: false).padding(.horizontal, 6).padding(.top, 2)
-                    wordChips
-                    Spacer(minLength: 4)
+                    // Grid, word chips and the two capsules are one centred block (founder, 2026-09-24).
+                    Spacer(minLength: 6)
+                    SpyglassGridView(vm: vm, revealMissing: false).padding(.horizontal, 6)
+                    wordChips.padding(.top, 4)
                     HStack(spacing: 8) {
                         capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
                         TimelineView(.periodic(from: .now, by: 1)) { _ in
                             capsule(vm.canReveal ? "Reveal" : "Reveal · \(timeText(max(0, revealAfterSeconds - vm.elapsed)))", "eye", dim: !vm.canReveal) { vm.reveal() }
                         }
                     }
-                    .padding(.bottom, 10)
+                    .padding(.top, 6)
+                    Spacer(minLength: 6)
+                    Spacer().frame(height: 4)
                 }
                 .padding(.horizontal, 10)
             }
@@ -257,10 +260,10 @@ struct SpyglassView: View {
         let s = vm.state
         return FlowChips(items: s.words.map(\.w)) { w in
             let found = s.found.contains(w), hinted = s.hinted.contains(w) && !found
-            Text(w).font(Brand.font(11, .bold)).strikethrough(found)
+            Text(w).font(Brand.font(14, .bold)).strikethrough(found)
                 .lineLimit(1).fixedSize(horizontal: true, vertical: false)
                 .foregroundStyle(found ? spyglassInk : Theme.textPrimary)
-                .padding(.horizontal, 8).padding(.vertical, 3)
+                .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(Capsule().fill(found ? spyglassAccent.opacity(0.14) : Theme.surface))
                 .overlay(Capsule().stroke(found ? spyglassAccent.opacity(0.35) : (hinted ? spyglassAccent : Theme.border), lineWidth: 1))
         }
@@ -314,7 +317,7 @@ private struct FlowChips<Content: View>: View {
     let items: [String]
     @ViewBuilder let content: (String) -> Content
     var body: some View {
-        WrapLayout(spacing: 5, lineSpacing: 5) { ForEach(items, id: \.self) { content($0) } }
+        WrapLayout(spacing: 8, lineSpacing: 8) { ForEach(items, id: \.self) { content($0) } }
     }
 }
 

@@ -181,12 +181,12 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${WORDSEARCH_ACCENT}66`, color: WORDSEARCH_ACCENT, background: `${WORDSEARCH_ACCENT}0d` };
 
   const wordList = (
-    <div className="flex flex-wrap justify-center gap-1.5 px-2" aria-label="Words to find">
+    <div className="flex flex-wrap justify-center gap-2 px-2" aria-label="Words to find">
       {state.words.map((p) => {
         const found = state.found.includes(p.w);
         const hinted = state.hinted.includes(p.w) && !found;
         return (
-          <span key={p.w} className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
+          <span key={p.w} className={`text-sm font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
             style={found
               ? { background: `${WORDSEARCH_ACCENT}22`, borderColor: `${WORDSEARCH_ACCENT}55`, color: '#365314' }
               : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: 'var(--color-text)' }}>
@@ -224,17 +224,18 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
       {!finished ? (
         <>
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center gap-2 px-3 pb-1">
+          {/* Grid, word chips and the two capsules are one centred block (founder, 2026-09-24). */}
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center gap-3 px-3 pb-3">
             <SpyglassGrid state={state} onSelect={onSelect} />
             {wordList}
-          </div>
-          <div className="shrink-0 pb-3 px-2 pt-1 flex justify-center gap-2" role="group" aria-label="Spyglass controls">
+          <div className="shrink-0 px-2 pt-1 flex justify-center gap-2" role="group" aria-label="Spyglass controls">
             <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint">
               <Lightbulb className="w-3.5 h-3.5" /> Hint{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
             </button>
             <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
               <Eye className="w-3.5 h-3.5" /> Reveal{!canReveal ? ` · ${formatTime(REVEAL_AFTER_SECONDS - elapsedSeconds)}` : ''}
             </button>
+          </div>
           </div>
         </>
       ) : (
