@@ -85,7 +85,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
    *  Without it the board stretches to fill its grid cell, and on a wide
    *  viewport the tiles turn into flat bars — the "compressed looking mess"
    *  the founder saw on QuadWord/OctoWord. The expanded OctoWord overlay
-   *  omits it and keeps the stretch behaviour. */
+   *  omits it and keeps the stretch behavior. */
   tileSize?: number;
   index: number;
   currentGuess?: string;
@@ -244,7 +244,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
   // tiles became long flat bars. The natives size SQUARE tiles to fit the
   // space. Measure the container and derive one tile size that fits both
   // dimensions — capped so desktop doesn't balloon — then lay the boards out
-  // at that size, centred. Falls back to the stretch layout until measured.
+  // at that size, centered. Falls back to the stretch layout until measured.
   const maxRows = boards.reduce((m, b) => Math.max(m, (b.prefilledGuesses?.length ?? 0) + b.maxGuesses), 1);
   // Square tiles fitted to the measured container, best arrangement wins —
   // see hooks/use-square-board-fit.ts (shared with Succession).

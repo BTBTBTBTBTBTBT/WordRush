@@ -515,7 +515,7 @@ private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: 
 /**
  * The cartoon panel (§5/§8): a standard card in the cream paper tone, always
  * 4:3, sized from the height the screen leaves it (compact rule: capped at
- * ~26 % of the screen) and centred. The puzzle's cartoon loads from the web
+ * ~26 % of the screen) and centered. The puzzle's cartoon loads from the web
  * host when set; until the founder's image batch runs a placeholder sketch
  * stands in. The caption is ALWAYS typeset by the app beneath the panel.
  */
@@ -563,7 +563,7 @@ private fun PlaceholderSketch() {
     }
 }
 
-/** The caption, centred, with the blank as an accent underline — filled with the punchline in lowercase purple once it is solved (or the game is over). */
+/** The caption, centered, with the blank as an accent underline — filled with the punchline in lowercase purple once it is solved (or the game is over). */
 @Composable
 private fun Caption(s: ScrambleState, finished: Boolean) {
     val parts = s.caption.split("____")
@@ -676,7 +676,7 @@ private fun WordRow(
 /** The top line of a word block — the hint circles set its height so the scramble letters never jump when they hide. */
 private val HINT_ROW_HEIGHT = 32.dp
 
-/** One answer tile: rounded, 2dp border, letter centred; the circled ring drawn INSIDE at ~60 % of the tile (never an outline around it). */
+/** One answer tile: rounded, 2dp border, letter centered; the circled ring drawn INSIDE at ~60 % of the tile (never an outline around it). */
 @Composable
 private fun AnswerBox(
     ch: String, bg: Color, border: Color, ink: Color, ring: Boolean, ringColor: Color, ringAlpha: Float,

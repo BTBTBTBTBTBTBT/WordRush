@@ -83,7 +83,7 @@ fun ladderNeighbours(w: String, allowed: Set<String>): List<String> {
 /**
  * The next rung on a shortest path from [current] to [end] over [allowed],
  * never stepping onto a word in [avoid]. BFS from [end]; among current's
- * neighbours one step closer, the alphabetically first. Null when no route.
+ * neighbors one step closer, the alphabetically first. Null when no route.
  */
 fun ladderNextStep(current: String, end: String, allowed: Set<String>, avoid: Set<String> = emptySet()): String? {
     if (current == end) return null

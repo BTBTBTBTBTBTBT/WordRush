@@ -256,7 +256,7 @@ export async function shareResult(
    *  unfurl IS the card (leaderboard), image+link would render TWICE in the
    *  Messages compose sheet — the link preview already carries the pixels,
    *  and it's tappable. Falls back to the image chain if there's no URL or
-   *  the link share fails for any reason other than the user cancelling. */
+   *  the link share fails for any reason other than the user canceling. */
   opts: { linkOnly?: boolean } = {},
 ): Promise<ShareResultOutcome> {
   let blob: Blob | null = null;
@@ -281,7 +281,7 @@ export async function shareResult(
       logShareEvent('other', input.mode, surface);
       return { via: 'share' };
     } catch (e) {
-      // User cancelled the sheet — done, don't cascade into image fallbacks.
+      // User canceled the sheet — done, don't cascade into image fallbacks.
       if ((e as Error)?.name === 'AbortError') return { via: 'failed' };
       // Anything else (no share support, permission) → image chain below.
     }

@@ -81,7 +81,7 @@ fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAch
     }
     val titleName = featuredAchievement?.let { key -> catalog.firstOrNull { it.key == key }?.name }
     val bio = bioRaw?.trim()?.takeIf { it.isNotEmpty() }
-    // Search the whole catalog: a ProperNoundle favourite lives under the More tile now.
+    // Search the whole catalog: a ProperNoundle favorite lives under the More tile now.
     val favCard = modeCardForKey(favoriteModeKey)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {

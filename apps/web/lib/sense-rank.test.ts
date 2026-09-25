@@ -25,7 +25,7 @@ describe('sense-rank fixtures', () => {
     expect(isCircular('climb', 'An act of climbing.')).toBe(true);
     // A real definition that merely uses the word is not circular.
     expect(isCircular('blade', 'The sharp cutting edge of a knife, chisel, or other tool, a razor blade/sword blade.')).toBe(false);
-    // A capitalised mention is a name.
+    // A capitalized mention is a name.
     expect(isCircular('bible', 'An exemplar of the Bible.')).toBe(false);
     expect(isStub('Alternative spelling of braze.')).toBe(true);
     expect(isStub('plural of calf')).toBe(false); // inflection notes are accurate and stay

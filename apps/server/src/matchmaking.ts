@@ -7,7 +7,7 @@ import { QueueEntry, Player } from './types';
  * Daily-VS players must only pair with other daily players on the SAME seed
  * (same local calendar day), and random players only with random players —
  * otherwise an iOS daily player and a web random player in the same mode
- * could be spliced together with mismatched puzzles (the old behaviour:
+ * could be spliced together with mismatched puzzles (the old behavior:
  * queues were keyed by mode alone and `findMatch` paired the first two
  * entries regardless of seed).
  */

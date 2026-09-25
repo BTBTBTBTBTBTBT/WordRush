@@ -119,7 +119,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // §255 (founder: "succession was not adjusted in gauntlet"): the Succession
   // STAGE inside Gauntlet renders its own mini board through a stretched 2x2
   // grid — the same flat-tile defect Succession proper just lost. Same shared
-  // fit: measure the stage area, one square tile, best arrangement, centred.
+  // fit: measure the stage area, one square tile, best arrangement, centered.
   // boardCount is 0 when the stage isn't sequential so the effect re-runs (and
   // re-attaches to the ref) the moment a Succession stage begins.
   const seqAreaRef = useRef<HTMLDivElement>(null);

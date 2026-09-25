@@ -134,7 +134,7 @@ fun modeTitleForKey(dbKey: String): String = ModeGen.byDbKey(dbKey)?.title ?: db
 /**
  * The daily-playable cards this viewer may see: the sweep tiles plus every More
  * Games title whose remote flag is on (a title with no flag — ProperNoundle — is
- * always visible). For pickers that list "every daily mode" (favourite mode,
+ * always visible). For pickers that list "every daily mode" (favorite mode,
  * per-mode stats chips, help), never the home grid, which has its own filter.
  */
 @androidx.compose.runtime.Composable

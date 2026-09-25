@@ -25,7 +25,7 @@ import { getTodayLocal } from '@/lib/daily-service';
  * daily module re-reads today and the stale boards clear.
  *
  * Mid-day tab switches don't trigger a reload — the day-change check keeps
- * this from fighting with normal Safari behaviour.
+ * this from fighting with normal Safari behavior.
  */
 export function DailyBoundaryReload() {
   const mountedDayRef = useRef<string | null>(null);

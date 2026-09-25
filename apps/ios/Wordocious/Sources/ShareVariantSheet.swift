@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Deliberately built from the same parts as the header "?" menu
 /// (`MenuScaffold` chrome + the accent-tiled row of `MenuSheet`) rather than a
-/// system `confirmationDialog`, which rendered as flat grey iOS chrome that
+/// system `confirmationDialog`, which rendered as flat gray iOS chrome that
 /// looked nothing like the app. Presented as a sheet with a fixed detent so it
 /// reads as a compact menu, not a full-screen takeover.
 struct ShareVariantSheet: View {

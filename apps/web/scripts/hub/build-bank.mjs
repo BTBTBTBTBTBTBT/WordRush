@@ -5,8 +5,8 @@
 //
 //   apps/web/data/hub-puzzles.json   { version, epoch, daily[], extra[] }
 //
-// A puzzle = seven distinct letters (never S), one centre letter, 20–60 common
-// words of 4+ letters using only those letters and containing the centre,
+// A puzzle = seven distinct letters (never S), one center letter, 20–60 common
+// words of 4+ letters using only those letters and containing the center,
 // ≥ 1 pangram, max score 60–250, ≤ 35% -ED/-ING, ≥ 3 words of 6+ letters.
 // `words` score (4 letters = 1, else length, pangram +7) and set `max`;
 // `bonus` = extended-tier words accepted for 0 points. Each letter set is used

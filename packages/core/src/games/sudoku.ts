@@ -234,7 +234,7 @@ export type SudokuStatus = 'playing' | 'won' | 'lost';
 
 export interface SudokuSnapshot {
   board: string;
-  /** 81 bitmasks; bit d−1 set = candidate d pencilled in. */
+  /** 81 bitmasks; bit d−1 set = candidate d penciled in. */
   notes: number[];
   /** 81 chars '0'/'1': cells filled by Hint. */
   hintMask: string;

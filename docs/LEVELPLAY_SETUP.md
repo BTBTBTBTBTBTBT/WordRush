@@ -71,7 +71,7 @@ MAX shipped its own consent flow; LevelPlay does not. Google's UMP is unusable
 is integrated, the apps **do not initialize ads for users in the EEA, UK or
 Switzerland** — those regions simply stay ad-free (`ConsentGate` on both
 platforms, decided from the device region). Everywhere else the SDK starts
-with `setConsent(false)` / `do_not_sell` honoured and serves.
+with `setConsent(false)` / `do_not_sell` honored and serves.
 
 Phase 2, when Brian wants EU inventory: create a **Usercentrics** App CMP
 account (Unity's partner CMP; free tier for small apps), paste its settings id

@@ -52,7 +52,7 @@ const PAGES = [['index.html', 'Overview'], ['kindred.html', 'Kindred'], ['codebr
 const nav = (cur) => `<nav>${PAGES.map(([f, t]) => `<a href="${f}" class="${f === cur ? 'cur' : ''}">${t}</a>`).join('')}</nav>`;
 const page = (file, title, accent, kick, lede, body) => fs.writeFileSync(path.join(OUT, file), `<title>${esc(title)}</title>\n${FONT}\n<style>${CSS}</style>\n<main>${nav(file)}<header><div class="kick">${esc(kick)}</div><h1 style="color:${accent}">${esc(title)}</h1><p class="lede">${lede}</p></header>${body}</main>\n`);
 const stats = (items) => `<div class="stats">${items.map(([n, l]) => `<div class="stat"><b>${esc(n)}</b><span>${esc(l)}</span></div>`).join('')}</div>`;
-const HOW = `<div class="card wide"><div class="ttl">How to review</div><p style="margin:0">Skim; you are looking for anything you would not want in the app — a group that is unfair, a saying you do not recognise, a clue that could take two answers, a pun that does not land. Note the <b>id</b> of anything to cut or change (or open the CSV next to this page and set <b>keep</b> to <b>n</b>). Nothing here is live: the banks are built only from what survives.</p></div>`;
+const HOW = `<div class="card wide"><div class="ttl">How to review</div><p style="margin:0">Skim; you are looking for anything you would not want in the app — a group that is unfair, a saying you do not recognize, a clue that could take two answers, a pun that does not land. Note the <b>id</b> of anything to cut or change (or open the CSV next to this page and set <b>keep</b> to <b>n</b>). Nothing here is live: the banks are built only from what survives.</p></div>`;
 
 // ---------------- Kindred ----------------
 const kin = J('kindred-bank.json');

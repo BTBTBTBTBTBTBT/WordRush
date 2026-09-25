@@ -73,7 +73,7 @@ const wordsearchRows: MatchRow[] = [
   row({ guess_count: 15, completed: false, time_seconds: 900, hints_used: 0, player1_guesses: [...wsFound.slice(0, 6), 'x 1,1>1,5', 'x 2,2>2,6', 'x 3,3>3,7', 'x 4,4>4,8', 'x 5,5>5,9', '!'], solutions: wsSolutions, seed: 'daily-2026-09-26-WORDSEARCH' }),
 ];
 
-// Hubbub: solutions = [id, letters (centre first), max, wordCount, pangramCount]; events "+WORD" scored, "=WORD" bonus, "?ST5" hint, "!WORD" revealed, "#" ended.
+// Hubbub: solutions = [id, letters (center first), max, wordCount, pangramCount]; events "+WORD" scored, "=WORD" bonus, "?ST5" hint, "!WORD" revealed, "#" ended.
 // guess_count = rank position (1 Pandemonium … 10 Hush); boards = floor(points × 20 / max).
 const hubRows: MatchRow[] = [
   // 4 = Hubbub. Points: TRAIN 5 + RETINAL 7+7 + LATER 5 + ALERT 5 + RAIL 1 + LINEAR 6 = 36 of 60 → 12 of 20.

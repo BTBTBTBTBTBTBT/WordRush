@@ -133,7 +133,7 @@ final class ProperNoundleVM: ObservableObject {
               let data = UserDefaults.standard.data(forKey: key),
               let snap = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
         // Fail-closed: only restore the exact puzzle; daily also re-checks the
-        // local date (web getSavedDailyState), practice honours the 24h TTL.
+        // local date (web getSavedDailyState), practice honors the 24h TTL.
         let stale = snap.puzzleId != p.id
             || (isDaily && snap.date != LeaderboardService.todayLocal())
             || (!isDaily && Date().timeIntervalSince1970 * 1000 - snap.savedAt > Self.practiceTTLms)
@@ -545,7 +545,7 @@ struct ProperNoundleView: View {
 }
 
 /// Clue / Vowel / Consonant hint row — shared by the solo screen and the VS
-/// board (web shows hints in both). Buttons disable + grey out once used.
+/// board (web shows hints in both). Buttons disable + gray out once used.
 struct NoundleHints: View {
     @ObservedObject var vm: ProperNoundleVM
     var body: some View {

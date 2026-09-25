@@ -1,7 +1,7 @@
 // Merges the authored shards under apps/web/scripts/<game>/bank/ into ONE
 // source bank per game (the file the real generators will read from), dropping
 // exact duplicates across shards, then runs each game's validator/composer
-// against the merged bank so the review artefacts reflect the whole thing.
+// against the merged bank so the review artifacts reflect the whole thing.
 //   node scripts/more-games/merge-banks.mjs            (merge + validate)
 //   node scripts/more-games/merge-banks.mjs --no-run   (merge only)
 import fs from 'node:fs';

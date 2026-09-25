@@ -462,7 +462,7 @@ final class AuthService: ObservableObject {
 
     /// Mirror the profile's entitlement into the cache on every load, so the
     /// next launch paints the right tier immediately. Storing the EXPIRY (not a
-    /// bool) is what keeps a cancelled subscription from lingering.
+    /// bool) is what keeps a canceled subscription from lingering.
     ///
     /// A NIL profile means "not loaded yet" and must leave the cache alone.
     /// Clearing on nil is why build 137 still flashed the free tier: the auth

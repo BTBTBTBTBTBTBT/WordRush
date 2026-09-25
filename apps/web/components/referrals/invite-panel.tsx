@@ -25,7 +25,7 @@ const STATUS_LABEL: Record<string, { text: string; color: string }> = {
   redeemed: { text: 'Friend joined! +3 days', color: '#059669' },
   converted: { text: 'Subscribed! Reward earned', color: '#d97706' },
   expired: { text: 'Expired', color: 'var(--color-text-muted)' },
-  revoked: { text: 'Cancelled', color: 'var(--color-text-muted)' },
+  revoked: { text: 'Canceled', color: 'var(--color-text-muted)' },
 };
 
 /** "29d left" / "12h left" for a pending invite's expiry. */
@@ -96,7 +96,7 @@ export function InvitePanel() {
   );
   const slotsLeft = Math.max(0, 3 - openInvites.length);
   const redemptions = (invites ?? []).filter((i) => i.status === 'redeemed' || i.status === 'converted').length;
-  // Dead invites (cancelled / expired) disappear entirely — a spent random
+  // Dead invites (canceled / expired) disappear entirely — a spent random
   // code is noise to the player. The rows live on in the DB for the admin
   // Referrals tab's history.
   const visibleInvites = (invites ?? []).filter(

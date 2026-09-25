@@ -92,7 +92,7 @@ val INFO_NAV = listOf(
 )
 
 /** Styled "?" menu — a welcoming, on-brand list (color-accented icon tiles +
- *  title + subtitle) instead of the flat grey system dropdown. */
+ *  title + subtitle) instead of the flat gray system dropdown. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {

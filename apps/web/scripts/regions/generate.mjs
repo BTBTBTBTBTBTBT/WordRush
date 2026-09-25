@@ -34,7 +34,7 @@ function connected(n, reg, k, without) { const cells = []; reg.forEach((v, i) =>
 
 function make(seed, n) {
   for (let k = 0; k < 400; k++) { const rng = rngFor(`${seed}-regions-v1${k ? `-r${k}` : ''}`), cols = layout(n, rng); if (!cols) continue; const reg = grow(n, cols, rng);
-    for (let step = 0; step < 60 && solutions(n, reg) > 1; step++) { // repair: find a rival solution, hand one of its cells to a neighbouring region so it breaks
+    for (let step = 0; step < 60 && solutions(n, reg) > 1; step++) { // repair: find a rival solution, hand one of its cells to a neighboring region so it breaks
       const all = []; solutions(n, reg, 2, all); const rival = all.find((s) => s.some((c, r) => c !== cols[r])); if (!rival) break;
       const moves = []; rival.forEach((c, r) => { const i = r * n + c; if (c === cols[r]) return; for (const j of N4(n, i)) if (reg[j] !== reg[i] && connected(n, reg, reg[i], i)) moves.push([i, reg[j]]); }); if (!moves.length) break;
       const [i, to] = moves[below(rng, moves.length)]; reg[i] = to; }

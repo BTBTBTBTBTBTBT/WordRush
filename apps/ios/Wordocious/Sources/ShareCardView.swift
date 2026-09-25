@@ -30,7 +30,7 @@ struct ShareCardView: View {
         case ladder(start: String, end: String, words: [String], hintMask: String, par: Int, moves: Int, puzzleNumber: Int?)
         /// Spyglass (More Games §18d): a dot grid with the found words as accent capsules — no letters.
         case wordsearch(n: Int, words: [WordsearchPlacement], found: [String], misses: Int, title: String, puzzleNumber: Int?)
-        /// Hubbub (More Games §18d): the blank 2-3-2 silhouette with the centre filled, rank, % of max — no letters.
+        /// Hubbub (More Games §18d): the blank 2-3-2 silhouette with the center filled, rank, % of max — no letters.
         case hub(rankName: String, pct: Int, wordsFound: Int, wordCount: Int, pangramsFound: Int, puzzleNumber: Int?)
         /// Codebreaker (More Games §18d): the CIPHERTEXT only — blank cells with the code letter under each, words wrapped whole — no plain letters.
         case cryptogram(cipher: String, checks: Int, puzzleNumber: Int?)
@@ -258,7 +258,7 @@ struct ShareCardView: View {
 
     /// Web drawCrossword parity: the grid silhouette — a purple tile (#ede9fe,
     /// #c4b5fd border) wherever the solution has a letter, nothing where it has
-    /// a block; the largest cell that fits the area, centred. No letters, no
+    /// a block; the largest cell that fits the area, centered. No letters, no
     /// numbers — the card spoils nothing.
     private func crosswordCard(w: Int, h: Int, solution: String) -> some View {
         let fill = Color(hex: 0xEDE9FE), border = Color(hex: 0xC4B5FD)
@@ -285,9 +285,9 @@ struct ShareCardView: View {
     }
 
     /// Web drawGroups parity: four 720-wide tier bars — the solved tiers filled
-    /// from the ramp in solve order with 1–4 pips centred, the unsolved tiers
+    /// from the ramp in solve order with 1–4 pips centered, the unsolved tiers
     /// dashed beneath on a loss — then four mistake dots (accent while a
-    /// mistake remains, grey once spent). No words — the card spoils nothing.
+    /// mistake remains, gray once spent). No words — the card spoils nothing.
     private func groupsCard(solvedTiers: [Int], mistakes: Int, maxMistakes: Int) -> some View {
         let accent = Color(hex: 0x9F1239)
         let ramp: [Int: (bg: Color, fg: Color)] = [
@@ -324,7 +324,7 @@ struct ShareCardView: View {
     }
 
     /// Web drawCryptogram parity: the ciphertext as rows of blank white cells
-    /// with the code letter in grey monospace beneath each, words wrapped whole,
+    /// with the code letter in gray monospace beneath each, words wrapped whole,
     /// punctuation in the accent. The largest cell (58 down to 26) whose wrapped
     /// rows fit the area wins. No plain letters — the card spoils nothing.
     private func cryptogramCard(cipher: String) -> some View {
@@ -377,7 +377,7 @@ struct ShareCardView: View {
         }
     }
 
-    /// Web drawHub parity: the 2-3-2 cluster as blank tiles with the centre in
+    /// Web drawHub parity: the 2-3-2 cluster as blank tiles with the center in
     /// the accent, the rank name large beneath, then % of the maximum.
     private func hubCard(rankName: String, pct: Int) -> some View {
         let tile: CGFloat = 150, gap: CGFloat = 18, accent = Color(hex: 0xC026D3)

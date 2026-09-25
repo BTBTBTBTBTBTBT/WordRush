@@ -37,7 +37,7 @@ final class HowToPlayService: ObservableObject {
 
     /// Cached copy shows immediately; this refreshes it and persists the result.
     ///
-    /// Was once-per-launch AND on `URLSession.shared`, which honours the
+    /// Was once-per-launch AND on `URLSession.shared`, which honors the
     /// response's `max-age=3600` — so a backgrounded app never refetched, and a
     /// cold launch could still serve an hour-old copy. That is two layers of
     /// staleness over content whose whole point is that it updates on a deploy

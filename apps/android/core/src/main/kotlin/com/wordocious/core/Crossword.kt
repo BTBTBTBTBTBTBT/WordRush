@@ -92,7 +92,7 @@ fun crosswordEntriesAt(s: CrosswordState, cell: Int): List<CrosswordEntry> = cro
 enum class CrosswordStatus(val key: String) { PLAYING("playing"), WON("won"), LOST("lost") }
 
 /**
- * [fill]: w*h chars — "." block, "_" empty, else the pencilled letter.
+ * [fill]: w*h chars — "." block, "_" empty, else the penciled letter.
  * [locked]: w*h chars — "1" locked (checked right / revealed), "0" free, "." block.
  * [revealed]: w*h chars — "l" letter revealed, "w" word revealed, "p" puzzle revealed, "." otherwise.
  * [lastWrong]: cells the last Check cleared (for the red flash).

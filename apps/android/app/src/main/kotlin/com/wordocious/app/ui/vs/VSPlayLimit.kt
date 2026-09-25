@@ -43,7 +43,7 @@ private fun vsLimitSecondsUntilMidnight(): Long {
 
 /**
  * "Daily VS Used" modal — ports iOS VSLobbyView.VSLimitModal (web
- * vs-limit-modal.tsx). Shown when a free player taps the greyed-out
+ * vs-limit-modal.tsx). Shown when a free player taps the grayed-out
  * "Play Daily VS" card: live countdown to midnight, Go Pro, Maybe later.
  */
 @Composable

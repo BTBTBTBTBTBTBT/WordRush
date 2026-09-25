@@ -3754,7 +3754,7 @@
         "FEAST"
       ],
       [
-        "Exchange ____ with the neighbours",
+        "Exchange ____ with the neighbors",
         "GIFTS"
       ],
       [
@@ -3871,7 +3871,7 @@
         "HERITAGE"
       ],
       [
-        "Honour the ____",
+        "Honor the ____",
         "ANCESTORS"
       ],
       [
@@ -4552,7 +4552,7 @@
         "GREASE"
       ],
       [
-        "A labour of ____",
+        "A labor of ____",
         "LOVE"
       ],
       [
@@ -5294,7 +5294,7 @@
       ]
     ]
   },
-  "colours": {
+  "colors": {
     "title": "A Splash of Color",
     "pairs": [
       [
@@ -5398,7 +5398,7 @@
         "FLAG"
       ],
       [
-        "Use your grey ____",
+        "Use your gray ____",
         "MATTER"
       ],
       [
@@ -7030,7 +7030,7 @@
         "CHANCE"
       ],
       [
-        "Fortune favours the ____",
+        "Fortune favors the ____",
         "BRAVE"
       ],
       [
@@ -7187,7 +7187,7 @@
         "PROSPER"
       ],
       [
-        "Practise what you ____",
+        "Practice what you ____",
         "PREACH"
       ],
       [
@@ -7530,7 +7530,7 @@
     "title": "Brave Hearts",
     "pairs": [
       [
-        "Fortune favours the ____",
+        "Fortune favors the ____",
         "BRAVE"
       ],
       [
@@ -9614,7 +9614,7 @@
     ]
   },
   "friends": {
-    "title": "Friends and Neighbours",
+    "title": "Friends and Neighbors",
     "pairs": [
       [
         "A friend in need is a friend ____",
@@ -11791,7 +11791,7 @@
         "PINCH"
       ],
       [
-        "Flavour of the ____",
+        "Flavor of the ____",
         "MONTH"
       ],
       [
@@ -13890,7 +13890,7 @@
       ]
     ]
   },
-  "neighbours": {
+  "neighbors": {
     "title": "Good Fences",
     "allow": [
       "BACKYARD",

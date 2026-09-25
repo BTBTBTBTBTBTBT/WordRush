@@ -195,7 +195,7 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
       case 'correct': return 'tile-correct';
       case 'present': return 'tile-present';
       case 'absent': return 'tile-absent';
-      // Hint rows: same grey as the in-game NoundleBoard (#e5e7eb/#d1d5db) —
+      // Hint rows: same gray as the in-game NoundleBoard (#e5e7eb/#d1d5db) —
       // without this they fell through to the white "empty" style and a hint
       // row was indistinguishable from an unplayed one.
       case 'hint-used': return 'bg-gray-200 border-gray-300';

@@ -211,7 +211,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         }
                         Spacer(Modifier.size(12.dp))
-                        // Two equal labelled buttons under the URL pill — Copy
+                        // Two equal labeled buttons under the URL pill — Copy
                         // flips to "Copied!" (iOS linkTab).
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(

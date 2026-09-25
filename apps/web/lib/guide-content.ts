@@ -487,7 +487,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     rules: [
       'The board is split into color regions, one for every row. Place exactly one star in every row, every column and every region. Stars can never touch, not even at a corner, so once a star is down all eight cells around it are out. Every board has exactly one solution and is built on your device from the day\'s seed, so everyone plays the same board.',
       'Tap an empty cell once to cross it out (a small ×: "no star here"), tap again to place a star, tap a third time to clear it. A star in the right cell stays; a star in a wrong cell turns red and counts as a mistake — you can clear it, but the mistake stands. Three mistakes end the game. Crosses are notes for your own reasoning: they are never judged and never cost anything.',
-      'Auto-cross is on by default: when you place a correct star, every cell it rules out — its row, its column, its region and the eight neighbours — is crossed out for you. Switch it off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
+      'Auto-cross is on by default: when you place a correct star, every cell it rules out — its row, its column, its region and the eight neighbors — is crossed out for you. Switch it off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
       'The daily is the same for everyone and counts once on the leaderboard. Starsweep lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
     scoring: [
@@ -515,7 +515,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'A tall region that spans one column owns it',
-        body: 'When a region lives in a single column, its star takes that column, so no other region may place a star there. Cross the whole column outside the region and watch neighbouring regions collapse.',
+        body: 'When a region lives in a single column, its star takes that column, so no other region may place a star there. Cross the whole column outside the region and watch neighboring regions collapse.',
       },
       {
         heading: 'Never place a star you cannot prove',
@@ -566,11 +566,11 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Work from both ends',
-        body: 'It is often easier to see which words are one step away from END than to push forward blindly. Find END\'s neighbours in your head, then aim your ladder at one of them.',
+        body: 'It is often easier to see which words are one step away from END than to push forward blindly. Find END\'s neighbors in your head, then aim your ladder at one of them.',
       },
       {
         heading: 'Rejections are free — use them',
-        body: 'Typing a word that turns out not to be in the list costs nothing, so test a promising rung rather than agonising. Only accepted words spend moves.',
+        body: 'Typing a word that turns out not to be in the list costs nothing, so test a promising rung rather than agonizing. Only accepted words spend moves.',
       },
       {
         heading: 'Undo before you dig deeper',
@@ -641,14 +641,14 @@ export const MODE_GUIDES: ModeGuide[] = [
     metaDescription:
       'Wordocious Hubbub guide: the seven-letter hub rules, how words and pangrams score, what every rank means, why the game keeps going after you win, how the two hints work, and the strategy that reaches Pandemonium.',
     facts: [
-      { label: 'Letters', value: '7, one required centre letter, repeats allowed' },
+      { label: 'Letters', value: '7, one required center letter, repeats allowed' },
       { label: 'Words', value: '4 letters = 1 point, longer = its length, pangram +7' },
       { label: 'Solved at', value: 'Hubbub — half the maximum score' },
       { label: 'Time bonus cap', value: '30:00' },
       { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
     ],
     rules: [
-      'You get seven letters in a cluster with one letter in the middle. Make words of four letters or more using only those letters; you may repeat a letter as often as you like, but every word must use the centre letter. Tap the tiles or type, then press Enter. A four-letter word scores 1 point, a longer word scores its length, and a word that uses all seven letters — a pangram — scores 7 extra. Every puzzle has at least one.',
+      'You get seven letters in a cluster with one letter in the middle. Make words of four letters or more using only those letters; you may repeat a letter as often as you like, but every word must use the center letter. Tap the tiles or type, then press Enter. A four-letter word scores 1 point, a longer word scores its length, and a word that uses all seven letters — a pangram — scores 7 extra. Every puzzle has at least one.',
       'Words are checked against a friendly list. Common words score and together set the puzzle\'s maximum. Rarer real words are accepted as bonus words for 0 points, so a genuine word is never turned away and the maximum never needs an obscure one. Your rank climbs with your share of the maximum: Hush, Murmur, Chatter, Banter, Clamor, Racket, then Hubbub at 50%, Uproar at 70%, Thunder at 85% and Pandemonium at 100% — every word found.',
       'Reaching Hubbub solves the puzzle and records your result once. The board stays open: keep hunting and every rank you climb afterwards raises your leaderboard score in place, without earning XP twice. If you stop short of Hubbub, "End puzzle and see answers" records a loss with the rank you reached and shows every word.',
       'The daily is the same for everyone and counts once on the leaderboard. Hubbub lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
@@ -659,8 +659,8 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     controls: [
       { icon: 'delete', label: 'Delete', body: 'Removes the last letter you typed. Free.' },
-      { icon: 'shuffle', label: 'Shuffle', body: 'Rearranges the six outer letters so you see new combinations. The centre never moves. Free (Space does the same).' },
-      { icon: 'corner-down-left', label: 'Enter', body: 'Submits your word. A word that is too short, misses the centre letter, uses other letters, or is not on the list is turned away for free.' },
+      { icon: 'shuffle', label: 'Shuffle', body: 'Rearranges the six outer letters so you see new combinations. The center never moves. Free (Space does the same).' },
+      { icon: 'corner-down-left', label: 'Enter', body: 'Submits your word. A word that is too short, misses the center letter, uses other letters, or is not on the list is turned away for free.' },
       { icon: 'lightbulb', label: 'Starts with…', body: 'Shows the first two letters and the length of the next word you have not found. Costs 50 points of score, never a mistake, and rules out a Perfect run.' },
       { icon: 'eye', label: 'Reveal a word', body: 'Places the next unfound word for you, points included. Costs two hints (100 points) and rules out a Perfect run.' },
       { icon: 'flag', label: 'End puzzle', body: 'Only shown before you reach Hubbub. Records a loss at the rank you reached and shows every word. After Hubbub the puzzle records itself and you simply keep going.' },
@@ -668,7 +668,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     tips: [
       {
         heading: 'Find the pangram first',
-        body: 'Every puzzle has a word that uses all seven letters, and it is worth its length plus seven — often a fifth of Hubbub on its own. Look for common endings (-ING, -ER, -ED, -LY) built from the outer letters and see which stem the centre letter completes.',
+        body: 'Every puzzle has a word that uses all seven letters, and it is worth its length plus seven — often a fifth of Hubbub on its own. Look for common endings (-ING, -ER, -ED, -LY) built from the outer letters and see which stem the center letter completes.',
       },
       {
         heading: 'Milk the prefixes and suffixes',
@@ -696,7 +696,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     accent: '#92400e',
     tagline: 'A well-known saying in a letter-for-letter code — work out which letter stands for which and crack it',
     metaDescription:
-      'Wordocious Codebreaker guide: how the daily cryptogram works, why the three given letters matter, why pencilled letters are free, what Check, Hint and Reveal cost, the exact scoring formula, and the strategy that cracks a code fast.',
+      'Wordocious Codebreaker guide: how the daily cryptogram works, why the three given letters matter, why penciled letters are free, what Check, Hint and Reveal cost, the exact scoring formula, and the strategy that cracks a code fast.',
     facts: [
       { label: 'Puzzle', value: 'One everyday saying, 30–90 letters, in a substitution code' },
       { label: 'Given', value: 'The three most frequent letters, filled in and locked' },
@@ -707,7 +707,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     rules: [
       'Every letter of the saying has been swapped for another letter, the same way throughout: if K stands for E, every K in the code is an E. The small letter under each box is the code letter; the box above it is where you write what you think it really is. The three most common letters of the saying are already filled in and locked, in the game\'s color, so there is always a way in.',
       'Tap any box (or its code letter in the strip below) and type. The letter goes into every box with that code letter at once, and the selection moves on to the next open letter. Change your mind as often as you like: typing over a letter replaces it everywhere, Delete clears it everywhere, and nothing is marked or counted while you experiment. If you use the same plain letter for two different code letters, both read red until you change one — a saying cannot have two letters that both mean E.',
-      'Check is the only thing that counts against you. It looks at every letter you have pencilled: right ones lock in the game\'s color, wrong ones are cleared with a red flash, and the check is recorded. Hint fills in the most frequent letter you have not yet solved. Reveal appears after five minutes; it shows the whole answer and records the puzzle as a loss. The puzzle completes itself the moment every letter is right — there is nothing to submit.',
+      'Check is the only thing that counts against you. It looks at every letter you have penciled: right ones lock in the game\'s color, wrong ones are cleared with a red flash, and the check is recorded. Hint fills in the most frequent letter you have not yet solved. Reveal appears after five minutes; it shows the whole answer and records the puzzle as a loss. The puzzle completes itself the moment every letter is right — there is nothing to submit.',
       'The daily is the same for everyone and counts once on the leaderboard. On a holiday the saying belongs to the day (Christmas, Thanksgiving, Fourth of July and the rest). Codebreaker lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
     scoring: [
@@ -715,8 +715,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       'Each Hint costs 100 points and never counts as a Check. Hints never lose you the puzzle, but a crack with any hint is not a Perfect run and does not count toward the Pure Codebreaker achievements. A revealed puzzle records a loss but still earns credit for the time you put in, so it is always worth trying.',
     ],
     controls: [
-      { icon: 'delete', label: 'Delete', body: 'Clears the pencilled letter from the selected code letter everywhere it appears. Free. Locked letters cannot be cleared.' },
-      { icon: 'check-check', label: 'Check', body: 'Marks every pencilled letter: right ones lock, wrong ones are cleared. Each Check counts — none is perfect, and the bonus falls 250 points per Check up to three.' },
+      { icon: 'delete', label: 'Delete', body: 'Clears the penciled letter from the selected code letter everywhere it appears. Free. Locked letters cannot be cleared.' },
+      { icon: 'check-check', label: 'Check', body: 'Marks every penciled letter: right ones lock, wrong ones are cleared. Each Check counts — none is perfect, and the bonus falls 250 points per Check up to three.' },
       { icon: 'lightbulb', label: 'Hint', body: 'Fills in the most frequent letter you have not solved and locks it. Costs 100 points of score, never a Check, and rules out a Perfect run.' },
       { icon: 'eye', label: 'Reveal', body: 'Available after five minutes. Shows the whole saying and records the puzzle as a loss.' },
       { icon: 'corner-down-left', label: 'Enter', body: 'Moves the selection to the next open letter without changing anything. Free.' },
@@ -736,7 +736,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Pencil boldly, Check rarely',
-        body: 'Pencilling is free, so try a whole word and read the sentence back — a wrong guess usually looks wrong at once. Save Check for the moment you are almost done and want the last few letters confirmed; the bonus falls with every Check, not with every wrong letter.',
+        body: 'Penciling is free, so try a whole word and read the sentence back — a wrong guess usually looks wrong at once. Save Check for the moment you are almost done and want the last few letters confirmed; the bonus falls with every Check, not with every wrong letter.',
       },
       {
         heading: 'Read the saying, not the letters',

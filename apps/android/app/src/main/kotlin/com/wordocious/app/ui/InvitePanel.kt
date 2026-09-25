@@ -88,7 +88,7 @@ fun InvitePanel() {
             .recoverCatching { java.time.Instant.parse(row.expiresAt).toEpochMilli() }
             .getOrDefault(0L)
 
-    // Dead invites (cancelled / expired) disappear — web/iOS parity.
+    // Dead invites (canceled / expired) disappear — web/iOS parity.
     val now = System.currentTimeMillis()
     val visible = invites.filter {
         it.status != "revoked" && !(it.status == "pending" && expiryMs(it) < now)

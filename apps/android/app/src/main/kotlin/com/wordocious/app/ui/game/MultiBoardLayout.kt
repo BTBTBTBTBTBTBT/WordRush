@@ -36,7 +36,7 @@ import com.wordocious.core.evaluateGuess
  * - 8 boards (OctoWord): 4-column grid; tap any board → fullscreen zoom overlay
  * - Sequence (Succession): boards are displayed in order; boards before the
  *   current one are solved/lost and don't receive the current guess; boards
- *   after the current one are locked (invisible/greyed out, per web behavior)
+ *   after the current one are locked (invisible/grayed out, per web behavior)
  *
  * Matches web `auto-rows-fr` height-fill: boards in a row share height equally.
  */

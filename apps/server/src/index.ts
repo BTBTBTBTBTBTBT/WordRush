@@ -133,7 +133,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 // devices); anonymous visitors send `a:<per-browser-UUID>` (dedupes
 // across tabs in the same browser profile). Sockets that arrive without
 // a presenceId fall back to their socket.id, so they're counted but not
-// collapsed — matches pre-dedupe behaviour for any out-of-date clients.
+// collapsed — matches pre-dedupe behavior for any out-of-date clients.
 httpServer.on('request', (req, res) => {
   if (!req.url) return;
   if (req.url.startsWith('/socket.io/')) return; // let Socket.IO handle it

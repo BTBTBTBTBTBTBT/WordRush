@@ -193,7 +193,7 @@
    ["____ point", "VANTAGE"]
   ]
  },
- "neighbours": {
+ "neighbors": {
   "title": "Good Fences",
   "allow": ["BACKYARD", "OTHERS", "POTLUCK"],
   "pairs": [

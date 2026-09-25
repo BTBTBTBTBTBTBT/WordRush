@@ -12,7 +12,7 @@ package com.wordocious.app.data
  * > clean (0); ties keep source order.
  */
 object SenseRank {
-    /** The headword or an inflection of it, in LOWERCASE (a capitalised mention is a name). */
+    /** The headword or an inflection of it, in LOWERCASE (a capitalized mention is a name). */
     fun mentions(word: String, def: String): Boolean {
         val w = word.lowercase()
         if (w.length < 3) return false

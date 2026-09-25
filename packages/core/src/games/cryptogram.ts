@@ -111,7 +111,7 @@ export interface CryptogramState {
   key: string;
   cipher: string;
   given: string[];
-  /** code letter → the plain letter the player has pencilled in. */
+  /** code letter → the plain letter the player has penciled in. */
   mapping: Record<string, string>;
   /** Code letters that can no longer change: given, checked-correct, hinted, revealed. Alphabetical. */
   locked: string[];
@@ -242,7 +242,7 @@ export function cryptogramReduce(s: CryptogramState, a: CryptogramAction, now = 
 /**
  * solutions = [text, key26, id]; guesses = ["=" + mapping26, "h" + mask26, "c" + checks]
  * where position i of each 26-string is CODE letter ALPHABET[i]: mapping26 holds
- * the pencilled plain letter or "."; mask26 holds "g" given, "h" hinted, "r"
+ * the penciled plain letter or "."; mask26 holds "g" given, "h" hinted, "r"
  * revealed, "l" locked by a Check, "." otherwise.
  */
 export function cryptogramMatchRow(s: CryptogramState): { solutions: string[]; guesses: string[] } {

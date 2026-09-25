@@ -287,7 +287,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Notes are for pairs, not for everything',
         body: [
-          'Sudocious lets you pencil candidates into any cell for free, and the reflex is to fill every empty cell with every possibility. Do not. A board covered in marks is harder to read than an empty one, and the daily rarely needs it. Use Notes surgically: when a cell is down to exactly two candidates, mark both; when a digit has exactly two possible homes inside a box, mark both cells. Those pairs are precisely what the next placement will resolve, and the game clears a pencilled digit from its row, column and box the moment you place it, so the bookkeeping is done for you.',
+          'Sudocious lets you pencil candidates into any cell for free, and the reflex is to fill every empty cell with every possibility. Do not. A board covered in marks is harder to read than an empty one, and the daily rarely needs it. Use Notes surgically: when a cell is down to exactly two candidates, mark both; when a digit has exactly two possible homes inside a box, mark both cells. Those pairs are precisely what the next placement will resolve, and the game clears a penciled digit from its row, column and box the moment you place it, so the bookkeeping is done for you.',
           'A pair of pairs is the Medium puzzle\'s deepest trick. If two cells in a row each hold only the candidates 4 and 9, then 4 and 9 live in those two cells and nowhere else in that row — so you can strike them from every other cell in the line. Spotting a naked pair is usually the moment a stuck grid opens up again.',
         ],
       },
@@ -327,7 +327,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Open with the smallest region',
         body: [
-          'Every region owns exactly one star, and a region of two or three cells has almost nowhere to put it. Whichever of its cells holds the star, every cell that touches all of them is dead — stars cannot share a corner, let alone an edge — so you can cross those neighbours out before you place anything. On a 7 × 7 board a two-cell region often settles its row or column in a single move.',
+          'Every region owns exactly one star, and a region of two or three cells has almost nowhere to put it. Whichever of its cells holds the star, every cell that touches all of them is dead — stars cannot share a corner, let alone an edge — so you can cross those neighbors out before you place anything. On a 7 × 7 board a two-cell region often settles its row or column in a single move.',
           'Then look at the row and column the small region occupies. Its star takes that row, so no other region may place a star in that row: cross every cell of the row that lies outside the small region. That one deduction routinely eliminates five or six cells and pulls the next region into focus.',
         ],
       },
@@ -342,14 +342,14 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Cross before you star',
         body: [
           'Starsweep is won by elimination, not inspiration. Tap a cell once to cross it out; the mark is free, never judged and never counted, and it is where the actual solving happens. Every cross you place is a fact about the board that stays visible, so the more you mark, the less you have to hold in your head. When a row is down to one uncrossed cell, that cell is the star — and it cost you nothing to have been thorough.',
-          'Auto-cross is on by default and does the mechanical half of this for you: place a correct star and its row, column, region and eight neighbours are crossed automatically. Leave it on. Your job is the other half — the crosses that follow from reasoning about regions, not from a star already placed.',
+          'Auto-cross is on by default and does the mechanical half of this for you: place a correct star and its row, column, region and eight neighbors are crossed automatically. Leave it on. Your job is the other half — the crosses that follow from reasoning about regions, not from a star already placed.',
         ],
       },
       {
         heading: 'Price every hunch at 300 points',
         body: [
           'The scoring treats your finish as mistakes plus one out of a budget of four, with every unused step worth 300 points: a clean board banks 900, one mistake 600, two 300, and the third mistake ends the game. Speed is worth at most 240 points across the ten-minute cap, so a faster board can never outrank a cleaner one. Read that as a rule: a star you cannot prove is a 300-point bet with a one-in-two or worse chance of paying off, plus a step toward losing the whole day.',
-          'When two cells both look possible for a region\'s star, do not pick. Cross out something else — look for a neighbouring region\'s forced line, or the counting argument — and one of the two candidates will die on its own. The board is built so that this always works.',
+          'When two cells both look possible for a region\'s star, do not pick. Cross out something else — look for a neighboring region\'s forced line, or the counting argument — and one of the two candidates will die on its own. The board is built so that this always works.',
         ],
       },
       {
@@ -362,7 +362,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Thursday is a different game',
         body: [
-          'Monday to Wednesday the board is 7 × 7; Thursday to Sunday it is 8 × 8, and the extra row is more than a 15% increase in difficulty. Eight regions give the counting argument more to bite on and the small-region opening less to work with, so the middle game — regions against rows — is where the weekend boards are decided. If you only have time to practise one thing, practise the count.',
+          'Monday to Wednesday the board is 7 × 7; Thursday to Sunday it is 8 × 8, and the extra row is more than a 15% increase in difficulty. Eight regions give the counting argument more to bite on and the small-region opening less to work with, so the middle game — regions against rows — is where the weekend boards are decided. If you only have time to practice one thing, practice the count.',
           'Pro Unlimited adds a 9 × 9 board, which is the best training there is: it forces the counting logic on every board and makes the daily 8 × 8 feel roomy. As with every More Games title, none of this touches your Daily Sweep — Starsweep is extra XP, medals and a leaderboard, not a sweep cell.',
         ],
       },
@@ -388,21 +388,21 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Find the pivot vowel',
         body: [
-          'Most ladders turn on a vowel swap in the middle of the word, and most blocked routes are blocked because the vowel cannot change yet. STONE to STANE is not a word, but STONE to STORE to STARE is: the consonant change opens a word in which the vowel is free to move. When the letter you want to change produces a non-word, change a neighbouring consonant first and try the vowel again a rung later.',
-          'Think in word families. -ATE, -INE, -OLD, -ARE, -AND are dense neighbourhoods with many one-letter neighbours; -UMP or -ISK are sparse. If your route can pass through a dense family it will find rungs easily, so steer toward one when the direct path stalls.',
+          'Most ladders turn on a vowel swap in the middle of the word, and most blocked routes are blocked because the vowel cannot change yet. STONE to STANE is not a word, but STONE to STORE to STARE is: the consonant change opens a word in which the vowel is free to move. When the letter you want to change produces a non-word, change a neighboring consonant first and try the vowel again a rung later.',
+          'Think in word families. -ATE, -INE, -OLD, -ARE, -AND are dense neighborhoods with many one-letter neighbors; -UMP or -ISK are sparse. If your route can pass through a dense family it will find rungs easily, so steer toward one when the direct path stalls.',
         ],
       },
       {
         heading: 'Climb from both ends',
         body: [
-          'It is often easier to see which words are one step away from END than to push forward blindly from START. List END\'s neighbours in your head — every word one letter different — and pick the one that shares the most letters with your current rung. Now you are aiming at a target two or three moves closer than END itself.',
-          'When both ends have obvious neighbours, meet in the middle: find a word that is one step from a START-neighbour and one step from an END-neighbour, and the whole ladder is drawn before you type. Planning a five-move route in your head takes twenty seconds; typing it takes ten. Discovering it rung by rung takes three minutes and two Undos.',
+          'It is often easier to see which words are one step away from END than to push forward blindly from START. List END\'s neighbors in your head — every word one letter different — and pick the one that shares the most letters with your current rung. Now you are aiming at a target two or three moves closer than END itself.',
+          'When both ends have obvious neighbors, meet in the middle: find a word that is one step from a START-neighbor and one step from an END-neighbor, and the whole ladder is drawn before you type. Planning a five-move route in your head takes twenty seconds; typing it takes ten. Discovering it rung by rung takes three minutes and two Undos.',
         ],
       },
       {
         heading: 'Rejections are free — spend them',
         body: [
-          'Letter Ladder turns a word away for three reasons: it is not in the word list, it changes more than one letter (or none), or it is already on your ladder. None of these costs anything — no move, no mistake, no time penalty beyond the second it took to type. Only an ACCEPTED word is a move. So when you are unsure whether a rung is a word, type it. Agonising over whether STANE exists costs more than finding out.',
+          'Letter Ladder turns a word away for three reasons: it is not in the word list, it changes more than one letter (or none), or it is already on your ladder. None of these costs anything — no move, no mistake, no time penalty beyond the second it took to type. Only an ACCEPTED word is a move. So when you are unsure whether a rung is a word, type it. Agonizing over whether STANE exists costs more than finding out.',
           'This also means the word list is your ally. It is built from common words — par is always achievable through everyday vocabulary, and no obscure word can beat it — so if your route needs an unusual word, you are probably on the wrong route rather than short of vocabulary.',
         ],
       },
@@ -471,7 +471,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Pace the clean clear',
         body: [
           'Because every strong finish is a zero-miss clear, the Spyglass podium is decided by time, and time is decided by method. Read the list once, rank the words by their rarest letter, take the long words and the rare-letter words first, and let the crossings give you the rest. The last two words are usually short, common-letter words — sweep the grid row by row for their first pair, not their first letter.',
-          'Themes rotate through fifteen families, a theme never returns within four months and no word repeats within six weeks, so you cannot memorise the grid — but you can memorise the method. Like every More Games title, Spyglass earns XP, medals and a leaderboard place while leaving your Daily Sweep exactly where the eight word games put it.',
+          'Themes rotate through fifteen families, a theme never returns within four months and no word repeats within six weeks, so you cannot memorize the grid — but you can memorize the method. Like every More Games title, Spyglass earns XP, medals and a leaderboard place while leaving your Daily Sweep exactly where the eight word games put it.',
         ],
       },
     ],
@@ -490,7 +490,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'The pangram is your opening move',
         body: [
           'Every Hubbub puzzle contains at least one word that uses all seven letters, and it is worth its length plus seven — a seven-letter pangram scores 14, an eight-letter one 15, against 1 point for a four-letter word. That is often a fifth of the way to Hubbub in a single entry. Spend your first minute on it before you type anything else, while the letters are fresh and you have no half-found words distracting you.',
-          'Hunt it structurally. Look at the six outer letters for a common ending — -ING, -ER, -ED, -LY, -ION — and ask which stem the centre letter completes. If the letters include I, N and G, the pangram almost certainly ends in -ING and you need a four-letter stem from the other four. If they include T, I, O, N, try -TION or -ATION. Most pangrams are an ordinary word wearing a familiar suffix.',
+          'Hunt it structurally. Look at the six outer letters for a common ending — -ING, -ER, -ED, -LY, -ION — and ask which stem the center letter completes. If the letters include I, N and G, the pangram almost certainly ends in -ING and you need a four-letter stem from the other four. If they include T, I, O, N, try -TION or -ATION. Most pangrams are an ordinary word wearing a familiar suffix.',
         ],
       },
       {
@@ -537,7 +537,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     title: 'The Codebreaker Playbook: Frequency, Pattern, and the Cost of a Check',
     description:
       'How to crack the Wordocious daily coded saying fast — starting from the three given letters and the short words, reading the frequency strip, using apostrophes and doubles as fixed points, and why you should pencil boldly and Check almost never.',
-    dek: 'Pencilled letters are free and the code cracks itself when every letter is right. The only thing that costs you is asking the game to check your work.',
+    dek: 'Penciled letters are free and the code cracks itself when every letter is right. The only thing that costs you is asking the game to check your work.',
     minutes: 7,
     sections: [
       {
@@ -565,13 +565,13 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Pencil boldly',
         body: [
           'Every letter you type is a pencil mark. It lands in every box with that code letter, you can type over it, Delete it everywhere at once, and nothing is marked or counted while you experiment. The game only warns you when you have used the same plain letter for two different code letters, turning both red — because a saying cannot have two letters that both mean E. So try a whole word at once and read the sentence back. A wrong guess usually looks wrong immediately, and undoing it is free.',
-          'Pencilling a full hypothesis is faster than being careful: if you think a five-letter word is THERE, type all five and let the other words tell you whether the R holds.',
+          'Penciling a full hypothesis is faster than being careful: if you think a five-letter word is THERE, type all five and let the other words tell you whether the R holds.',
         ],
       },
       {
         heading: 'Check almost never',
         body: [
-          'Check is the only action that counts against you. It looks at every pencilled letter, locks the right ones and clears the wrong ones with a red flash — and it is recorded. Your finish is counted as checks plus one out of a budget of four, with every unused check worth 250 points: no Check banks 750, one Check 500, two 250, three or more nothing. Speed is worth at most 240 points across a twenty-minute cap, so a single Check costs more than the whole speed bonus. The bonus falls per Check, not per wrong letter, which means one Check that catches five errors costs exactly what one Check that catches none does.',
+          'Check is the only action that counts against you. It looks at every penciled letter, locks the right ones and clears the wrong ones with a red flash — and it is recorded. Your finish is counted as checks plus one out of a budget of four, with every unused check worth 250 points: no Check banks 750, one Check 500, two 250, three or more nothing. Speed is worth at most 240 points across a twenty-minute cap, so a single Check costs more than the whole speed bonus. The bonus falls per Check, not per wrong letter, which means one Check that catches five errors costs exactly what one Check that catches none does.',
           'That arithmetic gives you a policy. Never Check early. Pencil the whole saying, read it aloud, fix what reads wrong — the puzzle completes itself the moment every letter is right, so a fully correct board never needs a Check at all. Reserve Check for two or three genuinely doubtful letters, and take one Check, not two.',
         ],
       },
@@ -651,8 +651,8 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'The title is the first clue',
         body: [
-          'Crosswordocious is themed, and the theme is the title. Most answers belong to it; a few are simply other sayings, and nothing on the board says which is which. So read the title before the clues and prime the family: if the title is "Down by the Sea", you are expecting ANCHOR, TIDE, SAILS and HARBOUR, and a clue that does not fit the sea is telling you it is one of the plain sayings.',
-          'On a holiday the puzzle belongs to the day, which makes the theme even louder. A Thanksgiving grid will lean on gratitude, harvest and family sayings; a Fourth of July grid on freedom and fireworks. Guess the answers before you read the clues and you will recognise them when you do.',
+          'Crosswordocious is themed, and the theme is the title. Most answers belong to it; a few are simply other sayings, and nothing on the board says which is which. So read the title before the clues and prime the family: if the title is "Down by the Sea", you are expecting ANCHOR, TIDE, SAILS and HARBOR, and a clue that does not fit the sea is telling you it is one of the plain sayings.',
+          'On a holiday the puzzle belongs to the day, which makes the theme even louder. A Thanksgiving grid will lean on gratitude, harvest and family sayings; a Fourth of July grid on freedom and fireworks. Guess the answers before you read the clues and you will recognize them when you do.',
         ],
       },
       {

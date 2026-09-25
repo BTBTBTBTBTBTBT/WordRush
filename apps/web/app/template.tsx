@@ -7,7 +7,7 @@
  *
  * The `key={pathname}` trick forces React to remount on navigation,
  * replaying the CSS animation. `usePathname()` changes on every
- * client-side navigation — identical behaviour to the old motion.div.
+ * client-side navigation — identical behavior to the old motion.div.
  */
 
 import { usePathname } from 'next/navigation';

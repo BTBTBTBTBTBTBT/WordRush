@@ -44,7 +44,7 @@ describe('Hubbub bank', () => {
       expect(sets.has(key), `${p.id} letter set reused`).toBe(false); sets.add(key);
       expect(p.words.length).toBeGreaterThanOrEqual(20); expect(p.words.length).toBeLessThanOrEqual(60);
       expect(p.pangrams.length).toBeGreaterThanOrEqual(1);
-      for (const w of p.words) { expect(w.includes(p.letters[0]), `${p.id} ${w} centre`).toBe(true); for (const ch of w) expect(p.letters.includes(ch), `${p.id} ${w}`).toBe(true); }
+      for (const w of p.words) { expect(w.includes(p.letters[0]), `${p.id} ${w} center`).toBe(true); for (const ch of w) expect(p.letters.includes(ch), `${p.id} ${w}`).toBe(true); }
       for (const w of p.bonus) { expect(p.words.includes(w), `${p.id} bonus ${w} also scores`).toBe(false); expect(w.includes(p.letters[0])).toBe(true); }
       expect(p.words.reduce((t, w) => t + hubWordScore(w, p.letters), 0), `${p.id} max`).toBe(p.max);
       for (const pg of p.pangrams) expect(hubIsPangram(pg, p.letters) && p.words.includes(pg), `${p.id} pangram ${pg}`).toBe(true);
@@ -55,7 +55,7 @@ describe('Hubbub bank', () => {
 describe('Hubbub reducer', () => {
   const p = bank.daily[0];   // U·DELMNP
 
-  it('rejects for free, scores words, accepts bonus words for nothing, and finalises once at Hubbub', () => {
+  it('rejects for free, scores words, accepts bonus words for nothing, and finalizes once at Hubbub', () => {
     let s = createHubState(p, 'fixture', 0);
     s = hubReduce(s, { type: 'SUBMIT', word: 'DUE' }); expect(s.reject).toBe('short');
     s = hubReduce(s, { type: 'SUBMIT', word: 'MELD' }); expect(s.reject).toBe('centre');

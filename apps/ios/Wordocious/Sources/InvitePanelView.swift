@@ -45,7 +45,7 @@ struct InvitePanelView: View {
         Self.iso.date(from: row.expires_at) ?? Self.isoPlain.date(from: row.expires_at) ?? .distantPast
     }
 
-    /// Dead invites (cancelled / expired) disappear — web parity.
+    /// Dead invites (canceled / expired) disappear — web parity.
     private var visibleInvites: [ReferralRow] {
         invites.filter { !($0.status == "revoked" || ($0.status == "pending" && expiry($0) < Date())) }
     }

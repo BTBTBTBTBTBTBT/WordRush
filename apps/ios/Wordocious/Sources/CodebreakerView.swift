@@ -135,7 +135,7 @@ final class CodebreakerVM: ObservableObject {
         if case .check = a {
             let n = state.lastWrong.count
             if n > 0 { flash("\(n) wrong letter\(n == 1 ? "" : "s") cleared"); Haptics.error(); SoundManager.shared.playInvalid() }
-            else { flash("Everything pencilled is right"); SoundManager.shared.playSuccess() }
+            else { flash("Everything penciled is right"); SoundManager.shared.playSuccess() }
             Task { try? await Task.sleep(nanoseconds: 700_000_000); if !state.lastWrong.isEmpty { state.lastWrong = [] } }
         }
         if state.status != .playing { finish() }
@@ -226,7 +226,7 @@ struct CodebreakerView: View {
                 VStack(spacing: 8) {
                     header
                     // Layout rule (founder, 2026-09-24, §16): the board and the
-                    // frequency strip are ONE block centred in the band between
+                    // frequency strip are ONE block centered in the band between
                     // the header and the capsule row; the cell scales to the band
                     // (64 pt down to 40 pt) so the cipher's wrapped lines plus the
                     // strip fit. The ScrollView only ever scrolls if a saying
@@ -540,7 +540,7 @@ struct WordWrapLayout: Layout {
 }
 
 /// One letter of the cipher — the Classic tile geometry (14% corner,
-/// proportional stroke) with the pencilled plain letter inside and the CODE
+/// proportional stroke) with the penciled plain letter inside and the CODE
 /// letter in small monospace beneath.
 private struct CipherTile: View {
     let plain: String
@@ -621,7 +621,7 @@ struct CipherBoardView: View {
     }
 }
 
-/// Code letters by how often they occur, with the pencilled letter shown; tap to select.
+/// Code letters by how often they occur, with the penciled letter shown; tap to select.
 struct FrequencyStripView: View {
     @ObservedObject var vm: CodebreakerVM
     /// Chip type size — scales with the board cell (11 pt at the floor, 14 pt at the top end).

@@ -26,7 +26,7 @@ interface CipherBoardProps {
 
 /**
  * The saying as the player sees it (More Games §16): every letter is a Classic
- * style cell with the pencilled plain letter inside and the CODE letter in small
+ * style cell with the penciled plain letter inside and the CODE letter in small
  * type beneath. Words never break across lines. The three given letters are
  * filled in the accent and locked; hinted letters are violet; a plain letter
  * used for two code letters reads red; the code letter just cleared by Check
@@ -111,7 +111,7 @@ interface FrequencyStripProps {
   chipFont?: number;
 }
 
-/** Code letters by how often they occur, with the pencilled letter shown; tap to select. */
+/** Code letters by how often they occur, with the penciled letter shown; tap to select. */
 export const FrequencyStrip = memo(function FrequencyStrip({ state, selected, onSelect, chipFont = 11 }: FrequencyStripProps) {
   const freq = cryptogramFrequencies(state.cipher);
   const codes = Object.keys(freq).sort((a, b) => freq[b] - freq[a] || a.localeCompare(b));

@@ -364,7 +364,7 @@ private fun DifficultyPicker(current: SudokuDifficulty, onPick: (SudokuDifficult
  *  rules around each 3 × 3 box and the edge. Givens dark and heaviest, the
  *  player's digits purple, hint digits violet, a wrong digit red; the selected
  *  cell in the stronger lilac fill with its row, column and box washed; every
- *  cell holding the selected digit emphasised. Pencil marks: the 3 × 3 mini-grid. */
+ *  cell holding the selected digit emphasized. Pencil marks: the 3 × 3 mini-grid. */
 @Composable
 fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, onSelect: (Int) -> Unit) {
     val rule = Color(0xFFC4B5FD); val heavy = Color(0xFF4C1D95)

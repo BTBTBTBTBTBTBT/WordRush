@@ -60,7 +60,7 @@ Tick a cell only after checking, in order:
   counts a mistake that clearing never refunds; the third ends the game and the missing stars show
   muted. Stars placed by **Hint** are violet and cannot be erased.
 - Action row: **Undo** · **Erase** (clears the last-tapped cell) · **Auto-cross** (toggle, fills gold
-  when on; a correct star crosses out its row, column, region and eight neighbours) · **Hint**
+  when on; a correct star crosses out its row, column, region and eight neighbors) · **Hint**
   (places the star for the last-tapped cell's row, 100 points, never a mistake).
 - Wording: always "Starsweep", win copy "Board cleared", picker chip "Stars". The guide's quick facts
   say More Games do not count toward the Daily Sweep. Nothing about this game should read "Sweep!".
@@ -112,15 +112,15 @@ Tick a cell only after checking, in order:
 
 ## Hubbub — what to look for (built overnight 2026-09-22 → 23)
 
-- Daily "#N" counts from 2026-09-23; the first letter set is U·DELMNP (centre U, 25 words, max 81,
+- Daily "#N" counts from 2026-09-23; the first letter set is U·DELMNP (center U, 25 words, max 81,
   pangram PENDULUM). Same puzzle everywhere on a date (bank bundled on both natives, sha-guarded).
-  Seven letters, no S ever, centre letter required, words of four letters or more, letters may repeat.
+  Seven letters, no S ever, center letter required, words of four letters or more, letters may repeat.
 - Tap tiles or type; **Delete · Shuffle · Enter** under the cluster. Four-letter words score 1,
   longer words score their length, a pangram (all seven letters) adds 7. A real word that is not on
   the scoring list is accepted as a **bonus word** for 0 points (dimmed chip) — never "not a word".
 - Ranks by % of the maximum: Hush 0 · Murmur 5 · Chatter 12 · Banter 20 · Clamor 30 · Racket 40 ·
   **Hubbub 50 = solved** · Uproar 70 · Thunder 85 · Pandemonium 100. The rank bar marks Hubbub.
-- **Finalises once.** Reaching Hubbub records the win (XP, streak, achievements) and shows the
+- **Finalizes once.** Reaching Hubbub records the win (XP, streak, achievements) and shows the
   victory card once; "End puzzle and see answers" before Hubbub records a loss and lists every word.
   After the win you can **Keep going**: each later rank-up updates your daily result, leaderboard and
   the matches row only (never games, XP or streak). Toast "Rank up: Uproar" on each step.
@@ -129,7 +129,7 @@ Tick a cell only after checking, in order:
 - Finished screen: rank name, points/max · words · pangrams · time · hints, then Home · Share ·
   Keep going (· Play Again on Pro Unlimited). Victory card shows WORDS · TIME · POINTS. Score row
   reads "Rank bonus"; the stat label is the rank, e.g. "Racket".
-- Share card: blank 2-3-2 silhouette with the centre filled, rank name, "% of the maximum", no
+- Share card: blank 2-3-2 silhouette with the center filled, rank name, "% of the maximum", no
   letters. Caption names Rank · % · words · Score · Time. Pro "Keep playing: Unlimited Hubbub" on all three.
 - Achievements: first Hubbub, 50 Hubbub days, pangram, Pandemonium, seven Uproar-or-better days in a
   row, pure (no hints) 1/10/50.
@@ -193,7 +193,7 @@ Tick a cell only after checking, in order:
   rotate so a theme never returns within 13 days; **on a holiday the grid belongs to the day** (28
   holiday themes — Christmas, Hanukkah, MLK Day, Diwali and the rest) and the header shows its name.
 - **The look you asked for:** every cell is the purple tile tint with a purple clue number in the
-  corner, letters centred like Classic tiles, the board centred at every width, Across and Down as
+  corner, letters centered like Classic tiles, the board centered at every width, Across and Down as
   two columns beneath it (capped near 700 px on desktop). Nothing marks which answers are on theme.
 - Tap a cell or a clue and type; the selection walks the entry and jumps to the next unfinished
   clue at the end. Tap a cell twice (or Space) to switch Across/Down; the **active-clue bar** above
@@ -275,7 +275,7 @@ simply never dated.
   lexicon lacks sits on a per-theme `allow` list (MENORAH, DREIDEL, SHAMROCK, KINARA, MATZO…);
   proper nouns are only the holiday's own (SANTA, CUPID, LINCOLN, ABE, MOSES, PHIL, SAM) — cut
   any you would rather not see. The lexicon is American (NEIGHBOR, TRAVELED); "Friends and
-  Neighbours" as a title may want the US spelling. MLK Day uses general sayings only (Dr King's
+  Neighbors" as a title may want the US spelling. MLK Day uses general sayings only (Dr King's
   words are under copyright).
 - **Muddle:** the composer picks the four scrambled words from the Classic answer lists, so the
   puns are the review; the scrambled words were swept for tone (the blocklist grew after the first

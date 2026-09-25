@@ -54,7 +54,7 @@
   ["Put down ____","ROOTS"],["A snake in the ____","GRASS"],["Grow like a ____","WEED"],["Go to ____","SEED"],["Out of the ____","WOODS"],
   ["Weeping ____","WILLOW"],["Spring up like ____","MUSHROOMS"],["An old ____","CHESTNUT"],["In the ____ of youth","FLOWER"],["Lily of the ____","VALLEY"],
   ["April showers bring May ____","FLOWERS"],["Not give a ____","FIG"],["Get to the ____ of the problem","ROOT"],["Wither on the ____","VINE"],["Consider the ____ of the field","LILIES"],
-  ["An ____ favourite","EVERGREEN"],["Under the ____ tree","GREENWOOD"],["Sow the ____ of doubt","SEEDS"],["Brown as a ____","BERRY"]]},
+  ["An ____ favorite","EVERGREEN"],["Under the ____ tree","GREENWOOD"],["Sow the ____ of doubt","SEEDS"],["Brown as a ____","BERRY"]]},
  "clothes": {"title": "Dressed Up", "pairs": [
   ["Wear your heart on your ____","SLEEVE"],["If the ____ fits, wear it","SHOE"],["Pull your ____ up","SOCKS"],["Keep it under your ____","HAT"],["Follow ____","SUIT"],
   ["Fit like a ____","GLOVE"],["Too big for your ____","BOOTS"],["A wolf in sheep's ____","CLOTHING"],["Cut from the same ____","CLOTH"],["Hot under the ____","COLLAR"],
@@ -74,7 +74,7 @@
  "luck": {"title": "Luck of the Draw", "pairs": [
   ["Beginner's ____","LUCK"],["Third time ____","LUCKY"],["Break a ____","LEG"],["Knock on ____","WOOD"],["Fingers ____","CROSSED"],
   ["A four-leaf ____","CLOVER"],["A lucky ____","CHARM"],["Born under a lucky ____","STAR"],["A roll of the ____","DICE"],["The die is ____","CAST"],
-  ["Hedge your ____","BETS"],["Against all ____","ODDS"],["Fat ____","CHANCE"],["Fortune favours the ____","BRAVE"],["A blessing in ____","DISGUISE"],
+  ["Hedge your ____","BETS"],["Against all ____","ODDS"],["Fat ____","CHANCE"],["Fortune favors the ____","BRAVE"],["A blessing in ____","DISGUISE"],
   ["Count your ____","BLESSINGS"],["A winning ____","STREAK"],["A small ____","FORTUNE"],["Play your ____ right","CARDS"],["An ____ up your sleeve","ACE"],
   ["Heads or ____","TAILS"],["Hang a ____ over the door","HORSESHOE"],["A black cat crossing your ____","PATH"],["Walk under a ____","LADDER"],["Seven years' bad luck for breaking a ____","MIRROR"],
   ["Make a ____","WISH"],["Lightning never strikes ____","TWICE"],["A good ____","OMEN"],["Unlucky ____","THIRTEEN"],["Win the ____","LOTTERY"],

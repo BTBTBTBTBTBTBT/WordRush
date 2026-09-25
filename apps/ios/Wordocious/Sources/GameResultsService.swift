@@ -8,7 +8,7 @@ import WordociousCore
 /// rethrow — but failed stat/result writes are no longer invisible (web
 /// reportRejectedWrite parity).
 func reportRejectedWrite(_ operation: String, gameMode: String, _ error: Error) {
-    // A cancelled task is NOT a rejected write: reporting it here dressed a
+    // A canceled task is NOT a rejected write: reporting it here dressed a
     // mid-flight cancellation up as a handled server failure (the Android
     // incident's swallowed-CancellationException hole, ported). The pending
     // payload semantics already treat a cancel like any failure — the part
@@ -109,7 +109,7 @@ enum GameResultsService {
     /// so a kill/offline finish is re-run by PendingRecords.drain() next
     /// launch (web stats-service.ts recordSoloMatch parity).
     /// More Games §11: the idempotent IMPROVE path (Hubbub rank-ups after the
-    /// first finalisation). Touches ONLY the score-bearing rows — daily_results
+    /// first finalization). Touches ONLY the score-bearing rows — daily_results
     /// via DailyResultsService.record (already only-better) and this seed's
     /// matches row (player1_score = the guess-count bucket, lower = better) —
     /// never games, wins, XP, level or streaks. Safe to call any number of times.

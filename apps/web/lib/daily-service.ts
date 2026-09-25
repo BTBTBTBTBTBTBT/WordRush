@@ -1271,7 +1271,7 @@ export async function awardDailyBonusesIfComplete(_userId: string): Promise<Dail
 /**
  * More Games §11: the idempotent "improve" path. `recordGameResult` counts a
  * game (games, wins, XP, streaks) every time it is called, so a mode that
- * finalises once and then keeps improving — Hubbub, where a later rank-up
+ * finalizes once and then keeps improving — Hubbub, where a later rank-up
  * must raise the leaderboard score without paying XP twice — needs a second
  * entry point that touches ONLY the score-bearing rows:
  *   1. daily_results via recordDailyResult (already only-better), and

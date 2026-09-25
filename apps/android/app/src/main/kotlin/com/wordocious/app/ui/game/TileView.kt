@@ -111,7 +111,7 @@ fun TileView(
         masked -> Color(0xFFF3F4F6)
         // Orange = CORRECT, blue = PRESENT — matching this app's own keyboard
         // (KeyboardView.quadColor), iOS and web. These two were reversed
-        // (cyan=correct, orange=present) against a web behaviour that no longer
+        // (cyan=correct, orange=present) against a web behavior that no longer
         // exists, so in Quad/Octo with colorblind mode ON, orange meant
         // "present" on the board and "correct" on the keys. It actively misled
         // the exact users the feature is for.
@@ -172,7 +172,7 @@ fun TileView(
         // user's fontScale inside a tile whose aspectRatio box did NOT scale, so
         // at 2x text size the glyph doubled and clipped. Ironically Android was
         // the only platform to break here BECAUSE it is the only one that
-        // honours font scale at all.
+        // honors font scale at all.
         val density = androidx.compose.ui.platform.LocalDensity.current
         val fontSp = with(density) { fontDp.dp.toSp() }
         Box(

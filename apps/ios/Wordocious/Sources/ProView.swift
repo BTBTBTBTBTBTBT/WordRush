@@ -147,7 +147,7 @@ struct ProView: View {
 
     private var subscriptionDisclosure: some View {
         VStack(spacing: 6) {
-            Text("Monthly ($\(monthlyPrice)) and Yearly ($\(yearlyPrice)) are auto-renewing subscriptions. Payment is charged to your Apple Account at confirmation. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends; manage or cancel in Settings → Apple Account. The Day Pass is a one-time 24-hour purchase and does not renew.")
+            Text("Monthly ($\(monthlyPrice)) and Yearly ($\(yearlyPrice)) are auto-renewing subscriptions. Payment is charged to your Apple Account at confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the period ends; manage or cancel in Settings → Apple Account. The Day Pass is a one-time 24-hour purchase and does not renew.")
                 .font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {

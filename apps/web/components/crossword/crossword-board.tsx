@@ -16,8 +16,8 @@ interface BoardProps {
 }
 
 /**
- * The grid, always centred (§13 round 11): a sparse criss-cross of purple tiles;
- * blocks are simply absent. The letter is centred in its cell exactly like a
+ * The grid, always centered (§13 round 11): a sparse criss-cross of purple tiles;
+ * blocks are simply absent. The letter is centered in its cell exactly like a
  * Classic tile; the clue number is a small top-left badge that never touches
  * the letter (round 7/8). The active entry wears a 10% accent wash and the
  * selected cell an accent cursor border.
@@ -75,7 +75,7 @@ interface CluesProps {
   finished: boolean;
 }
 
-/** Across and Down side by side (§13 round 10), centred under the board; solved entries dim. */
+/** Across and Down side by side (§13 round 10), centered under the board; solved entries dim. */
 export const ClueColumns = memo(function ClueColumns({ state, activeEntry, onPick, finished }: CluesProps) {
   const col = (dir: 'A' | 'D', title: string) => (
     <div className="min-w-0">

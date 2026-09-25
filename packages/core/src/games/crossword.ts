@@ -82,7 +82,7 @@ export interface CrosswordState {
   h: number;
   entries: CrosswordEntry[];
   solution: string;
-  /** w*h chars: "." block, "_" empty, else the pencilled letter. */
+  /** w*h chars: "." block, "_" empty, else the penciled letter. */
   fill: string;
   /** w*h chars: "1" locked (checked right / revealed), "0" free, "." block. */
   locked: string;

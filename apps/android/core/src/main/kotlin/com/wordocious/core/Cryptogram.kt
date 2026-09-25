@@ -92,7 +92,7 @@ fun cryptogramDailyNumber(day: String): Int { val idx = Bank.dayIndex(day, CRYPT
 enum class CryptogramStatus(val key: String) { PLAYING("playing"), WON("won"), LOST("lost") }
 
 /**
- * [mapping]: code letter → the plain letter the player has pencilled in.
+ * [mapping]: code letter → the plain letter the player has penciled in.
  * [locked]: code letters that can no longer change (given, checked-correct, hinted, revealed), alphabetical.
  * [hinted]: code letters filled by Hint, in order. [lastWrong]: code letters the last Check cleared.
  */
@@ -219,7 +219,7 @@ fun cryptogramReduce(s: CryptogramState, a: CryptogramAction, now: Long = 0): Cr
 /**
  * solutions = [text, key26, id]; guesses = ["=" + mapping26, "h" + mask26, "c" + checks]
  * where position i of each 26-string is CODE letter ALPHABET[i]: mapping26 holds
- * the pencilled plain letter or "."; mask26 holds "g" given, "h" hinted, "r"
+ * the penciled plain letter or "."; mask26 holds "g" given, "h" hinted, "r"
  * revealed, "l" locked by a Check, "." otherwise.
  */
 fun cryptogramMatchRow(s: CryptogramState): Pair<List<String>, List<String>> {

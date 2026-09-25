@@ -4,7 +4,7 @@ import {
   cipherMetrics, cipherWordWidth, wrapCipherWords, cipherBlockHeight, cipherStripHeight, fitCipherCell,
 } from './cipher-layout';
 
-// §16 layout rule (founder 2026-09-24): the board + strip block is centred in
+// §16 layout rule (founder 2026-09-24): the board + strip block is centered in
 // the band and the cell scales to it — 64px down in 4px steps to a 40px floor —
 // with the cipher wrapped word by word (words never split).
 const CIPHER = 'XQD DZQFN AJ BXK NDQZ PJ XQD ADXNE PZ XQD YQZC';

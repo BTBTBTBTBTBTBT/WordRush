@@ -94,7 +94,7 @@ object GameResultsService {
     }
 
     /** More Games §11: the idempotent IMPROVE path (Hubbub rank-ups after the
-     *  first finalisation). Touches ONLY the score-bearing rows — daily_results
+     *  first finalization). Touches ONLY the score-bearing rows — daily_results
      *  via recordDailyResult (already only-better) and this seed's matches row
      *  (player1_score = the guess-count bucket, lower = better) — never games,
      *  wins, XP, level or streaks. Safe to call any number of times. */

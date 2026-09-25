@@ -76,7 +76,7 @@ final class LeaderboardCache {
     // lets a cold launch paint the last-known board and refresh underneath.
     //
     // Caches directory, not Documents: this is a cache, and iOS reclaiming it
-    // under storage pressure just restores the old behaviour.
+    // under storage pressure just restores the old behavior.
     private struct DiskRank: Codable { let rank: Int; let total: Int }
     private struct DiskWindow: Codable { let startRank: Int; let entries: [LeaderboardEntry] }
     private struct DiskSnapshot: Codable {

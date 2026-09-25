@@ -135,7 +135,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
   // URL-driven, no persistence — the Daily/Practice switcher is gone, so
-  // `mode` is fully derived from the route. This keeps behaviour in sync
+  // `mode` is fully derived from the route. This keeps behavior in sync
   // with every other mode (quordle, octordle, sequence, rescue, gauntlet)
   // which all route daily via ?daily=true and unlimited via the bare path.
   const mode: GameMode = isDaily ? 'daily' : 'practice';
@@ -279,7 +279,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   // Total hint actions used this game. ProperNoundle exposes three
   // distinct hint slots (Wikipedia clue, vowel reveal, consonant
-  // reveal); each counts independently — penalises the score
+  // reveal); each counts independently — penalizes the score
   // breakdown and gates the Pure achievement ladder.
   const hintsUsed =
     (hints.hintUsed ? 1 : 0) +

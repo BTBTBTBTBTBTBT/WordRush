@@ -2,7 +2,7 @@ import SwiftUI
 import WordociousCore
 
 // Hubbub (More Games §12) — the iOS twin of components/hub/*. Seven letters,
-// one required centre, words of 4+ letters. Finalises ONCE (Hubbub = win, End
+// one required center, words of 4+ letters. Finalizes ONCE (Hubbub = win, End
 // below it = loss); play continues after the win and each later rank-up goes
 // through GameResultsService.improve (leaderboard + matches row, never XP twice).
 
@@ -32,7 +32,7 @@ final class HubVM: ObservableObject {
     private var startMs = Date().timeIntervalSince1970 * 1000
     private var restoredElapsedMs: Double = 0
     private var guidePauseStart: Double?
-    /// The rank already sent to recordGameResult / improve; -1 = never finalised.
+    /// The rank already sent to recordGameResult / improve; -1 = never finalized.
     private var recordedRank = -1
     private(set) var restoredFinished = false
 
@@ -115,14 +115,14 @@ final class HubVM: ObservableObject {
         switch r {
         case .ended: return "This puzzle is finished"
         case .short: return "Four letters or more"
-        case .centre: return "Must use the centre letter"
+        case .centre: return "Must use the center letter"
         case .letters: return "Only the seven letters"
         case .found: return "Already found"
         case .notword: return "Not in word list"
         }
     }
 
-    /// First finalisation records once; later rank-ups after the win improve in place.
+    /// First finalization records once; later rank-ups after the win improve in place.
     private func afterChange(from before: HubState) {
         if state.status != .playing && recordedRank < 0 {
             if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() } else { Haptics.error(); SoundManager.shared.playGameOver() }
@@ -269,7 +269,7 @@ struct HubView: View {
                 .shadow(color: .black.opacity(0.06), radius: 0, x: 0, y: 2)
         }
         .buttonStyle(PressableStyle()).disabled(vm.state.ended)
-        .accessibilityLabel(centre ? "\(ch), centre letter" : String(ch))
+        .accessibilityLabel(centre ? "\(ch), center letter" : String(ch))
     }
 
     private func chip(_ w: String, dim: Bool = false) -> some View {
@@ -307,7 +307,7 @@ struct HubView: View {
         return min(tileMax, max(tileMin, (remaining / 3.3).rounded(.down)))
     }
 
-    /// The word in progress: 28 pt bold, centre letter in the accent, placeholder when
+    /// The word in progress: 28 pt bold, center letter in the accent, placeholder when
     /// empty. Shakes on a rejected entry and is erased by the view-model afterwards.
     private var entryLine: some View {
         Group {
@@ -326,7 +326,7 @@ struct HubView: View {
         .accessibilityLabel(vm.typing.isEmpty ? "Tap letters or type" : "Entry \(vm.typing)")
     }
 
-    /// 2-3-2 cluster, centre tile accent-filled, spacing proportional to the tile.
+    /// 2-3-2 cluster, center tile accent-filled, spacing proportional to the tile.
     private func cluster(side: CGFloat) -> some View {
         let gap = (side * 0.14).rounded()
         let o = vm.outer + Array(repeating: Character(" "), count: max(0, 6 - vm.outer.count))
@@ -346,7 +346,7 @@ struct HubView: View {
                 rankBar
                 entryLine
                 // The cluster band: everything between the entry line and the controls,
-                // cluster centred inside it.
+                // cluster centered inside it.
                 cluster(side: side)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 HStack(spacing: 8) {

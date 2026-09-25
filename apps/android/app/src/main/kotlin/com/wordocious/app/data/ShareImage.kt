@@ -52,7 +52,7 @@ object ShareImage {
     private val TILE = mapOf(
         TileState.CORRECT to 0xFF7C3AED.toInt(),
         TileState.PRESENT to 0xFFF59E0B.toInt(),
-        // iOS ShareCardView.tileColor folds .hintUsed in with .absent — GREY, not
+        // iOS ShareCardView.tileColor folds .hintUsed in with .absent — GRAY, not
         // amber. Painting it amber made a hint row read as a real PRESENT hit, so
         // the same game shared from each platform produced different cards.
         TileState.HINT_USED to 0xFF9CA3AF.toInt(),
@@ -360,7 +360,7 @@ object ShareImage {
             val top = areaTop + i * (chipH + gap)
             val rect = RectF(padH, top, W - padH, top + chipH)
             // iOS gauntletStagesShare(): every configured stage is drawn and one
-            // the player never reached counts as a LOSS — there's no grey state.
+            // the player never reached counts as a LOSS — there's no gray state.
             val stage = g.stages.getOrNull(i)
             val res = g.stageResults.firstOrNull { it.stageIndex == (stage?.stageIndex ?: i) }
             val stageWon = res?.status == GameStatus.WON
@@ -722,7 +722,7 @@ object ShareImage {
 
     // ── Hubbub card (More Games §18d) ─────────────────────────────────────────
 
-    /** The blank 2-3-2 silhouette with the centre in the accent, the rank name
+    /** The blank 2-3-2 silhouette with the center in the accent, the rank name
      *  large beneath, then % of the maximum. No letters. */
     fun renderHub(context: Context, rankName: String, pct: Int, won: Boolean, meta: String): Bitmap {
         val height = 1080
@@ -891,7 +891,7 @@ object ShareImage {
 
     // ── Kindred card (More Games §18d) ────────────────────────────────────────
 
-    /** Four tier bars in solve order (tier ramp fill, one to four pips centred),
+    /** Four tier bars in solve order (tier ramp fill, one to four pips centered),
      *  the unsolved tiers dashed beneath on a loss, then the four mistake dots.
      *  No words (no spoilers). `meta` is the stats line ("#12 · 4/4 groups · 1 mistake · 2:45"). */
     fun renderGroups(context: Context, solvedTiers: List<Int>, mistakes: Int, maxMistakes: Int, won: Boolean, meta: String): Bitmap {
@@ -1032,7 +1032,7 @@ object ShareImage {
             c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
         }
 
-        // The silhouette, centred in the area above the headline; cells shrink to fit the wider axis.
+        // The silhouette, centered in the area above the headline; cells shrink to fit the wider axis.
         val cols = maxOf(1, w); val rows = maxOf(1, h)
         val margin = 120f
         val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f

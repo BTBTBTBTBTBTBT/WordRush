@@ -121,7 +121,7 @@
     },
     {
      "pos": "noun",
-     "def": "A flight path used by aeroplanes."
+     "def": "A flight path used by airplanes."
     }
    ],
    "expectedFirst": "The trachea.",
@@ -257,7 +257,7 @@
     },
     {
      "pos": "preposition",
-     "def": "Centred upon; surrounding; regarding."
+     "def": "Centered upon; surrounding; regarding."
     },
     {
      "pos": "preposition",
@@ -1269,7 +1269,7 @@
     },
     {
      "pos": "noun",
-     "def": "Eccentric behaviour; lunacy; craziness."
+     "def": "Eccentric behavior; lunacy; craziness."
     }
    ],
    "expectedFirst": "Of unsound mind; insane; demented.",
@@ -1377,7 +1377,7 @@
     },
     {
      "pos": "noun",
-     "def": "The government department or agency that is authorised to collect the taxes imposed on imported goods."
+     "def": "The government department or agency that is authorized to collect the taxes imposed on imported goods."
     },
     {
      "pos": "noun",
@@ -1452,7 +1452,7 @@
    "senses": [
     {
      "pos": "verb",
-     "def": "To remove air or some other gas from within an elastic container, e.g. a balloon or tyre."
+     "def": "To remove air or some other gas from within an elastic container, e.g. a balloon or tire."
     },
     {
      "pos": "verb",
@@ -1463,7 +1463,7 @@
      "def": "To reduce the amount of available currency or credit and thus lower prices."
     }
    ],
-   "expectedFirst": "To remove air or some other gas from within an elastic container, e.g. a balloon or tyre.",
+   "expectedFirst": "To remove air or some other gas from within an elastic container, e.g. a balloon or tire.",
    "scores": [
     0,
     0,
@@ -1598,7 +1598,7 @@
     },
     {
      "pos": "noun",
-     "def": "A biplane aeroplane or kite."
+     "def": "A biplane airplane or kite."
     }
    ],
    "expectedFirst": "One who doubles.",
@@ -1827,6 +1827,24 @@
     0,
     0,
     0,
+    0
+   ]
+  },
+  {
+   "word": "favored",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "US standard spelling of favored."
+    },
+    {
+     "pos": "verb",
+     "def": "simple past and past participle of favor"
+    }
+   ],
+   "expectedFirst": "simple past and past participle of favor",
+   "scores": [
+    1,
     0
    ]
   },
@@ -2247,7 +2265,7 @@
     },
     {
      "pos": "verb",
-     "def": "Of a turkey, to make its characteristic vocalisation; also, used of certain other birds."
+     "def": "Of a turkey, to make its characteristic vocalization; also, used of certain other birds."
     },
     {
      "pos": "verb",
@@ -2255,7 +2273,7 @@
     },
     {
      "pos": "noun",
-     "def": "The sound of a turkey; or, a similar vocalisation of another bird."
+     "def": "The sound of a turkey; or, a similar vocalization of another bird."
     }
    ],
    "expectedFirst": "To eat hastily or greedily; to scoff or scarf",
@@ -2462,7 +2480,7 @@
     },
     {
      "pos": "noun",
-     "def": "A group of female animals (cows) herded and controlled by a male animal (bull) of that species for breeding purposes. Such behaviour is exhibited by bovids including cattle and buffalo as well as moose, elephants, seals (including elephant seals), sea lions, and baboons."
+     "def": "A group of female animals (cows) herded and controlled by a male animal (bull) of that species for breeding purposes. Such behavior is exhibited by bovids including cattle and buffalo as well as moose, elephants, seals (including elephant seals), sea lions, and baboons."
     }
    ],
    "expectedFirst": "The private section of a Muslim household forbidden to male strangers.",
@@ -2566,6 +2584,24 @@
    "scores": [
     0,
     0,
+    0
+   ]
+  },
+  {
+   "word": "honored",
+   "senses": [
+    {
+     "pos": "adjective",
+     "def": "US standard spelling of honored."
+    },
+    {
+     "pos": "verb",
+     "def": "simple past and past participle of honor"
+    }
+   ],
+   "expectedFirst": "simple past and past participle of honor",
+   "scores": [
+    1,
     0
    ]
   },
@@ -2835,7 +2871,7 @@
     },
     {
      "pos": "noun",
-     "def": "A unit of itinerary distance varying with country, in Britain commonly about three statute miles (or five kilometres). Perhaps representing an hour's walking. Three nautical miles."
+     "def": "A unit of itinerary distance varying with country, in Britain commonly about three statute miles (or five kilometers). Perhaps representing an hour's walking. Three nautical miles."
     },
     {
      "pos": "noun",
@@ -2932,7 +2968,7 @@
     },
     {
      "pos": "noun",
-     "def": "A person or organisation that creates or maintains lists."
+     "def": "A person or organization that creates or maintains lists."
     },
     {
      "pos": "noun",
@@ -2940,7 +2976,7 @@
     },
     {
      "pos": "noun",
-     "def": "A double-mouldboard plough that throws a deep furrow and at the same time plants and covers grain in the bottom of the furrow."
+     "def": "A double-mouldboard plow that throws a deep furrow and at the same time plants and covers grain in the bottom of the furrow."
     },
     {
      "pos": "noun",
@@ -3106,7 +3142,7 @@
     },
     {
      "pos": "verb",
-     "def": "To cause (fruit) to become soft or tender, specifically by ripening. To cause (food or drink, for example, cheese or wine, or its flavour) to become matured and smooth, and not acidic, harsh, or sharp. To soften (land or soil) and make it suitable for planting in. To reduce or remove the harshness or roughness from (something); to soften, to subdue, to tone down. To cause (a person) to become calmer, gentler, and more understanding, particularly from age or experience."
+     "def": "To cause (fruit) to become soft or tender, specifically by ripening. To cause (food or drink, for example, cheese or wine, or its flavor) to become matured and smooth, and not acidic, harsh, or sharp. To soften (land or soil) and make it suitable for planting in. To reduce or remove the harshness or roughness from (something); to soften, to subdue, to tone down. To cause (a person) to become calmer, gentler, and more understanding, particularly from age or experience."
     },
     {
      "pos": "verb",
@@ -3114,7 +3150,7 @@
     },
     {
      "pos": "verb",
-     "def": "To cause (food or drink, for example, cheese or wine, or its flavour) to become matured and smooth, and not acidic, harsh, or sharp."
+     "def": "To cause (food or drink, for example, cheese or wine, or its flavor) to become matured and smooth, and not acidic, harsh, or sharp."
     },
     {
      "pos": "noun",
@@ -3139,7 +3175,7 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "A centre, midpoint."
+     "def": "A center, midpoint."
     },
     {
      "pos": "noun",
@@ -3174,7 +3210,7 @@
      "def": "To double (a rope) into two equal portions; to fold in the middle."
     }
    ],
-   "expectedFirst": "A centre, midpoint.",
+   "expectedFirst": "A center, midpoint.",
    "scores": [
     0,
     0,
@@ -3464,7 +3500,7 @@
     },
     {
      "pos": "verb",
-     "def": "To adorn or honour (someone or something)."
+     "def": "To adorn or honor (someone or something)."
     }
    ],
    "expectedFirst": "Elaborately ornamented, often to excess.",
@@ -3938,11 +3974,11 @@
    "senses": [
     {
      "pos": "noun",
-     "def": "In full primary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analysing radio waves (usually microwaves) which are sent towards the object and which reflect off its surfaces; also, the field of study of this method."
+     "def": "In full primary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analyzing radio waves (usually microwaves) which are sent towards the object and which reflect off its surfaces; also, the field of study of this method."
     },
     {
      "pos": "noun",
-     "def": "In full secondary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analysing signals transmitted by the object in response to radio waves sent towards the object."
+     "def": "In full secondary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analyzing signals transmitted by the object in response to radio waves sent towards the object."
     },
     {
      "pos": "noun",
@@ -3953,7 +3989,7 @@
      "def": "To use a radar apparatus (noun senses 1, 1.1, or 2) on (someone or something); to scan (someone or something) with, or as if with, radar."
     }
    ],
-   "expectedFirst": "In full primary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analysing radio waves (usually microwaves) which are sent towards the object and which reflect off its surfaces; also, the field of study of this method.",
+   "expectedFirst": "In full primary radar: a method of detecting a distant object and determining its position, velocity, or other characteristics by analyzing radio waves (usually microwaves) which are sent towards the object and which reflect off its surfaces; also, the field of study of this method.",
    "scores": [
     0,
     0,
@@ -4461,7 +4497,7 @@
     },
     {
      "pos": "noun",
-     "def": "Vulgar pretence or sham."
+     "def": "Vulgar pretense or sham."
     }
    ],
    "expectedFirst": "Of poor quality or construction.",

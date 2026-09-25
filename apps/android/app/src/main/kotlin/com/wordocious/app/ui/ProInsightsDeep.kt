@@ -416,7 +416,7 @@ private fun StageBreakdownCard(stages: List<StatsDeepService.GauntletStageStat>)
     KitCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                // Theatre masks, not the skull (which is the Gauntlet/Nemesis glyph) — iOS.
+                // Theater masks, not the skull (which is the Gauntlet/Nemesis glyph) — iOS.
                 Icon(Icons.Filled.TheaterComedy, null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
                 Text("Stage Breakdown", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             }

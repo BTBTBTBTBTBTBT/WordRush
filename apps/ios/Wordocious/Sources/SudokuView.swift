@@ -63,7 +63,7 @@ final class SudokuVM: ObservableObject {
     private func restore() {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let snap = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
-        // Fail-closed: exact seed; the daily also re-checks the local date; practice honours the TTL.
+        // Fail-closed: exact seed; the daily also re-checks the local date; practice honors the TTL.
         let stale = snap.seed != seed
             || (isDaily && snap.date != LeaderboardService.todayLocal())
             || (!isDaily && Date().timeIntervalSince1970 * 1000 - snap.savedAt > Self.practiceTTLms)
@@ -325,7 +325,7 @@ struct SudokuView: View {
 /// radius. Givens dark and heaviest, the player's digits purple, hint digits
 /// violet, a wrong digit red; the selected cell in the stronger lilac fill
 /// with its row, column and box washed; every cell holding the selected digit
-/// emphasised. Pencil marks: the standard 3 × 3 mini-grid.
+/// emphasized. Pencil marks: the standard 3 × 3 mini-grid.
 struct SudokuBoardView: View {
     let state: SudokuState
     let selected: Int?

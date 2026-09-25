@@ -447,8 +447,8 @@ struct CrosswordView: View {
 
 // MARK: - Board
 
-/// The grid, always centred: a sparse criss-cross of purple tiles; blocks are
-/// simply absent. The letter is centred in its cell exactly like a Classic
+/// The grid, always centered: a sparse criss-cross of purple tiles; blocks are
+/// simply absent. The letter is centered in its cell exactly like a Classic
 /// tile; the clue number is a tiny purple mark top-left that never touches the
 /// letter. The active entry wears a 10% accent wash and the selected cell an
 /// accent ring; Check-locked cells a deeper purple; revealed cells violet with
@@ -523,7 +523,7 @@ struct CrosswordGridView: View {
     }
 }
 
-/// Across and Down side by side, centred under the board; solved entries are
+/// Across and Down side by side, centered under the board; solved entries are
 /// struck through and dimmed, the active one highlighted; a tap selects the
 /// entry's first empty cell. Finished, each answer follows its clue in purple.
 struct CrosswordClueColumns: View {

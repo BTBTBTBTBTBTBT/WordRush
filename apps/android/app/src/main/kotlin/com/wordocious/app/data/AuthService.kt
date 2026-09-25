@@ -158,7 +158,7 @@ object AuthService {
             ?: SettingsPref.get(CACHED_SHIELDS, -1).takeIf { it >= 0 }
 
     /** Cached entitlement for the launch window — still expiry-checked here, so
-     *  a cancelled subscription can't linger. */
+     *  a canceled subscription can't linger. */
     private val cachedProActive: Boolean
         get() {
             val until = SettingsPref.get(CACHED_PRO_UNTIL, "")
@@ -297,7 +297,7 @@ object AuthService {
             // just sat there. Report it so the real cause is visible remotely;
             // a user who actually tapped away costs one harmless event.
             val detail = "${e.type} ${e.errorMessage ?: e.message ?: ""}"
-            runCatching { io.sentry.Sentry.captureMessage("google sign-in cancelled: $detail") }
+            runCatching { io.sentry.Sentry.captureMessage("google sign-in canceled: $detail") }
             // Play Services raises TYPE_USER_CANCELED for "Account reauth
             // failed" — the Google account on the DEVICE is in a state where it
             // cannot mint a token and needs re-verification. Nothing to do with

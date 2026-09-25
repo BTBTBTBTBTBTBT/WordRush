@@ -1,5 +1,5 @@
 // Collects CANDIDATE vintage single-panel cartoons from Wikimedia Commons for
-// the Muddle sample round. Records, per image: the file page, the licence
+// the Muddle sample round. Records, per image: the file page, the license
 // Commons states, the date and artist it records, and a thumbnail URL. NOTHING
 // is downloaded — the review gallery links to Commons — and nothing here is a
 // legal determination: a human confirms each keeper's status (US: published
@@ -21,12 +21,12 @@ for (const cat of CATS) {
     const ratio = ii.width / ii.height;
     out.push({ category: cat, title: p.title, page: ii.descriptionurl, thumb: ii.thumburl, width: ii.width, height: ii.height,
       licence: lic, year, artist: strip(m.Artist?.value).slice(0, 80), description: strip(m.ImageDescription?.value).slice(0, 200),
-      // First-pass screen only: stated public-domain licence, dated before 1931, roughly landscape or squarish single panel.
+      // First-pass screen only: stated public-domain license, dated before 1931, roughly landscape or squarish single panel.
       passesFirstScreen: /public domain|PD/i.test(lic) && year !== null && year < 1931 && ratio > 0.7 && ratio < 2.2 && ii.width >= 600 });
   }
 }
 const pass = out.filter((x) => x.passesFirstScreen);
-console.log(`collected ${out.length} files from ${CATS.length} categories; ${pass.length} pass the first screen (PD licence stated, dated < 1931, single-panel shape)`);
-const byLic = {}; for (const x of out) byLic[x.licence || '(none)'] = (byLic[x.licence || '(none)'] || 0) + 1; console.log('licences seen:', byLic);
+console.log(`collected ${out.length} files from ${CATS.length} categories; ${pass.length} pass the first screen (PD license stated, dated < 1931, single-panel shape)`);
+const byLic = {}; for (const x of out) byLic[x.licence || '(none)'] = (byLic[x.licence || '(none)'] || 0) + 1; console.log('licenses seen:', byLic);
 for (const x of pass.slice(0, 8)) console.log(`  ${x.year} ${x.licence} — ${x.title.slice(0, 70)}`);
-console.log('wrote', writeSample('muddle-vintage-candidates.json', { generatedBy: 'apps/web/scripts/muddle/collect-vintage.mjs', note: 'Candidates only. Licence text is what Commons states; verify each keeper before use.', candidates: pass, screenedOut: out.length - pass.length }));
+console.log('wrote', writeSample('muddle-vintage-candidates.json', { generatedBy: 'apps/web/scripts/muddle/collect-vintage.mjs', note: 'Candidates only. License text is what Commons states; verify each keeper before use.', candidates: pass, screenedOut: out.length - pass.length }));

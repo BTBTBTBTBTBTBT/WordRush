@@ -143,7 +143,7 @@ fun HintPills(
 /**
  * ProperNoundle hints (spec line 166) — 3 capsule pills Clue/Vowel/Consonant.
  * Clue #9333EA/#D8B4FE/#FAF5FF (lightbulb→hourglass), Vowel #2563EB/#93C5FD/#EFF6FF
- * (eye), Consonant #16A34A/#86EFAC/#F0FDF4 (number). Used = grey + disabled.
+ * (eye), Consonant #16A34A/#86EFAC/#F0FDF4 (number). Used = gray + disabled.
  */
 // Non-private so the VS screen (ui.vs) can reuse the exact same pills for
 // ProperNoundle VS — parity by construction.
@@ -153,7 +153,7 @@ fun ProperNoundleHints(
     vowelRevealed: String?, consonantRevealed: String?,
     onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
-    // iOS sizes each pill to its own label and centres the row, so "Clue" is
+    // iOS sizes each pill to its own label and centers the row, so "Clue" is
     // narrow and "Consonant" wide — and a pill SHRINKS when its label collapses
     // to the revealed letter. weight(1f) forced three equal full-bleed pills
     // that never changed width, which is the main reason this row read as a
@@ -552,7 +552,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             recorded = true
             // NonCancellable: the record flow used to run on THIS composition's
             // scope alone, so leaving the post-game (Home tap, "Next Daily",
-            // leaderboard hop) cancelled it mid-flight. A cancel landing after
+            // leaderboard hop) canceled it mid-flight. A cancel landing after
             // the three primary writes but during the daily_results upsert was
             // swallowed as a plain Exception and never retried — Doug's DUEL:
             // local save completed, stats/match/XP recorded, no leaderboard
@@ -957,7 +957,7 @@ internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
             .shadow(
                 6.dp, circle, clip = false,
                 // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
-                // default opaque-black elevation shadow read as a hard grey ring.
+                // default opaque-black elevation shadow read as a hard gray ring.
                 ambientColor = Color.Black.copy(alpha = 0.35f),
                 spotColor = Color.Black.copy(alpha = 0.35f),
             )
@@ -988,7 +988,7 @@ private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modif
             .shadow(
                 6.dp, circle, clip = false,
                 // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
-                // default opaque-black elevation shadow read as a hard grey ring.
+                // default opaque-black elevation shadow read as a hard gray ring.
                 ambientColor = Color.Black.copy(alpha = 0.35f),
                 spotColor = Color.Black.copy(alpha = 0.35f),
             )
@@ -1017,7 +1017,7 @@ internal fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modi
             .shadow(
                 6.dp, circle, clip = false,
                 // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
-                // default opaque-black elevation shadow read as a hard grey ring.
+                // default opaque-black elevation shadow read as a hard gray ring.
                 ambientColor = Color.Black.copy(alpha = 0.35f),
                 spotColor = Color.Black.copy(alpha = 0.35f),
             )
@@ -1035,7 +1035,7 @@ internal fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modi
 /**
  * Single-board — fills available space like the web's `max-w-[400px] max-h-full
  * aspect-ratio` board. Uses BoxWithConstraints to compute the largest board that
- * fits width AND height, then centres it. Font size scales with tile size.
+ * fits width AND height, then centers it. Font size scales with tile size.
  */
 @Composable
 internal fun SingleBoard(

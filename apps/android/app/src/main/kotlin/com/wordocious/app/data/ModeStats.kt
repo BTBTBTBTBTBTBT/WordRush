@@ -141,7 +141,7 @@ object ModeStats {
 
     /**
      * boards_solved for a row that did not store it, rebuilt from the event log
-     * exactly as the game's finaliser computed it. Anything unrecognised: the win
+     * exactly as the game's finalizer computed it. Anything unrecognised: the win
      * flag over one board.
      */
     fun boardsFromEvents(dbKey: String, row: MatchRow): Int {

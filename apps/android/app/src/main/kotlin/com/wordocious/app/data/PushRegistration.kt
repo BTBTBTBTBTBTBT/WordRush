@@ -80,7 +80,7 @@ object PushRegistration {
  *
  * Display is deliberately left to the system: the server sends `notification`
  * payloads, which Android renders itself while the app is backgrounded — the
- * same division of labour iOS has with APNs. [onMessageReceived] therefore only
+ * same division of labor iOS has with APNs. [onMessageReceived] therefore only
  * matters for data-only messages, which nothing sends today.
  */
 class WordociousMessagingService : FirebaseMessagingService() {

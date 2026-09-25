@@ -237,7 +237,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   // still looks bad"): this screen has its own mini board and never went
   // through MultiBoard, so it kept the stretched 2x2 grid — flat tiles on a
   // wide window. Same fit as MultiBoard: measure, one square tile size, the
-  // arrangement with the biggest tile, centred. 18px reserved under each
+  // arrangement with the biggest tile, centered. 18px reserved under each
   // board for the failed-board solution line.
   const boardAreaRef = useRef<HTMLDivElement>(null);
   const boardFit = useSquareBoardFit(boardAreaRef, 4, maxGuesses, 18);

@@ -6,10 +6,10 @@ import kotlinx.serialization.json.Json
 /**
  * Hubbub — seven-letter hub game (More Games §12). 1:1 port of
  * packages/core/src/games/hub.ts; pinned by hub-fixtures.json (HubFixtureTest).
- * Words of 4+ letters using only the seven letters and containing the centre;
+ * Words of 4+ letters using only the seven letters and containing the center;
  * 4 letters = 1 point, else length, pangram +7; bonus words score 0. Ranks by
  * integer maths (points*100 >= pct*max); Hubbub (50%) = solved. Play continues
- * after the win; End finalises a loss when below Hubbub. Event sigils + = ? ! #
+ * after the win; End finalizes a loss when below Hubbub. Event sigils + = ? ! #
  */
 const val HUB_DAILY_EPOCH = "2026-09-23"
 const val HUB_LETTERS = 7

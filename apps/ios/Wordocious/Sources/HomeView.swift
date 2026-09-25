@@ -770,7 +770,7 @@ struct HomeView: View {
     /// Freemium lock: a free user who has already played today's daily for this
     /// mode can't replay it (Pro unlocks unlimited replays). Mirrors the web's
     /// `isLocked = !isPro && (isDailyDone || hasPlayedModeToday)`. The VS card
-    /// greys out the same way once today's free daily VS is used (web parity) —
+    /// grays out the same way once today's free daily VS is used (web parity) —
     /// gated by the local VSPlayLimit, the same gate the lobby uses.
     private func isLocked(_ mode: HomeMode) -> Bool {
         guard !auth.isProActive else { return false }

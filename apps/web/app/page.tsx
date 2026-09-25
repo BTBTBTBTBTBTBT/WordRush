@@ -223,7 +223,7 @@ export default function HomePage() {
   // stats mid-celebration (the iOS widget-launch "0/N WON · 0:00" bug).
   const [sweepCeleb, setSweepCeleb] = useState<Map<string, DailyCompletion> | null>(null);
   // Today's daily VS outcome (server-backed, iOS vsDailyWon parity) — the VS
-  // Battle card greys with a W/L badge like every other completed daily.
+  // Battle card grays with a W/L badge like every other completed daily.
   // null = not played today. Home remounts on every return from a game, so a
   // just-finished daily VS refetches naturally.
   const [vsDailyWon, setVsDailyWon] = useState<boolean | null>(null);

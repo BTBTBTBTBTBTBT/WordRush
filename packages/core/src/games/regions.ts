@@ -48,7 +48,7 @@ function shuffle<T>(rng: Rng, arr: T[]): T[] {
   return a;
 }
 
-/** Orthogonal neighbours, in the fixed order up, down, left, right. */
+/** Orthogonal neighbors, in the fixed order up, down, left, right. */
 export function regionsN4(n: number, i: number): number[] {
   const r = Math.floor(i / n), c = i % n, o: number[] = [];
   if (r) o.push(i - n);
@@ -135,7 +135,7 @@ export function generateRegions(seed: string, n: number): RegionsPuzzle | null {
     const cols = layout(n, rng);
     if (!cols) continue;
     const reg = grow(n, cols, rng);
-    // Repair: find a rival solution and hand one of its cells to a neighbouring
+    // Repair: find a rival solution and hand one of its cells to a neighboring
     // region (connectivity preserved) so it breaks; repeat until unique.
     for (let step = 0; step < 60 && countRegionsSolutions(n, reg) > 1; step++) {
       const all: number[][] = [];
@@ -207,7 +207,7 @@ export interface RegionsState extends RegionsSnapshot {
   solution: string;
   mistakes: number;
   hintsUsed: number;
-  /** Placing a correct star crosses out its row, column, region and neighbours. */
+  /** Placing a correct star crosses out its row, column, region and neighbors. */
   autoCross: boolean;
   status: RegionsStatus;
   history: RegionsSnapshot[];
@@ -241,7 +241,7 @@ function pushHistory(s: RegionsState): RegionsSnapshot[] {
   return h.length > HISTORY_CAP ? h.slice(h.length - HISTORY_CAP) : h;
 }
 
-/** Cells a correct star rules out: its row, column, region and the eight neighbours. */
+/** Cells a correct star rules out: its row, column, region and the eight neighbors. */
 export function regionsRuledOut(n: number, regions: string, cell: number): number[] {
   const r = Math.floor(cell / n), c = cell % n, g = regions[cell];
   const out = new Set<number>();

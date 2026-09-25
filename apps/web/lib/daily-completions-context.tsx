@@ -59,7 +59,7 @@ function writeCache(map: Map<string, DailyCompletion>) {
 
 export function DailyCompletionsProvider({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  // Initialise from localStorage so the very first render already has data
+  // Initialize from localStorage so the very first render already has data
   const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => readCache());
   // readCache() is day-guarded, so whatever seeded the initial state is today's.
   const [dailiesDay, setDailiesDay] = useState<string>(() => getTodayLocal());

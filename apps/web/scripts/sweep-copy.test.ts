@@ -33,7 +33,7 @@ function* walk(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
     if (statSync(p).isDirectory()) { if (name !== 'node_modules' && name !== '.next') yield* walk(p); }
-    // Test files pin behaviour on dated fixtures (a 2026-08 day IS a 9-mode day), so they are not scanned.
+    // Test files pin behavior on dated fixtures (a 2026-08 day IS a 9-mode day), so they are not scanned.
     else if (/\.(tsx?|mjs|json)$/.test(name) && !/\.test\.tsx?$/.test(name)) yield p;
   }
 }

@@ -2,7 +2,7 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../bank';
 
 /**
  * Hubbub — seven-letter hub game (More Games §12). Seven letters, one required
- * centre letter, words of 4+ letters, letters may repeat. 4 letters = 1 point,
+ * center letter, words of 4+ letters, letters may repeat. 4 letters = 1 point,
  * longer words = their length, a pangram (all seven letters) +7. The bank
  * (apps/web/data/hub-puzzles.json, bundled everywhere and sha-guarded) freezes
  * each puzzle's accepted words: `words` score and set `max`; `bonus` words are
@@ -11,7 +11,7 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../bank';
  *
  * Ranks (integer maths, points*100 >= pct*max): Hush 0, Murmur 5, Chatter 12,
  * Banter 20, Clamor 30, Racket 40, HUBBUB 50 = solved, Uproar 70, Thunder 85,
- * Pandemonium 100. The game finalises ONCE — on reaching Hubbub (won) or on
+ * Pandemonium 100. The game finalizes ONCE — on reaching Hubbub (won) or on
  * End (lost when below Hubbub) — and play continues after a win; each later
  * rank-up goes through the improve path (§11), never through recordGameResult
  * again. guess_count = rank position 1–10 (Pandemonium 1 … Hush 10);
@@ -35,7 +35,7 @@ export const HUB_RANKS: ReadonlyArray<{ name: string; pct: number }> = [
 
 export interface HubPuzzle {
   id: string;
-  /** Seven distinct uppercase letters, the CENTRE letter first. */
+  /** Seven distinct uppercase letters, the CENTER letter first. */
   letters: string;
   /** Scoring words, alphabetical. */
   words: string[];

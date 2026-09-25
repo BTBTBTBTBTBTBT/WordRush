@@ -122,7 +122,7 @@ object AdsManager {
     private fun initialize(appContext: Context) {
         runCatching {
             // No CMP yet, so the most conservative flags everywhere we do
-            // serve: no GDPR consent asserted, CCPA "do not sell" honoured,
+            // serve: no GDPR consent asserted, CCPA "do not sell" honored,
             // the app is not child-directed (Wordocious is a general-audience
             // word game). These are the 9.4+ replacements for the deprecated
             // LevelPlay.setConsent(false) / setMetaData("do_not_sell","true")

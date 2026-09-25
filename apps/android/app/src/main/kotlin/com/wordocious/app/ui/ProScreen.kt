@@ -226,7 +226,7 @@ private fun PlansContent() {
         )
         // Disclosure (Google Play wording for Android).
         Text(
-            "Monthly ($6.99) and Yearly ($59.99) are auto-renewing subscriptions billed through Google Play. Payment is charged to your Google account at confirmation. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends; manage or cancel in Google Play → Subscriptions. The Day Pass is a one-time 24-hour purchase and does not renew.",
+            "Monthly ($6.99) and Yearly ($59.99) are auto-renewing subscriptions billed through Google Play. Payment is charged to your Google account at confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the period ends; manage or cancel in Google Play → Subscriptions. The Day Pass is a one-time 24-hour purchase and does not renew.",
             fontSize = 10.sp, color = WTheme.textMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp),
         )
         // Terms / Privacy links under the disclosure (iOS ProView.swift:153) —

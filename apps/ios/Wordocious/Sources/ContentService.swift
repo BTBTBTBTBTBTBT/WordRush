@@ -36,7 +36,7 @@ final class ContentService: ObservableObject {
     /// phone.
     ///
     /// It used to return early once per launch AND go through
-    /// `URLSession.shared`, which honours the response's `max-age=3600`. Two
+    /// `URLSession.shared`, which honors the response's `max-age=3600`. Two
     /// layers of staleness on top of each other: a backgrounded app never
     /// refetched at all, and even a cold launch could serve an hour-old copy.
     /// Editing this content is supposed to be a deploy, not a release — a new

@@ -10,7 +10,7 @@
  */
 export interface RankableSense { pos?: string; def?: string }
 
-/** The headword or an inflection of it, in LOWERCASE (a capitalised mention —
+/** The headword or an inflection of it, in LOWERCASE (a capitalized mention —
  *  "the Bible", "the Blitz" — is a name, not circularity). */
 export function mentions(word: string, def: string): boolean {
   const w = word.toLowerCase();

@@ -9,7 +9,7 @@
 // SAME rule at read time (pickPrimarySense) so a future dataset with a bad
 // first sense still displays well. Keep the three ports in lock-step.
 
-/** The headword or an inflection of it, in LOWERCASE (a capitalised mention —
+/** The headword or an inflection of it, in LOWERCASE (a capitalized mention —
  *  "the Bible", "the Blitz" — is a name, not circularity). */
 export function mentions(word, def) {
   const w = word.toLowerCase();
@@ -84,7 +84,7 @@ export function cleanDefinition(def) {
     d = d.replace(GRAMMAR_LABEL, '').replace(USAGE_NOTE, '').trim();
     if (d === before) break;
   }
-  // A stripped note can leave a lowercase start ("happy people as a group") — capitalise.
+  // A stripped note can leave a lowercase start ("happy people as a group") — capitalize.
   if (d && d !== def && /^[a-z]/.test(d)) d = d[0].toUpperCase() + d.slice(1);
   return d || (def || '').trim();
 }

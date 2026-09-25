@@ -117,7 +117,7 @@ final class AdsManager: NSObject, ObservableObject {
         // recommend (LPMPrivacySettings replaces the deprecated
         // LevelPlay.setConsent / setMetaData("do_not_sell") pair from SDK 9.4).
         // No CMP means no affirmative GDPR consent record: say so. CCPA "do not
-        // sell" is honoured for everyone. The app is not child-directed.
+        // sell" is honored for everyone. The app is not child-directed.
         LPMPrivacySettings.setGDPRConsent(false)
         LPMPrivacySettings.setCCPA(true)
         LPMPrivacySettings.setCOPPA(false)

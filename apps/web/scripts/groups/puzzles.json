@@ -2457,7 +2457,7 @@
   "groups": [
    {
     "tier": 1,
-    "label": "Ice-cream parlour",
+    "label": "Ice-cream parlor",
     "words": [
      "SUNDAE",
      "CONE",
@@ -3497,7 +3497,7 @@
    },
    {
     "tier": 2,
-    "label": "Knitting fibres",
+    "label": "Knitting fibers",
     "words": [
      "MOHAIR",
      "CASHMERE",
@@ -3889,7 +3889,7 @@
     ]
    }
   ],
-  "redHerrings": "FERRET searches, MINK is a coat, FORAGE looks like animal behaviour, and TOAST unscrambles the STOAT already in play.",
+  "redHerrings": "FERRET searches, MINK is a coat, FORAGE looks like animal behavior, and TOAST unscrambles the STOAT already in play.",
   "source": "shard-02"
  },
  {
@@ -5717,7 +5717,7 @@
   "groups": [
    {
     "tier": 1,
-    "label": "Animal fibres",
+    "label": "Animal fibers",
     "words": [
      "WOOL",
      "SILK",
@@ -7135,7 +7135,7 @@
     ]
    }
   ],
-  "redHerrings": "SATIN reads as a fabric and CROSS as a mood; CHAIN and NECKLACE hint at jewellery.",
+  "redHerrings": "SATIN reads as a fabric and CROSS as a mood; CHAIN and NECKLACE hint at jewelry.",
   "source": "shard-03"
  },
  {
@@ -7477,7 +7477,7 @@
     "label": "Tea ___",
     "words": [
      "TOWEL",
-     "COSY",
+     "COZY",
      "BAG",
      "LEAF"
     ],
@@ -7954,7 +7954,7 @@
   "groups": [
    {
     "tier": 1,
-    "label": "Sailing manoeuvres",
+    "label": "Sailing maneuvers",
     "words": [
      "TACK",
      "JIBE",
@@ -10201,7 +10201,7 @@
    },
    {
     "tier": 2,
-    "label": "Parts of a theatre",
+    "label": "Parts of a theater",
     "words": [
      "WINGS",
      "APRON",
@@ -10781,7 +10781,7 @@
   "groups": [
    {
     "tier": 1,
-    "label": "Theatre people",
+    "label": "Theater people",
     "words": [
      "ACTOR",
      "USHER",
@@ -10823,7 +10823,7 @@
     ]
    }
   ],
-  "redHerrings": "GASP hides an asp; CURTAIN reads as theatre; BOO frightens; ROLL and COLD look like a lunch order.",
+  "redHerrings": "GASP hides an asp; CURTAIN reads as theater; BOO frightens; ROLL and COLD look like a lunch order.",
   "source": "shard-05"
  },
  {
@@ -11752,7 +11752,7 @@
    },
    {
     "tier": 2,
-    "label": "Theatre seating",
+    "label": "Theater seating",
     "words": [
      "STALLS",
      "BALCONY",
@@ -11775,7 +11775,7 @@
    },
    {
     "tier": 4,
-    "label": "Sound like theatre words",
+    "label": "Sound like theater words",
     "words": [
      "ROLL",
      "SEEN",
@@ -12231,7 +12231,7 @@
     ]
    }
   ],
-  "redHerrings": "FRAME is a picture frame; SPOKE is a bicycle part; STAGE reads as theatre; CAMERA reads as photography; PEONY is a flower.",
+  "redHerrings": "FRAME is a picture frame; SPOKE is a bicycle part; STAGE reads as theater; CAMERA reads as photography; PEONY is a flower.",
   "source": "shard-05"
  },
  {
@@ -13293,7 +13293,7 @@
     ]
    }
   ],
-  "redHerrings": "TIME reads as a stretch of time; SHOW and STAGE read as theatre; MOUTH reads as body; COTTON and COTTAGE look alike.",
+  "redHerrings": "TIME reads as a stretch of time; SHOW and STAGE read as theater; MOUTH reads as body; COTTON and COTTAGE look alike.",
   "source": "shard-06"
  },
  {
@@ -13972,7 +13972,7 @@
    },
    {
     "tier": 2,
-    "label": "The very centre",
+    "label": "The very center",
     "words": [
      "CORE",
      "CRUX",
@@ -14007,7 +14007,7 @@
     ]
    }
   ],
-  "redHerrings": "HEART is the centre and a sweetheart; TOOTH reads as body; FEARFUL reads as a feeling; CORN and KERNEL pair up.",
+  "redHerrings": "HEART is the center and a sweetheart; TOOTH reads as body; FEARFUL reads as a feeling; CORN and KERNEL pair up.",
   "source": "shard-06"
  },
  {
@@ -16535,7 +16535,7 @@
    },
    {
     "tier": 2,
-    "label": "Jewellery",
+    "label": "Jewelry",
     "words": [
      "BROOCH",
      "BANGLE",
@@ -16571,7 +16571,7 @@
     ]
    }
   ],
-  "redHerrings": "RING is jewellery and a tone; DIAL is a tone too; CHORD sounds like CORD; BASE reads as a building word.",
+  "redHerrings": "RING is jewelry and a tone; DIAL is a tone too; CHORD sounds like CORD; BASE reads as a building word.",
   "source": "shard-07"
  },
  {
@@ -21028,7 +21028,7 @@
     ]
    }
   ],
-  "redHerrings": "MITE is an insect beside the insect anagrams; BUS and VAN are vehicles; TRACE and TANG read as flavours.",
+  "redHerrings": "MITE is an insect beside the insect anagrams; BUS and VAN are vehicles; TRACE and TANG read as flavors.",
   "source": "shard-09"
  },
  {
@@ -21065,7 +21065,7 @@
    },
    {
     "tier": 4,
-    "label": "Three alphabet neighbours in a row",
+    "label": "Three alphabet neighbors in a row",
     "words": [
      "FIRST",
      "STUDY",
@@ -21273,7 +21273,7 @@
     ]
    }
   ],
-  "redHerrings": "CHECK is a way to pay; AUDIT and MARKET are money words; GOOD looks like a judgement, not wordplay.",
+  "redHerrings": "CHECK is a way to pay; AUDIT and MARKET are money words; GOOD looks like a judgment, not wordplay.",
   "source": "shard-09"
  },
  {
@@ -25432,7 +25432,7 @@
     ]
    }
   ],
-  "redHerrings": "BELLY hides a BELL; BOW and RIBBON could decorate Santa's SACK; BERRIES and PEPPERMINT both read as flavours; DUMBBELL tempts as a weight.",
+  "redHerrings": "BELLY hides a BELL; BOW and RIBBON could decorate Santa's SACK; BERRIES and PEPPERMINT both read as flavors; DUMBBELL tempts as a weight.",
   "source": "shard-holidays"
  },
  {

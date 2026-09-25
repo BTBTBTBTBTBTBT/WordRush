@@ -79,7 +79,7 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
         }
     }
 
-    // Free daily VS already used → tapping the greyed card explains + upsells
+    // Free daily VS already used → tapping the grayed card explains + upsells
     // instead of doing nothing (iOS VSLobbyView showVSLimit overlay).
     var showVSLimit by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 

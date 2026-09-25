@@ -88,7 +88,7 @@ export function ladderNeighbours(w: string, allowed: ReadonlySet<string>): strin
 /**
  * The next rung on a shortest path from `current` to `end` over `allowed`,
  * never stepping onto a word in `avoid` (the rungs already used). BFS from
- * `end`; among current's neighbours one step closer, the alphabetically
+ * `end`; among current's neighbors one step closer, the alphabetically
  * first. Null when no route exists.
  */
 export function ladderNextStep(current: string, end: string, allowed: ReadonlySet<string>, avoid: ReadonlySet<string> = new Set()): string | null {

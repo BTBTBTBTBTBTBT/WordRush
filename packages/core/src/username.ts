@@ -69,7 +69,7 @@ export const USERNAME_BLOCKED_TOKENS: readonly string[] = [
 
 /**
  * Innocent words that CONTAIN a blocked term. Each is removed from the
- * normalised name before the blocklist is scanned, which is what makes
+ * normalized name before the blocklist is scanned, which is what makes
  * substring matching survivable — this is the Scunthorpe problem, and the
  * first version of this file rejected the town, the mushroom and a couple of
  * real surnames until the test caught it.
@@ -100,7 +100,7 @@ const LEET: Record<string, string> = {
 /**
  * Fold a username to the form the blocklist is matched against: uppercase,
  * leet-substituted, separators removed, and runs of a repeated letter
- * collapsed (so `niiiggerrr` normalises to the base term).
+ * collapsed (so `niiiggerrr` normalizes to the base term).
  */
 export function normalizeUsername(raw: string): string {
   const substituted = raw

@@ -35,7 +35,7 @@ object LeaderboardService {
     private val client get() = SupabaseConfig.client
 
     /** Like [runCatching].getOrElse, but lets cancellation propagate so a
-     *  cancelled LaunchedEffect (mode switch) can't resume with a bogus
+     *  canceled LaunchedEffect (mode switch) can't resume with a bogus
      *  fallback value and overwrite the new mode's state. */
     private inline fun <T> Result<T>.getOrElseNotCancelled(fallback: (Throwable) -> T): T =
         getOrElse { if (it is CancellationException) throw it else fallback(it) }
@@ -91,7 +91,7 @@ object LeaderboardService {
     // board immediately and refresh underneath.
     //
     // cacheDir, not filesDir: this is a cache, and the OS reclaiming it under
-    // storage pressure is correct — the worst case is the old behaviour.
+    // storage pressure is correct — the worst case is the old behavior.
     @Serializable
     private data class DiskSnapshot(
         val day: String,

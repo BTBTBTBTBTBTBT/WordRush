@@ -32,8 +32,8 @@
   {
     "final": "SQUARE ROOTS",
     "caption": "The maths teacher's vegetable garden was famous for its ____.",
-    "scene": "A teacher in a cardigan pulls a perfectly cube-shaped carrot from a tidy vegetable bed while a neighbour stares over the fence.",
-    "altText": "A gardener pulls a cube-shaped carrot from the soil as a neighbour looks on."
+    "scene": "A teacher in a cardigan pulls a perfectly cube-shaped carrot from a tidy vegetable bed while a neighbor stares over the fence.",
+    "altText": "A gardener pulls a cube-shaped carrot from the soil as a neighbor looks on."
   },
   {
     "final": "OUTSTANDING",
@@ -158,7 +158,7 @@
   {
     "final": "FIELD DAY",
     "caption": "When the old tractor finally started, the farmer had a ____.",
-    "scene": "A farmer whoops with joy as his rusty tractor rears up on its back wheels across a ploughed meadow.",
+    "scene": "A farmer whoops with joy as his rusty tractor rears up on its back wheels across a plowed meadow.",
     "altText": "A farmer cheers as his tractor rears up in a meadow."
   },
   {
@@ -217,7 +217,7 @@
   },
   {
     "final": "DRUM ROLL",
-    "caption": "The percussionist's favourite lunch was, naturally, a ____.",
+    "caption": "The percussionist's favorite lunch was, naturally, a ____.",
     "scene": "A percussionist bites into a bread roll shaped like a snare drum, drumsticks tucked behind her ears.",
     "altText": "A percussionist bites into a bun shaped like a snare."
   },
@@ -260,8 +260,8 @@
   {
     "final": "TIRED OUT",
     "caption": "After changing wheels all day, the mechanic was completely ____.",
-    "scene": "A mechanic snores inside a tower of stacked tyres, a wrench dangling from one hand.",
-    "altText": "A mechanic sleeps inside a stack of tyres with a wrench in hand."
+    "scene": "A mechanic snores inside a tower of stacked tires, a wrench dangling from one hand.",
+    "altText": "A mechanic sleeps inside a stack of tires with a wrench in hand."
   },
   {
     "final": "BRAKE TIME",
@@ -319,7 +319,7 @@
   },
   {
     "final": "VESTED INTEREST",
-    "caption": "The manager wore his favourite waistcoat to the savings-rate meeting; he had a ____.",
+    "caption": "The manager wore his favorite waistcoat to the savings-rate meeting; he had a ____.",
     "scene": "A manager in a splendid embroidered waistcoat points proudly to a chart of climbing rates while the board admires his buttons.",
     "altText": "A man in an embroidered waistcoat points at a rising chart."
   },
@@ -332,7 +332,7 @@
   {
     "final": "STAMP OF APPROVAL",
     "caption": "The postmaster liked the new uniforms and gave them his ____.",
-    "scene": "A postmaster brings a giant rubber stamp down on the shoulder of a grinning worker modelling the new uniform.",
+    "scene": "A postmaster brings a giant rubber stamp down on the shoulder of a grinning worker modeling the new uniform.",
     "altText": "A postmaster presses a large rubber marker onto a worker's shoulder."
   },
   {
@@ -375,7 +375,7 @@
     "final": "WINGING IT",
     "caption": "The pilot admitted he hadn't read the new manual; he was ____.",
     "scene": "A pilot stands on the wing of a parked plane, shrugging, with an unopened manual tucked under his arm.",
-    "altText": "A pilot shrugs while standing on the wing of a parked aeroplane."
+    "altText": "A pilot shrugs while standing on the wing of a parked airplane."
   },
   {
     "final": "CLASS ACT",
@@ -398,8 +398,8 @@
   {
     "final": "GOOD CHEMISTRY",
     "caption": "The two lab partners got along famously; everyone said they had ____.",
-    "scene": "Two scientists laugh together at a lab bench while the vapour from their beakers curls into the shape of a heart.",
-    "altText": "Two scientists laugh at a lab bench as beaker vapour forms a heart."
+    "scene": "Two scientists laugh together at a lab bench while the vapor from their beakers curls into the shape of a heart.",
+    "altText": "Two scientists laugh at a lab bench as beaker vapor forms a heart."
   },
   {
     "final": "IN THEORY",
@@ -560,8 +560,8 @@
   {
     "final": "ON THE FENCE",
     "caption": "Unable to choose which garden to nap in, Whiskers stayed ____.",
-    "scene": "A cat perches along a wooden garden fence with a flower bed on either side, while two neighbours each pat a cushion to tempt her down.",
-    "altText": "A cat sits along a wooden garden divider while two neighbours pat cushions."
+    "scene": "A cat perches along a wooden garden fence with a flower bed on either side, while two neighbors each pat a cushion to tempt her down.",
+    "altText": "A cat sits along a wooden garden divider while two neighbors pat cushions."
   },
   {
     "final": "FELINE FINE",
@@ -577,7 +577,7 @@
   },
   {
     "final": "TIDE AND SEEK",
-    "caption": "The crabs' favourite beach game was ____.",
+    "caption": "The crabs' favorite beach game was ____.",
     "scene": "Crabs duck behind rocks and buckets as a wave rolls up the sand, while one crab with claws over its eyes counts to ten.",
     "altText": "Crabs hide behind rocks as one covers its eyes while a wave rolls in."
   },
@@ -596,8 +596,8 @@
   {
     "final": "LIGHTEN UP",
     "caption": "The thundercloud sulked all morning until the sun told it to ____.",
-    "scene": "A scowling grey cloud with folded arms hangs over a garden while a grinning sun leans in and nudges it.",
-    "altText": "A grumpy grey cloud is nudged by a smiling sun above a garden."
+    "scene": "A scowling gray cloud with folded arms hangs over a garden while a grinning sun leans in and nudges it.",
+    "altText": "A grumpy gray cloud is nudged by a smiling sun above a garden."
   },
   {
     "final": "UNDER THE WEATHER",
@@ -607,9 +607,9 @@
   },
   {
     "final": "SNOW PROBLEM",
-    "caption": "The plough driver had one cheerful answer to every call for help: ____.",
-    "scene": "A cheerful driver leans from a plough cab giving a thumbs up, mountains of white drifts piled behind him and a family waving from a buried doorway.",
-    "altText": "A driver gives a thumbs up from a plough cab beside towering drifts."
+    "caption": "The plow driver had one cheerful answer to every call for help: ____.",
+    "scene": "A cheerful driver leans from a plow cab giving a thumbs up, mountains of white drifts piled behind him and a family waving from a buried doorway.",
+    "altText": "A driver gives a thumbs up from a plow cab beside towering drifts."
   },
   {
     "final": "FROSTY RECEPTION",
@@ -805,7 +805,7 @@
   },
   {
     "final": "LAWN AND ORDER",
-    "caption": "The new neighbour trimmed every blade to the same height; he was a stickler for ____.",
+    "caption": "The new neighbor trimmed every blade to the same height; he was a stickler for ____.",
     "scene": "A man in a judge's wig pushes a mower across perfectly striped grass while a garden gnome stands guard.",
     "altText": "A man in a judge's wig pushes a mower across perfectly striped grass."
   },
@@ -896,8 +896,8 @@
   {
     "final": "NIGHT OWL",
     "caption": "The zoo's newest arrival never went to bed on time; the keepers called him a ____.",
-    "scene": "An owl in pyjamas sits wide awake reading by torchlight under a blanket while the other birds sleep on their perches.",
-    "altText": "An owl in pyjamas reads by torchlight while other birds sleep."
+    "scene": "An owl in pajamas sits wide awake reading by torchlight under a blanket while the other birds sleep on their perches.",
+    "altText": "An owl in pajamas reads by torchlight while other birds sleep."
   },
   {
     "final": "PLAYING BY EAR",
@@ -926,7 +926,7 @@
   {
     "final": "PLANE SAILING",
     "caption": "With the airport so quiet, the family's holiday getaway was ____.",
-    "scene": "A small aeroplane with a sail hoisted on its wing glides down a runway while the family waves from the windows.",
+    "scene": "A small airplane with a sail hoisted on its wing glides down a runway while the family waves from the windows.",
     "altText": "A small aircraft with a sail on its wing glides down a runway."
   },
   {
@@ -1033,7 +1033,7 @@
   },
   {
     "final": "SOMETHING FISHY",
-    "caption": "When the angler claimed the pike was two metres long, his wife suspected ____.",
+    "caption": "When the angler claimed the pike was two meters long, his wife suspected ____.",
     "scene": "An angler stretches his arms as wide as they go while his wife raises an eyebrow at the sardine-sized fish in his bucket.",
     "altText": "A man stretches his arms wide while a woman looks doubtfully at a tiny catch in his bucket."
   },
@@ -1173,7 +1173,7 @@
     "final": "FULL STEAM AHEAD",
     "caption": "When the club's new locomotive was finished, the chairman shouted '____!'",
     "scene": "A jubilant club chairman waves a flag as a model engine puffs so hard the whole clubroom fills with cloud.",
-    "altText": "A club chairman waves a flag while a tiny locomotive fills the room with puffs of white vapour."
+    "altText": "A club chairman waves a flag while a tiny locomotive fills the room with puffs of white vapor."
   },
   {
     "final": "LOSING STEAM",
@@ -1184,8 +1184,8 @@
   {
     "final": "ROOT CAUSE",
     "caption": "The garden club investigated why the carrots leaned and found the ____.",
-    "scene": "Two gardeners on hands and knees peer into a hole where a knotted carrot root has tied itself to its neighbour.",
-    "altText": "Two gardeners peer into a hole where a carrot's underground part is knotted around its neighbour."
+    "scene": "Two gardeners on hands and knees peer into a hole where a knotted carrot root has tied itself to its neighbor.",
+    "altText": "Two gardeners peer into a hole where a carrot's underground part is knotted around its neighbor."
   },
   {
     "final": "HEDGE YOUR BETS",
@@ -1232,12 +1232,12 @@
   {
     "final": "STAGE FRIGHT",
     "caption": "The wooden platform trembled before the show; the carpenter blamed ____.",
-    "scene": "A theatre stage with a nervous face on its front boards shivers on its legs while a carpenter pats it reassuringly.",
-    "altText": "A wooden theatre platform with a nervous face trembles as a carpenter pats it kindly."
+    "scene": "A theater stage with a nervous face on its front boards shivers on its legs while a carpenter pats it reassuringly.",
+    "altText": "A wooden theater platform with a nervous face trembles as a carpenter pats it kindly."
   },
   {
     "final": "CURTAIN CALL",
-    "caption": "The theatre society's seamstress got a telephone message about the drapes: a ____.",
+    "caption": "The theater society's seamstress got a telephone message about the drapes: a ____.",
     "scene": "A seamstress with pins in her mouth answers a ringing telephone that is wrapped in yards of red velvet.",
     "altText": "A seamstress with pins in her mouth answers a telephone wrapped in red velvet."
   },
@@ -1250,7 +1250,7 @@
   {
     "final": "SCENE STEALER",
     "caption": "Someone kept swiping the painted backdrops; the drama club hunted the ____.",
-    "scene": "A theatre cat tiptoes offstage dragging a painted forest backdrop while an actor onstage gestures at a bare wall.",
+    "scene": "A theater cat tiptoes offstage dragging a painted forest backdrop while an actor onstage gestures at a bare wall.",
     "altText": "A cat drags a painted forest backdrop offstage while an actor points at the bare wall behind him."
   },
   {
@@ -1351,8 +1351,8 @@
   },
   {
     "final": "SPACED OUT",
-    "caption": "The astronomy club planted its telescopes ten metres apart, nicely ____.",
-    "scene": "Five stargazers stand at widely separated telescopes across a dark field, each waving to a distant neighbour.",
+    "caption": "The astronomy club planted its telescopes ten meters apart, nicely ____.",
+    "scene": "Five stargazers stand at widely separated telescopes across a dark field, each waving to a distant neighbor.",
     "altText": "Five stargazers stand far apart at telescopes in a dark field, waving to one another."
   },
   {
@@ -1449,13 +1449,13 @@
     "final": "CORE VALUES",
     "caption": "The gym's apple-loving trainer pinned his ____ to the wall.",
     "scene": "A trainer proudly pins a row of apple cores to a noticeboard headed with a little heart, while a member munches thoughtfully.",
-    "altText": "A trainer pins a row of eaten apple centres to a noticeboard while a gym member munches."
+    "altText": "A trainer pins a row of eaten apple centers to a noticeboard while a gym member munches."
   },
   {
     "final": "RAIN CHECK",
     "caption": "The ants postponed their picnic and politely asked the storm cloud for a ____.",
-    "scene": "An ant in a tiny yellow slicker holds a ticket stub up toward a grumbling grey cloud hovering over a folded picnic blanket.",
-    "altText": "An ant in a small coat holds a ticket up toward a grey cloud above a folded picnic blanket."
+    "scene": "An ant in a tiny yellow slicker holds a ticket stub up toward a grumbling gray cloud hovering over a folded picnic blanket.",
+    "altText": "An ant in a small coat holds a ticket up toward a gray cloud above a folded picnic blanket."
   },
   {
     "final": "BREAK THE ICE",
@@ -1526,8 +1526,8 @@
   {
     "final": "SILVER LINING",
     "caption": "The rain cloud hired a tailor for her new coat and asked for a ____.",
-    "scene": "A plump grey cloud stands on a tailor's stool while a mouse tailor pins shimmering fabric inside her coat.",
-    "altText": "A grey cloud stands on a stool while a mouse tailor pins shiny fabric inside her coat."
+    "scene": "A plump gray cloud stands on a tailor's stool while a mouse tailor pins shimmering fabric inside her coat.",
+    "altText": "A gray cloud stands on a stool while a mouse tailor pins shiny fabric inside her coat."
   },
   {
     "final": "WEATHER THE STORM",
@@ -1591,7 +1591,7 @@
   },
   {
     "final": "GIVE A HOOT",
-    "caption": "The owl volunteered for forest litter patrol; unlike his neighbours, he did ____.",
+    "caption": "The owl volunteered for forest litter patrol; unlike his neighbors, he did ____.",
     "scene": "An owl in a hi-vis vest spears a crisp packet with a stick while raccoons lounge on a log in the background.",
     "altText": "An owl in a bright vest picks up litter with a stick while raccoons lounge on a log."
   },
@@ -1623,7 +1623,7 @@
     "final": "PLAYING POSSUM",
     "caption": "The forest talent show's stillest act came from the marsupial, who was simply ____.",
     "scene": "A possum lies rigid on a tree-stump stage with its tongue out while a panel of owl judges applauds politely.",
-    "altText": "A small grey marsupial lies stiff on a stump stage with its tongue out while owl judges applaud."
+    "altText": "A small gray marsupial lies stiff on a stump stage with its tongue out while owl judges applaud."
   },
   {
     "final": "GOING NUTS",
@@ -1700,8 +1700,8 @@
   {
     "final": "BED OF ROSES",
     "caption": "The gardener's brand-new mattress was, quite literally, a ____.",
-    "scene": "A gardener in pyjamas lies blissfully on a raised flowerbed of blooming red flowers, a watering can on the nightstand.",
-    "altText": "A gardener in pyjamas lies on a raised flowerbed of red blooms with a watering can beside it."
+    "scene": "A gardener in pajamas lies blissfully on a raised flowerbed of blooming red flowers, a watering can on the nightstand.",
+    "altText": "A gardener in pajamas lies on a raised flowerbed of red blooms with a watering can beside it."
   },
   {
     "final": "GREEN THUMB",
@@ -1723,7 +1723,7 @@
   },
   {
     "final": "HOPPING MAD",
-    "caption": "When rain cancelled the meadow games, the frogs were ____.",
+    "caption": "When rain canceled the meadow games, the frogs were ____.",
     "scene": "Furious frogs bounce up and down under a downpour, one shaking a tiny fist at the cloud.",
     "altText": "Angry frogs bounce up and down in heavy rain while one shakes a tiny fist at a cloud."
   },
@@ -1790,14 +1790,14 @@
   {
     "final": "RULE THE ROOST",
     "caption": "Every morning our rooster reminded everyone who got to ____.",
-    "scene": "A rooster with a tiny crown and sceptre crows from the henhouse roof while hens below curtsy.",
+    "scene": "A rooster with a tiny crown and scepter crows from the henhouse roof while hens below curtsy.",
     "altText": "A cockerel with a small crown crows from a henhouse roof while hens curtsy below."
   },
   {
     "final": "TAKEN FOR GRANITE",
     "caption": "The old mountain grumbled that after a million years, it felt rather ____.",
-    "scene": "A craggy grey mountain with a sulky face folds its arms while hikers stroll past without looking up.",
-    "altText": "A grey mountain with a sulky face folds its arms while hikers stroll past without looking up."
+    "scene": "A craggy gray mountain with a sulky face folds its arms while hikers stroll past without looking up.",
+    "altText": "A gray mountain with a sulky face folds its arms while hikers stroll past without looking up."
   },
   {
     "final": "PONDERING",
@@ -1844,12 +1844,12 @@
   {
     "final": "IN THE PINK",
     "caption": "After a good long rest, our flamingo felt entirely ____.",
-    "scene": "A flamingo stretches luxuriously on one leg at sunrise, glowing rosy from beak to toe, while grey herons nearby look drab.",
-    "altText": "A flamingo stretches on one leg at sunrise, glowing rosy, while grey herons look on."
+    "scene": "A flamingo stretches luxuriously on one leg at sunrise, glowing rosy from beak to toe, while gray herons nearby look drab.",
+    "altText": "A flamingo stretches on one leg at sunrise, glowing rosy, while gray herons look on."
   },
   {
     "final": "FERRY TALE",
-    "caption": "Every night the harbour read the little boats their favourite bedtime story, a ____.",
+    "caption": "Every night the harbor read the little boats their favorite bedtime story, a ____.",
     "scene": "A tugboat in a nightcap reads from a big book to a row of small boats tucked under wave blankets at the dock.",
     "altText": "A tugboat in a nightcap reads from a big book to small boats tucked in at a dock."
   },
@@ -1861,9 +1861,9 @@
   },
   {
     "final": "FOGGIEST IDEA",
-    "caption": "Asked which way the harbour lay, the lighthouse admitted it hadn't the ____.",
-    "scene": "A lighthouse shrugs in thick grey murk while a rowing boat below holds up a compass hopefully.",
-    "altText": "A lighthouse shrugs in thick grey murk while a rowing boat below holds up a compass."
+    "caption": "Asked which way the harbor lay, the lighthouse admitted it hadn't the ____.",
+    "scene": "A lighthouse shrugs in thick gray murk while a rowing boat below holds up a compass hopefully.",
+    "altText": "A lighthouse shrugs in thick gray murk while a rowing boat below holds up a compass."
   },
   {
     "final": "SEASONS GREETINGS",
@@ -1873,7 +1873,7 @@
   },
   {
     "final": "MISSED THE BOAT",
-    "caption": "Our seal overslept in his harbour bunk and, by sunrise, had clearly ____.",
+    "caption": "Our seal overslept in his harbor bunk and, by sunrise, had clearly ____.",
     "scene": "A seal in a nightcap gallops down the pier waving flippers as the ferry chugs off, passengers waving back.",
     "altText": "A seal in a nightcap gallops down a pier waving flippers as a ferry chugs into the distance."
   },
@@ -1909,7 +1909,7 @@
   },
   {
     "final": "SPLITTING HAIRS",
-    "caption": "The barber and his customer argued over half a millimetre; both were guilty of ____.",
+    "caption": "The barber and his customer argued over half a millimeter; both were guilty of ____.",
     "scene": "A barber wields a tiny axe over a single strand of hair laid on a chopping block while his customer peers through a magnifying glass.",
     "altText": "A barber holds a small axe over a single strand laid on a block as a customer looks on with a magnifying glass."
   },
@@ -2078,8 +2078,8 @@
   {
     "final": "WATCH OUT",
     "caption": "The wristwatch leapt from its display case and dashed for the door; the shopkeeper yelled, '____!'",
-    "scene": "A jeweller lunges across the counter as a tiny wristwatch with legs sprints toward the open shop door.",
-    "altText": "A jeweller lunges as a tiny timepiece with legs runs for the door."
+    "scene": "A jeweler lunges across the counter as a tiny wristwatch with legs sprints toward the open shop door.",
+    "altText": "A jeweler lunges as a tiny timepiece with legs runs for the door."
   },
   {
     "final": "CROWNING GLORY",
@@ -2131,7 +2131,7 @@
   },
   {
     "final": "PARROT FASHION",
-    "caption": "The captain's bird repeated every word while modelling a tiny hat; the crew called it ____.",
+    "caption": "The captain's bird repeated every word while modeling a tiny hat; the crew called it ____.",
     "scene": "A parrot in a miniature feathered hat and cape struts along a plank runway while pirates applaud.",
     "altText": "A bright bird in a tiny hat and cape struts along a plank while pirates applaud."
   },
@@ -2144,13 +2144,13 @@
   {
     "final": "MOON WALK",
     "caption": "The astronaut took his dog out for its evening stroll across the crater: a ____.",
-    "scene": "An astronaut leads a spacesuited dog on a leash across a cratered grey surface, both leaving bouncy footprints.",
-    "altText": "An astronaut leads a dog in a spacesuit on a leash across a grey cratered surface."
+    "scene": "An astronaut leads a spacesuited dog on a leash across a cratered gray surface, both leaving bouncy footprints.",
+    "altText": "An astronaut leads a dog in a spacesuit on a leash across a gray cratered surface."
   },
   {
     "final": "FOSSIL FUEL",
     "caption": "The elderly dinosaur pulled up at the pump and asked for a tank of ____.",
-    "scene": "A grey-whiskered dinosaur in a scarf idles at a petrol pump while a nervous attendant holds the nozzle.",
+    "scene": "A gray-whiskered dinosaur in a scarf idles at a petrol pump while a nervous attendant holds the nozzle.",
     "altText": "An old dinosaur waits at a petrol pump while an attendant holds the nozzle."
   },
   {
@@ -2203,7 +2203,7 @@
   },
   {
     "final": "SPOTLIGHT",
-    "caption": "The theatre's lamp came out in polka dots; the electrician said it was now a true ____.",
+    "caption": "The theater's lamp came out in polka dots; the electrician said it was now a true ____.",
     "scene": "A stage electrician on a ladder inspects a large lamp covered in bright polka dots, the beam on the stage dotted too.",
     "altText": "An electrician on a ladder inspects a polka-dotted stage lamp."
   },
@@ -2215,7 +2215,7 @@
   },
   {
     "final": "MOVIE TRAILER",
-    "caption": "The travelling cinema showed films from a caravan; naturally they called it the ____.",
+    "caption": "The traveling cinema showed films from a caravan; naturally they called it the ____.",
     "scene": "A caravan with a screen on its side shows a film to villagers on deckchairs, popcorn in hand.",
     "altText": "A caravan with a screen on its side shows a film to villagers in deckchairs."
   },
@@ -2324,23 +2324,23 @@
   },
   {
     "final": "RING IT IN",
-    "caption": "Our jeweller had one favourite way to welcome January: ____.",
-    "scene": "A jeweller in a party hat holds up a tiny golden band to the stroke of midnight while confetti drifts down over her workbench.",
-    "altText": "A jeweller in a party hat lifts a small golden band as confetti falls at midnight.",
+    "caption": "Our jeweler had one favorite way to welcome January: ____.",
+    "scene": "A jeweler in a party hat holds up a tiny golden band to the stroke of midnight while confetti drifts down over her workbench.",
+    "altText": "A jeweler in a party hat lifts a small golden band as confetti falls at midnight.",
     "holiday": "newyear"
   },
   {
     "final": "LENDING A HAND",
     "caption": "On the January day of service, volunteers spent the whole morning ____.",
-    "scene": "Two volunteers in matching T-shirts pass a paint roller between them at a community centre, a fresh mural half finished behind them.",
+    "scene": "Two volunteers in matching T-shirts pass a paint roller between them at a community center, a fresh mural half finished behind them.",
     "altText": "Two volunteers pass a paint roller in front of a half-finished community mural.",
     "holiday": "mlkday"
   },
   {
     "final": "COMMON GROUND",
-    "caption": "Our neighbourhood garden opened on that January Monday; everyone agreed it was our ____.",
-    "scene": "Two neighbours of different ages kneel side by side in a shared garden plot, planting a sapling together on a crisp winter day.",
-    "altText": "Two neighbours kneel together planting a sapling in a shared garden plot.",
+    "caption": "Our neighborhood garden opened on that January Monday; everyone agreed it was our ____.",
+    "scene": "Two neighbors of different ages kneel side by side in a shared garden plot, planting a sapling together on a crisp winter day.",
+    "altText": "Two neighbors kneel together planting a sapling in a shared garden plot.",
     "holiday": "mlkday"
   },
   {
@@ -2415,16 +2415,16 @@
   },
   {
     "final": "GREEN WITH ENVY",
-    "caption": "When the leprechaun saw his neighbour's shamrock patch, he turned ____.",
-    "scene": "A leprechaun peers over a fence at a neighbour's lush field of four-leaf clovers, his own patch bare and scruffy.",
+    "caption": "When the leprechaun saw his neighbor's shamrock patch, he turned ____.",
+    "scene": "A leprechaun peers over a fence at a neighbor's lush field of four-leaf clovers, his own patch bare and scruffy.",
     "altText": "A leprechaun peers over a fence at a lush clover field beside his own bare patch.",
     "holiday": "stpatricks"
   },
   {
     "final": "SHAM ROCK",
     "caption": "The leprechaun's pet boulder turned out to be painted cardboard; it was a ____.",
-    "scene": "A leprechaun proudly walks a large grey boulder on a leash while a child pokes it and it wobbles like a prop.",
-    "altText": "A leprechaun walks a large grey boulder on a leash as a child pokes it.",
+    "scene": "A leprechaun proudly walks a large gray boulder on a leash while a child pokes it and it wobbles like a prop.",
+    "altText": "A leprechaun walks a large gray boulder on a leash as a child pokes it.",
     "holiday": "stpatricks"
   },
   {
@@ -2506,7 +2506,7 @@
   },
   {
     "final": "FLYING THE FLAG",
-    "caption": "Our town's pigeons found their own way to honour that last Monday of May: ____.",
+    "caption": "Our town's pigeons found their own way to honor that last Monday of May: ____.",
     "scene": "Two pigeons carry a small banner of stars and stripes between their beaks above a quiet parade of marching veterans.",
     "altText": "Two pigeons carry a small striped banner between their beaks above a parade.",
     "holiday": "memorial"

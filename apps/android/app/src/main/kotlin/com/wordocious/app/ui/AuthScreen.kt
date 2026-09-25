@@ -145,10 +145,10 @@ fun AuthScreen(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // iOS's card is a VStack, which centres its children by default;
+            // iOS's card is a VStack, which centers its children by default;
             // Compose's Column defaults to Start, so this heading sat
-            // left-aligned against a centred wordmark and centred everything
-            // else. Centre it explicitly rather than centring the whole Column,
+            // left-aligned against a centered wordmark and centered everything
+            // else. Center it explicitly rather than centering the whole Column,
             // which would drag the field labels off their leading edge.
             Text(
                 when (mode) { "signin" -> "WELCOME BACK!"; "signup" -> "JOIN THE FUN!"; else -> "RESET PASSWORD" },
@@ -407,7 +407,7 @@ private fun GoogleSignInButton(onError: (String) -> Unit) {
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             // iOS fills with Theme.background, not hard white — a hardcoded
-            // white button with dark-grey text was unreadable in the dark theme.
+            // white button with dark-gray text was unreadable in the dark theme.
             .background(WTheme.bg)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
             .clickableNoRipple {

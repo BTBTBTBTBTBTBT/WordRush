@@ -44,7 +44,7 @@ describe('Starsweep generator', () => {
     expect(regionsDailyNumber('2026-09-30')).toBe(8);
   });
 
-  it('neighbours come back in the fixed up/down/left/right order', () => {
+  it('neighbors come back in the fixed up/down/left/right order', () => {
     expect(regionsN4(7, 0)).toEqual([7, 1]);
     expect(regionsN4(7, 24)).toEqual([17, 31, 23, 25]);
   });

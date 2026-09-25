@@ -378,7 +378,7 @@ struct MuddleView: View {
     }
 
     /// The cartoon at the height that is left (capped at 26 % of the screen),
-    /// centred, with the caption beneath. Scrolls only when the floor does not fit.
+    /// centered, with the caption beneath. Scrolls only when the floor does not fit.
     private func topArea(available: CGFloat) -> some View {
         let cap = floor(UIScreen.main.bounds.height * MdSize.cartoonCap)
         let fit = available - captionHeight - MdSize.gap
@@ -539,7 +539,7 @@ struct MuddleView: View {
 /// tone at 4:3. The puzzle's image when the founder's batch has produced one;
 /// until then the placeholder sketch. The caption is ALWAYS typeset by the app
 /// beneath the panel, never drawn into the picture. The caller sets the height;
-/// the 4:3 fit centres it horizontally.
+/// the 4:3 fit centers it horizontally.
 struct MuddleCartoonPanel: View {
     let cartoon: String?
     let altText: String

@@ -522,8 +522,8 @@ private fun CrosswordHeader(session: CrosswordSession, tick: Int) {
 // ── Grid ────────────────────────────────────────────────────────────────────
 
 /**
- * The grid, always centred (§13 round 11): a sparse criss-cross of purple tiles;
- * blocks are simply absent. The letter is centred in its cell exactly like a
+ * The grid, always centered (§13 round 11): a sparse criss-cross of purple tiles;
+ * blocks are simply absent. The letter is centered in its cell exactly like a
  * Classic tile; the clue number is a small top-left badge that never touches
  * the letter. The active entry wears a 10% accent wash and the selected cell an
  * accent cursor ring; checked-locked cells go a deeper purple, revealed cells
@@ -614,7 +614,7 @@ private fun NumberBadge(label: String, size: Dp, fontSize: TextUnit) {
 
 // ── Clues ───────────────────────────────────────────────────────────────────
 
-/** Across and Down side by side (§13 round 10), centred under the grid; solved entries strike through and dim; the active clue is washed in the accent. */
+/** Across and Down side by side (§13 round 10), centered under the grid; solved entries strike through and dim; the active clue is washed in the accent. */
 @Composable
 private fun ClueColumns(session: CrosswordSession, finished: Boolean) {
     Row(

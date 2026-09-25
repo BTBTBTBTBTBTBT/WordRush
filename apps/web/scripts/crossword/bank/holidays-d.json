@@ -25,7 +25,7 @@
   ["Set off ____ at midnight","FIREWORKS"],["Hold your ____","HORSES"],["Let sleeping ____ lie","DOGS"],["Paper ____","TIGER"],
   ["____ business","MONKEY"],["Pull a ____ out of a hat","RABBIT"],["Smell a ____","RAT"],["A ____ in a poke","PIG"],
   ["Get someone's ____","GOAT"],["The ____ crows at dawn","ROOSTER"],["A ____ in the grass","SNAKE"],["Beginner's ____","LUCK"],
-  ["Fortune favours the ____","BOLD"],["Health is ____","WEALTH"],["Gifts of ____ for good luck","ORANGES"],["Red for luck, ____ for wealth","GOLD"],
+  ["Fortune favors the ____","BOLD"],["Health is ____","WEALTH"],["Gifts of ____ for good luck","ORANGES"],["Red for luck, ____ for wealth","GOLD"],
   ["Long ____ for a long life","NOODLES"],["The full ____ ends the celebrations","MOON"],["Bow to your ____","ELDERS"],["Twelve animals of the ____","ZODIAC"],
   ["Spring ____, another name for the holiday","FESTIVAL"],["A ____ of good luck","STROKE"],["A ____ fit for a king","FEAST"],["Third time ____","LUCKY"]
  ]},
@@ -36,7 +36,7 @@
   ["Rise and ____","SHINE"],["Burn the ____ at both ends","CANDLE"],["A guiding ____","BEACON"],["Bright as a ____","BUTTON"],
   ["Twinkling oil ____ on every ledge","LAMPS"],["A warm ____ in every window","GLOW"],["A ____ of light in the dark","FLICKER"],["Trim the ____","WICK"],
   ["Fan the ____","FLAMES"],["____ with joy","RADIANT"],["Look on the ____ side","BRIGHT"],["Eyes that ____","SPARKLE"],
-  ["A ____ for the eyes","FEAST"],["Exchange ____ with the neighbours","GIFTS"],["Evening ____ before the feast","PRAYERS"],["Count your ____","BLESSINGS"],
+  ["A ____ for the eyes","FEAST"],["Exchange ____ with the neighbors","GIFTS"],["Evening ____ before the feast","PRAYERS"],["Count your ____","BLESSINGS"],
   ["It's always darkest before the ____","DAWN"],["Twinkle, twinkle, little ____","STAR"],["Silence is ____","GOLDEN"],["Jump for ____","JOY"]
  ]},
  "kwanzaa": {"title": "Kwanzaa", "holiday": "kwanzaa", "allow": ["KINARA"], "pairs": [
@@ -45,7 +45,7 @@
   ["Gather the whole ____","FAMILY"],["A sense of ____","COMMUNITY"],["Find your ____","PURPOSE"],["Get ____","CREATIVE"],
   ["Take it on ____","FAITH"],["United we ____","STAND"],["Many hands make light ____","WORK"],["An ear of ____ for each child","CORN"],
   ["A woven ____ beneath the candles","MAT"],["Share a drink from one ____","CUP"],["Handmade ____ for the children","GIFTS"],["Proud of your ____","HERITAGE"],
-  ["Honour the ____","ANCESTORS"],["Know your ____","ROOTS"],["Respect your ____","ELDERS"],["Celebrate your ____","CULTURE"],
+  ["Honor the ____","ANCESTORS"],["Know your ____","ROOTS"],["Respect your ____","ELDERS"],["Celebrate your ____","CULTURE"],
   ["Bring something to the ____","TABLE"],["Seven ____ of celebration","NIGHTS"],["Light the black candle ____","FIRST"],["Red, black, and ____","GREEN"],
   ["Pearls of ____","WISDOM"],["Take ____ in your work","PRIDE"],["March to the beat of your own ____","DRUM"],["Two heads are better than ____","ONE"]
  ]},

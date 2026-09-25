@@ -316,7 +316,7 @@ struct RootTabView: View {
 /// screens by a per-screen ID rather than a counter: each screen's contribution
 /// is isolated, so a stray `exit` from one view can't un-hide the nav while
 /// another (e.g. a pushed game) is still up — the counter version drifted to 0
-/// on unpaired appear/disappear (fullScreenCover dismiss, cancelled swipe-back),
+/// on unpaired appear/disappear (fullScreenCover dismiss, canceled swipe-back),
 /// which let the nav bleed back onto live game screens.
 final class ChromeVisibility: ObservableObject {
     static let shared = ChromeVisibility()

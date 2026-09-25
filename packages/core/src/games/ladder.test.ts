@@ -58,7 +58,7 @@ describe('Letter Ladder bank', () => {
 describe('Letter Ladder engine', () => {
   const p = bank.daily[0];
 
-  it('neighbours and one-letter checks', () => {
+  it('neighbors and one-letter checks', () => {
     expect(ladderOneLetterApart('STONE', 'STORE')).toBe(true);
     expect(ladderOneLetterApart('STONE', 'STONE')).toBe(false);
     expect(ladderOneLetterApart('STONE', 'SHORE')).toBe(false);

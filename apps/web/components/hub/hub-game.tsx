@@ -33,8 +33,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
-// Hubbub (More Games §12): seven letters, one required centre, words of 4+
-// letters. The game finalises ONCE — reaching Hubbub (50% of max) is the win,
+// Hubbub (More Games §12): seven letters, one required center, words of 4+
+// letters. The game finalizes ONCE — reaching Hubbub (50% of max) is the win,
 // "End puzzle" below it is the loss — and play continues after the win: each
 // later rank-up goes through the improve path, which raises the leaderboard
 // score and the matches row without paying XP twice.
@@ -44,7 +44,7 @@ export const HUB_ACCENT = '#c026d3';
 const REJECT_COPY: Record<HubReject, string> = {
   ended: 'This puzzle is finished',
   short: 'Four letters or more',
-  centre: 'Must use the centre letter',
+  centre: 'Must use the center letter',
   letters: 'Only the seven letters',
   found: 'Already found',
   notword: 'Not in word list',
@@ -67,7 +67,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
   const [shake, setShake] = useState(false);
-  const recordedRankRef = useRef(-1);   // -1 = never finalised
+  const recordedRankRef = useRef(-1);   // -1 = never finalized
   const restoredRef = useRef(false);
 
   const status = state?.status ?? 'playing';
@@ -119,7 +119,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
-  // ── Recording: finalise once, then improve on every later rank-up ─────────
+  // ── Recording: finalize once, then improve on every later rank-up ─────────
   const points = state ? computeScoreBreakdown('HUB', state.status === 'won', hubGuessCount(hubRank(state)), elapsedSeconds, hubBoardsSolved(state.points, state.max), HUB_TOTAL_BOARDS, state.hintsUsed).total : 0;
 
   const finalise = useCallback((s: HubState) => {
@@ -170,7 +170,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     });
   }, [flash]);
 
-  // Terminal transitions: first finalisation → overlay + record; later rank-ups → improve.
+  // Terminal transitions: first finalization → overlay + record; later rank-ups → improve.
   const lastRankRef = useRef(-1);
   useEffect(() => {
     if (!state) return;
@@ -274,7 +274,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       className="rounded-[14%] font-black flex items-center justify-center active:scale-95 transition-transform select-none shrink-0"
       style={{ width: 'var(--tile)', height: 'var(--tile)', fontSize: 'calc(var(--tile) * 0.42)',
         ...(isCentre ? { background: HUB_ACCENT, color: '#fff', boxShadow: '0 2px 0 rgba(0,0,0,0.12)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', border: '2px solid var(--color-border)', boxShadow: '0 2px 0 rgba(0,0,0,0.06)' }) }}
-      aria-label={isCentre ? `${ch}, centre letter` : ch}>
+      aria-label={isCentre ? `${ch}, center letter` : ch}>
       {ch}
     </button>
   );
@@ -305,7 +305,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   });
 
   // Play screen (plan §12 layout rule): a flex column filling the shell — rank bar, entry line,
-  // cluster band (flex: 1, cluster centred), two control rows, found-words header + wrapping chip
+  // cluster band (flex: 1, cluster centered), two control rows, found-words header + wrapping chip
   // flow (flex: 1, scrolls, newest first), End link pinned at the bottom. The fixed rows carry
   // refs so the tile formula can subtract them from the column height.
   const clusterGap = 'calc(var(--tile) * 0.14)';

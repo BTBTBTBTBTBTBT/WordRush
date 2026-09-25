@@ -1,5 +1,5 @@
 // "Composed scene" cartoon route for Muddle: scenes assembled from a small kit
-// of ORIGINAL SVG parts drawn for Wordocious (no third-party art, so no licence
+// of ORIGINAL SVG parts drawn for Wordocious (no third-party art, so no license
 // question at all). Ink outlines, cream paper, purple + orange as the only
 // saturated accents — the style spec in the plan. Sample round: five scenes.
 import { writeSample } from '../more-games/lib.mjs';

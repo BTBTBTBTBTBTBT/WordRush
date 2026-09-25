@@ -1183,7 +1183,7 @@ private fun GuessDistributionCard(
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
     val totalWins = buckets.sumOf { it.count }
     // The color ramp reads from the FIRST bucket (fast wins purple → mid amber →
-    // slow grey) so a histogram that starts at 5 (Muddle) still opens in purple.
+    // slow gray) so a histogram that starts at 5 (Muddle) still opens in purple.
     val firstBucket = buckets.firstOrNull()?.guesses ?: 1
     // Tap a row -> "N guesses · X wins · Y% of wins" detail (iOS parity).
     var selected by remember { mutableStateOf<String?>(null) }
@@ -1215,7 +1215,7 @@ private fun GuessDistributionCard(
                     Text(b.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(24.dp))
                     Box(Modifier.weight(1f).height(20.dp), contentAlignment = Alignment.CenterStart) {
                         val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
-                        // Bucket color ramp: fast wins purple → mid amber → slow grey (iOS).
+                        // Bucket color ramp: fast wins purple → mid amber → slow gray (iOS).
                         val barColor = when {
                             b.guesses - firstBucket <= 1 -> Color(0xFF7C3AED)
                             b.guesses - firstBucket <= 3 -> Color(0xFFF59E0B)

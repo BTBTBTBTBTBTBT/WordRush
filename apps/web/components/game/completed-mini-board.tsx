@@ -42,7 +42,7 @@ export const evaluateGuessTiles = (guess: string, solution: string): TileState[]
 // ── Compact mini board for multi-board completed view ──
 // Uses a FIXED tile size (px) rather than aspect-ratio + auto rows. The latter
 // let empty rows collapse to ~0 height on some layout passes, so boards with
-// fewer guesses rendered shorter than their neighbours (the "wonky"/uneven
+// fewer guesses rendered shorter than their neighbors (the "wonky"/uneven
 // grid). A definite tile size makes every board the same height = crisp grid,
 // mirroring the native CompletedMiniBoardView.
 export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations, tileSize = 16 }: {

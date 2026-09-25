@@ -7,7 +7,7 @@
 
 import { supabase } from './supabase-client';
 
-export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled';
+export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'; // DB value
 
 export interface MatchInvite {
   id: string;
@@ -136,7 +136,7 @@ export async function markInviteAccepted(inviteId: string): Promise<void> {
  * and a second tap on the same link can't spawn a ghost lobby.
  *
  * Scoped to `status = 'pending'` so we don't clobber a row that was
- * already declined/cancelled between us reading it and writing.
+ * already declined/canceled between us reading it and writing.
  */
 export async function markInviteAcceptedByCode(code: string, matchId?: string): Promise<void> {
   const update: Record<string, unknown> = {

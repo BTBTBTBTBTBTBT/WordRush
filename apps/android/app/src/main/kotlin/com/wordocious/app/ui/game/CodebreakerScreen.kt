@@ -246,7 +246,7 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
         dispatch(CryptogramAction.Check, onFinished)
         val wrong = state.lastWrong.size
         if (wrong > 0) { flash("$wrong wrong letter${if (wrong == 1) "" else "s"} cleared"); SoundManager.playInvalid() }
-        else { flash("Everything pencilled is right"); SoundManager.playSuccess() }
+        else { flash("Everything penciled is right"); SoundManager.playSuccess() }
     }
     /** The red flash on letters a Check cleared lasts 700ms (web parity). */
     fun clearLastWrong() { if (state.lastWrong.isNotEmpty()) state = state.copy(lastWrong = emptyList()) }
@@ -342,7 +342,7 @@ fun CodebreakerScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 CodebreakerHeader(session, tick)
-                // The board + frequency strip block is centred in the band between the
+                // The board + frequency strip block is centered in the band between the
                 // header and the capsule row; capsules and keyboard stay pinned below.
                 CipherBand(session, Modifier.weight(1f).fillMaxWidth())
                 @Suppress("UNUSED_EXPRESSION") tick
@@ -393,7 +393,7 @@ private fun CodebreakerHeader(session: CodebreakerSession, tick: Int) {
 }
 
 // ── Sizing (§16 layout rule, founder 2026-09-24) ───────────────────────────
-// The cipher board and the frequency strip are ONE block centred vertically in
+// The cipher board and the frequency strip are ONE block centered vertically in
 // the band between the header and the Delete · Check · Hint · Reveal row. The
 // cell side starts at 64 dp and steps down 4 dp at a time until the whole
 // cipher, wrapped word-by-word at the band's width, fits the band's height
@@ -484,7 +484,7 @@ internal data class CipherFit(val cell: Float, val lines: Int, val fits: Boolean
 
 /** Cell side for a band of [width] × [height] dp: 64 → 40 in 4 dp steps until the wrapped cipher plus the
  *  strip fit the height and the widest word fits the width. Below 40 only a too-wide word may push further
- *  (to 20). [fits] false = even the floor overflows the height; the caller then scrolls instead of centring. */
+ *  (to 20). [fits] false = even the floor overflows the height; the caller then scrolls instead of centering. */
 internal fun cipherCellFit(words: List<String>, codeCount: Int, freqDigits: Int, width: Float, height: Float, fontScale: Float): CipherFit {
     var cell = CIPHER_CELL_MAX
     while (true) {
@@ -500,7 +500,7 @@ internal fun cipherCellFit(words: List<String>, codeCount: Int, freqDigits: Int,
 // ── Board ───────────────────────────────────────────────────────────────────
 
 /** The band between the header and the capsule row: the board and the frequency
- *  strip as one block, centred vertically, with the cell side chosen by
+ *  strip as one block, centered vertically, with the cell side chosen by
  *  [cipherCellFit] for the band's measured size. If even the 40 dp floor cannot
  *  fit the height, the block top-aligns and scrolls. */
 @Composable
@@ -534,7 +534,7 @@ private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
     }
 }
 
-/** One cipher cell — the Classic tile geometry with the pencilled plain letter
+/** One cipher cell — the Classic tile geometry with the penciled plain letter
  *  inside and the code letter in small monospace beneath (scaled with the cell
  *  by [cipherCodeSp]). The selected code letter wears an accent ring on every
  *  occurrence. */
@@ -613,7 +613,7 @@ private fun CipherBoard(session: CodebreakerSession, finished: Boolean, cell: Dp
     }
 }
 
-/** Code letters by how often they occur, with the pencilled letter shown; tap to select.
+/** Code letters by how often they occur, with the penciled letter shown; tap to select.
  *  [chipSp] scales with the cell ([cipherChipSp]): 11 sp at the floor, 14 sp at the top end. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

@@ -159,7 +159,7 @@ struct SpyglassView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    // Grid, word chips and the two capsules are one centred block (founder, 2026-09-24).
+                    // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
                     Spacer(minLength: 6)
                     SpyglassGridView(vm: vm, revealMissing: false).padding(.horizontal, 6)
                     wordChips.padding(.top, 4)
@@ -311,7 +311,7 @@ struct SpyglassView: View {
 }
 
 /// A wrapping row of chips (the word list): chips flow by width and each line is
-/// centred, so a long word (WOODPECKER) pushes its neighbours to the next line
+/// centered, so a long word (WOODPECKER) pushes its neighbors to the next line
 /// instead of breaking mid-word. (Fixed rows of five did the latter.)
 private struct FlowChips<Content: View>: View {
     let items: [String]

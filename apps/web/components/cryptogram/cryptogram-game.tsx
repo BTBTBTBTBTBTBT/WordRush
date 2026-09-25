@@ -127,7 +127,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       const next = cryptogramReduce(s, a, Date.now());
       if (a.type === 'CHECK') {
         if (next.lastWrong.length) { flash(`${next.lastWrong.length} wrong letter${next.lastWrong.length === 1 ? '' : 's'} cleared`); haptic('medium'); playInvalid(); }
-        else { flash('Everything pencilled is right'); playSuccess(); }
+        else { flash('Everything penciled is right'); playSuccess(); }
         setTimeout(() => setState((t) => (t && t.lastWrong.length ? { ...t, lastWrong: [] } : t)), 700);
       }
       return next;
@@ -213,7 +213,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
   // Layout rule (plan §16, founder 2026-09-24): the board and the frequency strip are one block
-  // centred in the band between the header and the capsule row; the cell side scales to the band —
+  // centered in the band between the header and the capsule row; the cell side scales to the band —
   // 64px down in 4px steps until the word-wrapped cipher plus the strip fits, floor 40px. The band
   // is measured with a ResizeObserver; `fitCipherCell` is pure and the board draws exactly the
   // lines it measured, so there is nothing to oscillate. Until the first measurement the floor
@@ -296,7 +296,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
               <button type="button" onClick={() => { haptic('light'); clearLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the selected letter">
                 <Delete className="w-3.5 h-3.5" /> Delete
               </button>
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Check the pencilled letters">
+              <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Check the penciled letters">
                 <CheckCheck className="w-3.5 h-3.5" /> Check{state.checks > 0 ? ` · ${state.checks}` : ''}
               </button>
               <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: reveal one letter">

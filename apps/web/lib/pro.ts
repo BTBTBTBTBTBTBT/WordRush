@@ -9,7 +9,7 @@
  * Rules:
  *  - No profile / not logged in / `is_pro` false → not Pro.
  *  - `is_pro: true` with no `pro_expires_at` → legacy / admin grant without
- *    expiry → treat as active (matches historical behaviour).
+ *    expiry → treat as active (matches historical behavior).
  *  - `is_pro: true` with an expiry in the future → active.
  *  - `is_pro: true` with an expiry in the past → inactive.
  */

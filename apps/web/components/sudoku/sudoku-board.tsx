@@ -10,7 +10,7 @@ import type { SudokuState } from '@wordle-duel/core';
 // digits in Wordocious purple, hint digits in the violet hint color, a wrong
 // digit in the invalid-word red. The selected cell takes the stronger lilac
 // fill with its row, column and box washed in the light tint; every cell
-// holding the selected digit is emphasised. Pencil marks are the standard
+// holding the selected digit is emphasized. Pencil marks are the standard
 // 3×3 mini-grid (1 top-left … 9 bottom-right) so each digit always sits in
 // the same spot.
 

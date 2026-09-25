@@ -464,7 +464,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             }
             TodayRingAvatar(completed = todayCount) {
                 Box(
-                    // iOS AvatarView: no accent set = the wordmark gradient, never a flat grey.
+                    // iOS AvatarView: no accent set = the wordmark gradient, never a flat gray.
                     Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -530,7 +530,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 }
                 Text("${1000 - intoLevel} XP to next level", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
-            // Socials — iOS socialLinksRow(): 30×30 grey circles with an
+            // Socials — iOS socialLinksRow(): 30×30 gray circles with an
             // @/globe/chat glyph, not brand-colored word pills (those wrapped
             // out of the header once a player had three or more links).
             val links = p.socialLinks ?: emptyMap()

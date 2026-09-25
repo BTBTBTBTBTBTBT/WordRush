@@ -174,7 +174,7 @@ export interface ShareWordsearchInput extends ShareBase {
 }
 
 /**
- * Hubbub (More Games §18d): the blank 2-3-2 tile silhouette with the centre
+ * Hubbub (More Games §18d): the blank 2-3-2 tile silhouette with the center
  * filled, the rank name, % of max, words and pangrams — no letters.
  * Stat line reads "#12 · Uproar · 72% · 18 words · 1 pangram".
  */
@@ -1096,7 +1096,7 @@ function drawWordsearch(
   ctx.restore();
 }
 
-// Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the centre
+// Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the center
 // filled in the accent, the rank name large beneath, then % of max. No letters.
 // Muddle (More Games §18d): four rows of blank tiles (circled positions ringed)
 // on one six-column grid, a divider, then the punchline row grouped by word in
@@ -1203,7 +1203,7 @@ function drawGroups(
     } else {
       ctx.setLineDash([12, 10]); ctx.lineWidth = 4; ctx.strokeStyle = bg; drawRoundRect(ctx, x0, y, barW, barH, radius); ctx.stroke(); ctx.setLineDash([]);
     }
-    // pips, centred
+    // pips, centered
     const pipR = 9, pipGap = 14, pipsW = t * pipR * 2 + (t - 1) * pipGap;
     let px = width / 2 - pipsW / 2 + pipR;
     ctx.fillStyle = solved ? fg : bg;

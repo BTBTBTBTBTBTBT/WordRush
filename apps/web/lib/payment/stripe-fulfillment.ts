@@ -87,7 +87,7 @@ export async function fulfillStripePurchase(opts: {
   if (error) throw new Error(`stripe fulfillment write failed: ${error.message}`);
 
   // Entitlement is in the database. NOW consume the event, so a retry of a
-  // failed delivery still fulfils. A race between two concurrent deliveries of
+  // failed delivery still fulfills. A race between two concurrent deliveries of
   // the same event grants the same window twice, which is idempotent here
   // (Math.max above) — far cheaper than the alternative.
   await claimEvent(opts.eventId);

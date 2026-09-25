@@ -377,7 +377,7 @@ export function replayRecordedGuesses(
           )
         // Unmatchable row (corrupt data — a real hint only ever reveals a
         // letter that IS in the answer): fall back to the recorded positions,
-        // which is no worse than the previous behaviour.
+        // which is no worse than the previous behavior.
         : [...guess].map(ch =>
             /[A-Z]/.test(ch)
               ? { letter: ch, state: TileState.CORRECT }

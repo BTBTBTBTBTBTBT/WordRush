@@ -99,8 +99,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 // Hubbub (More Games §12) — the Android twin of components/hub/* and
-// HubView.swift. Seven letters, one required centre, words of 4+ letters.
-// Finalises ONCE (Hubbub = win, End below it = loss); play continues after the
+// HubView.swift. Seven letters, one required center, words of 4+ letters.
+// Finalizes ONCE (Hubbub = win, End below it = loss); play continues after the
 // win and each later rank-up goes through GameResultsService.improve.
 
 private val HUB_ACCENT = Color(0xFFC026D3)
@@ -126,7 +126,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     var xpResult by mutableStateOf<GameResultsService.XpResult?>(null)
     var restoredFinished = false
         private set
-    /** Fires once when the game first finalises (the overlay). */
+    /** Fires once when the game first finalizes (the overlay). */
     var onFinalised: (() -> Unit)? = null
 
     private var startMs = System.currentTimeMillis()
@@ -212,7 +212,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     fun end() { dispatch(HubAction.End); finalTimeSeconds = elapsed; showResults = true }
 
     private fun rejectCopy(r: HubReject) = when (r) {
-        HubReject.ENDED -> "This puzzle is finished"; HubReject.SHORT -> "Four letters or more"; HubReject.CENTRE -> "Must use the centre letter"
+        HubReject.ENDED -> "This puzzle is finished"; HubReject.SHORT -> "Four letters or more"; HubReject.CENTRE -> "Must use the center letter"
         HubReject.LETTERS -> "Only the seven letters"; HubReject.FOUND -> "Already found"; HubReject.NOTWORD -> "Not in word list"
     }
 
@@ -402,7 +402,7 @@ private fun HubBoard(session: HubSession) {
             HubEntryLine(session)
             val o = session.outer.toList() + List(maxOf(0, 6 - session.outer.size)) { ' ' }
             val enabled = !s.ended
-            // The cluster sits vertically centred in its band between the entry line and the controls.
+            // The cluster sits vertically centered in its band between the entry line and the controls.
             Box(Modifier.fillMaxWidth().height(band), contentAlignment = Alignment.Center) {
                 Column(verticalArrangement = Arrangement.spacedBy(gap), horizontalAlignment = Alignment.CenterHorizontally) {
                     Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[0], false, enabled, tile) { session.type(o[0]) }; LetterTile(o[1], false, enabled, tile) { session.type(o[1]) } }
@@ -445,7 +445,7 @@ private fun HubBoard(session: HubSession) {
     }
 }
 
-/** Current entry: 28 sp bold, centre letter in the accent; placeholder when empty. Erase-on-reject lives in HubSession.submit. */
+/** Current entry: 28 sp bold, center letter in the accent; placeholder when empty. Erase-on-reject lives in HubSession.submit. */
 @Composable
 private fun HubEntryLine(session: HubSession) {
     Box(Modifier.fillMaxWidth().heightIn(min = HUB_ENTRY_H), contentAlignment = Alignment.Center) {

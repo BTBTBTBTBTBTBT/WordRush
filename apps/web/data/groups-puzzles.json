@@ -300,7 +300,7 @@
      "label": "Tea ___",
      "words": [
       "TOWEL",
-      "COSY",
+      "COZY",
       "BAG",
       "LEAF"
      ]
@@ -917,7 +917,7 @@
     },
     {
      "tier": 2,
-     "label": "Knitting fibres",
+     "label": "Knitting fibers",
      "words": [
       "MOHAIR",
       "CASHMERE",
@@ -1042,7 +1042,7 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Ice-cream parlour",
+     "label": "Ice-cream parlor",
      "words": [
       "SUNDAE",
       "CONE",
@@ -6127,7 +6127,7 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Sailing manoeuvres",
+     "label": "Sailing maneuvers",
      "words": [
       "TACK",
       "JIBE",
@@ -6227,7 +6227,7 @@
     },
     {
      "tier": 2,
-     "label": "Theatre seating",
+     "label": "Theater seating",
      "words": [
       "STALLS",
       "BALCONY",
@@ -6247,7 +6247,7 @@
     },
     {
      "tier": 4,
-     "label": "Sound like theatre words",
+     "label": "Sound like theater words",
      "words": [
       "ROLL",
       "SEEN",
@@ -6922,7 +6922,7 @@
     },
     {
      "tier": 4,
-     "label": "Three alphabet neighbours in a row",
+     "label": "Three alphabet neighbors in a row",
      "words": [
       "FIRST",
       "STUDY",
@@ -7937,7 +7937,7 @@
     },
     {
      "tier": 2,
-     "label": "The very centre",
+     "label": "The very center",
      "words": [
       "CORE",
       "CRUX",
@@ -9782,7 +9782,7 @@
     },
     {
      "tier": 2,
-     "label": "Parts of a theatre",
+     "label": "Parts of a theater",
      "words": [
       "WINGS",
       "APRON",
@@ -12302,7 +12302,7 @@
     },
     {
      "tier": 2,
-     "label": "Jewellery",
+     "label": "Jewelry",
      "words": [
       "BROOCH",
       "BANGLE",
@@ -18729,7 +18729,7 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Theatre people",
+     "label": "Theater people",
      "words": [
       "ACTOR",
       "USHER",
@@ -19944,7 +19944,7 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Animal fibres",
+     "label": "Animal fibers",
      "words": [
       "WOOL",
       "SILK",

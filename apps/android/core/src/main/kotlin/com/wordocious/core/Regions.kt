@@ -29,7 +29,7 @@ private fun <T> shuffleR(rng: Mulberry32, arr: List<T>): List<T> {
     return a
 }
 
-/** Orthogonal neighbours, in the fixed order up, down, left, right. */
+/** Orthogonal neighbors, in the fixed order up, down, left, right. */
 fun regionsN4(n: Int, i: Int): List<Int> {
     val r = i / n; val c = i % n
     val o = ArrayList<Int>(4)
@@ -193,7 +193,7 @@ private fun pushHistory(s: RegionsState): List<RegionsSnapshot> {
     return if (h.size > REGIONS_HISTORY_CAP) h.takeLast(REGIONS_HISTORY_CAP) else h
 }
 
-/** Cells a correct star rules out: its row, column, region and the eight neighbours. */
+/** Cells a correct star rules out: its row, column, region and the eight neighbors. */
 fun regionsRuledOut(n: Int, regions: String, cell: Int): List<Int> {
     val r = cell / n; val c = cell % n; val g = regions[cell]
     val out = HashSet<Int>()

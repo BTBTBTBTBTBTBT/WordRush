@@ -273,7 +273,7 @@ fun SpyglassScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SpyglassHeader(session)
-                // Grid, word chips and the two capsules are one centred block (founder, 2026-09-24).
+                // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
                 Spacer(Modifier.weight(1f))
                 SpyglassGrid(session, revealMissing = false) { from, to -> session.select(from, to, onFinished) }
                 WordChips(session)

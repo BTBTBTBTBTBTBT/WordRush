@@ -238,7 +238,7 @@ object DailyResultsService {
             AuthService.refreshProfile()
             return true
         } catch (e: kotlinx.coroutines.CancellationException) {
-            // The caller's scope was cancelled mid-flight (post-game left while
+            // The caller's scope was canceled mid-flight (post-game left while
             // the write was airborne). This is NOT a handled failure: rethrow so
             // the coroutine unwinds and the PendingRecords payload keeps its
             // DAILY part outstanding for the next drain. Swallowing it here

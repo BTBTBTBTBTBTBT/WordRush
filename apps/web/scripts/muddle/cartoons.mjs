@@ -33,7 +33,7 @@ const MAX_USD = Number(arg('max-usd', 40));
 const USD_PER_IMAGE = Number(arg('usd-per-image', QUALITY === 'high' ? 0.25 : QUALITY === 'medium' ? 0.07 : 0.02)); // measured 2026-09-23: high 1536x1024 ≈ $0.25
 
 // The fixed style spec (§8): one artist for the whole year, no text in the image.
-const STYLE = 'Single-panel newspaper gag cartoon, confident black ink outlines, flat limited palette on cream paper (#fdf8ec) with purple (#7c3aed) and orange (#f97316) as the only saturated accents and warm greys, one or two characters with expressive faces, generous margins. No text, lettering, captions, signage or speech bubbles anywhere in the image.';
+const STYLE = 'Single-panel newspaper gag cartoon, confident black ink outlines, flat limited palette on cream paper (#fdf8ec) with purple (#7c3aed) and orange (#f97316) as the only saturated accents and warm grays, one or two characters with expressive faces, generous margins. No text, lettering, captions, signage or speech bubbles anywhere in the image.';
 
 function readKey() {
   if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY.trim();
@@ -106,8 +106,8 @@ async function work(p) {
   if (DRY) { console.log(`  [dry] ${p.id} ← ${scene.slice(0, 80)}…`); return; }
   try {
     const png = await generate(prompt);
-    // Centre-crop to 4:3 and shrink to 800×600 WebP (~40–80 KB), hash-named so the CDN can cache forever.
-    const webp = await sharp(png).resize(800, 600, { fit: 'cover', position: 'centre' }).webp({ quality: 82 }).toBuffer();
+    // Center-crop to 4:3 and shrink to 800×600 WebP (~40–80 KB), hash-named so the CDN can cache forever.
+    const webp = await sharp(png).resize(800, 600, { fit: 'cover', position: 'center' }).webp({ quality: 82 }).toBuffer();
     const hash = crypto.createHash('sha256').update(webp).digest('hex').slice(0, 10);
     const file = `${p.id}-${hash}.webp`;
     fs.writeFileSync(path.join(outDir, file), webp);

@@ -1,5 +1,5 @@
 // Codebreaker board sizing (More Games §16, founder layout rule 2026-09-24):
-// the cipher board and the frequency strip are one block centred in the band
+// the cipher board and the frequency strip are one block centered in the band
 // between the header and the Delete · Check · Hint · Reveal row. The cell side
 // starts at 64px and steps down 4px at a time until the whole cipher, wrapped
 // word by word at the band's width, fits the band's height together with the
