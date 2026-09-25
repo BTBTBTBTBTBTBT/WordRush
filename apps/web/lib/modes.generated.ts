@@ -464,7 +464,7 @@ export const MODES: ModeMeta[] = [
     "title": "Starsweep",
     "shortTitle": "Stars",
     "shareLabel": "Starsweep",
-    "desc": "One star per colour region",
+    "desc": "One star per color region",
     "accentHex": "#ca8a04",
     "glyph": "*",
     "romanNumeral": null,

@@ -6,9 +6,9 @@ import type { RegionsState } from '@wordle-duel/core';
 
 // The Starsweep board (More Games §18b): ONE continuous ruled board like the
 // Sudoku board — heavy rules between regions, hairlines within a region,
-// regions washed in soft Wordocious tints (never colour alone: the heavy
-// region borders carry the shape). A star is drawn in the dark text colour, a
-// wrong star in the invalid-word red, a hint star in the violet hint colour, a
+// regions washed in soft Wordocious tints (never color alone: the heavy
+// region borders carry the shape). A star is drawn in the dark text color, a
+// wrong star in the invalid-word red, a hint star in the violet hint color, a
 // cross-out as a small muted ×. The focused cell wears a thin accent inset ring
 // so keyboard players can see where Space and Backspace will land.
 

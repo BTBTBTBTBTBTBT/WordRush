@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
  * packages/core/src/games/groups.ts; pinned by groups-fixtures.json
  * (GroupsFixtureTest). Sixteen words hide four groups of four; find them all
  * with at most four mistakes. Tiers 1–4 run from a plain category to wordplay
- * and are shown as one to four pips on the solved bar (never colour alone).
+ * and are shown as one to four pips on the solved bar (never color alone).
  * Submitting four words: a group → it locks and its bar appears; three from one
  * group → "One away"; otherwise a plain miss. A set already tried is free to
  * try again (no second mistake). Four mistakes lose the puzzle and the

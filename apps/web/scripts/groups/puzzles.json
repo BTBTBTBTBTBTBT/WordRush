@@ -250,7 +250,7 @@
     ]
    }
   ],
-  "redHerrings": "WAFFLE is also an iron; SEASON reads as a cooking step; GREEN reads as a colour; ICED and FLAKE read like a frosty breakfast.",
+  "redHerrings": "WAFFLE is also an iron; SEASON reads as a cooking step; GREEN reads as a color; ICED and FLAKE read like a frosty breakfast.",
   "source": "shard-01"
  },
  {
@@ -979,7 +979,7 @@
     ]
    }
   ],
-  "redHerrings": "KIDNEY reads as an organ beside the hidden organs; NAVY reads as a colour or fleet; NUT and EGG read as food; TORTILLA suggests a shell.",
+  "redHerrings": "KIDNEY reads as an organ beside the hidden organs; NAVY reads as a color or fleet; NUT and EGG read as food; TORTILLA suggests a shell.",
   "source": "shard-01"
  },
  {
@@ -1077,7 +1077,7 @@
     ]
    }
   ],
-  "redHerrings": "SOLE sits beside its homophone SOUL; TRIFLE reads as something small; GOOSE reads as dinner; BLUE and BLACK read as colours.",
+  "redHerrings": "SOLE sits beside its homophone SOUL; TRIFLE reads as something small; GOOSE reads as dinner; BLUE and BLACK read as colors.",
   "source": "shard-01"
  },
  {
@@ -1175,7 +1175,7 @@
     ]
    }
   ],
-  "redHerrings": "STEAM reads as a cooking method; FRUIT and PUDDING read as dessert; FOLD and BEAT read as defeat; BROWNIE reads as a colour.",
+  "redHerrings": "STEAM reads as a cooking method; FRUIT and PUDDING read as dessert; FOLD and BEAT read as defeat; BROWNIE reads as a color.",
   "source": "shard-01"
  },
  {
@@ -1674,7 +1674,7 @@
     ]
    }
   ],
-  "redHerrings": "FRIED reads as overcooked; TIMER hides TIME; WHITE reads as a colour; PLANT reads as garden.",
+  "redHerrings": "FRIED reads as overcooked; TIMER hides TIME; WHITE reads as a color; PLANT reads as garden.",
   "source": "shard-01"
  },
  {
@@ -1726,7 +1726,7 @@
     ]
    }
   ],
-  "redHerrings": "JASMINE is a flower; ROSEMARY reads as a herb; WILD is also a card; BROWN reads as a colour; STICKY reads as a texture.",
+  "redHerrings": "JASMINE is a flower; ROSEMARY reads as a herb; WILD is also a card; BROWN reads as a color; STICKY reads as a texture.",
   "source": "shard-01"
  },
  {
@@ -3023,7 +3023,7 @@
     ]
    }
   ],
-  "redHerrings": "DESERT means abandon, MARSH takes salt, MAROON is a colour, and SEE and BEECH sound like shorelines.",
+  "redHerrings": "DESERT means abandon, MARSH takes salt, MAROON is a color, and SEE and BEECH sound like shorelines.",
   "source": "shard-02"
  },
  {
@@ -6164,7 +6164,7 @@
     ]
    }
   ],
-  "redHerrings": "SHUTTER is a camera part and BLIND is a kind of date; SHADE and SHRED both hint at colour.",
+  "redHerrings": "SHUTTER is a camera part and BLIND is a kind of date; SHADE and SHRED both hint at color.",
   "source": "shard-03"
  },
  {
@@ -8143,7 +8143,7 @@
    },
    {
     "tier": 4,
-    "label": "Hidden colours",
+    "label": "Hidden colors",
     "words": [
      "SHRED",
      "TANGENT",
@@ -10240,7 +10240,7 @@
   "groups": [
    {
     "tier": 1,
-    "label": "Colours",
+    "label": "Colors",
     "words": [
      "CRIMSON",
      "AMBER",
@@ -10273,7 +10273,7 @@
    },
    {
     "tier": 4,
-    "label": "Add a letter for a colour",
+    "label": "Add a letter for a color",
     "words": [
      "GOD",
      "PIN",
@@ -10282,7 +10282,7 @@
     ]
    }
   ],
-  "redHerrings": "LIME is a colour; VIOLET is a flower; TEA and CAN read as drinks and containers.",
+  "redHerrings": "LIME is a color; VIOLET is a flower; TEA and CAN read as drinks and containers.",
   "source": "shard-05"
  },
  {
@@ -10670,7 +10670,7 @@
    },
    {
     "tier": 4,
-    "label": "Hidden colours",
+    "label": "Hidden colors",
     "words": [
      "SACRED",
      "STEAL",
@@ -10679,7 +10679,7 @@
     ]
    }
   ],
-  "redHerrings": "PLUMBER hides the plum; PASTEL and INK read as colours; PIG and BULL are animals; LILAC and LAVENDER are flowers.",
+  "redHerrings": "PLUMBER hides the plum; PASTEL and INK read as colors; PIG and BULL are animals; LILAC and LAVENDER are flowers.",
   "source": "shard-05"
  },
  {
@@ -11250,7 +11250,7 @@
    },
    {
     "tier": 2,
-    "label": "Metallic colours",
+    "label": "Metallic colors",
     "words": [
      "GOLD",
      "SILVER",
@@ -11285,7 +11285,7 @@
     ]
    }
   ],
-  "redHerrings": "BRASS is a section, a colour and a band; WINDS reads as weather; STRINGS reads as instruments.",
+  "redHerrings": "BRASS is a section, a color and a band; WINDS reads as weather; STRINGS reads as instruments.",
   "source": "shard-05"
  },
  {
@@ -11426,7 +11426,7 @@
    },
    {
     "tier": 4,
-    "label": "Anagram of a colour",
+    "label": "Anagram of a color",
     "words": [
      "LATE",
      "SORE",
@@ -11644,7 +11644,7 @@
   "groups": [
    {
     "tier": 1,
-    "label": "Colour words",
+    "label": "Color words",
     "words": [
      "HUE",
      "TINT",
@@ -11689,7 +11689,7 @@
     ]
    }
   ],
-  "redHerrings": "TONE is both a colour and a music word; SHADE fits sunshade; PITCH looks sporty; RATS are animals.",
+  "redHerrings": "TONE is both a color and a music word; SHADE fits sunshade; PITCH looks sporty; RATS are animals.",
   "source": "shard-05"
  },
  {
@@ -12081,7 +12081,7 @@
     ]
    }
   ],
-  "redHerrings": "BELT is a seat belt; BLACK and GREEN are colours; HUM is a noise; PROFIT reads as business.",
+  "redHerrings": "BELT is a seat belt; BLACK and GREEN are colors; HUM is a noise; PROFIT reads as business.",
   "source": "shard-05"
  },
  {
@@ -12384,7 +12384,7 @@
     ]
    }
   ],
-  "redHerrings": "BAND is a rubber band; CUT and TRIM read as haircuts; CORAL is a colour; DUCK is an animal; STAMP reads as post.",
+  "redHerrings": "BAND is a rubber band; CUT and TRIM read as haircuts; CORAL is a color; DUCK is an animal; STAMP reads as post.",
   "source": "shard-05"
  },
  {
@@ -12832,7 +12832,7 @@
     ]
    }
   ],
-  "redHerrings": "CROSS is a walk; BLUE and LIVID are colours; MOON reads as sky and ATE as eating.",
+  "redHerrings": "CROSS is a walk; BLUE and LIVID are colors; MOON reads as sky and ATE as eating.",
   "source": "shard-06"
  },
  {
@@ -13499,7 +13499,7 @@
     ]
    }
   ],
-  "redHerrings": "TABLET is a writing surface; CAPSULE is a time capsule; PLUM, ROSE and SLATE read as colours; SYRUP and PLUM read as food.",
+  "redHerrings": "TABLET is a writing surface; CAPSULE is a time capsule; PLUM, ROSE and SLATE read as colors; SYRUP and PLUM read as food.",
   "source": "shard-06"
  },
  {
@@ -15741,7 +15741,7 @@
    },
    {
     "tier": 4,
-    "label": "Hidden colours",
+    "label": "Hidden colors",
     "words": [
      "BORED",
      "SULTAN",
@@ -20782,7 +20782,7 @@
     ]
    }
   ],
-  "redHerrings": "STEP and POLKA read as dance moves next to TWIRL; SILVER and LIME look like colours; SPONGE is kitchenware.",
+  "redHerrings": "STEP and POLKA read as dance moves next to TWIRL; SILVER and LIME look like colors; SPONGE is kitchenware.",
   "source": "shard-09"
  },
  {
@@ -24117,7 +24117,7 @@
     ]
    }
   ],
-  "redHerrings": "GOOF is also a bit of fun; GREEN is a colour; NOSE and GLASSES read as body part and eyewear; RIDDLE is also a verb.",
+  "redHerrings": "GOOF is also a bit of fun; GREEN is a color; NOSE and GLASSES read as body part and eyewear; RIDDLE is also a verb.",
   "source": "shard-holidays"
  },
  {
@@ -24412,7 +24412,7 @@
     ]
    }
   ],
-  "redHerrings": "VIOLET is a colour beside GREEN, WHITE and RED, and looks like VIOLIN; BASH and BLAST read as hits and explosions; CONSOLE as a verb.",
+  "redHerrings": "VIOLET is a color beside GREEN, WHITE and RED, and looks like VIOLIN; BASH and BLAST read as hits and explosions; CONSOLE as a verb.",
   "source": "shard-holidays"
  },
  {
@@ -25235,7 +25235,7 @@
     ]
    }
   ],
-  "redHerrings": "NAVY is also a colour beside VELVET; RIBBON could be a fabric; RESERVES reads as a verb; CIVET is an animal.",
+  "redHerrings": "NAVY is also a color beside VELVET; RIBBON could be a fabric; RESERVES reads as a verb; CIVET is an animal.",
   "source": "shard-holidays"
  },
  {
@@ -25682,7 +25682,7 @@
     ]
    }
   ],
-  "redHerrings": "FISH is an animal too; ORANGE is a colour; HOUSE tempts beside SWEEPING and REUNION; STOP and CIRCLE read as verbs.",
+  "redHerrings": "FISH is an animal too; ORANGE is a color; HOUSE tempts beside SWEEPING and REUNION; STOP and CIRCLE read as verbs.",
   "source": "shard-holidays"
  },
  {

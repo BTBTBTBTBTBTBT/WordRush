@@ -91,7 +91,7 @@ val INFO_NAV = listOf(
     InfoNavItem("terms", "Terms", "Terms of service", Icons.Filled.Description, Color(0xFF6B7280)),
 )
 
-/** Styled "?" menu — a welcoming, on-brand list (colour-accented icon tiles +
+/** Styled "?" menu — a welcoming, on-brand list (color-accented icon tiles +
  *  title + subtitle) instead of the flat grey system dropdown. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

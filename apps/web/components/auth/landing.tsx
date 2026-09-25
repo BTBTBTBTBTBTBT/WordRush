@@ -49,7 +49,7 @@ const MORE_GAMES: LandingMode[] = [
   { title: 'Letter Ladder', desc: 'Change one letter at a time from the start word to the end word, on par.', accent: '#0284c7', guide: 'letter-ladder', Icon: LadderIcon },
   { title: 'Codebreaker', desc: 'Crack a well-known saying written in a letter-for-letter code.', accent: '#92400e', guide: 'codebreaker', Icon: KeyRound },
   { title: 'Spyglass', desc: 'Ten themed words hidden forwards in a 10 × 10 grid — clear it clean.', accent: '#4d7c0f', guide: 'spyglass', Icon: TextSearch },
-  { title: 'Starsweep', desc: 'One star in every row, column and colour region, none touching.', accent: '#ca8a04', guide: 'starsweep', Icon: Star },
+  { title: 'Starsweep', desc: 'One star in every row, column and color region, none touching.', accent: '#ca8a04', guide: 'starsweep', Icon: Star },
 ];
 
 function ModeCard({ m }: { m: LandingMode }) {

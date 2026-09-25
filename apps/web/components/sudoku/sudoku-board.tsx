@@ -4,10 +4,10 @@ import { memo } from 'react';
 import type { SudokuState } from '@wordle-duel/core';
 
 // The board (More Games §8, founder round 5): ONE continuous ruled grid, like a
-// printed Sudoku, in Wordocious colours — hairline lilac rules between cells,
+// printed Sudoku, in Wordocious colors — hairline lilac rules between cells,
 // heavy rules around each 3×3 box and the outer edge, no per-cell radius or
-// shadow. Givens in the dark text colour at the heaviest weight, the player's
-// digits in Wordocious purple, hint digits in the violet hint colour, a wrong
+// shadow. Givens in the dark text color at the heaviest weight, the player's
+// digits in Wordocious purple, hint digits in the violet hint color, a wrong
 // digit in the invalid-word red. The selected cell takes the stronger lilac
 // fill with its row, column and box washed in the light tint; every cell
 // holding the selected digit is emphasised. Pencil marks are the standard

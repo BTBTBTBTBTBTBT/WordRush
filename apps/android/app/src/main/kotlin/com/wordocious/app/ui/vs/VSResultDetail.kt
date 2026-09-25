@@ -198,7 +198,7 @@ private fun ScoreColumn(p: ScoreCardPlayer, accent: Color, isDraw: Boolean, cloc
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            // iOS uses the amber crown.fill glyph, not a multicolour emoji.
+            // iOS uses the amber crown.fill glyph, not a multicolor emoji.
             if (p.isWinner && !isDraw) {
                 Icon(
                     androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),

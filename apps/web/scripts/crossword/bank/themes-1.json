@@ -47,7 +47,7 @@
   ["High and ____","DRY"],["Drop ____","ANCHOR"],["Sail close to the ____","WIND"],["Plain ____","SAILING"],
   ["Find your sea ____","LEGS"],["Happy as a ____","CLAM"],["The world is your ____","OYSTER"],["Come out of your ____","SHELL"],
   ["Time and ____ wait for no man","TIDE"],["Worth your ____","SALT"],["Still waters run ____","DEEP"],["On an even ____","KEEL"],
-  ["Nail your colours to the ____","MAST"],["A sea ____","CHANGE"],["A message in a ____","BOTTLE"],["The coast is ____","CLEAR"],
+  ["Nail your colors to the ____","MAST"],["A sea ____","CHANGE"],["A message in a ____","BOTTLE"],["The coast is ____","CLEAR"],
   ["Red sky at night, sailors' ____","DELIGHT"]]},
  "school": {"title": "School Days", "pairs": [
   ["Teacher's ____","PET"],["Stand the ____ of time","TEST"],["Top of the ____","CLASS"],["Back to the drawing ____","BOARD"],
@@ -69,14 +69,14 @@
   ["Pull ____","STRINGS"],["Put that in your ____ and smoke it","PIPE"],["Curtain ____","CALL"],["A round of ____","APPLAUSE"],
   ["At the top of your ____","VOICE"],["Take a ____","BOW"],["Pass the ____","BATON"],["In ____","CONCERT"],
   ["Set the ____","TONE"]]},
- "colours": {"title": "A Splash of Colour", "pairs": [
+ "colors": {"title": "A Splash of Color", "pairs": [
   ["Out of the ____","BLUE"],["Green with ____","ENVY"],["Roll out the red ____","CARPET"],["Paint the town ____","RED"],
   ["White as ____","SNOW"],["The black ____ of the family","SHEEP"],["Tickled ____","PINK"],["Born to the ____","PURPLE"],
   ["Every cloud has a silver ____","LINING"],["All that glitters is not ____","GOLD"],["Brown as a ____","BERRY"],["A yellow ____","STREAK"],
   ["Rose-tinted ____","GLASSES"],["Give the green ____","LIGHT"],["In black and ____","WHITE"],["The pot calling the kettle ____","BLACK"],
   ["The silver ____","SCREEN"],["Kill the goose that lays the golden ____","EGGS"],["A red-letter ____","DAY"],["Like a red ____ to a bull","RAG"],
   ["A red ____","HERRING"],["Cut through the red ____","TAPE"],["A white ____","ELEPHANT"],["A little white ____","LIE"],
-  ["Wave the white ____","FLAG"],["Use your grey ____","MATTER"],["Every colour of the ____","RAINBOW"],["Beyond the ____","PALE"],
+  ["Wave the white ____","FLAG"],["Use your grey ____","MATTER"],["Every color of the ____","RAINBOW"],["Beyond the ____","PALE"],
   ["Green around the ____","GILLS"],["Red in the ____","FACE"],["Cross my palm with ____","SILVER"],["Tarred with the same ____","BRUSH"],
   ["Dyed-in-the-____","WOOL"]]},
  "numbers": {"title": "By the Numbers", "pairs": [

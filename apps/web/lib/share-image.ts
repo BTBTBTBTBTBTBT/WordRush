@@ -123,7 +123,7 @@ export interface ShareSudokuInput extends ShareBase {
 }
 
 /**
- * Starsweep (More Games §18d): the coloured regions with the placed stars as
+ * Starsweep (More Games §18d): the colored regions with the placed stars as
  * dots — no crosses, no missing stars — so the card spoils nothing.
  * Stat line reads "#12 · 8 × 8 · 0 mistakes · 2:10".
  */
@@ -202,7 +202,7 @@ export interface ShareCryptogramInput extends ShareBase {
 
 /**
  * Kindred (More Games §18d): four tier bars in the order solved (one to four
- * pips each) plus four mistake dots — never a row-per-guess colour grid, and
+ * pips each) plus four mistake dots — never a row-per-guess color grid, and
  * no words. Stat line reads "#12 · 4/4 groups · 1 mistake · 2:10".
  */
 export interface ShareGroupsInput extends ShareBase {

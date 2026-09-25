@@ -49,13 +49,13 @@ Tick a cell only after checking, in order:
   one), costs 100 points, never a mistake.
 - Pro Unlimited: Easy · Medium · Hard capsules above the board; switching starts a fresh puzzle.
 - Score: mistakes + 1 out of 4, 300 per unused step, 30-minute speed cap. The share card is the
-  board as coloured squares with "0 mistakes · 3:58".
+  board as colored squares with "0 mistakes · 3:58".
 
 ## Starsweep — what to look for (built 2026-09-22)
 
 - Daily board is 7 × 7 Monday–Wednesday and 8 × 8 Thursday–Sunday; "#N" counts from 2026-09-23.
   Same regions and the same hidden stars everywhere on a date (fixture-pinned on all three).
-- One continuous ruled board: heavy rules between colour regions, hairlines inside a region, nine
+- One continuous ruled board: heavy rules between color regions, hairlines inside a region, nine
   soft tints. Tap a cell once for ×, again for a star, again to clear. A wrong star turns red and
   counts a mistake that clearing never refunds; the third ends the game and the missing stars show
   muted. Stars placed by **Hint** are violet and cannot be erased.
@@ -66,7 +66,7 @@ Tick a cell only after checking, in order:
   say More Games do not count toward the Daily Sweep. Nothing about this game should read "Sweep!".
 - Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 capsules above the board; switching starts a fresh board.
 - Score: mistakes + 1 out of 4, 300 per unused step, 10-minute speed cap. The share card is the
-  regions as coloured squares with the placed stars as dots and "0 mistakes · 2:10".
+  regions as colored squares with the placed stars as dots and "0 mistakes · 2:10".
 
 ## Letter Ladder — what to look for (built 2026-09-22)
 
@@ -167,8 +167,8 @@ Tick a cell only after checking, in order:
   the tile order is dealt from the seed, so every platform shows the same layout). **On a holiday
   the puzzle belongs to the day** and the header shows the holiday's name.
 - Tap four tiles and **Submit** (the capsule fills in when four are selected). A group locks into a
-  bar above the grid with one to four pips (one = plain category, four = wordplay); the tier colours
-  are one hue at four lightnesses, never colour alone. Three of a kind reads "One away…"; a set you
+  bar above the grid with one to four pips (one = plain category, four = wordplay); the tier colors
+  are one hue at four lightnesses, never color alone. Three of a kind reads "One away…"; a set you
   already tried is free to resubmit ("Already tried that set"); anything else spends one of four
   mistakes (the dots). Four mistakes end it and the remaining groups appear as dashed bars.
 - **Shuffle** rearranges the unsolved tiles (free). **Deselect** clears the selection. **Name a

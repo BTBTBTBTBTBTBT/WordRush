@@ -6,7 +6,7 @@ import java.text.Normalizer
 
 /**
  * ProperNoundle — a SEPARATE engine (not the reducer). A guess-the-name game:
- * the answer is a normalized name ("taylorswift"), tiles colour like Wordle, the
+ * the answer is a normalized name ("taylorswift"), tiles color like Wordle, the
  * board lays out word groups from `display` ("Taylor Swift" → 6+5).
  * 1:1 port of iOS `ProperNoundleEngine.swift` / web components/propernoundle/.
  * On a holiday (§20) the daily comes from the bundled propernoundle-holidays.json

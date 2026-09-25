@@ -3322,7 +3322,7 @@
     },
     {
      "tier": 4,
-     "label": "Hidden colours",
+     "label": "Hidden colors",
      "words": [
       "SACRED",
       "STEAL",
@@ -5902,7 +5902,7 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Colour words",
+     "label": "Color words",
      "words": [
       "HUE",
       "TINT",
@@ -8432,7 +8432,7 @@
     },
     {
      "tier": 2,
-     "label": "Metallic colours",
+     "label": "Metallic colors",
      "words": [
       "GOLD",
       "SILVER",
@@ -11152,7 +11152,7 @@
     },
     {
      "tier": 4,
-     "label": "Anagram of a colour",
+     "label": "Anagram of a color",
      "words": [
       "LATE",
       "SORE",
@@ -19674,7 +19674,7 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Colours",
+     "label": "Colors",
      "words": [
       "CRIMSON",
       "AMBER",
@@ -19704,7 +19704,7 @@
     },
     {
      "tier": 4,
-     "label": "Add a letter for a colour",
+     "label": "Add a letter for a color",
      "words": [
       "GOD",
       "PIN",
@@ -19929,7 +19929,7 @@
     },
     {
      "tier": 4,
-     "label": "Hidden colours",
+     "label": "Hidden colors",
      "words": [
       "BORED",
       "SULTAN",
@@ -20289,7 +20289,7 @@
     },
     {
      "tier": 4,
-     "label": "Hidden colours",
+     "label": "Hidden colors",
      "words": [
       "SHRED",
       "TANGENT",

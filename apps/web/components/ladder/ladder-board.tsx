@@ -6,7 +6,7 @@ import type { LadderState } from '@wordle-duel/core';
 
 // The ladder (More Games §15): Classic tiles, one row per rung. START is a
 // filled purple row, each accepted rung is a white row with the CHANGED letter
-// filled in the mode accent (hint rungs: the violet hint colour) and ringed,
+// filled in the mode accent (hint rungs: the violet hint color) and ringed,
 // the typing row is the empty bordered row, and END waits at the bottom as a
 // dashed target. On a loss the canonical shortest path is shown muted below
 // the ladder so nobody leaves without the answer.

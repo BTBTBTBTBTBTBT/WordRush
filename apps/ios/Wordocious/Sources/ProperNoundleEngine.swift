@@ -3,7 +3,7 @@ import WordociousCore
 
 /// ProperNoundle puzzle + logic — ports components/propernoundle/
 /// {types,game-logic,puzzle-service}.ts. A guess-the-name game: the answer is
-/// a normalized name (e.g. "taylorswift"), tiles colour like Wordle, the
+/// a normalized name (e.g. "taylorswift"), tiles color like Wordle, the
 /// board lays out word-groups from `display` ("Taylor Swift" → 6+5).
 /// NTile + the pure logic live in WordociousCore (ProperNoundleCore.swift) so
 /// `swift test` can pin them; the statics below forward for source compat.

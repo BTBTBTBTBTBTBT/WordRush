@@ -13,7 +13,7 @@ private let kindredAccent = Color(hex: 0x9F1239)
 /// Hinted pairs wear this ring (web PAIR_RING).
 private let kindredPairRing = Color(hex: 0x8B5CF6)
 
-/// Tier ramp (More Games §14): one hue, four lightnesses — plus pips, never colour alone.
+/// Tier ramp (More Games §14): one hue, four lightnesses — plus pips, never color alone.
 struct KindredTierStyle {
     let bg: Color
     let fg: Color
@@ -61,7 +61,7 @@ final class KindredVM: ObservableObject {
         self.seed = seed ?? generateDailySeed(date: today, gameMode: GameMode.groups.rawValue)
         let bank = GroupsBankStore.shared ?? GroupsBank(version: 1, epoch: GROUPS_DAILY_EPOCH, daily: [], extra: [])
         let fallback = GroupsPuzzle(id: "none", groups: [
-            GroupsGroup(tier: 1, label: "COLOURS", words: ["RED", "BLUE", "GREEN", "GOLD"]),
+            GroupsGroup(tier: 1, label: "COLORS", words: ["RED", "BLUE", "GREEN", "GOLD"]),
             GroupsGroup(tier: 2, label: "SHAPES", words: ["CUBE", "RING", "CONE", "ARCH"]),
             GroupsGroup(tier: 3, label: "SEASONS", words: ["SPRING", "SUMMER", "AUTUMN", "WINTER"]),
             GroupsGroup(tier: 4, label: "___LIGHT", words: ["DAY", "MOON", "SUN", "SKY"]),
@@ -391,7 +391,7 @@ struct KindredView: View {
 
 // MARK: - Board pieces
 
-/// 1–4 pips for the tier — the colour-independent reading of the ramp.
+/// 1–4 pips for the tier — the color-independent reading of the ramp.
 struct KindredPips: View {
     let tier: Int
     var size: CGFloat = 5

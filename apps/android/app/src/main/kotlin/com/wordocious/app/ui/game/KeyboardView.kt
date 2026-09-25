@@ -63,7 +63,7 @@ object KeyboardLayoutPref {
  * - Keys are responsive: each letter key gets equal width (weight 1f),
  *   wide keys get weight 1.5f — exactly like the web's flex-equal layout.
  * - Key height is 48dp (matches the web's h-14 ≈ 56px / ~42dp native).
- * - Letter-state colouring: CORRECT=green-600, PRESENT=yellow-600,
+ * - Letter-state coloring: CORRECT=green-600, PRESENT=yellow-600,
  *   ABSENT=gray-400, EMPTY=keyDefault (#e8e5f0).
  */
 @Composable

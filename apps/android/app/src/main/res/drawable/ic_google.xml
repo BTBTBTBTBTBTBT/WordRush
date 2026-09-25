@@ -1,9 +1,9 @@
 <!--
   Google "G" mark for the Sign in with Google button.
 
-  Google's Sign-In branding guidelines require the official four-colour G — a
+  Google's Sign-In branding guidelines require the official four-color G — a
   blue letter "G" typed in Nunito is not compliant and read as a placeholder
-  next to iOS, which ships the real asset. Colours are the published brand
+  next to iOS, which ships the real asset. Colors are the published brand
   values: #4285F4 / #34A853 / #FBBC05 / #EA4335.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"

@@ -4,7 +4,7 @@ import { memo } from 'react';
 import type { GroupsGroup, GroupsState } from '@wordle-duel/core';
 
 export const GROUPS_ACCENT = '#9f1239';
-/** Tier ramp (More Games §14): one hue, four lightnesses — plus pips, never colour alone. */
+/** Tier ramp (More Games §14): one hue, four lightnesses — plus pips, never color alone. */
 export const TIER_STYLE: Record<number, { bg: string; fg: string }> = {
   1: { bg: '#ddd6fe', fg: '#3b0764' },
   2: { bg: '#a78bfa', fg: '#1a1a2e' },

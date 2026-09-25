@@ -136,7 +136,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'More Games: ten extra dailies outside the Sweep',
         body: [
-          'The More Games tile opens a second shelf of daily puzzles that are not word-guessing at all. Sudocious is a Medium sudoku with three mistakes; Starsweep asks for one star per row, column and colour region with none touching; Letter Ladder climbs one letter at a time against a par; Spyglass hides ten themed words forwards in a 10 × 10 grid; Hubbub builds words from seven letters around a required hub; Codebreaker is a letter-for-letter coded saying; Kindred hides four groups of four among sixteen words; Crosswordocious is a crossword of sayings with one word missing; Muddle is the newspaper scramble with a pun to finish; and ProperNoundle, the famous-names game, now lives here too.',
+          'The More Games tile opens a second shelf of daily puzzles that are not word-guessing at all. Sudocious is a Medium sudoku with three mistakes; Starsweep asks for one star per row, column and color region with none touching; Letter Ladder climbs one letter at a time against a par; Spyglass hides ten themed words forwards in a 10 × 10 grid; Hubbub builds words from seven letters around a required hub; Codebreaker is a letter-for-letter coded saying; Kindred hides four groups of four among sixteen words; Crosswordocious is a crossword of sayings with one word missing; Muddle is the newspaper scramble with a pun to finish; and ProperNoundle, the famous-names game, now lives here too.',
           'They earn XP, medals, leaderboard places and achievements like everything else, but they sit outside the Daily Sweep: the sweep and Flawless Victory stay the eight word games on the home grid, so a More Games result never pads or spoils them. Each title has its own playbook in this section and a full guide behind the ? button in play.',
         ],
       },
@@ -321,7 +321,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     title: 'The Starsweep Playbook: Forced Placements and the Art of Crossing Out',
     description:
       'How to clear the Wordocious daily star puzzle by pure logic — smallest-region openings, the region-counting argument that cracks the middle of every 8 × 8, why crosses come before stars, and how the three-mistake budget prices every hunch.',
-    dek: 'One star per row, column and colour region, none touching. The board never needs a guess — it needs you to cross out more cells first.',
+    dek: 'One star per row, column and color region, none touching. The board never needs a guess — it needs you to cross out more cells first.',
     minutes: 6,
     sections: [
       {
@@ -543,7 +543,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Start where the puzzle starts you',
         body: [
-          'Codebreaker hands you the three most frequent letters of the saying, already filled in and locked in the game\'s colour. Those three are almost always drawn from E, T, A, O, I, N and S, and they touch most of the words in the sentence. Read every word that contains a given letter before you type anything — the puzzle is designed so that a way in is always visible.',
+          'Codebreaker hands you the three most frequent letters of the saying, already filled in and locked in the game\'s color. Those three are almost always drawn from E, T, A, O, I, N and S, and they touch most of the words in the sentence. Read every word that contains a given letter before you type anything — the puzzle is designed so that a way in is always visible.',
           'The short words are that way in. A one-letter word is A or I. A two-letter word is one of a dozen — OF, TO, IN, IT, IS, AS, AT, ON, BE, WE, HE, SO — and if it contains a given letter you can usually name it outright. A three-letter word ending in a given E is THE more often than anything else, which fixes T and H everywhere they appear. Two or three of these and a third of the code is broken.',
         ],
       },
@@ -604,7 +604,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Read every word two ways',
         body: [
-          'LIME is a fruit and a colour. HUSKY is a dog and a voice. BASS is a fish and a note. The hardest group — four pips — is nearly always hiding in plain sight as ordinary words with a second reading: words that precede or follow a common word (MOUNTAIN ___, ___ BALL), homophones, anagrams, words that contain a hidden shorter word, things that come in a set. When a word seems to fit nowhere, that is the tell that its meaning is not the one you are reading.',
+          'LIME is a fruit and a color. HUSKY is a dog and a voice. BASS is a fish and a note. The hardest group — four pips — is nearly always hiding in plain sight as ordinary words with a second reading: words that precede or follow a common word (MOUNTAIN ___, ___ BALL), homophones, anagrams, words that contain a hidden shorter word, things that come in a set. When a word seems to fit nowhere, that is the tell that its meaning is not the one you are reading.',
           'The pips are information after the fact. A group locks with one to four pips showing how hard it was — one pip is a plain category, four is wordplay — so if your first two groups came up with one and two pips, the remaining eight words hold the three- and four-pip groups, and you should be looking for the sly link, not the obvious one.',
         ],
       },

@@ -7,12 +7,12 @@ import WordociousCore
 /// without a word-game view model. Same rows, same key sizes, same layout
 /// preference (§213 standard | flipped | michael), same sounds and haptics —
 /// only the wiring differs: the caller supplies the three actions and, if it
-/// wants per-key colouring, a state lookup.
+/// wants per-key coloring, a state lookup.
 struct LetterKeyboard: View {
     var onLetter: (String) -> Void
     var onEnter: () -> Void
     var onDelete: () -> Void
-    /// Optional per-key state for colouring (nil = plain key).
+    /// Optional per-key state for coloring (nil = plain key).
     var keyState: (String) -> TileState? = { _ in nil }
     /// Hide ENTER for games that auto-check (Crosswordocious auto-advances).
     var showEnter: Bool = true

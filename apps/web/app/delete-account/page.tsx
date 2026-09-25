@@ -27,7 +27,7 @@ export const metadata: Metadata = {
  * (app/api/account/delete/route.ts). If that endpoint changes, change this.
  */
 const DELETED = [
-  ['Profile', 'Username, avatar, bio, social links, accent colour, favourite mode'],
+  ['Profile', 'Username, avatar, bio, social links, accent color, favourite mode'],
   ['Game statistics', 'Every mode’s wins, losses, streaks, best times and averages'],
   ['Daily results', 'All daily puzzle results and their leaderboard entries'],
   ['Medals', 'Gold, silver and bronze daily medals'],

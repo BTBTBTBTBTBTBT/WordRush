@@ -663,7 +663,7 @@
 }
 
 /* Windows High Contrast / forced-colors ignores our palette entirely; ask the
-   system for its own focus colour rather than shipping an invisible ring. */
+   system for its own focus color rather than shipping an invisible ring. */
 @media (forced-colors: active) {
   :focus-visible { outline: 3px solid Highlight; }
 }

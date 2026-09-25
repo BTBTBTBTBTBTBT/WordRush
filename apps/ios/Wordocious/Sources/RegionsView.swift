@@ -2,7 +2,7 @@ import SwiftUI
 import WordociousCore
 
 // Starsweep (More Games §18b) — the iOS twin of components/regions/*. Place one
-// star in every row, column and colour region, no two touching. Daily 7 × 7
+// star in every row, column and color region, no two touching. Daily 7 × 7
 // Monday–Wednesday, 8 × 8 Thursday–Sunday; Pro Unlimited picks 7 / 8 / 9.
 // Tap = cross out, again = star, again = clear. A wrong star is a mistake, the
 // third loses; a hint places one correct star for a score cost, never a
@@ -330,7 +330,7 @@ let regionsTints: [Color] = [
 
 /// ONE continuous ruled board like the Sudoku board: heavy rules between
 /// regions, hairlines within a region, regions washed in soft tints (the heavy
-/// borders carry the shape, never colour alone). Star in the dark text colour,
+/// borders carry the shape, never color alone). Star in the dark text color,
 /// wrong star red, hint star violet, cross-out a small muted ×. The focused
 /// cell wears a thin accent inset ring.
 struct RegionsBoardView: View {

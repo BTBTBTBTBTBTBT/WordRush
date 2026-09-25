@@ -366,7 +366,7 @@
     "altText": "A captain yawns at the wheel of a ferry on a perfectly flat sea."
   },
   {
-    "final": "FLYING COLOURS",
+    "final": "FLYING COLORS",
     "caption": "The trainee pilot passed his final exam with ____.",
     "scene": "A small plane loops through the sky trailing rainbow streamers, the pilot waving a certificate from the cockpit.",
     "altText": "A small plane trails rainbow streamers as the pilot waves a certificate."
@@ -524,8 +524,8 @@
   {
     "final": "STROKE OF GENIUS",
     "caption": "The decorator finished the ceiling with one flourish; the client called it a ____.",
-    "scene": "A decorator on a ladder sweeps a single dramatic arc of colour across a ceiling while the client gasps in delight.",
-    "altText": "A decorator on a ladder sweeps a single arc of colour across a ceiling."
+    "scene": "A decorator on a ladder sweeps a single dramatic arc of color across a ceiling while the client gasps in delight.",
+    "altText": "A decorator on a ladder sweeps a single arc of color across a ceiling."
   },
   {
     "final": "SECOND HAND",
@@ -861,7 +861,7 @@
     "final": "CHASING RAINBOWS",
     "caption": "The puppy spent every drizzly afternoon ____.",
     "scene": "A puppy bounds across a wet meadow toward the end of a huge rainbow while its owner waits with a lead.",
-    "altText": "A puppy bounds across a wet meadow toward a colourful arc in the sky."
+    "altText": "A puppy bounds across a wet meadow toward a colorful arc in the sky."
   },
   {
     "final": "HAVING A BALL",
@@ -1501,7 +1501,7 @@
   },
   {
     "final": "BRANCHING OUT",
-    "caption": "The oak decided to try pottery and watercolours; she told the forest she was ____.",
+    "caption": "The oak decided to try pottery and watercolors; she told the forest she was ____.",
     "scene": "An oak tree with a paintbrush in one branch and a clay pot in another shows off her work to an audience of impressed squirrels.",
     "altText": "An oak tree holds a paintbrush and a clay pot while squirrels watch."
   },
@@ -2465,8 +2465,8 @@
   {
     "final": "GOING GREEN",
     "caption": "On April twenty-second the chameleon announced it was finally ____.",
-    "scene": "A chameleon perched on a recycling bin shifts colour to match a leafy sapling, a small planet banner hanging behind.",
-    "altText": "A chameleon on a recycling bin changes colour to match a leafy sapling.",
+    "scene": "A chameleon perched on a recycling bin shifts color to match a leafy sapling, a small planet banner hanging behind.",
+    "altText": "A chameleon on a recycling bin changes color to match a leafy sapling.",
     "holiday": "earthday"
   },
   {
@@ -2689,8 +2689,8 @@
   {
     "final": "SWEET VICTORY",
     "caption": "The mithai tray survived all five festival nights untouched by the dog; Grandma called it a ____.",
-    "scene": "A grandmother raises a tray of colourful mithai like a trophy while a dog sulks beside a rangoli and glowing diyas.",
-    "altText": "A grandmother lifts a tray of colourful treats while a dog sulks beside glowing lamps.",
+    "scene": "A grandmother raises a tray of colorful mithai like a trophy while a dog sulks beside a rangoli and glowing diyas.",
+    "altText": "A grandmother lifts a tray of colorful treats while a dog sulks beside glowing lamps.",
     "holiday": "diwali"
   },
   {

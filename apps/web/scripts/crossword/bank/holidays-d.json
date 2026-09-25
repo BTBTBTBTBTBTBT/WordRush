@@ -31,7 +31,7 @@
  ]},
  "diwali": {"title": "Festival of Lights", "holiday": "diwali", "allow": ["DIYA","RANGOLI"], "pairs": [
   ["A small clay lamp, a ____","DIYA"],["Light over ____","DARKNESS"],["Good ____ over evil","TRIUMPHS"],["Every cloud has a silver ____","LINING"],
-  ["Light at the end of the ____","TUNNEL"],["Share a plate of ____","SWEETS"],["____ designs in coloured powder at the door","RANGOLI"],["____ burst over the rooftops","FIREWORKS"],
+  ["Light at the end of the ____","TUNNEL"],["Share a plate of ____","SWEETS"],["____ designs in colored powder at the door","RANGOLI"],["____ burst over the rooftops","FIREWORKS"],
   ["New ____ for the new year","CLOTHES"],["A fresh ____","START"],["Home ____ home","SWEET"],["Sweep the house clean to welcome good ____","FORTUNE"],
   ["Rise and ____","SHINE"],["Burn the ____ at both ends","CANDLE"],["A guiding ____","BEACON"],["Bright as a ____","BUTTON"],
   ["Twinkling oil ____ on every ledge","LAMPS"],["A warm ____ in every window","GLOW"],["A ____ of light in the dark","FLICKER"],["Trim the ____","WICK"],

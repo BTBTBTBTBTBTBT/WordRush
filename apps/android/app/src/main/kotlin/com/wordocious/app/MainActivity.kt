@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                 // Nothing did this before, and on API 35+ it is the only lever
                 // that still works: android:statusBarColor (themes.xml, still a
                 // hardcoded light brand_bg) is DEPRECATED AND IGNORED there, so
-                // the platform draws transparent bars and picks icon colour
+                // the platform draws transparent bars and picks icon color
                 // purely from these two flags. Left unset they stay in their
                 // light-background default — dark icons — which is invisible
                 // against Dark/Ocean/Forest. Caught by the API 36 dark sweep:

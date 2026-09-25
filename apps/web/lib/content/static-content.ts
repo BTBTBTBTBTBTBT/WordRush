@@ -79,7 +79,7 @@ export const HELP_MODES: HelpMode[] = [
   { title: 'Letter Ladder', desc: 'Change one letter at a time from the start word to the end word, on par.', accent: '#0284c7', glyph: 'L' },
   { title: 'Codebreaker', desc: 'Crack a well-known saying written in a letter-for-letter code.', accent: '#92400e', glyph: '?' },
   { title: 'Spyglass', desc: '10 themed words hidden forwards in a 10 × 10 grid. Clear it clean.', accent: '#4d7c0f', glyph: 'W' },
-  { title: 'Starsweep', desc: 'One star in every row, column and colour region, none touching. 3 mistakes.', accent: '#ca8a04', glyph: '*' },
+  { title: 'Starsweep', desc: 'One star in every row, column and color region, none touching. 3 mistakes.', accent: '#ca8a04', glyph: '*' },
 ];
 
 // ── Help sheet: FAQ tab ─────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ export const ABOUT_SECTIONS: ContentSection[] = [
       { heading: 'Letter Ladder', accent: '#0284c7', body: 'Change one letter at a time from the start word to the end word, every rung a real word. Par is the shortest route, rejected words are free, and you have par plus five moves.' },
       { heading: 'Codebreaker', accent: '#92400e', body: 'A well-known saying in a letter-for-letter code with the three most common letters given. Pencil freely, Check when you dare, and the code cracks itself the moment every letter is right.' },
       { heading: 'Spyglass', accent: '#4d7c0f', body: 'Ten themed words hidden forwards in a 10 × 10 grid. Race the clock and keep your misses down — only a straight line of four or more letters that spells no listed word counts against you.' },
-      { heading: 'Starsweep', accent: '#ca8a04', body: 'Place one star in every row, column and colour region with no two stars touching. A 7 × 7 board early in the week and 8 × 8 from Thursday, three mistakes, and a solution you can always reach by logic alone.' },
+      { heading: 'Starsweep', accent: '#ca8a04', body: 'Place one star in every row, column and color region with no two stars touching. A 7 × 7 board early in the week and 8 × 8 from Thursday, three mistakes, and a solution you can always reach by logic alone.' },
     ],
   },
   {

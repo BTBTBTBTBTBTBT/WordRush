@@ -53,7 +53,7 @@ const evaluateGuess = (guess: string, solution: string) => {
 /**
  * Spoken description of one submitted row: the word, then each letter's
  * result. A screen-reader user gets no information at all from the tile
- * COLOURS, which is the entire feedback mechanism of the game — without this
+ * COLORS, which is the entire feedback mechanism of the game — without this
  * the multi-board modes are unplayable rather than merely awkward.
  */
 function describeRow(letters: string, tiles: TileState[]): string {

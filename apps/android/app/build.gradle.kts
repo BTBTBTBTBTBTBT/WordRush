@@ -25,7 +25,7 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 136
+        versionCode = 137
         versionName = "2"
         vectorDrawables { useSupportLibrary = true }
     }

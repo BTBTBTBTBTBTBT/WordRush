@@ -930,7 +930,7 @@ object ShareImage {
             c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
         }
 
-        // Tier ramp — one hue, four lightnesses, plus pips (never colour alone).
+        // Tier ramp — one hue, four lightnesses, plus pips (never color alone).
         val tierBg = mapOf(1 to 0xFFDDD6FE.toInt(), 2 to 0xFFA78BFA.toInt(), 3 to 0xFF7C3AED.toInt(), 4 to 0xFF1A1A2E.toInt())
         val tierFg = mapOf(1 to 0xFF3B0764.toInt(), 2 to 0xFF1A1A2E.toInt(), 3 to 0xFFFFFFFF.toInt(), 4 to 0xFFFFFFFF.toInt())
         val solved = solvedTiers.filter { it in 1..4 }.distinct()

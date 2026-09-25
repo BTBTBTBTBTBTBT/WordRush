@@ -34,7 +34,7 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
-// Starsweep (More Games §18b): place one star in every row, column and colour
+// Starsweep (More Games §18b): place one star in every row, column and color
 // region, no two stars touching. Daily 7 × 7 Monday–Wednesday, 8 × 8
 // Thursday–Sunday; Pro Unlimited picks 7 / 8 / 9. Tap = cross out, tap again =
 // star, again = clear. A wrong star is a mistake, the third loses; a hint

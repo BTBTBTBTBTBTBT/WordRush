@@ -22,7 +22,7 @@ export interface HTPBullet {
 
 export interface HTPMode {
   name: string;     // "Classic — 1 Word, 6 Guesses"
-  accent: string;   // hex heading colour
+  accent: string;   // hex heading color
   body: string;
 }
 
@@ -128,7 +128,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       },
       {
         name: 'Starsweep — One Star Per Row, Column & Region', accent: '#ca8a04',
-        body: 'Place exactly one star in every row, every column and every colour region, with no two stars touching — not even at a corner. The board is 7 × 7 from Monday to Wednesday and 8 × 8 from Thursday to Sunday, and every puzzle has one solution you can reach by elimination alone. Tap once to cross a cell out (free, never judged), tap again to place a star; a wrong star turns red and counts as a mistake, and the third mistake ends the game. Auto-cross marks every cell a correct star rules out, and a Hint places one row\'s star for 100 points. Each unused mistake is worth 300 points, with speed as the tiebreaker inside a ten-minute cap.',
+        body: 'Place exactly one star in every row, every column and every color region, with no two stars touching — not even at a corner. The board is 7 × 7 from Monday to Wednesday and 8 × 8 from Thursday to Sunday, and every puzzle has one solution you can reach by elimination alone. Tap once to cross a cell out (free, never judged), tap again to place a star; a wrong star turns red and counts as a mistake, and the third mistake ends the game. Auto-cross marks every cell a correct star rules out, and a Hint places one row\'s star for 100 points. Each unused mistake is worth 300 points, with speed as the tiebreaker inside a ten-minute cap.',
       },
       {
         name: 'Letter Ladder — One Letter at a Time', accent: '#0284c7',

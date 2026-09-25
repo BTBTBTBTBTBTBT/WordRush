@@ -474,7 +474,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     slug: 'starsweep',
     title: 'Starsweep',
     accent: '#ca8a04',
-    tagline: 'One star in every row, column and colour region, none touching — a pure logic puzzle you can finish without a single guess',
+    tagline: 'One star in every row, column and color region, none touching — a pure logic puzzle you can finish without a single guess',
     metaDescription:
       'Wordocious Starsweep guide: the one-star rule, why stars can never touch, how crossing out and Auto-cross work, the exact scoring formula, and the region-counting strategy that solves every board by logic.',
     facts: [
@@ -485,7 +485,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
     ],
     rules: [
-      'The board is split into colour regions, one for every row. Place exactly one star in every row, every column and every region. Stars can never touch, not even at a corner, so once a star is down all eight cells around it are out. Every board has exactly one solution and is built on your device from the day\'s seed, so everyone plays the same board.',
+      'The board is split into color regions, one for every row. Place exactly one star in every row, every column and every region. Stars can never touch, not even at a corner, so once a star is down all eight cells around it are out. Every board has exactly one solution and is built on your device from the day\'s seed, so everyone plays the same board.',
       'Tap an empty cell once to cross it out (a small ×: "no star here"), tap again to place a star, tap a third time to clear it. A star in the right cell stays; a star in a wrong cell turns red and counts as a mistake — you can clear it, but the mistake stands. Three mistakes end the game. Crosses are notes for your own reasoning: they are never judged and never cost anything.',
       'Auto-cross is on by default: when you place a correct star, every cell it rules out — its row, its column, its region and the eight neighbours — is crossed out for you. Switch it off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
       'The daily is the same for everyone and counts once on the leaderboard. Starsweep lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
@@ -705,9 +705,9 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Daily Sweep', value: 'Not counted — More Games are extra' },
     ],
     rules: [
-      'Every letter of the saying has been swapped for another letter, the same way throughout: if K stands for E, every K in the code is an E. The small letter under each box is the code letter; the box above it is where you write what you think it really is. The three most common letters of the saying are already filled in and locked, in the game\'s colour, so there is always a way in.',
+      'Every letter of the saying has been swapped for another letter, the same way throughout: if K stands for E, every K in the code is an E. The small letter under each box is the code letter; the box above it is where you write what you think it really is. The three most common letters of the saying are already filled in and locked, in the game\'s color, so there is always a way in.',
       'Tap any box (or its code letter in the strip below) and type. The letter goes into every box with that code letter at once, and the selection moves on to the next open letter. Change your mind as often as you like: typing over a letter replaces it everywhere, Delete clears it everywhere, and nothing is marked or counted while you experiment. If you use the same plain letter for two different code letters, both read red until you change one — a saying cannot have two letters that both mean E.',
-      'Check is the only thing that counts against you. It looks at every letter you have pencilled: right ones lock in the game\'s colour, wrong ones are cleared with a red flash, and the check is recorded. Hint fills in the most frequent letter you have not yet solved. Reveal appears after five minutes; it shows the whole answer and records the puzzle as a loss. The puzzle completes itself the moment every letter is right — there is nothing to submit.',
+      'Check is the only thing that counts against you. It looks at every letter you have pencilled: right ones lock in the game\'s color, wrong ones are cleared with a red flash, and the check is recorded. Hint fills in the most frequent letter you have not yet solved. Reveal appears after five minutes; it shows the whole answer and records the puzzle as a loss. The puzzle completes itself the moment every letter is right — there is nothing to submit.',
       'The daily is the same for everyone and counts once on the leaderboard. On a holiday the saying belongs to the day (Christmas, Thanksgiving, Fourth of July and the rest). Codebreaker lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
     scoring: [
@@ -784,7 +784,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Read every word two ways',
-        body: 'LIME is a fruit and a colour; HUSKY is a dog and a voice. The four-pip group is usually hiding in plain sight as ordinary words with a second reading: a hidden word, a homophone, something that goes before or after a common word.',
+        body: 'LIME is a fruit and a color; HUSKY is a dog and a voice. The four-pip group is usually hiding in plain sight as ordinary words with a second reading: a hidden word, a homophone, something that goes before or after a common word.',
       },
       {
         heading: '"One away" is information',

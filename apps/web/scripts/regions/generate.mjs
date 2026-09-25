@@ -1,6 +1,6 @@
 // Region-placement logic puzzle, sample generator (Phase 0). Generic id
 // `regions` / `REGIONS`; display name Starsweep (founder, 2026-09-21).
-// Rules: an N×N board split into N coloured regions. Place exactly one marker
+// Rules: an N×N board split into N colored regions. Place exactly one marker
 // in every row, every column and every region; no two markers may touch, not
 // even diagonally. Fully generated, zero content review:
 //   1. seeded marker layout (one per row/column, no touching),
@@ -40,7 +40,7 @@ function make(seed, n) {
       const [i, to] = moves[below(rng, moves.length)]; reg[i] = to; }
     const sizes = Array(n).fill(0); reg.forEach((v) => sizes[v]++);
     if (solutions(n, reg) !== 1 || sizes.filter((s) => s <= 2).length > 1 || Math.max(...sizes) > n * 2 || sizes.some((s, g) => !connected(n, reg, g, -1))) continue;
-    const order = [...new Set(reg)]; // relabel regions in reading order so colours are assigned predictably
+    const order = [...new Set(reg)]; // relabel regions in reading order so colors are assigned predictably
     return { seed, n, rerolls: k, regions: reg.map((v) => order.indexOf(v)).join(''), solution: cols.join(''), sizes: order.map((g) => sizes[g]) };
   }
   throw new Error(`no board for ${seed}`);

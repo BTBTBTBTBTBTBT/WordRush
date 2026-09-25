@@ -156,7 +156,7 @@ export function generateRegions(seed: string, n: number): RegionsPuzzle | null {
     reg.forEach((v) => sizes[v]++);
     if (countRegionsSolutions(n, reg) !== 1 || sizes.filter((s) => s <= 2).length > 1 || Math.max(...sizes) > n * 2
       || sizes.some((_, g) => !connected(n, reg, g, -1))) continue;
-    // Relabel regions in reading order so colours are assigned predictably.
+    // Relabel regions in reading order so colors are assigned predictably.
     const order: number[] = [];
     for (const v of reg) if (!order.includes(v)) order.push(v);
     return {

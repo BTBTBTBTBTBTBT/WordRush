@@ -111,7 +111,7 @@ import kotlinx.serialization.json.Json
 private val GROUPS_ACCENT = Color(0xFF9F1239)
 private val PAIR_RING = Color(0xFF8B5CF6)
 
-/** Tier ramp (§14): one hue, four lightnesses — plus pips, never colour alone. */
+/** Tier ramp (§14): one hue, four lightnesses — plus pips, never color alone. */
 private data class TierStyle(val bg: Color, val fg: Color)
 private val TIER_STYLE = mapOf(
     1 to TierStyle(Color(0xFFDDD6FE), Color(0xFF3B0764)),
@@ -142,7 +142,7 @@ class KindredSession(val seed: String, val isDaily: Boolean) {
                 val fallback = GroupsPuzzle(
                     "none",
                     listOf(
-                        GroupsGroup(1, "Colours", listOf("RED", "BLUE", "GREEN", "GOLD")),
+                        GroupsGroup(1, "Colors", listOf("RED", "BLUE", "GREEN", "GOLD")),
                         GroupsGroup(2, "Card games", listOf("POKER", "BRIDGE", "RUMMY", "HEARTS")),
                         GroupsGroup(3, "___ Ring", listOf("KEY", "EAR", "BOXING", "ONION")),
                         GroupsGroup(4, "Hidden numbers", listOf("STONE", "OFTEN", "CANINE", "WEIGHT")),
@@ -409,7 +409,7 @@ private fun KindredHeader(session: KindredSession, tick: Int) {
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** One to four pips — the tier, readable without colour. */
+/** One to four pips — the tier, readable without color. */
 @Composable
 private fun Pips(tier: Int, color: Color, size: Int = 5) {
     Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -445,7 +445,7 @@ private fun GroupBar(group: GroupsGroup, revealed: Boolean = false) {
     }
 }
 
-/** Categories named by a hint, as tier-coloured chips above the grid. */
+/** Categories named by a hint, as tier-colored chips above the grid. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RevealedChips(groups: List<GroupsGroup>) {

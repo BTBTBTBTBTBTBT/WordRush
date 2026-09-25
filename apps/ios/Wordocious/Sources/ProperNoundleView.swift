@@ -630,7 +630,7 @@ struct NoundleBoard: View {
     }
 }
 
-/// QWERTY keyboard for ProperNoundle (per-key colour from guesses).
+/// QWERTY keyboard for ProperNoundle (per-key color from guesses).
 struct NoundleKeyboard: View {
     @ObservedObject var vm: ProperNoundleVM
     // §213: honors the same layout pref as KeyboardView — this bespoke copy

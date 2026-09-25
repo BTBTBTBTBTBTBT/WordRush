@@ -5,7 +5,7 @@ import { mulberry32, simpleHash } from '../seed';
  * Kindred — groups of four (More Games §14). Sixteen words hide four groups
  * of four; find them all with at most four mistakes. Tiers 1–4 run from a
  * plain category to wordplay and are shown as one to four pips on the solved
- * bar (never colour alone). Submitting four words: a group → it locks and its
+ * bar (never color alone). Submitting four words: a group → it locks and its
  * bar appears; three from one group → "One away"; otherwise a plain miss. A
  * set already tried is free to try again (no second mistake). Four mistakes
  * lose the puzzle and the remaining groups are revealed.

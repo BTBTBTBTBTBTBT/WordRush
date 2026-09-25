@@ -50,7 +50,7 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
         }
     }
 
-    /// Per-item accent — keeps the menu colourful + on-brand (mirrors the home
+    /// Per-item accent — keeps the menu colorful + on-brand (mirrors the home
     /// mode-card accents) rather than a flat grey list.
     var accent: Color {
         switch self {
@@ -127,7 +127,7 @@ private var infoCard: some View {
 
 // MARK: - Styled menu (replaces the plain system dropdown)
 
-/// The "?" menu — a welcoming, on-brand list (colour-accented icon tiles +
+/// The "?" menu — a welcoming, on-brand list (color-accented icon tiles +
 /// title + subtitle) instead of the flat grey system dropdown.
 struct MenuSheet: View {
     @Binding var selection: InfoMenuDestination?

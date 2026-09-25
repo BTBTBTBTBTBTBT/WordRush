@@ -424,7 +424,7 @@ private fun GoogleSignInButton(onError: (String) -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The official four-colour mark at 20dp, matching iOS's Image("google").
+        // The official four-color mark at 20dp, matching iOS's Image("google").
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_google),
             contentDescription = null,

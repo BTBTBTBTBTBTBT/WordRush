@@ -112,7 +112,7 @@ fun TileView(
         // Orange = CORRECT, blue = PRESENT — matching this app's own keyboard
         // (KeyboardView.quadColor), iOS and web. These two were reversed
         // (cyan=correct, orange=present) against a web behaviour that no longer
-        // exists, so in Quad/Octo with colourblind mode ON, orange meant
+        // exists, so in Quad/Octo with colorblind mode ON, orange meant
         // "present" on the board and "correct" on the keys. It actively misled
         // the exact users the feature is for.
         filled && mini && WTheme.colorblind && state == TileState.CORRECT -> Color(0xFFF5793A)
