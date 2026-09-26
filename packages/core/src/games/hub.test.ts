@@ -55,7 +55,7 @@ describe('Hubbub bank', () => {
 describe('Hubbub reducer', () => {
   const p = bank.daily[0];   // U·DELMNP
 
-  it('rejects for free, scores words, accepts bonus words for nothing, and finalizes once at Hubbub', () => {
+  it('rejects for free, scores every accepted word (rarer ones too), and finalizes once at Hubbub', () => {
     let s = createHubState(p, 'fixture', 0);
     s = hubReduce(s, { type: 'SUBMIT', word: 'DUE' }); expect(s.reject).toBe('short');
     s = hubReduce(s, { type: 'SUBMIT', word: 'MELD' }); expect(s.reject).toBe('centre');
@@ -64,7 +64,7 @@ describe('Hubbub reducer', () => {
     s = hubReduce(s, { type: 'SUBMIT', word: 'dude' }); expect(s.reject).toBeNull(); expect(s.points).toBe(1); expect(s.events).toEqual(['+DUDE']);
     s = hubReduce(s, { type: 'SUBMIT', word: 'DUDE' }); expect(s.reject).toBe('found');
     const bonus = p.bonus[0];
-    s = hubReduce(s, { type: 'SUBMIT', word: bonus }); expect(s.bonusFound).toEqual([bonus]); expect(s.points).toBe(1); expect(s.events.at(-1)).toBe(`=${bonus}`);
+    s = hubReduce(s, { type: 'SUBMIT', word: bonus }); expect(s.bonusFound).toEqual([bonus]); expect(s.points).toBe(1 + hubWordScore(bonus, p.letters)); expect(s.events.at(-1)).toBe(`=${bonus}`);
     expect(s.status).toBe('playing');
     for (const w of p.words) { if (s.status !== 'playing') break; s = hubReduce(s, { type: 'SUBMIT', word: w }, 77); }
     expect(s.status).toBe('won'); expect(s.endTime).toBe(77); expect(hubRank(s)).toBeGreaterThanOrEqual(HUB_SOLVED_RANK);

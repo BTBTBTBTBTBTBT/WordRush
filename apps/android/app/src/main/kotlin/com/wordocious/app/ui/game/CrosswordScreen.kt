@@ -200,6 +200,11 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
     }
     val activeCells: List<Int> get() = activeEntry?.let { crosswordEntryCells(state, it) } ?: emptyList()
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init {
         restore()
         if (selected == null) { selected = firstOpenCell(state); dir = state.entries.firstOrNull()?.dir ?: "A" }
@@ -216,7 +221,6 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
         val status: String, val ended: Boolean, val startTime: Long, val endTime: Long?,
         val selected: Int? = null, val dir: String = "A",
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "crossword-save-daily" else "crossword-save-$seed"
 
     private fun persist() {

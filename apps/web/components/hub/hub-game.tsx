@@ -162,8 +162,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         else {
           setTyping('');
           const word = a.word.toUpperCase();
-          if (next.points > s.points) { haptic('light'); playSuccess(); flash(hubIsPangram(word, s.letters) ? `Pangram! +${hubWordScore(word, s.letters)}` : `+${hubWordScore(word, s.letters)}`); }
-          else flash('Bonus word — accepted, no points');
+          // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
+          haptic('light'); playSuccess(); flash(hubIsPangram(word, s.letters) ? `Pangram! +${hubWordScore(word, s.letters)}` : `+${hubWordScore(word, s.letters)}`);
         }
       } else if (a.type === 'HINT_START' || a.type === 'HINT_REVEAL') { if (next.hintsUsed > s.hintsUsed) playKeyTap(); }
       return next;
@@ -228,10 +228,11 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
-  const sortedFound = useMemo(() => state ? [...state.found].sort() : [], [state]);
+  const sortedFound = useMemo(() => state ? [...state.found, ...state.bonusFound].sort() : [], [state]);
   // Board flow shows found words newest first (plan §12 layout rule); results keep the alphabetical list.
-  const newestFound = useMemo(() => state ? [...state.found].reverse() : [], [state]);
-  const newestBonus = useMemo(() => state ? [...state.bonusFound].reverse() : [], [state]);
+  // Every accepted word is one list in the order it was found (the event log keeps that order
+  // across the core list and the rarer words); nothing is labeled "bonus" any more.
+  const newestFound = useMemo(() => state ? state.events.filter((e) => /^[+=!]/.test(e)).map((e) => e.slice(1)).reverse() : [], [state]);
 
   // Layout rule (plan §12, founder 2026-09-24): the 2-3-2 cluster is the hero and scales to the
   // screen. Tile side = clamp((board column height − rank bar − entry line − control rows − found
@@ -349,10 +350,10 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       {/* Found words — header, then a wrapping chip flow that fills the lower area and scrolls once it overflows. */}
       <div className="flex-1 min-h-0 flex flex-col w-full max-w-md mx-auto">
         <div ref={setFixed(3)} className="shrink-0 text-[10px] font-black tracking-wider pb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
-          {state.found.length} OF {state.words.length} WORDS{state.bonusFound.length ? ` · ${state.bonusFound.length} BONUS` : ''}
+          {state.found.length + state.bonusFound.length} {state.found.length + state.bonusFound.length === 1 ? 'WORD' : 'WORDS'} · {state.points} {state.points === 1 ? 'PT' : 'PTS'}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="flex flex-wrap justify-center gap-1.5 pb-1">{wordChips(newestFound)}{wordChips(newestBonus, true)}</div>
+          <div className="flex flex-wrap justify-center gap-1.5 pb-1">{wordChips(newestFound)}</div>
         </div>
       </div>
       <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
@@ -390,8 +391,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
             </div>
             <div className="flex flex-wrap justify-center gap-1.5">
               {state.ended
-                ? [...state.words].sort().map((w) => (
-                  <span key={w} className="text-[11px] font-bold px-2 py-0.5 rounded-full border" style={state.found.includes(w)
+                ? [...state.words, ...state.bonusFound].sort().map((w) => (
+                  <span key={w} className="text-[11px] font-bold px-2 py-0.5 rounded-full border" style={state.found.includes(w) || state.bonusFound.includes(w)
                     ? (state.pangrams.includes(w) ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' })
                     : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }}>{w}{state.pangrams.includes(w) ? ' ★' : ''}</span>
                 ))

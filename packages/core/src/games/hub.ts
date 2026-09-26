@@ -5,9 +5,11 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../bank';
  * center letter, words of 4+ letters, letters may repeat. 4 letters = 1 point,
  * longer words = their length, a pangram (all seven letters) +7. The bank
  * (apps/web/data/hub-puzzles.json, bundled everywhere and sha-guarded) freezes
- * each puzzle's accepted words: `words` score and set `max`; `bonus` words are
- * accepted for 0 points (friendly acceptance — never "why isn't my real word
- * accepted", never a 100% that needs an obscure word).
+ * each puzzle's accepted words: `words` (the core list) set `max`; `bonus` words
+ * are the rarer accepted words. EVERY accepted word scores by the same rule
+ * (founder, 2026-09-25: "make all words count … feel like every word helps");
+ * only the ceiling comes from the core list, so Pandemonium never needs an
+ * obscure word and points may pass max (the rank and boards_solved cap there).
  *
  * Ranks (integer maths, points*100 >= pct*max): Hush 0, Murmur 5, Chatter 12,
  * Banter 20, Clamor 30, Racket 40, HUBBUB 50 = solved, Uproar 70, Thunder 85,
@@ -162,7 +164,13 @@ export function hubReduce(s: HubState, a: HubAction, now = 0): HubState {
       if (s.words.includes(word)) {
         return settle({ ...s, found: [...s.found, word], points: s.points + hubWordScore(word, s.letters), events: [...s.events, `+${word}`], reject: null }, now);
       }
-      if (s.bonus.includes(word)) return { ...s, bonusFound: [...s.bonusFound, word], events: [...s.events, `=${word}`], reject: null };
+      // Founder (2026-09-25): EVERY accepted word scores by the same rule. Words off the core
+      // list keep the "=" sigil (stats still know they were the rarer ones) but they earn their
+      // points and can carry the player up the ranks — the ceiling stays the core list's max,
+      // so Pandemonium never needs a rare word, and nothing a player finds is ever worth 0.
+      if (s.bonus.includes(word)) {
+        return settle({ ...s, bonusFound: [...s.bonusFound, word], points: s.points + hubWordScore(word, s.letters), events: [...s.events, `=${word}`], reject: null }, now);
+      }
       return { ...s, reject: 'notword' };
     }
     case 'HINT_START': {
@@ -215,7 +223,7 @@ export function reconstructHub(solutions: string[] | null | undefined, guesses: 
     if ((sigil === '+' || sigil === '!') && /^[A-Z]{4,}$/.test(rest) && !found.includes(rest)) {
       found.push(rest); points += hubWordScore(rest, letters);
       if (sigil === '!') { revealed.push(rest); hintsUsed += 2; }
-    } else if (sigil === '=' && /^[A-Z]{4,}$/.test(rest)) bonusFound.push(rest);
+    } else if (sigil === '=' && /^[A-Z]{4,}$/.test(rest) && !bonusFound.includes(rest)) { bonusFound.push(rest); points += hubWordScore(rest, letters); }
     else if (sigil === '?') { hints.push(rest); hintsUsed += 1; }
   }
   const rank = hubRankIndex(points, max);

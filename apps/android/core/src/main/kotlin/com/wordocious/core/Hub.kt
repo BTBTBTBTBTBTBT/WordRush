@@ -7,7 +7,7 @@ import kotlinx.serialization.json.Json
  * Hubbub — seven-letter hub game (More Games §12). 1:1 port of
  * packages/core/src/games/hub.ts; pinned by hub-fixtures.json (HubFixtureTest).
  * Words of 4+ letters using only the seven letters and containing the center;
- * 4 letters = 1 point, else length, pangram +7; bonus words score 0. Ranks by
+ * 4 letters = 1 point, else length, pangram +7; EVERY accepted word scores (founder 2026-09-25), max = core list. Ranks by
  * integer maths (points*100 >= pct*max); Hubbub (50%) = solved. Play continues
  * after the win; End finalizes a loss when below Hubbub. Event sigils + = ? ! #
  */
@@ -107,7 +107,8 @@ fun hubReduce(s: HubState, a: HubAction, now: Long = 0): HubState {
                 word.any { it !in s.letters } -> s.copy(reject = HubReject.LETTERS)
                 word in s.found || word in s.bonusFound -> s.copy(reject = HubReject.FOUND)
                 word in s.words -> settle(s.copy(found = s.found + word, points = s.points + hubWordScore(word, s.letters), events = s.events + "+$word", reject = null), now)
-                word in s.bonus -> s.copy(bonusFound = s.bonusFound + word, events = s.events + "=$word", reject = null)
+                // Founder (2026-09-25): every accepted word scores; "=" keeps marking the rarer ones.
+                word in s.bonus -> settle(s.copy(bonusFound = s.bonusFound + word, points = s.points + hubWordScore(word, s.letters), events = s.events + "=$word", reject = null), now)
                 else -> s.copy(reject = HubReject.NOTWORD)
             }
         }
@@ -153,7 +154,7 @@ fun reconstructHub(solutions: List<String>, guesses: List<String>): HubReconstru
         val rest = ev.substring(1)
         when {
             (sigil == '+' || sigil == '!') && isWord(rest) && rest !in found -> { found.add(rest); points += hubWordScore(rest, letters); if (sigil == '!') { revealed.add(rest); hintsUsed += 2 } }
-            sigil == '=' && isWord(rest) -> bonusFound.add(rest)
+            sigil == '=' && isWord(rest) && rest !in bonusFound -> { bonusFound.add(rest); points += hubWordScore(rest, letters) }
             sigil == '?' -> { hints.add(rest); hintsUsed += 1 }
         }
     }

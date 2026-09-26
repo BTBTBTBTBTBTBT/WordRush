@@ -185,6 +185,11 @@ class KindredSession(val seed: String, val isDaily: Boolean) {
         groupsBoardsSolved(state), GROUPS_TOTAL_BOARDS, state.hintsUsed,
     ).total.toInt()
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore() }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -199,7 +204,6 @@ class KindredSession(val seed: String, val isDaily: Boolean) {
         val lastResult: String?, val events: List<String>,
         val status: String, val ended: Boolean, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "groups-save-daily" else "groups-save-$seed"
 
     private fun persist() {

@@ -259,7 +259,7 @@
         ],
         "revealed": [],
         "hinted": [],
-        "points": 7,
+        "points": 13,
         "hintsUsed": 0,
         "events": [
           "+DELUDED",
@@ -269,9 +269,9 @@
         "ended": false,
         "reject": "found",
         "endTime": null,
-        "rank": 1,
-        "guessCount": 9,
-        "boardsSolved": 1
+        "rank": 2,
+        "guessCount": 8,
+        "boardsSolved": 3
       },
       "row": {
         "solutions": [
@@ -300,10 +300,10 @@
         ],
         "revealed": [],
         "hints": [],
-        "points": 7,
+        "points": 13,
         "hintsUsed": 0,
-        "rank": 1,
-        "rankName": "Murmur",
+        "rank": 2,
+        "rankName": "Chatter",
         "ended": false,
         "solved": false
       }
@@ -908,6 +908,117 @@
         "rankName": "Pandemonium",
         "ended": false,
         "solved": true
+      }
+    },
+    {
+      "name": "rare-words-score-in-full",
+      "id": "hb0001",
+      "actions": [
+        {
+          "type": "SUBMIT",
+          "word": "DELUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DENUDED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DULLED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DUPE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "ELUDE"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "ELUDED"
+        },
+        {
+          "type": "SUBMIT",
+          "word": "DELUDED"
+        }
+      ],
+      "expect": {
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [
+          "DELUDE",
+          "DENUDED",
+          "DULLED",
+          "DUPE",
+          "ELUDE",
+          "ELUDED"
+        ],
+        "revealed": [],
+        "hinted": [],
+        "points": 38,
+        "hintsUsed": 0,
+        "events": [
+          "=DELUDE",
+          "=DENUDED",
+          "=DULLED",
+          "=DUPE",
+          "=ELUDE",
+          "=ELUDED",
+          "+DELUDED"
+        ],
+        "status": "playing",
+        "ended": false,
+        "reject": null,
+        "endTime": null,
+        "rank": 5,
+        "guessCount": 5,
+        "boardsSolved": 9
+      },
+      "row": {
+        "solutions": [
+          "hb0001",
+          "UDELMNP",
+          "81",
+          "25",
+          "1"
+        ],
+        "guesses": [
+          "=DELUDE",
+          "=DENUDED",
+          "=DULLED",
+          "=DUPE",
+          "=ELUDE",
+          "=ELUDED",
+          "+DELUDED"
+        ]
+      },
+      "reconstruct": {
+        "id": "hb0001",
+        "letters": "UDELMNP",
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1,
+        "found": [
+          "DELUDED"
+        ],
+        "bonusFound": [
+          "DELUDE",
+          "DENUDED",
+          "DULLED",
+          "DUPE",
+          "ELUDE",
+          "ELUDED"
+        ],
+        "revealed": [],
+        "hints": [],
+        "points": 38,
+        "hintsUsed": 0,
+        "rank": 5,
+        "rankName": "Racket",
+        "ended": false,
+        "solved": false
       }
     }
   ],

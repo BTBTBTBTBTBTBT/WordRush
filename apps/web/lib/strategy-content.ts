@@ -522,10 +522,10 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         ],
       },
       {
-        heading: 'Hints and bonus words',
+        heading: 'Hints, and why every word is worth typing',
         body: [
           'Two hints exist and neither counts against your rank. "Starts with…" shows the first two letters and the length of the next word you have not found, for 50 points; "Reveal a word" costs two hints (100 points) and places that word, points included. Both rule out a Perfect run and the Pure Hubbub achievements. The 50-point hint is the better buy almost every time — two letters and a length is usually enough to see the word yourself, and you keep half the price.',
-          'A word you are unsure of is free to try. If it is on the friendly list it is accepted — as a scoring word if it is common, as a 0-point bonus word if it is rare — and if it is not, nothing is lost. There is no penalty for a rejected word in Hubbub, so type everything that looks plausible. Only your rank and your time are recorded, and, like every More Games title, none of it touches your Daily Sweep.',
+          'A word you are unsure of is free to try. If it is on the friendly list it scores like any other word — the everyday list sets the puzzle\'s maximum, but a rarer word you know counts in full and can lift your rank just the same — and if it is not on the list, nothing is lost. There is no penalty for a rejected word in Hubbub, so type everything that looks plausible. Only your rank and your time are recorded, and, like every More Games title, none of it touches your Daily Sweep.',
         ],
       },
     ],

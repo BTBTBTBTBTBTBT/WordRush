@@ -398,6 +398,8 @@ export function renderHubFixtures() {
     { name: 'end-below-hubbub', actions: [{ type: 'SUBMIT', word: p.words[0] }, { type: 'END' }, { type: 'SUBMIT', word: p.words[1] }, { type: 'HINT_START' }, { type: 'FINISH' }] },
     { name: 'win-then-keep-going', actions: [...toHubbub, { type: 'SUBMIT', word: p.words[p.words.length - 1] }, { type: 'END' }] },
     { name: 'all-words', actions: p.words.map((w) => ({ type: 'SUBMIT', word: w }) as HubAction) },
+    // Founder (2026-09-25): every accepted word scores — rarer words earn points and can win the puzzle on their own.
+    { name: 'rare-words-score-in-full', actions: [...p.bonus.slice(0, 6), p.words[0]].map((w) => ({ type: 'SUBMIT', word: w }) as HubAction) },
   ];
   const reducer = scripts.map((sc) => {
     let s = createHubState(p, 'fixture', 0);

@@ -136,6 +136,11 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         GameMode.WORDSEARCH.name, state.status == WordsearchStatus.WON, state.guessCount, elapsed, state.found.size, state.words.size, state.hintsUsed,
     ).total.toInt()
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore() }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -149,7 +154,6 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         val found: List<String>, val misses: Int, val hintsUsed: Int, val hinted: List<String>, val events: List<String>,
         val status: String, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "wordsearch-save-daily" else "wordsearch-save-$seed"
 
     private fun persist() {

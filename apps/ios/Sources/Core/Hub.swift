@@ -3,7 +3,7 @@ import Foundation
 // Hubbub — seven-letter hub game (More Games §12). 1:1 port of
 // packages/core/src/games/hub.ts; pinned by hub-fixtures.json (HubFixtureTests).
 // Words of 4+ letters using only the seven letters and containing the centre;
-// 4 letters = 1 point, else length, pangram +7; bonus words score 0. Ranks by
+// 4 letters = 1 point, else length, pangram +7; EVERY accepted word scores (founder 2026-09-25), max = core list. Ranks by
 // integer maths (points*100 >= pct*max); Hubbub (50%) = solved. Play continues
 // after the win; End finalises a loss when below Hubbub. Event sigils + = ? ! #
 
@@ -135,7 +135,11 @@ public func hubReduce(_ s: HubState, _ a: HubAction, now: Double = 0) -> HubStat
             n.found.append(word); n.points += hubWordScore(word, letters: s.letters); n.events.append("+\(word)"); n.reject = nil
             return settle(n, now)
         }
-        if s.bonus.contains(word) { n.bonusFound.append(word); n.events.append("=\(word)"); n.reject = nil; return n }
+        // Founder (2026-09-25): every accepted word scores; "=" keeps marking the rarer ones.
+        if s.bonus.contains(word) {
+            n.bonusFound.append(word); n.points += hubWordScore(word, letters: s.letters); n.events.append("=\(word)"); n.reject = nil
+            return settle(n, now)
+        }
         n.reject = .notword
         return n
     case .hintStart:
@@ -183,7 +187,7 @@ public func reconstructHub(solutions: [String], guesses: [String]) -> HubReconst
         if (sigil == "+" || sigil == "!") && isWord(rest) && !found.contains(rest) {
             found.append(rest); points += hubWordScore(rest, letters: letters)
             if sigil == "!" { revealed.append(rest); hintsUsed += 2 }
-        } else if sigil == "=" && isWord(rest) { bonusFound.append(rest) }
+        } else if sigil == "=" && isWord(rest) && !bonusFound.contains(rest) { bonusFound.append(rest); points += hubWordScore(rest, letters: letters) }
         else if sigil == "?" { hints.append(rest); hintsUsed += 1 }
     }
     let rank = hubRankIndex(points: points, max: max)

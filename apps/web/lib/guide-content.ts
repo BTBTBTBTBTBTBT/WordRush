@@ -649,7 +649,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     rules: [
       'You get seven letters in a cluster with one letter in the middle. Make words of four letters or more using only those letters; you may repeat a letter as often as you like, but every word must use the center letter. Tap the tiles or type, then press Enter. A four-letter word scores 1 point, a longer word scores its length, and a word that uses all seven letters — a pangram — scores 7 extra. Every puzzle has at least one.',
-      'Words are checked against a friendly list. Common words score and together set the puzzle\'s maximum. Rarer real words are accepted as bonus words for 0 points, so a genuine word is never turned away and the maximum never needs an obscure one. Your rank climbs with your share of the maximum: Hush, Murmur, Chatter, Banter, Clamor, Racket, then Hubbub at 50%, Uproar at 70%, Thunder at 85% and Pandemonium at 100% — every word found.',
+      'Words are checked against a friendly list, and every word on it scores — the same rule for all of them, so a genuine word is never turned away and never worth nothing. The puzzle\'s maximum is set by its everyday words, so the top rank never needs an obscure one; rarer words you find still count in full and can carry you up the ladder. Your rank climbs with your points as a share of the maximum: Hush, Murmur, Chatter, Banter, Clamor, Racket, then Hubbub at 50%, Uproar at 70%, Thunder at 85% and Pandemonium at 100%.',
       'Reaching Hubbub solves the puzzle and records your result once. The board stays open: keep hunting and every rank you climb afterwards raises your leaderboard score in place, without earning XP twice. If you stop short of Hubbub, "End puzzle and see answers" records a loss with the rank you reached and shows every word.',
       'The daily is the same for everyone and counts once on the leaderboard. Hubbub lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
@@ -683,8 +683,8 @@ export const MODE_GUIDES: ModeGuide[] = [
         body: 'Seeing the same arrangement hides words. Shuffle (or press Space) and read the tiles as a new row — the brain finds new pairs when the order changes.',
       },
       {
-        heading: 'Bonus words cost nothing to try',
-        body: 'A word you are unsure of is free to test: if it is on the friendly list it is accepted (as a bonus if it is rare), and if it is not, nothing is lost. Only your rank and time matter.',
+        heading: 'Every word helps, so try them all',
+        body: 'A word you are unsure of is free to test: if it is on the friendly list it scores like any other, and if it is not, nothing is lost. There are no words to avoid and none that count for less — only your rank and time matter.',
       },
     ],
     related: ['classic', 'spyglass', 'letter-ladder'],

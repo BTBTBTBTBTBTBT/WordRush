@@ -763,11 +763,13 @@ struct MuddleFinalRow: View {
         let active = vm.row == SCRAMBLE_FINAL && !finished
         let showTray = open && !solved && !finished
         let pattern = s.final.pattern
-        let total = max(1, pattern.reduce(0, +))
-        // One line when it fits: the column minus the single hint target at the right.
-        let width = muddleColumnWidth() + MdSize.hitTarget
-        let side = max(MdSize.punchTileFloor, min(MdSize.punchTile,
-                       floor((width - MdSize.punchGap * CGFloat(total - pattern.count) - MdSize.punchWordGap * CGFloat(pattern.count - 1)) / CGFloat(total))))
+        // Founder (2026-09-25, on build 191): the one-line squeeze looked "jammed". The tiles
+        // keep their full size and the punchline WRAPS BY WORD like the newspaper answer boxes
+        // (web and Android already do); a tile only shrinks, toward the floor, when a single
+        // word is longer than the row.
+        let width = muddleColumnWidth() - MdSize.rowPad * 2
+        let longest = CGFloat(pattern.max() ?? 1)
+        let side = max(MdSize.punchTileFloor, min(MdSize.punchTile, floor((width - MdSize.punchGap * (longest - 1)) / longest)))
         let starts = muddleStarts(pattern)
         HStack(alignment: .center, spacing: MdSize.gap) {
             VStack(alignment: .leading, spacing: 3) {

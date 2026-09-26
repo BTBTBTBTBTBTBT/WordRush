@@ -129,6 +129,11 @@ class LadderSession(val seed: String, val isDaily: Boolean) {
         if (state.status == LadderStatus.WON) 1 else 0, 1, state.hintsUsed,
     ).total.toInt()
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore() }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -141,7 +146,6 @@ class LadderSession(val seed: String, val isDaily: Boolean) {
         val words: List<String>, val hintMask: String, val moves: Int, val hintsUsed: Int, val events: List<String>,
         val status: String, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "ladder-save-daily" else "ladder-save-$seed"
 
     private fun persist() {

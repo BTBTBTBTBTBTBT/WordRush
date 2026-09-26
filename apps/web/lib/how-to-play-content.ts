@@ -140,7 +140,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       },
       {
         name: 'Hubbub — Seven Letters, One Hub', accent: '#c026d3',
-        body: 'Seven letters sit in a cluster with one in the center. Make words of four letters or more that use the center letter — repeats allowed — and watch your rank climb: a four-letter word is worth 1 point, longer words score their length, and a pangram that uses all seven letters earns 7 extra. Rarer real words are accepted as bonus words, so a genuine word is never turned away. Reaching Hubbub rank at half the maximum score solves the puzzle, and the board stays open so you can keep climbing through Uproar (70%) and Thunder (85%) to Pandemonium — every word found — raising your leaderboard score in place. Each rank above Hubbub is worth 300 points; a "Starts with…" hint costs 50 and revealing a word costs 100.',
+        body: 'Seven letters sit in a cluster with one in the center. Make words of four letters or more that use the center letter — repeats allowed — and watch your rank climb: a four-letter word is worth 1 point, longer words score their length, and a pangram that uses all seven letters earns 7 extra. Every word on the list scores, common or rare, so a genuine word is never turned away and never counts for nothing; only the puzzle\'s maximum comes from its everyday words. Reaching Hubbub rank at half the maximum score solves the puzzle, and the board stays open so you can keep climbing through Uproar (70%) and Thunder (85%) to Pandemonium (100%) — raising your leaderboard score in place. Each rank above Hubbub is worth 300 points; a "Starts with…" hint costs 50 and revealing a word costs 100.',
       },
       {
         name: 'Codebreaker — Crack the Coded Saying', accent: '#92400e',

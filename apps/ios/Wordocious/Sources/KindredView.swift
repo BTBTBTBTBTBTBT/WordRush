@@ -454,7 +454,11 @@ struct KindredTileGrid: View {
     var body: some View {
         let s = vm.state
         let ringed = vm.ringed
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+        // Founder (2026-09-25, on build 191): the pair ring was cut off at the screen edge.
+        // A lazy grid clips to its own bounds, and the ring is drawn 3 pt OUTSIDE the tile, so
+        // the outer columns lost it. Every cell now carries a 3 pt transparent margin (the grid
+        // gaps drop to 0 so the visible spacing stays 6) and the ring lives inside the cell.
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 4), spacing: 0) {
             ForEach(s.tiles, id: \.self) { w in
                 let sel = s.selected.contains(w)
                 let long = w.count > 8
@@ -467,6 +471,7 @@ struct KindredTileGrid: View {
                         .background(RoundedRectangle(cornerRadius: 8).fill(sel ? kindredAccent : Theme.surface))
                         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(sel ? kindredAccent : Theme.border, lineWidth: 2))
                         .overlay(ringed.contains(w) ? RoundedRectangle(cornerRadius: 11).stroke(kindredPairRing, lineWidth: 2).padding(-3) : nil)
+                        .padding(3)
                 }
                 .buttonStyle(PressableStyle())
                 .disabled(vm.isFinished)
@@ -474,7 +479,7 @@ struct KindredTileGrid: View {
                 .accessibilityAddTraits(sel ? .isSelected : [])
             }
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, -1)
         .animation(Theme.animation(.easeInOut(duration: 0.25)), value: s.tiles)
         .accessibilityLabel("Words")
     }

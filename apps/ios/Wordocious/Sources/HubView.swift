@@ -103,8 +103,8 @@ final class HubVM: ObservableObject {
             shake = true; Task { try? await Task.sleep(nanoseconds: 450_000_000); shake = false; typing = "" }
         } else {
             typing = ""
-            if state.words.contains(word) { Haptics.tap(); SoundManager.shared.playSuccess(); flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))") }
-            else { flash("Bonus word — accepted, no points") }
+            // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
+            Haptics.tap(); SoundManager.shared.playSuccess(); flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))")
         }
     }
     func hintStart() { dispatch(.hintStart) }
@@ -361,13 +361,14 @@ struct HubView: View {
                 if !pending.isEmpty {
                     HStack(spacing: 6) { ForEach(pending, id: \.self) { w in Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.caption(11)).foregroundStyle(Theme.textMuted).padding(.horizontal, 8).padding(.vertical, 3).overlay(Capsule().stroke(hubAccent, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))) } }
                 }
-                Text("\(s.found.count) OF \(s.words.count) WORDS\(s.bonusFound.isEmpty ? "" : " · \(s.bonusFound.count) BONUS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                let total = s.found.count + s.bonusFound.count
+                Text("\(total) \(total == 1 ? "WORD" : "WORDS") · \(s.points) \(s.points == 1 ? "PT" : "PTS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 // Found words: newest first in a wrapping flow that fills the lower area
                 // and scrolls once it overflows.
                 ScrollView(showsIndicators: false) {
                     HubWrapLayout(spacing: 5, lineSpacing: 5) {
-                        ForEach(s.found.reversed(), id: \.self) { chip($0) }
-                        ForEach(s.bonusFound.reversed(), id: \.self) { chip($0, dim: true) }
+                        // Every accepted word, newest first, in the order found (the event log spans both lists).
+                        ForEach(hubFoundInOrder(s).reversed(), id: \.self) { chip($0) }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 2)
@@ -398,12 +399,12 @@ struct HubView: View {
                 .foregroundStyle(hubAccent).padding(.top, 2)
                 Text(s.ended ? "ALL WORDS" : "FOUND SO FAR · \(s.words.count - s.found.count) MORE TO FIND").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 if s.ended {
-                    let all = s.words.sorted()
+                    let all = (s.words + s.bonusFound).sorted()
                     let rows = stride(from: 0, to: all.count, by: 4).map { Array(all[$0..<min($0 + 4, all.count)]) }
                     VStack(spacing: 5) { ForEach(0..<rows.count, id: \.self) { r in HStack(spacing: 5) { ForEach(rows[r], id: \.self) { w in
-                        if s.found.contains(w) { chip(w) } else { Text(w).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x9CA3AF)).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(Color(hex: 0xF9FAFB))).overlay(Capsule().stroke(Color(hex: 0xE5E7EB), lineWidth: 1)) }
+                        if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x9CA3AF)).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(Color(hex: 0xF9FAFB))).overlay(Capsule().stroke(Color(hex: 0xE5E7EB), lineWidth: 1)) }
                     } } } }
-                } else { chipRows(s.found.sorted()) }
+                } else { chipRows((s.found + s.bonusFound).sorted()) }
                 if vm.isDaily { DailyRankBadge(gameMode: .hub) }
                 ScoreBreakdownView(gameMode: GameMode.hub.rawValue, completed: won, guessCount: s.guessCount, timeSeconds: secs,
                                    boardsSolved: s.boardsSolved, totalBoards: HUB_TOTAL_BOARDS, hintsUsed: s.hintsUsed,
@@ -464,4 +465,13 @@ private struct HubWrapLayout: Layout {
             y += lineH + lineSpacing
         }
     }
+}
+
+/// Every accepted word in the order it was found — the event log carries "+" (core list), "=" (rarer word) and "!" (revealed).
+func hubFoundInOrder(_ s: HubState) -> [String] {
+    var out: [String] = []
+    for ev in s.events where ev.first == "+" || ev.first == "=" || ev.first == "!" {
+        let w = String(ev.dropFirst()); if !out.contains(w) { out.append(w) }
+    }
+    return out
 }

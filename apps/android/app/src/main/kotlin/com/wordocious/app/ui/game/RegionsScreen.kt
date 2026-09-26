@@ -139,6 +139,11 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
     val remaining get() = regionsRemaining(state)
     val sizeLabel get() = REGIONS_SIZE_LABEL[n] ?: "$n × $n"
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore() }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -154,7 +159,6 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
         val mistakes: Int, val hintsUsed: Int, val autoCross: Boolean,
         val status: String, val history: List<SnapDto>, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "regions-save-daily" else "regions-save-$seed"
 
     private fun persist() {

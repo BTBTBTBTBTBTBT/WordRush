@@ -161,6 +161,11 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
         if (state.status == CryptogramStatus.WON) 1 else 0, 1, state.hintsUsed,
     ).total.toInt()
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore(); if (selected == null) selected = nextOpen(state, null) }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -174,7 +179,6 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
         val hintsUsed: Int, val checks: Int, val events: List<String>,
         val status: String, val ended: Boolean, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "cryptogram-save-daily" else "cryptogram-save-$seed"
 
     private fun persist() {

@@ -143,6 +143,11 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         GameMode.HUB.name, state.status == HubStatus.WON, state.guessCount, elapsed, state.boardsSolved, HUB_TOTAL_BOARDS, state.hintsUsed,
     ).total.toInt()
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore() }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -155,7 +160,6 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         val found: List<String>, val bonusFound: List<String>, val revealed: List<String>, val hinted: List<String>,
         val points: Int, val hintsUsed: Int, val events: List<String>, val status: String, val ended: Boolean, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "hub-save-daily" else "hub-save-$seed"
 
     private fun persist() {
@@ -203,8 +207,8 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         }
         else {
             typing = ""
-            if (word in state.words) { SoundManager.playSuccess(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}" }
-            else toast = "Bonus word — accepted, no points"
+            // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
+            SoundManager.playSuccess(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}"
         }
     }
     fun hintStart() = dispatch(HubAction.HintStart)
@@ -426,13 +430,12 @@ private fun HubBoard(session: HubSession) {
             }
             // "N OF M WORDS" heads the found-words area directly under the hint capsules;
             // the chips wrap newest-first and fill the rest, scrolling once they overflow.
-            Text("${s.found.size} OF ${s.words.size} WORDS" + (if (s.bonusFound.isEmpty()) "" else " · ${s.bonusFound.size} BONUS"), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
+            val total = s.found.size + s.bonusFound.size
+            Text("$total ${if (total == 1) "WORD" else "WORDS"} · ${s.points} ${if (s.points == 1) "PT" else "PTS"}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    for (w in s.found.asReversed()) Chip(session, w)
-                }
-                if (s.bonusFound.isNotEmpty()) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    for (w in s.bonusFound.asReversed()) Chip(session, w, dim = true)
+                    // Every accepted word, newest first, in the order found (the event log spans both lists).
+                    for (w in hubFoundInOrder(s).asReversed()) Chip(session, w)
                 }
             }
             // Pinned at the very bottom; the navigation-bar inset is respected by the BoxWithConstraints above.
@@ -484,11 +487,11 @@ private fun HubResults(
         }
         Text(if (s.ended) "ALL WORDS" else "FOUND SO FAR · ${s.words.size - s.found.size} MORE TO FIND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
         if (s.ended) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            for (row in s.words.sorted().chunked(4)) Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                for (w in row) if (w in s.found) Chip(session, w) else Text(w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF),
+            for (row in (s.words + s.bonusFound).sorted().chunked(4)) Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                for (w in row) if (w in s.found || w in s.bonusFound) Chip(session, w) else Text(w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF),
                     modifier = Modifier.clip(CircleShape).background(Color(0xFFF9FAFB)).border(1.dp, Color(0xFFE5E7EB), CircleShape).padding(horizontal = 8.dp, vertical = 3.dp))
             }
-        } else ChipRows(session, s.found.sorted())
+        } else ChipRows(session, (s.found + s.bonusFound).sorted())
         if (session.isDaily) DailyRankBadge(GameMode.HUB)
         ScoreBreakdownCard(GameMode.HUB, won, s.guessCount, secs, s.boardsSolved, HUB_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
         if (session.isDaily) NextDailyRow(GameMode.HUB, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
@@ -533,4 +536,11 @@ private fun StatBlock(value: String, label: String) {
         Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
     }
+}
+
+/** Every accepted word in the order it was found — the event log carries "+" (core list), "=" (rarer word) and "!" (revealed). */
+private fun hubFoundInOrder(s: com.wordocious.core.HubState): List<String> {
+    val out = ArrayList<String>()
+    for (ev in s.events) if (ev.isNotEmpty() && ev[0] in "+=!") { val w = ev.substring(1); if (w !in out) out.add(w) }
+    return out
 }

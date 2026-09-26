@@ -131,6 +131,11 @@ class SudokuSession(val seed: String, val isDaily: Boolean) {
     val elapsed: Int get() = finalTimeSeconds ?: maxOf(0, ((System.currentTimeMillis() - startMs) / 1000).toInt())
     val dailyNumber get() = sudokuDailyNumber(todayLocalDate())
 
+    // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
+    // block it was null during construction, decode threw inside runCatching and every
+    // save was silently ignored on the next open (Doug, Android production, 2026-09-25).
+    private val json = Json { ignoreUnknownKeys = true }
+
     init { restore() }
 
     fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
@@ -147,7 +152,6 @@ class SudokuSession(val seed: String, val isDaily: Boolean) {
         val mistakes: Int, val hintsUsed: Int, val notesMode: Boolean, val autoClearNotes: Boolean,
         val status: String, val history: List<SnapDto>, val startTime: Long, val endTime: Long?,
     )
-    private val json = Json { ignoreUnknownKeys = true }
     private val storageKey get() = if (isDaily) "sudoku-save-daily" else "sudoku-save-$seed"
 
     private fun persist() {
