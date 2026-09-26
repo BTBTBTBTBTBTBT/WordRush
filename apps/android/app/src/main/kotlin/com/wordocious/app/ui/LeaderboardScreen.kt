@@ -109,7 +109,7 @@ internal fun pickerGameModeOrNull(id: String): com.wordocious.core.GameMode? =
  * - Top 50 entries with rank badges (🥇🥈🥉 for top 3), username, score, guesses/time
  */
 @Composable
-fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}, onOpenFriends: () -> Unit = {}) {
+fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}) {
     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
 
     // Signed-out gate (iOS ProfileTab `signedOut`): guests get a trophy
@@ -477,7 +477,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         letterSpacing = (-0.5).sp,
                         style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
                     )
-                    DailyCountdownChip()
+                    // Date + countdown, and the door to the all-time Records boards
+                    // (D2 step 3: the Records row left the Stats page; web /daily parity).
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        DailyCountdownChip()
+                        Text(
+                            "All-time →", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                            modifier = Modifier.clickableNoRipple(onOpenRecords),
+                        )
+                    }
                 }
             }
             // Mode picker — the LazyColumn already supplies the 12.dp gutter.

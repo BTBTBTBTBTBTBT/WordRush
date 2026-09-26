@@ -75,8 +75,14 @@ import kotlinx.coroutines.launch
 // with counts, incoming requests (Accept / Decline), and the Add-by-username
 // field. Same card shell + type scale as the referral InvitePanel next to it
 // (web FriendsPanel / iOS FriendsPanelView parity).
+// §289: Today's Race tops the card and every friend row can Challenge — the
+// private-lobby entry is [onJoinInvite] (MainScreen's vsInvite, the
+// pending-invites banner's path).
 @Composable
-fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
+fun FriendsPanel(
+    onOpenProfile: (String) -> Unit = {},
+    onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit = { _, _ -> },
+) {
     if (AuthService.userId == null) return
 
     var version by remember { mutableIntStateOf(FriendsService.version) }
@@ -103,9 +109,31 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     var sharingRace by remember { mutableStateOf(false) }
     // §238: the "Last week" line unfolds into the settled-week history.
     var showPastWeeks by remember { mutableStateOf(false) }
+    // §289: the friend whose Challenge is in flight — one at a time.
+    var challenging by remember { mutableStateOf<String?>(null) }
+    // §289: "Share invite link" resolves a Pro player's open referral first.
+    var sharingInvite by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(note) { if (note != null) { delay(2_500); note = null } }
+
+    // §289 Challenge = a private Classic VS Battle, pushed to the friend by the
+    // server; the challenger drops straight into the private lobby with the code.
+    fun challenge(f: FriendsService.FriendProfile) {
+        if (challenging != null) return
+        challenging = f.id
+        scope.launch {
+            try {
+                when (val r = FriendsService.challenge(f.id, "DUEL")) {
+                    is FriendsService.ChallengeOutcome.Sent -> {
+                        note = "Challenge sent to ${f.username} ⚔️"
+                        onJoinInvite(com.wordocious.core.GameMode.DUEL, r.code)
+                    }
+                    is FriendsService.ChallengeOutcome.Failed -> note = r.message
+                }
+            } finally { challenging = null }
+        }
+    }
     LaunchedEffect(username) {
         val q = username.trim().trimStart('@')
         if (q.length < 2) { suggestions = emptyList(); return@LaunchedEffect }
@@ -192,6 +220,19 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                 }
             }
         }
+
+        // §289: TODAY'S RACE tops the card — you and every friend ranked by
+        // today's points, bell for the unplayed, Challenge on every row. It
+        // retires §216's "topped N of M" bar (the card says it).
+        TodaysRaceCard(
+            friends = friends,
+            meDigest = FriendsService.meDigest,
+            challengingId = challenging,
+            onOpenProfile = onOpenProfile,
+            onTaunt = { tauntTarget = it },
+            onChallenge = { challenge(it) },
+        )
+        if (friends.isNotEmpty()) PanelDivider()
 
         // Weekly race standings (§212/§238) — me + friends by this week's
         // daily points, best first. Podium wears the medals; 4th+ get rows.
@@ -416,37 +457,6 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
             }
         }
 
-        // §216: today's race — how many friends you've topped so far.
-        val myToday = FriendsService.meDigest?.todayPoints ?: 0
-        if (myToday > 0 && friends.isNotEmpty()) {
-            val topped = friends.count { (it.todayPoints ?: 0) < myToday }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "TODAY'S RACE", fontSize = 9.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                        letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        "topped $topped of ${friends.size} friend${if (friends.size == 1) "" else "s"}",
-                        fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = WTheme.textMuted, fontFamily = Nunito,
-                    )
-                }
-                Box(
-                    Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
-                        .background(WTheme.surfaceHover),
-                ) {
-                    Box(
-                        Modifier.fillMaxWidth(topped.toFloat() / friends.size.coerceAtLeast(1))
-                            .height(6.dp).clip(RoundedCornerShape(3.dp))
-                            .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899)))),
-                    )
-                }
-            }
-        }
-
         // Friends list — avatar rows into their profiles (H2H lives there).
         if (friends.isNotEmpty()) {
             friends.forEach { f ->
@@ -594,6 +604,11 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                         text = { Text("Taunt", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito) },
                         onClick = { menuTarget = null; tauntTarget = f },
                     )
+                    // §289: Challenge from the row menu too (web kebab twin).
+                    DropdownMenuItem(
+                        text = { Text("Challenge ⚔️", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito, color = Color(0xFFEC4899)) },
+                        onClick = { menuTarget = null; challenge(f) },
+                    )
                     DropdownMenuItem(
                         text = { Text("Unfriend", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito, color = Color(0xFFDC2626)) },
                         onClick = { menuTarget = null; unfriendTarget = f },
@@ -659,19 +674,36 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
             "Share invite link", fontSize = 11.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             color = WTheme.textMuted, fontFamily = Nunito,
-            modifier = Modifier.clickableNoRipple {
+            modifier = Modifier.alpha(if (sharingInvite) 0.55f else 1f).clickableNoRipple {
                 val myId = AuthService.userId ?: return@clickableNoRipple
                 val myName = AuthService.profile.value?.username ?: return@clickableNoRipple
-                // Plain-text ACTION_SEND, InvitePanel.share idiom (ShareHelper
-                // is image-first, so no fit there).
-                val send = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "Add me on Wordocious — I'm $myName\nhttps://wordocious.com/profile/$myId",
-                    )
+                if (sharingInvite) return@clickableNoRipple
+                sharingInvite = true
+                scope.launch {
+                    try {
+                        var text = "Add me on Wordocious — I'm $myName\nhttps://wordocious.com/profile/$myId"
+                        // §289: a Pro player's OPEN referral code is the better
+                        // door — the friend lands with 7 days of Pro. Newest
+                        // pending, unexpired invite wins; else the profile link.
+                        if (AuthService.isProActive) {
+                            val now = java.time.Instant.now()
+                            val open = com.wordocious.app.data.ReferralService.myInvites().firstOrNull { r ->
+                                r.status == "pending" &&
+                                    (AuthService.parseTimestamp(r.expiresAt)?.isAfter(now) ?: false)
+                            }
+                            if (open != null) {
+                                text = "I'm gifting you 7 days of Wordocious Pro — add me once you're in: $myName\nhttps://wordocious.com/join/${open.code}"
+                            }
+                        }
+                        // Plain-text ACTION_SEND, InvitePanel.share idiom (ShareHelper
+                        // is image-first, so no fit there).
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }
+                        context.startActivity(Intent.createChooser(send, null))
+                    } finally { sharingInvite = false }
                 }
-                context.startActivity(Intent.createChooser(send, null))
             },
         )
         // Typeahead results — tap sends to that exact account (by id).
@@ -1113,8 +1145,15 @@ fun FriendsRowLink(onOpen: () -> Unit) {
 
 // The dedicated Friends screen (§207 Tier 3) — the full panel with room to
 // breathe, pushed in-tab like PublicProfileScreen (web /friends parity).
+// §289/§290: [onJoinInvite] carries a Challenge into the private VS lobby
+// (MainScreen's vsInvite); the ACTIVITY feed sits between the roster and the
+// gift-Pro panel (web /friends page order).
 @Composable
-fun FriendsScreen(onClose: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
+fun FriendsScreen(
+    onClose: () -> Unit,
+    onOpenProfile: (String) -> Unit = {},
+    onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit = { _, _ -> },
+) {
     Column(
         Modifier.fillMaxSize().background(WTheme.bg)
             .verticalScroll(rememberScrollState())
@@ -1132,7 +1171,9 @@ fun FriendsScreen(onClose: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = Color(0xFF7C3AED),
             )
         }
-        FriendsPanel(onOpenProfile = onOpenProfile)
+        FriendsPanel(onOpenProfile = onOpenProfile, onJoinInvite = onJoinInvite)
+        // §290: what your circle did this week — sweeps, medals, records.
+        ActivityFeed(onOpenProfile = onOpenProfile)
         // §212: recruiting and friending are the same motion — the gift-Pro
         // panel lives here too.
         InvitePanel()
@@ -1161,8 +1202,9 @@ private fun friendversary(f: FriendsService.FriendProfile): Int? {
     return if (days in listOf(7, 30, 100, 365)) days else null
 }
 
+// Shared with TodaysRace.kt / ActivityFeed.kt (§289/§290) — one avatar idiom.
 @Composable
-private fun FriendAvatar(f: FriendsService.FriendProfile) {
+internal fun FriendAvatar(f: FriendsService.FriendProfile) {
     val url = f.avatarUrl?.takeIf { it.isNotBlank() }
     Box(
         Modifier.size(32.dp).clip(CircleShape)

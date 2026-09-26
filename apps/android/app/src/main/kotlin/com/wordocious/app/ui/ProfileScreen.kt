@@ -153,8 +153,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var timeOfDay by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.HourBucket>>(emptyList()) }
     var topWords by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.TopWord>>(emptyList()) }
     var proInsights by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.ProInsights()) }
-    // Sweep COUNTS moved to Records → You (single home); profile keeps only the
-    // Daily Points trend, so only the points series is fetched here.
+    // Sweep COUNTS live in the All-time page's Daily Sweeps card (SweepRecordsCard,
+    // fed by sweepStats below); this series is the Daily Points trend only.
     var sweepPoints by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>>(emptyList()) }
     // D2: today's daily VS outcome, today's field standing, the sweep streaks.
     var vsDailyWon by remember { mutableStateOf<Boolean?>(null) }
@@ -203,6 +203,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
 
     val userId = profile?.id
+    // D2 step 3: your records (all-time records held, record chases, sweep board
+    // ranks) — the old Records → You fetches, once for every page (YourRecords.kt).
+    val yours = rememberYourRecords(userId, stats)
     // Re-run once a daily result row has LANDED on the server (recordedTick) so
     // Today's Dailies + stats update immediately, without a tab round-trip —
     // these are server fetches, and the optimistic completionTick fired before
@@ -469,7 +472,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             )
                         }
 
-                        // ── All-time: the snapshot hero, RECORDS, every chart the old
+                        // ── All-time: the snapshot hero, YOUR RECORDS, every chart the old
                         //    "All" dashboard drew, then Progression and Recent Matches. ──
                         page == RAIL_ALL -> {
                             SnapshotHero(
@@ -484,8 +487,14 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                                 xpToNext = 1000 - ((profile?.xp ?: 0) % 1000),
                                 isPro = isProActive, onGoPro = onGoPro,
                             )
-                            // D1: Records left the tab bar; its rows fold into these pages in D2 step 3.
-                            RecordsRowLink(onOpen = onOpenRecords)
+                            // ── Your records (D2 step 3): what the Records → You view used to hold —
+                            //    Next Up, Daily Sweeps, Medals + Global Records held, the Trophy Shelf.
+                            //    The Global Records tile is the door to the Hall of Fame (RecordsScreen). ──
+                            SectionHeader("Your Records", accent = Color(0xFFD97706))
+                            NextUpCard(dailyStreak = profile?.dailyLoginStreak ?: 0, chases = yours.chases)
+                            SweepRecordsCard(sweep = sweepStats, sweepRankToday = yours.sweepRankToday, sweepRankAllTime = yours.sweepRankAllTime)
+                            RecordsHeldRow(recordsHeld = yours.recordsHeld, onOpenRecords = onOpenRecords)
+                            TrophyShelf(recordsHeld = yours.recordsHeld)
 
                             // ── "All" global view — web Trends order (restat R1). ──
                             if (activityCal.any { it.played > 0 }) DailyCalendarCard(activityCal)
@@ -562,12 +571,21 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         }
 
                         // ── A game page: Solo | VS (only with a live VS board), today's
-                        //    line, then the existing registry-driven per-mode stats. ──
+                        //    line, your records in it, then the registry-driven per-mode stats. ──
                         else -> {
                             val gm = runCatching { GameMode.valueOf(page) }.getOrNull()
                             val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
                             if (hasVs(page)) GameSoloVsToggle(active = gameTab, accent = accent) { gameTab = it }
                             TodayLineCard(dbKey = page, completion = todayDailies[page], accent = accent) { gm?.let(onPlayDaily) }
+                            // Your records in this game (the old Records → You "bests by mode" card) — Solo only.
+                            if (tab == "solo") {
+                                GameRecordsCard(
+                                    dbKey = page,
+                                    my = stats.find { it.gameMode == page && it.playType == "solo" },
+                                    recordsHeld = yours.recordsHeld,
+                                    chases = yours.chases,
+                                )
+                            }
                             ModeStatsBody(
                                 mode = page, tab = tab, stats = stats, modeStreaks = modeStreaks, modeAgg = modeAgg,
                                 guessDist = guessDist, modeCal = modeCal, solveTimes = solveTimes, topWords = topWords,

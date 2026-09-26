@@ -270,6 +270,64 @@ object FriendsService {
         }
     }
 
+    sealed class ChallengeOutcome {
+        data class Sent(val code: String, val gameMode: String) : ChallengeOutcome()
+        data class Failed(val message: String) : ChallengeOutcome()
+    }
+
+    /**
+     * Challenge-from-row (§289, Friends D3.1): a TARGETED match invite for an
+     * accepted friend, pushed to them by the server ("<you> challenges you!").
+     * Free for friends — the returned code bypasses the Pro gate on both ends.
+     * The caller drops into the private lobby with the code.
+     */
+    suspend fun challenge(friendId: String, gameMode: String = "DUEL"): ChallengeOutcome {
+        val resp = api("POST", "/api/friends/challenge",
+            """{"friendId":"$friendId","gameMode":"$gameMode"}""")
+            ?: return ChallengeOutcome.Failed("Network error")
+        val obj = runCatching { Json.parseToJsonElement(resp.second) as? JsonObject }.getOrNull()
+        if (resp.first != 200) {
+            return ChallengeOutcome.Failed(obj?.get("error")?.jsonPrimitive?.content ?: "Could not send the challenge")
+        }
+        val code = obj?.get("code")?.jsonPrimitive?.content
+            ?: return ChallengeOutcome.Failed("Could not send the challenge")
+        return ChallengeOutcome.Sent(code, obj["gameMode"]?.jsonPrimitive?.content ?: gameMode)
+    }
+
+    /**
+     * One row of the ACTIVITY feed (§290) — mirrors the web route's FeedEvent.
+     * `type` is one of sweep / flawless / medal / record / more_sweep /
+     * more_flawless; `kind` is the medal_type for medals (gold / silver /
+     * bronze / perfect / streak_7…) or the record_type for records.
+     */
+    @Serializable
+    data class FeedEvent(
+        val id: String,
+        val userId: String,
+        val username: String = "Player",
+        @SerialName("avatar_url") val avatarUrl: String? = null,
+        @SerialName("avatar_emoji") val avatarEmoji: String? = null,
+        val me: Boolean = false,
+        val day: String,
+        val at: String = "",
+        val type: String,
+        val kind: String? = null,
+        val gameMode: String? = null,
+        val gameTitle: String? = null,
+        val value: Int? = null,
+    )
+
+    @Serializable
+    private data class FeedPayload(val events: List<FeedEvent> = emptyList())
+
+    /** The last seven days of your circle's moments, newest first (§290). Empty on any failure. */
+    suspend fun fetchFeed(day: String = localDay()): List<FeedEvent> {
+        val resp = api("GET", "/api/friends/feed?day=$day") ?: return emptyList()
+        if (resp.first != 200) return emptyList()
+        return runCatching { json.decodeFromString<FeedPayload>(resp.second).events }
+            .getOrElse { emptyList() }
+    }
+
     /** (statusCode, bodyText) or null — the ReferralService apiPost shape. */
     private suspend fun api(method: String, path: String, body: String? = null): Pair<Int, String>? =
         withContext(Dispatchers.IO) {

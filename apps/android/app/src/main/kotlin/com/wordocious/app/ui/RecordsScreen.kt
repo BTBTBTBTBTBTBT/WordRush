@@ -15,39 +15,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,14 +56,16 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
 /**
- * Records screen — ported from web /records/page.tsx.
+ * Records screen — ported from web /records/page.tsx. The GLOBAL views only:
  * Daily tab: mode-picker + leaderboard (reuses LeaderboardService)
  * All-time tab: Hall of Fame 2x2 grid (longest streak, highest level, most medals, most completions)
+ * Your own records live on the Stats tab (D2 step 3, YourRecords.kt); the
+ * shared record table (RECORD_CFG / recordCfgFor) lives there too.
  */
 @Composable
-fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
+fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit = {}) {
     var tab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Daily", "All-Time", "You")
+    val tabs = listOf("Daily", "All-Time")
     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
 
     // Signed-out gate (iOS RecordsTab): the whole tab is a crown placeholder +
@@ -127,7 +119,8 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
 
         Spacer(Modifier.height(8.dp))
 
-        // Three pill buttons (iOS RecordsTab.toggleButton), not a Material tab strip.
+        // Two pill buttons (iOS RecordsTab.toggleButton), not a Material tab strip.
+        // The "You" view folded into the Stats tab (D2 step 3) — see YourRecords.kt.
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -150,11 +143,20 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
         }
         Spacer(Modifier.height(8.dp))
 
-        when (tab) {
-            0 -> DailyRecordsTab(onOpenProfile)
-            1 -> AllTimeTab(onOpenProfile)
-            2 -> YourRecordsTab()
+        // The views fill the remaining height; the Stats link stays pinned below.
+        Box(Modifier.weight(1f)) {
+            when (tab) {
+                0 -> DailyRecordsTab(onOpenProfile)
+                1 -> AllTimeTab(onOpenProfile)
+            }
         }
+        // D2 step 3 (2026-09-26): your own records live on the Stats tab now.
+        Text(
+            "Your personal records → Stats",
+            fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().clickableNoRipple(onOpenStats).padding(vertical = 10.dp),
+        )
     }
 }
 
@@ -437,7 +439,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
 
 /** 32dp accent-tinted mode glyph box — mirrors iOS `ModeIconView(box: 32)`. */
 @Composable
-private fun ModeIconBox(mode: String, accent: Color) {
+internal fun ModeIconBox(mode: String, accent: Color) {
     Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
         if (mode == SWEEP_ID) {
             Icon(
@@ -550,33 +552,6 @@ private fun SoloVsToggle(playType: String, onSelect: (String) -> Unit) {
     }
 }
 
-// ── Record label/format/icon config (mirrors web RECORD_LABELS) ──────────────
-private data class RecordCfg(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector?, val crown: Boolean, val format: (Int) -> String)
-
-private val RECORD_CFG: Map<String, RecordCfg> = mapOf(
-    "fastest_win" to RecordCfg("Fastest Win", androidx.compose.material.icons.Icons.Filled.Schedule, false) { v -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s" },
-    "fewest_guesses" to RecordCfg("Fewest Guesses", androidx.compose.material.icons.Icons.Filled.TrackChanges, false) { v -> "$v guesses" },
-    "most_games_played" to RecordCfg("Most Games Played", androidx.compose.material.icons.Icons.Filled.Bolt, false) { v -> "$v games" },
-    "longest_streak" to RecordCfg("Longest Streak", androidx.compose.material.icons.Icons.Filled.LocalFireDepartment, false) { v -> "$v wins" },
-    "most_gold_medals" to RecordCfg("Most Gold Medals", null, true) { v -> "$v golds" },
-    "highest_level" to RecordCfg("Highest Level", androidx.compose.material.icons.Icons.Filled.EmojiEvents, false) { v -> "Level $v" },
-    "most_daily_completions" to RecordCfg("Most Dailies Completed", androidx.compose.material.icons.Icons.Filled.TrackChanges, false) { v -> "$v dailies" },
-)
-/**
- * The record config read through a mode's guess semantics (More Games §18):
- * "fewest_guesses" on Sudoku is "Fewest Mistakes · 0 mistakes", on Letter
- * Ladder "Best vs Par · Par", on Hubbub "Best Rank · Hubbub". Word modes (and
- * every other record type) keep RECORD_CFG untouched.
- */
-private fun recordCfgFor(type: String, gameMode: String?): RecordCfg? {
-    val base = RECORD_CFG[type] ?: return null
-    if (type != "fewest_guesses" || gameMode == null) return base
-    val meta = com.wordocious.app.ModeGen.byDbKey(gameMode) ?: return base
-    if (meta.guessSemantics == "guesses") return base
-    return RecordCfg(com.wordocious.app.data.ModeStats.fewestRecordLabel(meta.guessSemantics), base.icon, base.crown) { v ->
-        formatGuessStat(meta.guessSemantics, meta.guessBase, v)
-    }
-}
 private val GLOBAL_RECORD_TYPES = listOf("longest_streak", "highest_level", "most_gold_medals", "most_daily_completions")
 private val PER_MODE_RECORD_TYPES = listOf("fastest_win", "fewest_guesses", "most_games_played", "longest_streak")
 
@@ -731,449 +706,6 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
     }
 }
 
-// Streak shields are granted every 7 days (web /api/shields/grant-milestone
-// MILESTONE_EVERY=7) — the "next shield" card counts toward the next multiple
-// of 7, NOT the [7, 30, 100] streak MEDAL milestones.
-private const val SHIELD_EVERY = 7
-// MODE_OPTIONS is the sweep picker only — a More Games record (ProperNoundle…) reads the catalog title.
-private fun recModeTitle(key: String) = MODE_OPTIONS.firstOrNull { it.first == key }?.second ?: modeTitleForKey(key)
-private fun fmtSecs(v: Int) = if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
-
-/** One beatable all-time record: label, gap copy, progress (record/mine %). */
-private data class RecordChase(val label: String, val gap: String, val pct: Int)
-
-/** "You" tab — the player's own records: milestone progress + Record Chase,
- *  sweep totals (single home), per-mode personal bests, medals +
- *  global-records-held + Trophy Shelf. Mirrors web YourRecordsView. */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun YourRecordsTab() {
-    val profile by AuthService.profile.collectAsState()
-    val userId = profile?.id
-    var stats by remember { mutableStateOf<List<com.wordocious.app.data.ProfileService.UserStat>>(emptyList()) }
-    var sweep by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.DailySweepStats()) }
-    var recordsHeld by remember { mutableStateOf<List<LeaderboardService.AllTimeRecord>>(emptyList()) }
-    var chases by remember { mutableStateOf<List<RecordChase>>(emptyList()) }
-    var selectedMode by remember { mutableStateOf("DUEL") }
-    var loading by remember { mutableStateOf(true) }
-    // The user's sweep standings — shown in the Sweep-selected bests window:
-    // today's daily-sweep board rank + the global all-time sweep rank.
-    var sweepRankToday by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
-    var sweepRankAllTime by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
-
-    LaunchedEffect(userId) {
-        if (userId == null) { loading = false; return@LaunchedEffect }
-        val s = com.wordocious.app.data.ProfileService.fetchUserStats(userId)
-        sweep = com.wordocious.app.data.MatchStatsService.dailySweepStats()
-        val recs = LeaderboardService.fetchAllTimeRecords()
-        sweepRankToday = LeaderboardService.getUserSweepRank(userId)
-        sweepRankAllTime = LeaderboardService.getUserAllTimeSweepRank(userId)
-        stats = s
-        // One shelf row per (record type, mode): all_time_records keeps a
-        // separate row per play_type ('solo' and 'vs'), and listing both made
-        // e.g. "Six · Most Games Played" appear twice — the 54-game solo
-        // record next to a 1-game VS record. Prefer the solo row, same rule as
-        // the All-Time per-mode grid. Also drives the Global Records count, so
-        // held solo+vs pairs no longer double-count. (iOS/web parity.)
-        val heldByKey = LinkedHashMap<String, LeaderboardService.AllTimeRecord>()
-        for (r in recs) {
-            if (r.holderId != userId) continue
-            val key = "${r.recordType}|${r.gameMode ?: "global"}"
-            val existing = heldByKey[key]
-            if (existing == null || (existing.playType != "solo" && r.playType == "solo")) heldByKey[key] = r
-        }
-        recordsHeld = heldByKey.values.toList()
-        // Record Chase: EVERY beatable all-time record with your gap, sorted by
-        // how close you are (relative gap), top 3. Lower-is-better types only.
-        // Ports the web loop in records/page.tsx exactly.
-        data class Cand(val chase: RecordChase, val rel: Double)
-        val all = ArrayList<Cand>()
-        for (r in recs) {
-            if (r.holderId == userId || r.gameMode == null || r.playType != "solo") continue
-            val mine = s.find { it.gameMode == r.gameMode && it.playType == "solo" } ?: continue
-            val ft = mine.fastestTime ?: 0
-            val bs = mine.bestScore ?: 0.0
-            if (r.recordType == "fastest_win" && ft > 0 && ft.toDouble() > r.recordValue) {
-                val gap = ft - r.recordValue
-                all.add(Cand(RecordChase(
-                    label = "${recModeTitle(r.gameMode!!)} fastest win",
-                    gap = "${gap.toInt()}s away",
-                    pct = Math.round(r.recordValue / ft * 100).toInt(),
-                ), gap / maxOf(1.0, r.recordValue)))
-            } else if (r.recordType == "fewest_guesses" && bs > 0 && bs > r.recordValue) {
-                val gap = bs - r.recordValue
-                all.add(Cand(RecordChase(
-                    label = "${recModeTitle(r.gameMode!!)} ${(recordCfgFor("fewest_guesses", r.gameMode)?.label ?: "Fewest Guesses").lowercase()}",
-                    gap = "${gap.toInt()} away",
-                    pct = Math.round(r.recordValue / bs * 100).toInt(),
-                ), gap / maxOf(1.0, r.recordValue)))
-            }
-        }
-        chases = all.sortedBy { it.rel }.take(3).map { it.chase }
-        loading = false
-    }
-
-    if (userId == null) {
-        Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
-            Spacer(Modifier.height(8.dp)); Text("Sign in to see your personal records.", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        }
-        return
-    }
-    if (loading) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { CardsSkeleton() }; return }
-
-    // GUARDED valueOf via pickerGameModeOrNull: the picker's SWEEP id has no
-    // `:core` GameMode → neutral primary accent (indigo is reserved for the tile).
-    val accent = pickerGameModeOrNull(selectedMode)?.let { modeAccent(it) } ?: WTheme.primary
-    val streak = profile?.dailyLoginStreak ?: 0
-    val nextShield = (streak / SHIELD_EVERY + 1) * SHIELD_EVERY
-    val my = stats.find { it.gameMode == selectedMode && it.playType == "solo" }
-
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        item { Spacer(Modifier.height(8.dp)) }
-        // Milestone + Record Chase (top-3 beatable records with progress bars)
-        if (nextShield > 0 || chases.isNotEmpty()) item {
-            CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))) {
-                Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.size(4.dp))
-                    Text("$nextShield-day streak shield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
-                    Spacer(Modifier.weight(1f))
-                    Text("$streak/$nextShield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
-                }
-                Spacer(Modifier.height(4.dp))
-                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
-                    Box(Modifier.fillMaxWidth((streak.toFloat() / nextShield).coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24)))))
-                }
-                chases.forEach { c ->
-                    Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Filled.TrendingUp, null, tint = WTheme.primary, modifier = Modifier.size(14.dp))
-                        Row(Modifier.weight(1f)) {
-                            Text("You're ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
-                            Text(c.gap, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
-                            Text(
-                                " from the ${c.label} record", fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                                color = WTheme.textMuted, maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(2.dp))
-                    Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
-                        Box(
-                            Modifier.fillMaxWidth((c.pct / 100f).coerceIn(0f, 1f)).height(6.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFF7C3AED)))),
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-        // Bests by mode — the Sweep tile swaps the per-mode bests for the daily-
-        // sweep window (totals + today/all-time rank), populating only on select.
-        item {
-            val isSweep = selectedMode == SWEEP_ID
-            Text("YOUR BESTS BY MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-            Spacer(Modifier.height(8.dp))
-            ModePickerRow(selectedMode) { selectedMode = it }
-            Spacer(Modifier.height(8.dp))
-            CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ModeIconBox(selectedMode, if (isSweep) SWEEP_ACCENT else accent)
-                    Text(if (isSweep) "Daily Sweeps" else recModeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                }
-                Spacer(Modifier.height(2.dp))
-                if (isSweep) {
-                    if (sweep.hasData) {
-                        Row(Modifier.fillMaxWidth()) {
-                            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.AutoAwesome, "${sweep.sweepCount}", "Daily Sweeps", Color(0xFF7C3AED)) }
-                            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, "${sweep.flawlessCount}", "Flawless Victories", Color(0xFFD97706)) }
-                        }
-                        Row(Modifier.fillMaxWidth()) {
-                            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.LocalFireDepartment, "${sweep.currentSweepStreak}", "Current Sweep Streak", Color(0xFFF97316)) }
-                            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Schedule, if (sweep.bestSweepSecs > 0) fmtSecs(sweep.bestSweepSecs) else "—", "Best Sweep Time", Color(0xFF2563EB), dim = sweep.bestSweepSecs == 0) }
-                        }
-                        // Sweep leaderboard standing — today's daily board + all-time
-                        // (getUserSweepRank / getUserAllTimeSweepRank).
-                        if (sweepRankToday != null || sweepRankAllTime != null || sweep.currentFlawlessStreak > 0) {
-                            Spacer(Modifier.height(6.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = SWEEP_ACCENT, modifier = Modifier.size(13.dp))
-                                sweepRankToday?.let { r ->
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        Text("Today", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                                        Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                    }
-                                }
-                                sweepRankAllTime?.let { r ->
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        Text("All-Time", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                                        Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                    }
-                                }
-                                // §244: the flawless-streak notation rides the same row.
-                                if (sweep.currentFlawlessStreak > 0) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        Text("🏆 Flawless", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                        Text("×${sweep.currentFlawlessStreak}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                                        if (sweep.bestFlawlessStreak > sweep.currentFlawlessStreak) {
-                                            Text("· best ${sweep.bestFlawlessStreak}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
-                            Spacer(Modifier.height(8.dp))
-                            Text("No sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                        }
-                    }
-                } else {
-                    Row(Modifier.fillMaxWidth()) {
-                        Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Schedule, if ((my?.fastestTime ?: 0) > 0) fmtSecs(my!!.fastestTime!!) else "—", "Fastest Win", accent, dim = (my?.fastestTime ?: 0) == 0) }
-                        // Through the mode's guess semantics (More Games §18): Sudoku reads "Fewest Mistakes · 0 mistakes".
-                        val fewestCfg = recordCfgFor("fewest_guesses", selectedMode)
-                        Box(Modifier.weight(1f)) { MeCell(Icons.Filled.TrackChanges, if ((my?.bestScore ?: 0.0) > 0) (fewestCfg?.format?.invoke(my!!.bestScore!!.toInt()) ?: "${my!!.bestScore!!.toInt()} guesses") else "—", fewestCfg?.label ?: "Fewest Guesses", accent, dim = (my?.bestScore ?: 0.0) == 0.0) }
-                    }
-                    Row(Modifier.fillMaxWidth()) {
-                        Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Bolt, if (my != null) "${my.totalGames} games" else "—", "Games Played", accent, dim = my == null) }
-                        Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, if (my != null) "${my.wins}–${my.losses}" else "—", "Win–Loss", accent, dim = my == null) }
-                    }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-        // Medals + records held
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
-                ) {
-                    Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        MedalCount(com.wordocious.app.R.drawable.ic_crown, Color(0xFFD97706), profile?.goldMedals ?: 0)
-                        MedalCount(Icons.Filled.MilitaryTech, Color(0xFF9CA3AF), profile?.silverMedals ?: 0)
-                        MedalCount(Icons.Filled.MilitaryTech, Color(0xFFB45309), profile?.bronzeMedals ?: 0)
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text("Daily top-3 finishes", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-                Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
-                ) {
-                    Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-                    Spacer(Modifier.height(2.dp))
-                    // Star icon + 13sp count (iOS Label(…, systemImage: "star.fill")),
-                    // so this card doesn't outweigh the MEDALS card beside it.
-                    val starTint = if (recordsHeld.isEmpty()) WTheme.textMuted else Color(0xFFD97706)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Icon(Icons.Filled.Star, null, tint = starTint, modifier = Modifier.size(14.dp))
-                        Text("${recordsHeld.size}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = starTint)
-                    }
-                    Text("all-time record${if (recordsHeld.size == 1) "" else "s"} held", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-        // Trophy shelf (§245, founder: "it is an eyesore as it sits today") —
-        // marquee jewels up top (most impressive records, auto-picked), then
-        // type-grouped shelves of mode-accented glyph tiles; the repeated
-        // record label becomes the shelf header, said once (web parity).
-        if (recordsHeld.isNotEmpty()) item {
-            val marquee = remember(recordsHeld) {
-                fun bestOf(type: String) = recordsHeld
-                    .filter { it.recordType == type && it.gameMode != null }
-                    .minByOrNull { it.recordValue }
-                listOfNotNull(bestOf("fastest_win"), bestOf("fewest_guesses"))
-            }
-            val marqueeKeys = marquee.map { "${it.recordType}|${it.gameMode}" }.toSet()
-            val shelfOrder = listOf("fastest_win", "fewest_guesses", "longest_streak", "most_games_played",
-                "most_gold_medals", "highest_level", "most_daily_completions")
-            val groups = shelfOrder
-                .map { t -> t to recordsHeld.filter { it.recordType == t && "${it.recordType}|${it.gameMode}" !in marqueeKeys } }
-                .filter { it.second.isNotEmpty() }
-            val ctx = androidx.compose.ui.platform.LocalContext.current
-            val scope = androidx.compose.runtime.rememberCoroutineScope()
-            var sharingShelf by remember { mutableStateOf(false) }
-            CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-                    Spacer(Modifier.weight(1f))
-                    Icon(
-                        Icons.Filled.Share, "Share trophy shelf",
-                        tint = WTheme.textMuted.copy(alpha = if (sharingShelf) 0.4f else 1f),
-                        modifier = Modifier.size(15.dp).clickableNoRipple {
-                            if (!sharingShelf) {
-                                sharingShelf = true
-                                scope.launch {
-                                    try {
-                                        com.wordocious.app.data.LeaderboardShare.shareTrophyCaseCard(
-                                            ctx, recordsHeld,
-                                            com.wordocious.app.data.AuthService.profile.value?.username,
-                                        )
-                                    } finally { sharingShelf = false }
-                                }
-                            }
-                        },
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
-                // Marquee jewels — the records worth a plinth of their own.
-                marquee.forEach { r ->
-                    val cfg = recordCfgFor(r.recordType, r.gameMode)
-                    val accent = r.gameMode?.let { gm -> pickerGameModeOrNull(gm)?.let { modeAccent(it) } } ?: Color(0xFFD97706)
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                            .background(Brush.linearGradient(listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7))))
-                            .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(12.dp))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        TrophyGlyphBox(r.gameMode, 40.dp)
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                "${r.gameMode?.let { recModeTitle(it) } ?: "Global"} · ${cfg?.label ?: r.recordType}".uppercase(),
-                                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E),
-                                letterSpacing = 0.6.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
-                                fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706),
-                            )
-                        }
-                        heldSince(r.achievedAt)?.let { since ->
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("held since", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
-                                Text(since, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309))
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(6.dp))
-                }
-                // Type-grouped shelves.
-                groups.forEach { (type, rows) ->
-                    val cfg = RECORD_CFG[type]
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (cfg?.crown == true) {
-                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
-                        } else {
-                            Icon(cfg?.icon ?: androidx.compose.material.icons.Icons.Filled.Star, null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
-                        }
-                        Text((cfg?.label ?: type).uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.7.sp)
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    // Wrapping tile row — FlowRow keeps the shelf dense.
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        rows.forEach { r ->
-                            val accent = r.gameMode?.let { gm -> pickerGameModeOrNull(gm)?.let { modeAccent(it) } } ?: Color(0xFFD97706)
-                            Row(
-                                Modifier.clip(RoundedCornerShape(9.dp)).background(WTheme.bg)
-                                    .padding(horizontal = 6.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                TrophyGlyphBox(r.gameMode, 20.dp)
-                                Text(
-                                    recordCfgFor(type, r.gameMode)?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
-                                    fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent,
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFFDE68A).copy(alpha = 0.33f)))
-                    Spacer(Modifier.height(6.dp))
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-    }
-}
-
-/** §245: mode glyph in an accent-tinted box; global records get a gold star. */
-@Composable
-private fun TrophyGlyphBox(gameMode: String?, box: androidx.compose.ui.unit.Dp) {
-    val engine = gameMode?.let { pickerGameModeOrNull(it) }
-    val accent = engine?.let { modeAccent(it) } ?: Color(0xFFD97706)
-    Box(
-        Modifier.size(box).clip(RoundedCornerShape(box * 0.27f)).background(accent.copy(alpha = 0.08f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (engine != null) ModeGlyph(engine, accent, box = box)
-        else Icon(androidx.compose.material.icons.Icons.Filled.Star, null, tint = accent, modifier = Modifier.size(box * 0.5f))
-    }
-}
-
-/** §245: "Aug 12" from an ISO timestamp — the marquee card's "held since". */
-private fun heldSince(iso: String?): String? {
-    if (iso == null) return null
-    return runCatching {
-        val inst = runCatching { java.time.OffsetDateTime.parse(iso).toInstant() }
-            .recoverCatching { java.time.Instant.parse(iso) }.getOrThrow()
-        java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US)
-            .withZone(java.time.ZoneId.systemDefault()).format(inst)
-    }.getOrNull()
-}
-
-@Composable
-private fun CardShell(barBrush: Brush, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))) {
-        Box(Modifier.fillMaxWidth().height(3.dp).background(barBrush))
-        Column(Modifier.padding(14.dp), content = content)
-    }
-}
-
-/** Centered icon-over-value-over-label tile (iOS `meCell`). */
-@Composable
-private fun MeCell(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String,
-    color: Color,
-    dim: Boolean = false,
-) {
-    Column(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        Icon(icon, null, tint = if (dim) WTheme.textMuted else color, modifier = Modifier.size(16.dp))
-        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (dim) WTheme.textMuted else WTheme.text, maxLines = 1)
-        Text(
-            label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 2,
-        )
-    }
-}
-
-@Composable
-private fun MedalCount(res: Int, tint: Color, n: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        Icon(androidx.compose.ui.res.painterResource(res), null, tint = tint, modifier = Modifier.size(14.dp))
-        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
-    }
-}
-
-/** Vector-icon medal tally — iOS uses a medal glyph for silver/bronze, a crown for gold. */
-@Composable
-private fun MedalCount(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, n: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
-        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
-    }
-}
-
 /** §254: " · N hints" / " · No hints" on a hint-mode record cell — the exact
  *  wording the leaderboard rows use, so All-Time and You match them. */
 private fun recordHintSuffix(r: LeaderboardService.AllTimeRecord): String {
@@ -1225,40 +757,3 @@ private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecor
     }
 }
 
-
-/**
- * Compact "RECORDS →" row on the Stats (Profile) page — the door to RecordsScreen
- * while the Records tab is gone (D1, 2026-09-26) and before its rows fold into the
- * per-game pages and the All-time page (D2 step 3). Twin of FriendsRowLink.
- */
-@Composable
-fun RecordsRowLink(onOpen: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(WTheme.surface, RoundedCornerShape(20.dp))
-            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
-            .clickableNoRipple(onOpen)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(
-            androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown_filled), null,
-            tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp),
-        )
-        Text(
-            "RECORDS",
-            fontSize = 15.sp, fontWeight = FontWeight.Black,
-            style = TextStyle(
-                brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
-                fontFamily = Nunito,
-            ),
-        )
-        Spacer(Modifier.weight(1f))
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
-            tint = WTheme.textMuted, modifier = Modifier.size(18.dp),
-        )
-    }
-}

@@ -701,6 +701,8 @@ fun MainScreen() {
                                 onPlay = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
                                 // Empty Friends board CTA → the Friends tab (§207 Tier 2).
                                 onOpenFriends = { selectedTab = 3 },
+                                // "All-time →" in the header → the global Records screen (D2 step 3).
+                                onOpenRecords = { showRecords = true },
                             )
                             2 -> ProfileScreen(
                                 onGoPro = { infoRoute = "pro" },
@@ -712,23 +714,30 @@ fun MainScreen() {
                                 onOpenProfile = { publicProfileId = it },
                                 // Compact FRIENDS row → the Friends tab (§207 Tier 3).
                                 onOpenFriends = { selectedTab = 3 },
-                                // D1: Records left the tab bar; its rows fold into Stats in D2.
+                                // D2 step 3: the Global Records tile on the All-time page → the Hall of Fame.
                                 onOpenRecords = { showRecords = true },
                             )
                             3 -> FriendsScreen(
                                 // Tab root: "Back" returns to Stats until D3 restyles the page.
                                 onClose = { selectedTab = 2 },
                                 onOpenProfile = { publicProfileId = it },
+                                // D3: a Challenge from Today's Race opens the private lobby with its code.
+                                onJoinInvite = { m, code -> vsInvite = m to code },
                             )
                         }
                     }
                 }
 
-                // Records — pushed inside the Stats tab (D1) until D2 folds it in.
+                // Records — the GLOBAL Daily / All-Time boards, pushed inside the current
+                // tab (from the Leaderboard header's "All-time →" or the Stats page's
+                // Global Records tile). Your own records live on the Stats tab (D2 step 3).
                 if (showRecords) {
                     androidx.activity.compose.BackHandler { showRecords = false }
                     Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
-                        RecordsScreen(onOpenProfile = { publicProfileId = it })
+                        RecordsScreen(
+                            onOpenProfile = { publicProfileId = it },
+                            onOpenStats = { showRecords = false; selectedTab = 2 },
+                        )
                     }
                 }
 
