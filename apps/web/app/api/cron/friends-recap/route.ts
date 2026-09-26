@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
           title: 'FRIENDS RACE 🏁',
           body: `Last week: ${nameOf.get(winner.id) ?? 'A friend'} took it, ${fmt(winner.pts)} to your ${fmt(mine)}. New week starts now.`,
         };
-    const res = await broadcastPush({ ...msg, url: '/friends' }, new Set([uid]));
+    const res = await broadcastPush({ ...msg, url: '/friends' }, new Set([uid]), 'race');
     sent += res.sent;
   }
 

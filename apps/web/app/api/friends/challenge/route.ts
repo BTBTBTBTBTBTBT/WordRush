@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       url: `/vs/join/${inviteCode}`,
     },
     new Set([body.friendId]),
+    'challenge',
   ).catch(() => {});
 
   return NextResponse.json({ code: inviteCode, gameMode });

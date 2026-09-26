@@ -3,6 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { sweepAll } from '@/lib/supabase-sweep';
 import { sweepModesFor } from '@/lib/modes.generated';
+import { settleWeek } from '@/lib/weekly-race';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,7 @@ export async function GET(req: NextRequest) {
   // today", "who's winning the week", and the 90-day head-to-head record —
   // per-day TOTAL points across all modes, me vs each friend.
   let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number } | null = null;
+  let lastWeek: { weekStart: string; rank: number; points: number; circleSize: number; winnerId: string | null; winnerName: string | null; winnerPoints: number } | null = null;
   if (wantDigest && friends.length >= 0) {
     const ids = [me, ...friends.map((f) => f.id)];
     const cutoff = new Date(`${day}T00:00:00Z`);
@@ -195,6 +197,38 @@ export async function GET(req: NextRequest) {
       f.flawlessStreak = flawlessStreakOf(f.id);
     }
     const myPast = pastWeekPointsOf(me);
+    // D3.3 — the Sunday finish. The first visit after the client's Monday 00:00
+    // settles LAST week for the viewer into weekly_race_results (one row per
+    // user per week; friends settle their own rows on their own first visit).
+    // Read back when it already exists, so the banner is stable all week.
+    try {
+      const prevWeekStart = pastWeekStarts[0];
+      const { data: existing } = await admin
+        .from('weekly_race_results')
+        .select('week_start, rank, points, circle_size, winner_id, winner_points')
+        .eq('user_id', me).eq('week_start', prevWeekStart).maybeSingle();
+      let row = existing as { week_start: string; rank: number; points: number; circle_size: number; winner_id: string | null; winner_points: number | null } | null;
+      if (!row) {
+        const settled = settleWeek(
+          [{ id: me, points: myPast[0] }, ...(friends as any[]).map((f) => ({ id: f.id as string, points: (f.pastWeekPoints?.[0] ?? 0) as number }))],
+          me,
+        );
+        if (settled) {
+          const insert = {
+            user_id: me, week_start: prevWeekStart, rank: settled.rank, points: settled.points,
+            circle_size: settled.circleSize, winner_id: settled.winnerId, winner_points: settled.winnerPoints,
+          };
+          const { error: insErr } = await admin.from('weekly_race_results').insert(insert);
+          if (!insErr || (insErr as { code?: string }).code === '23505') row = insert;
+        }
+      }
+      if (row) {
+        const winnerName = row.winner_id === me ? 'You' : ((friends as any[]).find((f) => f.id === row!.winner_id)?.username ?? null);
+        lastWeek = { weekStart: row.week_start, rank: row.rank, points: row.points, circleSize: row.circle_size, winnerId: row.winner_id, winnerName, winnerPoints: row.winner_points ?? 0 };
+      }
+    } catch {
+      // Settlement is a bonus — never fail the friends list over it.
+    }
     meDigest = {
       playedToday: playedCount.get(me) ?? 0,
       weekPoints: weekPointsOf(me),
@@ -206,7 +240,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { friends, incoming, outgoing, outgoingProfiles, me: meDigest },
+    { friends, incoming, outgoing, outgoingProfiles, me: meDigest, lastWeek },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

@@ -108,6 +108,7 @@ async function doLoad(): Promise<void> {
     outgoingIds = new Set((json.outgoing ?? []).map((s: string) => s.toLowerCase()));
     outgoingList = json.outgoingProfiles ?? [];
     meDigest = json.me ?? null;
+    lastWeekResult = json.lastWeek ?? null;
     fetchedDay = localDay();
     fetchedAt = Date.now();
     loaded = true;
@@ -121,6 +122,20 @@ async function doLoad(): Promise<void> {
 type MeDigest = { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number };
 let meDigest: MeDigest | null = null;
 export const getMeDigest = (): MeDigest | null => meDigest;
+
+/** D3.3: last week's settled finish for the viewer (server-computed, one definition). */
+export interface LastWeekResult { weekStart: string; rank: number; points: number; circleSize: number; winnerId: string | null; winnerName: string | null; winnerPoints: number }
+let lastWeekResult: LastWeekResult | null = null;
+export const getLastWeekResult = (): LastWeekResult | null => lastWeekResult;
+
+/** D3.4: send a friend one of your streak shields (once per friend per week). */
+export async function giftShield(friendId: string): Promise<{ sent: true; shieldsLeft: number } | { error: string }> {
+  const res = await post('/api/friends/gift-shield', { friendId, weekStart: localWeekStart() });
+  if (!res) return { error: 'Network error' };
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: json.error ?? 'Could not send the shield' };
+  return { sent: true, shieldsLeft: json.shieldsLeft as number };
+}
 
 /** Nudge a pending invite (§212) — 24h rate limit lives server-side. */
 export async function remindFriend(addresseeId: string): Promise<{ remindedAt?: string; error?: string }> {
@@ -253,7 +268,9 @@ export interface FeedEvent {
   me: boolean;
   day: string;
   at: string;
-  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless';
+  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless' | 'gift';
+  otherName?: string | null;
+  otherId?: string | null;
   kind?: string;
   gameMode?: string | null;
   gameTitle?: string | null;

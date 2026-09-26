@@ -26,7 +26,10 @@ export interface FeedEvent {
   me: boolean;
   day: string;            // the player's local day the event belongs to
   at: string;             // ISO timestamp for ordering
-  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless';
+  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless' | 'gift';
+  /** Gift rows: the other party's name. */
+  otherName?: string | null;
+  otherId?: string | null;
   /** medal_type for medals (gold/silver/bronze/perfect/streak_7…), record_type for records. */
   kind?: string;
   gameMode?: string | null;
@@ -57,7 +60,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const ids = [me, ...new Set((rows ?? []).map((r: any) => (r.requester_id === me ? r.addressee_id : r.requester_id)))];
 
-  const [{ data: profs }, { data: bonuses }, { data: medals }, { data: records }, { data: moreRows }] = await Promise.all([
+  const [{ data: profs }, { data: bonuses }, { data: medals }, { data: records }, { data: moreRows }, { data: gifts }] = await Promise.all([
     admin.from('profiles').select('id, username, avatar_url, avatar_emoji').in('id', ids),
     admin.from('daily_bonuses').select('user_id, day, sweep_awarded, flawless_awarded, updated_at')
       .in('user_id', ids).gte('day', cutoff).lte('day', day).or('sweep_awarded.eq.true,flawless_awarded.eq.true'),
@@ -68,6 +71,9 @@ export async function GET(req: NextRequest) {
     admin.from('daily_results').select('user_id, day, game_mode, completed')
       .in('user_id', ids).eq('play_type', 'solo').gte('day', cutoff).lte('day', day)
       .in('game_mode', MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).map((m) => m.dbKey as string)),
+    admin.from('shield_gifts').select('sender_id, recipient_id, week_start, created_at')
+      .or(`sender_id.in.(${ids.join(',')}),recipient_id.in.(${ids.join(',')})`)
+      .gte('created_at', `${cutoff}T00:00:00Z`),
   ]);
 
   const who = new Map<string, { username: string; avatar_url: string | null; avatar_emoji: string | null }>();
@@ -115,6 +121,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Shield gifts (D3.4): shown from the sender's side, naming the recipient.
+  for (const g of (gifts ?? []) as any[]) {
+    const other = who.get(g.recipient_id);
+    events.push({
+      id: `gift-${g.sender_id}-${g.recipient_id}-${g.week_start}`, ...person(g.sender_id),
+      day: (g.created_at as string).slice(0, 10), at: g.created_at, type: 'gift',
+      otherName: g.recipient_id === me ? 'you' : other?.username ?? 'a friend', otherId: g.recipient_id,
+    });
+  }
   events.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : a.at < b.at ? 1 : -1));
   return NextResponse.json({ events: events.slice(0, 40) }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

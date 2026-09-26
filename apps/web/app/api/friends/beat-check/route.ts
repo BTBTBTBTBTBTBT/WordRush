@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
           url: '/daily',
         },
         new Set([row.user_id]),
+        'race',
       );
     }),
   );

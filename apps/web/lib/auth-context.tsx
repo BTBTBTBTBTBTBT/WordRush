@@ -232,6 +232,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         app_platform: 'web',
         last_seen_at: new Date().toISOString(),
       };
+      // D3.3: the viewer's IANA timezone, so server-side settlement can use the same week boundary.
+      try { patch.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch {}
       // Guest→account conversion: this runs exactly where the guest flag is
       // superseded by a real session, which is the conversion moment for both
       // email and OAuth signups on this browser. (An email confirmation opened

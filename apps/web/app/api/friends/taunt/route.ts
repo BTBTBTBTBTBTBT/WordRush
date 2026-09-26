@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       url: '/daily',
     },
     new Set([body.friendId]),
+    'nudge',
   ).catch(() => {});
 
   return NextResponse.json({ sent: true });

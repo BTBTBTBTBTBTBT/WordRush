@@ -13,6 +13,9 @@ import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { TodaysRace } from './todays-race';
+import { NotificationPrefs } from './notification-prefs';
+import { getLastWeekResult, giftShield } from '@/lib/friends-service';
+import { ordinal as ordinalOf } from '@/lib/weekly-race';
 import { challengeFriend } from '@/lib/friends-service';
 import { vsHrefForMode } from '@/lib/invite-service';
 import { supabase } from '@/lib/supabase-client';
@@ -385,6 +388,8 @@ export function FriendsPanel() {
             🔔 Nudge slackers
           </button>
         )}
+        {/* D3.5: per-event notification prefs (race, challenges, nudges, moments). */}
+        <NotificationPrefs />
       </div>
 
       {/* TODAY'S RACE (D3, 2026-09-26): ranked by today's points, challenge from any row. */}
@@ -423,6 +428,25 @@ export function FriendsPanel() {
               )}
             </span>
           </div>
+          {/* D3.3 — the Sunday finish, settled server-side on the first visit of the
+              week: "You finished 2nd of 6". Stable all week; the Stats tab tallies them. */}
+          {(() => {
+            const r = getLastWeekResult();
+            if (!r) return null;
+            const win = r.rank === 1;
+            return (
+              <div
+                className="flex items-center gap-2 px-3 py-2 mt-1 mb-1"
+                style={{ background: win ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : 'var(--color-bg)', border: `1.5px solid ${win ? '#f59e0b' : 'var(--color-border)'}`, borderRadius: '12px' }}
+              >
+                <span className="text-base">{win ? '👑' : '🏁'}</span>
+                <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : 'var(--color-text)' }}>
+                  Last week you finished <b>{ordinalOf(r.rank)} of {r.circleSize}</b> · {r.points.toLocaleString()} pts
+                  {!win && r.winnerName ? <span style={{ color: 'var(--color-text-muted)' }}> · 👑 {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
+                </span>
+              </div>
+            );
+          })()}
           {/* §232: Monday's answer — last week's settled winner. §238: the
               line unfolds into the whole settled-week history. */}
           {lastWeek && (
@@ -651,6 +675,20 @@ export function FriendsPanel() {
                       >
                         Challenge ⚔️
                       </button>
+                      {/* D3.4: gift one of your streak shields (once per friend per week). */}
+                      {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && (
+                        <button
+                          onClick={async () => {
+                            setMenuFor(null);
+                            const r = await giftShield(f.id);
+                            setNote('error' in r ? r.error : `🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left`);
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
+                          style={{ color: '#0d9488', borderBottom: '1px solid var(--color-border)' }}
+                        >
+                          🛡️ Gift a shield
+                        </button>
+                      )}
                       <button
                         onClick={() => { setMenuFor(null); setUnfriendTarget(f); }}
                         className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"

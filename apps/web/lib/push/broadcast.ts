@@ -22,11 +22,26 @@ export interface BroadcastResult {
  * subscription and a native token gets ONE ping — web wins, matching the
  * daily-reminder cron's dedupe order.
  */
+export type PushCategory = 'race' | 'challenge' | 'nudge' | 'feed';
+
 export async function broadcastPush(
   { title, body, url = '/daily' }: { title: string; body: string; url?: string },
   userIds: Set<string> | null,
+  /** Friends pushes name a category; a recipient whose
+   *  profiles.notification_prefs[category] === false is skipped (D3.5). */
+  category?: PushCategory,
 ): Promise<BroadcastResult> {
   const sb = getAdminSupabase();
+
+  if (category && userIds && userIds.size > 0) {
+    const { data: prefRows } = await sb.from('profiles').select('id, notification_prefs').in('id', [...userIds]);
+    const allowed = new Set<string>();
+    for (const r of (prefRows ?? []) as Array<{ id: string; notification_prefs: Record<string, boolean> | null }>) {
+      if (r.notification_prefs?.[category] !== false) allowed.add(r.id);
+    }
+    userIds = allowed;
+    if (userIds.size === 0) return { targeted: 0, sent: 0, failed: 0, web: 0, ios: 0, android: 0 };
+  }
 
   const webPushConfigured =
     !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY;

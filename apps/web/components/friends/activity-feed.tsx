@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, Crown, Medal, Star, Flame, Sparkles, Trophy, LayoutGrid } from 'lucide-react';
+import { Activity, Crown, Medal, Star, Flame, Sparkles, Trophy, LayoutGrid, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { fetchFriendsFeed, type FeedEvent } from '@/lib/friends-service';
 import { getTodayLocal } from '@/lib/daily-service';
@@ -32,6 +32,7 @@ function describe(e: FeedEvent): { text: string; icon: React.ReactNode } {
     case 'sweep': return { text: `${who} swept the dailies`, icon: <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} /> };
     case 'more_flawless': return { text: `${who} — Flawless More Games, all ten won`, icon: <LayoutGrid className="w-4 h-4" style={{ color: '#b45309' }} /> };
     case 'more_sweep': return { text: `${who} — More Games Sweep, all ten played`, icon: <LayoutGrid className="w-4 h-4" style={{ color: '#4f46e5' }} /> };
+    case 'gift': return { text: `${who} sent ${e.otherName ?? 'a friend'} a streak shield`, icon: <Shield className="w-4 h-4" style={{ color: '#0d9488' }} fill="currentColor" /> };
     case 'record': {
       const label = e.kind ? RECORD_LABELS[e.kind]?.label ?? e.kind : 'record';
       const val = e.kind && e.value != null ? recordValue(e.kind, e.value, e.gameMode) : '';

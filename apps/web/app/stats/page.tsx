@@ -48,6 +48,7 @@ import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
 import { useYourRecords, NextUpCard, SweepRecordsCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
+import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { GameRail, buildRailItems, RAIL_TODAY, RAIL_VS, RAIL_ALL } from '@/components/stats/game-rail';
 import { TodayCard } from '@/components/stats/today-card';
@@ -749,6 +750,8 @@ export default function StatsPage() {
               <SectionHeader label="Your Records" accent="#d97706" />
               <NextUpCard dailyStreak={profile.daily_login_streak ?? 0} chases={yours.chases} />
               <SweepRecordsCard sweep={yours.sweep} sweepRankToday={yours.sweepRankToday} sweepRankAllTime={yours.sweepRankAllTime} />
+              {/* D3.3: settled weekly friends races. */}
+              <WeeklyFinishesCard userId={profile.id} />
               <RecordsHeldRow recordsHeld={yours.recordsHeld} />
               <TrophyShelf recordsHeld={yours.recordsHeld} />
 
