@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { stampHeartbeat } from '@/lib/heartbeat';
+import { DAILY_MODES } from '@/lib/modes.generated';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
 export const maxDuration = 60;
 
-const GAME_MODES = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
+// Every daily mode this build knows, from the catalog — founder (2026-09-26,
+// Stats + Friends redesign D4): "All games should have medals." The old
+// hand-typed nine-mode list left the More Games titles without a podium.
+const GAME_MODES = DAILY_MODES.map((m) => m.dbKey as string);
 const PLAY_TYPES = ['solo', 'vs'] as const;
 const MEDAL_TYPES = ['gold', 'silver', 'bronze'] as const;
 const MEDAL_XP: Record<string, number> = { gold: 100, silver: 50, bronze: 25 };
@@ -25,7 +29,12 @@ export async function GET(req: NextRequest) {
   // ~24h behind their local midnight. This cron is the ONLY awarder of
   // daily podium medals (there is no client-side path); the lag is an
   // accepted trade-off, and re-runs are idempotent via the INSERT guard below.
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  // `?day=YYYY-MM-DD` re-runs a past day (the D4 backfill for the More Games
+  // titles from launch day); the INSERT guard keeps every re-run idempotent.
+  const dayParam = req.nextUrl.searchParams.get('day');
+  const yesterday = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam)
+    ? dayParam
+    : new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
   let medalsAssigned = 0;
   let xpGranted = 0;
