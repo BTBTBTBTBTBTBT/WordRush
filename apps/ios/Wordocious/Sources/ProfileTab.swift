@@ -1,18 +1,36 @@
 import SwiftUI
 import WordociousCore
 
-/// Profile — core match of app/profile/page.tsx: header (avatar, level
-/// tier + XP, member since), Today's Dailies grid, Global Summary Row,
-/// mode picker + per-mode stats. (Deferred to later passes: activity
-/// calendar, guess-distribution / solve-time charts, top words, time-of-day
-/// heatmap, Pro insights, edit modal, social links, notification toggle.)
+/// STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
+/// and Records merge into one Stats tab that "flows like butter"). Port of
+/// app/stats/page.tsx:
+///   identity strip → StatsRail → ONE page below it, chosen from the rail:
+///   Today (landing, TodayCard) · a game page per daily mode (Solo | VS toggle
+///   where a live VS board exists, today's line, the §18 registry stats) ·
+///   VS (record + rivalries + CPU + a word-game board) · All-time (snapshot
+///   hero, Records row, every chart, Progression, Recent Matches).
+/// A horizontal swipe on the page moves one rail chip; hold Today (or the grid
+/// button) for every game at once. Zero new fetches beyond the old page except
+/// today's VS result, the sweep streak and today's standing.
 struct ProfileTab: View {
     @EnvironmentObject private var auth: AuthService
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
     @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
-    @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
+    /// Which page the rail shows: StatsRailKey.today | .vs | .all | a mode dbKey.
+    @State private var selected: String = StatsRailKey.today
+    /// The VS page's per-game board — one word game at a time (Classic by default).
+    @State private var vsMode: GameMode = .duel
+    /// Today's daily VS outcome (nil = not played) — the VS chip's dot, the
+    /// Today card's VS pill and the VS RECORD card's "Today:" line.
+    @State private var vsDailyWon: Bool? = nil
+    /// Sweep + flawless streaks for the Today card (MatchStatsService, §244).
+    @State private var sweepStats = MatchStatsService.DailySweepStats()
+    /// Today's field standing — the ONE formula the old standing strip used.
+    @State private var standing: StatsDeepService.DailyStanding? = nil
+    /// An own-engine More Games daily opened from its game page ("Play →").
+    @State private var badgeMore: HomeMode?
     // Per-mode win streak for the mode-detail grid (computed from match history,
     // mirrors web mode-detail-panel's fetchModeWinStreak). Not stored in
     // user_stats, so it's fetched when the selected mode changes.
@@ -21,7 +39,9 @@ struct ProfileTab: View {
     /// (ModeStats.modeAggregates) — the custom games' grid cells (Clean, Avg
     /// Mistakes, Pangrams, …) read from it; word modes ignore it.
     @State private var modeAggregates: ModeAggregates = .empty
-    // Solo/VS toggle (mirrors the web personal profile) — filters user_stats by play_type.
+    // Solo/VS/VS-CPU scope for the per-game charts (restat B1). A game page's
+    // Solo | VS toggle drives it; the VS page pins it to vs (or vs_cpu for
+    // practice); the All-time charts read it like the web.
     @State private var activeTab = "solo"
     @State private var unlockedAchievements: Set<String> = []
     @StateObject private var achievementCatalog = AchievementCatalog.shared
@@ -52,18 +72,61 @@ struct ProfileTab: View {
     // Games played in the last 7 days — powers the Insights "this week" line.
     @State private var sevenDayTotal = 0
 
-    // Mode-picker (per-mode stats): EVERY daily mode with recorded stats — the
-    // sweep modes plus the More Games titles this viewer can see (ProperNoundle
-    // lives there since Stage 9; its HomeMode has `mode: nil` but a GameMode
-    // case + stats rows). Only VS (dbKey nil) is excluded. Flag-gated titles
-    // stay hidden until their flag is on, so an unlaunched game never leaks.
+    // Every daily mode this viewer can see — the sweep modes plus the More Games
+    // titles (ProperNoundle lives there since Stage 9; its HomeMode has `mode:
+    // nil` but a GameMode case + stats rows). Only VS (dbKey nil) is excluded.
+    // Flag-gated titles stay hidden until their flag is on, so an unlaunched
+    // game never leaks. Lookup for the selected game page's title/icon/accent.
     private var dailyModes: [HomeMode] {
         (homeModes + moreModes).filter { $0.dbKey != nil && $0.dailyEligible && FlagsService.shared.isOn($0.flagKey) }
     }
-    // Today's-Dailies grid = the Daily Sweep set only (ModeGen.sweep via the
-    // core grid), so its N/M matches the completions store. More Games titles
-    // are not part of the sweep and don't appear here.
+    // The Today card's tiles = the Daily Sweep set only (ModeGen.sweep via the
+    // core grid), so its N/M matches the completions store.
     private let dailyTiles: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.sweep }
+    /// The More Games dailies on the rail: catalog ∩ remote flags.
+    private var visibleMore: [HomeMode] {
+        moreModes.filter { $0.dailyEligible && $0.dbKey != nil && FlagsService.shared.isOn($0.flagKey) }
+    }
+    private var railItems: [StatsRailItem] {
+        buildStatsRailItems(sweep: dailyTiles, more: visibleMore, byMode: completions.byMode, vsDailyWon: vsDailyWon)
+    }
+    /// Word-engine games and ProperNoundle have live VS boards; the More Games titles do not.
+    private func hasVs(_ dbKey: String) -> Bool {
+        guard let meta = ModeGen.byDbKey(dbKey) else { return false }
+        return meta.engine == "word" || dbKey == "PROPERNOUNDLE"
+    }
+    /// The VS page's board picker: the sweep word games (web `vsModes`).
+    private var vsModes: [HomeMode] { dailyTiles.filter { hasVs($0.dbKey ?? "") } }
+    /// The selected game page's catalog record (nil on Today / VS / All-time).
+    private var selectedMeta: HomeMode? { dailyModes.first { $0.dbKey == selected } }
+    /// The play-type a game page scopes to: VS only where the game has a live board.
+    private var gamePageTab: String { activeTab == "vs" && hasVs(selected) ? "vs" : "solo" }
+    /// The VS page's play-type: Live or CPU practice.
+    private var vsPageTab: String { activeTab == "vs_cpu" ? "vs_cpu" : "vs" }
+
+    /// Rail selection — web `setSelected`: landing on VS lifts a Solo scope to
+    /// VS; landing on a game without a VS board drops the scope to Solo.
+    private func select(_ key: String) {
+        selected = key
+        if key == StatsRailKey.vs {
+            if activeTab == "solo" { activeTab = "vs" }
+        } else if key != StatsRailKey.all && key != StatsRailKey.today && !hasVs(key) {
+            activeTab = "solo"
+        } else if key != StatsRailKey.all && key != StatsRailKey.today && activeTab == "vs_cpu" {
+            activeTab = "solo"
+        }
+    }
+
+    /// Swipe on the page moves one chip along the rail (founder: no 19-page
+    /// swipe — but a swipe between neighbors is the natural gesture).
+    private func step(_ delta: Int) {
+        let items = railItems
+        guard let i = items.firstIndex(where: { $0.key == selected }) else { return }
+        let j = i + delta
+        guard items.indices.contains(j) else { return }
+        Haptics.tap()
+        select(items[j].key)
+    }
 
     var body: some View {
         NavigationStack {
@@ -95,6 +158,25 @@ struct ProfileTab: View {
             .fullScreenCover(isPresented: $badgePN) {
                 NavigationStack { ProperNoundleView() }
             }
+            // Own-engine More Games dailies (nil seed = today's; each view
+            // restores its finished board when already played) — the same
+            // switch RootTabView's Next Daily hand-off and Home use.
+            .fullScreenCover(item: $badgeMore) { m in
+                NavigationStack {
+                    switch m.id {
+                    case "sudoku": SudokuView()
+                    case "regions": RegionsView()
+                    case "ladder": LadderView()
+                    case "wordsearch": SpyglassView()
+                    case "hub": HubView()
+                    case "cryptogram": CodebreakerView()
+                    case "groups": KindredView()
+                    case "crossword": CrosswordView()
+                    case "scramble": MuddleView()
+                    default: ProperNoundleView()
+                    }
+                }
+            }
             .onDailyRecorded { reloadToken += 1 }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
                 // P1: every independent fetch runs concurrently (was 8+ serial
@@ -119,6 +201,14 @@ struct ProfileTab: View {
                     }
                     if let v: Int = memo.get("gamesThisWeek:\(uid)") { gamesThisWeek = v }
                     if let v: Int = memo.get("sevenDayTotal:\(uid)") { sevenDayTotal = v }
+                    if let v: MatchStatsService.DailySweepStats = memo.get("sweepStats:\(uid)") { sweepStats = v }
+                    if let v: Bool? = memo.get("vsDailyWon:\(uid)") { vsDailyWon = v }
+                    if let v: StatsDeepService.DailyStanding? = memo.get("standing:\(uid)") { standing = v }
+                    // D2: today's VS result (the rail dot + VS card), the sweep
+                    // streak and today's standing (the Today card).
+                    async let vsTodayF = DailyResultsService.dailyVSResult()
+                    async let sweepF = MatchStatsService.dailySweepStats()
+                    async let standingF = StatsDeepService.todayDailyStanding()
                     async let statsF = UserStatsService.fetch(userId: uid)
                     async let achievementsF = AchievementService.fetchUnlocked(userId: uid)
                     async let medalsF = MedalsService.recent(userId: uid, limit: 120)
@@ -142,7 +232,13 @@ struct ProfileTab: View {
                         return $0.day >= cutoff
                     }.reduce(0) { $0 + $1.played }
                     recentLoading = false
+                    vsDailyWon = await vsTodayF
+                    sweepStats = await sweepF
+                    standing = await standingF
                     // Store the fresh results back into the session memo.
+                    memo.set("sweepStats:\(uid)", sweepStats)
+                    memo.set("vsDailyWon:\(uid)", vsDailyWon)
+                    memo.set("standing:\(uid)", standing)
                     memo.set("statRows:\(uid)", statRows)
                     memo.set("achievements:\(uid)", unlockedAchievements)
                     memo.set("medals:\(uid)", medals)
@@ -170,96 +266,197 @@ struct ProfileTab: View {
     }
 
     private func content(_ p: Profile) -> some View {
-        // Web order (restat R1, profile/page.tsx): header → Today's Dailies →
-        // SnapshotHero → daily standing strip → Solo/VS/VS-CPU toggle + (VS
-        // card + Rivalries | CPU card) + Mode Picker → [All view: Trends charts,
-        // Insights, Pro Stats, Skill Radar | Mode view: mode header + stats +
-        // per-mode dashboard + Deep Insights] → Progression (Daily Medals +
-        // Achievements, BOTH views) → Recent Matches.
+        // Web order (app/stats/page.tsx, D2): identity strip → action row →
+        // StatsRail → ONE page keyed on the selection (Today · a game page ·
+        // VS · All-time). The page swaps with the F1 fade+rise the old picker
+        // used; a horizontal swipe on it moves one chip along the rail.
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
-                // FRIENDS (§207): list, requests, add-by-username — web
-                // profile-page placement (above the referral panel).
-                // Tier 3 (Aug 11): full card lives on FriendsScreenView now.
-                FriendsRowLink()
-                // D1: Records left the tab bar; its rows fold into Stats in D2.
-                RecordsRowLink()
-                // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
-                // (founder, 2026-09-26: on the profile it was clutter and a duplicate).
-                todaysDailies
-                SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
-                DailyStandingStrip(reloadToken: reloadToken)
-                soloVsToggle
-                // F1: the tab-specific cards fade+rise on each Solo/VS/VS CPU
-                // swap (.id change → .transition) instead of snapping in.
+                StatsRail(items: railItems, selected: $selected, onSelect: select)
                 Group {
-                    if activeTab == "vs" {
-                        vsRecordCard
-                        // Rivalries — most-faced opponents with head-to-head bars (Pro).
-                        if UserStatsService.vsRecord(statRows).total > 0 {
-                            RivalriesCard(isPro: auth.isProActive)
-                        }
+                    if selected == StatsRailKey.today {
+                        todayPage
+                    } else if selected == StatsRailKey.vs {
+                        vsPage(p)
+                    } else if selected == StatsRailKey.all {
+                        allTimePage(p)
+                    } else if let m = selectedMeta, let gm = GameMode(rawValue: selected) {
+                        gamePage(p, meta: m, mode: gm)
+                    } else {
+                        todayPage
                     }
-                    if activeTab == "vs_cpu" { cpuRecordCard }
                 }
-                .id("tabcards-\(activeTab)")
+                .id("page-\(selected)-\(activeTab)")
                 .transition(.opacity.combined(with: .offset(y: 6)))
-                ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
-                // F1: dashboard content eases in on mode / play-type swap.
-                Group {
-                if let mode = selectedMode {
-                    // Mode-detail view — header row carries the read-only
-                    // play-type chip (the page-level toggle drives it; the panel
-                    // has no toggle of its own, matching mode-detail-panel.tsx).
-                    // Every per-game chart is scoped to activeTab (restat B1).
-                    modeDetailHeader(mode)
-                    modeStats(p, mode: mode)
-                    ProfileDashboard(mode: mode, playType: activeTab)
-                    ProDeepModeCard(gameMode: mode.rawValue, isPro: auth.isProActive,
-                                    accent: ModeStyle.accent(mode), playType: activeTab)
-                    // CPU practice writes aggregate totals only — per-game charts
-                    // have no data to draw from, so say so instead of blanks.
-                    if activeTab == "vs_cpu" {
-                        Text("CPU practice records totals only — per-game charts track Solo and VS matches.")
-                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity).multilineTextAlignment(.center)
-                            .padding(.vertical, 8)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 24).onEnded { v in
+                        guard abs(v.translation.width) >= 70, abs(v.translation.height) <= 50 else { return }
+                        step(v.translation.width < 0 ? 1 : -1)
                     }
-                } else {
-                    // "All" global view — Trends charts (web order inside
-                    // ProfileDashboard), then Insights, Pro Stats, Skill Radar.
-                    // CPU practice records totals only — the per-game charts
-                    // below draw from match rows that CPU games never write.
-                    if activeTab == "vs_cpu" {
-                        Text("CPU practice records totals only — charts track Solo and VS matches.")
-                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity).multilineTextAlignment(.center)
-                            .padding(.vertical, 4)
-                    }
-                    ProfileDashboard(mode: nil, playType: activeTab)
-                    ProfileInsightsCard(insights: allViewInsights(p))
-                    ProStatsCard(statRows: statRows)
-                    SkillRadarCard(isPro: auth.isProActive, statRows: statRows)
-                }
-                }
-                .id("dash-\(activeTab)-\(selectedMode?.rawValue ?? "all")")
-                .transition(.opacity.combined(with: .offset(y: 6)))
-                // Progression: medals + achievements under one banner, shown in
-                // BOTH the All and per-mode views (web parity).
-                SectionHeader("Progression", accent: Color(hex: 0xF59E0B))
-                medalsSection(p)
-                achievementsSection
-                recentMatchesSection(p)
+                )
             }
             .padding(.horizontal, 12).padding(.top, 8)
             // Generous bottom clearance so the last section always sits above the
             // custom bottom nav and stays tappable (Account actions live in
             // Settings now, not here).
             .padding(.bottom, 72)
-            // F1: drives the .id-swap transitions on the tab cards + dashboard.
+            // F1: drives the .id-swap transition on the page.
             .animation(Theme.animation(.easeOut(duration: 0.22)), value: activeTab)
-            .animation(Theme.animation(.easeOut(duration: 0.22)), value: selectedMode)
+            .animation(Theme.animation(.easeOut(duration: 0.22)), value: selected)
+        }
+    }
+
+    // MARK: Pages
+
+    /// Today — the landing page: the eight sweep tiles, the More Games / VS /
+    /// Standing pills, the ten More Games chips, sweep streak + best moment.
+    private var todayPage: some View {
+        TodayCard(
+            sweepModes: dailyTiles, visibleMore: visibleMore, byMode: completions.byMode,
+            vsDailyWon: vsDailyWon, standing: standing,
+            sweepStreak: sweepStats.currentSweepStreak, flawlessStreak: sweepStats.currentFlawlessStreak,
+            onJump: { key in Haptics.tap(); select(key) },
+            onOpenDaily: openDaily)
+    }
+
+    /// A game page: Solo | VS toggle (live boards only), today's line, then the
+    /// EXISTING per-mode stats content (registry cells, dashboard, deep insights).
+    @ViewBuilder private func gamePage(_ p: Profile, meta m: HomeMode, mode gm: GameMode) -> some View {
+        let tab = gamePageTab
+        if hasVs(gm.rawValue) { soloVsToggle(accent: m.accent) }
+        todayLine(m)
+        modeDetailHeader(gm, tab: tab)
+        modeStats(p, mode: gm, tab: tab)
+        ProfileDashboard(mode: gm, playType: tab)
+        ProDeepModeCard(gameMode: gm.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(gm), playType: tab)
+    }
+
+    /// "Won · 4 guesses · 1m 12s · 1,940 pts  Open →" or "Not played yet — play
+    /// today's <Title>  Play →", in the mode's accent tint. Tap opens the daily
+    /// exactly as the Today card's tile does.
+    private func todayLine(_ m: HomeMode) -> some View {
+        let today = m.dbKey.flatMap { completions.byMode[$0] }
+        let text: String = {
+            guard let t = today else { return "Not played yet — play today's \(m.title)" }
+            var s = "\(t.completed ? "Won" : "Lost") · \(formatGuessStat(semantics: m.guessSemantics, guessBase: m.guessBase, guessCount: t.guessCount))"
+            if t.timeSeconds > 0 { s += " · \(formatShortTime(Int(t.timeSeconds)))" }
+            let f = NumberFormatter(); f.numberStyle = .decimal
+            let pts = Int(t.score.rounded())
+            s += " · \(f.string(from: NSNumber(value: pts)) ?? "\(pts)") pts"
+            return s
+        }()
+        return Button { openDaily(m) } label: {
+            HStack(spacing: 12) {
+                Text("TODAY").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(m.accent)
+                Text(text).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(today == nil ? "Play →" : "Open →").font(Brand.font(11, .black)).foregroundStyle(m.accent)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 14).fill(m.accent.opacity(0.06)))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(m.accent.opacity(0.33), lineWidth: 1.5))
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    /// VS — the record (with today's result), Rivalries, the CPU practice card,
+    /// then one word game's VS board: a picker + Live | CPU over the per-mode view.
+    @ViewBuilder private func vsPage(_ p: Profile) -> some View {
+        let tab = vsPageTab
+        vsRecordCard
+        // Rivalries — most-faced opponents with head-to-head bars (Pro).
+        if UserStatsService.vsRecord(statRows).total > 0 {
+            RivalriesCard(isPro: auth.isProActive)
+        }
+        cpuRecordCard
+        HStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(vsModes) { m in
+                        let active = m.dbKey == vsMode.rawValue
+                        Button { if let gm = m.mode { Haptics.tap(); vsMode = gm } } label: {
+                            Text(ModeGen.byId(m.id)?.shortTitle ?? m.title).font(Brand.font(10, .heavy))
+                                .foregroundStyle(active ? m.accent : Theme.textMuted)
+                                .padding(.horizontal, 10).padding(.vertical, 5)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(active ? m.accent.opacity(0.08) : Theme.surface))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+                        }.buttonStyle(PressableStyle())
+                    }
+                }
+                .padding(.horizontal, 1)
+            }
+            HStack(spacing: 4) {
+                ForEach(["vs", "vs_cpu"], id: \.self) { t in
+                    let active = tab == t
+                    Button { activeTab = t } label: {
+                        Text(t == "vs" ? "Live" : "CPU").font(Brand.font(10, .heavy))
+                            .foregroundStyle(active ? Theme.primary : Theme.textMuted)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary.opacity(0.08) : Theme.surface))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
+                    }.buttonStyle(PressableStyle())
+                }
+            }
+        }
+        modeDetailHeader(vsMode, tab: tab)
+        modeStats(p, mode: vsMode, tab: tab)
+        ProfileDashboard(mode: vsMode, playType: tab)
+        ProDeepModeCard(gameMode: vsMode.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(vsMode), playType: tab)
+        // CPU practice writes aggregate totals only — per-game charts
+        // have no data to draw from, so say so instead of blanks.
+        if tab == "vs_cpu" {
+            Text("CPU practice records totals only — per-game charts track Solo and VS matches.")
+                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                .padding(.vertical, 8)
+        }
+    }
+
+    /// All-time — the snapshot hero, the Records row, every chart the old
+    /// "All" view had, Insights, Pro Stats, Skill Radar, then Progression
+    /// (medals, achievements) and Recent Matches.
+    @ViewBuilder private func allTimePage(_ p: Profile) -> some View {
+        SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
+        // D1: Records left the tab bar; its rows fold into these pages in D2 step 3.
+        RecordsRowLink()
+        // CPU practice records totals only — the per-game charts below draw
+        // from match rows that CPU games never write.
+        if activeTab == "vs_cpu" {
+            Text("CPU practice records totals only — charts track Solo and VS matches.")
+                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                .padding(.vertical, 4)
+        }
+        // Trends charts (web order inside ProfileDashboard: activity calendar,
+        // last 7 days, guess distribution, solve time, daily points, top words,
+        // opener lab, weekday form), then Insights, Pro Stats, Skill Radar.
+        ProfileDashboard(mode: nil, playType: activeTab)
+        ProfileInsightsCard(insights: allViewInsights(p))
+        ProStatsCard(statRows: statRows)
+        SkillRadarCard(isPro: auth.isProActive, statRows: statRows)
+        // Progression: medals + achievements under one banner.
+        SectionHeader("Progression", accent: Color(hex: 0xF59E0B))
+        medalsSection(p)
+        achievementsSection
+        recentMatchesSection(p)
+    }
+
+    /// Opens a daily the way the Today's Dailies tile always has: played → the
+    /// read-only solved board; not played → today's game. §263: presented as a
+    /// full-screen cover (badgeGame & co.), never pushed.
+    private func openDaily(_ m: HomeMode) {
+        let played = m.dbKey.flatMap { completions.byMode[$0] } != nil
+        if let gm = m.mode {
+            if played { badgeSolved = LeaderboardTab.LbGame(mode: gm, title: m.title) }
+            else { badgeGame = LeaderboardTab.LbGame(mode: gm, title: m.title) }
+        } else if m.id == "propernoundle" {
+            // ProperNoundle has its own engine (no GameMode); the view
+            // restores the completed daily board when already played.
+            badgePN = true
+        } else {
+            badgeMore = m
         }
     }
 
@@ -367,50 +564,65 @@ struct ProfileTab: View {
 
     // MARK: Header
 
+    /// Identity strip (D2, compact): avatar 64 on the left; name + Pro badge,
+    /// the featured / favorite chips and bio, then the level pill with the XP
+    /// bar and "N XP to next · since Mon YYYY". Under it, ONE wrapping row of
+    /// actions: social links · Edit · Share · Private · Go Pro · Simulate Pro.
     private func header(_ p: Profile) -> some View {
         let tier = levelTier(p.level)
-        let progress = Double(p.xp % 1000) / 10.0
+        let progress = Double(p.xp % 1000) / 1000.0
         let toNext = 1000 - (p.xp % 1000)
-        return VStack(spacing: 8) {
-            AvatarView(url: p.avatarUrl, username: p.username, size: 96, accentHex: p.accentColor, emoji: p.avatarEmoji)
-            HStack(spacing: 6) {
-                if ProfileAccent.isCustom(p.accentColor) {
-                    Text(p.username).font(Brand.title(28)).foregroundStyle(ProfileAccent.color(p.accentColor))
-                } else {
-                    Text(p.username).font(Brand.title(28))
-                        .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                AvatarView(url: p.avatarUrl, username: p.username, size: 64, accentHex: p.accentColor, emoji: p.avatarEmoji)
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        if ProfileAccent.isCustom(p.accentColor) {
+                            Text(p.username).font(Brand.title(22)).foregroundStyle(ProfileAccent.color(p.accentColor))
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                        } else {
+                            Text(p.username).font(Brand.title(22))
+                                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                        if auth.isProActive {
+                            Text("PRO").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(.white)
+                                .padding(.horizontal, 8).padding(.vertical, 2)
+                                .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                        }
+                    }
+                    ProfilePersonalizationRow(profile: p, leading: true)
+                    HStack(spacing: 8) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill").font(.system(size: 10))
+                            Text("Lvl \(p.level)").font(Brand.font(11, .heavy))
+                            Text("·").opacity(0.7)
+                            Text(tier.label).font(Brand.font(11, .heavy))
+                        }
+                        .foregroundStyle(tier.color)
+                        .padding(.horizontal, 10).padding(.vertical, 3)
+                        .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
+                        .fixedSize()
+                        VStack(alignment: .leading, spacing: 3) {
+                            GeometryReader { g in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Theme.border)
+                                    Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
+                                        .frame(width: g.size.width * progress)
+                                }
+                            }
+                            .frame(height: 6)
+                            Text(memberSince(p).map { "\(toNext) XP to next · since \($0)" } ?? "\(toNext) XP to next")
+                                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                                .lineLimit(1).minimumScaleFactor(0.8)
+                        }
+                    }
                 }
-                if auth.isProActive {
-                    Text("PRO").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(.white)
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            ProfilePersonalizationRow(profile: p)
-            HStack(spacing: 6) {
-                Image(systemName: "star.fill").font(.system(size: 12))
-                Text("Level \(p.level)").font(Brand.caption(12))
-                Text("·").opacity(0.7)
-                Text(tier.label).font(Brand.caption(12))
-            }
-            .foregroundStyle(tier.color)
-            .padding(.horizontal, 12).padding(.vertical, 5)
-            .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
-            // XP progress and member-since fold into one caption line under the
-            // bar — they were separate rows, and with the buttons below also
-            // stacked one-per-row the header read as a tall loose list
-            // (founder: "looks sloppy"). Same elements, tighter rhythm.
-            VStack(spacing: 3) {
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.border).frame(width: 160, height: 6)
-                    Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: 160 * progress / 100, height: 6)
-                }
-                Text(memberSince(p).map { "\(toNext) XP to next  ·  Member since \($0)" } ?? "\(toNext) XP to next")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-            }
-            // Edit + Share side by side — equal-weight actions, one row.
-            HStack(spacing: 8) {
+            // One wrapping row: social links · Edit · Share · Private · Go Pro · Simulate Pro.
+            ActionWrapRow(spacing: 8, lineSpacing: 8) {
+                socialLinkButtons()
                 Button { showEditProfile = true } label: {
                     Label("Edit profile", systemImage: "pencil").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
                         .padding(.horizontal, 14).padding(.vertical, 6)
@@ -450,56 +662,47 @@ struct ProfileTab: View {
                     .buttonStyle(PressableStyle())
                     .accessibilityHint("Your profile is private — other players see a limited card. Tap to change.")
                 }
-            }
-            .padding(.top, 2)
-            socialLinksRow()
-            if !auth.isProActive {
-                Button { showPro = true } label: {
-                    Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
-                        .padding(.horizontal, 16).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2))
+                if !auth.isProActive {
+                    Button { showPro = true } label: {
+                        Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
+                            .padding(.horizontal, 16).padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2))
+                    }
+                    .sheet(isPresented: $showPro) { ProView() }
                 }
-                .padding(.top, 2)
-                .sheet(isPresented: $showPro) { ProView() }
-            }
-            // DEV-ONLY: Simulate Pro toggle — flips is_pro so free-vs-Pro gating
-            // can be exercised in testing. Gated on profiles.is_admin so it
-            // renders ONLY for the developer's account (never for App Review or
-            // real users; mirrors the web gate).
-            if auth.profile?.isAdmin == true {
-                // Plain text link, not a boxed button — a dev-only toggle was
-                // visually competing with the real actions above it.
-                let isPro = auth.isProActive
-                Button { Task { await auth.setSimulatePro(!isPro) } } label: {
-                    Text(isPro ? "Disable Pro (dev)" : "Simulate Pro (dev)").font(Brand.font(10, .heavy))
-                        .foregroundStyle(isPro ? Color(hex: 0xDC2626) : Color(hex: 0x16A34A))
+                // DEV-ONLY: Simulate Pro toggle — flips is_pro so free-vs-Pro gating
+                // can be exercised in testing. Gated on profiles.is_admin so it
+                // renders ONLY for the developer's account (never for App Review or
+                // real users; mirrors the web gate).
+                if auth.profile?.isAdmin == true {
+                    let isPro = auth.isProActive
+                    Button { Task { await auth.setSimulatePro(!isPro) } } label: {
+                        Text(isPro ? "Disable Pro (dev)" : "Simulate Pro (dev)").font(Brand.font(10, .heavy))
+                            .foregroundStyle(isPro ? Color(hex: 0xDC2626) : Color(hex: 0x16A34A))
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                    }
                 }
-                .padding(.top, 2)
             }
         }
     }
 
     private let socialOrder = ["twitter", "instagram", "tiktok", "threads", "discord", "website"]
 
+    /// The social-link circles — the leading items of the action row.
     @ViewBuilder
-    private func socialLinksRow() -> some View {
+    private func socialLinkButtons() -> some View {
         let links = socialLinks.filter { !$0.value.isEmpty }
-        if !links.isEmpty {
-            HStack(spacing: 8) {
-                ForEach(socialOrder.filter { links[$0] != nil }, id: \.self) { key in
-                    if let handle = links[key], let url = socialURL(key, handle) {
-                        Link(destination: url) {
-                            Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
-                                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
-                                .frame(width: 30, height: 30)
-                                .background(Circle().fill(Theme.surfaceHover))
-                                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-                        }
-                    }
+        ForEach(socialOrder.filter { links[$0] != nil }, id: \.self) { key in
+            if let handle = links[key], let url = socialURL(key, handle) {
+                Link(destination: url) {
+                    Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
+                        .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                        .frame(width: 30, height: 30)
+                        .background(Circle().fill(Theme.surfaceHover))
+                        .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
                 }
             }
-            .padding(.top, 4)
         }
     }
 
@@ -530,92 +733,8 @@ struct ProfileTab: View {
         return f.string(from: d)
     }
 
-    // MARK: Today's Dailies (5-over-N grid of the sweep modes)
-
-    private var todaysDailies: some View {
-        let completed = completions.completedCount
-        let total = DailyCompletionsStore.totalDailyModes
-        let allDone = completions.allDone
-        let flawless = completions.flawless
-        return VStack(spacing: 8) {
-            if !allDone {
-                HStack {
-                    Text("TODAY'S DAILIES").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                    Spacer()
-                    Text("\(completed)/\(total)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                }
-            }
-            VStack(spacing: 8) {
-                if allDone {
-                    HStack(spacing: 8) {
-                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
-                        Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
-                            .font(Brand.font(16, .black))
-                            .foregroundStyle(LinearGradient(colors: flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
-                    }
-                }
-                HStack(spacing: 12) { ForEach(Array(dailyTiles.prefix(5))) { m in dailyBadge(m) } }
-                HStack(spacing: 12) { ForEach(Array(dailyTiles.dropFirst(5))) { m in dailyBadge(m) } }
-                if allDone {
-                    if flawless {
-                        // §244: streak-aware footer + the brag-card share button.
-                        FlawlessBannerFooter(total: total)
-                    } else {
-                        Text("All \(total) dailies completed · +200 XP earned")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x6D28D9))
-                    }
-                }
-            }
-            .padding(12).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(allDone
-                ? AnyShapeStyle(LinearGradient(colors: flawless ? [Color(hex: 0xFEF3C7), Color(hex: 0xFDE68A)] : [Color(hex: 0xF5F3FF), Color(hex: 0xFCE7F3)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                : AnyShapeStyle(Theme.surface)))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(allDone ? (flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD)) : Theme.border, lineWidth: 1.5))
-        }
-    }
-
-    private func dailyBadge(_ m: HomeMode) -> some View {
-        let result = m.dbKey.flatMap { completions.byMode[$0] }
-        let played = result != nil
-        let won = result?.completed == true
-        let bg: Color = !played ? Theme.background : won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)
-        let border: Color = !played ? Theme.border : won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)
-        // Tappable like the web: played → read-only solved board; not played → play it.
-        // §263: presented as a full-screen cover (see badgeGame), never pushed.
-        return Button {
-            if let gm = m.mode {
-                if played { badgeSolved = LeaderboardTab.LbGame(mode: gm, title: m.title) }
-                else { badgeGame = LeaderboardTab.LbGame(mode: gm, title: m.title) }
-            } else if m.id == "propernoundle" {
-                // ProperNoundle has its own engine (no GameMode); the view
-                // restores the completed daily board when already played.
-                badgePN = true
-            }
-        } label: {
-            VStack(spacing: 3) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
-                    if played {
-                        Text(won ? "W" : "L").font(Brand.font(14, .black)).foregroundStyle(.white)
-                    } else {
-                        ModeIconView(icon: m.icon, accent: m.accent, box: 26)
-                    }
-                }
-                .opacity(played ? 1 : 0.7)
-                Text(m.title).font(Brand.font(8, .bold)).foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            .frame(width: 42)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // (Global summary + "This Week" recap merged into SnapshotHero — restat R1.)
+    // (Today's Dailies moved into TodayCard — D2. Global summary + "This Week"
+    // recap merged into SnapshotHero — restat R1.)
 
     // MARK: Daily Medals (ports the web profile medals section)
 
@@ -802,29 +921,30 @@ struct ProfileTab: View {
 
     // MARK: Solo/VS toggle + VS RECORD card (ports profile/page.tsx section D)
 
-    /// Stats filtered to the active Solo/VS tab.
-    private var filteredStats: [UserStatRow] { statRows.filter { $0.playType == activeTab } }
+    /// user_stats rows scoped to a play type.
+    private func stats(for tab: String) -> [UserStatRow] { statRows.filter { $0.playType == tab } }
 
-    private var soloVsToggle: some View {
+    /// Solo | VS toggle on a game page — only where the game has a live VS
+    /// board (word engines + ProperNoundle). The old page-level Solo/VS/VS-CPU
+    /// toggle is gone; the VS page's Live | CPU pair covers practice.
+    private func soloVsToggle(accent: Color) -> some View {
         HStack(spacing: 8) {
-            ForEach(["solo", "vs", "vs_cpu"], id: \.self) { t in
-                let active = activeTab == t
-                Button { activeTab = t } label: {
+            ForEach(["solo", "vs"], id: \.self) { t in
+                let active = gamePageTab == t
+                Button { Haptics.tap(); activeTab = t } label: {
                     HStack(spacing: 6) {
                         if t == "solo" {
                             Image(systemName: "person.fill").font(.system(size: 12, weight: .bold))
-                        } else if t == "vs" {
+                        } else {
                             Image("swords").renderingMode(.template).resizable().scaledToFit()
                                 .frame(width: 14, height: 14)
-                        } else {
-                            Image(systemName: "cpu").font(.system(size: 12, weight: .bold))
                         }
-                        Text(t == "solo" ? "Solo" : t == "vs" ? "VS" : "VS CPU").font(Brand.font(12, .heavy))
+                        Text(t == "solo" ? "Solo" : "VS").font(Brand.font(12, .heavy))
                     }
-                    .foregroundStyle(active ? Theme.primary : Theme.textMuted)
+                    .foregroundStyle(active ? accent : Theme.textMuted)
                     .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? accent : Theme.border, lineWidth: 1.5))
                 }.buttonStyle(PressableStyle())
             }
             Spacer()
@@ -879,6 +999,10 @@ struct ProfileTab: View {
                     .foregroundStyle(Color(hex: 0x6D28D9))
                 Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black))
                     .foregroundStyle(Theme.textPrimary)
+                // D2: today's daily VS outcome (DailyResultsService.dailyVSResult).
+                Text("Today: \(vsDailyWon == nil ? "not played" : (vsDailyWon! ? "won" : "lost"))")
+                    .font(Brand.font(10, .heavy))
+                    .foregroundStyle(vsDailyWon == nil ? Theme.textMuted : (vsDailyWon! ? Theme.win : Color(hex: 0xDC2626)))
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -896,9 +1020,9 @@ struct ProfileTab: View {
 
     /// Mode-detail header — ports the mode-detail-panel.tsx header row: mode
     /// icon tile + title in the mode accent, and a read-only play-type chip that
-    /// reflects the page-level Solo/VS/VS-CPU toggle (the panel no longer has a
-    /// toggle of its own — restat).
-    private func modeDetailHeader(_ mode: GameMode) -> some View {
+    /// reflects the page's scope (a game page's Solo | VS toggle, or the VS
+    /// page's Live | CPU pair — the panel has no toggle of its own).
+    private func modeDetailHeader(_ mode: GameMode, tab: String) -> some View {
         let m = dailyModes.first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
         return HStack {
@@ -908,15 +1032,15 @@ struct ProfileTab: View {
             }
             Spacer()
             HStack(spacing: 4) {
-                if activeTab == "solo" {
+                if tab == "solo" {
                     Image(systemName: "person.fill").font(.system(size: 10, weight: .bold))
-                } else if activeTab == "vs" {
+                } else if tab == "vs" {
                     Image("swords").renderingMode(.template).resizable().scaledToFit()
                         .frame(width: 12, height: 12)
                 } else {
                     Image(systemName: "cpu").font(.system(size: 10, weight: .bold))
                 }
-                Text(activeTab == "solo" ? "Solo" : activeTab == "vs" ? "VS" : "VS CPU")
+                Text(tab == "solo" ? "Solo" : tab == "vs" ? "VS" : "VS CPU")
                     .font(Brand.font(10, .heavy))
             }
             .foregroundStyle(accent)
@@ -925,8 +1049,8 @@ struct ProfileTab: View {
         }
     }
 
-    private func modeStats(_ p: Profile, mode: GameMode) -> some View {
-        let s = UserStatsService.aggregate(filteredStats, mode: mode.rawValue)
+    private func modeStats(_ p: Profile, mode: GameMode, tab: String) -> some View {
+        let s = UserStatsService.aggregate(stats(for: tab), mode: mode.rawValue)
         // The eight cells come from the shared per-mode stats registry (ModeStats,
         // More Games §18) — same lines, same fixtures as web and Android.
         let meta = ModeGen.byDbKey(mode.rawValue)
@@ -955,12 +1079,12 @@ struct ProfileTab: View {
         // changes (web mode-detail-panel parity — restat B1 scopes both to the
         // toggle). Reset first so a stale value from the previous mode never
         // flashes.
-        .task(id: "\(mode.rawValue)-\(activeTab)") {
+        .task(id: "\(mode.rawValue)-\(tab)") {
             modeWinStreak = (0, 0)
             modeAggregates = .empty
             if let uid = auth.profile?.id {
-                async let streak = MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: activeTab)
-                async let rows = MatchStatsService.modeMatches(uid: uid, mode: mode, playType: activeTab)
+                async let streak = MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: tab)
+                async let rows = MatchStatsService.modeMatches(uid: uid, mode: mode, playType: tab)
                 modeWinStreak = await streak
                 modeAggregates = WordociousCore.ModeStats.modeAggregates(mode.rawValue, await rows, guessBase: meta?.guessBase ?? 1)
             }
@@ -969,68 +1093,6 @@ struct ProfileTab: View {
 
     private func fmtTime(_ s: Int) -> String {
         s <= 0 ? "-" : (s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m"))
-    }
-}
-
-/// Profile mode picker — ports components/profile/mode-picker.tsx: a leading
-/// "All" chip (global view) then a vertical chip per mode (icon tile on top,
-/// short title, games-count badge). nil selection == All.
-private struct ProfileModePicker: View {
-    let modes: [HomeMode]
-    let games: [String: Int]
-    @Binding var selected: GameMode?
-
-    private let shortTitles: [String: String] = [
-        "practice": "Classic", "quordle": "Quad", "octordle": "Octo", "sequence": "Succ",
-        "rescue": "Deliv", "six": "Six", "seven": "Seven", "gauntlet": "Gauntlet", "propernoundle": "Proper",
-    ]
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                allChip
-                ForEach(modes) { m in modeChip(m) }
-            }
-            .padding(.horizontal, 1)
-        }
-    }
-
-    private var allChip: some View {
-        let active = selected == nil
-        return Button { selected = nil } label: {
-            VStack(spacing: 4) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary.opacity(0.08) : Theme.surfaceAlt)
-                        .frame(width: 28, height: 28)
-                    Image(systemName: "chart.bar.fill").font(.system(size: 13)).foregroundStyle(active ? Theme.primary : Theme.textMuted)
-                }
-                Text("All").font(Brand.font(10, .heavy)).foregroundStyle(active ? Theme.primary : Theme.textMuted)
-                Text(" ").font(Brand.font(8, .bold))   // reserve the games-count line so heights match
-            }
-            .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(PressableStyle())
-    }
-
-    private func modeChip(_ m: HomeMode) -> some View {
-        // ProperNoundle's HomeMode carries mode: nil (own view, not GameScreen) —
-        // derive its GameMode from the dbKey so the chip selects + counts.
-        let gm = m.mode ?? m.dbKey.flatMap { GameMode(rawValue: $0) }
-        let active = selected != nil && selected == gm
-        let count = gm.flatMap { games[$0.rawValue] } ?? 0
-        return Button { selected = active ? nil : gm } label: {
-            VStack(spacing: 4) {
-                ModeIconView(icon: m.icon, accent: m.accent, box: 28)
-                Text(shortTitles[m.id] ?? ModeGen.byId(m.id)?.shortTitle ?? m.title).font(Brand.font(10, .heavy))
-                    .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(count > 0 ? "\(count)" : " ").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
-            }
-            .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(PressableStyle())
     }
 }
 

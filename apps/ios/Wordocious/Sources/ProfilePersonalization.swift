@@ -40,6 +40,10 @@ enum ProfileAccent {
 /// the profile header (own + public). Mirrors the web profile-header personalization.
 struct ProfilePersonalizationRow: View {
     let profile: Profile
+    /// D2 identity strip (Stats tab): chips inline on one wrapping row, bio
+    /// left-aligned under them, instead of the centered stack the public
+    /// profile header uses.
+    var leading: Bool = false
     @ObservedObject private var catalog = AchievementCatalog.shared
 
     private var accent: Color { ProfileAccent.color(profile.accentColor) }
@@ -53,28 +57,60 @@ struct ProfilePersonalizationRow: View {
     }
 
     var body: some View {
-        VStack(spacing: 6) {
-            if let name = titleName {
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill").font(.system(size: 9, weight: .bold))
-                    Text(name.uppercased()).font(Brand.font(10, .black)).tracking(0.4)
+        Group {
+            if leading {
+                VStack(alignment: .leading, spacing: 4) {
+                    if titleName != nil || favMode != nil {
+                        HStack(spacing: 6) {
+                            if titleName != nil { titleChip }
+                            if favMode != nil { favChip }
+                        }
+                    }
+                    if let bio = bioText {
+                        Text(bio).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                            .multilineTextAlignment(.leading).lineLimit(2)
+                    }
                 }
-                .foregroundStyle(accent).padding(.horizontal, 9).padding(.vertical, 3)
-                .background(Capsule().fill(accent.opacity(0.12)))
-            }
-            if let bio = profile.bio?.trimmingCharacters(in: .whitespaces), !bio.isEmpty {
-                Text(bio).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
-                    .multilineTextAlignment(.center).frame(maxWidth: 300)
-            }
-            if let m = favMode {
-                HStack(spacing: 5) {
-                    ModeIconView(icon: m.icon, accent: m.accent, box: 16)
-                    Text(m.title).font(Brand.font(11, .bold)).foregroundStyle(m.accent)
+            } else {
+                VStack(spacing: 6) {
+                    if titleName != nil { titleChip }
+                    if let bio = bioText {
+                        Text(bio).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                            .multilineTextAlignment(.center).frame(maxWidth: 300)
+                    }
+                    if favMode != nil { favChip }
                 }
-                .padding(.horizontal, 9).padding(.vertical, 3)
-                .background(Capsule().fill(m.accent.opacity(0.12)))
             }
         }
         .task { await catalog.load() }
+    }
+
+    private var bioText: String? {
+        guard let bio = profile.bio?.trimmingCharacters(in: .whitespaces), !bio.isEmpty else { return nil }
+        return bio
+    }
+
+    @ViewBuilder private var titleChip: some View {
+        if let name = titleName {
+            HStack(spacing: 4) {
+                Image(systemName: "star.fill").font(.system(size: 9, weight: .bold))
+                Text(name.uppercased()).font(Brand.font(10, .black)).tracking(0.4)
+            }
+            .foregroundStyle(accent).padding(.horizontal, 9).padding(.vertical, 3)
+            .background(Capsule().fill(accent.opacity(0.12)))
+            .lineLimit(1).minimumScaleFactor(0.8)
+        }
+    }
+
+    @ViewBuilder private var favChip: some View {
+        if let m = favMode {
+            HStack(spacing: 5) {
+                ModeIconView(icon: m.icon, accent: m.accent, box: 16)
+                Text(m.title).font(Brand.font(11, .bold)).foregroundStyle(m.accent)
+            }
+            .padding(.horizontal, 9).padding(.vertical, 3)
+            .background(Capsule().fill(m.accent.opacity(0.12)))
+            .lineLimit(1).minimumScaleFactor(0.8)
+        }
     }
 }

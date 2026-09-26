@@ -276,3 +276,50 @@ struct StatsEmptyCard: View {
         }
     }
 }
+
+/// Left-aligned wrapping row (iOS 16 Layout) — the Stats identity strip's
+/// action row (social links · Edit · Share · Private · Go Pro · Simulate Pro)
+/// flows onto a second line instead of squeezing or scrolling.
+struct ActionWrapRow: Layout {
+    var spacing: CGFloat = 8
+    var lineSpacing: CGFloat = 8
+
+    private func rows(_ subviews: Subviews, width: CGFloat) -> [[Int]] {
+        var rows: [[Int]] = [[]], x: CGFloat = 0
+        for i in subviews.indices {
+            let w = subviews[i].sizeThatFits(.unspecified).width
+            if !rows[rows.count - 1].isEmpty && x + spacing + w > width { rows.append([]); x = 0 }
+            x += (rows[rows.count - 1].isEmpty ? 0 : spacing) + w
+            rows[rows.count - 1].append(i)
+        }
+        return rows
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        let rs = rows(subviews, width: width)
+        var h: CGFloat = 0, maxW: CGFloat = 0
+        for r in rs {
+            let sizes = r.map { subviews[$0].sizeThatFits(.unspecified) }
+            h += sizes.map(\.height).max() ?? 0
+            maxW = max(maxW, sizes.map(\.width).reduce(0, +) + spacing * CGFloat(max(0, r.count - 1)))
+        }
+        h += lineSpacing * CGFloat(max(0, rs.count - 1))
+        return CGSize(width: width.isFinite ? width : maxW, height: h)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for r in rows(subviews, width: bounds.width) {
+            let sizes = r.map { subviews[$0].sizeThatFits(.unspecified) }
+            let rowH = sizes.map(\.height).max() ?? 0
+            var x = bounds.minX
+            for (k, i) in r.enumerated() {
+                // Center each item vertically in its line so 30pt circles and 28pt capsules align.
+                subviews[i].place(at: CGPoint(x: x, y: y + (rowH - sizes[k].height) / 2), proposal: ProposedViewSize(sizes[k]))
+                x += sizes[k].width + spacing
+            }
+            y += rowH + lineSpacing
+        }
+    }
+}

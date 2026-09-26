@@ -60,10 +60,16 @@ struct ProfileDashboard: View {
 
 private struct LegacyChartCard<Content: View>: View {
     let title: String
+    /// Small muted note at the title's right ("word games" on the All-time histogram).
+    var hint: String? = nil
     @ViewBuilder var content: Content
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            HStack {
+                Text(title).font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                Spacer()
+                if let hint { Text(hint).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted) }
+            }
             content
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
@@ -109,7 +115,9 @@ private struct GuessDistributionChart: View {
         // Gauntlet runs can take up to 50 guesses across 21 boards — a guess
         // histogram is meaningless there, so the chart is hidden (all platforms).
         if mode == .gauntlet { EmptyView() } else {
-        LegacyChartCard(title: "\(noun.one.uppercased()) DISTRIBUTION") {
+        // All-time: word games only here (one histogram cannot mix guesses,
+        // mistakes and checks); each game page has its own.
+        LegacyChartCard(title: "\(noun.one.uppercased()) DISTRIBUTION", hint: mode == nil ? "word games" : nil) {
             if totalWins == 0 {
                 EmptyChart(copy: "Win a game to see your \(noun.one) distribution")
             } else {
