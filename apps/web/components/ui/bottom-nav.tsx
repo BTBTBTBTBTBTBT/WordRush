@@ -3,22 +3,26 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Home, Trophy, User, Crown } from 'lucide-react';
+import { Home, Trophy, BarChart3, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { loadFriends, getIncoming, onFriendsChange } from '@/lib/friends-service';
 
+// D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile
+// and Records merge into Stats; Friends gets its own tab. iOS RootTabView and
+// Android MainScreen carry the same four.
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/daily', label: 'Leaderboard', icon: Trophy },
-  { href: '/profile', label: 'Profile', icon: User },
-  { href: '/records', label: 'Records', icon: Crown },
+  { href: '/stats', label: 'Stats', icon: BarChart3 },
+  { href: '/friends', label: 'Friends', icon: Users },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
   const ref = useRef<HTMLElement | null>(null);
-  // Pending friend-request badge on Profile (Tier 1, Aug 11): pushes were the
-  // only signal before — a missed push meant a request nobody ever saw.
+  // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
+  // in D1): pushes were the only signal before — a missed push meant a request
+  // nobody ever saw.
   const { user } = useAuth();
   const [pendingRequests, setPendingRequests] = useState(0);
   useEffect(() => {
@@ -75,7 +79,7 @@ export function BottomNav() {
                 fill={isActive ? '#7c3aed' : 'none'}
                 aria-hidden="true"
               />
-              {item.href === '/profile' && pendingRequests > 0 && (
+              {item.href === '/friends' && pendingRequests > 0 && (
                 <span
                   className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full"
                   style={{ backgroundColor: '#7c3aed' /* win purple (founder, Aug 11) */ }}

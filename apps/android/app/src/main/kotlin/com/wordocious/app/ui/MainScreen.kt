@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,7 +54,9 @@ import com.wordocious.app.ui.game.GameScreen
 import com.wordocious.app.ui.theme.WTheme
 
 /**
- * Root 4-tab shell — matches the web BottomNav (Home / Leaderboard / Profile / Records).
+ * Root 4-tab shell — matches the web BottomNav (Home / Leaderboard / Stats / Friends;
+ * D1 of the Stats + Friends redesign, founder 2026-09-26 — Profile and Records merged
+ * into Stats, Friends promoted to a tab).
  * The tab bar is hidden when a game screen is active (web hides it on game pages too).
  */
 private data class TabItem(
@@ -70,9 +74,8 @@ private data class TabItem(
 private val TABS = listOf(
     TabItem("Home", Icons.Filled.Home, Icons.Outlined.Home),
     TabItem("Leaderboard", Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents),
-    TabItem("Profile", Icons.Filled.Person, Icons.Outlined.Person),
-    // iOS/web use a crown for Records; Material has no crown, so use our asset.
-    TabItem("Records", null, null, R.drawable.ic_crown, R.drawable.ic_crown_filled),
+    TabItem("Stats", Icons.Filled.BarChart, Icons.Outlined.BarChart),
+    TabItem("Friends", Icons.Filled.Group, Icons.Outlined.Group),
 )
 
 /**
@@ -87,8 +90,8 @@ private val TABS = listOf(
 @Composable
 private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val haptics = LocalHapticFeedback.current
-    // Red dot on Profile while friend requests wait (§207 Tier 1 — web/iOS
-    // badge parity). Listener keeps it live as requests arrive or resolve.
+    // Red dot on Friends while friend requests wait (§207 Tier 1 — web/iOS
+    // badge parity; moved from Profile in D1). Listener keeps it live as requests arrive or resolve.
     var friendsVersion by remember { mutableIntStateOf(com.wordocious.app.data.FriendsService.version) }
     androidx.compose.runtime.DisposableEffect(Unit) {
         val remove = com.wordocious.app.data.FriendsService.addListener {
@@ -131,8 +134,8 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                                 tab.label, tint = tint, modifier = Modifier.size(20.dp),
                             )
                         }
-                        // Pending friend requests → dot on the Profile icon.
-                        if (tab.label == "Profile" && pendingRequests > 0) {
+                        // Pending friend requests → dot on the Friends icon.
+                        if (tab.label == "Friends" && pendingRequests > 0) {
                             Box(
                                 Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-3).dp)
                                     .size(8.dp).clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
@@ -228,9 +231,10 @@ fun MainScreen() {
     var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
     var publicProfileId by remember { mutableStateOf<String?>(null) }
-    // Dedicated Friends screen overlay (§207 Tier 3) — opened from the profile
-    // row link and the empty Friends leaderboard CTA.
-    var showFriends by remember { mutableStateOf(false) }
+    // Records overlay (D1, 2026-09-26): Records left the tab bar; until D2 folds
+    // its rows into Stats it opens from the Stats page's RECORDS row, pushed
+    // in-tab like the public profile.
+    var showRecords by remember { mutableStateOf(false) }
     // Warm-resume day rollover (founder-approved UX, iOS WordociousApp parity):
     // if the LOCAL day changed while backgrounded, reset the landing surface
     // exactly like a cold start — Home tab, Daily toggle (App.onCreate resets
@@ -252,7 +256,6 @@ fun MainScreen() {
                         com.wordocious.app.data.SettingsPref.set("pref-play-mode", "daily")
                         if (activeGame != null) { activeGame = null; activeSeed = null }
                         publicProfileId = null
-                        showFriends = false
                         selectedTab = 0
                     }
                 }
@@ -392,7 +395,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -410,7 +413,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -427,7 +430,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -444,7 +447,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -461,7 +464,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -478,7 +481,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -495,7 +498,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -512,7 +515,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -529,7 +532,7 @@ fun MainScreen() {
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
                         activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null; showFriends = false
+                        publicProfileId = null
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
                     },
@@ -581,7 +584,7 @@ fun MainScreen() {
             // the game and land on the Leaderboard tab with the mode selected.
             onOpenLeaderboard = { m ->
                 activeGame = null; activeSeed = null; launchedFromMore = false
-                publicProfileId = null; showFriends = false
+                publicProfileId = null
                 LeaderboardDeepLink.pendingMode.value = m.name
                 selectedTab = 1
             },
@@ -644,7 +647,7 @@ fun MainScreen() {
             Column(Modifier.fillMaxWidth()) {
                 // Switching tabs pops the public-profile push, mirroring iOS's
                 // per-tab path reset (RootTabView.swift:38-47).
-                BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showFriends = false; selectedTab = it })
+                BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showRecords = false; selectedTab = it })
             }
         },
     ) { innerPadding ->
@@ -696,8 +699,8 @@ fun MainScreen() {
                             1 -> LeaderboardScreen(
                                 onOpenProfile = { publicProfileId = it },
                                 onPlay = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
-                                // Empty Friends board CTA → the Friends screen (§207 Tier 2).
-                                onOpenFriends = { showFriends = true },
+                                // Empty Friends board CTA → the Friends tab (§207 Tier 2).
+                                onOpenFriends = { selectedTab = 3 },
                             )
                             2 -> ProfileScreen(
                                 onGoPro = { infoRoute = "pro" },
@@ -707,23 +710,25 @@ fun MainScreen() {
                                 onPlayDaily = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
                                 // Friends card rows → push the friend's profile in-tab.
                                 onOpenProfile = { publicProfileId = it },
-                                // Compact FRIENDS row → the dedicated screen (§207 Tier 3).
-                                onOpenFriends = { showFriends = true },
+                                // Compact FRIENDS row → the Friends tab (§207 Tier 3).
+                                onOpenFriends = { selectedTab = 3 },
+                                // D1: Records left the tab bar; its rows fold into Stats in D2.
+                                onOpenRecords = { showRecords = true },
                             )
-                            3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
+                            3 -> FriendsScreen(
+                                // Tab root: "Back" returns to Stats until D3 restyles the page.
+                                onClose = { selectedTab = 2 },
+                                onOpenProfile = { publicProfileId = it },
+                            )
                         }
                     }
                 }
 
-                // Friends screen — same push-inside-the-tab pattern as the
-                // public profile below; profile taps from it layer on top.
-                if (showFriends) {
-                    androidx.activity.compose.BackHandler { showFriends = false }
+                // Records — pushed inside the Stats tab (D1) until D2 folds it in.
+                if (showRecords) {
+                    androidx.activity.compose.BackHandler { showRecords = false }
                     Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
-                        FriendsScreen(
-                            onClose = { showFriends = false },
-                            onOpenProfile = { publicProfileId = it },
-                        )
+                        RecordsScreen(onOpenProfile = { publicProfileId = it })
                     }
                 }
 

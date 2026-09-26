@@ -122,7 +122,7 @@ private data class ProfileChartsMemo(
 )
 
 @Composable
-fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}, onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}) {
+fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}, onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
@@ -355,6 +355,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
 
         // ── FRIENDS (§207 Tier 3) — compact row into the dedicated screen ──
         item { FriendsRowLink(onOpen = onOpenFriends) }
+        // D1 (2026-09-26): Records left the tab bar; its rows fold into Stats in D2.
+        item { RecordsRowLink(onOpen = onOpenRecords) }
 
         // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
         // (founder, 2026-09-26: on the profile it was clutter and a duplicate).

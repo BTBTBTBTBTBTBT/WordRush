@@ -183,6 +183,8 @@ struct ProfileTab: View {
                 // profile-page placement (above the referral panel).
                 // Tier 3 (Aug 11): full card lives on FriendsScreenView now.
                 FriendsRowLink()
+                // D1: Records left the tab bar; its rows fold into Stats in D2.
+                RecordsRowLink()
                 // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
                 // (founder, 2026-09-26: on the profile it was clutter and a duplicate).
                 todaysDailies

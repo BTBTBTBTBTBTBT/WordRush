@@ -1215,3 +1215,31 @@ struct YourRecordsView: View {
         loading = false
     }
 }
+
+
+/// Compact "RECORDS →" row on the Stats (Profile) page — the door to RecordsTab
+/// while the Records tab is gone (D1, 2026-09-26) and before its rows fold into
+/// the per-game pages and the All-time page (D2 step 3). Presented as a sheet
+/// because RecordsTab owns a NavigationStack of its own. Twin of FriendsRowLink.
+struct RecordsRowLink: View {
+    @State private var show = false
+    var body: some View {
+        Button { show = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "crown.fill").font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color(hex: 0x7C3AED))
+                Text("RECORDS")
+                    .font(Brand.font(16, .black)).tracking(0.3)
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .black))
+                    .foregroundStyle(Color(hex: 0x7C3AED))
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $show) { RecordsTab().presentationDetents([.large]) }
+    }
+}

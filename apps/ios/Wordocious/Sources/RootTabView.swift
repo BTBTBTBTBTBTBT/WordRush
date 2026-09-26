@@ -40,7 +40,10 @@ struct RootTabView: View {
         var id: String { seed }
     }
 
-    enum Tab: Hashable { case home, leaderboard, profile, records }
+    /// D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile and
+    /// Records merge into Stats; Friends gets its own tab. Web bottom-nav.tsx / Android
+    /// MainScreen carry the same four.
+    enum Tab: Hashable { case home, leaderboard, stats, friends }
     struct SafariURLItem: Identifiable { let id = UUID(); let url: URL }
 
     init() {
@@ -117,8 +120,12 @@ struct RootTabView: View {
         TabView(selection: tabSelection) {
             HomeView().tag(Tab.home).tabItem { Label("Home", systemImage: "house") }
             LeaderboardTab(path: $leaderboardPath).tag(Tab.leaderboard).tabItem { Label("Leaderboard", systemImage: "trophy") }
-            ProfileTab().tag(Tab.profile).tabItem { Label("Profile", systemImage: "person") }
-            RecordsTab().tag(Tab.records).tabItem { Label("Records", systemImage: "crown") }
+            ProfileTab().tag(Tab.stats).tabItem { Label("Stats", systemImage: "chart.bar") }
+            NavigationStack {
+                FriendsScreenView(padsForChrome: false)
+                    .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
+            }
+            .tag(Tab.friends).tabItem { Label("Friends", systemImage: "person.2") }
         }
         .toolbar(.hidden, for: .tabBar)
         // Hide the nav while an immersive screen (a game / solved puzzle) is up
@@ -351,16 +358,17 @@ extension View {
 /// Custom bottom navigation — 1:1 with the web BottomNav.
 private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
-    // Pending friend-request badge on Profile (Tier 1, Aug 11): pushes were
-    // the only signal before — a missed push meant a request nobody saw.
+    // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
+    // in D1): pushes were the only signal before — a missed push meant a request
+    // nobody saw.
     @State private var pendingRequests = 0
 
     var body: some View {
         HStack(spacing: 0) {
             item(.home, "house", "Home")
             item(.leaderboard, "trophy", "Leaderboard")
-            item(.profile, "person", "Profile", badge: pendingRequests)
-            item(.records, "crown", "Records")
+            item(.stats, "chart.bar", "Stats")
+            item(.friends, "person.2", "Friends", badge: pendingRequests)
         }
         .padding(.top, 8)
         .frame(maxWidth: .infinity)

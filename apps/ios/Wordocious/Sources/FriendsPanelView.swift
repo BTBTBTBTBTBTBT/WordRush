@@ -831,6 +831,8 @@ struct FriendsScreenView: View {
     // §218: pushed views don't inherit the root's safeAreaInset, so without
     // this the BottomNav covered the tail of the gift-Pro card (the same
     // cutoff PublicProfileView fixed) — pad by the reported chrome height.
+    // As the Friends TAB root (D1, 2026-09-26) the inset already applies: false.
+    var padsForChrome = true
     @ObservedObject private var chrome = ChromeVisibility.shared
 
     var body: some View {
@@ -842,7 +844,7 @@ struct FriendsScreenView: View {
                 InvitePanelView()
             }
             .padding(16)
-            .padding(.bottom, chrome.bottomInset)
+            .padding(.bottom, padsForChrome ? chrome.bottomInset : 0)
         }
         .background(Theme.background.ignoresSafeArea())
         // navigationTitle stays for the next push's back label; the principal

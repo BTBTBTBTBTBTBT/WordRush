@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -1221,5 +1222,43 @@ private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecor
                 }
             }
         }
+    }
+}
+
+
+/**
+ * Compact "RECORDS →" row on the Stats (Profile) page — the door to RecordsScreen
+ * while the Records tab is gone (D1, 2026-09-26) and before its rows fold into the
+ * per-game pages and the All-time page (D2 step 3). Twin of FriendsRowLink.
+ */
+@Composable
+fun RecordsRowLink(onOpen: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(WTheme.surface, RoundedCornerShape(20.dp))
+            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
+            .clickableNoRipple(onOpen)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown_filled), null,
+            tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp),
+        )
+        Text(
+            "RECORDS",
+            fontSize = 15.sp, fontWeight = FontWeight.Black,
+            style = TextStyle(
+                brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
+                fontFamily = Nunito,
+            ),
+        )
+        Spacer(Modifier.weight(1f))
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
+            tint = WTheme.textMuted, modifier = Modifier.size(18.dp),
+        )
     }
 }
