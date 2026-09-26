@@ -109,12 +109,19 @@ fun MoreGamesBand(
                             Box(Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)).background(Color.White.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Filled.Check, null, tint = if (gold) Color(0xFFB45309) else INDIGO, modifier = Modifier.size(11.dp))
                             }
+                        } else if (done) {
+                            // Played today = a SOLID accent chip with a white glyph (founder, 2026-09-26:
+                            // "I finished Spyglass and you can barely tell" — the ring alone was too quiet).
+                            Box(
+                                Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)).background(m.accent),
+                                contentAlignment = Alignment.Center,
+                            ) { ModeGlyph(m, Color.White, 18.dp) }
                         } else {
-                            // Played today = full strength with an accent ring; still to play = faded.
+                            // Still to play = faded tint.
                             Box(
                                 Modifier.size(18.dp).clip(RoundedCornerShape(5.dp))
-                                    .border(1.2.dp, m.accent.copy(alpha = if (done) 0.9f else 0.25f), RoundedCornerShape(5.dp))
-                                    .alpha(if (done) 1f else 0.55f),
+                                    .border(1.dp, m.accent.copy(alpha = 0.25f), RoundedCornerShape(5.dp))
+                                    .alpha(0.5f),
                                 contentAlignment = Alignment.Center,
                             ) { ModeGlyph(m, m.accent, 18.dp) }
                         }

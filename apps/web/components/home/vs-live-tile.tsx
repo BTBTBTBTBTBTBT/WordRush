@@ -43,19 +43,18 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
       aria-label="VS Battle"
     >
       <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: `linear-gradient(180deg, ${accent}, ${accent}88)` }} />
+      {/* W / L pill top-right — the same badge the mode cards show (founder, 2026-09-26). */}
+      {done && (
+        <div className="absolute top-2 right-2.5 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: vsDailyWon ? '#7c3aed' : '#dc2626' }}>
+          <span className="text-[10px] font-black text-white leading-none">{vsDailyWon ? 'W' : 'L'}</span>
+        </div>
+      )}
       <button type="button" onClick={onOpen} className="flex-1 min-w-0 flex items-center gap-3 text-left transition-transform active:scale-[0.98]" aria-label="Open VS Battle">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}15` }}>
           <Icon className="w-5 h-5" style={{ color: accent }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] font-black leading-tight" style={{ color: 'var(--color-text)' }}>{card.title}</span>
-            {done && (
-              <span className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: vsDailyWon ? '#7c3aed' : '#dc2626' }}>
-                <span className="text-[10px] font-black text-white leading-none">{vsDailyWon ? 'W' : 'L'}</span>
-              </span>
-            )}
-          </div>
+          <div className="text-[13px] font-black leading-tight" style={{ color: 'var(--color-text)' }}>{card.title}</div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
             <span className="text-[10px] font-black" style={{ color: 'var(--color-text)' }}>LIVE</span>

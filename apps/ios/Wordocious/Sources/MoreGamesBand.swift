@@ -64,11 +64,20 @@ struct MoreGamesBand: View {
                                             .foregroundStyle(gold ? Color(hex: 0xB45309) : indigo)
                                     }
                                     .frame(width: 18, height: 18)
+                                } else if done {
+                                    // Played today = a SOLID accent chip with a white glyph (founder, 2026-09-26:
+                                    // "I finished Spyglass and you can barely tell" — the ring alone was too quiet).
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 5).fill(m.accent)
+                                        ModeIconView(icon: m.icon, accent: .white, box: 18)
+                                    }
+                                    .frame(width: 18, height: 18)
+                                    .shadow(color: m.accent.opacity(0.45), radius: 3, y: 1)
                                 } else {
-                                    // Played today = full strength with an accent ring; still to play = faded.
+                                    // Still to play = faded tint.
                                     ModeIconView(icon: m.icon, accent: m.accent, box: 18)
-                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(m.accent.opacity(done ? 0.9 : 0.25), lineWidth: 1.2))
-                                        .opacity(done ? 1 : 0.55)
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(m.accent.opacity(0.25), lineWidth: 1))
+                                        .opacity(0.5)
                                 }
                             }
                         }

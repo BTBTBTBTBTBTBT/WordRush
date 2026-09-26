@@ -81,12 +81,21 @@ fun VSLiveTile(
     }
     val shape = RoundedCornerShape(14.dp)
 
+    // Completed daily: the same accent glow the mode cards wear (done tint + accent border)
+    // so today's battle never looks unplayed (founder, 2026-09-26); W/L pill top-right like the cards.
     Box(
         Modifier.fillMaxWidth().clip(shape)
-            .background(if (done) accent.copy(alpha = 0.06f) else WTheme.surface)
-            .border(1.5.dp, if (done) accent.copy(alpha = 0.4f) else WTheme.border, shape),
+            .background(if (done) accent.copy(alpha = 0.10f) else WTheme.surface)
+            .border(1.5.dp, if (done) accent.copy(alpha = 0.55f) else WTheme.border, shape),
     ) {
         Box(Modifier.width(4.dp).fillMaxHeight().padding(vertical = 6.dp).clip(CircleShape).background(accent))
+        if (done) {
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 10.dp).size(20.dp)
+                    .clip(RoundedCornerShape(6.dp)).background(if (vsDailyWon == true) Color(0xFF7C3AED) else Color(0xFFDC2626)),
+                contentAlignment = Alignment.Center,
+            ) { Text(if (vsDailyWon == true) "W" else "L", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White) }
+        }
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -96,15 +105,7 @@ fun VSLiveTile(
                     ModeGlyph(card, accent, 36.dp)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-                        if (done) {
-                            Box(
-                                Modifier.size(20.dp).clip(RoundedCornerShape(6.dp)).background(if (vsDailyWon == true) Color(0xFF7C3AED) else Color(0xFFDC2626)),
-                                contentAlignment = Alignment.Center,
-                            ) { Text(if (vsDailyWon == true) "W" else "L", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White) }
-                        }
-                    }
+                    Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         LivePulseDot()
                         Text("LIVE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text)

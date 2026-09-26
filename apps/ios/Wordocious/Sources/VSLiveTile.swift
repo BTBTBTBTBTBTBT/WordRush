@@ -32,14 +32,7 @@ struct VSLiveTile<Destination: View>: View {
                 HStack(spacing: 12) {
                     ModeIconView(icon: mode.icon, accent: accent, box: 36)
                     VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 8) {
-                            Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                            if done {
-                                Text((vsDailyWon ?? false) ? "W" : "L").font(Brand.font(10, .black)).foregroundStyle(.white)
-                                    .frame(width: 20, height: 20)
-                                    .background(RoundedRectangle(cornerRadius: 6).fill((vsDailyWon ?? false) ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)))
-                            }
-                        }
+                        Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                         HStack(spacing: 6) {
                             LivePulseDot()
                             Text("LIVE").font(Brand.font(10, .black)).foregroundStyle(Theme.textPrimary)
@@ -66,10 +59,22 @@ struct VSLiveTile<Destination: View>: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 14).fill(done ? accent.opacity(0.06) : Theme.surface))
+        // Completed daily: the same accent glow the mode cards wear (ModeCardView done
+        // tint + accent border) so today's battle never looks unplayed (founder, 2026-09-26).
+        .background(RoundedRectangle(cornerRadius: 14).fill(done ? accent.opacity(0.10) : Theme.surface))
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: 14).fill(accent).frame(width: 4).padding(.vertical, 6)
         }
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(done ? accent.opacity(0.4) : Theme.border, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(done ? accent.opacity(0.55) : Theme.border, lineWidth: 1.5))
+        .overlay(alignment: .topTrailing) {
+            // W / L pill in the top-right corner — the same badge the mode cards show.
+            if done {
+                Text((vsDailyWon ?? false) ? "W" : "L").font(Brand.font(10, .black)).foregroundStyle(.white)
+                    .frame(width: 20, height: 20)
+                    .background(RoundedRectangle(cornerRadius: 6).fill((vsDailyWon ?? false) ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)))
+                    .padding(.top, 8).padding(.trailing, 10)
+            }
+        }
+        .shadow(color: done ? accent.opacity(0.25) : .clear, radius: 8, y: 2)
     }
 }
