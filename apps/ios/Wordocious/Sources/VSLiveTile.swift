@@ -41,7 +41,6 @@ struct VSLiveTile<Destination: View>: View {
                         Text(subtitle).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    Image(systemName: "chevron.right").font(.system(size: 15, weight: .bold)).foregroundStyle(accent)
                 }
             }
             .buttonStyle(.plain)

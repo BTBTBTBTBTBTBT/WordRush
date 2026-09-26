@@ -17,12 +17,14 @@ struct MoreGamesSheet: View {
     let playMode: PlayMode
     let isPro: Bool
     let onSelect: (HomeMode) -> Void
+    /// Set when hosted in the MoreGamesMorph panel (no presentation to dismiss).
+    var onClose: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
 
     private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
 
     var body: some View {
-        MenuScaffold("More Games") {
+        MenuScaffold("More Games", onClose: onClose) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(playMode == .daily ? "One free daily each · not part of the Daily Sweep" : "Unlimited play")
@@ -45,7 +47,7 @@ struct MoreGamesSheet: View {
                                     let locked = !isPro && done != nil
                                     Button {
                                         onSelect(mode)
-                                        dismiss()
+                                        if let onClose { onClose() } else { dismiss() }
                                     } label: {
                                         ModeCardView(mode: mode, done: done, locked: locked)
                                     }

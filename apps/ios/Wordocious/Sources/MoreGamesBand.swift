@@ -3,8 +3,10 @@ import WordociousCore
 
 /// The More Games band (founder + JP, 2026-09-26): a full-width tile directly
 /// UNDER the game grid — indigo accent, the ten small game icons in catalog
-/// order, "N of 10 played", chevron — so nobody hunts for the extra games but
-/// the page still opens on the Daily Challenge and the eight word games.
+/// order, "N of 10 played" — so nobody hunts for the extra games but the page
+/// still opens on the Daily Challenge and the eight word games. No chevron
+/// (founder, 2026-09-26): the whole band is the button, and the menu GROWS out
+/// of it (MoreGamesMorph reads this band's frame through MoreBandFrameKey).
 ///
 /// It is also the More Games "hero": every More Games daily played → filled
 /// indigo, "MORE GAMES SWEEP!"; every one won → the gold Flawless treatment,
@@ -85,8 +87,6 @@ struct MoreGamesBand: View {
                         Text(subtitle).font(Brand.font(10, .bold)).foregroundStyle(subC).lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    Image(systemName: "chevron.right").font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(tier == nil ? indigo : (gold ? Color(hex: 0xB45309) : .white))
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
@@ -113,9 +113,11 @@ struct MoreGamesBand: View {
                         .background(Capsule().fill(Color.white.opacity(0.85)))
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 8).padding(.trailing, 36)
+                .padding(.top, 8).padding(.trailing, 12)
             }
         }
+        // The morph's origin: this band's frame, read by HomeView.
+        .background(GeometryReader { g in Color.clear.preference(key: MoreBandFrameKey.self, value: g.frame(in: .global)) })
     }
 
     private func background(tier: MoreSweepTier?, gold: Bool) -> LinearGradient {

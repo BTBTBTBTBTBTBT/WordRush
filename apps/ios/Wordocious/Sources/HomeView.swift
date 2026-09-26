@@ -97,6 +97,8 @@ struct HomeView: View {
     @State private var pnDaily = false
     /// More Games sheet (Stage 5) + the pick it hands back on dismiss.
     @State private var showMoreGames = false
+    /// The More Games band's frame (global) — where the menu panel grows from.
+    @State private var moreBandFrame: CGRect?
     @State private var pendingMorePick: HomeMode?
     /// Founder + JP (2026-09-26): a game launched FROM the sheet returns to the sheet on
     /// every exit (Home, results Home, swipe-back). Set in openFromMoreGames, consumed in
@@ -334,11 +336,21 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
-            .sheet(isPresented: $showMoreGames, onDismiss: {
-                if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
-            }) {
-                MoreGamesSheet(modes: visibleMoreModes, completions: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive) { pendingMorePick = $0 }
-                    .presentationDetents([.large])
+            // More Games grows out of its band (founder, 2026-09-26) instead of a sheet
+            // fanning up: MoreGamesMorph animates the panel from the band's frame; once
+            // it has collapsed back, any pick made inside is routed exactly as before.
+            .onPreferenceChange(MoreBandFrameKey.self) { moreBandFrame = $0 }
+            .overlay {
+                if showMoreGames {
+                    MoreGamesMorph(origin: moreBandFrame, onDismissed: {
+                        showMoreGames = false
+                        if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
+                    }) { close in
+                        MoreGamesSheet(modes: visibleMoreModes, completions: completions.byMode, playMode: effectiveMode,
+                                       isPro: auth.isProActive, onSelect: { pendingMorePick = $0 }, onClose: close)
+                    }
+                    .zIndex(50)
+                }
             }
             .fullScreenCover(item: $solvedMode, onDismiss: { onGameCoverDismissed() }) { m in
                 NavigationStack {

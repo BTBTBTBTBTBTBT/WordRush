@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Swords } from 'lucide-react';
+import { Swords } from 'lucide-react';
 import type { HomeCard } from './mode-chrome';
 
 // VS Battle as a full-width tile at the very bottom of the game area (founder +
@@ -62,7 +62,6 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
           </div>
           <div className="text-[10px] font-bold leading-tight" style={{ color: 'var(--color-text-muted)' }}>{subtitle}</div>
         </div>
-        <ChevronRight className="w-5 h-5 shrink-0" style={{ color: accent }} />
       </button>
       {isPro && (
         <button

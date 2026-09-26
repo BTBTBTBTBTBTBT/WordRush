@@ -86,12 +86,16 @@ func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
 struct MenuScaffold<Content: View>: View {
     let title: String
     var onBack: (() -> Void)? = nil
+    /// Close action when the scaffold is NOT hosted in a presentation (the More Games
+    /// morph panel); nil → the environment dismiss.
+    var onClose: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     let content: () -> Content
 
-    init(_ title: String, onBack: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(_ title: String, onBack: (() -> Void)? = nil, onClose: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.onBack = onBack
+        self.onClose = onClose
         self.content = content
     }
 
@@ -108,7 +112,7 @@ struct MenuScaffold<Content: View>: View {
                 }
                 Text(title).font(Brand.font(22, .black)).textCase(.uppercase).foregroundStyle(Theme.wordmarkGradient).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
-                Button { dismiss() } label: {
+                Button { if let onClose { onClose() } else { dismiss() } } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .black)).foregroundStyle(Theme.textMuted)
                         .frame(width: 30, height: 30).background(Circle().fill(Theme.surfaceAlt))
                 }

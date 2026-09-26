@@ -1,6 +1,25 @@
 package com.wordocious.app.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -112,11 +131,97 @@ fun MoreGamesSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg) {
-        Column(
-            Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        MoreGamesSheetContent(Modifier.heightIn(max = 640.dp), modes, completions, unlimitedMode, isPro, onSelect, onLocked, onDismiss)
+    }
+}
+
+/**
+ * More Games opens by GROWING OUT OF the band (founder, 2026-09-26: "a fluid entry into
+ * the menu from the current shape of the board, kind of like how we do the OctoWord
+ * zooms"). Same grammar as the OctoWord board zoom: the panel starts as the band's exact
+ * rectangle (14 dp radius), swells to a centered menu panel (20 dp) while the scrim fades
+ * in, and the menu content fades in over the second half; dismissal runs the same path
+ * backwards, shrinking onto the band before it vanishes. Replaces the ModalBottomSheet
+ * that used to fan up from the bottom. Web more-games-sheet.tsx and iOS MoreGamesMorph
+ * are the twins. Stays composed while collapsing, so the parent just flips [visible].
+ */
+@Composable
+fun MoreGamesMorphPanel(
+    visible: Boolean,
+    /** The band's bounds in root coordinates (null → grows from the centre). */
+    origin: androidx.compose.ui.geometry.Rect?,
+    onRequestClose: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    var mounted by remember { mutableStateOf(false) }
+    val progress = remember { Animatable(0f) }
+    val spring = spring<Float>(dampingRatio = 0.82f, stiffness = 320f)
+    LaunchedEffect(visible) {
+        if (visible) { mounted = true; progress.animateTo(1f, spring) }
+        else if (mounted) { progress.animateTo(0f, spring); mounted = false }
+    }
+    if (!mounted && !visible) return
+    BackHandler(enabled = visible) { onRequestClose() }
+    val p = progress.value
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val density = LocalDensity.current
+        var myPos by remember { mutableStateOf(Offset.Zero) }
+        val rootW = constraints.maxWidth.toFloat()
+        val rootH = constraints.maxHeight.toFloat()
+        val tw = minOf(rootW - with(density) { 32.dp.toPx() }, with(density) { 384.dp.toPx() })
+        val th = minOf(rootH - with(density) { 48.dp.toPx() }, with(density) { 720.dp.toPx() })
+        val target = Rect((rootW - tw) / 2f, (rootH - th) / 2f, (rootW - tw) / 2f + tw, (rootH - th) / 2f + th)
+        val from = origin?.translate(-myPos) ?: target.deflate(minOf(tw, th) * 0.05f)
+        val rect = lerp(from, target, p)
+        val radius = with(density) { (14f + 6f * p).dp }
+        val shape = RoundedCornerShape(radius)
+        Box(
+            Modifier.fillMaxSize()
+                .onGloballyPositioned { myPos = it.positionInRoot() }
+                .background(Color.Black.copy(alpha = 0.4f * p))
+                .clickableNoRipple(onRequestClose),
         ) {
+            Box(
+                Modifier
+                    .offset { IntOffset(rect.left.toInt(), rect.top.toInt()) }
+                    .size(with(density) { rect.width.toDp() }, with(density) { rect.height.toDp() })
+                    .alpha(minOf(1f, p * 2.5f))
+                    .clip(shape)
+                    .background(WTheme.bg)
+                    .border(1.5.dp, WTheme.border, shape)
+                    .clickableNoRipple {},
+            ) {
+                // Laid out at the FINAL size throughout and clipped to the in-flight rectangle,
+                // so nothing reflows while the panel grows.
+                Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true)) {
+                    Box(
+                        Modifier.size(with(density) { tw.toDp() }, with(density) { th.toDp() })
+                            .alpha(maxOf(0f, (p - 0.5f) * 2f)),
+                    ) { content() }
+                }
+            }
+        }
+    }
+}
+
+/** The sheet body shared by the ModalBottomSheet and the morph panel. */
+@Composable
+fun MoreGamesSheetContent(
+    modifier: Modifier = Modifier,
+    modes: List<ModeCard>,
+    completions: Map<String, DailyCompletionsService.Completion>,
+    unlimitedMode: Boolean,
+    isPro: Boolean,
+    onSelect: (ModeCard, Boolean) -> Unit,
+    onLocked: (ModeCard) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        run {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(

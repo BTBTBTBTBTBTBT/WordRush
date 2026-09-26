@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronRight, LayoutGrid, Sparkles, Trophy, Check } from 'lucide-react';
+import { LayoutGrid, Sparkles, Trophy, Check } from 'lucide-react';
+import { MORE_GAMES_BAND_ID } from './more-games-sheet';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { morePlayedCount, morePlayedText, moreSweepTier, moreDailyModes, computeMoreTotals, MORE_SWEEP_COPY } from '@/lib/more-games';
 import type { ModeMeta } from '@/lib/modes.generated';
@@ -9,8 +10,10 @@ import type { HomeCard } from './mode-chrome';
 
 // The More Games band (founder + JP, 2026-09-26): a full-width tile directly
 // UNDER the game grid — indigo accent, the ten small game icons in catalog
-// order, "N of 10 played", chevron — so nobody hunts for the extra games but
-// the page still opens on the Daily Challenge and the eight word games.
+// order, "N of 10 played" — so nobody hunts for the extra games but the page
+// still opens on the Daily Challenge and the eight word games. No chevron
+// (founder, 2026-09-26): the whole band is the button, and the sheet GROWS out
+// of it (more-games-sheet.tsx finds this element by MORE_GAMES_BAND_ID).
 //
 // It is also the More Games "hero": when every More Games daily is played it
 // fills indigo ("MORE GAMES SWEEP!"); when every one is won it takes the gold
@@ -52,6 +55,7 @@ export function MoreGamesBand({ card, modes, playMode, todayDailies, onOpen, onS
 
   return (
     <div
+      id={MORE_GAMES_BAND_ID}
       className="relative w-full shrink-0 overflow-hidden"
       style={{ background, border: tier ? border : `1.5px solid ${border}`, borderRadius: '14px' }}
       role="group"
@@ -112,14 +116,13 @@ export function MoreGamesBand({ card, modes, playMode, todayDailies, onOpen, onS
           </div>
           <div className="text-[10px] font-bold leading-tight" style={{ color: subColor }}>{subtitle}</div>
         </div>
-        <ChevronRight className="w-5 h-5 shrink-0" style={{ color: tier ? (gold ? '#b45309' : '#ffffff') : INDIGO }} />
       </button>
 
       {tier && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onShare(); }}
-          className="absolute top-2 right-9 text-[10px] font-black px-2 py-0.5 rounded-full"
+          className="absolute top-2 right-3 text-[10px] font-black px-2 py-0.5 rounded-full"
           style={{ background: 'rgba(255,255,255,0.85)', color: gold ? '#b45309' : INDIGO }}
         >
           Share

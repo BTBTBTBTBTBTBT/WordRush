@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.Icon
@@ -30,6 +29,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,8 +45,10 @@ private val INDIGO = Color(0xFF4F46E5)
 /**
  * The More Games band (founder + JP, 2026-09-26): a full-width tile directly UNDER
  * the game grid — indigo accent, the ten small game icons in catalog order, "N of
- * 10 played", chevron — so nobody hunts for the extra games but the page still opens
- * on the Daily Challenge and the eight word games.
+ * 10 played" — so nobody hunts for the extra games but the page still opens on the
+ * Daily Challenge and the eight word games. No chevron (founder, 2026-09-26): the whole
+ * band is the button, and the menu GROWS out of it (onPositioned reports this band's
+ * bounds to HomeScreen for MoreGamesMorphPanel).
  *
  * It is also the More Games "hero": every More Games daily played → filled indigo,
  * "MORE GAMES SWEEP!"; every one won → the gold Flawless treatment, "FLAWLESS MORE
@@ -62,6 +65,8 @@ fun MoreGamesBand(
     completions: Map<String, DailyCompletionsService.Completion>,
     onOpen: () -> Unit,
     onShare: () -> Unit,
+    /** This band's bounds in root coordinates — the morph panel's origin. */
+    onPositioned: (androidx.compose.ui.geometry.Rect) -> Unit = {},
 ) {
     val daily = moreDailyModes(modes)
     val tier = if (unlimitedMode) null else moreSweepTier(completions, modes)
@@ -82,7 +87,11 @@ fun MoreGamesBand(
     }
     val borderC = when { tier == null -> WTheme.border; gold -> Color(0xFFF59E0B); else -> INDIGO }
 
-    Box(Modifier.fillMaxWidth().clip(shape).background(background).border(1.5.dp, borderC, shape)) {
+    Box(
+        Modifier.fillMaxWidth()
+            .onGloballyPositioned { onPositioned(it.boundsInRoot()) }
+            .clip(shape).background(background).border(1.5.dp, borderC, shape),
+    ) {
         if (tier == null) Box(Modifier.width(4.dp).fillMaxHeight().padding(vertical = 6.dp).clip(CircleShape).background(INDIGO))
         Row(
             Modifier.fillMaxWidth().clickableNoRipple(onOpen).padding(horizontal = 12.dp, vertical = 10.dp),
@@ -129,12 +138,11 @@ fun MoreGamesBand(
                 }
                 Text(subtitle, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subC, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Icon(Icons.Filled.ChevronRight, null, tint = if (tier == null) INDIGO else if (gold) Color(0xFFB45309) else Color.White, modifier = Modifier.size(20.dp))
         }
         if (tier != null) {
             Text(
                 "Share", fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (gold) Color(0xFFB45309) else INDIGO,
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 36.dp)
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp)
                     .clip(CircleShape).background(Color.White.copy(alpha = 0.85f)).clickable { onShare() }
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 style = TextStyle(fontFamily = Nunito),

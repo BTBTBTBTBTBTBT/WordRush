@@ -131,6 +131,8 @@ fun HomeScreen(
     // users get a Daily/Unlimited toggle and replay unlimited (fresh seeds).
     val isPro = com.wordocious.app.data.AuthService.isProActive
     var limitModal by remember { mutableStateOf<ModeCard?>(null) }
+    // The More Games band's bounds (root coords) — where the More Games panel grows from.
+    var moreBandBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     // Contextual Pro prompt (web pro-prompt-modal.tsx): streak >= 7, not Pro,
     // not previously dismissed (local pref for instant gating + server
     // profiles.pro_prompt_shown for cross-device honor).
@@ -350,6 +352,7 @@ fun HomeScreen(
                     card = more, modes = visibleMore, unlimitedMode = unlimitedMode, completions = completions,
                     onOpen = { onShowMoreChange(true) },
                     onShare = { com.wordocious.app.data.DailySweepShare.shareMore(context, completions) },
+                    onPositioned = { moreBandBounds = it },
                 )
             }
             // VS Battle merged with the old LIVE bar, at the very bottom of the game area.
@@ -400,21 +403,25 @@ fun HomeScreen(
             )
         }
 
-        // More Games sheet (Stage 5): the same cards, sectioned; a pick routes
-        // through onSelectMode exactly like a grid tap; a locked card opens the
-        // same ModeLimitModal above.
-        if (showMore) {
+        // More Games (Stage 5): the same cards, sectioned; a pick routes through
+        // onSelectMode exactly like a grid tap; a locked card opens the same
+        // ModeLimitModal above. The panel GROWS OUT OF the band (founder, 2026-09-26)
+        // rather than fanning up as a bottom sheet — MoreGamesMorphPanel.
+        run {
             val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
             val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
-            MoreGamesSheet(
-                modes = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) },
-                completions = completions,
-                unlimitedMode = unlimitedMode,
-                isPro = isPro,
-                onSelect = { card, unlimited -> onShowMoreChange(false); onSelectMode(card, unlimited) },
-                onLocked = { card -> onShowMoreChange(false); limitModal = card },
-                onDismiss = { onShowMoreChange(false) },
-            )
+            MoreGamesMorphPanel(visible = showMore, origin = moreBandBounds, onRequestClose = { onShowMoreChange(false) }) {
+                MoreGamesSheetContent(
+                    modifier = Modifier.fillMaxSize(),
+                    modes = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) },
+                    completions = completions,
+                    unlimitedMode = unlimitedMode,
+                    isPro = isPro,
+                    onSelect = { card, unlimited -> onShowMoreChange(false); onSelectMode(card, unlimited) },
+                    onLocked = { card -> onShowMoreChange(false); limitModal = card },
+                    onDismiss = { onShowMoreChange(false) },
+                )
+            }
         }
 
         // Pro-prompt banner pinned to the bottom (web: fixed bottom-16 card).

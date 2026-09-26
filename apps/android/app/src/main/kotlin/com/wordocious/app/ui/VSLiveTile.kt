@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -113,7 +112,6 @@ fun VSLiveTile(
                     }
                     Text(subtitle, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Icon(Icons.Filled.ChevronRight, null, tint = accent, modifier = Modifier.size(20.dp))
             }
             if (isPro) {
                 Box {

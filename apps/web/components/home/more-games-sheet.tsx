@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
@@ -17,8 +17,21 @@ import { ModeCard, modeCardState } from './mode-card';
 // (overlay, focus trap, Escape, accent bar). The Daily/Unlimited toggle is
 // respected inside the sheet exactly as on the grid; a locked card opens the
 // same ModeLimitModal via onLocked.
+//
+// Entry (founder, 2026-09-26: "a fluid entry into the menu from the current
+// shape of the board, like the OctoWord zooms"): the panel GROWS OUT OF the
+// More Games band. It starts as the band's exact rectangle (same 14px radius),
+// swells to the centered menu panel while the scrim fades in, and the menu
+// content fades in over the second half; closing runs the same path in
+// reverse, shrinking back onto the band. The band is found by id so the
+// morph also runs when Home from a More Games title reopens the sheet. With
+// no band on screen (or reduced motion) the old modal fade is used.
 
 const MORE_PARAM = 'more';
+/** The band's DOM id — the morph's origin rectangle. */
+export const MORE_GAMES_BAND_ID = 'more-games-band';
+const MORPH_MS = 320;
+const MORPH_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
 
 /**
  * Sheet open/closed state kept in the URL (`/?more=1`) so Back from a game
@@ -66,9 +79,96 @@ interface MoreGamesSheetProps {
   onLocked: (card: HomeCard, href: string) => void;
 }
 
+type Phase = 'closed' | 'measuring' | 'from' | 'to' | 'open' | 'closing';
+type Box = { top: number; left: number; width: number; height: number; radius: number };
+
+function bandBox(): Box | null {
+  if (typeof document === 'undefined') return null;
+  const el = document.getElementById(MORE_GAMES_BAND_ID);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (r.width <= 0 || r.height <= 0) return null;
+  return { top: r.top, left: r.left, width: r.width, height: r.height, radius: 14 };
+}
+
+function reducedMotion(): boolean {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
+}
+
 export function MoreGamesSheet({ open, onClose, modes = MORE_GAME_MODES, playMode, todayDailies, isPro, signedIn, resetCountdownText, onLocked }: MoreGamesSheetProps) {
   const focusRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(focusRef, open);
+  // Morph state. `phase` runs closed → measuring (one hidden frame at the final
+  // layout, to learn the panel's real size) → from (pinned to the band's box)
+  // → to (transitioning to the measured box) → open (normal layout again) →
+  // closing (back onto the band) → closed. `box` is the panel's fixed
+  // geometry while it is in flight.
+  const [phase, setPhase] = useState<Phase>('closed');
+  const [box, setBox] = useState<Box | null>(null);
+  const targetRef = useRef<Box | null>(null);
+  const originRef = useRef<Box | null>(null);
+  const morph = phase !== 'closed' && phase !== 'open';
+  const mounted = phase !== 'closed';
+  useFocusTrap(focusRef, phase === 'open');
+
+  // Open: start the morph when a band is on screen, else plain mount.
+  useLayoutEffect(() => {
+    if (!open) return;
+    if (phase !== 'closed' && phase !== 'closing') return;
+    const origin = reducedMotion() ? null : bandBox();
+    originRef.current = origin;
+    setBox(null);
+    setPhase(origin ? 'measuring' : 'open');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Measure the final layout, then pin the panel to the band's box.
+  useLayoutEffect(() => {
+    if (phase !== 'measuring') return;
+    const el = focusRef.current;
+    const origin = originRef.current;
+    if (!el || !origin) { setPhase('open'); return; }
+    const r = el.getBoundingClientRect();
+    targetRef.current = { top: r.top, left: r.left, width: r.width, height: r.height, radius: 20 };
+    setBox(origin);
+    setPhase('from');
+  }, [phase]);
+
+  // One frame at the band's box, then transition to the measured box.
+  useEffect(() => {
+    if (phase !== 'from') return;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (targetRef.current) setBox(targetRef.current);
+      setPhase('to');
+    }));
+    return () => cancelAnimationFrame(id);
+  }, [phase]);
+
+  // Settle: hand the panel back to normal flow once it has landed.
+  useEffect(() => {
+    if (phase !== 'to') return;
+    const t = setTimeout(() => { setPhase('open'); setBox(null); }, MORPH_MS + 30);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // Close: shrink back onto the band (if it is still there), then unmount.
+  useLayoutEffect(() => {
+    if (open || phase === 'closed' || phase === 'closing') return;
+    const origin = reducedMotion() ? null : bandBox();
+    const el = focusRef.current;
+    if (!origin || !el) { setPhase('closed'); setBox(null); return; }
+    const r = el.getBoundingClientRect();
+    setBox({ top: r.top, left: r.left, width: r.width, height: r.height, radius: 20 });
+    setPhase('closing');
+    // Two frames so the fixed "from" geometry paints before the target applies.
+    requestAnimationFrame(() => requestAnimationFrame(() => setBox(origin)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (phase !== 'closing') return;
+    const t = setTimeout(() => { setPhase('closed'); setBox(null); }, MORPH_MS + 30);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   useEffect(() => {
     if (!open) return;
@@ -77,28 +177,52 @@ export function MoreGamesSheet({ open, onClose, modes = MORE_GAME_MODES, playMod
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   const sections = moreSections(modes);
+  // Panel opacity: fully in by 40% of the way out (so the band appears to
+  // swell rather than a white slab popping over it); content fades in over the
+  // second half and out first on the way back.
+  const inFlight = phase === 'from' || phase === 'to' || phase === 'closing';
+  const landed = phase === 'to' || phase === 'open';
+  const panelOpacity = phase === 'from' || phase === 'closing' && box === originRef.current ? 0 : 1;
+  const contentOpacity = landed ? 1 : 0;
+  const scrimOpacity = phase === 'measuring' || phase === 'from' || (phase === 'closing') ? 0 : 1;
+  const plainMount = phase === 'open' && !originRef.current;
+
+  const panelStyle: CSSProperties = {
+    background: 'var(--color-surface)',
+    border: '1.5px solid var(--color-border)',
+    borderRadius: box ? `${box.radius}px` : '20px',
+    overflow: 'hidden',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+    display: 'flex',
+    flexDirection: 'column',
+    ...(box
+      ? {
+          position: 'fixed' as const, top: box.top, left: box.left, width: box.width, height: box.height, maxWidth: 'none',
+          opacity: panelOpacity,
+          transition: inFlight && phase !== 'from'
+            ? `top ${MORPH_MS}ms ${MORPH_EASE}, left ${MORPH_MS}ms ${MORPH_EASE}, width ${MORPH_MS}ms ${MORPH_EASE}, height ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}, opacity ${Math.round(MORPH_MS * 0.4)}ms ease-out${phase === 'closing' ? ` ${Math.round(MORPH_MS * 0.6)}ms` : ''}`
+            : 'none',
+        }
+      : { visibility: (phase === 'measuring' ? 'hidden' : 'visible') as CSSProperties['visibility'] }),
+  };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-overlay"
-      style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${plainMount ? 'animate-modal-overlay' : ''}`}
+      style={{
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        opacity: morph ? scrimOpacity : 1,
+        transition: morph ? `opacity ${MORPH_MS}ms ease-out` : undefined,
+      }}
       onClick={onClose}
     >
       <div
         ref={focusRef}
-        className="relative w-full max-w-sm animate-modal-content max-h-modal"
-        style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
+        className={`relative w-full max-w-sm max-h-modal ${plainMount ? 'animate-modal-content' : ''}`}
+        style={panelStyle}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -110,6 +234,11 @@ export function MoreGamesSheet({ open, onClose, modes = MORE_GAME_MODES, playMod
           style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }}
         />
 
+        {/* Everything below the bar fades in once the panel has grown (and out first on close). */}
+        <div
+          className="flex flex-col flex-1 min-h-0"
+          style={{ opacity: morph ? contentOpacity : 1, transition: morph ? `opacity ${Math.round(MORPH_MS * 0.5)}ms ease-out ${phase === 'closing' ? 0 : Math.round(MORPH_MS * 0.4)}ms` : undefined }}
+        >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
           <div className="min-w-0">
@@ -184,6 +313,7 @@ export function MoreGamesSheet({ open, onClose, modes = MORE_GAME_MODES, playMod
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>
