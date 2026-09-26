@@ -57,6 +57,10 @@ data class Profile(
     // true, other players see only the teaser card and the four
     // /api/profile/[id]/* endpoints 403 for them.
     @SerialName("is_private") val isPrivate: Boolean = false,
+    // §294 (Friends D3.5): per-event friends push prefs — race / challenge /
+    // nudge / feed → false when turned off; a missing key means ON. Nullable
+    // so a profile row without the column never breaks decoding.
+    @SerialName("notification_prefs") val notificationPrefs: Map<String, Boolean>? = null,
 )
 
 /**

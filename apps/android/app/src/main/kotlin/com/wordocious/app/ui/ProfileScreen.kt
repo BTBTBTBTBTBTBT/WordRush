@@ -493,6 +493,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             SectionHeader("Your Records", accent = Color(0xFFD97706))
                             NextUpCard(dailyStreak = profile?.dailyLoginStreak ?: 0, chases = yours.chases)
                             SweepRecordsCard(sweep = sweepStats, sweepRankToday = yours.sweepRankToday, sweepRankAllTime = yours.sweepRankAllTime)
+                            // §294 (D3.3): settled weekly-race finishes, hidden until the first week settles.
+                            userId?.let { WeeklyFinishesCard(it) }
                             RecordsHeldRow(recordsHeld = yours.recordsHeld, onOpenRecords = onOpenRecords)
                             TrophyShelf(recordsHeld = yours.recordsHeld)
 

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
@@ -58,7 +59,8 @@ import com.wordocious.app.ui.theme.WTheme
 
 // ACTIVITY (§290, Friends D3.2) — the Friends tab's feed: the last seven days
 // of your circle's moments — Daily Sweeps, Flawless Victories, podium /
-// perfect / streak medals, all-time records set, More Games Sweeps — newest
+// perfect / streak medals, all-time records set, More Games Sweeps, shield
+// gifts (§294) — newest
 // first, each row a door to the profile. Read-only over the existing tables
 // (GET /api/friends/feed). Twin of web components/friends/activity-feed.tsx.
 
@@ -98,6 +100,8 @@ private fun describe(e: FriendsService.FeedEvent): FeedLine {
         "sweep" -> FeedLine("$who swept the dailies", Icons.Filled.AutoAwesome, false, PURPLE)
         "more_flawless" -> FeedLine("$who — Flawless More Games, all ten won", Icons.Filled.GridView, false, Color(0xFFB45309))
         "more_sweep" -> FeedLine("$who — More Games Sweep, all ten played", Icons.Filled.GridView, false, Color(0xFF4F46E5))
+        // §294 (D3.4): a streak shield sent to a friend.
+        "gift" -> FeedLine("$who sent ${e.otherName ?: "a friend"} a streak shield", Icons.Filled.Shield, false, Color(0xFF0D9488))
         "record" -> {
             val (label, value) = e.kind?.let { recordLabelAndValue(it, e.value, e.gameMode) } ?: ("record" to "")
             val title = e.gameTitle?.let { "$it " } ?: ""

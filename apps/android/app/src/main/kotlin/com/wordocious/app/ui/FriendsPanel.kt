@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -56,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -91,6 +93,10 @@ fun FriendsPanel(
         onDispose { remove() }
     }
     LaunchedEffect(Unit) { FriendsService.load() }
+
+    // §294: the profile drives the shield-gift menu item (streak_shields) and
+    // the notification-prefs bell; collected so a refresh re-renders both.
+    val myProfile by AuthService.profile.collectAsState()
 
     var username by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
@@ -219,6 +225,8 @@ fun FriendsPanel(
                     )
                 }
             }
+            // §294 (D3.5): per-event notification prefs (race, challenges, nudges, moments).
+            NotificationPrefsButton(myProfile)
         }
 
         // §289: TODAY'S RACE tops the card — you and every friend ranked by
@@ -314,6 +322,45 @@ fun FriendsPanel(
                                     }
                                 }
                             },
+                        )
+                    }
+                }
+                // §294 (D3.3) — the Sunday finish, settled server-side on the
+                // first visit of the week: "You finished 2nd of 6". Stable all
+                // week; the Stats tab tallies them (WeeklyFinishesCard).
+                val lastWeekResult = remember(version) { FriendsService.lastWeek }
+                lastWeekResult?.let { r ->
+                    val win = r.rank == 1
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (win) Brush.linearGradient(listOf(Color(0xFFFEF3C7), Color(0xFFFDE68A)))
+                                else SolidColor(WTheme.bg),
+                                RoundedCornerShape(12.dp),
+                            )
+                            .border(1.5.dp, if (win) Color(0xFFF59E0B) else WTheme.border, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Text(if (win) "👑" else "🏁", fontSize = 16.sp)
+                        Text(
+                            buildAnnotatedString {
+                                append("Last week you finished ")
+                                withStyle(SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.Black)) {
+                                    append("${ordinal(r.rank)} of ${r.circleSize}")
+                                }
+                                append(" · ${fmtPts(r.points)} pts")
+                                if (!win && !r.winnerName.isNullOrBlank()) {
+                                    withStyle(SpanStyle(color = WTheme.textMuted)) {
+                                        append(" · 👑 ${r.winnerName} ${fmtPts(r.winnerPoints)}")
+                                    }
+                                }
+                            },
+                            fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                            color = if (win) Color(0xFF92400E) else WTheme.text, fontFamily = Nunito,
+                            lineHeight = 14.sp, modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -609,6 +656,24 @@ fun FriendsPanel(
                         text = { Text("Challenge ⚔️", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito, color = Color(0xFFEC4899)) },
                         onClick = { menuTarget = null; challenge(f) },
                     )
+                    // §294 (D3.4): gift one of your streak shields (once per friend per week).
+                    if ((myProfile?.streakShields ?: 0) > 0) {
+                        DropdownMenuItem(
+                            text = { Text("🛡️ Gift a shield", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito, color = Color(0xFF0D9488)) },
+                            onClick = {
+                                menuTarget = null
+                                scope.launch {
+                                    when (val r = FriendsService.giftShield(f.id)) {
+                                        is FriendsService.GiftOutcome.Sent -> {
+                                            note = "🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left"
+                                            AuthService.refreshProfile()
+                                        }
+                                        is FriendsService.GiftOutcome.Failed -> note = r.message
+                                    }
+                                }
+                            },
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text("Unfriend", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, fontFamily = Nunito, color = Color(0xFFDC2626)) },
                         onClick = { menuTarget = null; unfriendTarget = f },
@@ -1016,12 +1081,7 @@ private fun pastWeekLabel(k: Int): String {
     return "${mon.format(f)}–${sun.format(f)}"
 }
 
-/** §238: 4th/5th/…/21st/22nd — the ranked rows under the podium. */
-private fun ordinal(n: Int): String {
-    val v = n % 100
-    if (v in 11..13) return "${n}th"
-    return n.toString() + when (n % 10) { 1 -> "st"; 2 -> "nd"; 3 -> "rd"; else -> "th" }
-}
+// §238 ordinal() (4th/5th/…/21st/22nd) now lives in WeeklyRace.kt, shared with the D3.3 banner and Stats card.
 
 /** "2d" / "5h" / "now" — how long a sent invite has been waiting (§212). */
 private fun agoShort(iso: String?): String {

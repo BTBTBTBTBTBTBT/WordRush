@@ -69,6 +69,27 @@ object FriendsService {
     /** The caller's own digest for the weekly podium (§212). */
     var meDigest: MeDigest? = null; private set
 
+    /**
+     * The Sunday finish (§294, Friends D3.3): last week's race SETTLED once,
+     * server-side, on the first /api/friends visit after Monday 00:00 and
+     * read back from weekly_race_results after that — the client only renders
+     * it. Null until the server has a row (a week nobody scored in, or a brand
+     * new circle).
+     */
+    @Serializable
+    data class LastWeek(
+        val weekStart: String = "",
+        val rank: Int,
+        val points: Int = 0,
+        val circleSize: Int = 0,
+        val winnerId: String? = null,
+        val winnerName: String? = null,
+        val winnerPoints: Int = 0,
+    )
+
+    /** Last week's settled result for the viewer (§294) — from the /api/friends payload. */
+    var lastWeek: LastWeek? = null; private set
+
     @Serializable
     private data class SearchPayload(val users: List<FriendProfile> = emptyList())
 
@@ -82,6 +103,8 @@ object FriendsService {
         val outgoingProfiles: List<FriendProfile> = emptyList(),
         // §212: the caller's own digest for the weekly podium — additive.
         val me: MeDigest? = null,
+        // §294 additive: the settled previous week — absent on older servers.
+        val lastWeek: LastWeek? = null,
     )
 
     /** Local YYYY-MM-DD — the same day boundary every daily surface uses. */
@@ -149,6 +172,7 @@ object FriendsService {
         outgoing = payload.outgoing.map { it.lowercase() }.toSet()
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
+        lastWeek = payload.lastWeek
         fetchedDay = localDay()
         fetchedAtMs = System.currentTimeMillis()
         loaded = true
@@ -294,11 +318,36 @@ object FriendsService {
         return ChallengeOutcome.Sent(code, obj["gameMode"]?.jsonPrimitive?.content ?: gameMode)
     }
 
+    sealed class GiftOutcome {
+        data class Sent(val shieldsLeft: Int) : GiftOutcome()
+        data class Failed(val message: String) : GiftOutcome()
+    }
+
+    /**
+     * Streak-shield gifting (§294, Friends D3.4): send an accepted friend one
+     * of YOUR streak shields, once per friend per week (the server's
+     * shield_gifts primary key — 429 "Already gifted this week"). The sender is
+     * decremented and the recipient incremented with the service role; the
+     * caller refreshes the profile so the header count follows.
+     */
+    suspend fun giftShield(friendId: String, weekStart: String = localWeekStart()): GiftOutcome {
+        val resp = api("POST", "/api/friends/gift-shield",
+            """{"friendId":"$friendId","weekStart":"$weekStart"}""")
+            ?: return GiftOutcome.Failed("Network error")
+        val obj = runCatching { Json.parseToJsonElement(resp.second) as? JsonObject }.getOrNull()
+        if (resp.first != 200) {
+            return GiftOutcome.Failed(obj?.get("error")?.jsonPrimitive?.content ?: "Could not send the shield")
+        }
+        val left = obj?.get("shieldsLeft")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+        return GiftOutcome.Sent(left)
+    }
+
     /**
      * One row of the ACTIVITY feed (§290) — mirrors the web route's FeedEvent.
      * `type` is one of sweep / flawless / medal / record / more_sweep /
-     * more_flawless; `kind` is the medal_type for medals (gold / silver /
-     * bronze / perfect / streak_7…) or the record_type for records.
+     * more_flawless / gift; `kind` is the medal_type for medals (gold / silver /
+     * bronze / perfect / streak_7…) or the record_type for records. `otherName`
+     * / `otherId` name the counterpart of a gift (§294).
      */
     @Serializable
     data class FeedEvent(
@@ -315,6 +364,8 @@ object FriendsService {
         val gameMode: String? = null,
         val gameTitle: String? = null,
         val value: Int? = null,
+        val otherName: String? = null,
+        val otherId: String? = null,
     )
 
     @Serializable
