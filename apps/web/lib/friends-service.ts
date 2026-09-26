@@ -243,6 +243,19 @@ export function beatCheck(day: string, gameMode: string, playType: 'solo' | 'vs'
   });
 }
 
+/** Challenge a friend to a private VS Battle (D3): a targeted invite + a push to them.
+ *  Returns the invite code the caller joins the lobby with. */
+export async function challengeFriend(
+  friendId: string,
+  gameMode = 'DUEL',
+): Promise<{ code: string; gameMode: string } | { error: string }> {
+  const res = await post('/api/friends/challenge', { friendId, gameMode });
+  if (!res) return { error: 'Network error' };
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: json.error ?? 'Could not send the challenge' };
+  return { code: json.code as string, gameMode: json.gameMode as string };
+}
+
 /** Send a canned taunt. 429 → { alreadySent: true }. */
 export async function sendTaunt(
   friendId: string,

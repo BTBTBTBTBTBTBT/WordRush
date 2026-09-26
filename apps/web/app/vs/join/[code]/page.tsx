@@ -12,6 +12,7 @@ import {
   vsHrefForMode,
   type MatchInvite,
 } from '@/lib/invite-service';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 export default function JoinInvitePage() {
   const params = useParams();
@@ -88,7 +89,7 @@ export default function JoinInvitePage() {
       <h1 className="text-lg font-black" style={{ color: 'var(--color-text)' }}>You're invited!</h1>
       <p className="text-xs font-bold mt-1 mb-4" style={{ color: 'var(--color-text-muted)' }}>
         {inviterName ? <>@{inviterName} </> : <>Someone </>}
-        wants to play <span style={{ color: 'var(--color-text)' }}>{invite?.game_mode}</span> against you.
+        wants to play <span style={{ color: 'var(--color-text)' }}>{(invite && MODE_BY_DBKEY[invite.game_mode]?.title) ?? invite?.game_mode}</span> against you.
       </p>
       <div className="flex gap-2">
         <button

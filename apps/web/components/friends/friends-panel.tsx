@@ -12,6 +12,10 @@ import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
 import { SWEEP_MODES } from '@/lib/modes.generated';
+import { TodaysRace } from './todays-race';
+import { challengeFriend } from '@/lib/friends-service';
+import { vsHrefForMode } from '@/lib/invite-service';
+import { supabase } from '@/lib/supabase-client';
 import {
   loadFriends,
   getFriends,
@@ -52,7 +56,7 @@ function agoShort(iso?: string): string {
 const withinDay = (iso?: string | null): boolean =>
   !!iso && Date.now() - Date.parse(iso) < 24 * 60 * 60 * 1000;
 
-function Avatar({ f }: { f: FriendProfile }) {
+export function Avatar({ f }: { f: FriendProfile }) {
   if (f.avatar_url) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={f.avatar_url} alt={f.username} className="w-8 h-8 rounded-full object-cover" />;
@@ -70,7 +74,7 @@ function Avatar({ f }: { f: FriendProfile }) {
 }
 
 export function FriendsPanel() {
-  const { user, profile } = useAuth();
+  const { user, profile, isProActive } = useAuth();
   const router = useRouter();
   const [, force] = useState(0);
   const [username, setUsername] = useState('');
@@ -260,12 +264,6 @@ export function FriendsPanel() {
     return d >= 1 ? `ends Sunday · ${d}d ${clock}` : `ends tonight · ${clock}`;
   })();
 
-  // §216: "topped N of M friends today" — my day total vs each friend's.
-  const myToday = meDigest?.todayPoints ?? 0;
-  const toppedCount = myToday > 0
-    ? friends.filter((f) => (f.todayPoints ?? 0) < myToday).length
-    : 0;
-
   // §216: friendversary chip on milestone days.
   const friendversary = (f: FriendProfile): number | null => {
     if (!f.since) return null;
@@ -304,8 +302,27 @@ export function FriendsPanel() {
   // sheet where the platform has one, clipboard + transient note elsewhere.
   const shareInvite = async () => {
     const myId = profile?.id ?? user.id;
-    const text = `Add me on Wordocious — I'm ${profile?.username ?? ''}`.trim();
-    const url = `https://wordocious.com/profile/${myId}`;
+    let text = `Add me on Wordocious — I'm ${profile?.username ?? ''}`.trim();
+    let url = `https://wordocious.com/profile/${myId}`;
+    // D3 (2026-09-26): a Pro player's open referral code is the better door —
+    // the friend lands with 7 days of Pro and the inviter earns the reward.
+    if (isProActive) {
+      try {
+        const { data } = await (supabase as any)
+          .from('referrals')
+          .select('code, expires_at')
+          .eq('inviter_id', myId)
+          .eq('status', 'pending')
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const code = data?.[0]?.code as string | undefined;
+        if (code) {
+          url = `https://wordocious.com/join/${code}`;
+          text = `I'm gifting you 7 days of Wordocious Pro — add me once you're in: ${profile?.username ?? ''}`.trim();
+        }
+      } catch {}
+    }
     if (typeof navigator.share === 'function') {
       try { await navigator.share({ text, url }); } catch { /* user closed the sheet */ }
       return;
@@ -369,6 +386,18 @@ export function FriendsPanel() {
           </button>
         )}
       </div>
+
+      {/* TODAY'S RACE (D3, 2026-09-26): ranked by today's points, challenge from any row. */}
+      <TodaysRace
+        friends={friends}
+        me={profile ? {
+          id: profile.id, username: profile.username, avatar_url: profile.avatar_url ?? null,
+          avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
+          level: profile.level ?? 0, todayPoints: meDigest?.todayPoints ?? 0, playedToday: meDigest?.playedToday ?? 0,
+        } : null}
+        onTaunt={(f) => setTauntTarget(f)}
+        onNote={setNote}
+      />
 
       {/* Weekly race podium (§212) — who owns the week among your circle. */}
       {podium.length > 0 && (
@@ -477,21 +506,7 @@ export function FriendsPanel() {
         </div>
       )}
 
-      {/* §216: today's race — how many friends you've topped so far. */}
-      {myToday > 0 && friends.length > 0 && (
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <span>TODAY&apos;S RACE</span>
-            <span>topped {toppedCount} of {friends.length} friend{friends.length === 1 ? '' : 's'}</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-hover)' }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${Math.round((toppedCount / friends.length) * 100)}%`, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }}
-            />
-          </div>
-        </div>
-      )}
+      {/* §216's "topped N of M" bar retired: the ranked Today's Race card above says it. */}
 
       {/* Friends list (§212) — live rows: today's progress, streak, H2H
           record, say-hi on NEW friendships, taunt bell for slackers. */}
@@ -622,6 +637,19 @@ export function FriendsPanel() {
                         style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
                       >
                         Taunt
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setMenuFor(null);
+                          const r = await challengeFriend(f.id, 'DUEL');
+                          if ('error' in r) { setNote(r.error); return; }
+                          setNote(`Challenge sent to ${f.username} ⚔️`);
+                          router.push(`${vsHrefForMode('DUEL')}?inviteCode=${r.code}`);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
+                        style={{ color: '#ec4899', borderBottom: '1px solid var(--color-border)' }}
+                      >
+                        Challenge ⚔️
                       </button>
                       <button
                         onClick={() => { setMenuFor(null); setUnfriendTarget(f); }}
