@@ -243,6 +243,35 @@ export function beatCheck(day: string, gameMode: string, playType: 'solo' | 'vs'
   });
 }
 
+/** One activity-feed row (D3) — mirrors apps/web/app/api/friends/feed/route.ts FeedEvent. */
+export interface FeedEvent {
+  id: string;
+  userId: string;
+  username: string;
+  avatar_url: string | null;
+  avatar_emoji: string | null;
+  me: boolean;
+  day: string;
+  at: string;
+  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless';
+  kind?: string;
+  gameMode?: string | null;
+  gameTitle?: string | null;
+  value?: number | null;
+}
+
+/** The last seven days of your circle's sweeps, medals and records (D3). */
+export async function fetchFriendsFeed(): Promise<FeedEvent[]> {
+  try {
+    const res = await fetch(`/api/friends/feed?day=${localDay()}`, { headers: await profileApiHeaders() });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.events ?? []) as FeedEvent[];
+  } catch {
+    return [];
+  }
+}
+
 /** Challenge a friend to a private VS Battle (D3): a targeted invite + a push to them.
  *  Returns the invite code the caller joins the lobby with. */
 export async function challengeFriend(

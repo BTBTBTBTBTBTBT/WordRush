@@ -7,6 +7,7 @@
 
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { FriendsPanel } from '@/components/friends/friends-panel';
+import { ActivityFeed } from '@/components/friends/activity-feed';
 import { InvitePanel } from '@/components/referrals/invite-panel';
 import { useAuth } from '@/lib/auth-context';
 
@@ -22,6 +23,8 @@ export default function FriendsPage() {
       ) : (
         <>
           <FriendsPanel />
+          {/* D3: the circle's last seven days — sweeps, medals, records, More Games Sweeps. */}
+          <ActivityFeed />
           {/* §212: recruiting and friending are the same motion — the
               gift-Pro panel lives here too. */}
           <InvitePanel />
