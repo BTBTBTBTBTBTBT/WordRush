@@ -27,6 +27,16 @@ struct FriendsPanelView: View {
     @State private var sharingRace = false
     // §238: the "Last week" line unfolds into the settled-week history.
     @State private var showPastWeeks = false
+    // §289: Challenge from any row — the friend id in flight (double-tap
+    // guard + button dimming) and the private Classic match to present.
+    @State private var challenging: String?
+    @State private var challengeMatch: ChallengeMatch?
+    private struct ChallengeMatch: Identifiable { let id = UUID(); let mode: GameMode; let code: String }
+    // §289: the share sheet for the invite link (profile, or a Pro player's
+    // open referral code) — message + separate URL, the ActivityShareSheet way.
+    @State private var shareInvite: ShareInvite?
+    @State private var resolvingShare = false
+    private struct ShareInvite: Identifiable { let id = UUID(); let text: String; let url: URL }
 
     var body: some View {
         let _ = version
@@ -72,6 +82,17 @@ struct FriendsPanelView: View {
                             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
                     }.buttonStyle(.plain)
                 }
+            }
+
+            // §289: TODAY'S RACE — you and every friend ranked by today's
+            // points, Challenge and the bell on every friend row. Sits above
+            // the weekly podium; it replaced §216's "topped N of M" strip.
+            if !friends.isEmpty, let p = AuthService.shared.profile {
+                TodaysRaceCard(
+                    friends: friends, me: p, meDigest: FriendsService.meDigest,
+                    challenging: challenging,
+                    onTaunt: { tauntTarget = $0 },
+                    onChallenge: { challenge($0) })
             }
 
             // Weekly race podium (§212, always-on since §216) — who owns the
@@ -197,29 +218,6 @@ struct FriendsPanelView: View {
                 .padding(.vertical, 4)
             }
 
-            // §216: today's race — how many friends you've topped so far.
-            if let myToday = FriendsService.meDigest?.todayPoints, myToday > 0, !friends.isEmpty {
-                let topped = friends.filter { ($0.todayPoints ?? 0) < myToday }.count
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("TODAY'S RACE").font(Brand.font(9, .black)).tracking(0.8)
-                            .foregroundStyle(Theme.textMuted)
-                        Spacer()
-                        Text("topped \(topped) of \(friends.count) friend\(friends.count == 1 ? "" : "s")")
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.surfaceAlt)
-                            Capsule()
-                                .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                                .frame(width: geo.size.width * CGFloat(topped) / CGFloat(max(1, friends.count)))
-                        }
-                    }
-                    .frame(height: 6)
-                }
-            }
-
             // Friends list — rows into their profiles (H2H lives there).
             if friends.isEmpty {
                 if incoming.isEmpty && outgoing.isEmpty {
@@ -329,6 +327,11 @@ struct FriendsPanelView: View {
                             Button { tauntTarget = f } label: {
                                 Label("Taunt", systemImage: "bell")
                             }
+                            // §289: a private Classic VS Battle, pushed to them.
+                            Button { challenge(f) } label: {
+                                Label("Challenge ⚔️", image: "swords")
+                            }
+                            .disabled(challenging != nil)
                             Button(role: .destructive) { unfriendTarget = f } label: {
                                 Label("Unfriend", systemImage: "person.badge.minus")
                             }
@@ -402,9 +405,10 @@ struct FriendsPanelView: View {
             // §225: not everyone knows their username — hand them a profile
             // link instead. Message + separate URL, the ActivityShareSheet
             // convention, so the sheet previews the site icon.
-            if let p = AuthService.shared.profile,
-               let profileUrl = URL(string: "https://wordocious.com/profile/\(p.id)") {
-                ShareLink(item: profileUrl, message: Text("Add me on Wordocious — I'm \(p.username)")) {
+            // §289: a Pro player's OPEN referral code is the better door — the
+            // friend lands with 7 days of Pro — so the link resolves first.
+            if AuthService.shared.profile != nil {
+                Button { shareInviteLink() } label: {
                     HStack(spacing: 5) {
                         Image(systemName: "square.and.arrow.up").font(.system(size: 10, weight: .semibold))
                         Text("Share invite link").font(Brand.font(10, .bold))
@@ -412,6 +416,8 @@ struct FriendsPanelView: View {
                     .foregroundStyle(Theme.textMuted)
                 }
                 .buttonStyle(.plain)
+                .disabled(resolvingShare)
+                .opacity(resolvingShare ? 0.5 : 1)
             }
             if let note {
                 Text(note).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
@@ -430,6 +436,13 @@ struct FriendsPanelView: View {
             version = FriendsService.version
         }
         .sheet(item: $tauntTarget) { target in tauntSheet(target) }
+        .sheet(item: $shareInvite) { item in ActivityShareSheet(text: item.text, url: item.url) }
+        // §289: the challenger lands in the private lobby with the code —
+        // the same VSGameView(mode:inviteCode:) cover a pending-invite accept
+        // and the /vs/join universal link use (RootTabView, VSLobbyView).
+        .fullScreenCover(item: $challengeMatch) { m in
+            NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
+        }
         // §225: Unfriend confirmation — the mutation was only reachable from a
         // profile page the rows couldn't open. remove() prunes the cache and
         // notifies, so the roster refreshes itself.
@@ -804,6 +817,57 @@ struct FriendsPanelView: View {
         return Date().timeIntervalSince(date) < 24 * 60 * 60
     }
 
+    /// §289: Challenge = a private Classic VS Battle. The server inserts a
+    /// targeted invite and pushes it to the friend; we note it and drop into
+    /// the same lobby with the code. Free for friends (the code bypasses the
+    /// Pro gate on both ends). Web twin: todays-race.tsx challenge().
+    private func challenge(_ f: FriendsService.FriendProfile) {
+        guard challenging == nil else { return }
+        challenging = f.id
+        Task {
+            let result = await FriendsService.challenge(friendId: f.id, gameMode: "DUEL")
+            challenging = nil
+            switch result {
+            case .success(let inv):
+                note = "Challenge sent to \(f.username) ⚔️"
+                challengeMatch = ChallengeMatch(mode: GameMode(rawValue: inv.gameMode) ?? .duel, code: inv.code)
+            case .failure(let error):
+                note = error.localizedDescription
+            }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            note = nil
+        }
+    }
+
+    /// §289: the invite link. A Pro player's newest OPEN referral (pending,
+    /// unexpired — the same PostgREST read InvitePanelView does) shares
+    /// /join/<code> with the 7-days-of-Pro line; else the profile link.
+    private func shareInviteLink() {
+        guard !resolvingShare, let p = AuthService.shared.profile else { return }
+        resolvingShare = true
+        Task {
+            var text = "Add me on Wordocious — I'm \(p.username)"
+            var url = URL(string: "https://wordocious.com/profile/\(p.id)")
+            if AuthService.shared.isProActive {
+                struct OpenReferral: Decodable { let code: String }
+                let rows: [OpenReferral]? = try? await AuthService.shared.client.from("referrals")
+                    .select("code")
+                    .eq("inviter_id", value: p.id)
+                    .eq("status", value: "pending")
+                    .gt("expires_at", value: ISO8601DateFormatter().string(from: Date()))
+                    .order("created_at", ascending: false)
+                    .limit(1)
+                    .execute().value
+                if let code = rows?.first?.code, let joinUrl = URL(string: "https://wordocious.com/join/\(code)") {
+                    url = joinUrl
+                    text = "I'm gifting you 7 days of Wordocious Pro — add me once you're in: \(p.username)"
+                }
+            }
+            resolvingShare = false
+            if let url { shareInvite = ShareInvite(text: text, url: url) }
+        }
+    }
+
     private func add() {
         let name = username.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !sending else { return }
@@ -839,6 +903,8 @@ struct FriendsScreenView: View {
         ScrollView {
             VStack(spacing: 16) {
                 FriendsPanelView()
+                // §290: the circle's last seven days — sweeps, medals, records.
+                ActivityFeedView()
                 // §212: recruiting and friending are the same motion — the
                 // gift-Pro panel lives here too.
                 InvitePanelView()

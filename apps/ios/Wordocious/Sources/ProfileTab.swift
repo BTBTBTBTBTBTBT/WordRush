@@ -8,7 +8,7 @@ import WordociousCore
 ///   Today (landing, TodayCard) · a game page per daily mode (Solo | VS toggle
 ///   where a live VS board exists, today's line, the §18 registry stats) ·
 ///   VS (record + rivalries + CPU + a word-game board) · All-time (snapshot
-///   hero, Records row, every chart, Progression, Recent Matches).
+///   hero, Your Records, every chart, Progression, Recent Matches).
 /// A horizontal swipe on the page moves one rail chip; hold Today (or the grid
 /// button) for every game at once. Zero new fetches beyond the old page except
 /// today's VS result, the sweep streak and today's standing.
@@ -71,6 +71,10 @@ struct ProfileTab: View {
     @State private var deleteError = false
     // Games played in the last 7 days — powers the Insights "this week" line.
     @State private var sevenDayTotal = 0
+    /// D2 step 3: the old Records → You view's data (records held, sweep
+    /// ranks, record chases) — the per-game Your Records cards and the
+    /// All-time page's YOUR RECORDS section read it.
+    @State private var yours = YourRecordsData()
 
     // Every daily mode this viewer can see — the sweep modes plus the More Games
     // titles (ProperNoundle lives there since Stage 9; its HomeMode has `mode:
@@ -204,6 +208,7 @@ struct ProfileTab: View {
                     if let v: MatchStatsService.DailySweepStats = memo.get("sweepStats:\(uid)") { sweepStats = v }
                     if let v: Bool? = memo.get("vsDailyWon:\(uid)") { vsDailyWon = v }
                     if let v: StatsDeepService.DailyStanding? = memo.get("standing:\(uid)") { standing = v }
+                    if let v: YourRecordsData = memo.get("yourRecords:\(uid)") { yours = v }
                     // D2: today's VS result (the rail dot + VS card), the sweep
                     // streak and today's standing (the Today card).
                     async let vsTodayF = DailyResultsService.dailyVSResult()
@@ -215,6 +220,9 @@ struct ProfileTab: View {
                     async let weekF = MatchStatsService.activityCalendar(days: 7)
                     async let socialF = ProfileExtras.socialLinks(userId: uid)
                     async let matchesF = PublicProfileService.recentMatches(id: uid)
+                    // D2 step 3: the all-time record table + sweep ranks; the
+                    // chases fold the user_stats rows in once they land.
+                    async let yoursF = YourRecordsData.fetch(userId: uid)
                     statRows = await statsF
                     unlockedAchievements = await achievementsF
                     medals = await medalsF
@@ -235,7 +243,9 @@ struct ProfileTab: View {
                     vsDailyWon = await vsTodayF
                     sweepStats = await sweepF
                     standing = await standingF
+                    yours = await yoursF.resolved(userId: uid, stats: statRows)
                     // Store the fresh results back into the session memo.
+                    memo.set("yourRecords:\(uid)", yours)
                     memo.set("sweepStats:\(uid)", sweepStats)
                     memo.set("vsDailyWon:\(uid)", vsDailyWon)
                     memo.set("standing:\(uid)", standing)
@@ -326,6 +336,12 @@ struct ProfileTab: View {
         let tab = gamePageTab
         if hasVs(gm.rawValue) { soloVsToggle(accent: m.accent) }
         todayLine(m)
+        // Your records in this game (the old Records → You "bests by mode" card).
+        if tab == "solo" {
+            GameRecordsCard(dbKey: gm.rawValue,
+                            my: statRows.first { $0.gameMode == gm.rawValue && $0.playType == "solo" },
+                            recordsHeld: yours.recordsHeld, chases: yours.chases)
+        }
         modeDetailHeader(gm, tab: tab)
         modeStats(p, mode: gm, tab: tab)
         ProfileDashboard(mode: gm, playType: tab)
@@ -414,13 +430,17 @@ struct ProfileTab: View {
         }
     }
 
-    /// All-time — the snapshot hero, the Records row, every chart the old
+    /// All-time — the snapshot hero, YOUR RECORDS, every chart the old
     /// "All" view had, Insights, Pro Stats, Skill Radar, then Progression
     /// (medals, achievements) and Recent Matches.
     @ViewBuilder private func allTimePage(_ p: Profile) -> some View {
         SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
-        // D1: Records left the tab bar; its rows fold into these pages in D2 step 3.
-        RecordsRowLink()
+        // Your records (D2 step 3): what the Records → You view used to hold.
+        SectionHeader("Your Records", accent: Color(hex: 0xD97706))
+        NextUpCard(dailyStreak: p.dailyLoginStreak, chases: yours.chases)
+        SweepRecordsCard(sweep: sweepStats, sweepRankToday: yours.sweepRankToday, sweepRankAllTime: yours.sweepRankAllTime)
+        RecordsHeldRow(recordsHeld: yours.recordsHeld)
+        TrophyShelf(recordsHeld: yours.recordsHeld)
         // CPU practice records totals only — the per-game charts below draw
         // from match rows that CPU games never write.
         if activeTab == "vs_cpu" {
@@ -1154,6 +1174,9 @@ struct LeaderboardTab: View {
     @State private var tauntTarget: FriendsService.FriendProfile?
     @State private var tauntStatus: String?
     @State private var secondsLeft = secondsUntilLocalMidnight()
+    /// D2 step 3: the global Records screen (Hall of Fame, all-time boards)
+    /// is reached from here now that the Stats row is gone.
+    @State private var showRecords = false
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     /// Today's completed dailies (seeded instantly from the on-device cache) so
     /// the Play CTA knows "View vs Play" with zero flash, before the per-mode
@@ -1282,10 +1305,15 @@ struct LeaderboardTab: View {
                     Image(systemName: "clock").font(.system(size: 11))
                     Text(String(format: "%02d:%02d:%02d", secondsLeft / 3600, (secondsLeft % 3600) / 60, secondsLeft % 60)).monospacedDigit()
                 }
+                Button { showRecords = true } label: {
+                    Text("All-time →").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                }
+                .buttonStyle(.plain)
             }
             .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
         }
         .frame(maxWidth: .infinity).padding(.bottom, 4)
+        .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
     }
 
     private var signedOut: some View {

@@ -210,6 +210,10 @@ struct RootTabView: View {
                 if chrome.bottomNavHidden { chrome.reset() }
             }
         }
+        // D2 step 3: the Records sheet's "Your personal records → Stats" link.
+        .onReceive(NotificationCenter.default.publisher(for: .openStats)) { _ in
+            tab = .stats
+        }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
             guard let key = note.object as? String,
                   let m = (homeModes + moreModes).first(where: { $0.dbKey == key }) else { return }

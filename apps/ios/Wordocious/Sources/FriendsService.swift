@@ -243,6 +243,67 @@ enum FriendsService {
         }
     }
 
+    // MARK: Friends D3 (§289/§290) — Challenge and the Activity feed
+
+    /// A /api/friends/* refusal, surfaced as the note text (the server's
+    /// message: "Not friends", "You can't challenge yourself" …).
+    struct APIError: LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
+    /// Challenge a friend to a private VS Battle (§289): POST /api/friends/
+    /// challenge inserts a TARGETED match_invites row and pushes it to them
+    /// (deep link /vs/join/<code>); the caller joins the same lobby with the
+    /// returned code. Free for friends — the invite code bypasses the Pro
+    /// gate on both ends. Twin of friends-service.ts challengeFriend().
+    static func challenge(friendId: String, gameMode: String = "DUEL") async -> Result<(code: String, gameMode: String), Error> {
+        guard let (status, data) = await post("challenge", body: ["friendId": friendId, "gameMode": gameMode]) else {
+            return .failure(APIError(message: "Network error"))
+        }
+        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        guard status == 200, let code = json?["code"] as? String else {
+            return .failure(APIError(message: (json?["error"] as? String) ?? "Could not send the challenge"))
+        }
+        return .success((code: code, gameMode: (json?["gameMode"] as? String) ?? gameMode))
+    }
+
+    /// One activity-feed row (§290) — Decodable mirror of the route's
+    /// FeedEvent (apps/web/app/api/friends/feed/route.ts).
+    struct FeedEvent: Decodable, Identifiable, Equatable {
+        let id: String
+        let userId: String
+        let username: String
+        let avatar_url: String?
+        let avatar_emoji: String?
+        let me: Bool
+        /// The player's local day the event belongs to (YYYY-MM-DD).
+        let day: String
+        /// ISO timestamp, for ordering.
+        let at: String
+        /// sweep | flawless | medal | record | more_sweep | more_flawless
+        let type: String
+        /// medal_type for medals (gold/silver/bronze/perfect/streak_7…), record_type for records.
+        var kind: String?
+        var gameMode: String?
+        var gameTitle: String?
+        var value: Double?
+    }
+
+    /// The last seven days of your circle's sweeps, medals and records
+    /// (§290) — GET /api/friends/feed?day=<local day>. No-throw: [] on any
+    /// failure, the fetchFriendsFeed() contract.
+    static func fetchFeed() async -> [FeedEvent] {
+        guard let url = URL(string: "https://wordocious.com/api/friends/feed?day=\(localDay())") else { return [] }
+        struct FeedPayload: Decodable { let events: [FeedEvent] }
+        let req = await PublicProfileService.authedRequest(url)
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let payload = try? JSONDecoder().decode(FeedPayload.self, from: data)
+        else { return [] }
+        return payload.events
+    }
+
     enum TauntOutcome { case sent, alreadySent, failed }
 
     /// One-tap canned taunt (ids from FriendTaunts.all; 1/friend/day).
