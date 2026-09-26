@@ -540,15 +540,21 @@ final class VSMatchViewModel: ObservableObject {
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
             Task { @MainActor in
                 guard let self else { t.invalidate(); return }
-                if let c = self.countdown, c > 1 { self.countdown = c - 1 }
+                // The countdown was already cleared (beginMatch ran and faded GO!
+                // out, or the match went away): stop — never resurrect "GO!".
+                // Founder + Oliver, 2026-09-26: a tick landing just after the fade
+                // re-set countdown = 0 over the LIVE board and the old safety only
+                // cleared it on the queue screen, so both phones sat on "GO!".
+                guard let c = self.countdown else { t.invalidate(); return }
+                if c > 1 { self.countdown = c - 1 }
                 else {
                     // 3-2-1-GO: hold "GO!" (countdown == 0) — beginMatch fades it
                     // out over the first beat of the board. Safety: if the match
-                    // never starts, drop the overlay after 2.5s.
+                    // never starts, drop the overlay after 2.5s regardless of screen.
                     self.countdown = 0
                     t.invalidate()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
-                        if self?.countdown == 0, self?.screen == .queue { self?.countdown = nil }
+                        if self?.countdown == 0 { self?.countdown = nil }
                     }
                 }
             }
@@ -593,7 +599,9 @@ final class VSMatchViewModel: ObservableObject {
         // end-of-match/forfeit markings stay as idempotent backstops.
         if dailyVsActive && !isCpu { VSPlayLimit.markPlayedToday() }
         // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
-        // first ~0.6s instead of cutting straight from "1" into the game.
+        // first ~0.6s instead of cutting straight from "1" into the game. The
+        // tick timer is stopped HERE so a late tick can never re-show "GO!".
+        countdownTimer?.invalidate(); countdownTimer = nil
         if countdown != nil {
             countdown = 0
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in

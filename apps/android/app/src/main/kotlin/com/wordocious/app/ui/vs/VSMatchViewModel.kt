@@ -525,7 +525,7 @@ class VSMatchViewModel(
             // Safety: if the match never starts, drop the overlay after 2.5s.
             delay(1000); countdown = 0
             delay(2500)
-            if (countdown == 0 && screen == VSScreen.QUEUE) countdown = null
+            if (countdown == 0) countdown = null   // regardless of screen — never leave "GO!" over a live board (iOS parity, 2026-09-26)
         }
     }
 

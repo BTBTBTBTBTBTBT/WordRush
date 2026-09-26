@@ -451,8 +451,12 @@ struct VSGameView: View {
                         .scaleEffect(1)
                         .id(vm.countdown)
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    // Stays inside the 150 pt ring at every Dynamic Type size (Oliver's
+                    // phone pushed the "!" outside it, 2026-09-26).
                     Text(vm.countdown == 0 ? "GO!" : "\(vm.countdown ?? 0)")
-                        .font(Brand.font(vm.countdown == 0 ? 72 : 96, .black))
+                        .font(Brand.font(vm.countdown == 0 ? 64 : 96, .black))
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                        .frame(width: 118)
                         .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
                         .id(vm.countdown)
                         .transition(.scale.combined(with: .opacity))
