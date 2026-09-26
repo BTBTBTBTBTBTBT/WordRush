@@ -163,7 +163,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // More Games §18c — Spyglass.
   { key: 'wordsearch_first',     name: 'First Sighting',   description: 'Clear a Spyglass grid',                             category: 'beginner', icon: 'target' },
   { key: 'wordsearch_regular',   name: 'Spyglass Regular', description: 'Clear 50 Spyglass grids',                           category: 'skill',    icon: 'target' },
-  { key: 'wordsearch_eagle_eye', name: 'Eagle Eye',        description: 'Clear a Spyglass grid with no misses',              category: 'skill',    icon: 'star' },
+  { key: 'wordsearch_eagle_eye', name: 'Spotless',         description: 'Clear a Spyglass grid with no misses',              category: 'skill',    icon: 'star' },
   { key: 'wordsearch_swift',     name: 'Swift Spyglass',   description: 'Clear a Spyglass grid in under 2 minutes',          category: 'skill',    icon: 'zap' },
   { key: 'pure_wordsearch_initiate', name: 'Pure Spyglass',        description: 'Clear a Spyglass grid without using any hints', category: 'skill', icon: 'star' },
   { key: 'pure_wordsearch_adept',    name: 'Pure Spyglass Adept',  description: 'Clear 10 Spyglass grids without hints',        category: 'skill', icon: 'star' },
