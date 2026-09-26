@@ -72,6 +72,10 @@ struct VSMatchStart: Codable {
     let seed: String
     let startTime: Double          // unix ms
     let puzzleMetadata: VSPuzzleMetadata?
+    /// The match's answer words as the server dealt them (absent for
+    /// ProperNoundle and from the local bot). Used verbatim so both players
+    /// build the same board whatever answer list their build carries.
+    var solutions: [String]? = nil
 }
 
 struct VSGuessResult: Codable {
@@ -133,6 +137,7 @@ struct VSRematchStart: Codable {
     let matchId: String
     let seed: String
     let puzzleMetadata: VSPuzzleMetadata?
+    var solutions: [String]? = nil
 }
 
 struct VSStageEvent: Codable { let stageIndex: Int }

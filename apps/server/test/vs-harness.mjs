@@ -117,6 +117,12 @@ async function scenarioMatchmaking() {
   const [sa, sb] = await Promise.all([a.wait('match_start', 8000), b.wait('match_start', 8000)]);
   check('both got match_start', !!sa && !!sb);
   check('identical seed for both players', sa?.seed === sb?.seed, `${sa?.seed} vs ${sb?.seed}`);
+  // 2026-09-26: the words themselves ride along, so a client never has to
+  // derive them from its own (possibly older) answer list.
+  check('match_start carries the solutions', Array.isArray(sa?.solutions) && sa.solutions.length > 0,
+    JSON.stringify(sa?.solutions));
+  check('identical solutions for both players', JSON.stringify(sa?.solutions) === JSON.stringify(sb?.solutions),
+    `${JSON.stringify(sa?.solutions)} vs ${JSON.stringify(sb?.solutions)}`);
   a.close(); b.close();
 }
 

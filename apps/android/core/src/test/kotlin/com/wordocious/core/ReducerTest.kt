@@ -29,6 +29,24 @@ class ReducerTest {
         assertEquals(GameStatus.WON, s.boards[0].status)
     }
 
+    /** VS parity (2026-09-26): server-dealt words are used verbatim; a list
+     *  that doesn't fit the mode falls back to the seed derivation. */
+    @Test
+    fun supplied_solutions_are_used_verbatim() {
+        val derived = createInitialState("match-1", GameMode.QUORDLE).boards.map { it.solution }
+        val s = createInitialState("match-1", GameMode.QUORDLE, listOf("apple", "BREAD", "crane", "DELTA"))
+        assertEquals(listOf("APPLE", "BREAD", "CRANE", "DELTA"), s.boards.map { it.solution })
+        assert(derived != s.boards.map { it.solution })
+        assertEquals("match-1", s.seed)
+
+        val fallback = createInitialState("match-2", GameMode.DUEL, listOf("APPLE", "BREAD"))
+        assertEquals(createInitialState("match-2", GameMode.DUEL).boards[0].solution, fallback.boards[0].solution)
+
+        val rescue = createInitialState("match-3", GameMode.RESCUE, listOf("APPLE", "BREAD", "CRANE", "DELTA"))
+        assertEquals(listOf("APPLE", "BREAD", "CRANE", "DELTA"), rescue.boards.map { it.solution })
+        rescue.boards.forEach { assert(!it.prefilledGuesses.isNullOrEmpty()) }
+    }
+
     @Test
     fun quordle_applyToAll_solves_one_board_game_stays_playing() {
         val sols = generateSolutionsFromSeed("test", 4) // WRECK, ADORN, TRIED, BITCH

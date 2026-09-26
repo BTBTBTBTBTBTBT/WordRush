@@ -321,7 +321,8 @@ final class GameViewModel: ObservableObject {
         consonantRevealed = (d["consonantRevealed"]?.isEmpty == false) ? d["consonantRevealed"] : nil
     }
 
-    init(seed: String, mode: GameMode, isVersus: Bool = false) {
+    /// `solutions`: VS only — the server-dealt answer words (see createInitialState).
+    init(seed: String, mode: GameMode, isVersus: Bool = false, solutions: [String]? = nil) {
         self.mode = mode
         self.isVersus = isVersus
         switch mode {
@@ -347,7 +348,7 @@ final class GameViewModel: ObservableObject {
         if !isVersus, let saved = GamePersistence.shared.load(seed: effectiveSeed, mode: mode) {
             state = saved
         } else {
-            state = createInitialState(seed: seed, mode: mode)
+            state = createInitialState(seed: seed, mode: mode, solutions: isVersus ? solutions : nil)
         }
         recomputeEvaluations()
         restoreHintUI()

@@ -23,6 +23,8 @@ import { isTypingTarget } from '@/lib/keyboard';
 
 export interface VsGauntletProps {
   seed: string;
+  /** Server-dealt answer words (match_start); undefined/empty → derive from seed. */
+  solutions?: string[];
   mode: GameMode;
   onBoardSolved: (boardIndex: number) => void;
   onCompleted: (status: 'won' | 'lost', totalGuesses: number, timeMs: number) => void;
@@ -35,8 +37,8 @@ export interface VsGauntletProps {
   onTyping?: () => void;
 }
 
-export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onStageCompleted, onTyping }: VsGauntletProps) {
-  const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
+export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onStageCompleted, onTyping }: VsGauntletProps) {
+  const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET, solutions));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showTransition, setShowTransition] = useState(false);

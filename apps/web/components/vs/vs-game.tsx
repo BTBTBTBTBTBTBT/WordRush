@@ -369,6 +369,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const presenceId = usePresenceId();
   const router = useRouter();
   const [seed, setSeed] = useState('');
+  // The match's answer words as the SERVER dealt them (match_start /
+  // rematch_start). Preferred over deriving from the seed so both players
+  // always see the same puzzle, whatever answer list their build carries.
+  const [serverSolutions, setServerSolutions] = useState<string[]>([]);
   const [startTime, setStartTime] = useState(0);
   // Live refs so the socket connect effect can run ONCE per mount and read the
   // latest profile/seed without listing them as deps. Listing `profile` as a
@@ -507,10 +511,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // empty (the result screen uses match_ended.solutions instead).
   const mySolutions = useMemo(() => {
     if (!seed || mode === GameMode.PROPERNOUNDLE) return [] as string[];
+    if (serverSolutions.length > 0) return serverSolutions;
     if (mode === GameMode.DUEL_6) return generateSolutionsFromSeedForLength(seed, 1, 6);
     if (mode === GameMode.DUEL_7) return generateSolutionsFromSeedForLength(seed, 1, 7);
     return generateSolutionsFromSeed(seed, totalBoards);
-  }, [seed, mode, totalBoards]);
+  }, [seed, mode, totalBoards, serverSolutions]);
   const mySolutionsRef = useRef<string[]>([]);
   mySolutionsRef.current = mySolutions;
 
@@ -622,6 +627,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     });
 
     matchService.onMatchStart((data) => {
+      setServerSolutions((data.solutions ?? []).map((w) => w.toUpperCase()));
       setSeed(data.seed);
       setStartTime(data.startTime);
       setPuzzleMetadata(data.puzzleMetadata);
@@ -795,6 +801,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       beginInputLock(3000 + 600);
       const start = Date.now() + 3000;
       setTimeout(() => {
+        setServerSolutions(((data as any).solutions ?? []).map((w: string) => w.toUpperCase()));
         setSeed(data.seed);
         setStartTime(start);
         setPuzzleMetadata((data as any).puzzleMetadata);
@@ -1823,6 +1830,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const commonProps = {
       seed,
       mode,
+      solutions: serverSolutions,
       onBoardSolved: handleBoardSolved,
       onCompleted: handleCompleted,
       onGuessSubmitted: handleGuessSubmitted,

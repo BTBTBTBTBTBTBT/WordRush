@@ -36,22 +36,31 @@ private func getStageSolutionSlice(allSolutions: [String], stageIndex: Int) -> [
     return Array(allSolutions[offset..<(offset + gauntletStages[stageIndex].boardCount)])
 }
 
-public func createInitialState(seed: String, mode: GameMode) -> GameState {
+/// `solutions`, when supplied, are used VERBATIM as the board answers instead
+/// of being derived from the seed — the VS server sends the match's words in
+/// `match_start` so both players see the same puzzle even when their bundled
+/// answer lists differ (older build, pending cutover). A list whose length
+/// doesn't fit the mode is ignored and the seed derivation applies.
+public func createInitialState(seed: String, mode: GameMode, solutions: [String]? = nil) -> GameState {
     let now = Date().timeIntervalSince1970 * 1000
+    func supplied(_ count: Int) -> [String]? {
+        guard let s = solutions, s.count == count else { return nil }
+        return s.map { $0.uppercased() }
+    }
 
     switch mode {
     case .duel:
-        let solutions = generateSolutionsFromSeed(seed, count: 1)
+        let solutions = supplied(1) ?? generateSolutionsFromSeed(seed, count: 1)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .multiDuel:
-        let solutions = generateSolutionsFromSeed(seed, count: 2)
+        let solutions = supplied(2) ?? generateSolutionsFromSeed(seed, count: 2)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .gauntlet:
-        let allSolutions = generateSolutionsFromSeed(seed, count: gauntletTotalSolutions)
+        let allSolutions = supplied(gauntletTotalSolutions) ?? generateSolutionsFromSeed(seed, count: gauntletTotalSolutions)
         let firstStage = gauntletStages[0]
         let firstStageSolutions = getStageSolutionSlice(allSolutions: allSolutions, stageIndex: 0)
         let gauntletBoards = createStageBoardsFromSolutions(seed: seed, stage: firstStage, solutions: firstStageSolutions)
@@ -72,22 +81,22 @@ public func createInitialState(seed: String, mode: GameMode) -> GameState {
         )
 
     case .quordle:
-        let solutions = generateSolutionsFromSeed(seed, count: 4)
+        let solutions = supplied(4) ?? generateSolutionsFromSeed(seed, count: 4)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 9) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .octordle:
-        let solutions = generateSolutionsFromSeed(seed, count: 8)
+        let solutions = supplied(8) ?? generateSolutionsFromSeed(seed, count: 8)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 13) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .sequence:
-        let solutions = generateSolutionsFromSeed(seed, count: 4)
+        let solutions = supplied(4) ?? generateSolutionsFromSeed(seed, count: 4)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 10) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .rescue:
-        let solutions = generateSolutionsFromSeed(seed, count: 4)
+        let solutions = supplied(4) ?? generateSolutionsFromSeed(seed, count: 4)
         var boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         let dict = GameDictionary.shared
         let allowedWords = dict.getAllowedWords()
@@ -98,29 +107,29 @@ public func createInitialState(seed: String, mode: GameMode) -> GameState {
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .tournament:
-        let solutions = generateSolutionsFromSeed(seed, count: 5)
+        let solutions = supplied(5) ?? generateSolutionsFromSeed(seed, count: 5)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .propernoundle:
-        let solutions = generateSolutionsFromSeed(seed, count: 1)
+        let solutions = supplied(1) ?? generateSolutionsFromSeed(seed, count: 1)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .duel6:
-        let solutions = generateSolutionsFromSeedForLength(seed, count: 1, wordLength: 6)
+        let solutions = supplied(1) ?? generateSolutionsFromSeedForLength(seed, count: 1, wordLength: 6)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 7) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .duel7:
-        let solutions = generateSolutionsFromSeedForLength(seed, count: 1, wordLength: 7)
+        let solutions = supplied(1) ?? generateSolutionsFromSeedForLength(seed, count: 1, wordLength: 7)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 8) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
 
     case .sudoku, .scramble, .hub, .crossword, .groups, .ladder, .cryptogram, .wordsearch, .regions:
         // Custom-engine modes never run through the word reducer. A harmless
         // single-board placeholder keeps the switch exhaustive without a trap.
-        let solutions = generateSolutionsFromSeed(seed, count: 1)
+        let solutions = supplied(1) ?? generateSolutionsFromSeed(seed, count: 1)
         let boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         return GameState(mode: mode, seed: seed, startTime: now, boards: boards, currentBoardIndex: 0, status: .playing)
     }

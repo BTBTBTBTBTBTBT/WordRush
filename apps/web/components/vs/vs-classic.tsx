@@ -13,6 +13,8 @@ import type { EvaluatedRow } from './vs-result-detail';
 
 export interface VsGameComponentProps {
   seed: string;
+  /** Server-dealt answer words (match_start); undefined/empty → derive from seed. */
+  solutions?: string[];
   mode: GameMode;
   onBoardSolved: (boardIndex: number) => void;
   onCompleted: (status: 'won' | 'lost', totalGuesses: number, timeMs: number) => void;
@@ -32,8 +34,8 @@ export interface VsGameComponentProps {
   onFinalBoard?: (rows: EvaluatedRow[]) => void;
 }
 
-export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping, onFinalBoard }: VsGameComponentProps) {
-  const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode));
+export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping, onFinalBoard }: VsGameComponentProps) {
+  const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode, solutions));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);

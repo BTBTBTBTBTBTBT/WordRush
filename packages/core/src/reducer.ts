@@ -4,8 +4,8 @@ import { evaluateGuess } from './evaluator';
 import { isValidWord, getAllowedWords, getSolutionPoolForDate } from './dictionary';
 import { generatePrefillGuesses, generatePrefillWords } from './prefill';
 
-export function initializeGame(seed: string, mode: GameMode): GameState {
-  return createInitialState(seed, mode);
+export function initializeGame(seed: string, mode: GameMode, solutions?: string[]): GameState {
+  return createInitialState(seed, mode, solutions);
 }
 
 function createBoardState(solution: string, maxGuesses: number = 6): BoardState {
@@ -48,9 +48,19 @@ function getStageSolutionSlice(allSolutions: string[], stageIndex: number): stri
   return allSolutions.slice(offset, offset + GAUNTLET_STAGES[stageIndex].boardCount);
 }
 
-export function createInitialState(seed: string, mode: GameMode): GameState {
+/**
+ * Build a fresh game. `solutions`, when supplied, are used VERBATIM as the
+ * board answers instead of being derived from the seed — the VS server sends
+ * the match's words in `match_start` so both players see the same puzzle even
+ * when their bundled answer lists differ (an older app version, a pending
+ * cutover). A list whose length doesn't fit the mode is ignored and the seed
+ * derivation applies, so a malformed payload can never produce a broken board.
+ */
+export function createInitialState(seed: string, mode: GameMode, solutions?: string[]): GameState {
   let boardCount = 1;
   let maxGuesses = 6;
+  const supplied = (count: number): string[] | null =>
+    solutions && solutions.length === count ? solutions.map(w => w.toUpperCase()) : null;
 
   switch (mode) {
     case GameMode.DUEL:
@@ -62,7 +72,7 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
       maxGuesses = 6;
       break;
     case GameMode.GAUNTLET: {
-      const allSolutions = generateSolutionsFromSeed(seed, GAUNTLET_TOTAL_SOLUTIONS);
+      const allSolutions = supplied(GAUNTLET_TOTAL_SOLUTIONS) ?? generateSolutionsFromSeed(seed, GAUNTLET_TOTAL_SOLUTIONS);
       const firstStage = GAUNTLET_STAGES[0];
       const firstStageSolutions = getStageSolutionSlice(allSolutions, 0);
       const gauntletBoards = createStageBoardsFromSolutions(seed, firstStage, firstStageSolutions);
@@ -107,19 +117,19 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
       maxGuesses = 6;
       break;
     case GameMode.DUEL_6: {
-      const solutions6 = generateSolutionsFromSeedForLength(seed, 1, 6);
+      const solutions6 = supplied(1) ?? generateSolutionsFromSeedForLength(seed, 1, 6);
       const boards6 = solutions6.map(sol => createBoardState(sol, 7));
       return { mode, seed, startTime: Date.now(), boards: boards6, currentBoardIndex: 0, status: GameStatus.PLAYING };
     }
     case GameMode.DUEL_7: {
-      const solutions7 = generateSolutionsFromSeedForLength(seed, 1, 7);
+      const solutions7 = supplied(1) ?? generateSolutionsFromSeedForLength(seed, 1, 7);
       const boards7 = solutions7.map(sol => createBoardState(sol, 8));
       return { mode, seed, startTime: Date.now(), boards: boards7, currentBoardIndex: 0, status: GameStatus.PLAYING };
     }
   }
 
-  const solutions = generateSolutionsFromSeed(seed, boardCount);
-  const boards = solutions.map(sol => createBoardState(sol, maxGuesses));
+  const words = supplied(boardCount) ?? generateSolutionsFromSeed(seed, boardCount);
+  const boards = words.map(sol => createBoardState(sol, maxGuesses));
 
   if (mode === GameMode.RESCUE) {
     // Prefills come from the curated ANSWER bank, not the allowed-guess list.
@@ -128,7 +138,7 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
     // ordinary player knows, which makes the clue rows useless and the mode
     // look broken. Same bug the bot filler pool had.
     const prefillPool = getSolutionPoolForDate(null);
-    const prefillWords = generatePrefillWords(seed, solutions, prefillPool);
+    const prefillWords = generatePrefillWords(seed, words, prefillPool);
     boards.forEach((board) => {
       board.prefilledGuesses = generatePrefillGuesses(prefillWords, board.solution);
     });

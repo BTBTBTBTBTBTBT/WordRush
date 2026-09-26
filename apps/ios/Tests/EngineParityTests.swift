@@ -254,6 +254,23 @@ final class EngineParityTests: XCTestCase {
 
     // MARK: - Reducer Smoke Tests
 
+    /// VS parity (2026-09-26): server-dealt words are used verbatim; a list
+    /// that doesn't fit the mode falls back to the seed derivation.
+    func testSuppliedSolutionsAreUsedVerbatim() {
+        let derived = createInitialState(seed: "match-1", mode: .quordle).boards.map { $0.solution }
+        let state = createInitialState(seed: "match-1", mode: .quordle, solutions: ["apple", "BREAD", "crane", "DELTA"])
+        XCTAssertEqual(state.boards.map { $0.solution }, ["APPLE", "BREAD", "CRANE", "DELTA"])
+        XCTAssertNotEqual(state.boards.map { $0.solution }, derived)
+        XCTAssertEqual(state.seed, "match-1")
+
+        let fallback = createInitialState(seed: "match-2", mode: .duel, solutions: ["APPLE", "BREAD"])
+        XCTAssertEqual(fallback.boards[0].solution, createInitialState(seed: "match-2", mode: .duel).boards[0].solution)
+
+        let rescue = createInitialState(seed: "match-3", mode: .rescue, solutions: ["APPLE", "BREAD", "CRANE", "DELTA"])
+        XCTAssertEqual(rescue.boards.map { $0.solution }, ["APPLE", "BREAD", "CRANE", "DELTA"])
+        for b in rescue.boards { XCTAssertFalse((b.prefilledGuesses ?? []).isEmpty) }
+    }
+
     func testDuelInitialization() {
         let state = createInitialState(seed: "test", mode: .duel)
         XCTAssertEqual(state.boards.count, 1)

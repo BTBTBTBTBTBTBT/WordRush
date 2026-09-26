@@ -908,8 +908,9 @@ io.on('connection', (socket) => {
       guessLogByMatch.delete(matchId);
       guessLogByMatch.set(newMatchId, { p1: [], p2: [] });
 
-      io.to(match.player1.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
-      io.to(match.player2.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
+      const sharedSolutions = match.mode === GameMode.PROPERNOUNDLE ? undefined : newSolutions;
+      io.to(match.player1.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata, solutions: sharedSolutions });
+      io.to(match.player2.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata, solutions: sharedSolutions });
     }
   });
 
@@ -1082,8 +1083,12 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
     // or the surviving client can see match_ended THEN match_start.
     const m = matches.get(matchId);
     if (!m || m.ended) return;
-    io.to(player1.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata });
-    io.to(player2.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata });
+    // The words ride along so both boards are built from ONE source of truth
+    // (2026-09-26: two players on different app versions derived different
+    // answers from the same seed). ProperNoundle keeps its answer hidden.
+    const shared = mode === GameMode.PROPERNOUNDLE ? undefined : solutions;
+    io.to(player1.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata, solutions: shared });
+    io.to(player2.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata, solutions: shared });
   }, MATCH_COUNTDOWN * 1000);
 }
 

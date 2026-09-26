@@ -80,6 +80,10 @@ data class VSMatchStart(
     val seed: String = "",
     val startTime: Double = 0.0,        // unix ms
     val puzzleMetadata: VSPuzzleMetadata? = null,
+    /** The match's answer words as the server dealt them (absent for
+     *  ProperNoundle and from the local bot). Used verbatim so both players
+     *  build the same board whatever answer list their build carries. */
+    val solutions: List<String>? = null,
 )
 
 @Serializable
@@ -144,6 +148,7 @@ data class VSRematchStart(
     val matchId: String = "",
     val seed: String = "",
     val puzzleMetadata: VSPuzzleMetadata? = null,
+    val solutions: List<String>? = null,
 )
 
 @Serializable

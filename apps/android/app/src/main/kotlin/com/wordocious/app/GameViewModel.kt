@@ -33,6 +33,8 @@ class GameViewModel(
     private val mode: GameMode,
     /** VS mode: relay guesses/solves/completion to the socket; skip local persistence. */
     private val isVersus: Boolean = false,
+    /** VS only — the server-dealt answer words (see core createInitialState). */
+    private val solutions: List<String>? = null,
 ) : ViewModel() {
 
     // ── VS relay callbacks (null in solo; set by VSMatchViewModel) ────────────────
@@ -44,7 +46,7 @@ class GameViewModel(
     private val _state = MutableStateFlow(run {
         DictionaryLoader.ensureLoaded()
         // VS games are ephemeral (fresh per match) — never resume from persistence.
-        if (isVersus) createInitialState(seed, mode)
+        if (isVersus) createInitialState(seed, mode, solutions)
         else {
             // Cross-midnight grace (web/iOS parity): if today's daily has no
             // save but yesterday's is still in progress and fresh, adopt ITS

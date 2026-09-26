@@ -10,10 +10,10 @@ import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { isTypingTarget } from '@/lib/keyboard';
 
-export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
+export function VsOctoword({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(seed, GameMode.OCTORDLE)
+    initializeGame(seed, GameMode.OCTORDLE, solutions)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');

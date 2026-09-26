@@ -31,12 +31,20 @@ private fun getStageSolutionSlice(allSolutions: List<String>, stageIndex: Int): 
     return allSolutions.subList(offset, offset + gauntletStages[stageIndex].boardCount).toList()
 }
 
-fun createInitialState(seed: String, mode: GameMode): GameState {
+/**
+ * [solutions], when supplied, are used VERBATIM as the board answers instead of
+ * being derived from the seed — the VS server sends the match's words in
+ * `match_start` so both players see the same puzzle even when their bundled
+ * answer lists differ (older build, pending cutover). A list whose length
+ * doesn't fit the mode is ignored and the seed derivation applies.
+ */
+fun createInitialState(seed: String, mode: GameMode, solutions: List<String>? = null): GameState {
     val now = nowMs()
+    fun supplied(count: Int): List<String>? = solutions?.takeIf { it.size == count }?.map { it.uppercase() }
     fun simple(count: Int, maxGuesses: Int): GameState =
-        GameState(mode, seed, now, generateSolutionsFromSeed(seed, count).map { createBoardState(it, maxGuesses) }, 0, GameStatus.PLAYING)
+        GameState(mode, seed, now, (supplied(count) ?: generateSolutionsFromSeed(seed, count)).map { createBoardState(it, maxGuesses) }, 0, GameStatus.PLAYING)
     fun simpleLen(count: Int, maxGuesses: Int, wordLength: Int): GameState =
-        GameState(mode, seed, now, generateSolutionsFromSeedForLength(seed, count, wordLength).map { createBoardState(it, maxGuesses) }, 0, GameStatus.PLAYING)
+        GameState(mode, seed, now, (supplied(count) ?: generateSolutionsFromSeedForLength(seed, count, wordLength)).map { createBoardState(it, maxGuesses) }, 0, GameStatus.PLAYING)
 
     return when (mode) {
         GameMode.DUEL -> simple(1, 6)
@@ -60,15 +68,15 @@ fun createInitialState(seed: String, mode: GameMode): GameState {
         GameMode.SUDOKU, GameMode.SCRAMBLE, GameMode.HUB, GameMode.CROSSWORD, GameMode.GROUPS,
         GameMode.LADDER, GameMode.CRYPTOGRAM, GameMode.WORDSEARCH, GameMode.REGIONS -> simple(1, 6)
         GameMode.RESCUE -> {
-            val solutions = generateSolutionsFromSeed(seed, 4)
-            val prefillWords = generatePrefillWords(seed, solutions, GameDictionary.solutionPool(null))
-            val boards = solutions.map {
+            val words = supplied(4) ?: generateSolutionsFromSeed(seed, 4)
+            val prefillWords = generatePrefillWords(seed, words, GameDictionary.solutionPool(null))
+            val boards = words.map {
                 createBoardState(it, 6).copy(prefilledGuesses = generatePrefillGuesses(prefillWords, it))
             }
             GameState(mode, seed, now, boards, 0, GameStatus.PLAYING)
         }
         GameMode.GAUNTLET -> {
-            val allSolutions = generateSolutionsFromSeed(seed, gauntletTotalSolutions)
+            val allSolutions = supplied(gauntletTotalSolutions) ?: generateSolutionsFromSeed(seed, gauntletTotalSolutions)
             val firstSlice = getStageSolutionSlice(allSolutions, 0)
             val boards = createStageBoardsFromSolutions(seed, gauntletStages[0], firstSlice)
             GameState(

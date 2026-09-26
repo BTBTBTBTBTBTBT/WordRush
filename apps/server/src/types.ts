@@ -111,7 +111,11 @@ export interface ServerToClientEvents {
     /** Opponent's Supabase user id (from presenceId `u:<id>`), or null if anonymous. */
     opponentUserId?: string | null;
   }) => void;
-  match_start: (data: { seed: string; startTime: number; puzzleMetadata?: any }) => void;
+  /** `solutions` are the match's answer words, sent so BOTH clients build the
+   *  same board even when their bundled answer lists differ (older app build,
+   *  a pending cutover). Omitted for ProperNoundle, whose answer stays hidden
+   *  server-side until match end. */
+  match_start: (data: { seed: string; startTime: number; puzzleMetadata?: any; solutions?: string[] }) => void;
   guess_result: (data: {
     boardIndex: number;
     isValid: boolean;
@@ -161,7 +165,7 @@ export interface ServerToClientEvents {
   opponent_typing: (data: Record<string, never>) => void;
   rematch_offered: () => void;
   rematch_declined: () => void;
-  rematch_start: (data: { matchId: string; seed: string; puzzleMetadata?: any }) => void;
+  rematch_start: (data: { matchId: string; seed: string; puzzleMetadata?: any; solutions?: string[] }) => void;
   /** Opponent left for good (explicit abandon, or their reconnect grace expired). */
   opponent_left: () => void;
   /** Opponent dropped mid-match but is within the reconnect grace window.

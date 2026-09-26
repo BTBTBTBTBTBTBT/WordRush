@@ -10,10 +10,10 @@ import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { isTypingTarget } from '@/lib/keyboard';
 
-export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
+export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(seed, GameMode.RESCUE)
+    initializeGame(seed, GameMode.RESCUE, solutions)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');

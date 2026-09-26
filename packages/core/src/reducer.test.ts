@@ -10,6 +10,32 @@ describe('game reducer', () => {
     initDictionary(allowed, solutions);
   });
 
+  describe('server-supplied solutions (VS parity)', () => {
+    it('uses the supplied words verbatim instead of deriving from the seed', () => {
+      const derived = createInitialState('match-1', GameMode.QUORDLE).boards.map(b => b.solution);
+      const given = ['apple', 'BREAD', 'crane', 'DELTA'];
+      const state = createInitialState('match-1', GameMode.QUORDLE, given);
+      expect(state.boards.map(b => b.solution)).toEqual(['APPLE', 'BREAD', 'CRANE', 'DELTA']);
+      expect(state.boards.map(b => b.solution)).not.toEqual(derived);
+      expect(state.seed).toBe('match-1');
+    });
+
+    it('ignores a list whose length does not fit the mode', () => {
+      const derived = createInitialState('match-2', GameMode.DUEL).boards[0].solution;
+      const state = createInitialState('match-2', GameMode.DUEL, ['APPLE', 'BREAD']);
+      expect(state.boards[0].solution).toBe(derived);
+    });
+
+    it('feeds the supplied words to Gauntlet and Deliverance prefills', () => {
+      const words = Array.from({ length: GAUNTLET_STAGES.reduce((n, s) => n + s.boardCount, 0) }, (_, i) => ['APPLE', 'BREAD', 'CRANE', 'DELTA', 'EARTH', 'PANDA', 'PURDY'][i % 7]);
+      const g = createInitialState('match-3', GameMode.GAUNTLET, words);
+      expect(g.gauntlet?.allSolutions).toEqual(words);
+      const r = createInitialState('match-4', GameMode.RESCUE, ['APPLE', 'BREAD', 'CRANE', 'DELTA']);
+      expect(r.boards.map(b => b.solution)).toEqual(['APPLE', 'BREAD', 'CRANE', 'DELTA']);
+      r.boards.forEach(b => expect(b.prefilledGuesses?.length ?? 0).toBeGreaterThan(0));
+    });
+  });
+
   describe('DUEL mode', () => {
     it('should create initial state with one board', () => {
       const state = createInitialState('test', GameMode.DUEL);

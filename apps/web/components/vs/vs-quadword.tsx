@@ -10,10 +10,10 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { isTypingTarget } from '@/lib/keyboard';
 import type { VsGameComponentProps } from './vs-classic';
 
-export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
+export function VsQuadword({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(seed, GameMode.QUORDLE)
+    initializeGame(seed, GameMode.QUORDLE, solutions)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');

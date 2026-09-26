@@ -45,7 +45,7 @@ export interface IMatchService {
   emitTyping(): void;
   onQueueStatus(callback: (data: { position: number; mode: GameMode; queueSize?: number; dailySeed?: string | null }) => void): void;
   onMatchFound(callback: (data: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number; opponentUserId?: string | null }) => void): void;
-  onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void;
+  onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string }; solutions?: string[] }) => void): void;
   onGuessResult(callback: (data: { boardIndex: number; isValid: boolean; isCorrect: boolean; reason?: string }) => void): void;
   onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] }; latestGuesses?: { boardIndex: number; tiles: string[] }[] }) => void): void;
   onOpponentTyping(callback: () => void): void;
@@ -53,7 +53,7 @@ export interface IMatchService {
   onOpponentStageCompleted(callback: (data: { stageIndex: number }) => void): void;
   onRematchOffered(callback: () => void): void;
   onRematchDeclined(callback: () => void): void;
-  onRematchStart(callback: (data: { matchId: string; seed: string; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void;
+  onRematchStart(callback: (data: { matchId: string; seed: string; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string }; solutions?: string[] }) => void): void;
   onOpponentLeft(callback: () => void): void;
   /** Opponent's socket dropped — the server holds the match open for a
    *  reconnect grace window before awarding the forfeit win. */
@@ -140,7 +140,7 @@ export class SocketIOMatchService implements IMatchService {
     this.socket?.on('match_found', callback);
   }
 
-  onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void {
+  onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string }; solutions?: string[] }) => void): void {
     this.socket?.on('match_start', callback);
   }
 
@@ -172,7 +172,7 @@ export class SocketIOMatchService implements IMatchService {
     this.socket?.on('rematch_declined', callback);
   }
 
-  onRematchStart(callback: (data: { matchId: string; seed: string; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void {
+  onRematchStart(callback: (data: { matchId: string; seed: string; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string }; solutions?: string[] }) => void): void {
     this.socket?.on('rematch_start', callback);
   }
 

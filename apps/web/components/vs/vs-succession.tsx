@@ -11,10 +11,10 @@ import { isTypingTarget } from '@/lib/keyboard';
 
 const BOARD_ORDER = [0, 1, 2, 3];
 
-export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
+export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(seed, GameMode.SEQUENCE)
+    initializeGame(seed, GameMode.SEQUENCE, solutions)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');

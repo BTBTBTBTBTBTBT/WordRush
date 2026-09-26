@@ -390,7 +390,7 @@ class VSMatchViewModel(
         }
         service.onMatchStart = {
             puzzleDisplay = it.puzzleMetadata?.display
-            beginMatch(it.seed, it.startTime)
+            beginMatch(it.seed, it.startTime, it.solutions)
         }
         service.onOpponentProgress = { applyOpponentProgress(it) }
         service.onOpponentStageCompleted = { opponent.stagesCleared = max(opponent.stagesCleared, it.stageIndex + 1) }
@@ -409,7 +409,7 @@ class VSMatchViewModel(
         service.onRematchDeclined = { rematch = RematchState.DECLINED }
         service.onRematchStart = {
             puzzleDisplay = it.puzzleMetadata?.display
-            beginRematch(it.seed)
+            beginRematch(it.seed, it.solutions)
         }
         service.onOpponentLeft = {
             clearDisconnectBanner()
@@ -532,7 +532,7 @@ class VSMatchViewModel(
     /** Rematch start — no match-intro splash, so run a 3-2-1 countdown (mirrors
      *  the initial MATCH_COUNTDOWN) before the board resets instead of snapping
      *  straight into a new game. The bot is delayed the same 3s to stay aligned. */
-    private fun beginRematch(newSeed: String) {
+    private fun beginRematch(newSeed: String, solutions: List<String>? = null) {
         rematch = RematchState.IDLE
         showIntro = false
         countdownIsRematch = true
@@ -543,11 +543,11 @@ class VSMatchViewModel(
             var c = 3
             while (c > 1) { delay(1000); c -= 1; countdown = c }
             delay(1000)
-            beginMatch(newSeed, start)
+            beginMatch(newSeed, start, solutions)
         }
     }
 
-    private fun beginMatch(newSeed: String, startMs: Double?) {
+    private fun beginMatch(newSeed: String, startMs: Double?, solutions: List<String>? = null) {
         seed = newSeed
         matchStartMs = startMs ?: (System.currentTimeMillis().toDouble())
         countdownIsRematch = false
@@ -585,7 +585,9 @@ class VSMatchViewModel(
         opponentGuessTick = 0
 
         game?.stopTimer()
-        val vm = GameViewModel(seed = newSeed, mode = mode, isVersus = true)
+        // Server-dealt words win over seed derivation — same puzzle for both
+        // players even across app versions (Dave + his girlfriend, 2026-09-26).
+        val vm = GameViewModel(seed = newSeed, mode = mode, isVersus = true, solutions = solutions)
         // Relay the ACTUAL board this guess landed on (not a hardcoded 0) so the
         // server evaluates it against the right solution and the opponent's
         // per-board mini-board populates the correct board. Single-board /

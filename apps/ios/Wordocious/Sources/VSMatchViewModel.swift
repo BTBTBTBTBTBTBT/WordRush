@@ -440,7 +440,7 @@ final class VSMatchViewModel: ObservableObject {
         }
         service.onMatchFound = { [weak self] in self?.handleMatchFound($0) }
         service.onOpponentTyping = { [weak self] in self?.handleOpponentTyping() }
-        service.onMatchStart = { [weak self] in self?.beginMatch(seed: $0.seed, startMs: $0.startTime) }
+        service.onMatchStart = { [weak self] in self?.beginMatch(seed: $0.seed, startMs: $0.startTime, solutions: $0.solutions) }
         service.onOpponentProgress = { [weak self] in self?.applyOpponentProgress($0) }
         service.onOpponentStageCompleted = { [weak self] in
             // stageIndex is the stage the opponent just cleared (0-based) → that
@@ -463,7 +463,7 @@ final class VSMatchViewModel: ObservableObject {
             }
         }
         service.onRematchDeclined = { [weak self] in self?.rematch = .declined }
-        service.onRematchStart = { [weak self] in self?.beginRematch(seed: $0.seed) }
+        service.onRematchStart = { [weak self] in self?.beginRematch(seed: $0.seed, solutions: $0.solutions) }
         service.onOpponentLeft = { [weak self] in
             // Only meaningful while actually mid-match or spectating — a stray
             // opponent_left on the queue/result screens must not clobber them
@@ -565,7 +565,7 @@ final class VSMatchViewModel: ObservableObject {
     /// run a short 3-2-1 countdown (mirrors the initial MATCH_COUNTDOWN) before
     /// the board resets, instead of snapping straight into a new game. The bot's
     /// engine is likewise delayed by the same 3s so the pacing stays aligned.
-    private func beginRematch(seed: String) {
+    private func beginRematch(seed: String, solutions: [String]? = nil) {
         rematch = .idle
         showIntro = false
         countdownIsRematch = true
@@ -576,12 +576,12 @@ final class VSMatchViewModel: ObservableObject {
             Task { @MainActor in
                 guard let self else { t.invalidate(); return }
                 if let c = self.countdown, c > 1 { self.countdown = c - 1 }
-                else { t.invalidate(); self.beginMatch(seed: seed, startMs: start) }
+                else { t.invalidate(); self.beginMatch(seed: seed, startMs: start, solutions: solutions) }
             }
         }
     }
 
-    private func beginMatch(seed: String, startMs: Double?) {
+    private func beginMatch(seed: String, startMs: Double?, solutions: [String]? = nil) {
         self.seed = seed
         matchStartMs = startMs ?? (Date().timeIntervalSince1970 * 1000)
         countdownIsRematch = false
@@ -653,7 +653,9 @@ final class VSMatchViewModel: ObservableObject {
             return
         }
 
-        let vm = GameViewModel(seed: seed, mode: mode, isVersus: true)
+        // Server-dealt words win over seed derivation — same puzzle for both
+        // players even across app versions (Dave + his girlfriend, 2026-09-26).
+        let vm = GameViewModel(seed: seed, mode: mode, isVersus: true, solutions: solutions)
         vm.onGuessCommitted = { [weak self] guess, boardIndex in
             // Relay the ACTUAL board this guess landed on (not a hardcoded 0) so
             // the server evaluates it against the right solution and the
