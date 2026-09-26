@@ -111,6 +111,9 @@ struct ActivityFeedView: View {
             return .init(text: "\(who) — Flawless More Games, all ten won", symbol: "square.grid.2x2.fill", color: Color(hex: 0xB45309))
         case "more_sweep":
             return .init(text: "\(who) — More Games Sweep, all ten played", symbol: "square.grid.2x2", color: Color(hex: 0x4F46E5))
+        case "gift":
+            // D3.4 (§294): a streak shield sent to a friend.
+            return .init(text: "\(who) sent \(e.otherName ?? "a friend") a streak shield", symbol: "shield.fill", color: Color(hex: 0x0D9488))
         case "record":
             let label = e.kind.map { RecordCatalog.labels[$0]?.label ?? $0 } ?? "record"
             let value = (e.kind != nil && e.value != nil) ? recordValue(e.kind!, Int(e.value!), gameMode: e.gameMode) : ""

@@ -32,6 +32,8 @@ struct FriendsPanelView: View {
     @State private var challenging: String?
     @State private var challengeMatch: ChallengeMatch?
     private struct ChallengeMatch: Identifiable { let id = UUID(); let mode: GameMode; let code: String }
+    // D3.4 (§294): shield gift in flight — the friend id (double-tap guard).
+    @State private var gifting: String?
     // §289: the share sheet for the invite link (profile, or a Pro player's
     // open referral code) — message + separate URL, the ActivityShareSheet way.
     @State private var shareInvite: ShareInvite?
@@ -82,6 +84,9 @@ struct FriendsPanelView: View {
                             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
                     }.buttonStyle(.plain)
                 }
+                // D3.5 (§294): per-event notification prefs (race, challenges,
+                // nudges, moments) — the bell at the header's trailing edge.
+                NotificationPrefsButton()
             }
 
             // §289: TODAY'S RACE — you and every friend ranked by today's
@@ -132,6 +137,12 @@ struct FriendsPanelView: View {
                             .opacity(sharingRace ? 0.4 : 1)
                             .accessibilityLabel("Share weekly race")
                         }
+                    }
+                    // D3.3 (§294) — the Sunday finish, settled server-side on
+                    // the first visit of the week: "You finished 2nd of 6".
+                    // Stable all week; the Stats tab tallies them.
+                    if let r = FriendsService.lastWeek {
+                        lastWeekBanner(r)
                     }
                     // §232: Monday's answer — last week's settled winner.
                     // §238: the line unfolds into the settled-week history.
@@ -332,6 +343,14 @@ struct FriendsPanelView: View {
                                 Label("Challenge ⚔️", image: "swords")
                             }
                             .disabled(challenging != nil)
+                            // D3.4 (§294): gift one of your streak shields
+                            // (once per friend per week) — only when you hold one.
+                            if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
+                                Button { giftShield(f) } label: {
+                                    Label("🛡️ Gift a shield", systemImage: "shield")
+                                }
+                                .disabled(gifting != nil)
+                            }
                             Button(role: .destructive) { unfriendTarget = f } label: {
                                 Label("Unfriend", systemImage: "person.badge.minus")
                             }
@@ -831,6 +850,53 @@ struct FriendsPanelView: View {
             case .success(let inv):
                 note = "Challenge sent to \(f.username) ⚔️"
                 challengeMatch = ChallengeMatch(mode: GameMode(rawValue: inv.gameMode) ?? .duel, code: inv.code)
+            case .failure(let error):
+                note = error.localizedDescription
+            }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            note = nil
+        }
+    }
+
+    /// D3.3 (§294): "🏁 Last week you finished 2nd of 6 · 1,240 pts · 👑 Doug
+    /// 1,900" — gold with a crown when you won. Same copy and colors as the
+    /// web banner (friends-panel.tsx).
+    private func lastWeekBanner(_ r: FriendsService.LastWeek) -> some View {
+        let win = r.rank == 1
+        let ink = win ? Color(hex: 0x92400E) : Theme.textPrimary
+        var line = Text("Last week you finished ").font(Brand.font(11, .heavy)).foregroundColor(ink)
+            + Text("\(WeeklyRace.ordinal(r.rank)) of \(r.circleSize)").font(Brand.font(11, .black)).foregroundColor(ink)
+            + Text(" · \(r.points.formatted()) pts").font(Brand.font(11, .heavy)).foregroundColor(ink)
+        if !win, let name = r.winnerName {
+            line = line + Text(" · 👑 \(name) \(r.winnerPoints.formatted())").font(Brand.font(11, .heavy)).foregroundColor(Theme.textMuted)
+        }
+        return HStack(spacing: 8) {
+            Text(win ? "👑" : "🏁").font(.system(size: 16))
+            line.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12).fill(
+                win
+                    ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xFEF3C7), Color(hex: 0xFDE68A)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    : AnyShapeStyle(Theme.background)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(win ? Color(hex: 0xF59E0B) : Theme.border, lineWidth: 1.5))
+        .padding(.vertical, 2)
+    }
+
+    /// D3.4 (§294): send a friend one of your streak shields. The server owns
+    /// the once-per-week rule and the transfer; we note the outcome and
+    /// refresh the profile so the shield count (and the menu item) update.
+    private func giftShield(_ f: FriendsService.FriendProfile) {
+        guard gifting == nil else { return }
+        gifting = f.id
+        Task {
+            let result = await FriendsService.giftShield(friendId: f.id)
+            gifting = nil
+            switch result {
+            case .success(let left):
+                note = "🛡️ Shield sent to \(f.username) · \(left) left"
+                await AuthService.shared.refreshProfile()
             case .failure(let error):
                 note = error.localizedDescription
             }

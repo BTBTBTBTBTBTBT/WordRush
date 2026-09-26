@@ -439,6 +439,8 @@ struct ProfileTab: View {
         SectionHeader("Your Records", accent: Color(hex: 0xD97706))
         NextUpCard(dailyStreak: p.dailyLoginStreak, chases: yours.chases)
         SweepRecordsCard(sweep: sweepStats, sweepRankToday: yours.sweepRankToday, sweepRankAllTime: yours.sweepRankAllTime)
+        // D3.3 (§294): the settled weekly race finishes, under Daily Sweeps.
+        WeeklyFinishesCard(userId: p.id)
         RecordsHeldRow(recordsHeld: yours.recordsHeld)
         TrophyShelf(recordsHeld: yours.recordsHeld)
         // CPU practice records totals only — the per-game charts below draw

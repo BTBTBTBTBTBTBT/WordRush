@@ -43,6 +43,10 @@ struct Profile: Codable, Identifiable, Equatable {
     /// /api/profile/[id]/* endpoints 403 for them. Optional so decoding never
     /// breaks against a pre-migration cache.
     var isPrivate: Bool?
+    /// Friends D3.5 (§294): per-category push prefs (race / challenge /
+    /// nudge / feed); a missing key means ON. Optional so a pre-migration
+    /// row or cache never breaks profile loading.
+    var notificationPrefs: [String: Bool]?
 
     enum CodingKeys: String, CodingKey {
         case id, username, level, xp, bio
@@ -72,11 +76,12 @@ struct Profile: Codable, Identifiable, Equatable {
         case createdAt = "created_at"
         case proPromptShown = "pro_prompt_shown"
         case isPrivate = "is_private"
+        case notificationPrefs = "notification_prefs"
     }
 
     /// Columns to request from the profiles table. (social_links is fetched
     /// separately/optionally so a missing column never breaks profile loading.)
-    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,role,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,last_seen_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji,is_private"
+    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,role,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,last_seen_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji,is_private,notification_prefs"
 
     /// The stored Pro window as a date. Purchase fulfillment has to compare
     /// against this before writing — pro_expires_at holds time from sources the

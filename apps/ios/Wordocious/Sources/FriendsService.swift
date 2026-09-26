@@ -38,6 +38,21 @@ enum FriendsService {
     }
     static var meDigest: MeDigest?
 
+    /// D3.3 (§294) — LAST week's settled finish for the viewer, computed and
+    /// stored SERVER-side (weekly_race_results) on the first /api/friends of
+    /// the week; stable all week, never a client sort. winnerName is "You"
+    /// when the viewer won.
+    struct LastWeek: Decodable, Equatable {
+        let weekStart: String
+        let rank: Int
+        let points: Int
+        let circleSize: Int
+        let winnerId: String?
+        let winnerName: String?
+        let winnerPoints: Int
+    }
+    private(set) static var lastWeek: LastWeek?
+
     private struct FriendsPayload: Decodable {
         let friends: [FriendProfile]
         let incoming: [FriendProfile]
@@ -46,6 +61,8 @@ enum FriendsService {
         var outgoingProfiles: [FriendProfile] = []
         // §212: the caller's own digest for the weekly podium — additive.
         var me: MeDigest? = nil
+        // D3.3 (§294): the settled previous week — additive, null until settled.
+        var lastWeek: LastWeek? = nil
     }
 
     /// Accepted friend ids (lowercased) — the leaderboard filter set.
@@ -118,6 +135,7 @@ enum FriendsService {
         outgoing = Set(payload.outgoing.map { $0.lowercased() })
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
+        lastWeek = payload.lastWeek
         fetchedDay = localDay()
         fetchedAt = Date()
         loaded = true
@@ -281,13 +299,32 @@ enum FriendsService {
         let day: String
         /// ISO timestamp, for ordering.
         let at: String
-        /// sweep | flawless | medal | record | more_sweep | more_flawless
+        /// sweep | flawless | medal | record | more_sweep | more_flawless | gift
         let type: String
         /// medal_type for medals (gold/silver/bronze/perfect/streak_7…), record_type for records.
         var kind: String?
         var gameMode: String?
         var gameTitle: String?
         var value: Double?
+        /// D3.4 (§294) — the other party of a `gift` (the shield's recipient).
+        var otherName: String?
+        var otherId: String?
+    }
+
+    /// D3.4 (§294): send a friend one of YOUR streak shields — POST
+    /// /api/friends/gift-shield {friendId, weekStart}; once per friend per
+    /// local week (429 "Already gifted this week"), the sender −1 / recipient
+    /// +1 server-side. Success carries the shields you have left; the caller
+    /// refreshes the profile so the count updates. Twin of giftShield().
+    static func giftShield(friendId: String) async -> Result<Int, Error> {
+        guard let (status, data) = await post("gift-shield", body: ["friendId": friendId, "weekStart": localWeekStart()]) else {
+            return .failure(APIError(message: "Network error"))
+        }
+        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        guard status == 200 else {
+            return .failure(APIError(message: (json?["error"] as? String) ?? "Could not send the shield"))
+        }
+        return .success((json?["shieldsLeft"] as? Int) ?? 0)
     }
 
     /// The last seven days of your circle's sweeps, medals and records
