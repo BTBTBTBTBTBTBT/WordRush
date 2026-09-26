@@ -183,9 +183,8 @@ struct ProfileTab: View {
                 // profile-page placement (above the referral panel).
                 // Tier 3 (Aug 11): full card lives on FriendsScreenView now.
                 FriendsRowLink()
-                // Referral program — web-parity "GIFT PRO TO FRIENDS" panel
-                // (same placement: between the header and Today's Dailies).
-                InvitePanelView()
+                // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
+                // (founder, 2026-09-26: on the profile it was clutter and a duplicate).
                 todaysDailies
                 SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
                 DailyStandingStrip(reloadToken: reloadToken)

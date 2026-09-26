@@ -48,7 +48,6 @@ import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
-import { InvitePanel } from '@/components/referrals/invite-panel';
 import { FriendsRowLink } from '@/components/friends/friends-panel';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import type { Database } from '@/lib/database.types';
@@ -467,10 +466,8 @@ export default function ProfilePage() {
           <FriendsRowLink />
         </div>
 
-        {/* ── Gift Pro to Friends (referral program) ── */}
-        <div className="mb-4">
-          <InvitePanel />
-        </div>
+        {/* The "Gift Pro to Friends" panel lives on the Friends page only
+            (founder, 2026-09-26: on the profile it was clutter and a duplicate). */}
 
         {/* ── B. Today's Dailies ── */}
         {(() => {

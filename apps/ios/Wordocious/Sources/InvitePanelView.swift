@@ -45,9 +45,12 @@ struct InvitePanelView: View {
         Self.iso.date(from: row.expires_at) ?? Self.isoPlain.date(from: row.expires_at) ?? .distantPast
     }
 
-    /// Dead invites (canceled / expired) disappear — web parity.
+    /// Dead invites (canceled / expired) disappear — web parity. Settled rows
+    /// ("X joined! +3 days", "X subscribed!") also retire once the invite's own
+    /// expiry has passed, so a join is news for a week, not a permanent line
+    /// (founder, 2026-09-26: "Lord_Matthew joined! has been showing for a while").
     private var visibleInvites: [ReferralRow] {
-        invites.filter { !($0.status == "revoked" || ($0.status == "pending" && expiry($0) < Date())) }
+        invites.filter { $0.status != "revoked" && expiry($0) > Date() }
     }
     private var openCount: Int {
         invites.filter { $0.status == "pending" && expiry($0) > Date() }.count

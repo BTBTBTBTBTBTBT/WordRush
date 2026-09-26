@@ -99,9 +99,11 @@ export function InvitePanel() {
   // Dead invites (canceled / expired) disappear entirely — a spent random
   // code is noise to the player. The rows live on in the DB for the admin
   // Referrals tab's history.
+  // Settled rows ("X joined! +3 days", "X subscribed!") also retire once the
+  // invite's own expiry has passed — a join is news for a week, not a
+  // permanent line (founder, 2026-09-26).
   const visibleInvites = (invites ?? []).filter(
-    (i) => i.status !== 'revoked'
-      && !(i.status === 'pending' && new Date(i.expires_at).getTime() < Date.now()),
+    (i) => i.status !== 'revoked' && new Date(i.expires_at).getTime() > Date.now(),
   );
 
   const handleCreate = async () => {

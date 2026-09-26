@@ -90,9 +90,9 @@ fun InvitePanel() {
 
     // Dead invites (canceled / expired) disappear — web/iOS parity.
     val now = System.currentTimeMillis()
-    val visible = invites.filter {
-        it.status != "revoked" && !(it.status == "pending" && expiryMs(it) < now)
-    }
+    // Dead invites disappear; settled rows ("X joined!") retire once the invite's own
+    // expiry has passed — a join is news for a week, not a permanent line (founder, 2026-09-26).
+    val visible = invites.filter { it.status != "revoked" && expiryMs(it) > now }
     val open = invites.count { it.status == "pending" && expiryMs(it) > now }
     val slotsLeft = (3 - open).coerceAtLeast(0)
 

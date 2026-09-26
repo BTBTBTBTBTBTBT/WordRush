@@ -356,8 +356,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── FRIENDS (§207 Tier 3) — compact row into the dedicated screen ──
         item { FriendsRowLink(onOpen = onOpenFriends) }
 
-        // ── Referral program (web/iOS "GIFT PRO TO FRIENDS" parity) ──
-        item { InvitePanel() }
+        // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
+        // (founder, 2026-09-26: on the profile it was clutter and a duplicate).
 
         // ── B. Today's Dailies ────────────────────────────────────
         item { TodaysDailies(todayDailies, onPlayDaily) }
