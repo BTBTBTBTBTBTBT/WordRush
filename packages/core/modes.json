@@ -21,7 +21,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "classic",
-      "homeSlot": 0
+      "homeSlot": 0,
+      "homeWide": false
     },
     {
       "id": "vs",
@@ -43,7 +44,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": null,
-      "homeSlot": 8
+      "homeSlot": 8,
+      "homeWide": true
     },
     {
       "id": "quordle",
@@ -65,7 +67,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "quadword",
-      "homeSlot": 2
+      "homeSlot": 2,
+      "homeWide": false
     },
     {
       "id": "octordle",
@@ -87,7 +90,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "octoword",
-      "homeSlot": 3
+      "homeSlot": 3,
+      "homeWide": false
     },
     {
       "id": "sequence",
@@ -109,7 +113,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "succession",
-      "homeSlot": 4
+      "homeSlot": 4,
+      "homeWide": false
     },
     {
       "id": "rescue",
@@ -131,7 +136,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "deliverance",
-      "homeSlot": 5
+      "homeSlot": 5,
+      "homeWide": false
     },
     {
       "id": "six",
@@ -153,7 +159,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "six",
-      "homeSlot": 6
+      "homeSlot": 6,
+      "homeWide": false
     },
     {
       "id": "seven",
@@ -175,7 +182,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "seven",
-      "homeSlot": 7
+      "homeSlot": 7,
+      "homeWide": false
     },
     {
       "id": "gauntlet",
@@ -197,7 +205,8 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "gauntlet",
-      "homeSlot": 1
+      "homeSlot": 1,
+      "homeWide": false
     },
     {
       "id": "propernoundle",
@@ -219,7 +228,8 @@
       "flagKey": null,
       "category": "trivia",
       "guideSlug": "propernoundle",
-      "homeSlot": 109
+      "homeSlot": 109,
+      "homeWide": false
     },
     {
       "id": "more",
@@ -241,7 +251,8 @@
       "flagKey": "menu.more",
       "category": null,
       "guideSlug": null,
-      "homeSlot": 9
+      "homeSlot": 9,
+      "homeWide": true
     },
     {
       "id": "sudoku",
@@ -263,7 +274,8 @@
       "flagKey": "mode.sudoku",
       "category": "logic",
       "guideSlug": "sudocious",
-      "homeSlot": 111
+      "homeSlot": 111,
+      "homeWide": false
     },
     {
       "id": "scramble",
@@ -285,7 +297,8 @@
       "flagKey": "mode.scramble",
       "category": "word",
       "guideSlug": "muddle",
-      "homeSlot": 112
+      "homeSlot": 112,
+      "homeWide": false
     },
     {
       "id": "hub",
@@ -307,7 +320,8 @@
       "flagKey": "mode.hub",
       "category": "word",
       "guideSlug": "hubbub",
-      "homeSlot": 113
+      "homeSlot": 113,
+      "homeWide": false
     },
     {
       "id": "crossword",
@@ -329,7 +343,8 @@
       "flagKey": "mode.crossword",
       "category": "trivia",
       "guideSlug": "crosswordocious",
-      "homeSlot": 114
+      "homeSlot": 114,
+      "homeWide": false
     },
     {
       "id": "groups",
@@ -351,7 +366,8 @@
       "flagKey": "mode.groups",
       "category": "logic",
       "guideSlug": "kindred",
-      "homeSlot": 115
+      "homeSlot": 115,
+      "homeWide": false
     },
     {
       "id": "ladder",
@@ -373,7 +389,8 @@
       "flagKey": "mode.ladder",
       "category": "word",
       "guideSlug": "letter-ladder",
-      "homeSlot": 116
+      "homeSlot": 116,
+      "homeWide": false
     },
     {
       "id": "cryptogram",
@@ -395,7 +412,8 @@
       "flagKey": "mode.cryptogram",
       "category": "logic",
       "guideSlug": "codebreaker",
-      "homeSlot": 117
+      "homeSlot": 117,
+      "homeWide": false
     },
     {
       "id": "wordsearch",
@@ -417,7 +435,8 @@
       "flagKey": "mode.wordsearch",
       "category": "word",
       "guideSlug": "spyglass",
-      "homeSlot": 118
+      "homeSlot": 118,
+      "homeWide": false
     },
     {
       "id": "regions",
@@ -439,7 +458,8 @@
       "flagKey": "mode.regions",
       "category": "logic",
       "guideSlug": "starsweep",
-      "homeSlot": 119
+      "homeSlot": 119,
+      "homeWide": false
     }
   ],
   "_sweepEras_comment": "Newest first, append-only. Each row: the first local day (YYYY-MM-DD) it applies and the dbKeys that made up the required Daily Sweep from that day. 2026-05-21 is when Six/Seven dailies shipped (7 → 9). The launch row (8 word games, ProperNoundle out) is appended at Stage 9 with LAUNCH_DAY; until then the top row MUST equal modes.filter(sweep), which the codegen test asserts. Past days are never recomputed.",

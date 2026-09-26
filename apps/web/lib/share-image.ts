@@ -291,6 +291,9 @@ export interface ShareDailySweepInput {
   /** Always 'Classic' — present only to satisfy callers that read `.mode`;
    *  the daily-sweep card renders its own multi-mode header. */
   mode: ShareMode;
+  /** Optional headline override — the More Games Sweep card says "MORE GAMES SWEEP" /
+   *  "FLAWLESS MORE GAMES" (founder, 2026-09-26) over the same tile layout. */
+  title?: string;
   /** All games won → Flawless Victory (gold); else Daily Sweep (violet). */
   flawless: boolean;
   games: ShareDailyGame[];
@@ -1656,7 +1659,7 @@ function drawDailySweepCard(
   tg.addColorStop(0, titleGrad[0]);
   tg.addColorStop(1, titleGrad[1]);
   ctx.fillStyle = tg;
-  ctx.fillText(input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP', width / 2, titleY);
+  ctx.fillText(input.title ?? (input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP'), width / 2, titleY);
 
   // Stats line
   const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');

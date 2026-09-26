@@ -98,6 +98,13 @@ struct HomeView: View {
     /// More Games sheet (Stage 5) + the pick it hands back on dismiss.
     @State private var showMoreGames = false
     @State private var pendingMorePick: HomeMode?
+    /// Founder + JP (2026-09-26): a game launched FROM the sheet returns to the sheet on
+    /// every exit (Home, results Home, swipe-back). Set in openFromMoreGames, consumed in
+    /// onGameCoverDismissed once no game cover is up.
+    @State private var returnToMore = false
+    /// More Games Sweep / Flawless celebration (visual only — never a bonus or score).
+    @State private var moreCeleb: SweepCeleb?
+    @AppStorage("more-sweep-celebrated") private var moreSweepCelebratedDay = ""
     /// A Sudoku run (own view, not GameScreen): nil seed = today's daily.
     struct SudokuGame: Identifiable { let seed: String?; var id: String { seed ?? "daily" } }
     @State private var sudokuGame: SudokuGame?
@@ -180,11 +187,23 @@ struct HomeView: View {
                             if showFirstGameCard { firstGameCard }
                             sectionHeader
                             LazyVGrid(columns: columns, spacing: 8) {
-                                ForEach(visibleHomeModes) { mode in
+                                ForEach(visibleHomeModes.filter { !$0.homeWide }) { mode in
                                     card(mode)
                                 }
                             }
-                            liveBar
+                            // Founder + JP (2026-09-26): More Games as a full-width band directly under
+                            // the grid, then VS Battle merged with the LIVE bar at the very bottom.
+                            if let more = visibleHomeModes.first(where: { $0.id == "more" }) {
+                                MoreGamesBand(mode: more, modes: visibleMoreModes, playMode: effectiveMode, byMode: completions.byMode,
+                                              onOpen: { showMoreGames = true },
+                                              onShare: { ShareEvents.log(kind: "image", gameMode: "", surface: "more_sweep"); ShareService.shareMoreSweep(byMode: completions.byMode) })
+                            }
+                            if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
+                                VSLiveTile(mode: vs, liveCount: livePlayers.count, vsDailyWon: vsDailyWon, playMode: effectiveMode,
+                                           isPro: auth.isProActive, onInvite: { showInvite = true }) {
+                                    if effectiveMode == .unlimited { VSLobbyView() } else { VSGameView(mode: .duel, isDaily: true) }
+                                }
+                            }
                             // Sign Out only when there's a real session — a guest
                             // has nothing to sign out of (the header shows "Sign In").
                             if auth.isAuthenticated { signOutButton }
@@ -237,7 +256,7 @@ struct HomeView: View {
             // Games present full-screen OVER the tab bar (like the web's
             // full-screen game route) so the bottom nav is never behind them —
             // not on the board and not on the results/victory screen.
-            .fullScreenCover(item: $pendingGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $pendingGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     GameScreen(seed: g.seed, mode: g.mode, title: g.title, onPlayAgain: {
                         // Mint a fresh Unlimited seed for the same mode and swap it in
@@ -253,63 +272,63 @@ struct HomeView: View {
                     .id(g.seed)
                 }
             }
-            .fullScreenCover(item: $pnGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $pnGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     ProperNoundleView(seed: g.seed, onPlayAgain: { pnGame = PNGame(seed: freshPNSeed()) })
                 }
             }
-            .fullScreenCover(isPresented: $pnDaily, onDismiss: { reloadDaily() }) {
+            .fullScreenCover(isPresented: $pnDaily, onDismiss: { onGameCoverDismissed() }) {
                 NavigationStack { ProperNoundleView() }
             }
-            .fullScreenCover(item: $sudokuGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $sudokuGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     SudokuView(seed: g.seed, onPlayAgain: { d in sudokuGame = SudokuGame(seed: freshSudokuSeed(d)) })
                         .id(g.id)   // a new seed = a new view + view model
                 }
             }
-            .fullScreenCover(item: $regionsGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $regionsGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     RegionsView(seed: g.seed, onPlayAgain: { n in regionsGame = RegionsGame(seed: freshRegionsSeed(n)) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $ladderGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $ladderGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     LadderView(seed: g.seed, onPlayAgain: { ladderGame = LadderGame(seed: freshLadderSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $spyglassGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $spyglassGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     SpyglassView(seed: g.seed, onPlayAgain: { spyglassGame = SpyglassGame(seed: freshSpyglassSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $hubGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $hubGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     HubView(seed: g.seed, onPlayAgain: { hubGame = HubGame(seed: freshHubSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $codebreakerGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $codebreakerGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     CodebreakerView(seed: g.seed, onPlayAgain: { codebreakerGame = CodebreakerGame(seed: freshCodebreakerSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $kindredGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $kindredGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     KindredView(seed: g.seed, onPlayAgain: { kindredGame = KindredGame(seed: freshKindredSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $crosswordGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $crosswordGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     CrosswordView(seed: g.seed, onPlayAgain: { crosswordGame = CrosswordGame(seed: freshCrosswordSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $muddleGame, onDismiss: { reloadDaily() }) { g in
+            .fullScreenCover(item: $muddleGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     MuddleView(seed: g.seed, onPlayAgain: { muddleGame = MuddleGame(seed: freshMuddleSeed()) })
                         .id(g.id)
@@ -321,7 +340,7 @@ struct HomeView: View {
                 MoreGamesSheet(modes: visibleMoreModes, completions: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive) { pendingMorePick = $0 }
                     .presentationDetents([.large])
             }
-            .fullScreenCover(item: $solvedMode) { m in
+            .fullScreenCover(item: $solvedMode, onDismiss: { onGameCoverDismissed() }) { m in
                 NavigationStack {
                     if let gm = m.mode {
                         // Reconstruct the solved board from the matches row (works
@@ -396,6 +415,8 @@ struct HomeView: View {
                 pendingGame = nil
                 pnGame = nil
                 pendingSweepCeleb = nil   // an unshown sweep belongs to yesterday
+                returnToMore = false
+                moreCeleb = nil
             }
             // Deferred sweep celebration: present once the game cover that
             // earned it has fully left the screen (its hidesBottomNav
@@ -421,9 +442,19 @@ struct HomeView: View {
                 // completes, and re-check after the server-confirming load in
                 // case observer ordering ever changes.
                 checkSweepCelebration()
+                checkMoreSweepCelebration()
                 Task {
                     await completions.load()
                     checkSweepCelebration()
+                    checkMoreSweepCelebration()
+                }
+            }
+            .fullScreenCover(item: $moreCeleb) { celeb in
+                if #available(iOS 16.4, *) {
+                    SweepCelebrationView(byMode: celeb.byMode, onClose: { moreCeleb = nil }, variant: .more)
+                        .presentationBackground(.clear)
+                } else {
+                    SweepCelebrationView(byMode: celeb.byMode, onClose: { moreCeleb = nil }, variant: .more)
                 }
             }
             .fullScreenCover(item: $sweepCeleb) { celeb in
@@ -896,6 +927,7 @@ struct HomeView: View {
     /// the sheet's onDismiss so no cover is presented over a dismissing sheet.
     private func openFromMoreGames(_ mode: HomeMode) {
         if isLocked(mode) { limitModal = mode; return }
+        returnToMore = true
         if isCompletedDaily(mode) { solvedMode = mode; return }
         if let gameMode = mode.mode {
             pendingGame = ActiveGame(
@@ -922,7 +954,42 @@ struct HomeView: View {
         } else if mode.id == "scramble" {
             muddleGame = MuddleGame(seed: effectiveMode == .unlimited ? freshMuddleSeed() : nil)
         } else {
+            returnToMore = false
             comingSoon = mode.title
+        }
+    }
+
+    /// Runs when any game cover (or the solved-puzzle cover) has dismissed: refresh the
+    /// day, then — if the game came from the More Games sheet and no other cover took its
+    /// place (Play Again / Keep playing swap the item) — re-present the sheet.
+    private func onGameCoverDismissed() {
+        reloadDaily()
+        guard returnToMore else { return }
+        let anyCoverUp = pnGame != nil || pnDaily || sudokuGame != nil || regionsGame != nil || ladderGame != nil
+            || spyglassGame != nil || hubGame != nil || codebreakerGame != nil || kindredGame != nil
+            || crosswordGame != nil || muddleGame != nil || solvedMode != nil || pendingGame != nil
+        guard !anyCoverUp else { return }
+        returnToMore = false
+        // Never over a pending Daily Sweep celebration; the sheet can wait a beat.
+        guard pendingSweepCeleb == nil, sweepCeleb == nil, moreCeleb == nil else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { showMoreGames = true }
+    }
+
+    /// More Games Sweep / Flawless (founder, 2026-09-26): once per local day per tier, after
+    /// the Daily Sweep celebration if both land together. Visual only — no bonus, XP or board.
+    private func checkMoreSweepCelebration() {
+        guard auth.isAuthenticated, completions.dataDay == LeaderboardService.todayLocal() else { return }
+        guard let tier = moreSweepTier(byMode: completions.byMode, modes: visibleMoreModes) else { return }
+        let day = LeaderboardService.todayLocal()
+        let token = "\(day):\(tier == .flawless ? "flawless" : "sweep")"
+        if moreSweepCelebratedDay == token || moreSweepCelebratedDay == "\(day):flawless" { return }
+        moreSweepCelebratedDay = token
+        let celeb = SweepCeleb(byMode: completions.byMode)
+        // Present once the game cover has left the screen and no Daily Sweep celebration is up.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            if chrome.bottomNavHidden || sweepCeleb != nil || pendingSweepCeleb != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { if sweepCeleb == nil && !chrome.bottomNavHidden { moreCeleb = celeb } }
+            } else { moreCeleb = celeb }
         }
     }
 }
@@ -998,7 +1065,7 @@ struct ModeLimitModal: View {
 /// LIVE pulse dot — self-contained so the live-count poll re-rendering the
 /// banner can't disturb/displace its animation. Pulses opacity in place
 /// (layout-neutral); respects Reduce Motion.
-private struct LivePulseDot: View {
+struct LivePulseDot: View {
     @State private var dim = false
     var body: some View {
         Circle().fill(Color(hex: 0x22C55E)).frame(width: 8, height: 8)

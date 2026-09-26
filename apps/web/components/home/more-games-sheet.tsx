@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
-import { moreSections } from '@/lib/more-games';
+import { moreSections, moreSweepTier, moreDailyModes, MORE_SWEEP_COPY } from '@/lib/more-games';
 import { MORE_GAME_MODES, type ModeMeta } from '@/lib/modes.generated';
 import { buildHomeCard, type HomeCard } from './mode-chrome';
 import { ModeCard, modeCardState } from './mode-card';
@@ -28,10 +28,13 @@ const MORE_PARAM = 'more';
  * carried across so the app router keeps its tree on Back.
  */
 export function useMoreSheetUrl(): { open: boolean; openSheet: () => void; closeSheet: () => void } {
-  const [open, setOpen] = useState(false);
   const read = () => {
     try { return new URLSearchParams(window.location.search).get(MORE_PARAM) === '1'; } catch { return false; }
   };
+  // Starts closed on both server and client (a lazy window read would mismatch
+  // hydration); the mount effect below opens it when the URL says ?more=1 —
+  // that is how Home from a More Games title lands back on the sheet.
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     setOpen(read());
     const onPop = () => setOpen(read());
@@ -116,9 +119,24 @@ export function MoreGamesSheet({ open, onClose, modes = MORE_GAME_MODES, playMod
             >
               More Games
             </h2>
-            <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {playMode === 'daily' ? 'One free daily each · not part of the Daily Sweep' : 'Unlimited play'}
-            </div>
+            {/* More Games Sweep / Flawless (founder, 2026-09-26): the win shows where the games are.
+                Purely visual — derived from today's completions, never a bonus or a score. */}
+            {(() => {
+              const tier = playMode === 'daily' ? moreSweepTier(todayDailies, modes) : null;
+              if (tier) {
+                const gold = tier === 'flawless';
+                return (
+                  <div className="text-[10px] font-black" style={{ color: gold ? '#b45309' : '#4338ca' }}>
+                    {gold ? '🏆 ' : '✦ '}{MORE_SWEEP_COPY[tier].short} · all {moreDailyModes(modes).length} {gold ? 'won' : 'played'} today
+                  </div>
+                );
+              }
+              return (
+                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  {playMode === 'daily' ? 'One free daily each · not part of the Daily Sweep' : 'Unlimited play'}
+                </div>
+              );
+            })()}
           </div>
           <button
             onClick={onClose}

@@ -209,6 +209,16 @@ fun MainScreen() {
     // Explicit seed for the active game — non-null only for Pro Unlimited (a fresh
     // non-daily seed); null falls back to today's daily seed.
     var activeSeed by remember { mutableStateOf<String?>(null) }
+    // Founder + JP (2026-09-26): the More Games sheet's open state lives HERE, not in
+    // HomeScreen — HomeScreen leaves the composition while a game is up (the early
+    // returns below), so a flag inside it could never survive the round trip. A game
+    // launched from the sheet returns to Home WITH the sheet open on every exit.
+    var showMoreSheet by remember { mutableStateOf(false) }
+    var launchedFromMore by remember { mutableStateOf(false) }
+    val exitGame: () -> Unit = {
+        activeGame = null; activeSeed = null; launchedFromMore = false
+        if (launchedFromMore) { showMoreSheet = true; launchedFromMore = false }
+    }
     var showSettings by remember { mutableStateOf(false) }
     var showSignIn by remember { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
@@ -368,20 +378,20 @@ fun MainScreen() {
     // shared GameScreen.
     if (card?.engineMode?.isCustomEngine == true) {
         val mode = card.engineMode
-        androidx.activity.compose.BackHandler { activeGame = null; activeSeed = null }
+        androidx.activity.compose.BackHandler(onBack = exitGame)
         when (mode) {
             com.wordocious.core.GameMode.SUDOKU -> {
                 val isDaily = activeSeed == null
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.SudokuScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     // Pro Unlimited: a fresh seed carrying the chosen difficulty.
                     onPlayAgain = { d -> activeSeed = "unlimited-SUDOKU-${System.currentTimeMillis()}-${d.key}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -393,13 +403,13 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.RegionsScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     // Pro Unlimited: a fresh seed whose trailing segment is the board size (regionsSizeForSeed).
                     onPlayAgain = { n -> activeSeed = "unlimited-REGIONS-${System.currentTimeMillis()}-$n" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -411,12 +421,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.LadderScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-LADDER-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -428,12 +438,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.SpyglassScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-WORDSEARCH-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -445,12 +455,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.HubScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-HUB-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -462,12 +472,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.CodebreakerScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-CRYPTOGRAM-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -479,12 +489,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.KindredScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-GROUPS-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -496,12 +506,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.CrosswordScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-CROSSWORD-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -513,12 +523,12 @@ fun MainScreen() {
                 val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
                 com.wordocious.app.ui.game.MuddleScreen(
                     seed = seed, isDaily = isDaily,
-                    onBack = { activeGame = null; activeSeed = null },
+                    onBack = exitGame,
                     onPlayAgain = { activeSeed = "unlimited-SCRAMBLE-${System.currentTimeMillis()}" },
                     onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                     onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                     onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null
+                        activeGame = null; activeSeed = null; launchedFromMore = false
                         publicProfileId = null; showFriends = false
                         LeaderboardDeepLink.pendingMode.value = m.name
                         selectedTab = 1
@@ -548,12 +558,12 @@ fun MainScreen() {
         val seed = androidx.compose.runtime.remember(card, activeSeed) {
             activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
         }
-        androidx.activity.compose.BackHandler { activeGame = null; activeSeed = null }
+        androidx.activity.compose.BackHandler(onBack = exitGame)
         GameScreen(
             mode = card.engineMode,
             title = card.title,
             seed = seed,
-            onBack = { activeGame = null; activeSeed = null },
+            onBack = exitGame,
             // Pro Unlimited: "Play Again" mints a fresh non-daily seed for the
             // same mode (web parity — Play Again on non-daily games).
             onPlayAgain = { activeSeed = "unlimited-${card.engineMode.name}-${System.nanoTime()}" },
@@ -570,7 +580,7 @@ fun MainScreen() {
             // §214 (Lindsay): "View Leaderboard" from a daily result — close
             // the game and land on the Leaderboard tab with the mode selected.
             onOpenLeaderboard = { m ->
-                activeGame = null; activeSeed = null
+                activeGame = null; activeSeed = null; launchedFromMore = false
                 publicProfileId = null; showFriends = false
                 LeaderboardDeepLink.pendingMode.value = m.name
                 selectedTab = 1
@@ -671,18 +681,21 @@ fun MainScreen() {
                                         if (unlimited) vsLobby = true
                                         else vsActive = com.wordocious.core.GameMode.DUEL to true
                                     } else {
+                                        launchedFromMore = MORE_CARDS.any { it.id == card.id }
                                         activeGame = card
                                         activeSeed = if (unlimited && card.engineMode != null)
                                             resolvedUnlimitedSeed(card.engineMode) else null
                                     }
                                 },
+                                showMore = showMoreSheet && selectedTab == 0,
+                                onShowMoreChange = { showMoreSheet = it },
                                 onGoPro = { infoRoute = "pro" },
                                 onVs = { card -> card.engineMode?.let { vsActive = it to false } },
                                 onNavigate = { infoRoute = it },
                             )
                             1 -> LeaderboardScreen(
                                 onOpenProfile = { publicProfileId = it },
-                                onPlay = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                                onPlay = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
                                 // Empty Friends board CTA → the Friends screen (§207 Tier 2).
                                 onOpenFriends = { showFriends = true },
                             )
@@ -691,7 +704,7 @@ fun MainScreen() {
                                 onEditProfile = { infoRoute = "edit" },
                                 // Today's Dailies badge → open that mode's daily game (completed
                                 // puzzle if played, fresh if not) — web parity.
-                                onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                                onPlayDaily = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
                                 // Friends card rows → push the friend's profile in-tab.
                                 onOpenProfile = { publicProfileId = it },
                                 // Compact FRIENDS row → the dedicated screen (§207 Tier 3).

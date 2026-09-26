@@ -36,9 +36,15 @@ enum DailySweepCatalog {
             return (dbKey: key, label: labelOverride[key] ?? m.shareLabel, accent: m.accent, glyph: m.glyph ?? "")
         }
 
+    /// The More Games dailies, catalog order — the More Games Sweep card lists these.
+    static let moreModes: [(dbKey: String, label: String, accent: Color, glyph: String)] =
+        ModeGen.more.filter { $0.dailyEligible && $0.dbKey != nil }.map { m in
+            (dbKey: m.dbKey!, label: labelOverride[m.dbKey!] ?? m.shareLabel, accent: m.accent, glyph: m.glyph ?? String(m.shortTitle.prefix(1)))
+        }
+
     /// Build the ordered rows present in today's completions.
-    static func rows(from byMode: [String: DailyCompletion]) -> [DailySweepRow] {
-        modes.compactMap { m in
+    static func rows(from byMode: [String: DailyCompletion], over list: [(dbKey: String, label: String, accent: Color, glyph: String)]? = nil) -> [DailySweepRow] {
+        (list ?? modes).compactMap { m in
             guard let c = byMode[m.dbKey] else { return nil }
             return DailySweepRow(
                 dbKey: m.dbKey, modeLabel: m.label, accent: m.accent, glyph: m.glyph,
@@ -57,6 +63,9 @@ struct DailySweepCardView: View {
     let totalScore: Int
     let flawless: Bool
     let dateStr: String
+    /// Headline override — the More Games Sweep card (founder, 2026-09-26) says
+    /// "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES" over the same layout.
+    var title: String? = nil
 
     private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
@@ -79,7 +88,7 @@ struct DailySweepCardView: View {
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 44)
-                Text(flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP")
+                Text(title ?? (flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP"))
                     .font(Brand.font(52, .black))
                     .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 12)
@@ -154,6 +163,30 @@ struct DailySweepCardView: View {
 }
 
 extension ShareService {
+    /// More Games Sweep / Flawless share (founder, 2026-09-26): the same card over
+    /// the ten More Games dailies, headed "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES".
+    /// Image only (no OG page — there is no More Games sweep board to link).
+    @MainActor
+    static func shareMoreSweep(byMode: [String: DailyCompletion]) {
+        #if canImport(UIKit)
+        let rows = DailySweepCatalog.rows(from: byMode, over: DailySweepCatalog.moreModes)
+        guard !rows.isEmpty else { return }
+        let t = moreTotals(byMode: byMode)
+        let flawless = moreSweepTier(byMode: byMode) == .flawless
+        let f = DateFormatter(); f.dateFormat = "MMM d"; f.locale = Locale(identifier: "en_US")
+        let card = DailySweepCardView(
+            rows: rows, won: t.won, total: t.total,
+            totalTimeSeconds: Int(t.totalTimeSeconds.rounded()),
+            totalScore: Int(t.totalScore.rounded()), flawless: flawless,
+            dateStr: f.string(from: Date()), title: flawless ? "FLAWLESS MORE GAMES" : "MORE GAMES SWEEP")
+        let renderer = ImageRenderer(content: card)
+        renderer.proposedSize = .init(card.size)
+        renderer.scale = 1
+        guard let image = renderer.uiImage else { return }
+        present(items: [image, URL(string: "https://wordocious.com/?more=1") as Any])
+        #endif
+    }
+
     /// Render + share the all-dailies card. Uploads to share-images and links
     /// the /s OG page with m=DailySweep params (web app/s/[...key] parity).
     @MainActor

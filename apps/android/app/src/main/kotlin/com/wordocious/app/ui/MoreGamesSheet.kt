@@ -56,11 +56,39 @@ fun moreSections(modes: List<ModeCard> = MORE_CARDS): List<MoreSection> {
     return sections.filter { it.modes.isNotEmpty() }
 }
 
+/** The More Games dailies — what "N of M played" and the More Games Sweep count over. */
+fun moreDailyModes(modes: List<ModeCard> = MORE_CARDS): List<ModeCard> = modes.filter { it.dailyEligible && it.dbKey != null }
+
 /** "N of M played" over the More Games dailies — the More tile's Daily subtitle. */
 fun morePlayedText(completedKeys: Set<String>, modes: List<ModeCard> = MORE_CARDS): String {
-    val daily = modes.filter { it.dailyEligible && it.dbKey != null }
+    val daily = moreDailyModes(modes)
     val played = daily.count { it.dbKey in completedKeys }
     return "$played of ${daily.size} played"
+}
+
+/**
+ * More Games Sweep / Flawless (founder, 2026-09-26): a purely visual tier from
+ * today's completions — every More Games daily played = SWEEP, every one won =
+ * FLAWLESS. It never touches the Daily Sweep (no bonus, XP, leaderboard, dots).
+ * Mirrors apps/web/lib/more-games.ts moreSweepTier().
+ */
+enum class MoreSweepTier(val title: String, val short: String) {
+    SWEEP("MORE GAMES SWEEP!", "More Games Sweep"),
+    FLAWLESS("FLAWLESS MORE GAMES!", "Flawless More Games"),
+}
+fun moreSweepTier(byMode: Map<String, DailyCompletionsService.Completion>, modes: List<ModeCard> = MORE_CARDS): MoreSweepTier? {
+    val daily = moreDailyModes(modes)
+    if (daily.isEmpty()) return null
+    val rows = daily.map { byMode[it.dbKey!!] }
+    if (rows.any { it == null }) return null
+    return if (rows.all { it!!.completed }) MoreSweepTier.FLAWLESS else MoreSweepTier.SWEEP
+}
+data class MoreTotals(val completed: Int, val won: Int, val total: Int, val totalTimeSeconds: Int, val totalScore: Int)
+fun moreTotals(byMode: Map<String, DailyCompletionsService.Completion>, modes: List<ModeCard> = MORE_CARDS): MoreTotals {
+    val daily = moreDailyModes(modes)
+    var completed = 0; var won = 0; var time = 0; var score = 0.0
+    for (m in daily) { val c = byMode[m.dbKey!!] ?: continue; completed++; if (c.completed) won++; time += c.timeSeconds; score += Math.round(c.score).toDouble() }
+    return MoreTotals(completed, won, daily.size, time, score.toInt())
 }
 
 /**
@@ -95,10 +123,21 @@ fun MoreGamesSheet(
                         "MORE GAMES", fontSize = 22.sp, fontWeight = FontWeight.Black,
                         style = TextStyle(fontFamily = Nunito, brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
                     )
-                    Text(
-                        if (unlimitedMode) "Unlimited play" else "One free daily each · not part of the Daily Sweep",
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    )
+                    // More Games Sweep / Flawless (founder, 2026-09-26): the win shows where the
+                    // games are. Purely visual — derived from today's completions, never a score.
+                    val tier = if (unlimitedMode) null else moreSweepTier(completions, modes)
+                    if (tier != null) {
+                        val gold = tier == MoreSweepTier.FLAWLESS
+                        Text(
+                            (if (gold) "🏆 " else "✦ ") + tier.short + " · all ${moreDailyModes(modes).size} ${if (gold) "won" else "played"} today",
+                            fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (gold) Color(0xFFB45309) else Color(0xFF4338CA),
+                        )
+                    } else {
+                        Text(
+                            if (unlimitedMode) "Unlimited play" else "One free daily each · not part of the Daily Sweep",
+                            fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        )
+                    }
                 }
                 Text(
                     "Done", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.primary,

@@ -22,6 +22,12 @@ interface GameHomeButtonProps {
    * sits tighter.
    */
   positionClass?: string;
+  /**
+   * Where Home goes. Defaults to the home grid; the More Games titles pass
+   * MORE_HOME_HREF so every exit lands back on the open More Games sheet
+   * (founder + JP, 2026-09-26).
+   */
+  href?: string;
 }
 
 /**
@@ -34,6 +40,7 @@ export function GameHomeButton({
   accentColor = '#7c3aed',
   onClick,
   positionClass = 'absolute top-2 left-2 z-10',
+  href = '/',
 }: GameHomeButtonProps) {
   const className = `${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`;
   const style = {
@@ -58,7 +65,7 @@ export function GameHomeButton({
 
   return (
     <Link
-      href="/"
+      href={href}
       aria-label="Back to Home"
       className={className}
       style={style}

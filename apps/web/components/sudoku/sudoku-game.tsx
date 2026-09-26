@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -266,7 +267,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
 
       {/* Header — the same Home / "?" / sound trio as every game (§19). */}
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor={SUDOKU_ACCENT} />
+        <GameHomeButton accentColor={SUDOKU_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="sudocious" accentColor={SUDOKU_ACCENT} />
         <SoundToggle accentColor={SUDOKU_ACCENT} />
         <h1 className="text-2xl font-black" style={{ color: SUDOKU_ACCENT }}>SUDOCIOUS</h1>
@@ -342,7 +343,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
                       : `${remaining} cell${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`}
                   </span>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                     <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
                     {mode === 'daily' && <DailyRankBadge gameMode="SUDOKU" />}
                     {mode !== 'daily' && isPro && <button onClick={() => startPractice(difficulty)} className="text-xs font-bold underline" style={{ color: SUDOKU_ACCENT }}>Play Again</button>}

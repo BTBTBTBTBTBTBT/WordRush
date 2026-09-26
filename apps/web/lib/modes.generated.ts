@@ -28,6 +28,8 @@ export interface ModeMeta {
   guessBase: number;
   /** Reading order of the home grid (2 × 5); the array order stays the sweep/canonical order. */
   homeSlot: number;
+  /** Rendered as a full-width tile UNDER the grid (More Games band, VS Battle live tile), not a grid cell. */
+  homeWide: boolean;
   /** Compiled in and visible (a remote flag may still hide it). */
   enabled: boolean;
   flagKey: string | null;
@@ -60,7 +62,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "classic",
-    "homeSlot": 0
+    "homeSlot": 0,
+    "homeWide": false
   },
   {
     "id": "vs",
@@ -82,7 +85,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": null,
-    "homeSlot": 8
+    "homeSlot": 8,
+    "homeWide": true
   },
   {
     "id": "quordle",
@@ -104,7 +108,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "quadword",
-    "homeSlot": 2
+    "homeSlot": 2,
+    "homeWide": false
   },
   {
     "id": "octordle",
@@ -126,7 +131,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "octoword",
-    "homeSlot": 3
+    "homeSlot": 3,
+    "homeWide": false
   },
   {
     "id": "sequence",
@@ -148,7 +154,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "succession",
-    "homeSlot": 4
+    "homeSlot": 4,
+    "homeWide": false
   },
   {
     "id": "rescue",
@@ -170,7 +177,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "deliverance",
-    "homeSlot": 5
+    "homeSlot": 5,
+    "homeWide": false
   },
   {
     "id": "six",
@@ -192,7 +200,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "six",
-    "homeSlot": 6
+    "homeSlot": 6,
+    "homeWide": false
   },
   {
     "id": "seven",
@@ -214,7 +223,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "seven",
-    "homeSlot": 7
+    "homeSlot": 7,
+    "homeWide": false
   },
   {
     "id": "gauntlet",
@@ -236,7 +246,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": null,
     "guideSlug": "gauntlet",
-    "homeSlot": 1
+    "homeSlot": 1,
+    "homeWide": false
   },
   {
     "id": "propernoundle",
@@ -258,7 +269,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": null,
     "category": "trivia",
     "guideSlug": "propernoundle",
-    "homeSlot": 109
+    "homeSlot": 109,
+    "homeWide": false
   },
   {
     "id": "more",
@@ -280,7 +292,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "menu.more",
     "category": null,
     "guideSlug": null,
-    "homeSlot": 9
+    "homeSlot": 9,
+    "homeWide": true
   },
   {
     "id": "sudoku",
@@ -302,7 +315,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.sudoku",
     "category": "logic",
     "guideSlug": "sudocious",
-    "homeSlot": 111
+    "homeSlot": 111,
+    "homeWide": false
   },
   {
     "id": "scramble",
@@ -324,7 +338,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.scramble",
     "category": "word",
     "guideSlug": "muddle",
-    "homeSlot": 112
+    "homeSlot": 112,
+    "homeWide": false
   },
   {
     "id": "hub",
@@ -346,7 +361,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.hub",
     "category": "word",
     "guideSlug": "hubbub",
-    "homeSlot": 113
+    "homeSlot": 113,
+    "homeWide": false
   },
   {
     "id": "crossword",
@@ -368,7 +384,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.crossword",
     "category": "trivia",
     "guideSlug": "crosswordocious",
-    "homeSlot": 114
+    "homeSlot": 114,
+    "homeWide": false
   },
   {
     "id": "groups",
@@ -390,7 +407,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.groups",
     "category": "logic",
     "guideSlug": "kindred",
-    "homeSlot": 115
+    "homeSlot": 115,
+    "homeWide": false
   },
   {
     "id": "ladder",
@@ -412,7 +430,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.ladder",
     "category": "word",
     "guideSlug": "letter-ladder",
-    "homeSlot": 116
+    "homeSlot": 116,
+    "homeWide": false
   },
   {
     "id": "cryptogram",
@@ -434,7 +453,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.cryptogram",
     "category": "logic",
     "guideSlug": "codebreaker",
-    "homeSlot": 117
+    "homeSlot": 117,
+    "homeWide": false
   },
   {
     "id": "wordsearch",
@@ -456,7 +476,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.wordsearch",
     "category": "word",
     "guideSlug": "spyglass",
-    "homeSlot": 118
+    "homeSlot": 118,
+    "homeWide": false
   },
   {
     "id": "regions",
@@ -478,7 +499,8 @@ export const MODES: ModeMeta[] = [
     "flagKey": "mode.regions",
     "category": "logic",
     "guideSlug": "starsweep",
-    "homeSlot": 119
+    "homeSlot": 119,
+    "homeWide": false
   }
 ];
 

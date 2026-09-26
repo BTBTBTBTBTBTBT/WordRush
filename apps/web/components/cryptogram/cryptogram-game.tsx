@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -263,7 +264,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor={CRYPTOGRAM_ACCENT} />
+        <GameHomeButton accentColor={CRYPTOGRAM_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="codebreaker" accentColor={CRYPTOGRAM_ACCENT} />
         <SoundToggle accentColor={CRYPTOGRAM_ACCENT} />
         <h1 className="text-2xl font-black" style={{ color: CRYPTOGRAM_ACCENT }}>CODEBREAKER</h1>
@@ -330,7 +331,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
                     {`${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
                   </span>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                     <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
                     {mode === 'daily' && <DailyRankBadge gameMode="CRYPTOGRAM" />}
                     {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: CRYPTOGRAM_ACCENT }}>Play Again</button>}

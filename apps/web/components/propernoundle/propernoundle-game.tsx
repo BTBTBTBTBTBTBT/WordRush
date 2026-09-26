@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
@@ -701,7 +702,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
       {/* Header — compact, matching other modes */}
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor="#dc2626" />
+        <GameHomeButton accentColor="#dc2626"  href={MORE_HOME_HREF} />
         <GameGuideButton slug="propernoundle" accentColor="#dc2626" />
         <SoundToggle accentColor="#dc2626" />
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
@@ -849,7 +850,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
                     <p className="text-xs text-gray-500 leading-snug mt-0.5">{resultClue}</p>
                   )}
                   <div className="flex items-center gap-3 mt-0.5">
-                    <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                     <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
                     {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
                     {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}

@@ -61,8 +61,14 @@ object DailySweepShare {
             Triple(key, LABEL_OVERRIDE[key] ?: m.shareLabel, m.accentInt) to (m.glyph ?: "")
         }
 
-    fun rows(byMode: Map<String, DailyCompletionsService.Completion>): List<Row> =
-        MODES.mapNotNull { (meta, glyph) ->
+    /** The More Games dailies, catalog order — the More Games Sweep card lists these. */
+    private val MORE_MODES: List<Pair<Triple<String, String, Int>, String>> =
+        ModeGen.more.filter { it.dailyEligible && it.dbKey != null }.map { m ->
+            Triple(m.dbKey!!, LABEL_OVERRIDE[m.dbKey!!] ?: m.shareLabel, m.accentInt) to (m.glyph ?: m.shortTitle.take(1))
+        }
+
+    fun rows(byMode: Map<String, DailyCompletionsService.Completion>, more: Boolean = false): List<Row> =
+        (if (more) MORE_MODES else MODES).mapNotNull { (meta, glyph) ->
             val (dbKey, label, accent) = meta
             byMode[dbKey]?.let { c ->
                 Row(dbKey, label, accent, glyph, c.completed, c.guessCount, c.timeSeconds, Math.round(c.score).toInt())
@@ -83,6 +89,8 @@ object DailySweepShare {
 
     fun render(
         context: Context, rows: List<Row>, totals: DailyCompletionsService.Totals, flawless: Boolean,
+        /** Headline override — the More Games Sweep card (founder, 2026-09-26). */
+        title: String? = null,
     ): Bitmap {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
@@ -103,7 +111,7 @@ object DailySweepShare {
         val titleColors = if (flawless) intArrayOf(0xFFFBBF24.toInt(), 0xFFB45309.toInt())
                           else intArrayOf(0xFFA78BFA.toInt(), 0xFFEC4899.toInt())
         p.shader = LinearGradient(cx - 260f, 0f, cx + 260f, 0f, titleColors, null, Shader.TileMode.CLAMP)
-        c.drawText(if (flawless) "FLAWLESS VICTORY" else "DAILY SWEEP", cx, 156f, p)
+        c.drawText(title ?: (if (flawless) "FLAWLESS VICTORY" else "DAILY SWEEP"), cx, 156f, p)
         p.shader = null
 
         // Stats line
@@ -196,6 +204,39 @@ object DailySweepShare {
     }
 
     /** Build + share the all-dailies card. */
+    /**
+     * More Games Sweep / Flawless share (founder, 2026-09-26): the same card over the
+     * ten More Games dailies, headed "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES". Image
+     * only — there is no More Games sweep board to link, and nothing here scores.
+     */
+    fun shareMore(context: Context, byMode: Map<String, DailyCompletionsService.Completion>) {
+        val rows = rows(byMode, more = true)
+        if (rows.isEmpty()) return
+        val t = com.wordocious.app.ui.moreTotals(byMode)
+        val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
+        val totals = DailyCompletionsService.Totals(t.completed, t.won, t.total, 0, t.totalTimeSeconds, t.totalScore)
+        val bitmap = render(context, rows, totals, flawless, title = if (flawless) "FLAWLESS MORE GAMES" else "MORE GAMES SWEEP")
+        val text = if (flawless) "Flawless More Games on Wordocious! All ${t.total} More Games puzzles won.\nhttps://wordocious.com/?more=1"
+                   else "More Games Sweep on Wordocious! All ${t.total} More Games puzzles done.\nhttps://wordocious.com/?more=1"
+        val uri = runCatching {
+            val dir = File(context.cacheDir, "share").apply { mkdirs() }
+            val file = File(dir, "wordocious-moregames.png")
+            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }.getOrNull()
+        ShareEvents.log(if (uri != null) "image" else "text", "", "more_sweep")
+        if (uri == null) { ShareHelper.share(context, text); return }
+        runCatching {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, text)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, "Share your More Games").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        }.onFailure { ShareHelper.share(context, text) }
+    }
+
     fun share(context: Context, byMode: Map<String, DailyCompletionsService.Completion>) {
         val rows = rows(byMode)
         if (rows.isEmpty()) return

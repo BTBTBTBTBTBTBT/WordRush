@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from 'react';
+import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -377,7 +378,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
               <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>{won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}</span>
               <span className="text-xs text-gray-400">{state.points}/{state.max} pts · {state.found.length}/{state.words.length} words · {state.found.filter((w) => state.pangrams.includes(w)).length}/{state.pangrams.length} pangram{state.pangrams.length === 1 ? '' : 's'} · {formatTime(elapsedSeconds)}{state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}</span>
               <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                 <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
                 {!state.ended && <button onClick={() => setView('board')} className="text-xs font-bold underline" style={{ color: HUB_ACCENT }}>Keep going</button>}
                 {mode === 'daily' && <DailyRankBadge gameMode="HUB" />}
@@ -415,7 +416,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor={HUB_ACCENT} />
+        <GameHomeButton accentColor={HUB_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="hubbub" accentColor={HUB_ACCENT} />
         <SoundToggle accentColor={HUB_ACCENT} />
         <h1 className="text-2xl font-black" style={{ color: HUB_ACCENT }}>HUBBUB</h1>

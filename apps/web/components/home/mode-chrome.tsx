@@ -59,6 +59,8 @@ export interface HomeCard {
   category: string | null;
   /** Remote gate (app_flags key); null = never gated. Filter lists with useFlags().isOn. */
   flagKey: string | null;
+  /** Full-width tile under the grid (More Games band, VS Battle live tile), not a grid cell. */
+  homeWide: boolean;
 }
 
 export function buildHomeCard(m: ModeMeta): HomeCard {
@@ -77,6 +79,7 @@ export function buildHomeCard(m: ModeMeta): HomeCard {
     dailyEligible: m.dailyEligible,
     category: m.category,
     flagKey: m.flagKey,
+    homeWide: m.homeWide,
   };
 }
 

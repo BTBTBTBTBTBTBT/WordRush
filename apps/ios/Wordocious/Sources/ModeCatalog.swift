@@ -29,6 +29,8 @@ struct HomeMode: Identifiable {
     let guessBase: Int
     /// Remote gate (app_flags key); nil = never gated. Filter lists with FlagsService.isOn.
     let flagKey: String?
+    /// Full-width tile UNDER the grid (More Games band, VS Battle live tile), not a grid cell.
+    let homeWide: Bool
 
     /// Title/desc/accent/dbKey come from the single-source catalog (modes.json →
     /// ModeCatalog.generated.swift); only icon + engine mode stay native here.
@@ -46,6 +48,7 @@ struct HomeMode: Identifiable {
         self.guessSemantics = g.guessSemantics
         self.guessBase = g.guessBase
         self.flagKey = g.flagKey
+        self.homeWide = g.homeWide
     }
 
     init(genId: String, icon: ModeIconKind, mode: GameMode?) {
@@ -107,6 +110,34 @@ func morePlayedText(completedKeys: Set<String>, modes: [HomeMode] = moreModes) -
     let daily = modes.filter { $0.dailyEligible && $0.dbKey != nil }
     let played = daily.filter { completedKeys.contains($0.dbKey!) }.count
     return "\(played) of \(daily.count) played"
+}
+
+/// The More Games dailies — what "N of M played" and the More Games Sweep count over.
+func moreDailyModes(_ modes: [HomeMode] = moreModes) -> [HomeMode] {
+    modes.filter { $0.dailyEligible && $0.dbKey != nil }
+}
+
+/// More Games Sweep / Flawless (founder, 2026-09-26): a purely visual tier from
+/// today's completions — every More Games daily played = .sweep, every one won =
+/// .flawless. It never touches the Daily Sweep (no bonus, XP, leaderboard, dots).
+/// Mirrors apps/web/lib/more-games.ts moreSweepTier().
+enum MoreSweepTier { case sweep, flawless
+    var title: String { self == .flawless ? "FLAWLESS MORE GAMES!" : "MORE GAMES SWEEP!" }
+    var short: String { self == .flawless ? "Flawless More Games" : "More Games Sweep" }
+}
+func moreSweepTier(byMode: [String: DailyCompletion], modes: [HomeMode] = moreModes) -> MoreSweepTier? {
+    let daily = moreDailyModes(modes)
+    guard !daily.isEmpty else { return nil }
+    let rows = daily.map { byMode[$0.dbKey!] }
+    guard rows.allSatisfy({ $0 != nil }) else { return nil }
+    return rows.allSatisfy({ $0!.completed }) ? .flawless : .sweep
+}
+struct MoreTotals { var completed = 0, won = 0, total = 0; var totalTimeSeconds = 0.0, totalScore = 0.0 }
+func moreTotals(byMode: [String: DailyCompletion], modes: [HomeMode] = moreModes) -> MoreTotals {
+    var t = MoreTotals(); let daily = moreDailyModes(modes); t.total = daily.count
+    for m in daily { guard let c = byMode[m.dbKey!] else { continue }
+        t.completed += 1; if c.completed { t.won += 1 }; t.totalTimeSeconds += c.timeSeconds; t.totalScore += c.score }
+    return t
 }
 
 /// Renders a mode's icon inside a rounded accent-tinted square (matches web).

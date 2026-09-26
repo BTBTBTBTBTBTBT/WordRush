@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { MODE_CARDS } from '@/components/home/mode-chrome';
 import { ModeCard, modeCardState } from '@/components/home/mode-card';
 import { MoreGamesSheet, useMoreSheetUrl } from '@/components/home/more-games-sheet';
-import { morePlayedCount, morePlayedText } from '@/lib/more-games';
+import { MoreGamesBand } from '@/components/home/more-games-band';
+import { VSLiveTile } from '@/components/home/vs-live-tile';
+import { moreSweepTier } from '@/lib/more-games';
 import { useFlags } from '@/hooks/use-flags';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -23,7 +25,7 @@ import { getSecondsUntilMidnightLocal, computeDailyTotals, getTodayLocal, fetchD
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { cachedFlawlessStreak } from '@/lib/stats-service';
-import { shareDailySweep } from '@/lib/daily-share';
+import { shareDailySweep, shareMoreSweep } from '@/lib/daily-share';
 import { SWEEP_MODES, MORE_GAME_MODES } from '@/lib/modes.generated';
 
 // The Daily Sweep set, from the catalog (More Games Stage 4). Every count on
@@ -222,6 +224,9 @@ export default function HomePage() {
   // concurrent refresh (e.g. the new day's empty map) can never blank the
   // stats mid-celebration (the iOS widget-launch "0/N WON · 0:00" bug).
   const [sweepCeleb, setSweepCeleb] = useState<Map<string, DailyCompletion> | null>(null);
+  // More Games Sweep / Flawless celebration (founder, 2026-09-26) — same once-per-day-per-tier
+  // rule, its own key, and it waits for the Daily Sweep celebration to close first.
+  const [moreCeleb, setMoreCeleb] = useState<Map<string, DailyCompletion> | null>(null);
   // Today's daily VS outcome (server-backed, iOS vsDailyWon parity) — the VS
   // Battle card grays with a W/L badge like every other completed daily.
   // null = not played today. Home remounts on every return from a game, so a
@@ -260,6 +265,21 @@ export default function HomePage() {
       setSweepCeleb(new Map(todayDailies));
     } catch {}
   }, [user, todayDailies, dailiesDay]);
+
+  useEffect(() => {
+    if (!user || sweepCeleb) return;
+    if (dailiesDay !== getTodayLocal()) return;
+    const tier = moreSweepTier(todayDailies, visibleMore);
+    if (!tier) return;
+    const key = `wordocious-more-sweep-celebrated-${getTodayLocal()}`;
+    try {
+      const seen = localStorage.getItem(key);
+      if (seen === 'flawless' || seen === tier) return;
+      localStorage.setItem(key, tier);
+      setMoreCeleb(new Map(todayDailies));
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, todayDailies, dailiesDay, sweepCeleb]);
 
   // Restore the toggle on mount for Pro users — but only within the SAME
   // browser session and local day (founder-approved UX: reopening the app
@@ -524,29 +544,22 @@ export default function HomePage() {
         {/* Game Mode Cards - 2 column grid */}
         <div className="section-header mt-1 mb-0.5">GAME MODES</div>
         <div className="grid grid-cols-2 gap-2">
-          {visibleCards.map((mode) => {
+          {/* The grid is exactly the eight sweep games (founder + JP, 2026-09-26): VS Battle and
+              More Games are `homeWide` in the catalog and render as full-width tiles below. */}
+          {visibleCards.filter((c) => !c.homeWide).map((mode) => {
             // Today's daily result for this mode, if played (Daily mode only).
-            // Keyed by the DB game_mode string (DUEL/QUORDLE/…). The VS Battle
-            // card has no daily row; the More Games tile has no puzzle at all.
-            const isMore = mode.id === 'more';
+            // Keyed by the DB game_mode string (DUEL/QUORDLE/…).
             const dailyResult = playMode === 'daily' && mode.dbKey ? todayDailies.get(mode.dbKey) : undefined;
-            // The More Games tile: "N of M played" over the More Games dailies in
-            // Daily mode, its description in Unlimited. Never locks, never tints.
-            const morePlayed = morePlayedCount(todayDailies.keys(), visibleMore);
             const state = modeCardState({
               card: mode,
               playMode,
               dailyResult,
-              // VS has no solo daily_results row — its W/L comes from the
-              // play_type='vs' row (vsDailyWon).
-              vsWon: mode.id === 'vs' ? vsDailyWon : null,
+              vsWon: null,
               playedToday: hasPlayedModeToday(mode.id),
               isPro,
               signedIn: !!user,
               resetCountdownText,
-              subtitleOverride: isMore
-                ? (playMode === 'daily' ? morePlayedText(morePlayed.played, morePlayed.total) : mode.desc)
-                : null,
+              subtitleOverride: null,
             });
 
             // In Unlimited mode (Pro-only), route to the non-daily
@@ -559,16 +572,10 @@ export default function HomePage() {
               : mode.href;
 
             const handleCardClick = (e: React.MouseEvent) => {
-              if (isMore) {
-                e.preventDefault();
-                openMoreSheet();
-              } else if (state.isLocked) {
+              if (state.isLocked) {
                 e.preventDefault();
                 router.prefetch(effectiveHref);
                 setLimitModal({ open: true, modeName: mode.title, modeHref: effectiveHref });
-              } else if (mode.id === 'vs') {
-                e.preventDefault();
-                handleVsClick(effectiveHref);
               }
             };
 
@@ -580,42 +587,40 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* LIVE banner — shows the real-time connected-player count
-            from the matchmaking server's /presence endpoint. VS button
-            lives on the mode cards now; Invite is Pro-only so freemium
-            sees just the count. */}
-        <div
-          className="flex items-center justify-between px-3 py-2"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid var(--color-border)',
-            borderRadius: '14px',
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-black text-xs" style={{ color: 'var(--color-text)' }}>LIVE</span>
-            </div>
-            <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {livePlayerCount === null
-                ? 'Players online'
-                : `${livePlayerCount.toLocaleString()} ${livePlayerCount === 1 ? 'player' : 'players'} online`}
-            </div>
-          </div>
-          {isPro && (
-            <button
-              onClick={() => setInviteOpen(true)}
-              className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md transition-transform active:scale-95"
-              style={{
-                background: 'linear-gradient(135deg, #ec4899, #db2777)',
-                boxShadow: '0 2px 0 #9f1239',
-              }}
-            >
-              Invite
-            </button>
-          )}
-        </div>
+        {/* More Games band (founder + JP, 2026-09-26): full width, directly under the grid — the ten
+            icons and "N of 10 played"; in a More Games Sweep / Flawless it is the celebration surface. */}
+        {(() => {
+          const more = visibleCards.find((c) => c.id === 'more');
+          if (!more) return null;
+          return (
+            <MoreGamesBand
+              card={more}
+              modes={visibleMore}
+              playMode={playMode}
+              todayDailies={todayDailies}
+              onOpen={openMoreSheet}
+              onShare={() => { shareMoreSweep(todayDailies); }}
+            />
+          );
+        })()}
+
+        {/* VS Battle — the VS card and the old LIVE strip as one full-width tile at the very bottom. */}
+        {(() => {
+          const vs = visibleCards.find((c) => c.id === 'vs');
+          if (!vs) return null;
+          const href = playMode === 'unlimited' ? '/vs' : vs.href;
+          return (
+            <VSLiveTile
+              card={vs}
+              livePlayerCount={livePlayerCount}
+              vsDailyWon={vsDailyWon}
+              playMode={playMode}
+              isPro={isPro}
+              onOpen={() => handleVsClick(href)}
+              onInvite={() => setInviteOpen(true)}
+            />
+          );
+        })()}
 
         {/* Sign out — only with a real session; a guest has nothing to sign
             out of (the header shows "Sign In"). */}
@@ -664,6 +669,9 @@ export default function HomePage() {
           setLimitModal({ open: true, modeName: card.title, modeHref: href });
         }}
       />
+      {moreCeleb && !sweepCeleb && (
+        <SweepCelebration variant="more" completions={moreCeleb} onClose={() => setMoreCeleb(null)} />
+      )}
       {sweepCeleb && (
         <SweepCelebration completions={sweepCeleb} onClose={() => setSweepCeleb(null)} />
       )}

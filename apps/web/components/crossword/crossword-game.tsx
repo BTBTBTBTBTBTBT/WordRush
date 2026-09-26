@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -276,7 +277,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor={CROSSWORD_ACCENT} />
+        <GameHomeButton accentColor={CROSSWORD_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="crosswordocious" accentColor={CROSSWORD_ACCENT} />
         <SoundToggle accentColor={CROSSWORD_ACCENT} />
         <h1 className="font-black whitespace-nowrap px-12" style={{ color: CROSSWORD_ACCENT, fontSize: 'clamp(17px, 5.6vw, 24px)' }}>CROSSWORDOCIOUS</h1>
@@ -347,7 +348,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
                     {`${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
                   </span>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                     <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
                     {mode === 'daily' && <DailyRankBadge gameMode="CROSSWORD" />}
                     {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: CROSSWORD_ACCENT }}>Play Again</button>}

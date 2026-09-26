@@ -48,3 +48,53 @@ export function morePlayedCount(todayKeys: Iterable<string>, modes: ModeMeta[] =
 export function morePlayedText(played: number, total: number): string {
   return `${played} of ${total} played`;
 }
+
+/**
+ * Where "Home" goes from inside a More Games title: the home page with the
+ * sheet already open (founder + JP, 2026-09-26 — "a way to go right back to
+ * the more games menu"). The sheet reads `?more=1` on mount.
+ */
+export const MORE_HOME_HREF = '/?more=1';
+
+export type MoreSweepTier = 'sweep' | 'flawless';
+
+/**
+ * More Games Sweep / Flawless (founder, 2026-09-26): a purely visual tier
+ * derived from today's completions — every More Games daily played = 'sweep',
+ * every one of them won = 'flawless', otherwise null. It never touches the
+ * Daily Sweep: no bonus row, no XP, no leaderboard, no sweep dots. The band
+ * and the sheet header change color; that is all.
+ */
+export function moreSweepTier(
+  today: ReadonlyMap<string, { won: boolean }>,
+  modes: ModeMeta[] = MORE_GAME_MODES,
+): MoreSweepTier | null {
+  const daily = moreDailyModes(modes);
+  if (daily.length === 0) return null;
+  const rows = daily.map((m) => today.get(m.dbKey as string));
+  if (rows.some((r) => !r)) return null;
+  return rows.every((r) => r!.won) ? 'flawless' : 'sweep';
+}
+
+export interface MoreTotals { completed: number; won: number; total: number; totalTimeSeconds: number; totalScore: number }
+
+/** Sums over the More Games dailies only — the celebration and share card read these. */
+export function computeMoreTotals(
+  today: ReadonlyMap<string, { won: boolean; timeSeconds: number; score: number }>,
+  modes: ModeMeta[] = MORE_GAME_MODES,
+): MoreTotals {
+  const daily = moreDailyModes(modes);
+  let completed = 0, won = 0, totalTimeSeconds = 0, totalScore = 0;
+  for (const m of daily) {
+    const c = today.get(m.dbKey as string);
+    if (!c) continue;
+    completed += 1; if (c.won) won += 1; totalTimeSeconds += c.timeSeconds; totalScore += c.score;
+  }
+  return { completed, won, total: daily.length, totalTimeSeconds, totalScore };
+}
+
+/** The band / sheet header wording for a tier. Never the Daily Sweep strings. */
+export const MORE_SWEEP_COPY: Record<MoreSweepTier, { title: string; short: string }> = {
+  sweep: { title: 'MORE GAMES SWEEP!', short: 'More Games Sweep' },
+  flawless: { title: 'FLAWLESS MORE GAMES!', short: 'Flawless More Games' },
+};

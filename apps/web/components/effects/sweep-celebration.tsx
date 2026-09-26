@@ -6,10 +6,11 @@ import { haptic } from '@/lib/haptics';
 import { playSuccess } from '@/lib/sounds';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { computeDailyTotals } from '@/lib/daily-service';
-import { shareDailySweep } from '@/lib/daily-share';
+import { shareDailySweep, shareMoreSweep } from '@/lib/daily-share';
+import { computeMoreTotals, moreSweepTier, MORE_SWEEP_COPY } from '@/lib/more-games';
 import type { ShareMode } from '@/lib/share-image';
 import { MODE_SHARE_GLYPH } from '@/lib/share-image';
-import { MODE_BY_DBKEY, sweepModesFor } from '@/lib/modes.generated';
+import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
 
 // One-time full-screen celebration shown when the player completes every daily
@@ -25,6 +26,12 @@ const MODES: ModeMeta[] = sweepModesFor(getTodayLocal())
   .map((k) => MODE_BY_DBKEY[k])
   .filter(Boolean)
   .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex }));
+// More Games Sweep / Flawless (founder, 2026-09-26): the same celebration over the
+// ten More Games dailies, in indigo (sweep) or gold (flawless). Purely visual — it
+// never awards anything, and it never uses the Daily Sweep wording.
+const MORE_MODES: ModeMeta[] = MORE_GAME_MODES
+  .filter((m) => m.dailyEligible && m.dbKey)
+  .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex }));
 
 function fmtTime(s: number): string {
   const m = Math.floor(s / 60);
@@ -34,11 +41,26 @@ function fmtTime(s: number): string {
 interface Props {
   completions: Map<string, DailyCompletion>;
   onClose: () => void;
+  /** 'daily' (default) = the Daily Sweep; 'more' = the More Games Sweep. */
+  variant?: 'daily' | 'more';
 }
 
-export function SweepCelebration({ completions, onClose }: Props) {
-  const totals = useMemo(() => computeDailyTotals(completions), [completions]);
+export function SweepCelebration({ completions, onClose, variant = 'daily' }: Props) {
+  const more = variant === 'more';
+  const totals = useMemo(() => {
+    if (!more) return computeDailyTotals(completions);
+    const t = computeMoreTotals(completions);
+    return { ...t, totalGuesses: 0, flawless: moreSweepTier(completions) === 'flawless' };
+  }, [completions, more]);
   const flawless = totals.flawless;
+  const modes = more ? MORE_MODES : MODES;
+  // Sweep colors: violet/pink for the Daily Sweep, indigo for More Games; Flawless is gold on both.
+  const sweepA = more ? '#6366f1' : '#a78bfa', sweepB = more ? '#4f46e5' : '#ec4899';
+  const sweepInk = more ? '#4338ca' : '#6d28d9';
+  const title = flawless
+    ? (more ? MORE_SWEEP_COPY.flawless.title : 'FLAWLESS VICTORY!')
+    : (more ? MORE_SWEEP_COPY.sweep.title : 'DAILY SWEEP!');
+  const noun = more ? 'More Games puzzles' : 'daily puzzles';
   const [sharing, setSharing] = useState(false);
 
   useEffect(() => { haptic('heavy'); playSuccess(); }, []);
@@ -60,12 +82,12 @@ export function SweepCelebration({ completions, onClose }: Props) {
 
   const titleGradient = flawless
     ? 'linear-gradient(135deg, #fbbf24, #d97706, #b45309)'
-    : 'linear-gradient(135deg, #a78bfa, #ec4899)';
+    : `linear-gradient(135deg, ${sweepA}, ${sweepB})`;
 
   const handleShare = async () => {
     if (sharing) return;
     setSharing(true);
-    try { await shareDailySweep(completions); } finally { setSharing(false); }
+    try { await (more ? shareMoreSweep(completions) : shareDailySweep(completions)); } finally { setSharing(false); }
   };
 
   return (
@@ -89,8 +111,8 @@ export function SweepCelebration({ completions, onClose }: Props) {
                 borderRadius: flawless ? '50%' : '2px',
                 background: flawless
                   ? 'radial-gradient(circle, #fde68a, #f59e0b)'
-                  : (i % 2 ? '#c4b5fd' : '#f9a8d4'),
-                boxShadow: flawless ? '0 0 8px rgba(245,158,11,0.8)' : '0 0 6px rgba(167,139,250,0.7)',
+                  : (i % 2 ? (more ? '#a5b4fc' : '#c4b5fd') : (more ? '#818cf8' : '#f9a8d4')),
+                boxShadow: flawless ? '0 0 8px rgba(245,158,11,0.8)' : (more ? '0 0 6px rgba(99,102,241,0.7)' : '0 0 6px rgba(167,139,250,0.7)'),
                 animation: `${flawless ? 'firework-spark' : 'sweep-spark'} ${flawless ? 1.6 : 1.9}s ease-out ${p.delay}s infinite`,
               }}
             />
@@ -107,8 +129,8 @@ export function SweepCelebration({ completions, onClose }: Props) {
           style={{
             background: flawless
               ? 'linear-gradient(160deg, #fffbeb, #fef3c7)'
-              : 'linear-gradient(160deg, #faf5ff, #fce7f3)',
-            border: flawless ? '1.5px solid #f59e0b' : '1.5px solid #c4b5fd',
+              : (more ? 'linear-gradient(160deg, #eef2ff, #e0e7ff)' : 'linear-gradient(160deg, #faf5ff, #fce7f3)'),
+            border: flawless ? '1.5px solid #f59e0b' : (more ? '1.5px solid #a5b4fc' : '1.5px solid #c4b5fd'),
             borderRadius: '18px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           }}
@@ -131,29 +153,29 @@ export function SweepCelebration({ completions, onClose }: Props) {
             className="h-1.5"
             style={{ background: flawless
               ? 'linear-gradient(90deg, #fbbf24, #d97706, #fbbf24)'
-              : 'linear-gradient(90deg, #a78bfa, #ec4899, #a78bfa)' }}
+              : `linear-gradient(90deg, ${sweepA}, ${sweepB}, ${sweepA})` }}
           />
 
           <div className="relative px-5 pt-5 pb-5">
             <div className="flex items-center justify-center gap-2">
               {flawless
                 ? <Trophy className="w-7 h-7" style={{ color: '#d97706' }} fill="currentColor" />
-                : <Sparkles className="w-6 h-6" style={{ color: '#7c3aed' }} />}
+                : <Sparkles className="w-6 h-6" style={{ color: more ? '#4f46e5' : '#7c3aed' }} />}
               <h2
                 className="text-3xl font-black text-transparent bg-clip-text"
                 style={{ backgroundImage: titleGradient }}
               >
-                {flawless ? 'FLAWLESS VICTORY!' : 'DAILY SWEEP!'}
+                {title}
               </h2>
               {flawless
                 ? <Trophy className="w-7 h-7" style={{ color: '#d97706' }} fill="currentColor" />
-                : <Sparkles className="w-6 h-6" style={{ color: '#ec4899' }} />}
+                : <Sparkles className="w-6 h-6" style={{ color: more ? '#6366f1' : '#ec4899' }} />}
             </div>
 
-            <p className="text-xs font-extrabold mt-1" style={{ color: flawless ? '#b45309' : '#6d28d9' }}>
+            <p className="text-xs font-extrabold mt-1" style={{ color: flawless ? '#b45309' : sweepInk }}>
               {flawless
-                ? `All ${totals.total} daily puzzles won today`
-                : `All ${totals.total} daily puzzles completed today`}
+                ? `All ${totals.total} ${noun} won today`
+                : `All ${totals.total} ${noun} completed today`}
             </p>
 
             {/* Summary totals */}
@@ -177,7 +199,7 @@ export function SweepCelebration({ completions, onClose }: Props) {
               className="mt-4 px-3 py-2 grid grid-cols-3 gap-1.5"
               style={{ background: 'rgba(255,255,255,0.55)', borderRadius: '12px' }}
             >
-              {MODES.map((m) => {
+              {modes.map((m) => {
                 const c = completions.get(m.dbKey);
                 if (!c) return null;
                 return (
@@ -203,7 +225,7 @@ export function SweepCelebration({ completions, onClose }: Props) {
                 onClick={handleShare}
                 disabled={sharing}
                 className="btn-3d flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-black"
-                style={{ background: flawless ? 'linear-gradient(135deg, #d97706, #b45309)' : 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+                style={{ background: flawless ? 'linear-gradient(135deg, #d97706, #b45309)' : (more ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : 'linear-gradient(135deg, #7c3aed, #ec4899)') }}
               >
                 <Share2 className="w-4 h-4" />
                 {sharing ? 'Sharing…' : 'Share'}
@@ -211,7 +233,7 @@ export function SweepCelebration({ completions, onClose }: Props) {
               <button
                 onClick={onClose}
                 className="btn-3d flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-black"
-                style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid var(--color-border)', color: flawless ? '#b45309' : '#7c3aed' }}
+                style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid var(--color-border)', color: flawless ? '#b45309' : (more ? '#4f46e5' : '#7c3aed') }}
               >
                 <XIcon className="w-4 h-4" />
                 Close

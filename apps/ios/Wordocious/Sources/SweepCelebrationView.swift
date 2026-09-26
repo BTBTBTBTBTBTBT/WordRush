@@ -8,56 +8,73 @@ import WordociousCore
 //   • Flawless Victory → gold fireworks + stronger foil shimmer.
 // Mirrors web components/effects/sweep-celebration.tsx.
 struct SweepCelebrationView: View {
+    enum Variant { case daily, more }
     let byMode: [String: DailyCompletion]
     var onClose: () -> Void
+    /// .daily = the Daily Sweep; .more = the More Games Sweep (founder, 2026-09-26) —
+    /// the same celebration over the ten More Games dailies, indigo instead of violet,
+    /// never awarding anything and never using the Daily Sweep wording.
+    var variant: Variant = .daily
 
+    private var more: Bool { variant == .more }
+    private var moreT: MoreTotals { moreTotals(byMode: byMode) }
     private var totals: DailyTotals { DailyTotals(byMode) }
-    private var flawless: Bool { totals.flawless }
-    private var rows: [DailySweepRow] { DailySweepCatalog.rows(from: byMode) }
+    private var flawless: Bool { more ? moreSweepTier(byMode: byMode) == .flawless : totals.flawless }
+    private var rows: [DailySweepRow] { DailySweepCatalog.rows(from: byMode, over: more ? DailySweepCatalog.moreModes : nil) }
+    private var wonCount: Int { more ? moreT.won : totals.won }
+    private var totalCount: Int { more ? moreT.total : totals.total }
+    private var timeSum: Double { more ? moreT.totalTimeSeconds : totals.totalTimeSeconds }
+    private var scoreSum: Double { more ? moreT.totalScore : totals.totalScore }
+    private var sweepA: Color { more ? Color(hex: 0x6366F1) : Color(hex: 0xA78BFA) }
+    private var sweepB: Color { more ? Color(hex: 0x4F46E5) : Color(hex: 0xEC4899) }
+    private var title: String {
+        flawless ? (more ? MoreSweepTier.flawless.title : "FLAWLESS VICTORY!") : (more ? MoreSweepTier.sweep.title : "DAILY SWEEP!")
+    }
 
     @State private var burst = false
 
     private var titleColors: [Color] {
         flawless ? [Color(hex: 0xFBBF24), Color(hex: 0xD97706), Color(hex: 0xB45309)]
-                 : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]
+                 : [sweepA, sweepB]
     }
     private var cardBG: [Color] {
-        flawless ? [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)] : [Color(hex: 0xFAF5FF), Color(hex: 0xFCE7F3)]
+        flawless ? [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)]
+                 : (more ? [Color(hex: 0xEEF2FF), Color(hex: 0xE0E7FF)] : [Color(hex: 0xFAF5FF), Color(hex: 0xFCE7F3)])
     }
-    private var borderC: Color { flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD) }
-    private var accentText: Color { flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9) }
+    private var borderC: Color { flawless ? Color(hex: 0xF59E0B) : (more ? Color(hex: 0xA5B4FC) : Color(hex: 0xC4B5FD)) }
+    private var accentText: Color { flawless ? Color(hex: 0xB45309) : (more ? Color(hex: 0x4338CA) : Color(hex: 0x6D28D9)) }
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.7).ignoresSafeArea().onTapGesture { onClose() }
 
-            SweepParticleBurst(flawless: flawless).allowsHitTesting(false)
+            SweepParticleBurst(flawless: flawless, more: more).allowsHitTesting(false)
 
             VStack(spacing: 0) {
                 LinearGradient(colors: flawless
                     ? [Color(hex: 0xFBBF24), Color(hex: 0xD97706), Color(hex: 0xFBBF24)]
-                    : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)],
+                    : [sweepA, sweepB, sweepA],
                     startPoint: .leading, endPoint: .trailing)
                     .frame(height: 6)
 
                 VStack(spacing: 10) {
                     HStack(spacing: 8) {
                         Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .foregroundStyle(flawless ? Color(hex: 0xD97706) : Color(hex: 0x7C3AED))
-                        Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
-                            .font(Brand.font(26, .black))
+                            .foregroundStyle(flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x4F46E5) : Color(hex: 0x7C3AED)))
+                        Text(title)
+                            .font(Brand.font(more ? 22 : 26, .black)).minimumScaleFactor(0.7).lineLimit(1)
                             .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
                         Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .foregroundStyle(flawless ? Color(hex: 0xD97706) : Color(hex: 0xEC4899))
+                            .foregroundStyle(flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x6366F1) : Color(hex: 0xEC4899)))
                     }
-                    Text(flawless ? "All \(totals.total) daily puzzles won today"
-                                  : "All \(totals.total) daily puzzles completed today")
+                    Text(flawless ? "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") won today"
+                                  : "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") completed today")
                         .font(Brand.font(12, .heavy)).foregroundStyle(accentText)
 
                     HStack(spacing: 28) {
-                        stat("\(totals.won)/\(totals.total)", "Won")
-                        stat(fmt(Int(totals.totalTimeSeconds.rounded())), "Total Time")
-                        stat(formatScore(totals.totalScore), "Total Pts")
+                        stat("\(wonCount)/\(totalCount)", "Won")
+                        stat(fmt(Int(timeSum.rounded())), "Total Time")
+                        stat(formatScore(scoreSum), "Total Pts")
                     }
                     .padding(.top, 4)
 
@@ -68,7 +85,7 @@ struct SweepCelebrationView: View {
                             HStack(spacing: 5) {
                                 // Real game icon (same as the home cards), mapped by dbKey;
                                 // falls back to the letter glyph if a mode isn't found.
-                                if let m = homeModes.first(where: { $0.dbKey == r.dbKey }) {
+                                if let m = (homeModes + moreModes).first(where: { $0.dbKey == r.dbKey }) {
                                     ModeIconView(icon: m.icon, accent: r.accent, box: 22)
                                 } else {
                                     Text(r.glyph).font(Brand.font(r.glyph.count >= 3 ? 9 : 12, .black)).foregroundStyle(.white)
@@ -88,8 +105,8 @@ struct SweepCelebrationView: View {
 
                     HStack(spacing: 8) {
                         Button {
-                            ShareEvents.log(kind: "image", gameMode: "", surface: "sweep_celebration")
-                            ShareService.shareDailySweep(byMode: byMode)
+                            ShareEvents.log(kind: "image", gameMode: "", surface: more ? "more_sweep_celebration" : "sweep_celebration")
+                            if more { ShareService.shareMoreSweep(byMode: byMode) } else { ShareService.shareDailySweep(byMode: byMode) }
                         } label: {
                             HStack(spacing: 6) { Image(systemName: "square.and.arrow.up"); Text("Share") }
                                 .font(Brand.font(15, .black)).foregroundStyle(.white)
@@ -97,7 +114,7 @@ struct SweepCelebrationView: View {
                                 .background(RoundedRectangle(cornerRadius: 12).fill(
                                     LinearGradient(colors: flawless
                                         ? [Color(hex: 0xD97706), Color(hex: 0xB45309)]
-                                        : [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)],
+                                        : (more ? [Color(hex: 0x4F46E5), Color(hex: 0x6366F1)] : [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)]),
                                         startPoint: .leading, endPoint: .trailing)))
                         }
                         Button { onClose() } label: {
@@ -140,6 +157,7 @@ struct SweepCelebrationView: View {
 /// for Flawless. Deterministic angles so there's no per-render churn.
 private struct SweepParticleBurst: View {
     let flawless: Bool
+    var more: Bool = false
     @State private var animate = false
 
     var body: some View {
@@ -157,7 +175,7 @@ private struct SweepParticleBurst: View {
                             Circle().fill(RadialGradient(colors: [Color(hex: 0xFDE68A), Color(hex: 0xF59E0B)],
                                                          center: .center, startRadius: 0, endRadius: size))
                         } else {
-                            RoundedRectangle(cornerRadius: 2).fill(i % 2 == 0 ? Color(hex: 0xC4B5FD) : Color(hex: 0xF9A8D4))
+                            RoundedRectangle(cornerRadius: 2).fill(i % 2 == 0 ? (more ? Color(hex: 0xA5B4FC) : Color(hex: 0xC4B5FD)) : (more ? Color(hex: 0x818CF8) : Color(hex: 0xF9A8D4)))
                         }
                     }
                     .frame(width: size, height: size)

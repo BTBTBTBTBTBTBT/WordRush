@@ -92,6 +92,10 @@ fun HomeScreen(
     onVs: (ModeCard) -> Unit = {},
     onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit = { _, _ -> },
     onNavigate: (String) -> Unit = {},
+    /** More Games sheet open state — hoisted to MainScreen so a game launched from the
+     *  sheet can return to it (founder + JP, 2026-09-26). */
+    showMore: Boolean = false,
+    onShowMoreChange: (Boolean) -> Unit = {},
 ) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     // Seed from the day-keyed cache so cold launches don't flash unbadged
@@ -127,8 +131,6 @@ fun HomeScreen(
     // users get a Daily/Unlimited toggle and replay unlimited (fresh seeds).
     val isPro = com.wordocious.app.data.AuthService.isProActive
     var limitModal by remember { mutableStateOf<ModeCard?>(null) }
-    // More Games sheet (Stage 5) — opened by the More Games tile.
-    var showMore by remember { mutableStateOf(false) }
     // Contextual Pro prompt (web pro-prompt-modal.tsx): streak >= 7, not Pro,
     // not previously dismissed (local pref for instant gating + server
     // profiles.pro_prompt_shown for cross-device honor).
@@ -195,6 +197,19 @@ fun HomeScreen(
     // sweep-modal bug.
     var sweepCeleb by remember {
         mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
+    }
+    var moreCeleb by remember {
+        mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
+    }
+    androidx.compose.runtime.LaunchedEffect(completions, sweepCeleb) {
+        if (sweepCeleb != null) return@LaunchedEffect
+        val tier = moreSweepTier(completions, MORE_CARDS) ?: return@LaunchedEffect
+        val day = com.wordocious.app.todayLocalDate()
+        val token = "$day:${if (tier == MoreSweepTier.FLAWLESS) "flawless" else "sweep"}"
+        val seen = com.wordocious.app.data.SettingsPref.get("more-sweep-celebrated-day", "")
+        if (seen == token || seen == "$day:flawless") return@LaunchedEffect
+        com.wordocious.app.data.SettingsPref.set("more-sweep-celebrated-day", token)
+        moreCeleb = completions
     }
     androidx.compose.runtime.LaunchedEffect(completions) {
         if (com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
@@ -284,7 +299,9 @@ fun HomeScreen(
             val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
             val visibleCards = MODE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
             val visibleMore = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
-            visibleCards.chunked(2).forEach { rowCards ->
+            // Founder + JP (2026-09-26): the grid is exactly the eight sweep games; VS Battle and
+            // More Games are `homeWide` in the catalog and render as full-width tiles below.
+            visibleCards.filter { !it.homeWide }.chunked(2).forEach { rowCards ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     rowCards.forEach { card ->
                         val isVsCard = card.id == "vs"
@@ -317,7 +334,7 @@ fun HomeScreen(
                         // handler can choose lobby (unlimited) vs daily match.
                         val unlimited = unlimitedMode && (card.engineMode != null || isVsCard)
                         ModeCardView(card, shownCompletion, isLocked, showVs, Modifier.weight(1f), vsWon = vsWon, subtitleOverride = moreSubtitle, onVs = { onVs(card) }) {
-                            if (isMore) showMore = true
+                            if (isMore) onShowMoreChange(true)
                             else if (isLocked) limitModal = card
                             else onSelectMode(card, unlimited)
                         }
@@ -326,7 +343,26 @@ fun HomeScreen(
                 }
             }
 
-            LiveBanner(isPro = isPro, onInvite = { inviteOpen = true })
+            // More Games band directly under the grid — the ten icons and "N of M played"; in a
+            // More Games Sweep / Flawless it is the celebration surface (visual only).
+            visibleCards.firstOrNull { it.id == "more" }?.let { more ->
+                MoreGamesBand(
+                    card = more, modes = visibleMore, unlimitedMode = unlimitedMode, completions = completions,
+                    onOpen = { onShowMoreChange(true) },
+                    onShare = { com.wordocious.app.data.DailySweepShare.shareMore(context, completions) },
+                )
+            }
+            // VS Battle merged with the old LIVE bar, at the very bottom of the game area.
+            visibleCards.firstOrNull { it.id == "vs" }?.let { vs ->
+                VSLiveTile(
+                    card = vs, vsDailyWon = vsDailyWon, unlimitedMode = unlimitedMode, isPro = isPro,
+                    onOpen = {
+                        val vsUsed = com.wordocious.app.data.VSPlayLimit.hasPlayedToday() || vsDailyWon != null
+                        if (!isPro && vsUsed && !unlimitedMode) limitModal = vs else onSelectMode(vs, unlimitedMode)
+                    },
+                    onInvite = { inviteOpen = true },
+                )
+            }
             // Sign Out (web + iOS home footer parity) — subtle muted text button.
             // Only when there's a real session: a guest has nothing to sign out
             // of (the header shows "Sign In").
@@ -375,9 +411,9 @@ fun HomeScreen(
                 completions = completions,
                 unlimitedMode = unlimitedMode,
                 isPro = isPro,
-                onSelect = { card, unlimited -> showMore = false; onSelectMode(card, unlimited) },
-                onLocked = { card -> showMore = false; limitModal = card },
-                onDismiss = { showMore = false },
+                onSelect = { card, unlimited -> onShowMoreChange(false); onSelectMode(card, unlimited) },
+                onLocked = { card -> onShowMoreChange(false); limitModal = card },
+                onDismiss = { onShowMoreChange(false) },
             )
         }
 
@@ -391,6 +427,13 @@ fun HomeScreen(
         }
         // One-time Daily Sweep / Flawless Victory celebration overlay —
         // rendered from the snapshot captured at fire time, never live state.
+        if (sweepCeleb == null) moreCeleb?.let { celeb ->
+            SweepCelebration(
+                byMode = celeb, more = true,
+                onShare = { com.wordocious.app.data.DailySweepShare.shareMore(context, celeb) },
+                onClose = { moreCeleb = null },
+            )
+        }
         sweepCeleb?.let { celeb ->
             SweepCelebration(
                 byMode = celeb,
@@ -900,7 +943,7 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
  * solid under Reduced Motion.
  */
 @Composable
-private fun LivePulseDot() {
+fun LivePulseDot() {
     val dim = if (WTheme.reducedMotion) {
         1f
     } else {

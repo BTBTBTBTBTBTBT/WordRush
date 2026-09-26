@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -219,7 +220,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor={LADDER_ACCENT} />
+        <GameHomeButton accentColor={LADDER_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="letter-ladder" accentColor={LADDER_ACCENT} />
         <SoundToggle accentColor={LADDER_ACCENT} />
         <h1 className="text-2xl font-black" style={{ color: LADDER_ACCENT }}>LETTER LADDER</h1>
@@ -275,7 +276,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
                       : `${state.moves} moves · Par ${state.par} · ${formatTime(elapsedSeconds)}`}
                   </span>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                     <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
                     {mode === 'daily' && <DailyRankBadge gameMode="LADDER" />}
                     {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: LADDER_ACCENT }}>Play Again</button>}

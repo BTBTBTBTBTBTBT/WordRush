@@ -69,19 +69,31 @@ fun SweepCelebration(
     byMode: Map<String, DailyCompletionsService.Completion>,
     onShare: () -> Unit,
     onClose: () -> Unit,
+    /** false = the Daily Sweep; true = the More Games Sweep (founder, 2026-09-26) — the same
+     *  celebration over the ten More Games dailies, indigo instead of violet, never awarding
+     *  anything and never using the Daily Sweep wording. */
+    more: Boolean = false,
 ) {
-    val totals = remember(byMode) { DailyCompletionsService.totals(byMode) }
-    val flawless = totals.flawless
-    val rows = remember(byMode) { DailySweepShare.rows(byMode) }
+    val totals = remember(byMode, more) {
+        if (!more) DailyCompletionsService.totals(byMode)
+        else moreTotals(byMode).let { t -> DailyCompletionsService.Totals(t.completed, t.won, t.total, 0, t.totalTimeSeconds, t.totalScore) }
+    }
+    val flawless = if (more) moreSweepTier(byMode) == MoreSweepTier.FLAWLESS else totals.flawless
+    val rows = remember(byMode, more) { DailySweepShare.rows(byMode, more) }
+    val sweepA = if (more) Color(0xFF6366F1) else Color(0xFFA78BFA)
+    val sweepB = if (more) Color(0xFF4F46E5) else Color(0xFFEC4899)
+    val title = if (flawless) (if (more) MoreSweepTier.FLAWLESS.title else "FLAWLESS VICTORY!")
+                else (if (more) MoreSweepTier.SWEEP.title else "DAILY SWEEP!")
+    val noun = if (more) "More Games puzzles" else "daily puzzles"
 
     val titleColors = if (flawless) listOf(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFB45309))
-                      else listOf(Color(0xFFA78BFA), Color(0xFFEC4899))
+                      else listOf(sweepA, sweepB)
     val cardGrad = if (flawless) listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7))
-                   else listOf(Color(0xFFFAF5FF), Color(0xFFFCE7F3))
+                   else if (more) listOf(Color(0xFFEEF2FF), Color(0xFFE0E7FF)) else listOf(Color(0xFFFAF5FF), Color(0xFFFCE7F3))
     val barGrad = if (flawless) listOf(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFFBBF24))
-                  else listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFA78BFA))
-    val borderC = if (flawless) Color(0xFFF59E0B) else Color(0xFFC4B5FD)
-    val accentText = if (flawless) Color(0xFFB45309) else Color(0xFF6D28D9)
+                  else listOf(sweepA, sweepB, sweepA)
+    val borderC = if (flawless) Color(0xFFF59E0B) else if (more) Color(0xFFA5B4FC) else Color(0xFFC4B5FD)
+    val accentText = if (flawless) Color(0xFFB45309) else if (more) Color(0xFF4338CA) else Color(0xFF6D28D9)
 
     // iOS fires the success haptic + jingle on appear — the biggest daily
     // milestone shouldn't land quieter than an ordinary win.
@@ -106,7 +118,7 @@ fun SweepCelebration(
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onClose() },
         contentAlignment = Alignment.Center,
     ) {
-        ParticleBurst(flawless)
+        ParticleBurst(flawless, more)
 
         Column(
             Modifier.padding(horizontal = 24.dp).fillMaxWidth()
@@ -141,14 +153,14 @@ fun SweepCelebration(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
-                        tint = if (flawless) Color(0xFFD97706) else Color(0xFF7C3AED), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
-                    Text(if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!", fontSize = 26.sp, fontWeight = FontWeight.Black,
+                        tint = if (flawless) Color(0xFFD97706) else if (more) Color(0xFF4F46E5) else Color(0xFF7C3AED), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
+                    Text(title, fontSize = if (more) 22.sp else 26.sp, fontWeight = FontWeight.Black, maxLines = 1,
                         style = TextStyle(brush = Brush.linearGradient(titleColors), fontFamily = Nunito))
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
-                        tint = if (flawless) Color(0xFFD97706) else Color(0xFFEC4899), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
+                        tint = if (flawless) Color(0xFFD97706) else if (more) Color(0xFF6366F1) else Color(0xFFEC4899), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
                 }
                 Text(
-                    if (flawless) "All ${totals.total} daily puzzles won today" else "All ${totals.total} daily puzzles completed today",
+                    if (flawless) "All ${totals.total} $noun won today" else "All ${totals.total} $noun completed today",
                     fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accentText,
                 )
 
@@ -204,7 +216,7 @@ fun SweepCelebration(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                            .background(Brush.horizontalGradient(if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309)) else listOf(Color(0xFF7C3AED), Color(0xFFEC4899))))
+                            .background(Brush.horizontalGradient(if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309)) else (if (more) listOf(Color(0xFF4F46E5), Color(0xFF6366F1)) else listOf(Color(0xFF7C3AED), Color(0xFFEC4899)))))
                             .clickable { onShare() }.padding(vertical = 11.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -239,7 +251,7 @@ private fun stat(value: String, label: String) {
 
 /** Radial burst of sparkles (Sweep) or glowing dots (Flawless) from center. */
 @Composable
-private fun ParticleBurst(flawless: Boolean) {
+private fun ParticleBurst(flawless: Boolean, more: Boolean = false) {
     val count = if (flawless) 28 else 20
     val transition = rememberInfiniteTransition(label = "burst")
     Box(Modifier.fillMaxSize()) {
@@ -264,7 +276,7 @@ private fun ParticleBurst(flawless: Boolean) {
                     .offset(x = dx, y = dy)
                     .size(sz)
                     .clip(if (flawless) RoundedCornerShape(50) else RoundedCornerShape(2.dp))
-                    .background((if (flawless) Color(0xFFF59E0B) else if (i % 2 == 0) Color(0xFFC4B5FD) else Color(0xFFF9A8D4)).copy(alpha = (1f - t)))
+                    .background((if (flawless) Color(0xFFF59E0B) else if (i % 2 == 0) (if (more) Color(0xFFA5B4FC) else Color(0xFFC4B5FD)) else (if (more) Color(0xFF818CF8) else Color(0xFFF9A8D4))).copy(alpha = (1f - t)))
             )
         }
     }
