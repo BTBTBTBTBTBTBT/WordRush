@@ -68,13 +68,14 @@ object ProfileAccent {
  * the profile header (own + public). Mirrors the web/iOS profile-header.
  */
 @Composable
-fun ProfilePersonalizationRow(profile: Profile?) {
+fun ProfilePersonalizationRow(profile: Profile?, start: Boolean = false) {
     if (profile == null) return
-    ProfilePersonalizationRow(profile.accentColor, profile.bio, profile.featuredAchievement, profile.favoriteMode)
+    ProfilePersonalizationRow(profile.accentColor, profile.bio, profile.featuredAchievement, profile.favoriteMode, start = start)
 }
 
+/** [start] = left-aligned and compact (the Stats tab's identity strip, D2); default centered (public profile). */
 @Composable
-fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAchievement: String?, favoriteModeKey: String?) {
+fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAchievement: String?, favoriteModeKey: String?, start: Boolean = false) {
     val accent = ProfileAccent.color(accentColor)
     val catalog by produceState(AchievementCatalog.cached(), featuredAchievement) {
         value = AchievementCatalog.load()
@@ -84,7 +85,7 @@ fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAch
     // Search the whole catalog: a ProperNoundle favorite lives under the More tile now.
     val favCard = modeCardForKey(favoriteModeKey)
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(horizontalAlignment = if (start) Alignment.Start else Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (titleName != null) {
             Row(
                 Modifier.background(accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp),
@@ -95,7 +96,10 @@ fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAch
             }
         }
         if (bio != null) {
-            Text(bio, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 300.dp))
+            Text(
+                bio, fontSize = if (start) 12.sp else 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                textAlign = if (start) TextAlign.Start else TextAlign.Center, modifier = Modifier.widthIn(max = 300.dp),
+            )
         }
         if (favCard != null) {
             Row(

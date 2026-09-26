@@ -14,6 +14,7 @@ import {
 import { checkAchievements } from './achievement-service';
 import { grantFreeShield } from './shield-service';
 import { DAILY_MODES, requiredDailyModeCount, sweepModesFor } from './daily-modes';
+import { MODE_BY_DBKEY } from './modes.generated';
 import { guessDistributionRange, type MatchRow } from './mode-stats';
 
 export interface XpResult {
@@ -947,6 +948,10 @@ export async function fetchProfileTrends(userId: string, playType: StatsPlayType
   if (!cpu) for (const r of rows) {
     if (!inScope(r) || r.winner_id !== userId || r.player1_id !== userId) continue;
     if (!(r.player1_score > 0)) continue;
+    // One histogram cannot mix guesses, mistakes and checks (Stats redesign audit,
+    // 2026-09-26): the All-time distribution counts guess-scored games only; each
+    // game page draws its own through the registry.
+    if ((MODE_BY_DBKEY[r.game_mode]?.guessSemantics ?? 'guesses') !== 'guesses') continue;
     const bucket = Math.min(r.player1_score, maxBucket);
     dist[bucket] = (dist[bucket] || 0) + 1;
   }
@@ -2201,6 +2206,9 @@ export async function fetchSkillRadar(userId: string): Promise<SkillRadarData | 
   const endurance = g && g.total_games > 0 ? Math.round((g.wins / g.total_games) * 100) : 0;
 
   // Versatility: how evenly play spreads across modes (normalized entropy).
+  // Normalized by every daily mode this build knows (19 since More Games) and
+  // clamped — the old fixed log(9) let ten More Games titles push the axis past
+  // 100 % (Stats redesign audit, 2026-09-26).
   const played = rows.filter((r) => (r.total_games || 0) > 0);
   let versatility = 0;
   if (played.length > 1) {
@@ -2208,7 +2216,7 @@ export async function fetchSkillRadar(userId: string): Promise<SkillRadarData | 
       const p = r.total_games / totalGames;
       return s - p * Math.log(p);
     }, 0);
-    versatility = Math.round((H / Math.log(9)) * 100);
+    versatility = Math.min(100, Math.round((H / Math.log(Math.max(2, DAILY_MODES.length))) * 100));
   }
   return { speed, accuracy, consistency, endurance, versatility };
 }

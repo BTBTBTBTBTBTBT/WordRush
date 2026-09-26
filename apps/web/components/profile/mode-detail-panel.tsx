@@ -227,7 +227,9 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
               improvement={data.improvement}
               perfectGames={data.perfectGames}
               headToHead={tab === 'vs' ? data.headToHead : null}
-              wordInsights={data.wordInsights}
+              // Registry-aware (audit, 2026-09-26): nemesis / lucky word / first-try
+              // rate are word-game facts — a Sudocious page never shows them.
+              wordInsights={panels.topWords ? data.wordInsights : null}
             />
           )}
 

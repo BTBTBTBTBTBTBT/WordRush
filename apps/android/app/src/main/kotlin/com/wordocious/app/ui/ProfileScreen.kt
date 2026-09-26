@@ -2,8 +2,11 @@ package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,13 +22,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
@@ -81,20 +82,24 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 /**
- * Profile screen — ported from web /profile/page.tsx. Sections:
- *   A. Header: avatar, username + PRO, level-tier pill, XP bar, member-since, Go Pro
- *   B. Today's Dailies grid (5+4 badges with W/L)
- *   C. Global Summary row (Wins / Win Rate / Streak / Daily — 4 icon cards)
- *   D. Daily Medals (gold/silver/bronze counts)
- *   E. Stats by mode + Recent Matches
- *   F. Sign out
- * (ProfileDashboard charts, 72-item Achievements + Edit Profile are follow-ups.)
+ * STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
+ * and Records merge into one Stats tab that "flows like butter"). Ported from
+ * web app/stats/page.tsx. One page:
+ *   identity strip (compact header) → StatsRail → ONE page below it, chosen
+ *   from the rail: Today (landing) · a game page per daily mode · VS · All-time.
+ * Swipe left/right on the page moves one rail chip; hold Today (or the grid
+ * button) for every game at once. Zero new fetches beyond the old profile page
+ * except today's VS result, the sweep streak and today's standing.
  */
-// The Today's Dailies grid = the sweep set, from the catalog (More Games Stage 5:
-// no second hand-typed list; the eight word games since Stage 9).
+// The sweep set, from the catalog (More Games Stage 5: no second hand-typed
+// list; the eight word games since Stage 9).
 private val DAILY_MODES: List<String> = com.wordocious.app.ModeGen.sweep.mapNotNull { it.dbKey }
-// The per-mode dashboard picker scrolls, so it lists EVERY daily mode.
+// Every daily mode, canonical order (Pro Stats bars).
 private val PICKER_MODES: List<String> = com.wordocious.app.ModeGen.daily.mapNotNull { it.dbKey }
+
+/** Word-engine games and ProperNoundle have live VS boards; the More Games titles do not. */
+private fun hasVs(dbKey: String): Boolean =
+    com.wordocious.app.ModeGen.byDbKey(dbKey)?.let { it.engine == "word" || it.dbKey == "PROPERNOUNDLE" } == true
 
 // ── P-cache memo bundles (session-lived StatsMemo snapshots; SWR seeds) ──────
 private data class ProfileMainMemo(
@@ -106,6 +111,10 @@ private data class ProfileMainMemo(
     val unlocked: Set<String>,
     val activityCal: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
     val sweepPoints: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
+    /** D2: today's daily VS outcome (null = not played), today's standing, the sweep streaks. */
+    val vsDailyWon: Boolean? = null,
+    val standing: com.wordocious.app.data.StatsDeepService.DailyStanding? = null,
+    val sweepStats: MatchStatsService.DailySweepStats = MatchStatsService.DailySweepStats(),
 )
 
 private data class ProfileChartsMemo(
@@ -121,6 +130,7 @@ private data class ProfileChartsMemo(
     val modeAgg: com.wordocious.app.data.ModeStats.ModeAggregates = com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES,
 )
 
+@Suppress("UNUSED_PARAMETER") // onOpenFriends: Friends is its own tab since D1; kept for the MainScreen call site.
 @Composable
 fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}, onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
@@ -146,10 +156,27 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // Sweep COUNTS moved to Records → You (single home); profile keeps only the
     // Daily Points trend, so only the points series is fetched here.
     var sweepPoints by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>>(emptyList()) }
-    // Per-mode dashboard filter — null == "All" (global view). Mirrors iOS ProfileModePicker.
-    var selectedMode by remember { mutableStateOf<String?>(null) }
-    // Solo/VS toggle (web profile/page.tsx) — filters user_stats by play_type.
-    var activeTab by remember { mutableStateOf("solo") }
+    // D2: today's daily VS outcome, today's field standing, the sweep streaks.
+    var vsDailyWon by remember { mutableStateOf<Boolean?>(null) }
+    var standing by remember { mutableStateOf<com.wordocious.app.data.StatsDeepService.DailyStanding?>(null) }
+    var sweepStats by remember { mutableStateOf(MatchStatsService.DailySweepStats()) }
+    // Which page the rail shows: RAIL_TODAY | RAIL_VS | RAIL_ALL | a daily mode dbKey.
+    var selected by remember { mutableStateOf(RAIL_TODAY) }
+    // A game page's Solo | VS toggle (only where the game has a live VS board).
+    var gameTab by remember { mutableStateOf("solo") }
+    // The VS page: which word game's board, Live ("vs") or CPU practice ("vs_cpu").
+    var vsMode by remember { mutableStateOf("DUEL") }
+    var vsTab by remember { mutableStateOf("vs") }
+    // The per-mode chart fetch is scoped to the page: a game page → that mode
+    // and its toggle; the VS page → the picked word game, Live/CPU; Today and
+    // All-time → the global Solo view (the charts the All-time page draws).
+    val isGamePage = com.wordocious.app.ModeGen.byDbKey(selected) != null
+    val pageMode: String? = when { isGamePage -> selected; selected == RAIL_VS -> vsMode; else -> null }
+    val pageTab: String = when {
+        selected == RAIL_VS -> vsTab
+        isGamePage -> if (hasVs(selected) && gameTab == "vs") "vs" else "solo"
+        else -> "solo"
+    }
     // Per-mode win streak (current, best) from match history — mirrors web
     // mode-stats-card / iOS mode-detail streak. Play-type-scoped (restat B1),
     // so it reloads when the Solo/VS/VS-CPU toggle changes.
@@ -195,6 +222,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 unlockedAchievements = saved.unlocked
                 activityCal = saved.activityCal
                 sweepPoints = saved.sweepPoints
+                vsDailyWon = saved.vsDailyWon
+                standing = saved.standing
+                sweepStats = saved.sweepStats
                 loading = false
             }
             // All independent fetches run CONCURRENTLY (was 8 serial round-trips
@@ -207,6 +237,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
                 val calD = async { com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90) }
                 val pointsD = async { com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30) }
+                // D2: today's VS result (the rail's VS dot + the Today pill), today's
+                // standing (the ONE leaderboard formula) and the sweep streaks.
+                val vsTodayD = async { runCatching { com.wordocious.app.data.DailyResultsService.dailyVsResult() }.getOrNull() }
+                val standingD = async { runCatching { com.wordocious.app.data.StatsDeepService.todayDailyStanding(userId) }.getOrNull() }
+                val sweepD = async { MatchStatsService.dailySweepStats() }
                 val matches = matchesD.await()
                 val oppIds = matches.filter { it.player2Id != null }
                     .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
@@ -220,11 +255,15 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 unlockedAchievements = unlockedD.await()
                 activityCal = calD.await()
                 sweepPoints = pointsD.await()
+                vsDailyWon = vsTodayD.await()
+                standing = standingD.await()
+                sweepStats = sweepD.await()
             }
             com.wordocious.app.data.StatsMemo.set(memoKey, ProfileMainMemo(
                 stats = stats, recentMatches = recentMatches, opponentNames = opponentNames,
                 medals = medals, todayDailies = todayDailies, unlocked = unlockedAchievements,
                 activityCal = activityCal, sweepPoints = sweepPoints,
+                vsDailyWon = vsDailyWon, standing = standing, sweepStats = sweepStats,
             ))
         }
         loading = false
@@ -233,9 +272,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // toggle changes (restat B1: every per-game stat is scoped to the toggle;
     // vs_cpu fetchers return empty and a "totals only" note shows instead).
     val isProActive = AuthService.isProActive
-    LaunchedEffect(userId, selectedMode, isProActive, activeTab, tick) {
+    LaunchedEffect(userId, pageMode, isProActive, pageTab, tick) {
         val uid = userId ?: return@LaunchedEffect
-        val m = selectedMode
+        val m = pageMode
+        val activeTab = pageTab
         // P-cache: seed from the session memo (instant repaint on mode re-tap /
         // toggle flip), then fetch fresh below and store back (SWR).
         val memoKey = "profileCharts:$uid:${m ?: "ALL"}:$activeTab:$isProActive"
@@ -301,6 +341,33 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         chartsLoaded = true
     }
 
+    // ── The rail: Today · sweep games · VS · the More Games titles this viewer
+    // can see (catalog ∩ remote flags, the HomeScreen filter) · All-time. ──
+    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+    val visibleMore = remember(flagTable, flagsLoaded) {
+        MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+    }
+    val sweepCards = remember { DAILY_MODES.mapNotNull { modeCardForKey(it) } }
+    val railItems = remember(visibleMore, todayDailies, vsDailyWon) { buildRailItems(sweepCards, visibleMore, todayDailies, vsDailyWon) }
+    // Swipe on the page moves one chip along the rail (founder: no 19-page
+    // swipe — but a swipe between neighbors is the natural gesture).
+    val swipeModifier = Modifier.pointerInput(railItems, selected) {
+        val threshold = 70.dp.toPx()
+        var total = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { total = 0f },
+            onDragCancel = { total = 0f },
+            onDragEnd = {
+                if (kotlin.math.abs(total) >= threshold) {
+                    val i = railItems.indexOfFirst { it.key == selected }
+                    railItems.getOrNull(i + if (total < 0) 1 else -1)?.let { selected = it.key }
+                }
+                total = 0f
+            },
+        ) { _, dragAmount -> total += dragAmount }
+    }
+
     val isGuest by AuthService.isGuest.collectAsState()
     if (isGuest) {
         // Guest — profile/stats are account-based. Prompt sign-in (web/iOS parity).
@@ -353,215 +420,340 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             })
         }
 
-        // ── FRIENDS (§207 Tier 3) — compact row into the dedicated screen ──
-        item { FriendsRowLink(onOpen = onOpenFriends) }
-        // D1 (2026-09-26): Records left the tab bar; its rows fold into Stats in D2.
-        item { RecordsRowLink(onOpen = onOpenRecords) }
-
         // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
         // (founder, 2026-09-26: on the profile it was clutter and a duplicate).
+        // The FRIENDS row is gone too: Friends is its own tab since D1.
 
-        // ── B. Today's Dailies ────────────────────────────────────
-        item { TodaysDailies(todayDailies, onPlayDaily) }
+        // ── The game rail ─────────────────────────────────────────
+        item { StatsRail(items = railItems, selected = selected, onSelect = { selected = it }) }
 
-        // ── C. Snapshot hero (lifetime headline stats + this-week strip,
-        //       merged into ONE card — web snapshot-hero.tsx) ────────
+        // ── ONE page below the rail. F1: fades+rises on every page / toggle
+        //    swap (SwapFade), and a horizontal swipe moves one rail chip. ──
         item {
-            SnapshotHero(
-                totalWins = profile?.totalWins ?: 0,
-                totalLosses = profile?.totalLosses ?: 0,
-                currentStreak = profile?.currentStreak ?: 0,
-                bestStreak = profile?.bestStreak ?: 0,
-                dailyStreak = profile?.dailyLoginStreak ?: 0,
-                bestDailyStreak = profile?.bestDailyLoginStreak ?: 0,
-                gamesThisWeek = activity7.sumOf { it.played },
-                level = profile?.level ?: 1,
-                xpToNext = 1000 - ((profile?.xp ?: 0) % 1000),
-                isPro = isProActive, onGoPro = onGoPro,
-            )
-        }
+            SwapFade(targetState = Triple(selected, pageTab, pageMode)) { (page, tab, mode) ->
+                Column(Modifier.fillMaxWidth().then(swipeModifier), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    when {
+                        // ── Today: your day in one card (TodayCard.kt). ──
+                        page == RAIL_TODAY -> TodayCard(
+                            sweepModes = DAILY_MODES,
+                            moreModes = visibleMore,
+                            todayDailies = todayDailies,
+                            vsDailyWon = vsDailyWon,
+                            standing = standing,
+                            sweepStreak = sweepStats.currentSweepStreak,
+                            flawlessStreak = sweepStats.currentFlawlessStreak,
+                            flawlessFooter = { FlawlessBannerFooter(DAILY_MODES.size) },
+                            onPlayDaily = onPlayDaily,
+                            onJump = { selected = it },
+                        )
 
-        // Daily standing — "top X% today · across N dailies" (hidden until a
-        // daily is played today; refetches on completionTick).
-        item { DailyStandingStrip(reloadToken = tick) }
-
-        // ── Solo/VS toggle (web profile/page.tsx §D) ────────────────
-        item { SoloVsToggle(activeTab) { activeTab = it } }
-
-        // Tab-specific summary cards (VS record / Rivalries / CPU record) —
-        // F1: fade+rise on each Solo/VS/VS CPU swap instead of snapping. One
-        // AnimatedContent item keyed on activeTab drives the transition.
-        item {
-            SwapFade(targetState = activeTab) { tab ->
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (tab == "vs") {
-                        VsRecordCard(stats)
-                        // Rivalries — most-faced opponents with head-to-head bars
-                        // (Pro), only once there's an actual VS record (web parity).
-                        val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
-                        if (vsTotal > 0) RivalriesCard(isPro = isProActive, onGoPro = onGoPro)
-                    }
-                    if (tab == "vs_cpu") CpuRecordCard(stats)
-                }
-            }
-        }
-
-        // ── Dashboard: per-mode picker + charts ────────────────────
-        // The mode picker itself does NOT re-animate (web/iOS parity); only the
-        // content below it fades on swap.
-        item {
-            val filtered = stats.filter { it.playType == activeTab }
-            val gamesPerMode = filtered.groupBy { it.gameMode }.mapValues { (_, rows) -> rows.sumOf { it.totalGames } }
-            ProfileModePicker(selected = selectedMode, gamesPerMode = gamesPerMode, onSelect = { selectedMode = it })
-        }
-        // F1: dashboard content eases in on mode / play-type swap. One
-        // AnimatedContent item keyed on (activeTab, selectedMode).
-        item {
-            SwapFade(targetState = activeTab to selectedMode) { (tab, mode) ->
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (mode == null) {
-                        // ── "All" global view — web Trends order (restat R1).
-                        // CPU practice records totals only — per-game charts draw
-                        // from match rows CPU games never write (restat B1).
-                        if (tab == "vs_cpu") {
-                            Text(
-                                "CPU practice records totals only — charts track Solo and VS matches.",
-                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                textAlign = TextAlign.Center,
+                        // ── VS: record (with today's result), Rivalries, CPU practice,
+                        //    then one word game's VS board — Live or CPU. ──
+                        page == RAIL_VS -> {
+                            VsRecordCard(stats, vsDailyWon)
+                            // Rivalries — most-faced opponents with head-to-head bars
+                            // (Pro), only once there's an actual VS record (web parity).
+                            val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
+                            if (vsTotal > 0) RivalriesCard(isPro = isProActive, onGoPro = onGoPro)
+                            CpuRecordCard(stats)
+                            VsBoardPicker(
+                                modes = DAILY_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
+                                onMode = { vsMode = it }, onTab = { vsTab = it },
+                            )
+                            val m = mode ?: vsMode
+                            ModeStatsBody(
+                                mode = m, tab = tab, stats = stats, modeStreaks = modeStreaks, modeAgg = modeAgg,
+                                guessDist = guessDist, modeCal = modeCal, solveTimes = solveTimes, topWords = topWords,
+                                chartsLoaded = chartsLoaded, timeOfDay = timeOfDay, proInsights = proInsights,
+                                isProActive = isProActive, onGoPro = onGoPro,
                             )
                         }
-                        if (activityCal.any { it.played > 0 }) DailyCalendarCard(activityCal)
-                        if (activity7.isNotEmpty()) ActivityCard(activity7)
-                        // Guess distribution + solve time always render — their own
-                        // empty copy is the guidance (iOS keeps both cards visible).
-                        GuessDistributionCard(guessDist)
-                        SolveTimeCard(solveTimes)
-                        // Daily points trend (sweep/flawless days marked).
-                        DailyPointsChartCard(sweepPoints)
-                        if (topWords.isNotEmpty()) TopWordsCard(topWords)
-                        else if (chartsLoaded && tab != "vs_cpu") {
-                            StatsEmptyCard(
-                                "Top Words", accent = Color(0xFFD97706),
-                                hint = "Your most-guessed words appear here as you play.",
+
+                        // ── All-time: the snapshot hero, RECORDS, every chart the old
+                        //    "All" dashboard drew, then Progression and Recent Matches. ──
+                        page == RAIL_ALL -> {
+                            SnapshotHero(
+                                totalWins = profile?.totalWins ?: 0,
+                                totalLosses = profile?.totalLosses ?: 0,
+                                currentStreak = profile?.currentStreak ?: 0,
+                                bestStreak = profile?.bestStreak ?: 0,
+                                dailyStreak = profile?.dailyLoginStreak ?: 0,
+                                bestDailyStreak = profile?.bestDailyLoginStreak ?: 0,
+                                gamesThisWeek = activity7.sumOf { it.played },
+                                level = profile?.level ?: 1,
+                                xpToNext = 1000 - ((profile?.xp ?: 0) % 1000),
+                                isPro = isProActive, onGoPro = onGoPro,
                             )
-                        }
-                        // Opener Lab (basic): favorite starting words + conversion.
-                        OpenerLabCard(playType = tab)
-                        // Weekday form: your best day of the week.
-                        WeekdayFormCard(playType = tab)
-                        // WHEN YOU PLAY (time-of-day) — closes the All view on iOS too.
-                        if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
-                        // Insights — up to two derived one-liners.
-                        val insights = profileInsights(stats, activity7, profile, todayDailies)
-                        if (insights.isNotEmpty()) InsightsCard(insights)
-                        // Pro Stats (global view; SOLO rows only).
-                        if (!isProActive || stats.isNotEmpty()) {
-                            ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
-                        }
-                        // Skill Radar — the five-axis signature chart (Pro).
-                        SkillRadarCard(isPro = isProActive, onGoPro = onGoPro)
-                    } else {
-                        // ── Mode-detail view (web mode-detail-panel.tsx). ──
-                        ModeDetailHeader(mode, tab)
-                        val tabStats = stats.filter { it.playType == tab && it.gameMode == mode }
-                        // Always the grid — the aggregations zero out on an empty
-                        // list, so an unplayed mode reads 0/0/0 instead of swapping
-                        // in a placeholder box (iOS modeStats renders unconditionally).
-                        ModeStatsGrid(mode, tabStats, modeStreaks[mode], modeAgg)
-                        // The cards below the grid come from the mode's stats profile
-                        // (ModeStats.statPanels, More Games §18): Gauntlet's 50 guesses
-                        // across 21 boards make a histogram meaningless; the custom
-                        // engines have no word rows, so the word-only cards stay off;
-                        // Kindred and Muddle draw a histogram in their own unit.
-                        val modeMeta = com.wordocious.app.ModeGen.byDbKey(mode)
-                        val modeSemantics = modeMeta?.guessSemantics ?: "guesses"
-                        val panels = com.wordocious.app.data.ModeStats.statPanels(mode, modeSemantics)
-                        if (panels.guessDistribution) GuessDistributionCard(guessDist, com.wordocious.app.data.ModeStats.guessNoun(modeSemantics))
-                        // Per-mode 90-day heatmap (iOS ActivityCalendarView(mode:)).
-                        if (modeCal.any { it.played > 0 }) DailyCalendarCard(modeCal)
-                        if (panels.solveTime) SolveTimeCard(solveTimes)
-                        if (panels.topWords) {
+                            // D1: Records left the tab bar; its rows fold into these pages in D2 step 3.
+                            RecordsRowLink(onOpen = onOpenRecords)
+
+                            // ── "All" global view — web Trends order (restat R1). ──
+                            if (activityCal.any { it.played > 0 }) DailyCalendarCard(activityCal)
+                            if (activity7.isNotEmpty()) ActivityCard(activity7)
+                            // Guess distribution + solve time always render — their own
+                            // empty copy is the guidance (iOS keeps both cards visible).
+                            // The distribution counts the word games only (the custom
+                            // engines score in their own units).
+                            GuessDistributionCard(guessDist, hint = "word games")
+                            SolveTimeCard(solveTimes)
+                            // Daily points trend (sweep/flawless days marked).
+                            DailyPointsChartCard(sweepPoints)
                             if (topWords.isNotEmpty()) TopWordsCard(topWords)
-                            else if (chartsLoaded && tab != "vs_cpu") {
+                            else if (chartsLoaded) {
                                 StatsEmptyCard(
                                     "Top Words", accent = Color(0xFFD97706),
                                     hint = "Your most-guessed words appear here as you play.",
                                 )
                             }
+                            // Opener Lab (basic): favorite starting words + conversion.
+                            OpenerLabCard(playType = tab)
+                            // Weekday form: your best day of the week.
+                            WeekdayFormCard(playType = tab)
+                            // WHEN YOU PLAY (time-of-day) — closes the All view on iOS too.
+                            if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
+                            // Insights — up to two derived one-liners.
+                            val insights = profileInsights(stats, activity7, profile, todayDailies)
+                            if (insights.isNotEmpty()) InsightsCard(insights)
+                            // Pro Stats (global view; SOLO rows only).
+                            if (!isProActive || stats.isNotEmpty()) {
+                                ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
+                            }
+                            // Skill Radar — the five-axis signature chart (Pro).
+                            SkillRadarCard(isPro = isProActive, onGoPro = onGoPro)
+
+                            // ── Progression: medals + achievements under one banner ──
+                            SectionHeader("Progression", accent = Color(0xFFF59E0B))
+                            DailyMedals(profile, medals)
+                            AchievementsSection(unlockedAchievements, profile)
+
+                            if (loading) {
+                                Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) }
+                            }
+
+                            // ── Recent matches ──
+                            // Web parity (profile/page.tsx): skeleton rows while loading, then the
+                            // matches or "No matches played yet." — the section never just vanishes.
+                            SectionHeader("Recent Matches", accent = Color(0xFF2563EB))
+                            if (loading) {
+                                Column { repeat(5) { SkeletonBlock(height = 52.dp, cornerRadius = 12.dp); Spacer(Modifier.height(8.dp)) } }
+                            } else if (recentMatches.isEmpty()) {
+                                Text(
+                                    "No matches played yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                    color = WTheme.textMuted,
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                                    textAlign = TextAlign.Center,
+                                )
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    (if (showAllRecent) recentMatches else recentMatches.take(5)).forEach { m ->
+                                        val oppId = if (m.player2Id == null) null else if (m.player1Id == userId) m.player2Id else m.player1Id
+                                        RecentMatchRow(m, userId, opponentName = oppId?.let { opponentNames[it] ?: "Unknown" })
+                                    }
+                                }
+                                if (recentMatches.size > 5) {
+                                    Text(
+                                        if (showAllRecent) "Show less" else "View all ${recentMatches.size} ›",
+                                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
+                                    )
+                                }
+                            }
                         }
-                        // WHEN YOU PLAY (time-of-day).
-                        if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
-                        // Per-mode Pro Insights — Pro-only. Free users see no card
-                        // here: the blurred Deep Insights section below is the
-                        // single Pro gate on the profile (the old locked teaser
-                        // was redundant with it).
-                        if (isProActive && proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
-                            ProInsightsCard(proInsights, mode)
-                        }
-                        // Deep Insights (restat R4). Hidden on vs_cpu (restat B1).
-                        if (tab != "vs_cpu") {
-                            val accent = runCatching { modeAccent(GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
-                            ProDeepModeCard(gameMode = mode, isPro = isProActive, accent = accent, onGoPro = onGoPro, playType = tab)
-                        } else {
-                            Text(
-                                "CPU practice records totals only — per-game charts track Solo and VS matches.",
-                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                textAlign = TextAlign.Center,
+
+                        // ── A game page: Solo | VS (only with a live VS board), today's
+                        //    line, then the existing registry-driven per-mode stats. ──
+                        else -> {
+                            val gm = runCatching { GameMode.valueOf(page) }.getOrNull()
+                            val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
+                            if (hasVs(page)) GameSoloVsToggle(active = gameTab, accent = accent) { gameTab = it }
+                            TodayLineCard(dbKey = page, completion = todayDailies[page], accent = accent) { gm?.let(onPlayDaily) }
+                            ModeStatsBody(
+                                mode = page, tab = tab, stats = stats, modeStreaks = modeStreaks, modeAgg = modeAgg,
+                                guessDist = guessDist, modeCal = modeCal, solveTimes = solveTimes, topWords = topWords,
+                                chartsLoaded = chartsLoaded, timeOfDay = timeOfDay, proInsights = proInsights,
+                                isProActive = isProActive, onGoPro = onGoPro,
                             )
                         }
                     }
-                }
-            }
-        }
-
-        // ── Progression: medals + achievements under one banner (BOTH views) ──
-        item { SectionHeader("Progression", accent = Color(0xFFF59E0B)) }
-        item { DailyMedals(profile, medals) }
-        item { AchievementsSection(unlockedAchievements, profile) }
-
-        if (loading) {
-            item { Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) } }
-        }
-
-        // ── Recent matches ────────────────────────────────────────
-        // Web parity (profile/page.tsx): skeleton rows while loading, then the
-        // matches or "No matches played yet." — the section never just vanishes.
-        item { SectionHeader("Recent Matches", accent = Color(0xFF2563EB)) }
-        if (loading) {
-            item {
-                Column { repeat(5) { SkeletonBlock(height = 52.dp, cornerRadius = 12.dp); Spacer(Modifier.height(8.dp)) } }
-            }
-        } else if (recentMatches.isEmpty()) {
-            item {
-                Text(
-                    "No matches played yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    color = WTheme.textMuted,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-            }
-        } else {
-            items(if (showAllRecent) recentMatches else recentMatches.take(5)) { m ->
-                val oppId = if (m.player2Id == null) null else if (m.player1Id == userId) m.player2Id else m.player1Id
-                RecentMatchRow(m, userId, opponentName = oppId?.let { opponentNames[it] ?: "Unknown" })
-                Spacer(Modifier.height(8.dp))
-            }
-            if (recentMatches.size > 5) {
-                item {
-                    Text(
-                        if (showAllRecent) "Show less" else "View all ${recentMatches.size} ›",
-                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
-                    )
                 }
             }
         }
 
         // (Account actions — Daily Reminders / Sign Out / Delete Account — live
         // in Settings now; removed from the profile page per product direction.)
+    }
+}
+
+// ── Game page chrome: Solo | VS toggle, today's line ────────────────────────
+/** Solo | VS on a game page — only where the game has a live VS board. */
+@Composable
+private fun GameSoloVsToggle(active: String, accent: Color, onSelect: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
+            val isActive = active == key
+            val tint = if (isActive) accent else WTheme.textMuted
+            Row(
+                Modifier.clip(RoundedCornerShape(12.dp))
+                    .background(if (isActive) WTheme.surface else WTheme.surfaceHover)
+                    .border(1.5.dp, if (isActive) accent else WTheme.border, RoundedCornerShape(12.dp))
+                    .pressScale { onSelect(key) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (key == "solo") Icon(Icons.Filled.Person, null, tint = tint, modifier = Modifier.size(14.dp))
+                else Icon(
+                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
+                    tint = tint, modifier = Modifier.size(14.dp),
+                )
+                Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tint)
+            }
+        }
+    }
+}
+
+/** "1m 12s" / "45s" / "2m" — web stats page formatDuration. */
+private fun fmtDuration(seconds: Int): String {
+    if (seconds < 60) return "${seconds}s"
+    val m = seconds / 60
+    val s = seconds % 60
+    return if (s > 0) "${m}m ${s}s" else "${m}m"
+}
+
+/** Today's result for this game in the mode's tint — "Won · 4 guesses · 1m 12s ·
+ *  1,940 pts  Open →" — or the door to play it ("Not played yet … Play →"). */
+@Composable
+private fun TodayLineCard(dbKey: String, completion: DailyCompletionsService.Completion?, accent: Color, onOpen: () -> Unit) {
+    val meta = com.wordocious.app.ModeGen.byDbKey(dbKey)
+    val text = if (completion != null) {
+        buildString {
+            append(if (completion.completed) "Won" else "Lost")
+            append(" · ").append(formatGuessStat(meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, completion.guessCount))
+            if (completion.timeSeconds > 0) append(" · ").append(fmtDuration(completion.timeSeconds))
+            append(" · ").append(formatScore(completion.score)).append(" pts")
+        }
+    } else "Not played yet — play today's ${meta?.title ?: modeLabel(dbKey)}"
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.06f))
+            .border(1.5.dp, accent.copy(alpha = 0.33f), RoundedCornerShape(14.dp))
+            .clickableNoRipple(onOpen).padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text("TODAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = accent, letterSpacing = 0.6.sp)
+        Text(
+            text, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+        )
+        Text(if (completion != null) "Open →" else "Play →", fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent)
+    }
+}
+
+/** The VS page's board picker: the VS-capable word games as small chips, and
+ *  Live | CPU at the right. */
+@Composable
+private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String, onMode: (String) -> Unit, onTab: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.weight(1f).horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            modes.forEach { m ->
+                val active = m == selectedMode
+                val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
+                Text(
+                    com.wordocious.app.ModeGen.byDbKey(m)?.shortTitle ?: m,
+                    fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted,
+                    maxLines = 1, softWrap = false,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
+                        .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(8.dp))
+                        .clickableNoRipple { onMode(m) }.padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf("vs" to "Live", "vs_cpu" to "CPU").forEach { (key, label) ->
+                val active = tab == key
+                Text(
+                    label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (active) WTheme.primary else WTheme.textMuted,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(if (active) WTheme.primary.copy(alpha = 0.08f) else WTheme.surface)
+                        .border(1.5.dp, if (active) WTheme.primary else WTheme.border, RoundedCornerShape(8.dp))
+                        .clickableNoRipple { onTab(key) }.padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+/** The per-mode stats content (web mode-detail-panel.tsx): header, the §18
+ *  registry grid, then the cards the mode's stats profile turns on. Shared by
+ *  the game pages and the VS page; unchanged from the old mode-detail view. */
+@Composable
+private fun ModeStatsBody(
+    mode: String,
+    tab: String,
+    stats: List<ProfileService.UserStat>,
+    modeStreaks: Map<String, Pair<Int, Int>>,
+    modeAgg: com.wordocious.app.data.ModeStats.ModeAggregates,
+    guessDist: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
+    modeCal: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
+    solveTimes: List<com.wordocious.app.data.MatchStatsService.SolvePoint>,
+    topWords: List<com.wordocious.app.data.MatchStatsService.TopWord>,
+    chartsLoaded: Boolean,
+    timeOfDay: List<com.wordocious.app.data.MatchStatsService.HourBucket>,
+    proInsights: com.wordocious.app.data.MatchStatsService.ProInsights,
+    isProActive: Boolean,
+    onGoPro: () -> Unit,
+) {
+    ModeDetailHeader(mode, tab)
+    val tabStats = stats.filter { it.playType == tab && it.gameMode == mode }
+    // Always the grid — the aggregations zero out on an empty list, so an
+    // unplayed mode reads 0/0/0 instead of swapping in a placeholder box (iOS
+    // modeStats renders unconditionally).
+    ModeStatsGrid(mode, tabStats, modeStreaks[mode], modeAgg)
+    // The cards below the grid come from the mode's stats profile
+    // (ModeStats.statPanels, More Games §18): Gauntlet's 50 guesses across 21
+    // boards make a histogram meaningless; the custom engines have no word rows,
+    // so the word-only cards stay off; Kindred and Muddle draw a histogram in
+    // their own unit.
+    val modeMeta = com.wordocious.app.ModeGen.byDbKey(mode)
+    val modeSemantics = modeMeta?.guessSemantics ?: "guesses"
+    val panels = com.wordocious.app.data.ModeStats.statPanels(mode, modeSemantics)
+    if (panels.guessDistribution) GuessDistributionCard(guessDist, com.wordocious.app.data.ModeStats.guessNoun(modeSemantics))
+    // Per-mode 90-day heatmap (iOS ActivityCalendarView(mode:)).
+    if (modeCal.any { it.played > 0 }) DailyCalendarCard(modeCal)
+    if (panels.solveTime) SolveTimeCard(solveTimes)
+    if (panels.topWords) {
+        if (topWords.isNotEmpty()) TopWordsCard(topWords)
+        else if (chartsLoaded && tab != "vs_cpu") {
+            StatsEmptyCard(
+                "Top Words", accent = Color(0xFFD97706),
+                hint = "Your most-guessed words appear here as you play.",
+            )
+        }
+    }
+    // WHEN YOU PLAY (time-of-day).
+    if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
+    // Per-mode Pro Insights — Pro-only. Free users see no card here: the
+    // blurred Deep Insights section below is the single Pro gate on the
+    // profile (the old locked teaser was redundant with it).
+    if (isProActive && proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
+        ProInsightsCard(proInsights, mode)
+    }
+    // Deep Insights (restat R4). Hidden on vs_cpu (restat B1).
+    if (tab != "vs_cpu") {
+        val accent = runCatching { modeAccent(GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
+        ProDeepModeCard(gameMode = mode, isPro = isProActive, accent = accent, onGoPro = onGoPro, playType = tab)
+    } else {
+        Text(
+            "CPU practice records totals only — per-game charts track Solo and VS matches.",
+            fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -585,6 +777,14 @@ private fun memberSince(createdAt: String?): String? {
     return "${MONTHS[(m - 1).coerceIn(0, 11)]} $y"
 }
 
+/**
+ * The identity strip (D2, 2026-09-26) — the old Profile header, compact: avatar
+ * 64 on the left; name + PRO, the featured / favorite chips and bio, then the
+ * level pill with the XP bar and "N XP to next · since Mon YYYY" to its right.
+ * Under the strip one wrapping row: Edit · Share · Private (if private) · Go Pro
+ * (if not Pro) · Simulate Pro (admin only). Web app/stats/page.tsx parity.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive: Boolean, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onShare: () -> Unit = {}) {
     val level = profile?.level ?: 1
@@ -594,85 +794,98 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
     val xpToNext = 1000 - (xp % 1000)
     // Two-character initials fallback (web avatar-upload.tsx slice(0, 2) / iOS AvatarView).
     val initial = (profile?.username?.take(2) ?: "P").uppercase()
+    val since = memberSince(profile?.createdAt)
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // Avatar — real image (avatar_url) via Coil, else the initial in a gradient circle.
-        val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() }
-        Box(
-            Modifier.size(96.dp).clip(CircleShape)
-                .background(if (ProfileAccent.isCustom(profile?.accentColor)) ProfileAccent.avatarBrush(profile?.accentColor) else Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (avatarUrl != null) {
-                coil.compose.AsyncImage(
-                    model = avatarUrl, contentDescription = "Avatar",
-                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                )
-            } else {
-                Text(profile?.avatarEmoji?.takeIf { it.isNotBlank() } ?: initial, fontSize = 40.sp, fontWeight = FontWeight.Black, color = Color.White)
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Avatar — real image (avatar_url) via Coil, else the initial in a gradient circle.
+            val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() }
+            Box(
+                Modifier.size(64.dp).clip(CircleShape)
+                    .background(if (ProfileAccent.isCustom(profile?.accentColor)) ProfileAccent.avatarBrush(profile?.accentColor) else Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (avatarUrl != null) {
+                    coil.compose.AsyncImage(
+                        model = avatarUrl, contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    )
+                } else {
+                    Text(profile?.avatarEmoji?.takeIf { it.isNotBlank() } ?: initial, fontSize = 26.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+            }
+
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (ProfileAccent.isCustom(profile?.accentColor)) {
+                        Text(
+                            profile?.username ?: "Player", fontSize = 22.sp, fontWeight = FontWeight.Black,
+                            color = ProfileAccent.color(profile?.accentColor),
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                    } else {
+                        Text(
+                            profile?.username ?: "Player", fontSize = 22.sp, fontWeight = FontWeight.Black,
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontFamily = com.wordocious.app.ui.theme.Nunito,
+                                brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
+                            ),
+                        )
+                    }
+                    // Gold capsule, and gated on isProActive so an expired subscription
+                    // drops the badge (iOS ProfileTab header).
+                    if (isProActive) {
+                        Text(
+                            "PRO", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            letterSpacing = 0.6.sp,
+                            modifier = Modifier.clip(RoundedCornerShape(50))
+                                .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+
+                // Personalization: featured title, favorite-mode chip, bio (left-aligned).
+                ProfilePersonalizationRow(profile, start = true)
+
+                // Level-tier pill + XP bar with "N XP to next · since Mon YYYY".
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(tier.bg)
+                            .border(1.5.dp, tier.border, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(Icons.Filled.Star, null, tint = tier.color, modifier = Modifier.size(12.dp))
+                        Text("Lvl $level", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = tier.color, maxLines = 1)
+                        Text("·", fontSize = 11.sp, color = tier.color.copy(alpha = 0.7f))
+                        Text(tier.label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = tier.color, maxLines = 1)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(WTheme.border)) {
+                            Box(
+                                Modifier.fillMaxWidth(levelProgress.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp))
+                                    .background(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))),
+                            )
+                        }
+                        Text(
+                            "$xpToNext XP to next${if (since != null) " · since $since" else ""}",
+                            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (ProfileAccent.isCustom(profile?.accentColor)) {
-                Text(profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(profile?.accentColor))
-            } else {
-                Text(
-                    profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black,
-                    style = androidx.compose.ui.text.TextStyle(
-                        fontFamily = com.wordocious.app.ui.theme.Nunito,
-                        brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
-                    ),
-                )
-            }
-            // Gold capsule, and gated on isProActive so an expired subscription
-            // drops the badge (iOS ProfileTab header).
-            if (isProActive) {
-                Text(
-                    "PRO", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    letterSpacing = 0.6.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(50))
-                        .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                )
-            }
-        }
-
-        ProfilePersonalizationRow(profile)
-
-        // Level-tier pill
-        Row(
-            modifier = Modifier.clip(RoundedCornerShape(50)).background(tier.bg)
-                .border(1.5.dp, tier.border, RoundedCornerShape(50)).padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            Icon(Icons.Filled.Star, null, tint = tier.color, modifier = Modifier.size(13.dp))
-            Text("Level $level", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tier.color)
-            Text("·", fontSize = 12.sp, color = tier.color.copy(alpha = 0.7f))
-            Text(tier.label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tier.color)
-        }
-
-        // XP bar + "{n} XP to next"
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.width(160.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(WTheme.border)) {
-                Box(
-                    Modifier.fillMaxWidth(levelProgress.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))),
-                )
-            }
-            Text("$xpToNext XP to next", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(top = 2.dp))
-        }
-        memberSince(profile?.createdAt)?.let {
-            Text("Member since $it", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        }
-
-        // Edit profile + Share — pills (web EditProfileButton + Share).
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        // One wrapping row of actions (web `flex flex-wrap gap-2`): Edit · Share ·
+        // Private · Go Pro · Simulate Pro. Social links: the own-profile model
+        // carries none on Android yet (EditProfileScreen fetches them ad hoc).
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
                     .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
@@ -708,15 +921,11 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                     Text("Private", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
                 }
             }
-        }
-
-        // Go Pro (non-Pro) + Simulate/Disable Pro (admin) — side by side (web `flex gap-2`).
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!isProActive) {
                 Box(
                     Modifier.clip(RoundedCornerShape(8.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                        .clickableNoRipple(onGoPro).padding(horizontal = 16.dp, vertical = 6.dp),
+                        .clickableNoRipple(onGoPro).padding(horizontal = 16.dp, vertical = 7.dp),
                 ) { Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
             }
             // DEV-ONLY (web parity): is_admin-gated Simulate/Disable Pro — flips is_pro.
@@ -740,74 +949,9 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
     }
 }
 
-// ── B. Today's Dailies ────────────────────────────────────────────────────────
-private val MODE_GLYPH = mapOf("QUORDLE" to "IV", "OCTORDLE" to "VIII", "DUEL_6" to "6", "DUEL_7" to "7")
-
-@Composable
-private fun TodaysDailies(today: Map<String, DailyCompletionsService.Completion>, onPlayDaily: (GameMode) -> Unit = {}) {
-    val completed = DAILY_MODES.count { today.containsKey(it) }
-    val wins = DAILY_MODES.count { today[it]?.completed == true }
-    val total = DAILY_MODES.size
-    val allDone = completed >= total
-    val flawless = allDone && wins == total
-
-    val cardBg = when {
-        flawless -> Brush.linearGradient(listOf(Color(0xFFFEF3C7), Color(0xFFFDE68A)))
-        allDone -> Brush.linearGradient(listOf(Color(0xFFF5F3FF), Color(0xFFFCE7F3)))
-        else -> Brush.linearGradient(listOf(WTheme.surface, WTheme.surface))
-    }
-    val cardBorder = if (flawless) Color(0xFFF59E0B) else if (allDone) Color(0xFFC4B5FD) else WTheme.border
-
-    if (!allDone) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("TODAY'S DAILIES", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
-            Text("$completed/$total", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
-        }
-    }
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(cardBg)
-            .border(1.5.dp, cardBorder, RoundedCornerShape(16.dp)).padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (allDone) {
-            // Flanking trophy/sparkle glyphs + gradient banner text (iOS ProfileTab).
-            val bannerIcon = if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome
-            val iconSize = if (flawless) 18.dp else 15.dp
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(bannerIcon, null, tint = if (flawless) Color(0xFFB45309) else Color(0xFF7C3AED), modifier = Modifier.size(iconSize))
-                Text(
-                    if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
-                    fontSize = 16.sp, fontWeight = FontWeight.Black,
-                    style = androidx.compose.ui.text.TextStyle(
-                        fontFamily = com.wordocious.app.ui.theme.Nunito,
-                        brush = Brush.linearGradient(
-                            if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309))
-                            else listOf(Color(0xFFA78BFA), Color(0xFFEC4899)),
-                        ),
-                    ),
-                )
-                Icon(bannerIcon, null, tint = if (flawless) Color(0xFFB45309) else Color(0xFFEC4899), modifier = Modifier.size(iconSize))
-            }
-        }
-        listOf(DAILY_MODES.take(5), DAILY_MODES.drop(5)).forEach { rowModes ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rowModes.forEach { id -> DailyBadge(id, today[id], onPlayDaily) }
-            }
-        }
-        if (allDone) {
-            if (flawless) {
-                // §244: streak-aware footer + the brag-card share button.
-                FlawlessBannerFooter(total)
-            } else {
-                Text(
-                    "All $total dailies completed · +200 XP earned",
-                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9),
-                )
-            }
-        }
-    }
-}
-
+// (The old Today's Dailies card is TodayCard.kt now — the eight sweep tiles in
+// one row, the Sweep/Flawless banner, the day pills and the streak/best-moment
+// row. The §244 footer below is passed into it on a Flawless day.)
 /** §244 (founder: "no way of easily identifying that or even show it off"):
  *  the flawless banner's footer — streak-aware copy plus the brag-card share
  *  button. Self-contained fetch (dailySweepStats). */
@@ -853,31 +997,7 @@ private fun FlawlessBannerFooter(total: Int) {
     }
 }
 
-@Composable
-private fun DailyBadge(modeId: String, completion: DailyCompletionsService.Completion?, onPlayDaily: (GameMode) -> Unit = {}) {
-    val played = completion != null
-    val won = completion?.completed == true
-    val mode = runCatching { GameMode.valueOf(modeId) }.getOrNull()
-    val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
-    val tileBg = if (!played) WTheme.bg else if (won) Color(0xFF7C3AED) else Color(0xFFDC2626)
-    val tileBorder = if (!played) WTheme.border else tileBg
-
-    // Web parity: each badge is a Link to the mode's daily game — tap opens the
-    // daily (completed-puzzle screen if played, fresh puzzle if not).
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(44.dp).then(if (mode != null) Modifier.clickableNoRipple { onPlayDaily(mode) } else Modifier),
-    ) {
-        Box(
-            Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(tileBg).border(1.5.dp, tileBorder, RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (played) Text(if (won) "W" else "L", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
-            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, accent, box = 36.dp) }
-        }
-        Text(modeLabel(modeId), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (played) WTheme.text else WTheme.textMuted, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-    }
-}
+// (The sweep tile — the old DailyBadge — now lives in TodayCard.kt as SweepTile.)
 
 // ── Recent match row (web parity: icon box + Solo/VS pill + guesses·time + Win/Loss + date) ──
 @Composable
@@ -1046,12 +1166,14 @@ private fun profileInsights(
     else if (weekTotal in 1..4) out.add("Only $weekTotal game${if (weekTotal == 1) "" else "s"} this week — warm up with a daily.")
     val xpToNext = 1000 - ((profile?.xp ?: 0) % 1000)
     if (xpToNext <= 300) out.add("Just $xpToNext XP away from Level ${(profile?.level ?: 1) + 1}.")
+    // Sweep cells only — a More Games daily on the books is not a sweep mode.
     val total = DAILY_MODES.size
-    if (todayDailies.size == total) {
+    val sweepToday = DAILY_MODES.count { todayDailies.containsKey(it) }
+    if (sweepToday == total) {
         val allWon = DAILY_MODES.all { todayDailies[it]?.completed == true }
         out.add(if (allWon) "Flawless Victory — all $total dailies won today." else "All $total dailies done today. Legendary.")
-    } else if (todayDailies.size >= 3) {
-        out.add("${todayDailies.size}/$total dailies complete today — keep going.")
+    } else if (sweepToday >= 3) {
+        out.add("$sweepToday/$total dailies complete today — keep going.")
     }
     return out.take(2)
 }
@@ -1181,6 +1303,8 @@ private fun SectionLabel(text: String) {
 private fun GuessDistributionCard(
     buckets: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
     noun: com.wordocious.app.data.ModeStats.Noun = com.wordocious.app.data.ModeStats.Noun("guess", "guesses"),
+    /** A right-aligned scope note ("word games" on the All-time page). */
+    hint: String? = null,
 ) {
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
     val totalWins = buckets.sumOf { it.count }
@@ -1190,7 +1314,10 @@ private fun GuessDistributionCard(
     // Tap a row -> "N guesses · X wins · Y% of wins" detail (iOS parity).
     var selected by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionLabel("${noun.one.uppercase()} DISTRIBUTION")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            SectionLabel("${noun.one.uppercase()} DISTRIBUTION")
+            if (hint != null) Text(hint, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
@@ -1491,37 +1618,8 @@ private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.a
     }
 }
 
-// ── Solo/VS toggle + VS RECORD (web profile/page.tsx §D) ─────────────────────────
-@Composable
-private fun SoloVsToggle(active: String, onSelect: (String) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("solo" to "Solo", "vs" to "VS", "vs_cpu" to "VS CPU").forEach { (key, label) ->
-            val isActive = active == key
-            val accent = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted
-            Row(
-                Modifier.clip(RoundedCornerShape(12.dp))
-                    .background(if (isActive) WTheme.surface else WTheme.surfaceHover)
-                    .border(1.5.dp, if (isActive) Color(0xFF7C3AED) else WTheme.border, RoundedCornerShape(12.dp))
-                    .pressScale { onSelect(key) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                when (key) {
-                    "solo" -> Icon(Icons.Filled.Person, null, tint = accent, modifier = Modifier.size(14.dp))
-                    "vs" -> Icon(
-                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
-                        tint = accent, modifier = Modifier.size(14.dp),
-                    )
-                    else -> Icon(Icons.Filled.Memory, null, tint = accent, modifier = Modifier.size(14.dp))
-                }
-                Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accent)
-            }
-        }
-    }
-}
-
-/** VS RECORD summary card — W–L, win rate, total VS games (all modes). */
+// ── VS RECORD / CPU RECORD (the VS page) ──────────────────────────────────────
+/** vs CPU record — unranked practice: no leaderboard, no XP, no streak. */
 @Composable
 private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
     val cpuStats = stats.filter { it.playType == "vs_cpu" }
@@ -1557,7 +1655,7 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
 }
 
 @Composable
-private fun VsRecordCard(stats: List<ProfileService.UserStat>) {
+private fun VsRecordCard(stats: List<ProfileService.UserStat>, vsDailyWon: Boolean? = null) {
     val vsStats = stats.filter { it.playType == "vs" }
     val wins = vsStats.sumOf { it.wins }
     val losses = vsStats.sumOf { it.losses }
@@ -1582,6 +1680,12 @@ private fun VsRecordCard(stats: List<ProfileService.UserStat>) {
         Column(Modifier.weight(1f)) {
             Text("VS RECORD", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF6D28D9))
             Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
+            // D2: today's daily VS outcome (DailyResultsService.dailyVsResult).
+            Text(
+                "Today: ${when (vsDailyWon) { null -> "not played"; true -> "won"; false -> "lost" }}",
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
+                color = when (vsDailyWon) { null -> WTheme.textMuted; true -> WTheme.correct; false -> RAIL_LOSS_RED },
+            )
         }
         Column(horizontalAlignment = Alignment.End) {
             Text("$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
@@ -1593,47 +1697,9 @@ private fun VsRecordCard(stats: List<ProfileService.UserStat>) {
     }
 }
 
-// ── Per-mode picker ─────────────────────────────────────────────────────────────
-/** Horizontal "All" + per-mode chip row driving the dashboard filter (iOS ProfileModePicker). */
-@Composable
-private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>, onSelect: (String?) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ModeChip(label = "All", modeId = null, accent = WTheme.primary, count = 0, active = selected == null) { onSelect(null) }
-        PICKER_MODES.forEach { m ->
-            val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
-            ModeChip(
-                label = shortModeLabel(m), modeId = m,
-                accent = accent, count = gamesPerMode[m] ?: 0, active = selected == m,
-            ) { onSelect(if (selected == m) null else m) }
-        }
-    }
-}
-
-@Composable
-private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, active: Boolean, onClick: () -> Unit) {
-    val iconTint = if (active) accent else WTheme.textMuted
-    // Ultra-compact chips matching web density — minimal padding/spacing, smaller icon/text
-    Column(
-        Modifier.width(56.dp).clip(RoundedCornerShape(12.dp))
-            .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
-            .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
-            .pressScale { onClick() }.padding(horizontal = 6.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-    ) {
-        Box(Modifier.size(24.dp).clip(RoundedCornerShape(6.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
-            if (modeId == null) Icon(Icons.Filled.BarChart, null, tint = iconTint, modifier = Modifier.size(12.dp))
-            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, box = 24.dp) }
-        }
-        Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        // Always reserve the count line (blank when 0) so chips are identical height
-        // whether or not a mode has games played — matches web's even row.
-        Text(if (count > 0) "$count" else " ", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
-    }
-}
+// (The old 19-chip ProfileModePicker and the page-level Solo/VS/VS-CPU toggle
+// are gone — the StatsRail, the per-game Solo|VS toggle and the VS page's
+// Live|CPU toggle replace them. D2, 2026-09-26.)
 
 // ── Solve-time line chart ────────────────────────────────────────────────────────
 @Composable
@@ -1990,13 +2056,4 @@ private fun modeLabel(mode: String) = when (mode) {
     "DUEL_6" -> "Six"; "DUEL_7" -> "Seven"
     "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "ProperNoundle"
     else -> com.wordocious.app.ModeGen.byDbKey(mode)?.title ?: mode
-}
-
-/** Short titles for the mode-picker chips — matches web PROFILE_MODES.shortTitle. */
-private fun shortModeLabel(mode: String) = when (mode) {
-    "DUEL" -> "Classic"; "QUORDLE" -> "Quad"; "OCTORDLE" -> "Octo"
-    "SEQUENCE" -> "Succ"; "RESCUE" -> "Deliv"
-    "DUEL_6" -> "Six"; "DUEL_7" -> "Seven"
-    "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "Proper"
-    else -> com.wordocious.app.ModeGen.byDbKey(mode)?.shortTitle ?: mode
 }
