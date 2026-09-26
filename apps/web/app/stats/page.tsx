@@ -47,7 +47,7 @@ import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
-import { RecordsRowLink } from '@/components/records/records-row-link';
+import { useYourRecords, NextUpCard, SweepRecordsCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { GameRail, buildRailItems, RAIL_TODAY, RAIL_VS, RAIL_ALL } from '@/components/stats/game-rail';
 import { TodayCard } from '@/components/stats/today-card';
@@ -248,6 +248,8 @@ export default function StatsPage() {
   const weekdayForm = tabData?.weekdayForm ?? [];
 
   const [editOpen, setEditOpen] = useState(false);
+  // Your records (the old Records → You view), folded in: D2 step 3.
+  const yours = useYourRecords(profile?.id, stats);
   const [showAllMedals, setShowAllMedals] = useState(false);
   const [showAllRecent, setShowAllRecent] = useState(false);
 
@@ -257,7 +259,7 @@ export default function StatsPage() {
   const railItems = useMemo(() => buildRailItems(SWEEP_MODES, visibleMore, todayDailies, vsDailyWon), [visibleMore, todayDailies, vsDailyWon]);
 
   // Swipe on the page moves one chip along the rail (founder: no 19-page
-  // swipe — but a swipe between neighbours is the natural gesture).
+  // swipe — but a swipe between neighbors is the natural gesture).
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { const t = e.touches[0]; touchStart.current = { x: t.clientX, y: t.clientY }; };
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -591,6 +593,15 @@ export default function StatsPage() {
                   </span>
                   <span className="text-[11px] font-black shrink-0" style={{ color: accentColor }}>{today ? 'Open →' : 'Play →'}</span>
                 </Link>
+                {/* Your records in this game (the old Records → You "bests by mode" card). */}
+                {activeTab === 'solo' && (
+                  <GameRecordsCard
+                    dbKey={selected}
+                    my={stats.find((s) => s.game_mode === selected && s.play_type === 'solo')}
+                    recordsHeld={yours.recordsHeld}
+                    chases={yours.chases}
+                  />
+                )}
                 <ModeDetailPanel
                   userId={profile.id}
                   gameMode={selected}
@@ -734,8 +745,12 @@ export default function StatsPage() {
                 isPro={isProActive}
               />
 
-              {/* D1: Records left the tab bar; its rows fold into these pages in D2 step 3. */}
-              <RecordsRowLink />
+              {/* Your records (D2 step 3): what the Records → You view used to hold. */}
+              <SectionHeader label="Your Records" accent="#d97706" />
+              <NextUpCard dailyStreak={profile.daily_login_streak ?? 0} chases={yours.chases} />
+              <SweepRecordsCard sweep={yours.sweep} sweepRankToday={yours.sweepRankToday} sweepRankAllTime={yours.sweepRankAllTime} />
+              <RecordsHeldRow recordsHeld={yours.recordsHeld} />
+              <TrophyShelf recordsHeld={yours.recordsHeld} />
 
               {/* Activity Calendar */}
               {calendar.some((d) => d.gamesPlayed > 0) && (

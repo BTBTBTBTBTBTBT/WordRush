@@ -663,6 +663,7 @@ export default function DailyPage() {
               {today && new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
             <CountdownTimer />
+            <Link href="/records" className="text-xs font-black" style={{ color: '#7c3aed' }}>All-time →</Link>
           </div>
         </div>
 

@@ -11,16 +11,13 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
-import { formatGuessStat } from '@/lib/format';
-import { fewestRecordLabel, guessRowLabel } from '@/lib/mode-stats';
+import { guessRowLabel } from '@/lib/mode-stats';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
-import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { loadFriends, getFriendIds, onFriendsChange } from '@/lib/friends-service';
-import { shareDailyLeaderboardCard, shareYesterdayPodiumCard, shareTrophyCaseCard } from '@/lib/leaderboard-share-flow';
-import { SectionHeader } from '@/components/profile/stat-kit';
+import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
 import { SweepModeDots, sweepStatsText } from '@/components/leaderboard/sweep-mode-dots';
 import {
   fetchAllTimeRecords,
@@ -32,7 +29,6 @@ import {
   getDailyPlayerCount,
   getUserDailyRank,
   getUserSweepRank,
-  getUserAllTimeSweepRank,
   getTodayLocal,
   getYesterdayLocal,
   type AllTimeRecord,
@@ -53,55 +49,10 @@ const recordsLbCache = new Map<string, {
   rank: { rank: number; totalPlayers: number } | null;
 }>();
 
-// All-Time and Your Records both need the full record list — share one
-// session-lived fetch (fresh on reload; records change rarely) instead of
-// re-querying per sub-tab visit.
-let allTimeRecordsPromise: Promise<AllTimeRecord[]> | null = null;
-function fetchAllTimeRecordsShared(): Promise<AllTimeRecord[]> {
-  if (!allTimeRecordsPromise) {
-    allTimeRecordsPromise = fetchAllTimeRecords().catch((e) => {
-      allTimeRecordsPromise = null;  // don't memoize a failure
-      throw e;
-    });
-  }
-  return allTimeRecordsPromise;
-}
-
-const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string }> = {
-  fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
-  fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => `${v} guesses` },
-  most_games_played: { label: 'Most Games Played', icon: Zap, format: (v) => `${v} games` },
-  longest_streak: { label: 'Longest Streak', icon: Flame, format: (v) => `${v} wins` },
-  most_gold_medals: { label: 'Most Gold Medals', icon: Crown, format: (v) => `${v} golds` },
-  highest_level: { label: 'Highest Level', icon: Trophy, format: (v) => `Level ${v}` },
-  most_daily_completions: { label: 'Most Dailies Completed', icon: Target, format: (v) => `${v} dailies` },
-};
-
-// More Games §11: "fewest guesses" reads through the mode's guess semantics —
-// Sudocious "0 mistakes", Letter Ladder "Par" — and the label follows.
-const recordValue = (rt: string, v: number, gameMode?: string | null): string => {
-  const meta = gameMode ? MODE_BY_DBKEY[gameMode] : undefined;
-  if (rt === 'fewest_guesses' && meta && meta.guessSemantics !== 'guesses') {
-    return formatGuessStat(meta.guessSemantics, meta.guessBase, v);
-  }
-  return RECORD_LABELS[rt]?.format(v) ?? String(v);
-};
-const recordLabel = (rt: string, gameMode?: string | null): string => {
-  const meta = gameMode ? MODE_BY_DBKEY[gameMode] : undefined;
-  if (rt !== 'fewest_guesses' || !meta) return RECORD_LABELS[rt]?.label ?? rt;
-  // "Fewest Mistakes" / "Best vs Par" / "Fewest Misses" / "Best Rank" — the shared table.
-  return fewestRecordLabel(meta.guessSemantics);
-};
-
-const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played', 'longest_streak'];
-const GLOBAL_RECORD_TYPES = ['longest_streak', 'highest_level', 'most_gold_medals', 'most_daily_completions'];
-
-function formatTime(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
-}
+import {
+  fetchAllTimeRecordsShared, RECORD_LABELS, recordValue, recordLabel,
+  PER_MODE_RECORD_TYPES, GLOBAL_RECORD_TYPES, formatRecordTime as formatTime,
+} from '@/lib/records-ui';
 
 function RankIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
@@ -958,368 +909,11 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   YOUR RECORDS VIEW
-   ═══════════════════════════════════════════════════════ */
-type UserStatRow = { game_mode: string; play_type: string; wins: number; losses: number; total_games: number; best_score: number | null; fastest_time: number | null };
-
-// Streak shields are granted every 7 days (/api/shields/grant-milestone
-// MILESTONE_EVERY=7) — the "next shield" card counts toward the next multiple
-// of 7, NOT the [7, 30, 100] STREAK MEDAL milestones (lib/daily-service.ts).
-const SHIELD_EVERY = 7;
-
-function MyStatCell({ icon: Icon, value, label, color, dim }: { icon: typeof Trophy; value: string; label: string; color: string; dim?: boolean }) {
-  return (
-    <div className="flex items-start gap-2.5 p-2">
-      <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: dim ? 'var(--color-text-muted)' : color }} />
-      <div className="min-w-0 flex-1">
-        <div className="font-black text-base leading-tight" style={{ color: dim ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{value}</div>
-        <div className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{label}</div>
-      </div>
-    </div>
-  );
-}
-
-function YourRecordsView({ userId }: { userId?: string }) {
-  const { profile } = useAuth();
-  const [stats, setStats] = useState<UserStatRow[]>([]);
-  const [sweep, setSweep] = useState<DailySweepStats | null>(null);
-  const [sweepRankToday, setSweepRankToday] = useState<{ rank: number; totalPlayers: number } | null>(null);
-  const [sweepRankAllTime, setSweepRankAllTime] = useState<{ rank: number; totalPlayers: number } | null>(null);
-  const [recordsHeld, setRecordsHeld] = useState<AllTimeRecord[]>([]);
-  const [chases, setChases] = useState<Array<{ label: string; gap: string; pct: number }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedMode, setSelectedMode] = useState('DUEL');
-  // §245: one trophy-case card render/upload at a time.
-  const [sharingShelf, setSharingShelf] = useState(false);
-
-  useEffect(() => {
-    if (!userId) { setLoading(false); return; }
-    let active = true;
-    (async () => {
-      const [statsRes, sweepRes, recs, sweepRankTodayRes, sweepRankAllTimeRes] = await Promise.all([
-        supabase.from('user_stats').select('game_mode, play_type, wins, losses, total_games, best_score, fastest_time').eq('user_id', userId),
-        fetchDailySweepStats(userId),
-        fetchAllTimeRecordsShared(),
-        getUserSweepRank(userId),
-        getUserAllTimeSweepRank(userId),
-      ]);
-      if (!active) return;
-      const rows = (statsRes.data || []) as UserStatRow[];
-      setStats(rows);
-      setSweep(sweepRes);
-      setSweepRankToday(sweepRankTodayRes);
-      setSweepRankAllTime(sweepRankAllTimeRes);
-      // One shelf row per (record type, mode): all_time_records keeps a
-      // separate row per play_type ('solo' and 'vs'), and listing both made
-      // e.g. "Six · Most Games Played" appear twice — the 54-game solo record
-      // next to a 1-game VS record. Prefer the solo row, same rule as the
-      // All-Time per-mode grid. Also drives the Global Records count, so held
-      // solo+vs pairs no longer double-count.
-      const heldByKey = new Map<string, AllTimeRecord>();
-      for (const r of recs) {
-        if (r.holder_id !== userId) continue;
-        const key = `${r.record_type}|${r.game_mode ?? 'global'}`;
-        const existing = heldByKey.get(key);
-        if (!existing || (existing.play_type !== 'solo' && r.play_type === 'solo')) heldByKey.set(key, r);
-      }
-      setRecordsHeld([...heldByKey.values()]);
-
-      // Record Chase: EVERY beatable all-time record with your gap, sorted by
-      // how close you are (relative gap). Lower-is-better types only.
-      const all: Array<{ label: string; gap: string; pct: number; rel: number }> = [];
-      for (const r of recs) {
-        if (r.holder_id === userId || !r.game_mode || r.play_type !== 'solo') continue;
-        const mine = rows.find((s) => s.game_mode === r.game_mode && s.play_type === 'solo');
-        if (!mine) continue;
-        if (r.record_type === 'fastest_win' && mine.fastest_time && mine.fastest_time > r.record_value) {
-          const gap = mine.fastest_time - r.record_value;
-          all.push({ label: `${getMode(r.game_mode).title} fastest win`, gap: `${gap}s away`, pct: Math.round((r.record_value / mine.fastest_time) * 100), rel: gap / Math.max(1, r.record_value) });
-        } else if (r.record_type === 'fewest_guesses' && mine.best_score && mine.best_score > r.record_value) {
-          const gap = mine.best_score - r.record_value;
-          all.push({ label: `${getMode(r.game_mode).title} ${recordLabel('fewest_guesses', r.game_mode).toLowerCase()}`, gap: `${gap} away`, pct: Math.round((r.record_value / mine.best_score) * 100), rel: gap / Math.max(1, r.record_value) });
-        }
-      }
-      setChases(all.sort((a, b) => a.rel - b.rel).slice(0, 3).map(({ rel: _rel, ...rest }) => rest));
-      setLoading(false);
-    })();
-    return () => { active = false; };
-  }, [userId]);
-
-  if (!userId) {
-    return (
-      <div className="animate-fade-in-up p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-        <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
-        <p className="text-xs font-bold">Sign in to see your personal records.</p>
-      </div>
-    );
-  }
-  if (loading) return <div className="animate-fade-in-up"><AllTimeSkeleton /></div>;
-
-  const dailyStreak = profile?.daily_login_streak ?? 0;
-  const nextShield = (Math.floor(dailyStreak / SHIELD_EVERY) + 1) * SHIELD_EVERY;
-  const mode = getMode(selectedMode);
-  const color = mode.accentColor;
-  const Icon = mode.icon;
-  const isSweep = selectedMode === 'SWEEP';
-  const my = stats.find((s) => s.game_mode === selectedMode && s.play_type === 'solo');
-
-  const fmtRecord = (rt: string, v: number | null | undefined) =>
-    v == null || v === 0 ? '—' : recordValue(rt, v, selectedMode);
-
-  return (
-    <div className="animate-fade-in-up space-y-5">
-      {/* Milestone progress */}
-      {(nextShield > 0 || chases.length > 0) && (
-        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899)' }} />
-          <div className="px-4 pt-3 pb-4">
-            <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Next Up</div>
-            <div className="mb-3">
-              <div className="flex items-center justify-between text-[11px] font-extrabold mb-1">
-                <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />{nextShield}-day streak shield</span>
-                <span style={{ color: 'var(--color-text-muted)' }}>{dailyStreak}/{nextShield}</span>
-              </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min(100, (dailyStreak / nextShield) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)' }} />
-              </div>
-            </div>
-            {chases.length > 0 && (
-              <div className="space-y-2">
-                {chases.map((c) => (
-                  <div key={c.label}>
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                      <TrendingUp className="w-3.5 h-3.5 shrink-0" style={{ color: '#7c3aed' }} />
-                      <span className="flex-1 truncate">You&apos;re <b style={{ color: 'var(--color-text)' }}>{c.gap}</b> from the {c.label} record</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, c.pct)}%`, background: 'linear-gradient(90deg, #a78bfa, #7c3aed)' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Personal bests by mode (Sweep tile shows the daily-sweep window instead) */}
-      <div>
-        <SectionHeader label="Your Bests By Mode" accent="#7c3aed" />
-        <div className="mb-3">
-          <ModePicker grid includeSweep showAll={false} selectedMode={selectedMode} onSelectMode={(m) => setSelectedMode(m || 'DUEL')} />
-        </div>
-        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-          <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
-          <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
-              {mode.romanNumeral ? <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span> : Icon ? <Icon className="w-4 h-4" style={{ color }} /> : null}
-            </div>
-            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweeps' : mode.title}</div>
-          </div>
-          {isSweep ? (
-            // Sweep window — populates when the Sweep tile is pushed: sweep stats
-            // (count / flawless / current streak / best time) plus the user's
-            // today + all-time sweep rank chips.
-            sweep && (sweep.sweepCount > 0 || sweep.flawlessCount > 0) ? (
-              <div className="px-4 pb-3">
-                <div className="grid grid-cols-2 gap-1">
-                  <MyStatCell icon={Sparkles} value={`${sweep.sweepCount}`} label="Daily Sweeps" color="#7c3aed" />
-                  <MyStatCell icon={Trophy} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
-                  <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
-                  <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
-                </div>
-                {/* Sweep leaderboard standing — today's daily board + all-time.
-                    §244: the flawless-streak notation rides the same row. */}
-                {(sweepRankToday || sweepRankAllTime || sweep.currentFlawlessStreak > 0) && (
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
-                    {sweepRankToday && (
-                      <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                        Today: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankToday.rank}</span> of {sweepRankToday.totalPlayers}
-                      </span>
-                    )}
-                    {sweepRankAllTime && (
-                      <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                        All-Time: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankAllTime.rank}</span> of {sweepRankAllTime.totalPlayers}
-                      </span>
-                    )}
-                    {sweep.currentFlawlessStreak > 0 && (
-                      <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                        🏆 Flawless: <span className="font-black" style={{ color: '#d97706' }}>×{sweep.currentFlawlessStreak}</span>
-                        {sweep.bestFlawlessStreak > sweep.currentFlawlessStreak ? ` · best ${sweep.bestFlawlessStreak}` : ''}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="py-5 text-center">
-                <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
-                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
-              </div>
-            )
-          ) : (
-            <div className="px-4 pb-3 grid grid-cols-2 gap-1">
-              <MyStatCell icon={Clock} value={fmtRecord('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
-              <MyStatCell icon={Target} value={fmtRecord('fewest_guesses', my?.best_score)} label={recordLabel('fewest_guesses', selectedMode)} color={color} dim={!my?.best_score} />
-              <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
-              <MyStatCell icon={Trophy} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Medals + global records held */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/profile" className="overflow-hidden block" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-          <div className="px-4 py-3">
-            <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Medals</div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#d97706' }}><Crown className="w-3.5 h-3.5" />{profile?.gold_medals ?? 0}</span>
-              <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#9ca3af' }}><Medal className="w-3.5 h-3.5" />{profile?.silver_medals ?? 0}</span>
-              <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#b45309' }}><Medal className="w-3.5 h-3.5" />{profile?.bronze_medals ?? 0}</span>
-            </div>
-            <div className="text-[10px] font-bold mt-1.5" style={{ color: '#7c3aed' }}>View all →</div>
-          </div>
-        </Link>
-        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-          <div className="px-4 py-3">
-            <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Global Records</div>
-            <div className="flex items-center gap-1.5 font-black text-2xl" style={{ color: recordsHeld.length ? '#d97706' : 'var(--color-text-muted)' }}>
-              <Star className="w-5 h-5" />{recordsHeld.length}
-            </div>
-            <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>all-time record{recordsHeld.length !== 1 ? 's' : ''} held</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Trophy shelf (§245, founder: "it is an eyesore as it sits today") —
-          marquee jewels up top (your most impressive records, auto-picked),
-          then type-grouped shelves of mode-accented glyph tiles. The repeated
-          "· Fastest Win" label becomes the shelf header, said once. */}
-      {recordsHeld.length > 0 && (() => {
-        const bestOf = (type: string) => recordsHeld
-          .filter((r) => r.record_type === type && r.game_mode)
-          .sort((a, b) => a.record_value - b.record_value)[0];
-        const marquee = [bestOf('fastest_win'), bestOf('fewest_guesses')].filter(Boolean) as AllTimeRecord[];
-        const marqueeKeys = new Set(marquee.map((r) => `${r.record_type}|${r.game_mode}`));
-        const shelfOrder = ['fastest_win', 'fewest_guesses', 'longest_streak', 'most_games_played', 'most_gold_medals', 'highest_level', 'most_daily_completions'];
-        const grouped = shelfOrder
-          .map((t) => ({ type: t, rows: recordsHeld.filter((r) => r.record_type === t && !marqueeKeys.has(`${r.record_type}|${r.game_mode}`)) }))
-          .filter((g) => g.rows.length > 0);
-        const heldSince = (iso?: string) => {
-          if (!iso) return null;
-          const t = Date.parse(iso);
-          if (!Number.isFinite(t)) return null;
-          return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        };
-        const glyph = (gameMode: string | null, boxPx: number) => {
-          if (!gameMode) return <Star style={{ width: boxPx / 2, height: boxPx / 2, color: '#d97706' }} />;
-          const m = getMode(gameMode);
-          const MIcon = m.icon;
-          return m.romanNumeral
-            ? <span className="font-black leading-none" style={{ color: m.accentColor, fontSize: boxPx * 0.34 }}>{m.romanNumeral}</span>
-            : MIcon ? <MIcon style={{ width: boxPx / 2, height: boxPx / 2, color: m.accentColor }} /> : null;
-        };
-        const accentOf = (gameMode: string | null) => (gameMode ? getMode(gameMode).accentColor : '#d97706');
-        const shareShelf = async () => {
-          if (sharingShelf) return;
-          setSharingShelf(true);
-          try {
-            await shareTrophyCaseCard({ records: recordsHeld, username: profile?.username });
-          } finally { setSharingShelf(false); }
-        };
-        return (
-          <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
-            <div className="px-4 pt-2 pb-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Your Trophy Shelf</div>
-                <button
-                  onClick={shareShelf}
-                  disabled={sharingShelf}
-                  aria-label="Share trophy shelf"
-                  className="p-1 -my-1 active:scale-95 transition-transform"
-                  style={{ color: 'var(--color-text-muted)', opacity: sharingShelf ? 0.4 : 1 }}
-                >
-                  <Share className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              {/* Marquee jewels — the records worth a plinth of their own. */}
-              {marquee.length > 0 && (
-                <div className="space-y-1.5 mb-2">
-                  {marquee.map((r) => {
-                    const cfg = RECORD_LABELS[r.record_type];
-                    const since = heldSince(r.achieved_at);
-                    const accent = accentOf(r.game_mode);
-                    return (
-                      <div key={`mq-${r.record_type}-${r.game_mode}`} className="flex items-center gap-3 p-3"
-                        style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: '1px solid #fde68a', borderRadius: '12px' }}>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${accent}18` }}>
-                          {glyph(r.game_mode, 40)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-black uppercase tracking-wider truncate" style={{ color: '#92400e' }}>
-                            {r.game_mode ? getMode(r.game_mode).title : 'Global'} · {cfg?.label ?? r.record_type}
-                          </div>
-                          <div className="text-2xl font-black leading-tight" style={{ color: '#d97706' }}>
-                            {cfg ? recordValue(r.record_type, r.record_value, r.game_mode) : r.record_value}
-                          </div>
-                        </div>
-                        {since && (
-                          <div className="text-[10px] font-bold shrink-0 text-right" style={{ color: '#b45309' }}>
-                            held since<br />{since}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {/* Type-grouped shelves — mode-accented tiles under one label. */}
-              <div className="space-y-2">
-                {grouped.map((g) => {
-                  const cfg = RECORD_LABELS[g.type];
-                  const GIcon = cfg?.icon ?? Star;
-                  return (
-                    <div key={g.type}>
-                      <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                        <GIcon className="w-3 h-3" style={{ color: '#d97706' }} />
-                        {cfg?.label ?? g.type}
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 pb-1.5" style={{ borderBottom: '1px solid #fde68a55' }}>
-                        {g.rows.map((r) => {
-                          const accent = accentOf(r.game_mode);
-                          return (
-                            <div key={`${r.record_type}-${r.game_mode ?? 'g'}-${r.play_type ?? 'g'}`}
-                              className="flex items-center gap-1.5 pl-1.5 pr-2 py-1" style={{ background: 'var(--color-bg)', borderRadius: '9px' }}>
-                              <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ background: `${accent}18` }}>
-                                {glyph(r.game_mode, 20)}
-                              </div>
-                              <span className="text-[11px] font-black" style={{ color: accent }}>
-                                {cfg ? recordValue(r.record_type, r.record_value, r.game_mode) : r.record_value}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════ */
 export default function RecordsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'daily' | 'alltime' | 'you'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
 
   // Load the signed-in user's block list (session-cached) so blocked users'
   // rows can be filtered out of the leaderboard renders below. The state bump
@@ -1345,13 +939,13 @@ export default function RecordsPage() {
             RECORDS
           </h1>
           <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            The best of the best across Wordocious
+            The best of the best across Wordocious · <Link href="/daily" style={{ color: '#7c3aed' }}>today&apos;s boards</Link>
           </p>
         </div>
 
         {/* Daily / All-Time / You Toggle */}
         <div className="flex gap-2 mb-5">
-          {([['daily', 'Daily'], ['alltime', 'All-Time'], ['you', 'You']] as const).map(([key, label]) => (
+          {([['daily', 'Daily'], ['alltime', 'All-Time']] as const).map(([key, label]) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
@@ -1370,11 +964,14 @@ export default function RecordsPage() {
         {/* Tab Content */}
         {activeTab === 'daily' ? (
           <DailyRecordsView key="daily" userId={user?.id} />
-        ) : activeTab === 'alltime' ? (
-          <AllTimeRecordsView key="alltime" userId={user?.id} />
         ) : (
-          <YourRecordsView key="you" userId={user?.id} />
+          <AllTimeRecordsView key="alltime" userId={user?.id} />
         )}
+
+        {/* D2 step 3 (2026-09-26): your own records live on the Stats tab now. */}
+        <Link href="/stats?view=all-time" className="block text-center text-[11px] font-black mt-6" style={{ color: '#7c3aed' }}>
+          Your personal records → Stats
+        </Link>
       </div>
 
       <BottomNav />
