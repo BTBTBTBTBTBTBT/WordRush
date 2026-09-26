@@ -18,6 +18,9 @@ BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION:' "$IOS/project.yml" | sed -E 's/.*"(
 MARKETING="$(grep -m1 'MARKETING_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9.]+)".*/\1/')"
 echo "== BUILD $MARKETING ($BUILD) =="
 cd "$IOS"
+# Regenerate the Xcode project from project.yml EVERY run: 2.1 (192) was refused by Apple
+# on 2026-09-26 because the .yml had been bumped but the .xcodeproj still said "2".
+xcodegen generate --quiet || xcodegen generate
 rm -rf build/Wordocious.xcarchive build/export build/resign
 
 # §256: install the LLC profiles fresh from App Store Connect, by NAME, every
