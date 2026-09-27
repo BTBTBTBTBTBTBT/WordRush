@@ -62,9 +62,12 @@ struct StatsRail: View {
                         }
                         .padding(.horizontal, 1)
                     }
-                    // Keep the selected chip in view as the page changes (swipe, grid pick).
+                    // Keep the selected chip in view as the page changes (swipe, grid
+                    // pick) — moving the rail the LEAST amount that reveals it. Centering
+                    // on every tap shifted the whole row under the finger (founder,
+                    // 2026-09-26: "the menus shouldn't move much when clicking through").
                     .onChange(of: selected) { key in
-                        withAnimation(Theme.animation(.easeOut(duration: 0.25))) { proxy.scrollTo(key, anchor: .center) }
+                        withAnimation(Theme.animation(.easeOut(duration: 0.25))) { proxy.scrollTo(key, anchor: nil) }
                     }
                 }
                 Button {

@@ -216,8 +216,8 @@ object DailySweepShare {
         val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
         val totals = DailyCompletionsService.Totals(t.completed, t.won, t.total, 0, t.totalTimeSeconds, t.totalScore)
         val bitmap = render(context, rows, totals, flawless, title = if (flawless) "FLAWLESS MORE GAMES" else "MORE GAMES SWEEP")
-        val text = if (flawless) "Flawless More Games on Wordocious! All ${t.total} More Games puzzles won.\nhttps://wordocious.com/?more=1"
-                   else "More Games Sweep on Wordocious! All ${t.total} More Games puzzles done.\nhttps://wordocious.com/?more=1"
+        val text = if (flawless) "Flawless More Games on Wordocious! All ${t.total} More Games puzzles won."
+                   else "More Games Sweep on Wordocious! All ${t.total} More Games puzzles done."
         val uri = runCatching {
             val dir = File(context.cacheDir, "share").apply { mkdirs() }
             val file = File(dir, "wordocious-moregames.png")
@@ -225,16 +225,23 @@ object DailySweepShare {
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         }.getOrNull()
         ShareEvents.log(if (uri != null) "image" else "text", "", "more_sweep")
-        if (uri == null) { ShareHelper.share(context, text); return }
-        runCatching {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/png"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_TEXT, text)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        if (uri == null) { ShareHelper.share(context, "$text\nhttps://wordocious.com/?more=1"); return }
+        // Same OG page as the Daily Sweep (m=MoreSweep) so a pasted link unfurls the card, not the home page.
+        CoroutineScope(Dispatchers.IO).launch {
+            val url = uploadUrl(bitmap, totals, shareMode = "MoreSweep", flawless = flawless) ?: "https://wordocious.com/?more=1"
+            val finalText = "$text\n$url"
+            withContext(Dispatchers.Main) {
+                runCatching {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_TEXT, finalText)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share your More Games").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                }.onFailure { ShareHelper.share(context, finalText) }
             }
-            context.startActivity(Intent.createChooser(intent, "Share your More Games").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-        }.onFailure { ShareHelper.share(context, text) }
+        }
     }
 
     fun share(context: Context, byMode: Map<String, DailyCompletionsService.Completion>) {
@@ -274,19 +281,22 @@ object DailySweepShare {
         }
     }
 
-    private suspend fun uploadUrl(bitmap: Bitmap, totals: DailyCompletionsService.Totals): String? = runCatching {
+    private suspend fun uploadUrl(
+        bitmap: Bitmap, totals: DailyCompletionsService.Totals,
+        shareMode: String = "DailySweep", flawless: Boolean = totals.flawless,
+    ): String? = runCatching {
         val uid = AuthService.userId?.lowercase() ?: return null
         val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val key = "$uid/DailySweep-$dateStr"
+        val key = "$uid/$shareMode-$dateStr"
         val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
         SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
         val q = linkedMapOf(
-            "m" to "DailySweep",
-            "sweep" to if (totals.flawless) "flawless" else "sweep",
+            "m" to shareMode,
+            "sweep" to if (flawless) "flawless" else "sweep",
             "won" to "${totals.won}", "tot" to "${totals.total}",
             "t" to "${totals.totalTimeSeconds}", "pts" to "${totals.totalScore}",
             "w" to "1080", "h" to "1350",
-            "v" to "${if (totals.flawless) "f" else "s"}${totals.won}-${totals.totalTimeSeconds}-${totals.totalScore}",
+            "v" to "${if (flawless) "f" else "s"}${totals.won}-${totals.totalTimeSeconds}-${totals.totalScore}",
         )
         "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${android.net.Uri.encode(it.value)}" }
     }.getOrNull()

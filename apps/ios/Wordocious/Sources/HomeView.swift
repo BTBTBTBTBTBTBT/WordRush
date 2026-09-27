@@ -354,9 +354,13 @@ struct HomeView: View {
             }
             .fullScreenCover(item: $solvedMode, onDismiss: { onGameCoverDismissed() }) { m in
                 NavigationStack {
-                    if let gm = m.mode {
-                        // Reconstruct the solved board from the matches row (works
-                        // cross-device, unlike the local-only GameScreen state).
+                    // Word engines only: reconstruct the solved board from the matches
+                    // row (works cross-device, unlike the local-only GameScreen state).
+                    // Every More Games title has a GameMode too (Stage 3), so this test
+                    // must exclude custom engines — founder, 2026-09-26: Letter Ladder,
+                    // Muddle and Hubbub were landing here and drawing empty word grids.
+                    // Each custom game restores its finished daily from its own save.
+                    if let gm = m.mode, !gm.isCustomEngine {
                         SolvedPuzzleView(mode: gm, title: m.title)
                     } else if m.id == "propernoundle" {
                         ProperNoundleView()

@@ -13,6 +13,7 @@ export const MODE_DISPLAY: Record<string, string> = {
   Seven: 'Classic Seven',
   ProperNoundle: 'ProperNoundle',
   DailySweep: 'Daily Sweep',
+  MoreSweep: 'More Games Sweep',
   Profile: 'Player Profile',
 };
 
@@ -45,6 +46,8 @@ export const MODE_ROUTE: Record<string, string> = {
   Six: '/six',
   Seven: '/seven',
   DailySweep: '/daily',
+  // The More Games sweep card (natives link it since 2026-09-26): CTA opens the sheet.
+  MoreSweep: '/?more=1',
   Profile: '/',
   // Leaderboard cards aren't playable results — the CTA sends visitors to the
   // board they were shown (VS boards live on the Records daily tab).
@@ -174,18 +177,20 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
   const dateDisp = fromPath.date ? fmtDate(fromPath.date) : undefined;
 
   // All-dailies share card has its own copy shape (X/N won · time · pts).
-  if (mode === 'DailySweep' && str(sp.won) !== undefined) {
+  if ((mode === 'DailySweep' || mode === 'MoreSweep') && str(sp.won) !== undefined) {
+    const more = mode === 'MoreSweep';
     const flawless = str(sp.sweep) === 'flawless';
     const w = Number(str(sp.won)) || 0;
-    const tot = Number(str(sp.tot)) || 9;
+    const tot = Number(str(sp.tot)) || (more ? 10 : 9);
     const t = Number(str(sp.t)) || 0;
     const pts = Number(str(sp.pts)) || 0;
-    const label = flawless ? 'Flawless Victory' : 'Daily Sweep';
+    const label = more ? (flawless ? 'Flawless More Games' : 'More Games Sweep') : (flawless ? 'Flawless Victory' : 'Daily Sweep');
     const stats = `${w}/${tot} won · ${fmtTime(t)} · ${pts.toLocaleString()} pts`;
     const title = `Wordocious ${label} — ${stats}`;
+    const what = more ? 'More Games puzzles' : 'daily puzzles';
     const description = flawless
-      ? `I won all ${tot} daily puzzles on Wordocious (${stats}). Can you go flawless? ${PLAY_HOOK}`
-      : `I completed all ${tot} daily puzzles on Wordocious (${stats}). Think you can sweep them? ${PLAY_HOOK}`;
+      ? `I won all ${tot} ${what} on Wordocious (${stats}). Can you go flawless? ${PLAY_HOOK}`
+      : `I completed all ${tot} ${what} on Wordocious (${stats}). Think you can sweep them? ${PLAY_HOOK}`;
     return { mode, modeDisp: label, won: w >= tot, stats, title, description };
   }
 

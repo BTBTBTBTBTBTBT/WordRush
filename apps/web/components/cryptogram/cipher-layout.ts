@@ -7,8 +7,11 @@
 // unit-tested, and so the board draws exactly the lines the fit measured.
 
 export const CIPHER_CELL_MAX = 64;
-export const CIPHER_CELL_MIN = 40;
-export const CIPHER_CELL_STEP = 4;
+/** Floor 26px (was 40): a long saying must fit the band with no scroll (founder, 2026-09-26). */
+export const CIPHER_CELL_MIN = 26;
+/** Type scales from here, not from the new floor: a 26px cell keeps the old floor's 10px / 11px text. */
+export const CIPHER_FONT_FLOOR = 40;
+export const CIPHER_CELL_STEP = 2;
 
 /** Gap between the board and the frequency strip (Tailwind gap-3). */
 export const CIPHER_STRIP_GAP = 12;
@@ -41,7 +44,7 @@ export interface CipherMetrics {
 }
 
 const lerp = (cell: number, atMin: number, atMax: number) =>
-  atMin + ((cell - CIPHER_CELL_MIN) * (atMax - atMin)) / (CIPHER_CELL_MAX - CIPHER_CELL_MIN);
+  Math.min(atMax, Math.max(atMin, atMin + ((cell - CIPHER_FONT_FLOOR) * (atMax - atMin)) / (CIPHER_CELL_MAX - CIPHER_FONT_FLOOR)));
 
 /** Every size on the board derived from the cell side, so they scale together. */
 export function cipherMetrics(cell: number): CipherMetrics {
@@ -114,11 +117,11 @@ export function cipherStripHeight(chipCount: number, cell: number, width: number
 }
 
 /** Height of the board + strip block at this cell size, wrapped at `width`. */
-export function cipherBlockHeight(cipher: string, cell: number, width: number, chipCount: number): number {
+export function cipherBlockHeight(cipher: string, cell: number, width: number, chipCount: number, withStrip = true): number {
   const m = cipherMetrics(cell);
   const lines = wrapCipherWords(cipher, cell, width).length;
   const board = lines * m.rowHeight + Math.max(0, lines - 1) * m.rowGap;
-  const strip = cipherStripHeight(chipCount, cell, width);
+  const strip = withStrip ? cipherStripHeight(chipCount, cell, width) : 0;
   return board + (strip > 0 ? CIPHER_STRIP_GAP + strip : 0);
 }
 
@@ -127,10 +130,10 @@ export function cipherBlockHeight(cipher: string, cell: number, width: number, c
  * 4 at a time until the wrapped cipher plus the strip fits the height and the
  * longest word fits the width; floor 40.
  */
-export function fitCipherCell(cipher: string, width: number, height: number, chipCount: number): number {
+export function fitCipherCell(cipher: string, width: number, height: number, chipCount: number, withStrip = true): number {
   for (let cell = CIPHER_CELL_MAX; cell > CIPHER_CELL_MIN; cell -= CIPHER_CELL_STEP) {
     if (cipherLongestWordWidth(cipher, cell) > width) continue;
-    if (cipherBlockHeight(cipher, cell, width, chipCount) <= height) return cell;
+    if (cipherBlockHeight(cipher, cell, width, chipCount, withStrip) <= height) return cell;
   }
   return CIPHER_CELL_MIN;
 }

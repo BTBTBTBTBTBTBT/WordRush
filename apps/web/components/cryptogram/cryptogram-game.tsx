@@ -19,7 +19,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { CipherBoard, FrequencyStrip, CRYPTOGRAM_ACCENT } from './cipher-board';
-import { fitCipherCell, cipherMetrics, CIPHER_CELL_MIN } from './cipher-layout';
+import { fitCipherCell, CIPHER_CELL_MIN } from './cipher-layout';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -234,7 +234,8 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       const width = Math.min(band.clientWidth - padX, 768);
       const height = band.clientHeight - padY;
       if (width <= 0 || height <= 0) return;
-      setFit({ cell: fitCipherCell(cipher, width, height, chipCount), width });
+      // The strip is pinned below the band (founder, 2026-09-26): the board alone must fit here.
+      setFit({ cell: fitCipherCell(cipher, width, height, chipCount, false), width });
     };
     const ro = new ResizeObserver(measure);
     ro.observe(band);
@@ -243,7 +244,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   }, [cipher, playing]);
   const cell = fit?.cell ?? CIPHER_CELL_MIN;
   const boardWidth = fit?.width ?? null;
-  const chipFont = cipherMetrics(cell).chipFont;
+  const chipFont = 12;
 
   if (!state) return null;
 
@@ -285,12 +286,15 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       {!finished ? (
         <>
           <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
-            {/* Board + strip are one block, centred in the band (my-auto keeps it scrollable if it ever overflows). */}
+            {/* The board alone, centred in the band; the cell shrinks (floor 26px) so it never has to scroll. */}
             <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
               <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} />
               {conflicts.length > 0 && <div className="text-[11px] font-bold" style={{ color: '#dc2626' }}>{conflicts.join(', ')} used for two code letters</div>}
-              <FrequencyStrip state={state} selected={selected} onSelect={(c) => setSelected(c)} chipFont={chipFont} />
             </div>
+          </div>
+          {/* Pinned (founder, 2026-09-26): the letter frequencies always sit right above the buttons and keyboard. */}
+          <div className="shrink-0 px-2 pt-1 flex justify-center">
+            <div className="w-full max-w-3xl"><FrequencyStrip state={state} selected={selected} onSelect={(c) => setSelected(c)} chipFont={chipFont} /></div>
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Codebreaker controls">

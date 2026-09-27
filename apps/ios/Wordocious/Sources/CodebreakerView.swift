@@ -231,21 +231,26 @@ struct CodebreakerView: View {
                     // (64 pt down to 40 pt) so the cipher's wrapped lines plus the
                     // strip fit. The ScrollView only ever scrolls if a saying
                     // still overflows at the floor.
+                    // Founder, 2026-09-26 (a long saying): the frequency strip must ALWAYS
+                    // show over the keyboard and the board must never need a scroll. The
+                    // strip is pinned below the band (outside the ScrollView); the board
+                    // alone fills the band, shrinking as far as 26 pt so every saying fits.
                     GeometryReader { geo in
-                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12, height: geo.size.height - 8)
+                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12, height: geo.size.height - 8, withStrip: false)
                         ScrollView {
-                            VStack(spacing: 10) {
+                            VStack(spacing: 8) {
                                 CipherBoardView(vm: vm, finished: false, cell: cell).padding(.horizontal, 6)
                                 let conflicts = vm.conflicts
                                 if !conflicts.isEmpty {
                                     Text("\(conflicts.joined(separator: ", ")) used for two code letters").font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
                                 }
-                                FrequencyStripView(vm: vm, fontSize: CodebreakerSizing.chipFont(cell))
                             }
                             .padding(.vertical, 4)
                             .frame(maxWidth: .infinity, minHeight: geo.size.height)
                         }
+                        .scrollDisabled(CodebreakerSizing.boardHeight(cipher: vm.state.cipher, cell: cell, width: geo.size.width - 12) + 32 <= geo.size.height)
                     }
+                    FrequencyStripView(vm: vm, fontSize: 12).padding(.bottom, 2)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 8) {
                             capsule("Delete", "delete.left") { Haptics.tap(); vm.clearLetter() }
@@ -396,8 +401,12 @@ struct CodebreakerView: View {
 /// cell (10–13 pt) and the frequency chips (11–14 pt) scale with the cell.
 enum CodebreakerSizing {
     static let maxCell: CGFloat = 64
-    static let minCell: CGFloat = 40
-    static let step: CGFloat = 4
+    /// Floor 26 pt (was 40): a long saying must still fit the band without a scroll
+    /// (founder, 2026-09-26). Fonts scale from `fontFloor`, so a 26 pt cell keeps the
+    /// 10 pt code letter and 11 pt chips of the old floor instead of shrinking further.
+    static let minCell: CGFloat = 26
+    private static let fontFloor: CGFloat = 40
+    static let step: CGFloat = 2
     /// Gap between the letters of one word (the board's HStack spacing).
     static let letterGap: CGFloat = 3
     /// Gap between wrapped lines of the board.
@@ -408,7 +417,7 @@ enum CodebreakerSizing {
     static func cellHeight(_ cell: CGFloat) -> CGFloat { cell * 1.14 }
 
     /// 0 at the floor, 1 at the top end.
-    private static func t(_ cell: CGFloat) -> CGFloat { min(1, max(0, (cell - minCell) / (maxCell - minCell))) }
+    private static func t(_ cell: CGFloat) -> CGFloat { min(1, max(0, (cell - fontFloor) / (maxCell - fontFloor))) }
     /// The monospace code letter under a cell: 10 pt at the floor, 13 pt at the top end.
     static func codeFont(_ cell: CGFloat) -> CGFloat { (10 + 3 * t(cell)).rounded() }
     /// The frequency chips: 11 pt at the floor, 14 pt at the top end.
@@ -470,12 +479,13 @@ enum CodebreakerSizing {
     /// page, which scrolls) gives the compact floor size. Below the floor the cell
     /// only shrinks when the longest word would not fit the width otherwise —
     /// words never break across lines and never run off the screen.
-    static func cell(for cipher: String, width: CGFloat, height: CGFloat?) -> CGFloat {
-        var cell = height == nil ? minCell : maxCell
+    static func cell(for cipher: String, width: CGFloat, height: CGFloat?, withStrip: Bool = true) -> CGFloat {
+        var cell = height == nil ? fontFloor : maxCell
         if let height {
-            // Board + 10 gap + strip, with room for the one-line conflict notice.
+            // Board (+ 10 gap + strip when the strip shares the band), with room for the one-line conflict notice.
             while cell > minCell {
-                let block = boardHeight(cipher: cipher, cell: cell, width: width) + 10 + stripHeight(cipher: cipher, cell: cell, width: width) + 24
+                let strip = withStrip ? 10 + stripHeight(cipher: cipher, cell: cell, width: width) : 0
+                let block = boardHeight(cipher: cipher, cell: cell, width: width) + strip + 24
                 if block <= height { break }
                 cell -= step
             }

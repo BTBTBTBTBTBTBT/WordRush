@@ -165,7 +165,9 @@ struct DailySweepCardView: View {
 extension ShareService {
     /// More Games Sweep / Flawless share (founder, 2026-09-26): the same card over
     /// the ten More Games dailies, headed "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES".
-    /// Image only (no OG page — there is no More Games sweep board to link).
+    /// Uploads the card and links its /s OG page (m=MoreSweep) exactly like the
+    /// Daily Sweep — a bare wordocious.com link made Messages unfurl the generic
+    /// home page image instead of the card (founder, 2026-09-26).
     @MainActor
     static func shareMoreSweep(byMode: [String: DailyCompletion]) {
         #if canImport(UIKit)
@@ -182,8 +184,17 @@ extension ShareService {
         let renderer = ImageRenderer(content: card)
         renderer.proposedSize = .init(card.size)
         renderer.scale = 1
-        guard let image = renderer.uiImage else { return }
-        present(items: [image, URL(string: "https://wordocious.com/?more=1") as Any])
+        guard let image = renderer.uiImage, let png = image.pngData() else { return }
+        Task {
+            let url = await uploadSweepURL(
+                png: png, shareMode: "MoreSweep", flawless: flawless, won: t.won, total: t.total,
+                totalTime: Int(t.totalTimeSeconds.rounded()), totalScore: Int(t.totalScore.rounded()))
+            await MainActor.run {
+                var items: [Any] = [image]
+                if let url { items.append(url) }
+                present(items: items)
+            }
+        }
         #endif
     }
 
@@ -261,26 +272,32 @@ extension ShareService {
     }
 
     private static func uploadDailySweepURL(png: Data, totals: DailyTotals) async -> URL? {
+        await uploadSweepURL(
+            png: png, shareMode: "DailySweep", flawless: totals.flawless, won: totals.won, total: totals.total,
+            totalTime: Int(totals.totalTimeSeconds.rounded()), totalScore: Int(totals.totalScore.rounded()))
+    }
+
+    /// Upload an all-dailies card to share-images under `<uid>/<shareMode>-<date>`
+    /// and build its /s OG link (web share-page-copy.ts reads m=DailySweep and
+    /// m=MoreSweep with the same won/tot/t/pts params).
+    private static func uploadSweepURL(png: Data, shareMode: String, flawless: Bool, won: Int, total: Int, totalTime: Int, totalScore: Int) async -> URL? {
         let client = AuthService.shared.client
         guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
         let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
         f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         let dateStr = f.string(from: Date())
-        let key = "\(uid)/DailySweep-\(dateStr)"
+        let key = "\(uid)/\(shareMode)-\(dateStr)"
         do {
             try await client.storage.from("share-images").upload(
                 "\(key).png", data: png, options: FileOptions(contentType: "image/png", upsert: true))
         } catch { return nil }
-
-        let totalTime = Int(totals.totalTimeSeconds.rounded())
-        let totalScore = Int(totals.totalScore.rounded())
         let q: [String: String] = [
-            "m": "DailySweep",
-            "sweep": totals.flawless ? "flawless" : "sweep",
-            "won": "\(totals.won)", "tot": "\(totals.total)",
+            "m": shareMode,
+            "sweep": flawless ? "flawless" : "sweep",
+            "won": "\(won)", "tot": "\(total)",
             "t": "\(totalTime)", "pts": "\(totalScore)",
             "w": "1080", "h": "1350",
-            "v": "\(totals.flawless ? "f" : "s")\(totals.won)-\(totalTime)-\(totalScore)",
+            "v": "\(flawless ? "f" : "s")\(won)-\(totalTime)-\(totalScore)",
         ]
         var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
         comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }

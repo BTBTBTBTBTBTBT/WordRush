@@ -111,13 +111,19 @@ struct ProfileTab: View {
     /// Rail selection — web `setSelected`: landing on VS lifts a Solo scope to
     /// VS; landing on a game without a VS board drops the scope to Solo.
     private func select(_ key: String) {
-        selected = key
-        if key == StatsRailKey.vs {
-            if activeTab == "solo" { activeTab = "vs" }
-        } else if key != StatsRailKey.all && key != StatsRailKey.today && !hasVs(key) {
-            activeTab = "solo"
-        } else if key != StatsRailKey.all && key != StatsRailKey.today && activeTab == "vs_cpu" {
-            activeTab = "solo"
+        // One explicit fade for the page swap. The old implicit
+        // `.animation(value:)` on the whole scroll content animated every frame
+        // in the ScrollView through the `.id` swap and left the page rendered
+        // magnified and stuck (founder, 2026-09-26: "zooming in and freezing").
+        withAnimation(Theme.animation(.easeOut(duration: 0.18))) {
+            selected = key
+            if key == StatsRailKey.vs {
+                if activeTab == "solo" { activeTab = "vs" }
+            } else if key != StatsRailKey.all && key != StatsRailKey.today && !hasVs(key) {
+                activeTab = "solo"
+            } else if key != StatsRailKey.all && key != StatsRailKey.today && activeTab == "vs_cpu" {
+                activeTab = "solo"
+            }
         }
     }
 
@@ -298,7 +304,7 @@ struct ProfileTab: View {
                     }
                 }
                 .id("page-\(selected)-\(activeTab)")
-                .transition(.opacity.combined(with: .offset(y: 6)))
+                .transition(.opacity)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 24).onEnded { v in
                         guard abs(v.translation.width) >= 70, abs(v.translation.height) <= 50 else { return }
@@ -311,9 +317,6 @@ struct ProfileTab: View {
             // custom bottom nav and stays tappable (Account actions live in
             // Settings now, not here).
             .padding(.bottom, 72)
-            // F1: drives the .id-swap transition on the page.
-            .animation(Theme.animation(.easeOut(duration: 0.22)), value: activeTab)
-            .animation(Theme.animation(.easeOut(duration: 0.22)), value: selected)
         }
     }
 
@@ -415,7 +418,7 @@ struct ProfileTab: View {
             HStack(spacing: 4) {
                 ForEach(["vs", "vs_cpu"], id: \.self) { t in
                     let active = tab == t
-                    Button { activeTab = t } label: {
+                    Button { withAnimation(Theme.animation(.easeOut(duration: 0.18))) { activeTab = t } } label: {
                         Text(t == "vs" ? "Live" : "CPU").font(Brand.font(10, .heavy))
                             .foregroundStyle(active ? Theme.primary : Theme.textMuted)
                             .padding(.horizontal, 10).padding(.vertical, 5)
@@ -974,7 +977,7 @@ struct ProfileTab: View {
         HStack(spacing: 8) {
             ForEach(["solo", "vs"], id: \.self) { t in
                 let active = gamePageTab == t
-                Button { Haptics.tap(); activeTab = t } label: {
+                Button { Haptics.tap(); withAnimation(Theme.animation(.easeOut(duration: 0.18))) { activeTab = t } } label: {
                     HStack(spacing: 6) {
                         if t == "solo" {
                             Image(systemName: "person.fill").font(.system(size: 12, weight: .bold))
