@@ -234,6 +234,13 @@ class MainActivity : ComponentActivity() {
         // Remote flags (More Games §7): refresh at launch and on every
         // foreground return, so a kill switch lands within one resume.
         com.wordocious.app.data.FlagsService.load()
+        // Re-fire cut-off result writes on EVERY foreground return, not only a cold
+        // start: Android keeps the process alive for days, so Doug's Ladder win
+        // (2026-09-27, timed out on a weak link) sat in the queue with no retry.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            kotlinx.coroutines.delay(2_000)
+            com.wordocious.app.data.PendingRecords.drain()
+        }
     }
 
     override fun onPause() {
