@@ -18,6 +18,7 @@ import {
   Bot,
   Lock,
   Share,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
@@ -49,6 +50,8 @@ import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
 import { useYourRecords, NextUpCard, SweepRecordsCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
 import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
+import { RecentMatchesList } from '@/components/stats/recent-matches';
+import { SignatureCard, StandingTrendCard } from '@/components/stats/signature-cards';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { GameRail, buildRailItems, RAIL_TODAY, RAIL_VS, RAIL_ALL } from '@/components/stats/game-rail';
 import { TodayCard } from '@/components/stats/today-card';
@@ -404,128 +407,145 @@ export default function StatsPage() {
       <AppHeader />
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
-        {/* ── Identity strip (the old Profile header, compact) ── */}
-        <div className="flex items-start gap-3 pt-1">
-          <AvatarUpload size={64} editable={false} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              {(profile as any).accent_color ? (
-                <h1 className="text-2xl font-black truncate" style={{ color: accentHex }}>{profile.username}</h1>
-              ) : (
-                <h1 className="text-2xl font-black truncate text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">{profile.username}</h1>
+        {/* ── Player card (founder, 2026-09-26: "the top looks unfinished with the random
+            buttons"): ONE card. Avatar · name · chips on the first row with Edit / Share as
+            quiet icon buttons top-right; the level pill + XP bar span the card; Private,
+            Go Pro and the dev toggle sit in a single footer row only when they apply. ── */}
+        <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}>
+          <div className="flex items-start gap-3">
+            <AvatarUpload size={64} editable={false} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {(profile as any).accent_color ? (
+                  <h1 className="text-2xl font-black truncate leading-tight" style={{ color: accentHex }}>{profile.username}</h1>
+                ) : (
+                  <h1 className="text-2xl font-black truncate leading-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">{profile.username}</h1>
+                )}
+                {isProActive && <ProBadge size="md" />}
+              </div>
+              {memberSince && (
+                <p className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Playing since {memberSince}</p>
               )}
-              {isProActive && <ProBadge size="md" />}
+              {(() => {
+                const featuredName = (profile as any).featured_achievement
+                  ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement)?.name : null;
+                const bioText = ((profile as any).bio as string | null)?.trim();
+                const favMode = (profile as any).favorite_mode
+                  ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
+                if (!featuredName && !bioText && !favMode) return null;
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    {featuredName && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: `${accentHex}1a`, color: accentHex }}>
+                        <Star className="w-3 h-3" fill="currentColor" /> {featuredName}
+                      </span>
+                    )}
+                    {favMode && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
+                        {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
+                      </span>
+                    )}
+                    {bioText && <p className="text-xs font-bold w-full" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
+                  </div>
+                );
+              })()}
             </div>
-            {/* Personalization: featured title, bio, favorite-mode chip */}
-            {(() => {
-              const featuredName = (profile as any).featured_achievement
-                ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement)?.name : null;
-              const bioText = ((profile as any).bio as string | null)?.trim();
-              const favMode = (profile as any).favorite_mode
-                ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
-              if (!featuredName && !bioText && !favMode) return null;
-              return (
-                <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                  {featuredName && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: `${accentHex}1a`, color: accentHex }}>
-                      <Star className="w-3 h-3" fill="currentColor" /> {featuredName}
-                    </span>
-                  )}
-                  {favMode && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
-                      {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
-                    </span>
-                  )}
-                  {bioText && <p className="text-xs font-bold w-full" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
-                </div>
-              );
-            })()}
-            <div className="flex items-center gap-2 mt-1.5">
-              <div
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shrink-0"
-                style={{ background: levelTier.bg, border: `1.5px solid ${levelTier.border}`, color: levelTier.color }}
+            {/* Quiet icon actions — same 32px circles as the header's ? and ⚙. */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                aria-label="Edit profile"
+                className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
               >
-                <Star className="w-3 h-3" fill="currentColor" />
-                Lvl {profile.level}
-                <span className="opacity-70">·</span>
-                <span>{levelTier.label}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                  <div className="h-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #fbbf24, #f97316)' }} />
-                </div>
-                <p className="text-[9px] font-bold mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
-                  {xpToNextLevel} XP to next{memberSince ? ` · since ${memberSince}` : ''}
-                </p>
-              </div>
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const tw = profile.total_wins, tl = profile.total_losses;
+                  void shareResult({
+                    layout: 'profile', mode: 'Classic',
+                    username: profile.username || 'Player',
+                    level: (profile as any).level ?? 1,
+                    tier: levelTier.label,
+                    accentHex,
+                    totalWins: tw,
+                    winRate: tw + tl > 0 ? Math.round((tw / (tw + tl)) * 100) : 0,
+                    currentStreak: (profile as any).current_streak ?? 0,
+                    dailyStreak: profile.daily_login_streak ?? 0,
+                    gold: (profile as any).gold_medals ?? 0,
+                    silver: (profile as any).silver_medals ?? 0,
+                    bronze: (profile as any).bronze_medals ?? 0,
+                    achievementsUnlocked: userAchievements.size,
+                    achievementsTotal: ACHIEVEMENTS.length,
+                  });
+                }}
+                aria-label="Share profile card"
+                className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
+              >
+                <Share className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 -mt-1">
-          <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
-          <EditProfileButton onClick={() => setEditOpen(true)} />
-          <button
-            onClick={() => {
-              const tw = profile.total_wins, tl = profile.total_losses;
-              void shareResult({
-                layout: 'profile', mode: 'Classic',
-                username: profile.username || 'Player',
-                level: (profile as any).level ?? 1,
-                tier: levelTier.label,
-                accentHex,
-                totalWins: tw,
-                winRate: tw + tl > 0 ? Math.round((tw / (tw + tl)) * 100) : 0,
-                currentStreak: (profile as any).current_streak ?? 0,
-                dailyStreak: profile.daily_login_streak ?? 0,
-                gold: (profile as any).gold_medals ?? 0,
-                silver: (profile as any).silver_medals ?? 0,
-                bronze: (profile as any).bronze_medals ?? 0,
-                achievementsUnlocked: userAchievements.size,
-                achievementsTotal: ACHIEVEMENTS.length,
-              });
-            }}
-            className="flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-colors"
-            style={{ background: 'var(--color-surface-hover)', color: 'var(--color-text-muted)', border: '1.5px solid var(--color-border)' }}
-          >
-            <Sparkles className="w-3.5 h-3.5" /> Share
-          </button>
-          {/* PRIVATE PROFILES: the owner's always-on reminder that others see
-              only the teaser card. Tap opens the edit modal (where the toggle lives). */}
-          {(profile as any).is_private && (
-            <button
-              onClick={() => setEditOpen(true)}
-              title="Your profile is private — other players see a limited card. Tap to change."
-              className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-full"
-              style={{ background: '#f3f0ff', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+
+          {/* Level row spans the card: pill · bar · XP to next. */}
+          <div className="flex items-center gap-2.5 mt-3">
+            <div
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shrink-0"
+              style={{ background: levelTier.bg, border: `1.5px solid ${levelTier.border}`, color: levelTier.color }}
             >
-              <Lock className="w-3 h-3" /> Private
-            </button>
-          )}
-          {!isProActive && (
-            <Link href="/pro">
-              <button className="btn-3d px-4 py-1.5 rounded-lg text-white font-extrabold text-xs" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 2px 0 #92400e' }}>
-                Go Pro
-              </button>
-            </Link>
-          )}
-          {/* DEV-ONLY: gated on profiles.is_admin so it renders only for the
-              developer's account — never for App Review or real users. */}
-          {(profile as any).is_admin && (
-            <button
-              onClick={async () => {
-                const newValue = !(profile as any).is_pro;
-                await (supabase as any).from('profiles').update({ is_pro: newValue }).eq('id', profile.id);
-                await refreshProfile();
-              }}
-              className="px-3 py-1.5 rounded-lg font-extrabold text-xs border"
-              style={{
-                background: (profile as any).is_pro ? '#fef2f2' : '#f0fdf4',
-                border: (profile as any).is_pro ? '1.5px solid #fca5a5' : '1.5px solid #86efac',
-                color: (profile as any).is_pro ? '#dc2626' : '#16a34a',
-              }}
-            >
-              {(profile as any).is_pro ? 'Disable Pro' : 'Simulate Pro'}
-            </button>
+              <Star className="w-3 h-3" fill="currentColor" />
+              Lvl {profile.level}
+              <span className="opacity-70">·</span>
+              <span>{levelTier.label}</span>
+            </div>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+              <div className="h-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #fbbf24, #f97316)' }} />
+            </div>
+            <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>{xpToNextLevel} XP to next</span>
+          </div>
+
+          {/* Footer row — only when something applies. */}
+          {((profile as any).social_links || (profile as any).is_private || !isProActive || (profile as any).is_admin) && (
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
+              {(profile as any).is_private && (
+                <button
+                  onClick={() => setEditOpen(true)}
+                  title="Your profile is private — other players see a limited card. Tap to change."
+                  className="flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full"
+                  style={{ background: '#f3f0ff', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+                >
+                  <Lock className="w-3 h-3" /> Private
+                </button>
+              )}
+              {!isProActive && (
+                <Link href="/pro" className="ml-auto">
+                  <button className="btn-3d px-4 py-1.5 rounded-lg text-white font-extrabold text-xs" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 2px 0 #92400e' }}>
+                    Go Pro
+                  </button>
+                </Link>
+              )}
+              {/* DEV-ONLY (profiles.is_admin): a quiet gray tool pill, not a stray red link. */}
+              {(profile as any).is_admin && (
+                <button
+                  onClick={async () => {
+                    const newValue = !(profile as any).is_pro;
+                    await (supabase as any).from('profiles').update({ is_pro: newValue }).eq('id', profile.id);
+                    await refreshProfile();
+                  }}
+                  className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+                  style={{ background: 'var(--color-surface-hover)', border: '1.5px dashed var(--color-border)', color: 'var(--color-text-muted)' }}
+                  title="Developer: toggle Pro on this account"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: (profile as any).is_pro ? WIN_FG : '#9ca3af' }} />
+                  Dev · Pro {(profile as any).is_pro ? 'on' : 'off'}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -551,6 +571,14 @@ export default function StatsPage() {
               flawlessFooter={<FlawlessBannerFooter total={DAILY_MODES.length} />}
               onJump={setSelected}
             />
+          )}
+          {selected === RAIL_TODAY && (
+            <>
+              {/* Founder (2026-09-26): the most recent games — daily AND unlimited — right on Today;
+                  the full history stays on All-time. Same rows, same stats. */}
+              <SectionHeader label="Recent Games" accent="#2563eb" />
+              <RecentMatchesList matches={matches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={5} onSeeAll={() => setSelected(RAIL_ALL)} />
+            </>
           )}
 
           {isGamePage && (() => {
@@ -916,6 +944,14 @@ export default function StatsPage() {
                 </>
               )}
 
+              {/* Signature (audit, 2026-09-26): best day, best week, comebacks, perfects — free. */}
+              <SectionHeader label="Signature" accent="#f97316" />
+              <SignatureCard userId={profile.id} />
+
+              {/* Standing trend — your Top X% per day over 30 days (Pro). */}
+              <SectionHeader label="Standing Trend" accent="#7c3aed" />
+              <StandingTrendCard userId={profile.id} isPro={isProActive} />
+
               {/* Pro Stats (global view) */}
               <ProStats userId={profile.id} isPro={isProActive} />
 
@@ -1043,80 +1079,9 @@ export default function StatsPage() {
                 })}
               </div>
 
-              {/* ── Recent Matches ── */}
+              {/* ── Recent Matches (every game, newest first) ── */}
               <SectionHeader label="Recent Matches" accent="#2563eb" />
-              {loadingStats ? (
-                <div className="space-y-2">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 animate-pulse" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
-                      <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: 'var(--color-border)' }} />
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <div className="h-3 w-20 rounded" style={{ background: 'var(--color-border)' }} />
-                        <div className="h-2.5 w-28 rounded" style={{ background: 'var(--color-surface-hover)' }} />
-                      </div>
-                      <div className="flex-shrink-0 space-y-1.5 text-right">
-                        <div className="h-3 w-10 rounded ml-auto" style={{ background: 'var(--color-border)' }} />
-                        <div className="h-2.5 w-16 rounded ml-auto" style={{ background: 'var(--color-surface-hover)' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : matches.length === 0 ? (
-                <div className="text-center py-8 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>No matches played yet.</div>
-              ) : (
-                <div className="space-y-2">
-                  {(showAllRecent ? matches : matches.slice(0, 5)).map((match) => {
-                    const isWinner = match.winner_id === profile.id;
-                    const isPlayer1 = match.player1_id === profile.id;
-                    const score = isPlayer1 ? match.player1_score : (match.player2_score ?? 0);
-                    const playerTime = isPlayer1 ? match.player1_time : (match.player2_time ?? 0);
-                    const matchDate = new Date(match.created_at);
-                    const cfg = gameModeIcons[match.game_mode];
-                    const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
-                    const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
-                    return (
-                      <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
-                          {(() => {
-                            if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
-                            if (cfg.romanNumeral) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
-                            if (cfg.icon) { const Icon = cfg.icon; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; }
-                            return <Zap className="w-4 h-4" style={{ color: cfg.color }} />;
-                          })()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{gameModeTitles[match.game_mode] || match.game_mode}</span>
-                            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#eff6ff', color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
-                              {match.player2_id ? 'VS' : 'Solo'}
-                            </span>
-                            {(match as any).forfeit && (
-                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: '#fef3c7', color: '#b45309' }}>
-                                FORFEIT
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
-                            {matchStat(match.game_mode, score)} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
-                            {opponentName ? ` · vs ${opponentName}` : ''}
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-xs font-extrabold" style={{ color: isWinner ? WIN_FG : '#dc2626' }}>{isWinner ? 'Win' : 'Loss'}</div>
-                          <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                            {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {matches.length > 5 && (
-                    <button onClick={() => setShowAllRecent((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
-                      {showAllRecent ? 'Show less' : `View all ${matches.length} →`}
-                    </button>
-                  )}
-                </div>
-              )}
+              <RecentMatchesList matches={matches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={5} />
             </>
           )}
         </div>{/* /page */}

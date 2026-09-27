@@ -196,7 +196,8 @@ object StatsDeepService {
                 .decodeList<FieldRow>()
             if (field.size < 2) continue
             val better = field.count { (it.compositeScore ?: 0.0) > myScore }
-            percentiles.add(maxOf(1, ((better + 1).toDouble() / field.size * 100).roundToInt()))
+            // Badge formula (Format.topPercentLabel): percentile of the field you beat — one "Top X%" everywhere.
+            percentiles.add(maxOf(1, 100 - ((1 - better.toDouble() / field.size) * 100).roundToInt()))
         }
         if (percentiles.isEmpty()) return@runCatching null
         DailyStanding(

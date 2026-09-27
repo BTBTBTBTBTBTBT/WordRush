@@ -281,7 +281,7 @@ public enum ModeStats {
             StatLine(label: "Win Rate", value: "\(winRatePct(wins: t.wins, totalGames: t.totalGames))%"),
             StatLine(label: "Best", value: best),
             StatLine(label: "Fastest", value: statTime(t.fastestTime)),
-            StatLine(label: "Streak", value: String(t.streak)),
+            StatLine(label: "Win Streak", value: String(t.streak)),
             StatLine(label: "Best Streak", value: String(t.bestStreak)),
         ]
     }
@@ -295,7 +295,7 @@ public enum ModeStats {
         StatLine(label: "Avg Mistakes", value: avg1(a.winGuessTotal, a.wins, base)),
         StatLine(label: "Fastest", value: statTime(t.fastestTime)),
         StatLine(label: "No-hint Wins", value: String(a.noHintWins)),
-        StatLine(label: "Streak", value: String(t.streak)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
     ] }
 
     /// Letter Ladder: Wins · Losses · Par Rate · Avg Over Par · Fastest Par · No-hint Wins · Streak · Best Streak.
@@ -306,7 +306,7 @@ public enum ModeStats {
         StatLine(label: "Avg Over Par", value: avg1(a.winGuessTotal, a.wins, base)),
         StatLine(label: "Fastest Par", value: statTime(a.fastestPerfect)),
         StatLine(label: "No-hint Wins", value: String(a.noHintWins)),
-        StatLine(label: "Streak", value: String(t.streak)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
         StatLine(label: "Best Streak", value: String(t.bestStreak)),
     ] }
 
@@ -319,7 +319,7 @@ public enum ModeStats {
         StatLine(label: "Avg Checks", value: avg1(a.winGuessTotal, a.wins)),
         StatLine(label: "Fastest", value: statTime(t.fastestTime)),
         StatLine(label: "Words Solved", value: String(a.boardsSolved)),
-        StatLine(label: "Streak", value: String(t.streak)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
     ] }
 
     /// Spyglass: Cleared · Losses · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak.
@@ -334,7 +334,7 @@ public enum ModeStats {
             StatLine(label: "Fastest", value: statTime(t.fastestTime)),
             StatLine(label: "Avg Time", value: statTime(avgTime)),
             StatLine(label: "Sec / Word", value: tenths > 0 ? "\(tenths / 10).\(tenths % 10)s" : "-"),
-            StatLine(label: "Streak", value: String(t.streak)),
+            StatLine(label: "Win Streak", value: String(t.streak)),
         ]
     }
 
@@ -347,7 +347,7 @@ public enum ModeStats {
         StatLine(label: "Avg % Max", value: pct(a.boardsSolved, a.boardsTotal)),
         StatLine(label: "Pangrams", value: String(a.pangrams)),
         StatLine(label: "Longest Word", value: a.longestWord.isEmpty ? "-" : a.longestWord),
-        StatLine(label: "Streak", value: String(t.streak)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
     ] }
 
     /// Crosswordocious, Codebreaker: Wins · Losses · Win Rate · Clean · No-hint Wins · Fastest · Avg Time · Streak.
@@ -361,7 +361,7 @@ public enum ModeStats {
             StatLine(label: "No-hint Wins", value: String(a.noHintWins)),
             StatLine(label: "Fastest", value: statTime(t.fastestTime)),
             StatLine(label: "Avg Time", value: statTime(avgTime)),
-            StatLine(label: "Streak", value: String(t.streak)),
+            StatLine(label: "Win Streak", value: String(t.streak)),
         ]
     }
 
@@ -374,7 +374,7 @@ public enum ModeStats {
         StatLine(label: "Avg Mistakes", value: avg1(a.winGuessTotal, a.wins, base)),
         StatLine(label: "Hardest 1st", value: String(a.hardestFirst)),
         StatLine(label: "Fastest", value: statTime(t.fastestTime)),
-        StatLine(label: "Streak", value: String(t.streak)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
     ] }
 
     private static let wordPanels = StatPanels(guessDistribution: true, solveTime: true, topWords: true, openerYield: true, positionAccuracy: true, stageBreakdown: false)

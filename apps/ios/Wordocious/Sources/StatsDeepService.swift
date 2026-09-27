@@ -178,7 +178,8 @@ enum StatsDeepService {
                 .limit(2000).execute().value) ?? []
             guard field.count >= 2 else { continue }
             let better = field.filter { ($0.composite_score ?? 0) > myScore }.count
-            percentiles.append(max(1, Int((Double(better + 1) / Double(field.count) * 100).rounded())))
+            // Badge formula (Format.topPercentLabel): percentile of the field you beat — one "Top X%" everywhere.
+            percentiles.append(max(1, 100 - Int(((1 - Double(better) / Double(field.count)) * 100).rounded())))
         }
         guard !percentiles.isEmpty else { return nil }
         return DailyStanding(

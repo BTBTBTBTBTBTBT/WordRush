@@ -62,7 +62,7 @@ final class ModeStatsFixtureTests: XCTestCase {
 
     func testDefaultProfileIsTheWordModesEightCells() {
         let lines = ModeStats.statLines(dbKey: "DUEL", totals: StatTotals(wins: 41, losses: 6, totalGames: 47, bestScore: 2, fastestTime: 125, streak: 3, bestStreak: 12))
-        XCTAssertEqual(lines.map { $0.label }, ["Wins", "Losses", "Games", "Win Rate", "Best", "Fastest", "Streak", "Best Streak"])
+        XCTAssertEqual(lines.map { $0.label }, ["Wins", "Losses", "Games", "Win Rate", "Best", "Fastest", "Win Streak", "Best Streak"])
         XCTAssertEqual(lines.map { $0.value }, ["41", "6", "47", "87%", "2", "2m 5s", "3", "12"])
         let zero = StatTotals(wins: 0, losses: 0, totalGames: 0, bestScore: 0, fastestTime: 0, streak: 0, bestStreak: 0)
         XCTAssertEqual(ModeStats.statLines(dbKey: "DUEL", totals: zero).map { $0.value }, ["0", "0", "0", "0%", "-", "-", "0", "0"])

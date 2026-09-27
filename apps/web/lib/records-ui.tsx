@@ -29,7 +29,7 @@ export const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy;
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
   fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => `${v} guesses` },
   most_games_played: { label: 'Most Games Played', icon: Zap, format: (v) => `${v} games` },
-  longest_streak: { label: 'Longest Streak', icon: Flame, format: (v) => `${v} wins` },
+  longest_streak: { label: 'Longest Win Streak', icon: Flame, format: (v) => `${v} wins` },
   most_gold_medals: { label: 'Most Gold Medals', icon: Crown, format: (v) => `${v} golds` },
   highest_level: { label: 'Highest Level', icon: Trophy, format: (v) => `Level ${v}` },
   most_daily_completions: { label: 'Most Dailies Completed', icon: Target, format: (v) => `${v} dailies` },

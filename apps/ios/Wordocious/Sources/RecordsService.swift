@@ -66,7 +66,7 @@ enum RecordCatalog {
         "fastest_win": ("Fastest Win", "clock.fill"),
         "fewest_guesses": ("Fewest Guesses", "target"),
         "most_games_played": ("Most Games Played", "bolt.fill"),
-        "longest_streak": ("Longest Streak", "flame.fill"),
+        "longest_streak": ("Longest Win Streak", "flame.fill"),
         "most_gold_medals": ("Most Gold Medals", "crown.fill"),
         "highest_level": ("Highest Level", "trophy.fill"),
         "most_daily_completions": ("Most Dailies Completed", "target"),

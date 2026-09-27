@@ -1966,7 +1966,9 @@ export async function fetchTodayDailyStanding(userId: string): Promise<DailyStan
     const scores = byMode.get(row.game_mode) || [];
     if (scores.length < 2) continue;
     const better = scores.filter((sc) => sc > row.composite_score).length;
-    percentiles.push(Math.max(1, Math.round(((better + 1) / scores.length) * 100)));
+    // The badge formula (lib/format.ts topPercentLabel): percentile of the field you beat.
+    // One "Top X%" everywhere (Stats glossary, 2026-09-26).
+    percentiles.push(Math.max(1, 100 - Math.round((1 - better / scores.length) * 100)));
   }
   if (percentiles.length === 0) return null;
   return {

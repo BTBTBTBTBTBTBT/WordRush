@@ -122,7 +122,9 @@ struct RootTabView: View {
             LeaderboardTab(path: $leaderboardPath).tag(Tab.leaderboard).tabItem { Label("Leaderboard", systemImage: "trophy") }
             ProfileTab().tag(Tab.stats).tabItem { Label("Stats", systemImage: "chart.bar") }
             NavigationStack {
-                FriendsScreenView(padsForChrome: false)
+                // The bottom-nav inset does not reach this ScrollView's tail (founder, 2026-09-26:
+                // "I can't scroll all the way to the bottom") — pad by the chrome height like a push.
+                FriendsScreenView(padsForChrome: true)
                     .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             }
             .tag(Tab.friends).tabItem { Label("Friends", systemImage: "person.2") }

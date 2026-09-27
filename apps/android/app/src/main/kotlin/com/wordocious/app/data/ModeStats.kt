@@ -249,7 +249,7 @@ object ModeStats {
             Line("Win Rate", "${winRatePct(t.wins, t.totalGames)}%"),
             Line("Best", best),
             Line("Fastest", statTime(t.fastestTime)),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
             Line("Best Streak", t.bestStreak.toString()),
         )
     }
@@ -264,7 +264,7 @@ object ModeStats {
             Line("Avg Mistakes", avg1(a.winGuessTotal, a.wins, base)),
             Line("Fastest", statTime(t.fastestTime)),
             Line("No-hint Wins", a.noHintWins.toString()),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
         )
     }
 
@@ -277,7 +277,7 @@ object ModeStats {
             Line("Avg Over Par", avg1(a.winGuessTotal, a.wins, base)),
             Line("Fastest Par", statTime(a.fastestPerfect)),
             Line("No-hint Wins", a.noHintWins.toString()),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
             Line("Best Streak", t.bestStreak.toString()),
         )
     }
@@ -292,7 +292,7 @@ object ModeStats {
             Line("Avg Checks", avg1(a.winGuessTotal, a.wins)),
             Line("Fastest", statTime(t.fastestTime)),
             Line("Words Solved", a.boardsSolved.toString()),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
         )
     }
 
@@ -307,7 +307,7 @@ object ModeStats {
             Line("Fastest", statTime(t.fastestTime)),
             Line("Avg Time", avgTime(a)),
             Line("Sec / Word", if (tenths > 0) "${tenths / 10}.${tenths % 10}s" else "-"),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
         )
     }
 
@@ -321,7 +321,7 @@ object ModeStats {
             Line("Avg % Max", pct(a.boardsSolved, a.boardsTotal)),
             Line("Pangrams", a.pangrams.toString()),
             Line("Longest Word", a.longestWord.ifEmpty { "-" }),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
         )
     }
 
@@ -335,7 +335,7 @@ object ModeStats {
             Line("No-hint Wins", a.noHintWins.toString()),
             Line("Fastest", statTime(t.fastestTime)),
             Line("Avg Time", avgTime(a)),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
         )
     }
 
@@ -349,7 +349,7 @@ object ModeStats {
             Line("Avg Mistakes", avg1(a.winGuessTotal, a.wins, base)),
             Line("Hardest 1st", a.hardestFirst.toString()),
             Line("Fastest", statTime(t.fastestTime)),
-            Line("Streak", t.streak.toString()),
+            Line("Win Streak", t.streak.toString()),
         )
     }
 

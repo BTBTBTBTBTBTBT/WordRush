@@ -83,7 +83,7 @@ internal val RECORD_CFG: Map<String, RecordCfg> = mapOf(
     "fastest_win" to RecordCfg("Fastest Win", Icons.Filled.Schedule, false) { v -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s" },
     "fewest_guesses" to RecordCfg("Fewest Guesses", Icons.Filled.TrackChanges, false) { v -> "$v guesses" },
     "most_games_played" to RecordCfg("Most Games Played", Icons.Filled.Bolt, false) { v -> "$v games" },
-    "longest_streak" to RecordCfg("Longest Streak", Icons.Filled.LocalFireDepartment, false) { v -> "$v wins" },
+    "longest_streak" to RecordCfg("Longest Win Streak", Icons.Filled.LocalFireDepartment, false) { v -> "$v wins" },
     "most_gold_medals" to RecordCfg("Most Gold Medals", null, true) { v -> "$v golds" },
     "highest_level" to RecordCfg("Highest Level", Icons.Filled.EmojiEvents, false) { v -> "Level $v" },
     "most_daily_completions" to RecordCfg("Most Dailies Completed", Icons.Filled.TrackChanges, false) { v -> "$v dailies" },

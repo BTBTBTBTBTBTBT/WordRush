@@ -35,7 +35,7 @@ describe('mode-stats registry', () => {
 
   it('the default profile is exactly the word modes\' eight cells, in order', () => {
     const lines = statLines('DUEL', { wins: 41, losses: 6, totalGames: 47, bestScore: 2, fastestTime: 125, streak: 3, bestStreak: 12 });
-    expect(lines.map((l) => l.label)).toEqual(['Wins', 'Losses', 'Games', 'Win Rate', 'Best', 'Fastest', 'Streak', 'Best Streak']);
+    expect(lines.map((l) => l.label)).toEqual(['Wins', 'Losses', 'Games', 'Win Rate', 'Best', 'Fastest', 'Win Streak', 'Best Streak']);
     expect(lines.map((l) => l.value)).toEqual(['41', '6', '47', '87%', '2', '2m 5s', '3', '12']);
     expect(statLines('DUEL', { wins: 0, losses: 0, totalGames: 0, bestScore: 0, fastestTime: 0, streak: 0, bestStreak: 0 }).map((l) => l.value))
       .toEqual(['0', '0', '0', '0%', '-', '-', '0', '0']);
@@ -46,15 +46,15 @@ describe('mode-stats registry', () => {
   it('the custom profiles read their own eight cells', () => {
     const t = { wins: 1, losses: 0, totalGames: 1, bestScore: 1, fastestTime: 300, streak: 1, bestStreak: 1 };
     const labels = (k: string, s: string, b: number) => statLines(k, t, s, b).map((l) => l.label);
-    expect(labels('SUDOKU', 'mistakes', 1)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'Avg Mistakes', 'Fastest', 'No-hint Wins', 'Streak']);
+    expect(labels('SUDOKU', 'mistakes', 1)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'Avg Mistakes', 'Fastest', 'No-hint Wins', 'Win Streak']);
     expect(labels('REGIONS', 'mistakes', 1)).toEqual(labels('SUDOKU', 'mistakes', 1));
-    expect(labels('LADDER', 'overPar', 1)).toEqual(['Wins', 'Losses', 'Par Rate', 'Avg Over Par', 'Fastest Par', 'No-hint Wins', 'Streak', 'Best Streak']);
-    expect(labels('SCRAMBLE', 'checks', 5)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'Avg Checks', 'Fastest', 'Words Solved', 'Streak']);
-    expect(labels('WORDSEARCH', 'misses', 10)).toEqual(['Cleared', 'Losses', 'Win Rate', 'Clean', 'Fastest', 'Avg Time', 'Sec / Word', 'Streak']);
-    expect(labels('HUB', 'rank', 1)).toEqual(['Days Played', 'Hubbub+', 'Pandemonium', 'Best Rank', 'Avg % Max', 'Pangrams', 'Longest Word', 'Streak']);
-    expect(labels('CROSSWORD', 'checks', 1)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'No-hint Wins', 'Fastest', 'Avg Time', 'Streak']);
+    expect(labels('LADDER', 'overPar', 1)).toEqual(['Wins', 'Losses', 'Par Rate', 'Avg Over Par', 'Fastest Par', 'No-hint Wins', 'Win Streak', 'Best Streak']);
+    expect(labels('SCRAMBLE', 'checks', 5)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'Avg Checks', 'Fastest', 'Words Solved', 'Win Streak']);
+    expect(labels('WORDSEARCH', 'misses', 10)).toEqual(['Cleared', 'Losses', 'Win Rate', 'Clean', 'Fastest', 'Avg Time', 'Sec / Word', 'Win Streak']);
+    expect(labels('HUB', 'rank', 1)).toEqual(['Days Played', 'Hubbub+', 'Pandemonium', 'Best Rank', 'Avg % Max', 'Pangrams', 'Longest Word', 'Win Streak']);
+    expect(labels('CROSSWORD', 'checks', 1)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'No-hint Wins', 'Fastest', 'Avg Time', 'Win Streak']);
     expect(labels('CRYPTOGRAM', 'checks', 1)).toEqual(labels('CROSSWORD', 'checks', 1));
-    expect(labels('GROUPS', 'guesses', 4)).toEqual(['Wins', 'Losses', 'Win Rate', 'Perfect', 'Avg Mistakes', 'Hardest 1st', 'Fastest', 'Streak']);
+    expect(labels('GROUPS', 'guesses', 4)).toEqual(['Wins', 'Losses', 'Win Rate', 'Perfect', 'Avg Mistakes', 'Hardest 1st', 'Fastest', 'Win Streak']);
     // Best Rank is a rank NAME, never a number; ProperNoundle keeps the word grid.
     expect(statLines('HUB', { ...t, bestScore: 4 }, 'rank', 1)[3].value).toBe('Hubbub');
     expect(statLines('PROPERNOUNDLE', t)[4].label).toBe('Best');

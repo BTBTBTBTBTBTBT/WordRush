@@ -97,8 +97,13 @@ export async function GET(req: NextRequest) {
       type: 'medal', kind: m.medal_type, gameMode: m.game_mode, gameTitle: title(m.game_mode), value: m.composite_score ?? null,
     });
   }
+  // Only skill records make the feed: the rolling counters (most games played,
+  // most dailies, highest level, most golds) re-set themselves almost daily and
+  // read as noise (founder's Friends screenshot, 2026-09-26).
+  const FEED_RECORD_TYPES = new Set(['fastest_win', 'fewest_guesses', 'longest_streak']);
   for (const r of (records ?? []) as any[]) {
     if (r.play_type && r.play_type !== 'solo') continue;
+    if (!FEED_RECORD_TYPES.has(r.record_type)) continue;
     events.push({
       id: `record-${r.id}`, ...person(r.holder_id), day: (r.achieved_at as string).slice(0, 10), at: r.achieved_at,
       type: 'record', kind: r.record_type, gameMode: r.game_mode, gameTitle: title(r.game_mode), value: r.record_value ?? null,

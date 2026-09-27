@@ -239,7 +239,7 @@ function defaultLines(t: StatTotals, semantics: string, guessBase: number): Stat
     { label: 'Win Rate', value: `${winRatePct(t.wins, t.totalGames)}%` },
     { label: 'Best', value: best },
     { label: 'Fastest', value: statTime(t.fastestTime) },
-    { label: 'Streak', value: String(t.streak) },
+    { label: 'Win Streak', value: String(t.streak) },
     { label: 'Best Streak', value: String(t.bestStreak) },
   ];
 }
@@ -253,7 +253,7 @@ const mistakesLines: Lines = (t, _s, base, a) => [
   { label: 'Avg Mistakes', value: avg1(a.winGuessTotal, a.wins, base) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
   { label: 'No-hint Wins', value: String(a.noHintWins) },
-  { label: 'Streak', value: String(t.streak) },
+  { label: 'Win Streak', value: String(t.streak) },
 ];
 
 /** Letter Ladder: Wins · Losses · Par Rate · Avg Over Par · Fastest Par · No-hint Wins · Streak · Best Streak. */
@@ -264,7 +264,7 @@ const ladderLines: Lines = (t, _s, base, a) => [
   { label: 'Avg Over Par', value: avg1(a.winGuessTotal, a.wins, base) },
   { label: 'Fastest Par', value: statTime(a.fastestPerfect) },
   { label: 'No-hint Wins', value: String(a.noHintWins) },
-  { label: 'Streak', value: String(t.streak) },
+  { label: 'Win Streak', value: String(t.streak) },
   { label: 'Best Streak', value: String(t.bestStreak) },
 ];
 
@@ -277,7 +277,7 @@ const scrambleLines: Lines = (t, _s, _base, a) => [
   { label: 'Avg Checks', value: avg1(a.winGuessTotal, a.wins) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
   { label: 'Words Solved', value: String(a.boardsSolved) },
-  { label: 'Streak', value: String(t.streak) },
+  { label: 'Win Streak', value: String(t.streak) },
 ];
 
 /** Spyglass: Cleared · Losses · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak. */
@@ -291,7 +291,7 @@ const wordsearchLines: Lines = (t, _s, _base, a) => {
     { label: 'Fastest', value: statTime(t.fastestTime) },
     { label: 'Avg Time', value: statTime(a.timedWins > 0 ? Math.round(a.winTimeTotal / a.timedWins) : 0) },
     { label: 'Sec / Word', value: tenths > 0 ? `${Math.floor(tenths / 10)}.${tenths % 10}s` : '-' },
-    { label: 'Streak', value: String(t.streak) },
+    { label: 'Win Streak', value: String(t.streak) },
   ];
 };
 
@@ -304,7 +304,7 @@ const hubLines: Lines = (t, _s, base, a) => [
   { label: 'Avg % Max', value: pct(a.boardsSolved, a.boardsTotal) },
   { label: 'Pangrams', value: String(a.pangrams) },
   { label: 'Longest Word', value: a.longestWord || '-' },
-  { label: 'Streak', value: String(t.streak) },
+  { label: 'Win Streak', value: String(t.streak) },
 ];
 
 /** Crosswordocious, Codebreaker: Wins · Losses · Win Rate · Clean · No-hint Wins · Fastest · Avg Time · Streak. */
@@ -316,7 +316,7 @@ const checksLines: Lines = (t, _s, _base, a) => [
   { label: 'No-hint Wins', value: String(a.noHintWins) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
   { label: 'Avg Time', value: statTime(a.timedWins > 0 ? Math.round(a.winTimeTotal / a.timedWins) : 0) },
-  { label: 'Streak', value: String(t.streak) },
+  { label: 'Win Streak', value: String(t.streak) },
 ];
 
 /** Kindred: Wins · Losses · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak. */
@@ -328,7 +328,7 @@ const groupsLines: Lines = (t, _s, base, a) => [
   { label: 'Avg Mistakes', value: avg1(a.winGuessTotal, a.wins, base) },
   { label: 'Hardest 1st', value: String(a.hardestFirst) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
-  { label: 'Streak', value: String(t.streak) },
+  { label: 'Win Streak', value: String(t.streak) },
 ];
 
 const WORD_PANELS: StatPanels = { guessDistribution: true, solveTime: true, topWords: true, openerYield: true, positionAccuracy: true, stageBreakdown: false };
