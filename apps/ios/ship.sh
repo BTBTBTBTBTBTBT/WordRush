@@ -139,7 +139,9 @@ echo "== VALIDATE =="
 # shipped past a closed-train 409 this way. Check altool's own status and
 # abort with its full output before anything is uploaded.
 xcrun altool --validate-app -f Wordocious-resigned.ipa -t ios $KEY 2>&1 | tee validate.log | tail -2
-if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+# altool can exit 0 on a 409 (2.1 (197), 2026-09-26: a closed train sailed on to
+# --upload-app) — grep its own verdict too.
+if [ "${PIPESTATUS[0]}" -ne 0 ] || grep -q "Failed to validate package" validate.log; then
   echo "altool validation failed — aborting before upload. Full output:" >&2
   cat validate.log >&2
   exit 1
