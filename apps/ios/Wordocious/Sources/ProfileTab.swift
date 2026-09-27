@@ -4,11 +4,12 @@ import WordociousCore
 /// STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
 /// and Records merge into one Stats tab that "flows like butter"). Port of
 /// app/stats/page.tsx:
-///   identity strip → StatsRail → ONE page below it, chosen from the rail:
-///   Today (landing, TodayCard) · a game page per daily mode (Solo | VS toggle
-///   where a live VS board exists, today's line, the §18 registry stats) ·
-///   VS (record + rivalries + CPU + a word-game board) · All-time (snapshot
-///   hero, Your Records, every chart, Progression, Recent Matches).
+///   player card → StatsRail → ONE page below it, chosen from the rail:
+///   Today (landing, TodayCard + the five newest games) · a game page per
+///   daily mode (Solo | VS toggle where a live VS board exists, today's line,
+///   the §18 registry stats) · VS (record + rivalries + CPU + a word-game
+///   board) · All-time (snapshot hero, Your Records, every chart, Signature,
+///   Standing trend, Progression, Recent Matches).
 /// A horizontal swipe on the page moves one rail chip; hold Today (or the grid
 /// button) for every game at once. Zero new fetches beyond the old page except
 /// today's VS result, the sweep streak and today's standing.
@@ -47,7 +48,6 @@ struct ProfileTab: View {
     @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
     @State private var showAllMedals = false
-    @State private var showAllRecent = false
     @State private var gamesThisWeek = 0
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
@@ -276,7 +276,7 @@ struct ProfileTab: View {
     }
 
     private func content(_ p: Profile) -> some View {
-        // Web order (app/stats/page.tsx, D2): identity strip → action row →
+        // Web order (app/stats/page.tsx, D2): player card →
         // StatsRail → ONE page keyed on the selection (Today · a game page ·
         // VS · All-time). The page swaps with the F1 fade+rise the old picker
         // used; a horizontal swipe on it moves one chip along the rail.
@@ -320,14 +320,23 @@ struct ProfileTab: View {
     // MARK: Pages
 
     /// Today — the landing page: the eight sweep tiles, the More Games / VS /
-    /// Standing pills, the ten More Games chips, sweep streak + best moment.
-    private var todayPage: some View {
+    /// Standing pills, the ten More Games chips, sweep streak + best moment,
+    /// then the five newest games (founder, 2026-09-26: "the most recent games
+    /// — daily AND unlimited — right on Today"; the full history stays on All-time).
+    @ViewBuilder private var todayPage: some View {
         TodayCard(
             sweepModes: dailyTiles, visibleMore: visibleMore, byMode: completions.byMode,
             vsDailyWon: vsDailyWon, standing: standing,
             sweepStreak: sweepStats.currentSweepStreak, flawlessStreak: sweepStats.currentFlawlessStreak,
             onJump: { key in Haptics.tap(); select(key) },
             onOpenDaily: openDaily)
+        if let p = auth.profile {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionHeader("Recent Games", accent: Color(hex: 0x2563EB))
+                RecentMatchesList(matches: recentMatches, profileId: p.id, opponentNames: opponentNames,
+                                  loading: recentLoading, limit: 5, onSeeAll: { select(StatsRailKey.all) })
+            }
+        }
     }
 
     /// A game page: Solo | VS toggle (live boards only), today's line, then the
@@ -456,6 +465,14 @@ struct ProfileTab: View {
         // opener lab, weekday form), then Insights, Pro Stats, Skill Radar.
         ProfileDashboard(mode: nil, playType: activeTab)
         ProfileInsightsCard(insights: allViewInsights(p))
+        // Signature (audit, 2026-09-26): best day, best week, comebacks, perfects — free.
+        VStack(alignment: .leading, spacing: 8) {
+            SectionHeader("Signature", accent: Color(hex: 0xF97316))
+            SignatureCard(userId: p.id)
+        }
+        // Standing trend — your Top X% per day over 30 days (Pro); the card
+        // carries its own STANDING TREND header so both hide together.
+        StandingTrendCard(userId: p.id, isPro: auth.isProActive)
         ProStatsCard(statRows: statRows)
         SkillRadarCard(isPro: auth.isProActive, statRows: statRows)
         // Progression: medals + achievements under one banner.
@@ -584,20 +601,24 @@ struct ProfileTab: View {
         return Array(out.prefix(2))
     }
 
-    // MARK: Header
+    // MARK: Player card
 
-    /// Identity strip (D2, compact): avatar 64 on the left; name + Pro badge,
-    /// the featured / favorite chips and bio, then the level pill with the XP
-    /// bar and "N XP to next · since Mon YYYY". Under it, ONE wrapping row of
-    /// actions: social links · Edit · Share · Private · Go Pro · Simulate Pro.
+    /// The player card (founder, 2026-09-26: "the top looks unfinished with the
+    /// random buttons"): ONE card. Avatar · name + PRO · "Playing since" · the
+    /// featured / favorite chips + bio on the first row, with Edit and Share as
+    /// quiet 32 pt icon circles top-right (the header's ? and ⚙ idiom); the
+    /// level pill + XP bar + "N XP to next" spanning the card; a footer row —
+    /// social links · Private · Go Pro · the dev Pro pill — only when it applies.
     private func header(_ p: Profile) -> some View {
         let tier = levelTier(p.level)
         let progress = Double(p.xp % 1000) / 1000.0
         let toNext = 1000 - (p.xp % 1000)
-        return VStack(alignment: .leading, spacing: 10) {
+        let hasSocial = socialLinks.values.contains { !$0.isEmpty }
+        let showFooter = hasSocial || p.isPrivate == true || !auth.isProActive || auth.profile?.isAdmin == true
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
                 AvatarView(url: p.avatarUrl, username: p.username, size: 64, accentHex: p.accentColor, emoji: p.avatarEmoji)
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         if ProfileAccent.isCustom(p.accentColor) {
                             Text(p.username).font(Brand.title(22)).foregroundStyle(ProfileAccent.color(p.accentColor))
@@ -613,100 +634,124 @@ struct ProfileTab: View {
                                 .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                         }
                     }
-                    ProfilePersonalizationRow(profile: p, leading: true)
-                    HStack(spacing: 8) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill").font(.system(size: 10))
-                            Text("Lvl \(p.level)").font(Brand.font(11, .heavy))
-                            Text("·").opacity(0.7)
-                            Text(tier.label).font(Brand.font(11, .heavy))
-                        }
-                        .foregroundStyle(tier.color)
-                        .padding(.horizontal, 10).padding(.vertical, 3)
-                        .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
-                        .fixedSize()
-                        VStack(alignment: .leading, spacing: 3) {
-                            GeometryReader { g in
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Theme.border)
-                                    Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
-                                        .frame(width: g.size.width * progress)
-                                }
-                            }
-                            .frame(height: 6)
-                            Text(memberSince(p).map { "\(toNext) XP to next · since \($0)" } ?? "\(toNext) XP to next")
-                                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                                .lineLimit(1).minimumScaleFactor(0.8)
-                        }
+                    if let since = memberSince(p) {
+                        Text("Playing since \(since)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     }
+                    ProfilePersonalizationRow(profile: p, leading: true).padding(.top, 3)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            // One wrapping row: social links · Edit · Share · Private · Go Pro · Simulate Pro.
-            ActionWrapRow(spacing: 8, lineSpacing: 8) {
-                socialLinkButtons()
-                Button { showEditProfile = true } label: {
-                    Label("Edit profile", systemImage: "pencil").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
-                        .padding(.horizontal, 14).padding(.vertical, 6)
-                        .background(Capsule().fill(Theme.surfaceHover))
-                        .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                // Quiet icon actions — the same 32 pt circles as the header's ? and ⚙.
+                HStack(spacing: 6) {
+                    iconCircle("pencil.fill", label: "Edit profile") { showEditProfile = true }
+                    iconCircle("square.and.arrow.up", label: "Share profile card") { shareProfile(p) }
                 }
-                .buttonStyle(PressableStyle())
                 .sheet(isPresented: $showEditProfile) { EditProfileView() }
-                Button {
-                    ShareEvents.log(kind: "image", gameMode: "", surface: "profile")
-                    let total = p.totalWins + p.totalLosses
-                    ShareService.shareProfile(ProfileShareInput(
-                        username: p.username, level: p.level, tier: levelTier(p.level).label,
-                        accentHex: ProfileAccent.hex(p.accentColor),
-                        totalWins: p.totalWins,
-                        winRate: total > 0 ? Int((Double(p.totalWins) / Double(total) * 100).rounded()) : 0,
-                        currentStreak: p.currentStreak, dailyStreak: p.dailyLoginStreak,
-                        gold: p.goldMedals, silver: p.silverMedals, bronze: p.bronzeMedals,
-                        achievementsUnlocked: unlockedAchievements.count, achievementsTotal: achievementCatalog.all.count))
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
-                        .padding(.horizontal, 14).padding(.vertical, 6)
-                        .background(Capsule().fill(Theme.surfaceHover))
-                        .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+            }
+            // Level row spans the card: pill · bar · XP to next.
+            HStack(spacing: 10) {
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill").font(.system(size: 10))
+                    Text("Lvl \(p.level)").font(Brand.font(11, .heavy))
+                    Text("·").opacity(0.7)
+                    Text(tier.label).font(Brand.font(11, .heavy))
                 }
-                .buttonStyle(PressableStyle())
-                // PRIVATE PROFILES: the owner's always-on reminder that others
-                // see only the teaser card. Tap opens the edit surface (where
-                // the toggle lives).
-                if p.isPrivate == true {
-                    Button { showEditProfile = true } label: {
-                        Label("Private", systemImage: "lock.fill").font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x7C3AED))
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Capsule().fill(Color(hex: 0xF3F0FF)))
-                            .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-                    }
-                    .buttonStyle(PressableStyle())
-                    .accessibilityHint("Your profile is private — other players see a limited card. Tap to change.")
-                }
-                if !auth.isProActive {
-                    Button { showPro = true } label: {
-                        Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
-                            .padding(.horizontal, 16).padding(.vertical, 6)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2))
-                    }
-                    .sheet(isPresented: $showPro) { ProView() }
-                }
-                // DEV-ONLY: Simulate Pro toggle — flips is_pro so free-vs-Pro gating
-                // can be exercised in testing. Gated on profiles.is_admin so it
-                // renders ONLY for the developer's account (never for App Review or
-                // real users; mirrors the web gate).
-                if auth.profile?.isAdmin == true {
-                    let isPro = auth.isProActive
-                    Button { Task { await auth.setSimulatePro(!isPro) } } label: {
-                        Text(isPro ? "Disable Pro (dev)" : "Simulate Pro (dev)").font(Brand.font(10, .heavy))
-                            .foregroundStyle(isPro ? Color(hex: 0xDC2626) : Color(hex: 0x16A34A))
-                            .padding(.horizontal, 10).padding(.vertical, 6)
+                .foregroundStyle(tier.color)
+                .padding(.horizontal, 10).padding(.vertical, 3)
+                .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
+                .fixedSize()
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Theme.border)
+                        Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: g.size.width * progress)
                     }
                 }
+                .frame(height: 8)
+                Text("\(toNext) XP to next").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .lineLimit(1).fixedSize()
+            }
+            // Footer row — only when something applies.
+            if showFooter {
+                HStack(spacing: 8) {
+                    socialLinkButtons()
+                    // PRIVATE PROFILES: the owner's always-on reminder that others
+                    // see only the teaser card. Tap opens the edit surface (where
+                    // the toggle lives).
+                    if p.isPrivate == true {
+                        Button { showEditProfile = true } label: {
+                            Label("Private", systemImage: "lock.fill").font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0x7C3AED))
+                                .padding(.horizontal, 10).padding(.vertical, 5)
+                                .background(Capsule().fill(Color(hex: 0xF3F0FF)))
+                                .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                        }
+                        .buttonStyle(PressableStyle())
+                        .accessibilityHint("Your profile is private — other players see a limited card. Tap to change.")
+                    }
+                    Spacer(minLength: 0)
+                    if !auth.isProActive {
+                        Button { showPro = true } label: {
+                            Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
+                                .padding(.horizontal, 16).padding(.vertical, 6)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2))
+                        }
+                        .buttonStyle(PressableStyle())
+                        .sheet(isPresented: $showPro) { ProView() }
+                    }
+                    // DEV-ONLY (profiles.is_admin): the Simulate Pro toggle as a
+                    // quiet gray dashed tool pill with a status dot — flips is_pro
+                    // so free-vs-Pro gating can be exercised in testing. Renders
+                    // ONLY for the developer's account (mirrors the web gate).
+                    if auth.profile?.isAdmin == true {
+                        let isPro = auth.isProActive
+                        Button { Task { await auth.setSimulatePro(!isPro) } } label: {
+                            HStack(spacing: 6) {
+                                Circle().fill(isPro ? Theme.win : Color(hex: 0x9CA3AF)).frame(width: 6, height: 6)
+                                Text("DEV · PRO \(isPro ? "ON" : "OFF")").font(Brand.font(10, .black)).tracking(0.6)
+                            }
+                            .foregroundStyle(Theme.textMuted)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Capsule().fill(Theme.surfaceHover))
+                            .overlay(Capsule().stroke(Theme.border, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                        }
+                        .buttonStyle(PressableStyle())
+                        .accessibilityLabel("Developer: toggle Pro on this account")
+                    }
+                }
+                .padding(.top, 12)
+                .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
             }
         }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    /// A quiet 32 pt circle icon button — the app header's ? / ⚙ idiom with the brand purple glyph.
+    private func iconCircle(_ system: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: system)
+                .font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(Theme.surfaceAlt))
+                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel(label)
+    }
+
+    /// The existing profile share card (ShareService.shareProfile).
+    private func shareProfile(_ p: Profile) {
+        ShareEvents.log(kind: "image", gameMode: "", surface: "profile")
+        let total = p.totalWins + p.totalLosses
+        ShareService.shareProfile(ProfileShareInput(
+            username: p.username, level: p.level, tier: levelTier(p.level).label,
+            accentHex: ProfileAccent.hex(p.accentColor),
+            totalWins: p.totalWins,
+            winRate: total > 0 ? Int((Double(p.totalWins) / Double(total) * 100).rounded()) : 0,
+            currentStreak: p.currentStreak, dailyStreak: p.dailyLoginStreak,
+            gold: p.goldMedals, silver: p.silverMedals, bronze: p.bronzeMedals,
+            achievementsUnlocked: unlockedAchievements.count, achievementsTotal: achievementCatalog.all.count))
     }
 
     private let socialOrder = ["twitter", "instagram", "tiktok", "threads", "discord", "website"]
@@ -761,38 +806,14 @@ struct ProfileTab: View {
     // MARK: Daily Medals (ports the web profile medals section)
 
     /// The signed-in user's own recent matches (solo + VS), mirroring the web
-    /// profile's Recent Matches list and the public-profile view. Shows up to 5;
-    /// VS rows (player2 set) render as "VS Match". Shares RecentMatchRow with the
-    /// public profile so both are pixel-identical.
+    /// profile's Recent Matches list and the public-profile view — the full
+    /// list with View all / Show less (RecentMatchesList; Today shows the same
+    /// rows capped at five). Shares RecentMatchRow with the public profile.
     @ViewBuilder private func recentMatchesSection(_ p: Profile) -> some View {
-        // Web parity (profile/page.tsx): skeleton rows while loading, then either
-        // the matches or "No matches played yet." — the section never just vanishes.
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader("Recent Matches", accent: Color(hex: 0x2563EB))
-            if recentLoading {
-                VStack(spacing: 8) {
-                    ForEach(0..<5, id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) }
-                }
-            } else if recentMatches.isEmpty {
-                Text("No matches played yet.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    .frame(maxWidth: .infinity).padding(.vertical, 16)
-            } else {
-                // Show 5 collapsed; the toggle expands the rest in place (no
-                // inner ScrollView — the rows render straight into the VStack).
-                VStack(spacing: 8) {
-                    ForEach(showAllRecent ? recentMatches : Array(recentMatches.prefix(5))) { m in
-                        RecentMatchRow(
-                            match: m, profileId: p.id,
-                            opponentName: m.opponentId(p.id).map { opponentNames[$0] ?? "Unknown" })
-                    }
-                }
-                if recentMatches.count > 5 {
-                    Button { showAllRecent.toggle() } label: {
-                        Text(showAllRecent ? "Show less" : "View all \(recentMatches.count) ›")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.plain).padding(.top, 2)
-                }
-            }
+            RecentMatchesList(matches: recentMatches, profileId: p.id, opponentNames: opponentNames,
+                              loading: recentLoading, limit: 5)
         }
     }
 

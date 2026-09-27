@@ -28,8 +28,8 @@ struct SnapshotHero: View {
                 HStack(spacing: 8) {
                     StatCell(icon: "trophy.fill", label: "Wins", value: "\(profile.totalWins)", color: Color(hex: 0x7C3AED), countUp: profile.totalWins)
                     StatCell(icon: "target", label: "Win Rate", value: "\(winRate)%", color: Color(hex: 0x2563EB), countUp: winRate, countSuffix: "%")
-                    StatCell(icon: "bolt.fill", label: "Streak", value: "\(profile.currentStreak)", sub: "Best: \(profile.bestStreak)", color: Theme.primary, countUp: profile.currentStreak)
-                    StatCell(icon: "flame.fill", label: "Daily", value: "\(profile.dailyLoginStreak)", sub: "Best: \(profile.bestDailyLoginStreak)", color: Color(hex: 0xF97316), countUp: profile.dailyLoginStreak)
+                    StatCell(icon: "bolt.fill", label: StatLabels.winStreak, value: "\(profile.currentStreak)", sub: "Best: \(profile.bestStreak)", color: Theme.primary, countUp: profile.currentStreak)
+                    StatCell(icon: "flame.fill", label: StatLabels.dailyStreak, value: "\(profile.dailyLoginStreak)", sub: "Best: \(profile.bestDailyLoginStreak)", color: Color(hex: 0xF97316), countUp: profile.dailyLoginStreak)
                 }
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Theme.primary)

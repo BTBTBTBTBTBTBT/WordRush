@@ -137,7 +137,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
     var recentMatches by remember { mutableStateOf<List<ProfileService.RecentMatch>>(emptyList()) }
-    var showAllRecent by remember { mutableStateOf(false) }
     // VS opponents' usernames for the "· vs <name>" line (web profile parity).
     var opponentNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var medals by remember { mutableStateOf<List<ProfileService.UserMedal>>(emptyList()) }
@@ -437,7 +436,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 Column(Modifier.fillMaxWidth().then(swipeModifier), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when {
                         // ── Today: your day in one card (TodayCard.kt). ──
-                        page == RAIL_TODAY -> TodayCard(
+                        page == RAIL_TODAY -> {
+                        TodayCard(
                             sweepModes = DAILY_MODES,
                             moreModes = visibleMore,
                             todayDailies = todayDailies,
@@ -449,6 +449,15 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             onPlayDaily = onPlayDaily,
                             onJump = { selected = it },
                         )
+                        // Founder (2026-09-26): the most recent games — daily AND unlimited —
+                        // right under the Sweep streak / Best moment row; the full history
+                        // stays on All-time. Same rows, same stats (RecentMatches.kt).
+                        SectionHeader("Recent Games", accent = Color(0xFF2563EB))
+                        RecentMatchesList(
+                            matches = recentMatches, opponentNames = opponentNames, userId = userId,
+                            loading = loading, limit = 5, onSeeAll = { selected = RAIL_ALL },
+                        )
+                        }
 
                         // ── VS: record (with today's result), Rivalries, CPU practice,
                         //    then one word game's VS board — Live or CPU. ──
@@ -525,6 +534,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             // Insights — up to two derived one-liners.
                             val insights = profileInsights(stats, activity7, profile, todayDailies)
                             if (insights.isNotEmpty()) InsightsCard(insights)
+                            // Signature (audit, 2026-09-26): best day, best week, comebacks, perfects — free.
+                            userId?.let { SignatureCard(it) }
+                            // Standing trend — your Top X% per day over 30 days (Pro).
+                            userId?.let { StandingTrendCard(it, isPro = isProActive, onGoPro = onGoPro) }
                             // Pro Stats (global view; SOLO rows only).
                             if (!isProActive || stats.isNotEmpty()) {
                                 ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
@@ -545,31 +558,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             // Web parity (profile/page.tsx): skeleton rows while loading, then the
                             // matches or "No matches played yet." — the section never just vanishes.
                             SectionHeader("Recent Matches", accent = Color(0xFF2563EB))
-                            if (loading) {
-                                Column { repeat(5) { SkeletonBlock(height = 52.dp, cornerRadius = 12.dp); Spacer(Modifier.height(8.dp)) } }
-                            } else if (recentMatches.isEmpty()) {
-                                Text(
-                                    "No matches played yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                                    color = WTheme.textMuted,
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                                    textAlign = TextAlign.Center,
-                                )
-                            } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    (if (showAllRecent) recentMatches else recentMatches.take(5)).forEach { m ->
-                                        val oppId = if (m.player2Id == null) null else if (m.player1Id == userId) m.player2Id else m.player1Id
-                                        RecentMatchRow(m, userId, opponentName = oppId?.let { opponentNames[it] ?: "Unknown" })
-                                    }
-                                }
-                                if (recentMatches.size > 5) {
-                                    Text(
-                                        if (showAllRecent) "Show less" else "View all ${recentMatches.size} ›",
-                                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
-                                    )
-                                }
-                            }
+                            RecentMatchesList(
+                                matches = recentMatches, opponentNames = opponentNames, userId = userId,
+                                loading = loading, limit = 5,
+                            )
                         }
 
                         // ── A game page: Solo | VS (only with a live VS board), today's
@@ -798,13 +790,15 @@ private fun memberSince(createdAt: String?): String? {
 }
 
 /**
- * The identity strip (D2, 2026-09-26) — the old Profile header, compact: avatar
- * 64 on the left; name + PRO, the featured / favorite chips and bio, then the
- * level pill with the XP bar and "N XP to next · since Mon YYYY" to its right.
- * Under the strip one wrapping row: Edit · Share · Private (if private) · Go Pro
- * (if not Pro) · Simulate Pro (admin only). Web app/stats/page.tsx parity.
+ * The PLAYER CARD (founder, 2026-09-26: "the top looks unfinished with the
+ * random buttons") — ONE rounded card replacing the identity strip. Row 1:
+ * avatar 64 · name + PRO / "Playing since Mon YYYY" / the featured + favorite
+ * chips and bio · Edit and Share as the app header's quiet 32 dp icon circles.
+ * Row 2 spans the card: the level pill · the XP bar · "N XP to next". A footer
+ * row only when something applies (divider above): Private · Go Pro (the one
+ * filled button, pushed to the end) · the admin-only dev Pro toggle as a gray
+ * dashed pill with a status dot. Web app/stats/page.tsx parity.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive: Boolean, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onShare: () -> Unit = {}) {
     val level = profile?.level ?: 1
@@ -815,8 +809,13 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
     // Two-character initials fallback (web avatar-upload.tsx slice(0, 2) / iOS AvatarView).
     val initial = (profile?.username?.take(2) ?: "P").uppercase()
     val since = memberSince(profile?.createdAt)
+    val purple = Color(0xFF7C3AED)
 
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(20.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // Avatar — real image (avatar_url) via Coil, else the initial in a gradient circle.
             val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() }
@@ -836,7 +835,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                 }
             }
 
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (ProfileAccent.isCustom(profile?.accentColor)) {
                         Text(
@@ -868,105 +867,105 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                         )
                     }
                 }
+                if (since != null) {
+                    Text("Playing since $since", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+                }
+                // Personalization: featured title, favorite-mode chip, bio (left-aligned;
+                // renders nothing when the profile carries none).
+                Box(Modifier.padding(top = 4.dp)) { ProfilePersonalizationRow(profile, start = true) }
+            }
 
-                // Personalization: featured title, favorite-mode chip, bio (left-aligned).
-                ProfilePersonalizationRow(profile, start = true)
+            // Quiet icon actions — the same 32 dp circles as the header's ? and ⚙.
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                CardIconButton(Icons.Filled.Edit, "Edit profile", purple, onEditProfile)
+                CardIconButton(Icons.Filled.Share, "Share profile card", purple, onShare)
+            }
+        }
 
-                // Level-tier pill + XP bar with "N XP to next · since Mon YYYY".
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Level row spans the card: pill · bar · XP to next.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(tier.bg)
+                    .border(1.5.dp, tier.border, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Filled.Star, null, tint = tier.color, modifier = Modifier.size(12.dp))
+                Text("Lvl $level", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = tier.color, maxLines = 1)
+                Text("·", fontSize = 11.sp, color = tier.color.copy(alpha = 0.7f))
+                Text(tier.label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = tier.color, maxLines = 1)
+            }
+            Box(Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(WTheme.border)) {
+                Box(
+                    Modifier.fillMaxWidth(levelProgress.coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(4.dp))
+                        .background(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))),
+                )
+            }
+            Text("$xpToNext XP to next", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+        }
+
+        // Footer row — only when something applies. Social links: the own-profile
+        // model carries none on Android yet (EditProfileScreen fetches them ad hoc).
+        val isAdmin = profile?.isAdmin == true
+        if (profile?.isPrivate == true || !isProActive || isAdmin) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // PRIVATE PROFILES: the owner's always-on reminder that others see
+                // only the teaser card. Tap opens the edit surface (where the
+                // toggle lives). Accessibility copy per the spec.
+                if (profile?.isPrivate == true) {
                     Row(
-                        modifier = Modifier.clip(RoundedCornerShape(50)).background(tier.bg)
-                            .border(1.5.dp, tier.border, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 3.dp),
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFF3F0FF))
+                            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
+                            .pressScale { onEditProfile() }.padding(horizontal = 10.dp, vertical = 4.dp)
+                            .semantics {
+                                contentDescription = "Your profile is private — other players see a limited card. Tap to change."
+                            },
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Icon(Icons.Filled.Star, null, tint = tier.color, modifier = Modifier.size(12.dp))
-                        Text("Lvl $level", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = tier.color, maxLines = 1)
-                        Text("·", fontSize = 11.sp, color = tier.color.copy(alpha = 0.7f))
-                        Text(tier.label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = tier.color, maxLines = 1)
+                        Icon(Icons.Filled.Lock, null, tint = purple, modifier = Modifier.size(11.dp))
+                        Text("Private", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = purple)
                     }
-                    Column(Modifier.weight(1f)) {
-                        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(WTheme.border)) {
-                            Box(
-                                Modifier.fillMaxWidth(levelProgress.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp))
-                                    .background(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))),
-                            )
-                        }
+                }
+                Spacer(Modifier.weight(1f))
+                if (!isProActive) {
+                    Box(
+                        Modifier.clip(RoundedCornerShape(8.dp))
+                            .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                            .clickableNoRipple(onGoPro).padding(horizontal = 16.dp, vertical = 6.dp),
+                    ) { Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
+                }
+                // DEV-ONLY (profiles.is_admin): a quiet gray dashed tool pill with a status
+                // dot — never a stray red link. Flips is_pro and refreshes the profile.
+                if (isAdmin) {
+                    val pro = profile?.isPro == true
+                    Row(
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                            .dashedBorder(WTheme.border, 50.dp)
+                            .clickableNoRipple { com.wordocious.app.data.AuthService.setProDev(!pro) }
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .semantics { contentDescription = "Developer: toggle Pro on this account" },
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(Modifier.size(6.dp).clip(CircleShape).background(if (pro) WTheme.correct else Color(0xFF9CA3AF)))
                         Text(
-                            "$xpToNext XP to next${if (since != null) " · since $since" else ""}",
-                            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 2.dp),
+                            "DEV · PRO ${if (pro) "ON" else "OFF"}",
+                            fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.4.sp, maxLines = 1,
                         )
                     }
                 }
             }
         }
-
-        // One wrapping row of actions (web `flex flex-wrap gap-2`): Edit · Share ·
-        // Private · Go Pro · Simulate Pro. Social links: the own-profile model
-        // carries none on Android yet (EditProfileScreen fetches them ad hoc).
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                    .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
-                    .pressScale { onEditProfile() }.padding(horizontal = 14.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(Icons.Filled.Edit, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
-                Text("Edit profile", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
-            }
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                    .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
-                    .pressScale { onShare() }.padding(horizontal = 14.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(Icons.Filled.Share, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
-                Text("Share", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
-            }
-            // PRIVATE PROFILES: the owner's always-on reminder that others see
-            // only the teaser card. Tap opens the edit surface (where the
-            // toggle lives). Accessibility copy per the spec.
-            if (profile?.isPrivate == true) {
-                Row(
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFF3F0FF))
-                        .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
-                        .pressScale { onEditProfile() }.padding(horizontal = 12.dp, vertical = 6.dp)
-                        .semantics {
-                            contentDescription = "Your profile is private — other players see a limited card. Tap to change."
-                        },
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Icon(Icons.Filled.Lock, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(11.dp))
-                    Text("Private", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
-                }
-            }
-            if (!isProActive) {
-                Box(
-                    Modifier.clip(RoundedCornerShape(8.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                        .clickableNoRipple(onGoPro).padding(horizontal = 16.dp, vertical = 7.dp),
-                ) { Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
-            }
-            // DEV-ONLY (web parity): is_admin-gated Simulate/Disable Pro — flips is_pro.
-            if (profile?.isAdmin == true) {
-                val pro = profile.isPro
-                Box(
-                    Modifier.clip(RoundedCornerShape(8.dp))
-                        .background(if (pro) Color(0xFFFEF2F2) else Color(0xFFF0FDF4))
-                        .border(1.5.dp, if (pro) Color(0xFFFCA5A5) else Color(0xFF86EFAC), RoundedCornerShape(8.dp))
-                        .clickableNoRipple { com.wordocious.app.data.AuthService.setProDev(!pro) }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                ) {
-                    Text(
-                        if (pro) "Disable Pro" else "Simulate Pro",
-                        fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                        color = if (pro) Color(0xFFDC2626) else Color(0xFF16A34A),
-                    )
-                }
-            }
-        }
     }
+}
+
+/** The player card's quiet 32 dp icon circle (AppHeader's CircleIconButton idiom). */
+@Composable
+private fun CardIconButton(icon: ImageVector, label: String, tint: Color, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier.size(32.dp).clip(CircleShape).background(WTheme.surfaceAlt)
+            .border(1.5.dp, WTheme.borderAlt, CircleShape).pressScale { onClick() },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, tint = tint, modifier = Modifier.size(14.dp)) }
 }
 
 // (The old Today's Dailies card is TodayCard.kt now — the eight sweep tiles in
@@ -1019,74 +1018,8 @@ private fun FlawlessBannerFooter(total: Int) {
 
 // (The sweep tile — the old DailyBadge — now lives in TodayCard.kt as SweepTile.)
 
-// ── Recent match row (web parity: icon box + Solo/VS pill + guesses·time + Win/Loss + date) ──
-@Composable
-private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, opponentName: String? = null) {
-    val isPlayer1 = m.player1Id == userId
-    val isVs = m.player2Id != null
-    val won = m.winnerId == userId
-    val score = ((if (isPlayer1) m.player1Score else m.player2Score) ?: 0.0).toInt()
-    val timeSec = ((if (isPlayer1) m.player1Time else m.player2Time) ?: 0.0).toInt()
-    val mode = runCatching { GameMode.valueOf(m.gameMode) }.getOrNull()
-    val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
-            mode?.let { ModeGlyph(it, accent, box = 36.dp) }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(modeLabel(m.gameMode), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
-                Text(
-                    if (isVs) "VS" else "Solo", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                    color = if (isVs) Color(0xFF7C3AED) else Color(0xFF2563EB),
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                        .background(if (isVs) Color(0xFFEDE9F6) else Color(0xFFEFF6FF)).padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-                // Web parity: amber "FORFEIT" chip when this row was a forfeit win.
-                if (m.forfeit == true) {
-                    Text(
-                        "FORFEIT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFB45309),
-                        modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFFFEF3C7)).padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
-                }
-                // Web parity: "· vs <username>" inline on VS rows.
-                if (isVs && opponentName != null) {
-                    Text(
-                        "· vs $opponentName", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        color = WTheme.textMuted, maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            // Through the mode's guess semantics (More Games §11): Sudoku reads "0 mistakes".
-            val meta = com.wordocious.app.ModeGen.byDbKey(m.gameMode)
-            Text(
-                "${formatGuessStat(meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, score)} · ${if (timeSec > 0) fmtMatchTime(timeSec) else "—"}",
-                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-            )
-        }
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (won) "Win" else "Loss", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            Text(fmtMatchDate(m.createdAt), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        }
-    }
-}
-
-private fun fmtMatchTime(s: Int): String = if (s < 60) "${s}s" else "${s / 60}m ${s % 60}s"
-
-/** "Jun 8 · 3:56 PM" in local time (web toLocaleDateString + toLocaleTimeString). */
-private fun fmtMatchDate(iso: String): String {
-    val millis = runCatching { java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli() }
-        .recoverCatching { java.time.Instant.parse(if (iso.endsWith("Z")) iso else "${iso}Z").toEpochMilli() }
-        .getOrNull() ?: return iso.take(10)
-    return java.text.SimpleDateFormat("MMM d · h:mm a", java.util.Locale.US)
-        .apply { timeZone = java.util.TimeZone.getDefault() }.format(java.util.Date(millis))
-}
+// (The recent match row — RecentMatchRow, fmtMatchTime, fmtMatchDate — lives in
+// RecentMatches.kt now, shared by the Today page's Recent Games and All-time.)
 
 // ── Mode-detail header + stats grid (web mode-detail-panel.tsx) ───────────────
 /** Mode icon tile + title in the mode accent, and a read-only play-type chip
@@ -2070,10 +2003,4 @@ private fun hourLabelLower(h: Int): String { val am = h < 12; val t = if (h % 12
 /** "1 PM" / "12 AM" upper (Pro Insights peak hour). */
 private fun hourLabelUpper(h: Int): String { val ampm = if (h >= 12) "PM" else "AM"; val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h; return "$h12 $ampm" }
 
-private fun modeLabel(mode: String) = when (mode) {
-    "DUEL" -> "Classic"; "QUORDLE" -> "QuadWord"; "OCTORDLE" -> "OctoWord"
-    "SEQUENCE" -> "Succession"; "RESCUE" -> "Deliverance"
-    "DUEL_6" -> "Six"; "DUEL_7" -> "Seven"
-    "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "ProperNoundle"
-    else -> com.wordocious.app.ModeGen.byDbKey(mode)?.title ?: mode
-}
+// (modeLabel — the mode's display title for a matches.game_mode key — is in RecentMatches.kt.)

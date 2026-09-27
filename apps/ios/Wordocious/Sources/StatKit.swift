@@ -277,8 +277,8 @@ struct StatsEmptyCard: View {
     }
 }
 
-/// Left-aligned wrapping row (iOS 16 Layout) — the Stats identity strip's
-/// action row (social links · Edit · Share · Private · Go Pro · Simulate Pro)
+/// Left-aligned wrapping row (iOS 16 Layout) — a wrapping row of chips
+/// (the Stats tab used it for its action row before the §296 player card)
 /// flows onto a second line instead of squeezing or scrolling.
 struct ActionWrapRow: Layout {
     var spacing: CGFloat = 8

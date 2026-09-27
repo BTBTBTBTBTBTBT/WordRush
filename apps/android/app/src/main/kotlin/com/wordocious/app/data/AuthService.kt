@@ -602,6 +602,9 @@ object AuthService {
                     set("app_version", version)
                     set("app_platform", "android")
                     set("last_seen_at", java.time.Instant.now().toString())
+                    // §294/§296: the client's IANA timezone for a future server-side reminder
+                    // on the Monday race boundary (profiles.timezone, additive).
+                    set("timezone", java.util.TimeZone.getDefault().id)
                 }) { filter { eq("id", userId) } }
             }
         }

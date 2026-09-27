@@ -561,10 +561,14 @@ final class AuthService: ObservableObject {
                 let app_version: String
                 let app_platform: String
                 let last_seen_at: String
+                /// §294/§296: the device's IANA timezone (profiles.timezone) for
+                /// a future server-side reminder on the client's Monday boundary.
+                let timezone: String?
             }
             _ = try? await client.from("profiles")
                 .update(Stamp(app_version: version, app_platform: "ios",
-                              last_seen_at: ISO8601DateFormatter().string(from: Date())))
+                              last_seen_at: ISO8601DateFormatter().string(from: Date()),
+                              timezone: TimeZone.current.identifier))
                 .eq("id", value: userId)
                 .execute()
         }
