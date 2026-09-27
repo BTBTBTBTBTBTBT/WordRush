@@ -53,6 +53,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -493,11 +495,14 @@ private fun TileGrid(session: KindredSession) {
 @Composable
 private fun WordTile(word: String, selected: Boolean, ringed: Boolean, onTap: () -> Unit) {
     val shape = RoundedCornerShape(10.dp)
-    val fs = when {
-        word.length > 11 -> 9.sp
-        word.length > 8 -> 10.sp
-        else -> 12.sp
-    }
+    // Shrink-to-fit on ONE line (Doug, Android, 2026-09-26: PRESENCE broke as
+    // "PRESENC / E" at his font scale). The old three-step size table could not
+    // know the tile width or the user's font scale; now the text lays out at 12 sp,
+    // and while it overflows the tile it steps down (floor 6.5 sp) before it is
+    // drawn, so no word ever wraps or clips. iOS does the same with minimumScaleFactor.
+    var scale by remember(word) { mutableFloatStateOf(1f) }
+    var fitted by remember(word) { mutableStateOf(false) }
+    val fs = 12.sp * scale
     Box(
         Modifier.fillMaxWidth().height(60.dp)
             .then(if (ringed) Modifier.border(2.dp, PAIR_RING, RoundedCornerShape(14.dp)).padding(3.dp) else Modifier.padding(3.dp)),
@@ -511,7 +516,9 @@ private fun WordTile(word: String, selected: Boolean, ringed: Boolean, onTap: ()
         ) {
             Text(
                 word, fontSize = fs, fontWeight = FontWeight.Black, color = if (selected) Color.White else WTheme.text, fontFamily = Nunito,
-                textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Clip, lineHeight = fs,
+                textAlign = TextAlign.Center, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, lineHeight = fs,
+                modifier = Modifier.drawWithContent { if (fitted) drawContent() },
+                onTextLayout = { r -> if (r.hasVisualOverflow && scale > 0.55f) scale -= 0.05f else fitted = true },
             )
         }
     }

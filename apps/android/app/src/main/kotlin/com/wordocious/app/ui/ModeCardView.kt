@@ -85,7 +85,8 @@ internal fun ModeCardView(
                 ModeGlyph(card, card.accent, box = 32.dp)
             }
             Spacer(Modifier.height(8.dp))
-            Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            // One line, shrink-to-fit: "Crosswordocious" wrapped mid-word at a larger font scale.
+            FitText(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             // Completed daily shows guesses · time; else the mode description (web parity).
             Text(
                 subtitleOverride ?: if (completion != null) {

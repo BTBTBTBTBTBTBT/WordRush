@@ -32,7 +32,8 @@ struct ModeCardView: View {
                     if let done { winBadge(won: done.completed) }
                     else if let vsWon { winBadge(won: vsWon) }
                 }
-                Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                // One line, scaled down before it wraps: "Crosswordocious" at a large Dynamic Type size.
+                Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
                     .padding(.top, 8)
                 Text(subtitleOverride ?? (isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText))
                     .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
