@@ -46,12 +46,13 @@ export function buildRailItems(
       dot: r ? (r.won ? 'won' : 'lost') : null,
     };
   };
+  // All-time sits right after Today (founder, 2026-09-27: last of nineteen chips was too far to reach).
   return [
     { key: RAIL_TODAY, label: 'Today', icon: CalendarDays, accent: '#7c3aed' },
+    { key: RAIL_ALL, label: 'All-time', icon: Trophy, accent: '#d97706' },
     ...sweepModes.map(game),
     { key: RAIL_VS, label: 'VS', icon: Swords, accent: '#ec4899', dot: vsDailyWon === null ? null : vsDailyWon ? 'won' : 'lost' },
     ...moreModes.map(game),
-    { key: RAIL_ALL, label: 'All-time', icon: Trophy, accent: '#d97706' },
   ];
 }
 

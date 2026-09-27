@@ -33,11 +33,12 @@ func buildStatsRailItems(sweep: [HomeMode], more: [HomeMode],
         return StatsRailItem(key: m.dbKey ?? m.id, label: ModeGen.byId(m.id)?.shortTitle ?? m.title,
                              icon: m.icon, accent: m.accent, dot: r.map { $0.completed })
     }
-    return [StatsRailItem(key: StatsRailKey.today, label: "Today", icon: .symbol("calendar"), accent: Color(hex: 0x7C3AED), dot: nil)]
+    // All-time sits right after Today (founder, 2026-09-27: last of nineteen chips was too far to reach).
+    return [StatsRailItem(key: StatsRailKey.today, label: "Today", icon: .symbol("calendar"), accent: Color(hex: 0x7C3AED), dot: nil),
+            StatsRailItem(key: StatsRailKey.all, label: "All-time", icon: .symbol("trophy.fill"), accent: Color(hex: 0xD97706), dot: nil)]
         + sweep.map(game)
         + [StatsRailItem(key: StatsRailKey.vs, label: "VS", icon: .asset("swords"), accent: Color(hex: 0xEC4899), dot: vsDailyWon)]
         + more.map(game)
-        + [StatsRailItem(key: StatsRailKey.all, label: "All-time", icon: .symbol("trophy.fill"), accent: Color(hex: 0xD97706), dot: nil)]
 }
 
 struct StatsRail: View {
