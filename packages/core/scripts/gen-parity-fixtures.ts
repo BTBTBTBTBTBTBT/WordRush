@@ -356,6 +356,9 @@ export function renderWordsearchFixtures() {
     { name: 'reveal', actions: [{ type: 'SELECT', ...ends(2) }, { type: 'SELECT', ...missLine }, { type: 'REVEAL' }, { type: 'SELECT', ...ends(3) }, { type: 'FINISH' }] },
     { name: 'clear', actions: p.words.map((_, i) => ({ type: 'SELECT', ...ends(i) }) as WordsearchAction) },
     { name: 'hints-exhaust', actions: Array.from({ length: 12 }, () => ({ type: 'HINT' }) as WordsearchAction) },
+    // Show words (2026-09-26): finds after "=" are late finds and count like misses.
+    { name: 'show-words', actions: [{ type: 'SELECT', ...ends(0) }, { type: 'SHOW' }, { type: 'SHOW' }, { type: 'SELECT', ...ends(1) }, { type: 'SELECT', ...missLine }, { type: 'SELECT', ...ends(2) }] },
+    { name: 'show-then-clear', actions: [{ type: 'SHOW' }, ...p.words.map((_, i) => ({ type: 'SELECT', ...ends(i) }) as WordsearchAction)] },
   ];
   const reducer = scripts.map((sc) => {
     let s = createWordsearchState(p, 'fixture', 0);
@@ -363,7 +366,7 @@ export function renderWordsearchFixtures() {
     const row = wordsearchMatchRow(s);
     return {
       name: sc.name, id: p.id, actions: sc.actions,
-      expect: { found: s.found, misses: s.misses, hintsUsed: s.hintsUsed, hinted: s.hinted, events: s.events, status: s.status, endTime: s.endTime, guessCount: Math.min(15, 10 + s.misses) },
+      expect: { found: s.found, misses: s.misses, hintsUsed: s.hintsUsed, hinted: s.hinted, wordsShown: s.wordsShown, lateFinds: s.lateFinds, events: s.events, status: s.status, endTime: s.endTime, guessCount: Math.min(15, 10 + s.misses + s.lateFinds) },
       row, reconstruct: reconstructWordsearch(row.solutions, row.guesses),
     };
   });

@@ -21,6 +21,7 @@ class WordsearchFixtureTest {
     private data class Expect(
         val found: List<String>, val misses: Int, val hintsUsed: Int, val hinted: List<String>, val events: List<String>,
         val status: String, val endTime: Double?, val guessCount: Int,
+        val wordsShown: Boolean = false, val lateFinds: Int = 0,
     )
     private data class Row(val solutions: List<String>, val guesses: List<String>)
     private data class Recon(val found: List<String>, val misses: Int, val hintsUsed: Int, val revealed: Boolean, val solved: Boolean, val title: String)
@@ -39,6 +40,7 @@ class WordsearchFixtureTest {
     private fun action(a: Act): WordsearchAction = when (a.type) {
         "SELECT" -> WordsearchAction.Select(a.from!!, a.to!!)
         "HINT" -> WordsearchAction.Hint
+        "SHOW" -> WordsearchAction.Show
         "REVEAL" -> WordsearchAction.Reveal
         "FINISH" -> WordsearchAction.Finish
         else -> error("unknown action ${a.type}")
@@ -70,6 +72,8 @@ class WordsearchFixtureTest {
             assertEquals("${sc.name} misses", sc.expect.misses, s.misses)
             assertEquals("${sc.name} hintsUsed", sc.expect.hintsUsed, s.hintsUsed)
             assertEquals("${sc.name} hinted", sc.expect.hinted, s.hinted)
+            assertEquals("${sc.name} wordsShown", sc.expect.wordsShown, s.wordsShown)
+            assertEquals("${sc.name} lateFinds", sc.expect.lateFinds, s.lateFinds)
             assertEquals("${sc.name} events", sc.expect.events, s.events)
             assertEquals("${sc.name} status", sc.expect.status, s.status.key)
             assertEquals("${sc.name} endTime", sc.expect.endTime?.toLong(), s.endTime)

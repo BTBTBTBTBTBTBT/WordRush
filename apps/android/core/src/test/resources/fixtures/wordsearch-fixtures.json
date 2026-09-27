@@ -170,6 +170,8 @@
           "COOKIES",
           "BLANKET"
         ],
+        "wordsShown": false,
+        "lateFinds": 0,
         "events": [
           "+SUNSHINE",
           "+CRACKERS",
@@ -276,7 +278,9 @@
         "misses": 1,
         "hintsUsed": 2,
         "revealed": false,
-        "solved": false
+        "solved": false,
+        "wordsShown": false,
+        "lateFinds": 0
       }
     },
     {
@@ -312,6 +316,8 @@
         "misses": 1,
         "hintsUsed": 0,
         "hinted": [],
+        "wordsShown": false,
+        "lateFinds": 0,
         "events": [
           "+COOKIES",
           "x 0,0>0,3",
@@ -413,7 +419,9 @@
         "misses": 1,
         "hintsUsed": 0,
         "revealed": true,
-        "solved": false
+        "solved": false,
+        "wordsShown": false,
+        "lateFinds": 0
       }
     },
     {
@@ -487,6 +495,8 @@
         "misses": 0,
         "hintsUsed": 0,
         "hinted": [],
+        "wordsShown": false,
+        "lateFinds": 0,
         "events": [
           "+SUNSHINE",
           "+CRACKERS",
@@ -611,7 +621,9 @@
         "misses": 0,
         "hintsUsed": 0,
         "revealed": false,
-        "solved": true
+        "solved": true,
+        "wordsShown": false,
+        "lateFinds": 0
       }
     },
     {
@@ -671,6 +683,8 @@
           "PLATE",
           "CUPS"
         ],
+        "wordsShown": false,
+        "lateFinds": 0,
         "events": [
           "?SUNSHINE",
           "?CRACKERS",
@@ -784,7 +798,370 @@
         "misses": 0,
         "hintsUsed": 10,
         "revealed": false,
-        "solved": false
+        "solved": false,
+        "wordsShown": false,
+        "lateFinds": 0
+      }
+    },
+    {
+      "name": "show-words",
+      "id": "ws0001",
+      "actions": [
+        {
+          "type": "SELECT",
+          "from": 0,
+          "to": 70
+        },
+        {
+          "type": "SHOW"
+        },
+        {
+          "type": "SHOW"
+        },
+        {
+          "type": "SELECT",
+          "from": 72,
+          "to": 79
+        },
+        {
+          "type": "SELECT",
+          "from": 0,
+          "to": 3
+        },
+        {
+          "type": "SELECT",
+          "from": 72,
+          "to": 18
+        }
+      ],
+      "expect": {
+        "found": [
+          "SUNSHINE",
+          "CRACKERS",
+          "COOKIES"
+        ],
+        "misses": 1,
+        "hintsUsed": 0,
+        "hinted": [],
+        "wordsShown": true,
+        "lateFinds": 2,
+        "events": [
+          "+SUNSHINE",
+          "=",
+          "~CRACKERS",
+          "x 0,0>0,3",
+          "~COOKIES"
+        ],
+        "status": "playing",
+        "endTime": null,
+        "guessCount": 13
+      },
+      "row": {
+        "solutions": [
+          "g:SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+          "t:Picnic Basket",
+          "SUNSHINE@0,0,S",
+          "CRACKERS@7,2,E",
+          "COOKIES@7,2,NE",
+          "BLANKET@2,2,E",
+          "THERMOS@1,1,S",
+          "MEADOW@1,2,E",
+          "PICKLE@4,2,E",
+          "SHADE@9,1,E",
+          "PLATE@5,5,NE",
+          "CUPS@0,4,E"
+        ],
+        "guesses": [
+          "+SUNSHINE",
+          "=",
+          "~CRACKERS",
+          "x 0,0>0,3",
+          "~COOKIES"
+        ]
+      },
+      "reconstruct": {
+        "grid": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+        "title": "Picnic Basket",
+        "words": [
+          {
+            "w": "SUNSHINE",
+            "r": 0,
+            "c": 0,
+            "d": "S"
+          },
+          {
+            "w": "CRACKERS",
+            "r": 7,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "COOKIES",
+            "r": 7,
+            "c": 2,
+            "d": "NE"
+          },
+          {
+            "w": "BLANKET",
+            "r": 2,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "THERMOS",
+            "r": 1,
+            "c": 1,
+            "d": "S"
+          },
+          {
+            "w": "MEADOW",
+            "r": 1,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "PICKLE",
+            "r": 4,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "SHADE",
+            "r": 9,
+            "c": 1,
+            "d": "E"
+          },
+          {
+            "w": "PLATE",
+            "r": 5,
+            "c": 5,
+            "d": "NE"
+          },
+          {
+            "w": "CUPS",
+            "r": 0,
+            "c": 4,
+            "d": "E"
+          }
+        ],
+        "found": [
+          "SUNSHINE",
+          "CRACKERS",
+          "COOKIES"
+        ],
+        "misses": 1,
+        "hintsUsed": 0,
+        "revealed": false,
+        "solved": false,
+        "wordsShown": true,
+        "lateFinds": 2
+      }
+    },
+    {
+      "name": "show-then-clear",
+      "id": "ws0001",
+      "actions": [
+        {
+          "type": "SHOW"
+        },
+        {
+          "type": "SELECT",
+          "from": 0,
+          "to": 70
+        },
+        {
+          "type": "SELECT",
+          "from": 72,
+          "to": 79
+        },
+        {
+          "type": "SELECT",
+          "from": 72,
+          "to": 18
+        },
+        {
+          "type": "SELECT",
+          "from": 22,
+          "to": 28
+        },
+        {
+          "type": "SELECT",
+          "from": 11,
+          "to": 71
+        },
+        {
+          "type": "SELECT",
+          "from": 12,
+          "to": 17
+        },
+        {
+          "type": "SELECT",
+          "from": 42,
+          "to": 47
+        },
+        {
+          "type": "SELECT",
+          "from": 91,
+          "to": 95
+        },
+        {
+          "type": "SELECT",
+          "from": 55,
+          "to": 19
+        },
+        {
+          "type": "SELECT",
+          "from": 4,
+          "to": 7
+        }
+      ],
+      "expect": {
+        "found": [
+          "SUNSHINE",
+          "CRACKERS",
+          "COOKIES",
+          "BLANKET",
+          "THERMOS",
+          "MEADOW",
+          "PICKLE",
+          "SHADE",
+          "PLATE",
+          "CUPS"
+        ],
+        "misses": 0,
+        "hintsUsed": 0,
+        "hinted": [],
+        "wordsShown": true,
+        "lateFinds": 10,
+        "events": [
+          "=",
+          "~SUNSHINE",
+          "~CRACKERS",
+          "~COOKIES",
+          "~BLANKET",
+          "~THERMOS",
+          "~MEADOW",
+          "~PICKLE",
+          "~SHADE",
+          "~PLATE",
+          "~CUPS"
+        ],
+        "status": "won",
+        "endTime": 1000,
+        "guessCount": 15
+      },
+      "row": {
+        "solutions": [
+          "g:SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+          "t:Picnic Basket",
+          "SUNSHINE@0,0,S",
+          "CRACKERS@7,2,E",
+          "COOKIES@7,2,NE",
+          "BLANKET@2,2,E",
+          "THERMOS@1,1,S",
+          "MEADOW@1,2,E",
+          "PICKLE@4,2,E",
+          "SHADE@9,1,E",
+          "PLATE@5,5,NE",
+          "CUPS@0,4,E"
+        ],
+        "guesses": [
+          "=",
+          "~SUNSHINE",
+          "~CRACKERS",
+          "~COOKIES",
+          "~BLANKET",
+          "~THERMOS",
+          "~MEADOW",
+          "~PICKLE",
+          "~SHADE",
+          "~PLATE",
+          "~CUPS"
+        ]
+      },
+      "reconstruct": {
+        "grid": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+        "title": "Picnic Basket",
+        "words": [
+          {
+            "w": "SUNSHINE",
+            "r": 0,
+            "c": 0,
+            "d": "S"
+          },
+          {
+            "w": "CRACKERS",
+            "r": 7,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "COOKIES",
+            "r": 7,
+            "c": 2,
+            "d": "NE"
+          },
+          {
+            "w": "BLANKET",
+            "r": 2,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "THERMOS",
+            "r": 1,
+            "c": 1,
+            "d": "S"
+          },
+          {
+            "w": "MEADOW",
+            "r": 1,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "PICKLE",
+            "r": 4,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "SHADE",
+            "r": 9,
+            "c": 1,
+            "d": "E"
+          },
+          {
+            "w": "PLATE",
+            "r": 5,
+            "c": 5,
+            "d": "NE"
+          },
+          {
+            "w": "CUPS",
+            "r": 0,
+            "c": 4,
+            "d": "E"
+          }
+        ],
+        "found": [
+          "SUNSHINE",
+          "CRACKERS",
+          "COOKIES",
+          "BLANKET",
+          "THERMOS",
+          "MEADOW",
+          "PICKLE",
+          "SHADE",
+          "PLATE",
+          "CUPS"
+        ],
+        "misses": 0,
+        "hintsUsed": 0,
+        "revealed": false,
+        "solved": true,
+        "wordsShown": true,
+        "lateFinds": 10
       }
     }
   ],

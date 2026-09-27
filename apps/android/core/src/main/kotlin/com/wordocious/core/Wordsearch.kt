@@ -11,7 +11,9 @@ import kotlin.math.sign
  * (WordsearchFixtureTest). A selection is a straight line in any of the eight
  * directions; it finds a word when its letters spell a list word forwards or
  * backwards; a miss is a straight line of ≥ 4 cells spelling no list word.
- * guess_count = min(10 + misses, 15). Event sigils: + x ? !
+ * Hidden list (2026-09-26): the words start hidden; Show words lists the rest and every
+ * later find counts like a miss. guess_count = min(10 + misses + lateFinds, 15).
+ * Event sigils: + ~ x ? = !
  */
 const val WORDSEARCH_DAILY_EPOCH = "2026-09-23"
 const val WORDSEARCH_N = 10
@@ -80,9 +82,13 @@ data class WordsearchState(
     val seed: String, val id: String, val title: String, val n: Int, val grid: String, val words: List<WordsearchPlacement>,
     val found: List<String>, val misses: Int, val hintsUsed: Int, val hinted: List<String>, val events: List<String>,
     val status: WordsearchStatus, val startTime: Long, val endTime: Long?,
+    /** Show words used: the remaining words are listed; later finds count like misses. */
+    val wordsShown: Boolean = false,
+    /** Words found after Show words (each adds one to guess_count). */
+    val lateFinds: Int = 0,
 ) {
-    /** guess_count for the result row: 10 clean, +1 per miss, capped at 15. */
-    val guessCount: Int get() = minOf(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + maxOf(0, misses))
+    /** guess_count for the result row: 10 clean, +1 per miss and per late find, capped at 15. */
+    val guessCount: Int get() = minOf(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + maxOf(0, misses) + maxOf(0, lateFinds))
     /** The Hint target: the first unfound, un-pulsed word (else the first unfound). */
     val nextUnfound: WordsearchPlacement? get() = words.firstOrNull { it.w !in found && it.w !in hinted } ?: words.firstOrNull { it.w !in found }
 
@@ -96,6 +102,7 @@ data class WordsearchState(
 sealed class WordsearchAction {
     data class Select(val from: Int, val to: Int) : WordsearchAction()
     object Hint : WordsearchAction()
+    object Show : WordsearchAction()
     object Reveal : WordsearchAction()
     object Finish : WordsearchAction()
 }
@@ -113,7 +120,8 @@ fun wordsearchReduce(s: WordsearchState, a: WordsearchAction, now: Long = 0): Wo
                 if (hit.w in s.found) return s
                 val found = s.found + hit.w
                 val won = found.size == s.words.size
-                s.copy(found = found, events = s.events + "+${hit.w}", status = if (won) WordsearchStatus.WON else WordsearchStatus.PLAYING, endTime = if (won) now else null)
+                val late = s.wordsShown
+                s.copy(found = found, lateFinds = s.lateFinds + (if (late) 1 else 0), events = s.events + "${if (late) "~" else "+"}${hit.w}", status = if (won) WordsearchStatus.WON else WordsearchStatus.PLAYING, endTime = if (won) now else null)
             } else if (line.size < WORDSEARCH_MIN_MISS_LENGTH) s
             else s.copy(misses = s.misses + 1, events = s.events + "x ${a.from / s.n},${a.from % s.n}>${a.to / s.n},${a.to % s.n}")
         }
@@ -121,6 +129,7 @@ fun wordsearchReduce(s: WordsearchState, a: WordsearchAction, now: Long = 0): Wo
             val target = s.words.firstOrNull { it.w !in s.found && it.w !in s.hinted } ?: return s
             s.copy(hinted = s.hinted + target.w, hintsUsed = s.hintsUsed + 1, events = s.events + "?${target.w}")
         }
+        is WordsearchAction.Show -> if (s.wordsShown) s else s.copy(wordsShown = true, events = s.events + "=")
         is WordsearchAction.Reveal -> s.copy(status = WordsearchStatus.LOST, endTime = now, events = s.events + "!")
         is WordsearchAction.Finish -> s
     }
@@ -134,6 +143,7 @@ fun wordsearchMatchRow(s: WordsearchState): Pair<List<String>, List<String>> =
 data class WordsearchReconstruction(
     val grid: String, val title: String, val words: List<WordsearchPlacement>,
     val found: List<String>, val misses: Int, val hintsUsed: Int, val revealed: Boolean, val solved: Boolean,
+    val wordsShown: Boolean = false, val lateFinds: Int = 0,
 )
 
 private val PLACEMENT_RE = Regex("^([A-Z]{2,})@(\\d+),(\\d+),(NE|NW|SE|SW|N|S|E|W)$")
@@ -146,16 +156,17 @@ fun reconstructWordsearch(solutions: List<String>, guesses: List<String>): Words
         PLACEMENT_RE.matchEntire(f)?.let { m -> WordsearchPlacement(m.groupValues[1], m.groupValues[2].toInt(), m.groupValues[3].toInt(), m.groupValues[4]) }
     }
     if (words.isEmpty()) return null
-    val found = ArrayList<String>(); var misses = 0; var hintsUsed = 0; var revealed = false
+    val found = ArrayList<String>(); var misses = 0; var hintsUsed = 0; var revealed = false; var wordsShown = false; var lateFinds = 0
     for (ev in guesses) {
         if (ev == "!") { revealed = true; continue }
+        if (ev == "=") { wordsShown = true; continue }
         val sigil = ev.firstOrNull() ?: continue
         val rest = ev.substring(1)
         when (sigil) {
-            '+' -> if (words.any { it.w == rest } && rest !in found) found.add(rest)
+            '+', '~' -> if (words.any { it.w == rest } && rest !in found) { found.add(rest); if (sigil == '~') lateFinds++ }
             'x' -> misses++
             '?' -> hintsUsed++
         }
     }
-    return WordsearchReconstruction(grid, solutions[1].substring(2), words, found, misses, hintsUsed, revealed, found.size == words.size)
+    return WordsearchReconstruction(grid, solutions[1].substring(2), words, found, misses, hintsUsed, revealed, found.size == words.size, wordsShown, lateFinds)
 }

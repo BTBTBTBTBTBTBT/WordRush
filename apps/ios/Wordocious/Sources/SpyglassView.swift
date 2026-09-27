@@ -5,7 +5,9 @@ import WordociousCore
 // themed words hidden in a 10 × 10 grid, four forward directions in the daily.
 // Tap-start / tap-end or drag to select; a straight line of four or more
 // letters that spells no list word is a miss. Hint pulses a first letter
-// (score cost, never a miss). Reveal (after five minutes) records a loss with
+// (score cost, never a miss). The word list starts HIDDEN (founder, 2026-09-26):
+// chips show each word's length; Show words lists the rest and every later find
+// counts like a miss. Reveal (after five minutes) records a loss with
 // what was found. guess_count = min(10 + misses, 15).
 
 private let spyglassAccent = Color(hex: 0x4D7C0F)
@@ -101,6 +103,7 @@ final class SpyglassVM: ObservableObject {
         else if state.misses > before.misses { Haptics.error(); SoundManager.shared.playInvalid(); flash("Not one of the words") }
     }
     func hint() { let before = state.hintsUsed; dispatch(.hint); if state.hintsUsed > before { SoundManager.shared.playKeyTap() } }
+    func showWords() { guard !state.wordsShown else { return }; dispatch(.show); flash("Words shown — finds from here count like misses") }
     func reveal() {
         guard canReveal else { flash("Reveal unlocks at \(revealAfterSeconds / 60):00"); return }
         dispatch(.reveal)
@@ -165,6 +168,7 @@ struct SpyglassView: View {
                     wordChips.padding(.top, 4)
                     HStack(spacing: 8) {
                         capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
+                        capsule(vm.state.wordsShown ? "Words shown" : "Show words", "list.bullet", dim: vm.state.wordsShown) { vm.showWords() }
                         TimelineView(.periodic(from: .now, by: 1)) { _ in
                             capsule(vm.canReveal ? "Reveal" : "Reveal · \(timeText(max(0, revealAfterSeconds - vm.elapsed)))", "eye", dim: !vm.canReveal) { vm.reveal() }
                         }
@@ -260,9 +264,13 @@ struct SpyglassView: View {
         let s = vm.state
         return FlowChips(items: s.words.map(\.w)) { w in
             let found = s.found.contains(w), hinted = s.hinted.contains(w) && !found
-            Text(w).font(Brand.font(14, .bold)).strikethrough(found)
+            // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
+            let visible = found || s.wordsShown || s.status != .playing
+            Text(visible ? w : String(repeating: "•", count: w.count)).font(Brand.font(14, .bold)).strikethrough(found)
+                .tracking(visible ? 0 : 2)
                 .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-                .foregroundStyle(found ? spyglassInk : Theme.textPrimary)
+                .accessibilityLabel(visible ? w : "\(w.count)-letter word")
+                .foregroundStyle(found ? spyglassInk : (visible ? Theme.textPrimary : Theme.textMuted))
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(Capsule().fill(found ? spyglassAccent.opacity(0.14) : Theme.surface))
                 .overlay(Capsule().stroke(found ? spyglassAccent.opacity(0.35) : (hinted ? spyglassAccent : Theme.border), lineWidth: 1))
@@ -275,7 +283,7 @@ struct SpyglassView: View {
         let won = s.status == .won
         let secs = vm.elapsed
         return VStack(spacing: 10) {
-            Text(won ? (s.misses == 0 ? "Clean clear" : "Grid cleared") : "Revealed")
+            Text(won ? (s.guessCount == 10 ? "Clean clear" : (s.wordsShown ? "Cleared with the list" : "Grid cleared")) : "Revealed")
                 .font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
             Text("\(s.found.count)/\(s.words.count) found · \(formatGuessStat(semantics: "misses", guessBase: 10, guessCount: s.guessCount)) · \(timeText(secs))\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")
                 .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)

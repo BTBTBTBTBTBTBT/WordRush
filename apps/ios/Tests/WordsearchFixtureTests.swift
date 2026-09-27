@@ -10,6 +10,7 @@ final class WordsearchFixtureTests: XCTestCase {
     private struct Act: Decodable { let type: String; let from: Int?; let to: Int? }
     private struct Expect: Decodable {
         let found: [String]; let misses: Int; let hintsUsed: Int; let hinted: [String]; let events: [String]
+        let wordsShown: Bool; let lateFinds: Int
         let status: String; let endTime: Double?; let guessCount: Int
     }
     private struct Row: Decodable { let solutions: [String]; let guesses: [String] }
@@ -37,6 +38,7 @@ final class WordsearchFixtureTests: XCTestCase {
         switch a.type {
         case "SELECT": return .select(from: a.from!, to: a.to!)
         case "HINT": return .hint
+        case "SHOW": return .show
         case "REVEAL": return .reveal
         case "FINISH": return .finish
         default: fatalError("unknown action \(a.type)")
@@ -66,6 +68,8 @@ final class WordsearchFixtureTests: XCTestCase {
             XCTAssertEqual(s.misses, sc.expect.misses, "\(sc.name) misses")
             XCTAssertEqual(s.hintsUsed, sc.expect.hintsUsed, "\(sc.name) hintsUsed")
             XCTAssertEqual(s.hinted, sc.expect.hinted, "\(sc.name) hinted")
+            XCTAssertEqual(s.wordsShown, sc.expect.wordsShown, "\(sc.name) wordsShown")
+            XCTAssertEqual(s.lateFinds, sc.expect.lateFinds, "\(sc.name) lateFinds")
             XCTAssertEqual(s.events, sc.expect.events, "\(sc.name) events")
             XCTAssertEqual(s.status.rawValue, sc.expect.status, "\(sc.name) status")
             XCTAssertEqual(s.endTime, sc.expect.endTime, "\(sc.name) endTime")

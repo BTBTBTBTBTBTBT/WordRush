@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Refresh
@@ -97,7 +98,9 @@ import kotlinx.serialization.json.Json
 // SpyglassView.swift. Ten themed words hidden in a 10 × 10 grid, four forward
 // directions in the daily. Tap-start / tap-end or drag to select; a straight
 // line of four or more letters that spells no list word is a miss. Hint pulses
-// a first letter; Reveal (after five minutes) records a loss with what was
+// a first letter. The word list starts HIDDEN (founder, 2026-09-26): chips show
+// each word's length; Show words lists the rest and every later find counts like a
+// miss. Reveal (after five minutes) records a loss with what was
 // found. guess_count = min(10 + misses, 15).
 
 private val SPY_ACCENT = Color(0xFF4D7C0F)
@@ -153,6 +156,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         val id: String, val title: String, val grid: String, val words: List<PlaceDto>,
         val found: List<String>, val misses: Int, val hintsUsed: Int, val hinted: List<String>, val events: List<String>,
         val status: String, val startTime: Long, val endTime: Long?,
+        val wordsShown: Boolean = false, val lateFinds: Int = 0,
     )
     private val storageKey get() = if (isDaily) "wordsearch-save-daily" else "wordsearch-save-$seed"
 
@@ -161,7 +165,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
             s.id, s.title, s.grid, s.words.map { PlaceDto(it.w, it.r, it.c, it.d) }, s.found, s.misses, s.hintsUsed, s.hinted, s.events,
-            s.status.key, s.startTime, s.endTime,
+            s.status.key, s.startTime, s.endTime, s.wordsShown, s.lateFinds,
         )
         runCatching { SettingsPref.set(storageKey, json.encodeToString(dto)) }
     }
@@ -178,6 +182,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         state = WordsearchState(
             seed, dto.id, dto.title, 10, dto.grid, dto.words.map { WordsearchPlacement(it.w, it.r, it.c, it.d) },
             dto.found, dto.misses, dto.hintsUsed, dto.hinted, dto.events, status, dto.startTime, dto.endTime,
+            dto.wordsShown, dto.lateFinds,
         )
         restoredElapsedMs = dto.elapsed * 1000L
         if (status != WordsearchStatus.PLAYING) { finalTimeSeconds = dto.elapsed; recorded = true; restoredFinished = true }
@@ -198,6 +203,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         else if (state.misses > before.misses) { SoundManager.playInvalid(); toast = "Not one of the words" }
     }
     fun hint(onFinished: () -> Unit) { val before = state.hintsUsed; dispatch(WordsearchAction.Hint, onFinished); if (state.hintsUsed > before) SoundManager.playKeyTap() }
+    fun showWords(onFinished: () -> Unit) { if (state.wordsShown) return; dispatch(WordsearchAction.Show, onFinished); toast = "Words shown — finds from here count like misses" }
     fun reveal(onFinished: () -> Unit) {
         if (!canReveal) { toast = "Reveal unlocks at ${REVEAL_AFTER_SECONDS / 60}:00"; return }
         dispatch(WordsearchAction.Reveal, onFinished)
@@ -285,6 +291,7 @@ fun SpyglassScreen(
                 @Suppress("UNUSED_EXPRESSION") tick
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+                    Capsule(if (session.state.wordsShown) "Words shown" else "Show words", Icons.AutoMirrored.Filled.List, dim = session.state.wordsShown) { session.showWords(onFinished) }
                     Capsule(if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}", Icons.Filled.Visibility, dim = !session.canReveal) { session.reveal(onFinished) }
                 }
                 Spacer(Modifier.weight(1f))
@@ -340,8 +347,12 @@ private fun WordChips(session: SpyglassSession) {
     ) {
         for (w in s.words.map { it.w }) {
             val found = w in s.found; val hinted = w in s.hinted && !found
+            // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
+            val visible = found || s.wordsShown || s.status != WordsearchStatus.PLAYING
             Text(
-                w, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (found) SPY_INK else WTheme.text,
+                if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = if (visible) 0.sp else 2.sp,
+                color = if (found) SPY_INK else if (visible) WTheme.text else WTheme.textMuted,
                 textDecoration = if (found) TextDecoration.LineThrough else null,
                 maxLines = 1, softWrap = false,
                 modifier = Modifier.clip(CircleShape).background(if (found) SPY_ACCENT.copy(alpha = 0.14f) else WTheme.surface)
@@ -468,7 +479,7 @@ private fun SpyglassResult(
     val secs = session.elapsed
     val context = LocalContext.current
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Text(if (won) (if (s.misses == 0) "Clean clear" else "Grid cleared") else "Revealed", fontSize = 20.sp, fontWeight = FontWeight.Black,
+        Text(if (won) (if (s.guessCount == 10) "Clean clear" else if (s.wordsShown) "Cleared with the list" else "Grid cleared") else "Revealed", fontSize = 20.sp, fontWeight = FontWeight.Black,
             color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
         Text(
             "${s.found.size}/${s.words.size} found · ${formatGuessStat("misses", 10, s.guessCount)} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""),

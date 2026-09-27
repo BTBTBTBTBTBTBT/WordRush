@@ -5,7 +5,9 @@ import Foundation
 // (WordsearchFixtureTests). A selection is a straight line in any of the
 // eight directions; it finds a word when its letters spell a list word
 // forwards or backwards; a miss is a straight line of ≥ 4 cells spelling no
-// list word. guess_count = min(10 + misses, 15). Event sigils: + x ? !
+// list word. Hidden list (2026-09-26): the words start hidden; Show words lists the
+// rest and every later find counts like a miss. guess_count = min(10 + misses + lateFinds, 15).
+// Event sigils: + ~ x ? = !
 
 public let WORDSEARCH_DAILY_EPOCH = "2026-09-23"
 public let WORDSEARCH_N = 10
@@ -95,6 +97,10 @@ public struct WordsearchState: Codable, Equatable {
     public var misses: Int
     public var hintsUsed: Int
     public var hinted: [String]
+    /// Show words used: the remaining words are listed; later finds count like misses.
+    public var wordsShown: Bool
+    /// Words found after Show words (each adds one to guess_count).
+    public var lateFinds: Int
     public var events: [String]
     public var status: WordsearchStatus
     public var startTime: Double
@@ -102,11 +108,25 @@ public struct WordsearchState: Codable, Equatable {
 
     public init(puzzle: WordsearchPuzzle, seed: String, startTime: Double) {
         self.seed = seed; id = puzzle.id; title = puzzle.title; n = WORDSEARCH_N; grid = puzzle.grid; words = puzzle.words
-        found = []; misses = 0; hintsUsed = 0; hinted = []; events = []; status = .playing; self.startTime = startTime; endTime = nil
+        found = []; misses = 0; hintsUsed = 0; hinted = []; wordsShown = false; lateFinds = 0; events = []; status = .playing; self.startTime = startTime; endTime = nil
     }
 
-    /// guess_count for the result row: 10 clean, +1 per miss, capped at 15.
-    public var guessCount: Int { min(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + max(0, misses)) }
+    // Saves written before Show words existed lack the two new keys — decode them as their zero values.
+    private enum CodingKeys: String, CodingKey { case seed, id, title, n, grid, words, found, misses, hintsUsed, hinted, wordsShown, lateFinds, events, status, startTime, endTime }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        seed = try c.decode(String.self, forKey: .seed); id = try c.decode(String.self, forKey: .id); title = try c.decode(String.self, forKey: .title)
+        n = try c.decode(Int.self, forKey: .n); grid = try c.decode(String.self, forKey: .grid); words = try c.decode([WordsearchPlacement].self, forKey: .words)
+        found = try c.decode([String].self, forKey: .found); misses = try c.decode(Int.self, forKey: .misses); hintsUsed = try c.decode(Int.self, forKey: .hintsUsed)
+        hinted = try c.decode([String].self, forKey: .hinted)
+        wordsShown = try c.decodeIfPresent(Bool.self, forKey: .wordsShown) ?? false
+        lateFinds = try c.decodeIfPresent(Int.self, forKey: .lateFinds) ?? 0
+        events = try c.decode([String].self, forKey: .events); status = try c.decode(WordsearchStatus.self, forKey: .status)
+        startTime = try c.decode(Double.self, forKey: .startTime); endTime = try c.decodeIfPresent(Double.self, forKey: .endTime)
+    }
+
+    /// guess_count for the result row: 10 clean, +1 per miss and per late find, capped at 15.
+    public var guessCount: Int { min(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + max(0, misses) + max(0, lateFinds)) }
     /// The Hint target: the first unfound, un-pulsed word (else the first unfound).
     public var nextUnfound: WordsearchPlacement? {
         words.first { !found.contains($0.w) && !hinted.contains($0.w) } ?? words.first { !found.contains($0.w) }
@@ -116,6 +136,7 @@ public struct WordsearchState: Codable, Equatable {
 public enum WordsearchAction: Equatable {
     case select(from: Int, to: Int)
     case hint
+    case show
     case reveal
     case finish
 }
@@ -132,7 +153,8 @@ public func wordsearchReduce(_ s: WordsearchState, _ a: WordsearchAction, now: D
         if let hit = s.words.first(where: { $0.w == letters || $0.w == reversed }) {
             if s.found.contains(hit.w) { return s }
             var n = s
-            n.found.append(hit.w); n.events.append("+\(hit.w)")
+            let late = s.wordsShown
+            n.found.append(hit.w); if late { n.lateFinds += 1 }; n.events.append("\(late ? "~" : "+")\(hit.w)")
             if n.found.count == s.words.count { n.status = .won; n.endTime = now }
             return n
         }
@@ -145,6 +167,11 @@ public func wordsearchReduce(_ s: WordsearchState, _ a: WordsearchAction, now: D
         guard let target = s.words.first(where: { !s.found.contains($0.w) && !s.hinted.contains($0.w) }) else { return s }
         var n = s
         n.hinted.append(target.w); n.hintsUsed += 1; n.events.append("?\(target.w)")
+        return n
+    case .show:
+        if s.wordsShown { return s }
+        var n = s
+        n.wordsShown = true; n.events.append("=")
         return n
     case .reveal:
         var n = s
@@ -164,6 +191,7 @@ public func wordsearchMatchRow(_ s: WordsearchState) -> (solutions: [String], gu
 public struct WordsearchReconstruction: Equatable {
     public let grid: String, title: String, words: [WordsearchPlacement]
     public let found: [String], misses: Int, hintsUsed: Int, revealed: Bool, solved: Bool
+    public let wordsShown: Bool, lateFinds: Int
 }
 
 private let placementRe = try! NSRegularExpression(pattern: "^([A-Z]{2,})@(\\d+),(\\d+),(NE|NW|SE|SW|N|S|E|W)$")
@@ -180,15 +208,17 @@ public func reconstructWordsearch(solutions: [String], guesses: [String]) -> Wor
                                          c: Int(ns.substring(with: m.range(at: 3)))!, d: ns.substring(with: m.range(at: 4))))
     }
     guard !words.isEmpty else { return nil }
-    var found: [String] = [], misses = 0, hintsUsed = 0, revealed = false
+    var found: [String] = [], misses = 0, hintsUsed = 0, revealed = false, wordsShown = false, lateFinds = 0
     for ev in guesses {
         if ev == "!" { revealed = true; continue }
+        if ev == "=" { wordsShown = true; continue }
         guard let sigil = ev.first else { continue }
         let rest = String(ev.dropFirst())
-        if sigil == "+", words.contains(where: { $0.w == rest }), !found.contains(rest) { found.append(rest) }
+        if (sigil == "+" || sigil == "~") && words.contains(where: { $0.w == rest }) && !found.contains(rest) { found.append(rest); if sigil == "~" { lateFinds += 1 } }
         else if sigil == "x" { misses += 1 }
         else if sigil == "?" { hintsUsed += 1 }
     }
     return WordsearchReconstruction(grid: grid, title: String(solutions[1].dropFirst(2)), words: words, found: found,
-                                    misses: misses, hintsUsed: hintsUsed, revealed: revealed, solved: found.count == words.count)
+                                    misses: misses, hintsUsed: hintsUsed, revealed: revealed, solved: found.count == words.count,
+                                    wordsShown: wordsShown, lateFinds: lateFinds)
 }

@@ -118,7 +118,7 @@ final class HubVM: ObservableObject {
         case .centre: return "Must use the center letter"
         case .letters: return "Only the seven letters"
         case .found: return "Already found"
-        case .notword: return "Not in word list"
+        case .notword: return "Not a word we know"
         }
     }
 

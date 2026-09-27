@@ -428,10 +428,17 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     slug: 'spyglass-playbook',
     title: 'The Spyglass Playbook: Clearing the Daily Word Search Clean and Fast',
     description:
-      'How to clear the Wordocious daily word search with zero misses — scanning for rare letters and letter pairs, using the forwards-only rule to halve the search, taking long words first, and knowing exactly what a miss is so you never spend one.',
-    dek: 'Nothing reads backwards, only straight lines of four or more can miss, and a clean clear ranks purely on time. Here is how to earn the clean part.',
+      'How to clear the Wordocious daily word search with zero misses and the list still hidden — reading the theme, scanning for rare letters and letter pairs, using the forwards-only rule to halve the search, taking long words first, knowing exactly what a miss is, and when Show words is worth its price.',
+    dek: 'The list starts hidden, nothing reads backwards, only straight lines of four or more can miss, and a blind clean clear ranks purely on time. Here is how to earn the clean part.',
     minutes: 6,
     sections: [
+      {
+        heading: 'The list is hidden — the theme is the list',
+        body: [
+          'Since 2026-09-26 the ten words start hidden: every chip under the grid shows only how long its word is. That turns Spyglass into two puzzles — name the words, then find them — and the first half is where the points are. The title names the family. A "Breakfast" grid with a five-letter chip is asking for TOAST, BACON or JUICE; a nine-letter chip on a "Workshop" grid is almost certainly SCREWDRIVER\'s shorter cousin, CHISEL or SANDPAPER. Say the family\'s obvious members to yourself before you look at a single letter.',
+          'Every word you find with the list hidden is worth its full 120 points. Show words lists whatever you have not found — the words, never their places — and from that tap onward each find counts like a miss. That is the whole trade: information for points. Two blind finds and a shown third scores 13; three blind finds score 10. Use the button for the one or two words that will not come, not as your opening move.',
+        ],
+      },
       {
         heading: 'Forwards only — use it',
         body: [
@@ -461,16 +468,16 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         ],
       },
       {
-        heading: 'Hint and Reveal have different jobs',
+        heading: 'Hint, Show words and Reveal have different jobs',
         body: [
           'Hint pulses the first letter of the next word you have not found. It costs 60 points and never counts as a miss, but it rules out a Perfect run and the Pure Spyglass achievements. Since a miss costs 120, a Hint is half the price of a wrong guess — use it when you have scanned for a word\'s rare letters twice and still cannot see it, and never as a substitute for reading the grid.',
-          'After five minutes a Reveal button appears. It ends the grid as a loss, shows where the missing words were, and keeps credit for everything you found — each of the ten words is its own board, so nine found is still a strong partial score. Reveal is for a grid that has beaten you, not a slow one; a clean clear at fourteen minutes outscores a reveal at six by more than a thousand points.',
+          'Show words sits between them. It costs nothing up front and never ends the game, but every word you find after it counts like a miss — 120 points each — so it is a loan against your finish, not a free look. Take it when the theme has run dry and you have two words left, not five. After five minutes a Reveal button appears. It ends the grid as a loss, shows where the missing words were, and keeps credit for everything you found — each of the ten words is its own board, so nine found is still a strong partial score. Reveal is for a grid that has beaten you, not a slow one; a clean clear at fourteen minutes outscores a reveal at six by more than a thousand points.',
         ],
       },
       {
         heading: 'Pace the clean clear',
         body: [
-          'Because every strong finish is a zero-miss clear, the Spyglass podium is decided by time, and time is decided by method. Read the list once, rank the words by their rarest letter, take the long words and the rare-letter words first, and let the crossings give you the rest. The last two words are usually short, common-letter words — sweep the grid row by row for their first pair, not their first letter.',
+          'Because every strong finish is a blind zero-miss clear, the Spyglass podium is decided by time, and time is decided by method. Name the family\'s words from the theme and the chip lengths, rank them by their rarest letter, take the long words and the rare-letter words first, and let the crossings give you the rest. The last two words are usually short, common-letter words — sweep the grid row by row for their first pair, not their first letter — and only then decide whether Show words is worth its price.',
           'Themes rotate through fifteen families, a theme never returns within four months and no word repeats within six weeks, so you cannot memorize the grid — but you can memorize the method. Like every More Games title, Spyglass earns XP, medals and a leaderboard place while leaving your Daily Sweep exactly where the eight word games put it.',
         ],
       },

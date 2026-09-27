@@ -14,12 +14,20 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../bank';
  * (shorter or crooked drags are free — fat-finger tolerance). Finding every
  * word wins. Hint pulses the first letter of the next unfound word (a score
  * cost, never a miss). Reveal (the UI offers it after five minutes) records a
- * loss with the words found so far. guess_count = min(10 + misses, 15) with
- * boards_solved = words found of 10, so a clean clear ranks purely by time.
+ * loss with the words found so far.
+ *
+ * Hidden list (founder, 2026-09-26): the ten words start HIDDEN — the player
+ * sees the theme and each word's length only, and finds words from the theme.
+ * SHOW WORDS lists the remaining words (never their places); every word found
+ * after that is a LATE find and counts like a miss, because the feat is
+ * smaller. guess_count = min(10 + misses + lateFinds, 15) with boards_solved =
+ * words found of 10 — a blind clean clear is still the perfect 10 and ranks
+ * purely by time; showing the list can never turn a clear into a loss.
  *
  * Parity-critical: Wordsearch.swift / Wordsearch.kt reproduce this exactly and
  * wordsearch-fixtures.json pins all three. Event strings start with a
- * non-letter sigil (§11): "+WORD" found, "x r,c>r,c" miss, "?WORD" hint, "!" reveal.
+ * non-letter sigil (§11): "+WORD" found, "~WORD" found after Show words,
+ * "x r,c>r,c" miss, "?WORD" hint, "=" words shown, "!" reveal.
  */
 
 export const WORDSEARCH_DAILY_EPOCH = '2026-09-23';
@@ -105,6 +113,10 @@ export interface WordsearchState {
   hintsUsed: number;
   /** Words whose first letter has been pulsed by a Hint. */
   hinted: string[];
+  /** Show words used: the remaining words are listed; later finds count like misses. */
+  wordsShown: boolean;
+  /** Words found after Show words (each adds one to guess_count). */
+  lateFinds: number;
   events: string[];
   status: WordsearchStatus;
   startTime: number;
@@ -114,19 +126,21 @@ export interface WordsearchState {
 export type WordsearchAction =
   | { type: 'SELECT'; from: number; to: number }
   | { type: 'HINT' }
+  | { type: 'SHOW' }
   | { type: 'REVEAL' }
   | { type: 'FINISH' };
 
 export function createWordsearchState(puzzle: WordsearchPuzzle, seed: string, startTime: number): WordsearchState {
   return {
     seed, id: puzzle.id, title: puzzle.title, n: WORDSEARCH_N, grid: puzzle.grid, words: puzzle.words,
-    found: [], misses: 0, hintsUsed: 0, hinted: [], events: [], status: 'playing', startTime, endTime: null,
+    found: [], misses: 0, hintsUsed: 0, hinted: [], wordsShown: false, lateFinds: 0, events: [], status: 'playing', startTime, endTime: null,
   };
 }
 
-/** guess_count for the result row: 10 clean, +1 per miss, capped at 15. */
-export function wordsearchGuessCount(s: { misses: number }): number {
-  return Math.min(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + Math.max(0, s.misses));
+/** guess_count for the result row: 10 clean, +1 per miss and per late find, capped at 15.
+ *  (`lateFinds` is optional so saves written before Show words existed still score.) */
+export function wordsearchGuessCount(s: { misses: number; lateFinds?: number }): number {
+  return Math.min(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + Math.max(0, s.misses) + Math.max(0, s.lateFinds ?? 0));
 }
 
 /** The first list word not yet found, in list order (the Hint target). */
@@ -150,7 +164,11 @@ export function wordsearchReduce(s: WordsearchState, a: WordsearchAction, now = 
         if (s.found.includes(hit.w)) return s;
         const found = [...s.found, hit.w];
         const won = found.length === s.words.length;
-        return { ...s, found, events: [...s.events, `+${hit.w}`], status: won ? 'won' : 'playing', endTime: won ? now : null };
+        const late = !!s.wordsShown;
+        return {
+          ...s, found, lateFinds: (s.lateFinds ?? 0) + (late ? 1 : 0),
+          events: [...s.events, `${late ? '~' : '+'}${hit.w}`], status: won ? 'won' : 'playing', endTime: won ? now : null,
+        };
       }
       if (line.length < WORDSEARCH_MIN_MISS_LENGTH) return s;
       const r0 = Math.floor(a.from / s.n), c0 = a.from % s.n, r1 = Math.floor(a.to / s.n), c1 = a.to % s.n;
@@ -161,6 +179,9 @@ export function wordsearchReduce(s: WordsearchState, a: WordsearchAction, now = 
       if (!target) return s;
       return { ...s, hinted: [...s.hinted, target.w], hintsUsed: s.hintsUsed + 1, events: [...s.events, `?${target.w}`] };
     }
+    case 'SHOW':
+      if (s.wordsShown) return s;
+      return { ...s, wordsShown: true, events: [...s.events, '='] };
     case 'REVEAL':
       return { ...s, status: 'lost', endTime: now, events: [...s.events, '!'] };
     default:
@@ -181,6 +202,8 @@ export function wordsearchMatchRow(s: WordsearchState): { solutions: string[]; g
 export interface WordsearchReconstruction {
   grid: string; title: string; words: WordsearchPlacement[];
   found: string[]; misses: number; hintsUsed: number; revealed: boolean; solved: boolean;
+  /** Show words was used; how many words came after it. */
+  wordsShown: boolean; lateFinds: number;
 }
 
 export function reconstructWordsearch(solutions: string[] | null | undefined, guesses: string[] | null | undefined): WordsearchReconstruction | null {
@@ -195,13 +218,14 @@ export function reconstructWordsearch(solutions: string[] | null | undefined, gu
     if (m) words.push({ w: m[1], r: Number(m[2]), c: Number(m[3]), d: m[4] });
   }
   if (!words.length) return null;
-  const found: string[] = []; let misses = 0, hintsUsed = 0, revealed = false;
+  const found: string[] = []; let misses = 0, hintsUsed = 0, revealed = false, wordsShown = false, lateFinds = 0;
   for (const ev of guesses ?? []) {
     if (ev === '!') { revealed = true; continue; }
+    if (ev === '=') { wordsShown = true; continue; }
     const sigil = ev[0], rest = ev.slice(1);
-    if (sigil === '+' && words.some((p) => p.w === rest) && !found.includes(rest)) found.push(rest);
+    if ((sigil === '+' || sigil === '~') && words.some((p) => p.w === rest) && !found.includes(rest)) { found.push(rest); if (sigil === '~') lateFinds++; }
     else if (sigil === 'x') misses++;
     else if (sigil === '?') hintsUsed++;
   }
-  return { grid, title: t.slice(2), words, found, misses, hintsUsed, revealed, solved: found.length === words.length };
+  return { grid, title: t.slice(2), words, found, misses, hintsUsed, revealed, solved: found.length === words.length, wordsShown, lateFinds };
 }

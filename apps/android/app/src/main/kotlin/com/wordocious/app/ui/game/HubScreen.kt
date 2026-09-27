@@ -217,7 +217,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
 
     private fun rejectCopy(r: HubReject) = when (r) {
         HubReject.ENDED -> "This puzzle is finished"; HubReject.SHORT -> "Four letters or more"; HubReject.CENTRE -> "Must use the center letter"
-        HubReject.LETTERS -> "Only the seven letters"; HubReject.FOUND -> "Already found"; HubReject.NOTWORD -> "Not in word list"
+        HubReject.LETTERS -> "Only the seven letters"; HubReject.FOUND -> "Already found"; HubReject.NOTWORD -> "Not a word we know"
     }
 
     private fun afterChange(before: HubState) {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Lightbulb, Eye } from 'lucide-react';
+import { Clock, Lightbulb, List, Eye } from 'lucide-react';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount,
   generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank,
@@ -37,7 +37,9 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // forward directions in the daily. Tap-start / tap-end or drag to select; a
 // straight line of four or more letters that spells no list word is a miss.
 // Hint pulses a first letter (score cost, never a miss). Reveal (after five
-// minutes) records a loss with what was found. guess_count = min(10+misses, 15).
+// minutes) records a loss with what was found. The word list starts HIDDEN
+// (founder, 2026-09-26): chips show only each word's length; Show words lists
+// the rest and every later find counts like a miss. guess_count = min(10 + misses + late finds, 15).
 
 const BANK = wordsearchBankJson as WordsearchBank;
 const REVEAL_AFTER_SECONDS = 300;
@@ -151,6 +153,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
   const onSelect = useCallback((from: number, to: number) => dispatch({ type: 'SELECT', from, to }), [dispatch]);
   const hint = useCallback(() => dispatch({ type: 'HINT' }), [dispatch]);
+  const showWords = useCallback(() => { dispatch({ type: 'SHOW' }); flash('Words shown — finds from here count like misses'); }, [dispatch, flash]);
   const reveal = useCallback(() => {
     if (elapsedSeconds < REVEAL_AFTER_SECONDS) { flash(`Reveal unlocks at ${REVEAL_AFTER_SECONDS / 60}:00`); return; }
     dispatch({ type: 'REVEAL' });
@@ -186,12 +189,15 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
       {state.words.map((p) => {
         const found = state.found.includes(p.w);
         const hinted = state.hinted.includes(p.w) && !found;
+        // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
+        const visible = found || !!state.wordsShown || finished;
         return (
           <span key={p.w} className={`text-sm font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
             style={found
               ? { background: `${WORDSEARCH_ACCENT}22`, borderColor: `${WORDSEARCH_ACCENT}55`, color: '#365314' }
-              : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: 'var(--color-text)' }}>
-            {p.w}
+              : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: visible ? 'var(--color-text)' : 'var(--color-text-muted)', letterSpacing: visible ? undefined : '0.2em' }}
+            aria-label={visible ? p.w : `${p.w.length}-letter word`}>
+            {visible ? p.w : '•'.repeat(p.w.length)}
           </span>
         );
       })}
@@ -213,7 +219,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{wordsearchDailyNumber(getTodayLocal())}</span>}
           <span>{state.found.length}/{state.words.length} found</span>
-          <span>{state.misses} miss{state.misses === 1 ? '' : 'es'}</span>
+          <span>{state.misses} miss{state.misses === 1 ? '' : 'es'}{(state.lateFinds ?? 0) > 0 ? ` · ${state.lateFinds} late` : ''}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
         </div>
         {message && (
@@ -232,6 +238,9 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
           <div className="shrink-0 px-2 pt-1 flex justify-center gap-2" role="group" aria-label="Spyglass controls">
             <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint">
               <Lightbulb className="w-3.5 h-3.5" /> Hint{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
+            </button>
+            <button type="button" onClick={() => { if (!state.wordsShown) { haptic('light'); showWords(); } }} className={capsule(!!state.wordsShown)} style={capsuleStyle(!!state.wordsShown)} aria-label="Show words" aria-disabled={!!state.wordsShown}>
+              <List className="w-3.5 h-3.5" /> {state.wordsShown ? 'Words shown' : 'Show words'}
             </button>
             <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
               <Eye className="w-3.5 h-3.5" /> Reveal{!canReveal ? ` · ${formatTime(REVEAL_AFTER_SECONDS - elapsedSeconds)}` : ''}
@@ -254,7 +263,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? (state.misses === 0 ? 'Clean clear' : 'Grid cleared') : 'Revealed'}
+                    {won ? (gc === 10 ? 'Clean clear' : state.wordsShown ? 'Cleared with the list' : 'Grid cleared') : 'Revealed'}
                   </span>
                   <span className="text-xs text-gray-400">
                     {`${state.found.length}/${state.words.length} found · ${missLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}

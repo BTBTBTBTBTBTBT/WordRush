@@ -48,7 +48,7 @@ const REJECT_COPY: Record<HubReject, string> = {
   centre: 'Must use the center letter',
   letters: 'Only the seven letters',
   found: 'Already found',
-  notword: 'Not in word list',
+  notword: 'Not a word we know',
 };
 
 interface HubGameProps { isDaily?: boolean }

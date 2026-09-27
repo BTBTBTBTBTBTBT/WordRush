@@ -2,6 +2,7 @@ package com.wordocious.app.ui.game
 
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
@@ -171,6 +172,7 @@ private fun controlIcon(lucide: String): androidx.compose.ui.graphics.vector.Ima
     "check" -> Icons.Filled.Check
     "delete" -> Icons.AutoMirrored.Filled.Backspace
     "eye" -> Icons.Filled.Visibility
+    "list" -> Icons.AutoMirrored.Filled.List
     "check-check" -> Icons.Filled.DoneAll
     "flag" -> Icons.Filled.Flag
     "corner-down-left" -> Icons.AutoMirrored.Filled.KeyboardReturn
