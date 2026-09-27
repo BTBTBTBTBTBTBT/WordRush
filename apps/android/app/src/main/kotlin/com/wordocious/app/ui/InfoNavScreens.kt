@@ -466,6 +466,7 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
 
 // ── Home footer link row (web footer parity) ──────────────────────────────────
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun InfoFooter(onNav: (String) -> Unit) {
     // iOS splits the 8 links into two fixed rows of four rather than letting them
@@ -476,9 +477,12 @@ fun InfoFooter(onNav: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         listOf(INFO_NAV.take(half), INFO_NAV.drop(half)).forEach { line ->
-            Row(
+            // A link that does not fit wraps to the next line whole (a narrow phone at a
+            // large font clipped "WORDS" — Doug, 2026-09-27).
+            androidx.compose.foundation.layout.FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 line.forEach { item ->
                     Text(item.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,

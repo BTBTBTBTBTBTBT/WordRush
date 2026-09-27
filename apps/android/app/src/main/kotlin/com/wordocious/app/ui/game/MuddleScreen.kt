@@ -157,14 +157,30 @@ private val WORD_TILE = 36.dp
 /** The punchline tiles (~32 dp). */
 private val FINAL_TILE = 32.dp
 /**
- * Compact mode (Doug, Android, 2026-09-27: at his font scale the words, punchline,
- * capsules and a four-row keyboard filled the screen and the cartoon was a sliver).
- * True on a short screen or a larger system font: tiles 30/28 dp, hint circles 24 dp,
- * compact keyboard keys — so the picture band keeps its floor without scrolling.
+ * Fit tiers (Doug, Android, 2026-09-27: at his font scale, with the four-row keyboard
+ * and a two-row punchline, the words filled the screen and the cartoon was a sliver).
+ * The layout starts at the tier its screen suggests and, if the picture band still
+ * cannot hold the cartoon floor plus the caption, steps DOWN one tier at a time
+ * (measured, never estimated) until it can — so the cartoon and caption always show
+ * and the keyboard never scrolls. Tier 0 = the founder's compact rule sizes.
  */
-private val LocalMuddleCompact = androidx.compose.runtime.compositionLocalOf { false }
-@Composable private fun wordTile(): androidx.compose.ui.unit.Dp = if (LocalMuddleCompact.current) 30.dp else WORD_TILE
-@Composable private fun finalTile(): androidx.compose.ui.unit.Dp = if (LocalMuddleCompact.current) 28.dp else FINAL_TILE
+private data class MuddleSizes(
+    val tile: androidx.compose.ui.unit.Dp, val finalTile: androidx.compose.ui.unit.Dp,
+    val hintRow: androidx.compose.ui.unit.Dp, val hintCircle: androidx.compose.ui.unit.Dp,
+    val scrambleSp: androidx.compose.ui.unit.TextUnit, val tileSp: androidx.compose.ui.unit.TextUnit, val finalSp: androidx.compose.ui.unit.TextUnit,
+    val keyH: androidx.compose.ui.unit.Dp,
+    /** Vertical padding around the tray letters; the cartoon's floor; the caption's type. */
+    val trayPadV: androidx.compose.ui.unit.Dp, val cartoonFloor: androidx.compose.ui.unit.Dp,
+    val captionSp: androidx.compose.ui.unit.TextUnit, val captionLine: androidx.compose.ui.unit.TextUnit,
+)
+private val MUDDLE_TIERS = listOf(
+    MuddleSizes(WORD_TILE, FINAL_TILE, 32.dp, 28.dp, 17.sp, 18.sp, 17.sp, 44.dp, 6.dp, 120.dp, 14.sp, 18.sp),
+    MuddleSizes(30.dp, 28.dp, 28.dp, 26.dp, 16.sp, 16.sp, 15.sp, 38.dp, 3.dp, 100.dp, 14.sp, 18.sp),
+    MuddleSizes(26.dp, 24.dp, 26.dp, 22.dp, 14.sp, 14.sp, 13.sp, 34.dp, 2.dp, 80.dp, 13.sp, 16.sp),
+)
+private val LocalMuddleSizes = androidx.compose.runtime.compositionLocalOf { MUDDLE_TIERS[0] }
+@Composable private fun wordTile(): androidx.compose.ui.unit.Dp = LocalMuddleSizes.current.tile
+@Composable private fun finalTile(): androidx.compose.ui.unit.Dp = LocalMuddleSizes.current.finalTile
 /** Gap between tiles on the grid. */
 private val TILE_GAP = 6.dp
 /** The Letter · Solve icon circles (28–30 dp). */
@@ -446,8 +462,11 @@ fun MuddleScreen(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val cartoonCap = maxHeight * CARTOON_SCREEN_FRACTION
                 val fontScale = LocalDensity.current.fontScale
-                val compact = maxHeight < 760.dp || fontScale > 1.1f || KeyboardLayoutPref.value == "michael"
-                androidx.compose.runtime.CompositionLocalProvider(LocalMuddleCompact provides compact) {
+                val michael = KeyboardLayoutPref.value == "michael"
+                // Start at the tier the screen suggests; the picture band below escalates it if it must.
+                var tier by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(if (maxHeight < 760.dp || fontScale > 1.1f || michael) 1 else 0) }
+                val sizes = MUDDLE_TIERS[tier]
+                androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
                 Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MuddleHeader(session, tick)
                     BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -456,9 +475,15 @@ fun MuddleScreen(
                         // width and font scale, 1–4) so the cartoon shrinks and the caption never scrolls
                         // out of view (Doug, 2026-09-27: a narrow phone at a large font showed two lines
                         // and an ellipsis).
-                        val captionLines = estimatedCaptionLines(session.state.caption, minOf(maxWidth, 420.dp).value - 12f, fontScale)
-                        val captionAllowance = with(LocalDensity.current) { (CAPTION_LINE_HEIGHT * captionLines).toDp() } + 8.dp
-                        val cartoonH = minOf(cartoonCap, maxWidth * 0.75f, maxOf(maxHeight - captionAllowance, CARTOON_FLOOR))
+                        val captionLines = estimatedCaptionLines(session.state.caption, minOf(maxWidth, 420.dp).value - 12f, fontScale * (sizes.captionSp.value / 14f))
+                        val captionAllowance = with(LocalDensity.current) { (sizes.captionLine * captionLines).toDp() } + 8.dp
+                        // MEASURED fit: if this band cannot hold the cartoon floor plus the whole caption,
+                        // step the puzzle down one tier (smaller tiles, shorter keys) and re-measure.
+                        val needed = sizes.cartoonFloor + captionAllowance
+                        androidx.compose.runtime.LaunchedEffect(maxHeight, needed) {
+                            if (maxHeight < needed && tier < MUDDLE_TIERS.lastIndex) tier++
+                        }
+                        val cartoonH = minOf(cartoonCap, maxWidth * 0.75f, maxOf(maxHeight - captionAllowance, sizes.cartoonFloor))
                         Column(
                             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
@@ -472,7 +497,7 @@ fun MuddleScreen(
                         Capsule("Clear", Icons.Filled.Cancel) { SoundManager.playKeyTap(); session.clear() }
                     }
                     KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() },
-                                 keyHeight = if (compact) 38.dp else 44.dp)
+                                 keyHeight = sizes.keyH)
                     Spacer(Modifier.height(4.dp))
                 }
                 }
@@ -657,7 +682,7 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
                 }
             },
         ),
-        fontSize = CAPTION_FONT, lineHeight = CAPTION_LINE_HEIGHT, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
+        fontSize = LocalMuddleSizes.current.captionSp, lineHeight = LocalMuddleSizes.current.captionLine, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
         maxLines = 4, overflow = TextOverflow.Ellipsis,
         modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 6.dp),
     )
@@ -708,15 +733,15 @@ private fun WordRow(
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(Modifier.fillMaxWidth().height(HINT_ROW_HEIGHT), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = LocalMuddleSizes.current.hintRow), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
                 w.scramble.forEachIndexed { i, ch ->
                     val dim = dimmed[i] || solved
                     Text(
-                        ch.toString(), fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, letterSpacing = 1.sp,
+                        ch.toString(), fontSize = LocalMuddleSizes.current.scrambleSp, lineHeight = LocalMuddleSizes.current.scrambleSp * 1.2f, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, letterSpacing = 1.sp,
                         modifier = Modifier.alpha(if (dim) 0.25f else 1f)
                             .then(if (!dim && !finished) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier)
-                            .padding(horizontal = 3.dp, vertical = 6.dp),
+                            .padding(horizontal = 3.dp, vertical = LocalMuddleSizes.current.trayPadV),
                     )
                 }
             }
@@ -734,7 +759,7 @@ private fun WordRow(
                 val filled = ch.isNotEmpty()
                 val pinned = revealed[i] != '_'
                 val bg = if (solved) PURPLE else if (filled) (if (pinned) HINT else PURPLE) else WTheme.surface
-                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = if (LocalMuddleCompact.current) 16.sp else 18.sp, modifier = Modifier.size(wordTile()))
+                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = LocalMuddleSizes.current.tileSp, modifier = Modifier.size(wordTile()))
             }
         }
     }
@@ -796,7 +821,7 @@ private fun FinalRow(
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             // One line: the heading, then (once open) the circled-letter tray and the Letter circle.
-            Row(Modifier.fillMaxWidth().heightIn(min = if (playable) HINT_ROW_HEIGHT else 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().heightIn(min = if (playable) LocalMuddleSizes.current.hintRow else 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 com.wordocious.app.ui.FitText(
                     if (open || finished) "PUNCHLINE" else "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE",
                     fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp,
@@ -809,7 +834,7 @@ private fun FinalRow(
                                 ch.toString(), fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black, color = LILAC_TEXT, fontFamily = Nunito, letterSpacing = 1.sp,
                                 modifier = Modifier.alpha(if (dimmed[i]) 0.25f else 1f)
                                     .then(if (!dimmed[i]) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier)
-                                    .padding(horizontal = 3.dp, vertical = 6.dp),
+                                    .padding(horizontal = 3.dp, vertical = LocalMuddleSizes.current.trayPadV),
                             )
                         }
                     }
@@ -820,9 +845,17 @@ private fun FinalRow(
             // A word group never wraps, so the tile shrinks until the LONGEST group fits the row
             // (floor 22 dp) — a ten-letter punchline lost its last letter on a narrower phone.
             val longest = s.final.pattern.maxOrNull() ?: 1
+            val letters = s.final.pattern.sum().coerceAtLeast(1)
+            val groups = s.final.pattern.size.coerceAtLeast(1)
             val fitTile = ((maxWidth - 4.dp * (longest - 1)) / longest)
-            val tile = if (fitTile < finalTile()) maxOf(22.dp, fitTile) else finalTile()
-            val tileFont = if (tile < 28.dp) 13.sp else if (LocalMuddleCompact.current) 15.sp else 17.sp
+            // Every group on one row if the tiles can shrink to 22 dp for it; else the longest group sets the size.
+            val oneRow = (maxWidth - 12.dp * (groups - 1) - 4.dp * (letters - groups)) / letters
+            val tile = when {
+                oneRow >= 22.dp -> minOf(finalTile(), oneRow)
+                fitTile < finalTile() -> maxOf(22.dp, fitTile)
+                else -> finalTile()
+            }
+            val tileFont = if (tile < 28.dp) 13.sp else LocalMuddleSizes.current.finalSp
             FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var pos = 0
                 for (len in s.final.pattern) {
@@ -853,9 +886,9 @@ private fun FinalRow(
  */
 @Composable
 private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Unit) {
-    Box(Modifier.size(width = 40.dp, height = HINT_ROW_HEIGHT).clickableNoRipple(onClick), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(width = 40.dp, height = LocalMuddleSizes.current.hintRow).clickableNoRipple(onClick), contentAlignment = Alignment.Center) {
         Box(
-            Modifier.size(HINT_CIRCLE).clip(CircleShape).background(MUDDLE_ACCENT.copy(alpha = 0.08f)).border(1.dp, MUDDLE_ACCENT.copy(alpha = 0.45f), CircleShape),
+            Modifier.size(LocalMuddleSizes.current.hintCircle).clip(CircleShape).background(MUDDLE_ACCENT.copy(alpha = 0.08f)).border(1.dp, MUDDLE_ACCENT.copy(alpha = 0.45f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = description, tint = MUDDLE_ACCENT, modifier = Modifier.size(15.dp))
