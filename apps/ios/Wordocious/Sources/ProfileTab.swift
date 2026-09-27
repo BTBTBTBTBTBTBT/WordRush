@@ -160,10 +160,16 @@ struct ProfileTab: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .fullScreenCover(item: $badgeGame) { g in
-                NavigationStack { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+                NavigationStack {
+                    if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
+                    else { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+                }
             }
             .fullScreenCover(item: $badgeSolved) { g in
-                NavigationStack { SolvedPuzzleView(mode: g.mode, title: g.title) }
+                NavigationStack {
+                    if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
+                    else { SolvedPuzzleView(mode: g.mode, title: g.title) }
+                }
             }
             .fullScreenCover(isPresented: $badgePN) {
                 NavigationStack { ProperNoundleView() }
@@ -172,20 +178,7 @@ struct ProfileTab: View {
             // restores its finished board when already played) — the same
             // switch RootTabView's Next Daily hand-off and Home use.
             .fullScreenCover(item: $badgeMore) { m in
-                NavigationStack {
-                    switch m.id {
-                    case "sudoku": SudokuView()
-                    case "regions": RegionsView()
-                    case "ladder": LadderView()
-                    case "wordsearch": SpyglassView()
-                    case "hub": HubView()
-                    case "cryptogram": CodebreakerView()
-                    case "groups": KindredView()
-                    case "crossword": CrosswordView()
-                    case "scramble": MuddleView()
-                    default: ProperNoundleView()
-                    }
-                }
+                NavigationStack { CustomDailyView(id: m.id) }
             }
             .onDailyRecorded { reloadToken += 1 }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
@@ -334,10 +327,13 @@ struct ProfileTab: View {
             onJump: { key in Haptics.tap(); select(key) },
             onOpenDaily: openDaily)
         if let p = auth.profile {
+            // Founder, 2026-09-27: every game played TODAY (daily and unlimited), no cap,
+            // no "See all" link — the full history lives on All-time.
+            let todays = recentMatches.filter { RecentMatchesList.isToday($0.created_at) }
             VStack(alignment: .leading, spacing: 8) {
-                SectionHeader("Recent Games", accent: Color(hex: 0x2563EB))
-                RecentMatchesList(matches: recentMatches, profileId: p.id, opponentNames: opponentNames,
-                                  loading: recentLoading, limit: 5, onSeeAll: { select(StatsRailKey.all) })
+                SectionHeader("Today's Games", accent: Color(hex: 0x2563EB))
+                RecentMatchesList(matches: todays, profileId: p.id, opponentNames: opponentNames,
+                                  loading: recentLoading, limit: .max, emptyText: "No games yet today — play a daily to start the list.")
             }
         }
     }
@@ -490,7 +486,7 @@ struct ProfileTab: View {
     /// full-screen cover (badgeGame & co.), never pushed.
     private func openDaily(_ m: HomeMode) {
         let played = m.dbKey.flatMap { completions.byMode[$0] } != nil
-        if let gm = m.mode {
+        if let gm = m.mode, !gm.isCustomEngine {
             if played { badgeSolved = LeaderboardTab.LbGame(mode: gm, title: m.title) }
             else { badgeGame = LeaderboardTab.LbGame(mode: gm, title: m.title) }
         } else if m.id == "propernoundle" {
@@ -645,7 +641,7 @@ struct ProfileTab: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 // Quiet icon actions — the same 32 pt circles as the header's ? and ⚙.
                 HStack(spacing: 6) {
-                    iconCircle("pencil.fill", label: "Edit profile") { showEditProfile = true }
+                    iconCircle("pencil", label: "Edit profile") { showEditProfile = true }
                     iconCircle("square.and.arrow.up", label: "Share profile card") { shareProfile(p) }
                 }
                 .sheet(isPresented: $showEditProfile) { EditProfileView() }
@@ -1233,12 +1229,20 @@ struct LeaderboardTab: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .fullScreenCover(item: $lbGame) { g in
-                NavigationStack { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+                NavigationStack {
+                    // A More Games title opens ITS view (which starts or restores today's daily).
+                    if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
+                    else { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+                }
             }
             .fullScreenCover(item: $lbSolved) { g in
                 // Read-only reconstruction (matches the home "View Solved Puzzle"),
                 // so a finished daily never reopens as a fresh playable board.
-                NavigationStack { SolvedPuzzleView(mode: g.mode, title: g.title) }
+                // Custom engines show their own finished screen instead (founder, 2026-09-27).
+                NavigationStack {
+                    if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
+                    else { SolvedPuzzleView(mode: g.mode, title: g.title) }
+                }
             }
             .fullScreenCover(isPresented: $showPNDaily) {
                 NavigationStack { ProperNoundleView() }
@@ -1276,7 +1280,9 @@ struct LeaderboardTab: View {
     /// "Play CTA" card (web /daily): mode icon + title + players-today + a Play
     /// button that launches today's daily for the selected mode.
     private var playCtaCard: some View {
-        let m = homeModes.first { $0.dbKey == mode.rawValue }
+        // The whole catalog — the More Games titles are not in the home grid, and the
+        // fallback showed their raw keys ("SCRAMBLE", "HUB") with no icon (founder, 2026-09-27).
+        let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
         return VStack(spacing: 0) {
             LinearGradient(colors: [accent, accent.opacity(0.5)], startPoint: .leading, endPoint: .trailing)

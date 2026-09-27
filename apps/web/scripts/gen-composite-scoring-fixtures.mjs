@@ -54,6 +54,12 @@ const CASES = [
   ['spyglass loss 7/10',         'WORDSEARCH',    false, 12, 300, 7, 10, 0, null, null],
   ['starsweep 0 mistakes',       'REGIONS',       true,  1, 130, 1, 1,  0, null, null],
   ['starsweep 1 mistake',        'REGIONS',       true,  2, 200, 1, 1,  0, null, null],
+  // No-tie speed bonus (2026-09-27): wins at and past the cap must still differ by time.
+  ['muddle 5 checks, 17m21s (founder)', 'SCRAMBLE', true, 5, 1041, 5, 5, 0, null, null],
+  ['muddle 5 checks, 8m54s (Oliver)',   'SCRAMBLE', true, 5, 534,  5, 5, 0, null, null],
+  ['muddle 5 checks, 8m55s',            'SCRAMBLE', true, 5, 535,  5, 5, 0, null, null],
+  ['classic win exactly at the cap',    'DUEL',     true, 3, 300,  1, 1, 0, null, null],
+  ['classic win one hour',              'DUEL',     true, 3, 3600, 1, 1, 0, null, null],
 
   // Multi-board losses (UNCHANGED: proportional boards bonus)
   ['quadword loss 2/4',          'QUORDLE',       false, 9,  300, 2, 4,  0, null, null],
@@ -86,6 +92,8 @@ const DATE_VARIANTS = [
   // §220: LOSS_TIME_CUTOVER_DATE — losses gain a fractional (< 1 point) time
   // bonus so equal-board losses rank by speed. Wins are unchanged vs [v2].
   ['loss-time', '2026-08-24'],
+  // No-tie speed bonus (founder, 2026-09-27): floor at the cap, cap / t tail past it.
+  ['no-tie', '2026-09-28'],
 ];
 
 const fixtures = DATE_VARIANTS.flatMap(([tag, dateKey]) =>

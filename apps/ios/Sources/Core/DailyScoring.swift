@@ -26,6 +26,21 @@ public enum DailyScoring {
     /// board (every structural loss increment is >= 6 points).
     public static let lossTimeCutoverDate = "2026-08-24"
 
+    /// Founder, 2026-09-27: "no ties". Days >= this pay a WIN's speed bonus with a
+    /// floor (10 % of speedMax) at the cap and a cap / t tail past it (4 decimals),
+    /// so two different times never score the same. Mirrors composite-scoring.ts.
+    public static let noTieCutoverDate = "2026-09-28"
+    static let speedFloor = 0.1
+
+    /// No-tie speed bonus for a win — expression order mirrors the web 1:1.
+    static func noTieSpeedBonus(timeCap: Int, timeSeconds: Int, speedMax: Double) -> Double {
+        let t = max(0, timeSeconds)
+        if t <= timeCap {
+            return (speedMax * (speedFloor + (1 - speedFloor) * Double(timeCap - t) / Double(timeCap)) * 100).rounded() / 100
+        }
+        return (speedMax * speedFloor * Double(timeCap) / Double(t) * 10000).rounded() / 10000
+    }
+
     public struct Config {
         let maxGuesses: Int
         let guessWeight: Int
@@ -133,11 +148,16 @@ public enum DailyScoring {
         let speedMax = v2 ? speedFraction * Double(c.guessWeight) : Double(c.timeCap)
         // §220: post-cutover LOSSES earn a fractional (< 1 point) time bonus.
         let lossTime = dateKey == nil || dateKey! >= Self.lossTimeCutoverDate
+        let noTie = v2 && (dateKey == nil || dateKey! >= Self.noTieCutoverDate)
         let timeBonus: Double
         if completed {
-            timeBonus = v2
-                ? ((Double(max(0, c.timeCap - timeSeconds)) / Double(c.timeCap)) * speedMax * 100).rounded() / 100
-                : Double(max(0, c.timeCap - timeSeconds))
+            if noTie {
+                timeBonus = Self.noTieSpeedBonus(timeCap: c.timeCap, timeSeconds: timeSeconds, speedMax: speedMax)
+            } else {
+                timeBonus = v2
+                    ? ((Double(max(0, c.timeCap - timeSeconds)) / Double(c.timeCap)) * speedMax * 100).rounded() / 100
+                    : Double(max(0, c.timeCap - timeSeconds))
+            }
         } else if lossTime {
             timeBonus = ((Double(max(0, c.timeCap - timeSeconds)) / Double(c.timeCap)) * 0.99 * 100).rounded() / 100
         } else {

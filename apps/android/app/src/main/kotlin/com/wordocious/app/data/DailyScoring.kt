@@ -30,6 +30,19 @@ object DailyScoring {
      *  board (every structural loss increment is >= 6 points). */
     const val LOSS_TIME_CUTOVER_DATE = "2026-08-24"
 
+    /** Founder, 2026-09-27: "no ties". Days >= this pay a WIN's speed bonus with a floor
+     *  (10 % of speedMax) at the cap and a cap / t tail past it (4 decimals), so two
+     *  different times never score the same. Mirrors composite-scoring.ts. */
+    const val NO_TIE_CUTOVER_DATE = "2026-09-28"
+    private const val SPEED_FLOOR = 0.1
+
+    /** No-tie speed bonus for a win — expression order mirrors the web 1:1. */
+    internal fun noTieSpeedBonus(timeCap: Int, timeSeconds: Int, speedMax: Double): Double {
+        val t = max(0, timeSeconds)
+        if (t <= timeCap) return jsRound(speedMax * (SPEED_FLOOR + (1 - SPEED_FLOOR) * (timeCap - t).toDouble() / timeCap) * 100) / 100
+        return jsRound(speedMax * SPEED_FLOOR * timeCap / t * 10000) / 10000
+    }
+
     /** JS Math.round parity (half-up): kotlin.math.round is half-to-even and
      *  diverges from web/iOS on exact .5 values (§220 fixture catch). Scoring
      *  values are non-negative, where floor(x + 0.5) == JS Math.round(x). */
@@ -140,9 +153,11 @@ object DailyScoring {
         val speedMax = if (v2) SPEED_FRACTION * c.guessWeight else c.timeCap.toDouble()
         // §220: post-cutover LOSSES earn a fractional (< 1 point) time bonus.
         val lossTime = dateKey == null || dateKey >= LOSS_TIME_CUTOVER_DATE
+        val noTie = v2 && (dateKey == null || dateKey >= NO_TIE_CUTOVER_DATE)
         val timeBonus = when {
             !completed && lossTime -> jsRound((max(0, c.timeCap - timeSeconds).toDouble() / c.timeCap) * 0.99 * 100) / 100
             !completed -> 0.0
+            noTie -> noTieSpeedBonus(c.timeCap, timeSeconds, speedMax)
             v2 -> jsRound((max(0, c.timeCap - timeSeconds).toDouble() / c.timeCap) * speedMax * 100) / 100
             else -> max(0, c.timeCap - timeSeconds).toDouble()
         }

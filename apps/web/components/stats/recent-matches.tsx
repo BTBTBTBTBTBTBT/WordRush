@@ -47,9 +47,18 @@ interface Props {
   limit?: number;
   /** Today's page: a "See all →" link instead of expanding in place. */
   onSeeAll?: () => void;
+  /** Empty-state line (Today: "No games yet today…"). */
+  emptyText?: string;
 }
 
-export function RecentMatchesList({ matches, opponentNames, profileId, loading, limit = 5, onSeeAll }: Props) {
+/** Whether a match's `created_at` (UTC ISO-8601) falls on the viewer's local calendar day today. */
+export function isPlayedToday(createdAt: string): boolean {
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return false;
+  return d.toDateString() === new Date().toDateString();
+}
+
+export function RecentMatchesList({ matches, opponentNames, profileId, loading, limit = 5, onSeeAll, emptyText = 'No games played yet.' }: Props) {
   const [showAll, setShowAll] = useState(false);
   if (loading) {
     return (
@@ -71,7 +80,7 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
     );
   }
   if (matches.length === 0) {
-    return <div className="text-center py-8 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>No games played yet.</div>;
+    return <div className="text-center py-8 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{emptyText}</div>;
   }
   const shown = showAll && !onSeeAll ? matches : matches.slice(0, limit);
   return (

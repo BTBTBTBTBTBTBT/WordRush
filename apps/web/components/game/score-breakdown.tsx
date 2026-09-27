@@ -95,7 +95,7 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
       {completed && (
         <Row
           label="Speed bonus"
-          detail={`${fmtTime(timeUnder)} under ${fmtTime(b.timeCap)}`}
+          detail={timeSeconds > b.timeCap ? `${fmtTime(timeSeconds - b.timeCap)} over ${fmtTime(b.timeCap)}` : `${fmtTime(timeUnder)} under ${fmtTime(b.timeCap)}`}
           value={b.timeBonus}
         />
       )}

@@ -756,7 +756,7 @@ internal fun ScoreBreakdownCard(
             else -> "Guess bonus"
         }
         if (won && b.guessBonusApplies) ScoreRow(bonusLabel, "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
-        if (won) ScoreRow("Speed bonus", "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
+        if (won) ScoreRow("Speed bonus", if (elapsedSeconds > b.timeCap) "${fmtSecs(elapsedSeconds - b.timeCap)} over ${fmtSecs(b.timeCap)}" else "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
         if (b.completionBonus > 0) {
             val (compLabel, compDetail) = when {
                 won -> "Completion bonus" to (if (totalBoards > 1) "$boardsSolved/$totalBoards boards" else "puzzle solved")

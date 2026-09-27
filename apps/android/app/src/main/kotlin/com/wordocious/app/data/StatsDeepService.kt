@@ -417,7 +417,9 @@ object StatsDeepService {
                 val p = r.totalGames.toDouble() / totalGames
                 -p * ln(p)
             }
-            versatility = (h / ln(9.0) * 100).roundToInt()
+            // Normalized over EVERY daily mode this build knows (a fixed 9 read 106 % once
+            // the More Games titles landed), clamped to 100.
+            versatility = minOf(100, (h / ln(maxOf(2, com.wordocious.app.ModeGen.daily.size).toDouble()) * 100).roundToInt())
         }
         SkillRadarData(speed, accuracy, consistency, endurance, versatility)
     }.getOrNull()

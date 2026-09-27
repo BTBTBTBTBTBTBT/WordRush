@@ -15,7 +15,21 @@ struct RecentMatchesList: View {
     var limit: Int = 5
     /// Today's page: a "See all →" link instead of expanding in place.
     var onSeeAll: (() -> Void)? = nil
+    /// Empty-state line (Today: "No games yet today…").
+    var emptyText: String = "No games played yet."
     @State private var showAll = false
+
+    /// Whether a `matches.created_at` stamp (UTC ISO-8601 from Supabase) falls on the
+    /// device's local calendar day today. Parses the first 19 characters as UTC so
+    /// microsecond fractions and "+00:00" never trip the parser.
+    static func isToday(_ createdAt: String) -> Bool {
+        guard createdAt.count >= 19 else { return false }
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian); f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        guard let d = f.date(from: String(createdAt.prefix(19))) else { return false }
+        return Calendar.current.isDateInToday(d)
+    }
 
     var body: some View {
         // Web parity: skeleton rows while loading, then either the matches or
@@ -25,7 +39,7 @@ struct RecentMatchesList: View {
                 ForEach(0..<min(5, limit), id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) }
             }
         } else if matches.isEmpty {
-            Text("No games played yet.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+            Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 .frame(maxWidth: .infinity).padding(.vertical, 16)
         } else {
             let shown = (showAll && onSeeAll == nil) ? matches : Array(matches.prefix(limit))

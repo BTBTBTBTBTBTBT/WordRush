@@ -210,7 +210,7 @@ struct ScoreBreakdownView: View {
                 }
             }()
             if completed && b.guessBonusApplies { row(bonusLabel, "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
-            if completed { row("Speed bonus", "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
+            if completed { row("Speed bonus", timeSeconds > b.timeCap ? "\(fmt(timeSeconds - b.timeCap)) over \(fmt(b.timeCap))" : "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
             if b.completionBonus > 0 { completionRow(b.completionBonus) }
             if b.hasHints {
                 let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"

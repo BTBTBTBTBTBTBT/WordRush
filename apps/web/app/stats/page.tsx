@@ -50,7 +50,7 @@ import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
 import { useYourRecords, NextUpCard, SweepRecordsCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
 import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
-import { RecentMatchesList } from '@/components/stats/recent-matches';
+import { RecentMatchesList, isPlayedToday } from '@/components/stats/recent-matches';
 import { SignatureCard, StandingTrendCard } from '@/components/stats/signature-cards';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { GameRail, buildRailItems, RAIL_TODAY, RAIL_VS, RAIL_ALL } from '@/components/stats/game-rail';
@@ -576,8 +576,9 @@ export default function StatsPage() {
             <>
               {/* Founder (2026-09-26): the most recent games — daily AND unlimited — right on Today;
                   the full history stays on All-time. Same rows, same stats. */}
-              <SectionHeader label="Recent Games" accent="#2563eb" />
-              <RecentMatchesList matches={matches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={5} onSeeAll={() => setSelected(RAIL_ALL)} />
+              <SectionHeader label="Today's Games" accent="#2563eb" />
+              {/* Founder, 2026-09-27: every game played TODAY (daily and unlimited), no cap, no "See all" — the full history lives on All-time. */}
+              <RecentMatchesList matches={matches.filter((m) => isPlayedToday(m.created_at))} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} emptyText="No games yet today — play a daily to start the list." />
             </>
           )}
 

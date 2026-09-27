@@ -362,27 +362,8 @@ struct HomeView: View {
                     // Each custom game restores its finished daily from its own save.
                     if let gm = m.mode, !gm.isCustomEngine {
                         SolvedPuzzleView(mode: gm, title: m.title)
-                    } else if m.id == "propernoundle" {
-                        ProperNoundleView()
-                    } else if m.id == "sudoku" {
-                        // Restores today's finished board from its save (the daily seed).
-                        SudokuView()
-                    } else if m.id == "regions" {
-                        RegionsView()
-                    } else if m.id == "ladder" {
-                        LadderView()
-                    } else if m.id == "wordsearch" {
-                        SpyglassView()
-                    } else if m.id == "hub" {
-                        HubView()
-                    } else if m.id == "cryptogram" {
-                        CodebreakerView()
-                    } else if m.id == "groups" {
-                        KindredView()
-                    } else if m.id == "crossword" {
-                        CrosswordView()
-                    } else if m.id == "scramble" {
-                        MuddleView()
+                    } else {
+                        CustomDailyView(id: m.id)
                     }
                 }
             }

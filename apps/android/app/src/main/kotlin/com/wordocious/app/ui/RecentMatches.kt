@@ -53,6 +53,8 @@ fun RecentMatchesList(
     loading: Boolean,
     limit: Int = 5,
     onSeeAll: (() -> Unit)? = null,
+    /** Empty-state line (Today: "No games yet today…"). */
+    emptyText: String = "No games played yet.",
 ) {
     var showAll by remember { mutableStateOf(false) }
     if (loading) {
@@ -61,7 +63,7 @@ fun RecentMatchesList(
     }
     if (matches.isEmpty()) {
         Text(
-            "No games played yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+            emptyText, fontSize = 12.sp, fontWeight = FontWeight.Bold,
             color = WTheme.textMuted,
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
             textAlign = TextAlign.Center,
@@ -171,3 +173,10 @@ internal fun modeLabel(mode: String) = when (mode) {
     "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "ProperNoundle"
     else -> com.wordocious.app.ModeGen.byDbKey(mode)?.title ?: mode
 }
+
+/** Whether a Supabase `created_at` stamp (UTC ISO-8601, microseconds, "+00:00") falls on the
+ *  device's local calendar day today. Parses the first 19 characters as UTC. */
+fun isPlayedToday(createdAt: String): Boolean = runCatching {
+    val utc = java.time.LocalDateTime.parse(createdAt.take(19)).atOffset(java.time.ZoneOffset.UTC)
+    utc.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDate() == java.time.LocalDate.now()
+}.getOrDefault(false)

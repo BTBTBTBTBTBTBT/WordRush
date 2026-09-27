@@ -431,7 +431,9 @@ enum StatsDeepService {
                 let p = Double(r.totalGames) / Double(totalGames)
                 return acc - p * log(p)
             }
-            versatility = Int((H / log(9.0) * 100).rounded())
+            // Normalized over EVERY daily mode this build knows (was a fixed 9 → 106 %
+            // once the More Games titles landed), clamped to 100.
+            versatility = min(100, Int((H / log(Double(max(2, ModeGen.daily.count))) * 100).rounded()))
         }
         return SkillRadarData(speed: speed, accuracy: accuracy, consistency: consistency,
                               endurance: endurance, versatility: versatility)

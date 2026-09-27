@@ -833,11 +833,14 @@ struct ProStatsCard: View {
                             .opacity(selectedWin == nil || selectedWin == b.label ? 1 : 0.35)
                     }
                     .chartYScale(domain: 0...100)
-                    // Web parity (pro-stats.tsx): no gridlines — labels only.
-                    .chartXAxis { AxisMarks { _ in AxisValueLabel() } }
+                    // Web parity (pro-stats.tsx): no gridlines — labels only. Nineteen
+                    // bars share a phone width, so the labels stand vertical (founder,
+                    // 2026-09-27: "game titles are all mashed up here").
+                    .chartXAxis { AxisMarks { v in
+                        AxisValueLabel(orientation: .vertical) { if let s = v.as(String.self) { Text(s).font(Brand.font(9, .bold)) } } } }
                     .chartYAxis { AxisMarks(values: [0, 50, 100]) { v in
                         AxisValueLabel { if let i = v.as(Int.self) { Text("\(i)%").font(Brand.font(9, .bold)) } } } }
-                    .frame(height: 150)
+                    .frame(height: 200)
                     .chartTapSelection(bars: bars.map(\.label), selection: $selectedWin)
 
                     HStack {
@@ -853,10 +856,11 @@ struct ProStatsCard: View {
                             .foregroundStyle(Color(hex: 0xA78BFA)).cornerRadius(3)
                             .opacity(selectedTime == nil || selectedTime == b.label ? 1 : 0.35)
                     }
-                    .chartXAxis { AxisMarks { _ in AxisValueLabel() } }
+                    .chartXAxis { AxisMarks { v in
+                        AxisValueLabel(orientation: .vertical) { if let s = v.as(String.self) { Text(s).font(Brand.font(9, .bold)) } } } }
                     .chartYAxis { AxisMarks { v in
                         AxisValueLabel { if let s = v.as(Int.self) { Text(fmt(s)).font(Brand.font(9, .bold)) } } } }
-                    .frame(height: 150)
+                    .frame(height: 200)
                     .chartTapSelection(bars: bars.map(\.label), selection: $selectedTime)
                 }
             }

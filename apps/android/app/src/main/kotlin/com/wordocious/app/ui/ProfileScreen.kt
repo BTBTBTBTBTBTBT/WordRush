@@ -452,10 +452,12 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         // Founder (2026-09-26): the most recent games — daily AND unlimited —
                         // right under the Sweep streak / Best moment row; the full history
                         // stays on All-time. Same rows, same stats (RecentMatches.kt).
-                        SectionHeader("Recent Games", accent = Color(0xFF2563EB))
+                        // Founder, 2026-09-27: every game played TODAY (daily and unlimited),
+                        // no cap, no "See all" link — the full history lives on All-time.
+                        SectionHeader("Today's Games", accent = Color(0xFF2563EB))
                         RecentMatchesList(
-                            matches = recentMatches, opponentNames = opponentNames, userId = userId,
-                            loading = loading, limit = 5, onSeeAll = { selected = RAIL_ALL },
+                            matches = recentMatches.filter { isPlayedToday(it.createdAt) }, opponentNames = opponentNames, userId = userId,
+                            loading = loading, limit = Int.MAX_VALUE, emptyText = "No games yet today — play a daily to start the list.",
                         )
                         }
 
@@ -1953,7 +1955,7 @@ private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, o
 @Composable
 private fun ProBarRow(label: String, value: String, frac: Float, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(54.dp))
+        FitText(label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(72.dp))
         Box(Modifier.weight(1f).height(16.dp), contentAlignment = Alignment.CenterStart) {
             Box(Modifier.fillMaxWidth(frac.coerceIn(0.02f, 1f)).height(16.dp).clip(RoundedCornerShape(3.dp)).background(color))
         }

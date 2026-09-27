@@ -34,6 +34,25 @@ export const LOSS_TIME_CUTOVER_DATE = '2026-08-24';
 /** Strictly < 1 so the loss time bonus can never cross a board boundary. */
 const LOSS_TIME_MAX = 0.99;
 
+/** Days >= this use the NO-TIE speed bonus (founder, 2026-09-27: "All games need
+ *  to have a winner, no ties" — he and Oliver both cleared Muddle in 5 checks past
+ *  the 8-minute cap, so both speed bonuses were 0 and the scores tied at 2,400).
+ *  Under the cap the ramp now ends at a floor (10 % of speedMax) instead of 0;
+ *  past the cap the bonus keeps falling as cap / t (4-decimal precision) and
+ *  never reaches 0, so two different times ALWAYS score differently while the
+ *  guess step still dominates (the whole bonus stays ≤ 0.8 of one guess). */
+export const NO_TIE_CUTOVER_DATE = '2026-09-28';
+/** Fraction of speedMax still paid at the cap (and the tail's scale). */
+const SPEED_FLOOR = 0.1;
+
+/** No-tie speed bonus for a WIN (see NO_TIE_CUTOVER_DATE). Mirrored 1:1 in
+ *  DailyScoring.swift / DailyScoring.kt — expression order matters for parity. */
+export function noTieSpeedBonus(timeCap: number, timeSeconds: number, speedMax: number): number {
+  const t = Math.max(0, timeSeconds);
+  if (t <= timeCap) return Math.round(speedMax * (SPEED_FLOOR + (1 - SPEED_FLOOR) * (timeCap - t) / timeCap) * 100) / 100;
+  return Math.round(speedMax * SPEED_FLOOR * timeCap / t * 10000) / 10000;
+}
+
 interface ScoreConfig {
   maxGuesses: number;
   guessWeight: number;
@@ -187,8 +206,12 @@ export function computeScoreBreakdown(
   // §220: post-cutover LOSSES earn a fractional (< 1 point) time bonus so
   // equal-board losses order by speed instead of by who recorded first.
   const lossTime = !dateKey || dateKey >= LOSS_TIME_CUTOVER_DATE;
+  // No-tie speed bonus for wins (see NO_TIE_CUTOVER_DATE): floor at the cap, tail past it.
+  const noTie = v2 && (!dateKey || dateKey >= NO_TIE_CUTOVER_DATE);
   const timeBonus = completed
-    ? (v2
+    ? (noTie
+      ? noTieSpeedBonus(config.timeCap, timeSeconds, speedMax)
+      : v2
       ? Math.round((Math.max(0, config.timeCap - timeSeconds) / config.timeCap) * speedMax * 100) / 100
       : Math.max(0, config.timeCap - timeSeconds))
     : (lossTime
