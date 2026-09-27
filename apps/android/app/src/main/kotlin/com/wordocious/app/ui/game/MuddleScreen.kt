@@ -144,6 +144,8 @@ private val SKETCH_INK = Color(0xFF1A1A2E)
 private const val COLS = 6
 /** Where the cartoon batch is hosted (the web serves /muddle/<file> from public/muddle). */
 private const val CARTOON_HOST = "https://wordocious.com/muddle/"
+/** App-identifying UA for the cartoon fetch (OkHttp's default "okhttp/x" has been refused by hosts before). */
+private const val CARTOON_USER_AGENT = "Wordocious-Android (Muddle cartoons; +https://wordocious.com)"
 
 // Compact rule sizes (founder, 2026-09-23 — plan §5): the whole puzzle on one screen.
 /** The cartoon's height cap as a fraction of the screen height (~26 %). */
@@ -526,16 +528,53 @@ private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: 
 @Composable
 private fun CartoonPanel(cartoon: String?, altText: String, height: Dp) {
     val shape = RoundedCornerShape(16.dp)
+    val context = LocalContext.current
+    // Doug (Android, 2026-09-26): the panel stayed a blank cream card. The plain
+    // AsyncImage renders NOTHING on a failed load and tells nobody why. Now every
+    // phase draws something (the sketch while loading, the sketch + "tap to retry"
+    // on failure), a failure is reported to Sentry with the real cause, and a tap
+    // re-issues the request. The request carries an app User-Agent like the
+    // ProperNoundle photo does (Wikimedia refused OkHttp's default one, §PostGame).
+    var attempt by remember(cartoon) { mutableStateOf(0) }
+    var failed by remember(cartoon) { mutableStateOf(false) }
     Box(
-        Modifier.size(width = height * 4f / 3f, height = height).clip(shape).background(PAPER).border(1.dp, WTheme.border, shape),
+        Modifier.size(width = height * 4f / 3f, height = height).clip(shape).background(PAPER).border(1.dp, WTheme.border, shape)
+            .then(if (failed) Modifier.clickableNoRipple { failed = false; attempt++ } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (cartoon != null) {
-            coil.compose.AsyncImage(model = CARTOON_HOST + cartoon, contentDescription = altText, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            val url = CARTOON_HOST + cartoon
+            val request = remember(url, attempt) {
+                coil.request.ImageRequest.Builder(context)
+                    .data(url)
+                    .setHeader("User-Agent", CARTOON_USER_AGENT)
+                    .setHeader("Accept", "image/webp,image/*;q=0.9,*/*;q=0.8")
+                    .setParameter("attempt", attempt)
+                    .build()
+            }
+            coil.compose.SubcomposeAsyncImage(
+                model = request, contentDescription = altText, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(),
+                loading = { PlaceholderSketch() },
+                error = { PlaceholderSketch() },
+                onError = { st ->
+                    failed = true
+                    val t = st.result.throwable
+                    val why = "${t.javaClass.simpleName}: ${t.message}"
+                    android.util.Log.w("Muddle", "cartoon failed $url (attempt $attempt): $why", t)
+                    runCatching { io.sentry.Sentry.captureMessage("muddle cartoon failed: $cartoon attempt=$attempt $why") }
+                },
+                onSuccess = { failed = false },
+            )
+            // Drawn by the OUTER Box (a real BoxScope): Coil's error slot ignored align().
+            if (failed) Text(
+                "Tap to retry", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6B7280), fontFamily = Nunito, maxLines = 1,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
+                    .background(PAPER.copy(alpha = 0.92f), RoundedCornerShape(999.dp)).padding(horizontal = 10.dp, vertical = 3.dp),
+            )
         } else {
             PlaceholderSketch()
             Text(
-                "Cartoon panel — art batch pending", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6B7280), fontFamily = Nunito,
+                "Cartoon panel \u2014 art batch pending", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6B7280), fontFamily = Nunito,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
             )
         }

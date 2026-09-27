@@ -67,6 +67,15 @@ const nextConfig = {
         ],
       },
       {
+        // Muddle cartoons: content-hashed file names (md-<id>-<sha10>.webp), so a
+        // year-long immutable cache is safe. Without this Vercel served them with
+        // max-age=0 and every native open revalidated (plan §5 asked for immutable).
+        source: '/muddle/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         // Cache images served through next/image
         source: '/_next/image',
         headers: [
