@@ -34,11 +34,12 @@ fun FitText(
     fontFamily: FontFamily? = null,
     textAlign: TextAlign? = null,
     minScale: Float = 0.6f,
+    letterSpacing: TextUnit = TextUnit.Unspecified,
 ) {
     var scale by remember(text) { mutableFloatStateOf(1f) }
     var fitted by remember(text) { mutableStateOf(false) }
     Text(
-        text, fontSize = fontSize * scale, color = color, fontWeight = fontWeight, fontFamily = fontFamily, textAlign = textAlign,
+        text, fontSize = fontSize * scale, color = color, fontWeight = fontWeight, fontFamily = fontFamily, textAlign = textAlign, letterSpacing = letterSpacing,
         maxLines = 1, softWrap = false, overflow = TextOverflow.Clip,
         modifier = modifier.drawWithContent { if (fitted) drawContent() },
         onTextLayout = { r -> if (r.hasVisualOverflow && scale > minScale) scale -= 0.05f else fitted = true },

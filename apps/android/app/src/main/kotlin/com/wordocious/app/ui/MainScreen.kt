@@ -219,8 +219,11 @@ fun MainScreen() {
     var showMoreSheet by remember { mutableStateOf(false) }
     var launchedFromMore by remember { mutableStateOf(false) }
     val exitGame: () -> Unit = {
+        // Read the flag BEFORE clearing it — the old order cleared it first, so the
+        // sheet never re-opened and Home/back landed on the main menu (Doug, 2026-09-27).
+        val backToMore = launchedFromMore
         activeGame = null; activeSeed = null; launchedFromMore = false
-        if (launchedFromMore) { showMoreSheet = true; launchedFromMore = false }
+        if (backToMore) showMoreSheet = true
     }
     var showSettings by remember { mutableStateOf(false) }
     var showSignIn by remember { mutableStateOf(false) }

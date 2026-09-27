@@ -482,6 +482,7 @@ fun InfoFooter(onNav: (String) -> Unit) {
             ) {
                 line.forEach { item ->
                     Text(item.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        maxLines = 1, softWrap = false,
                         modifier = Modifier.clickableNoRipple { onNav(item.route) })
                 }
             }

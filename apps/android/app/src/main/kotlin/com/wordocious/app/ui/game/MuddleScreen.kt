@@ -156,6 +156,15 @@ private val CARTOON_FLOOR = 120.dp
 private val WORD_TILE = 36.dp
 /** The punchline tiles (~32 dp). */
 private val FINAL_TILE = 32.dp
+/**
+ * Compact mode (Doug, Android, 2026-09-27: at his font scale the words, punchline,
+ * capsules and a four-row keyboard filled the screen and the cartoon was a sliver).
+ * True on a short screen or a larger system font: tiles 30/28 dp, hint circles 24 dp,
+ * compact keyboard keys — so the picture band keeps its floor without scrolling.
+ */
+private val LocalMuddleCompact = androidx.compose.runtime.compositionLocalOf { false }
+@Composable private fun wordTile(): androidx.compose.ui.unit.Dp = if (LocalMuddleCompact.current) 30.dp else WORD_TILE
+@Composable private fun finalTile(): androidx.compose.ui.unit.Dp = if (LocalMuddleCompact.current) 28.dp else FINAL_TILE
 /** Gap between tiles on the grid. */
 private val TILE_GAP = 6.dp
 /** The Letter · Solve icon circles (28–30 dp). */
@@ -164,6 +173,11 @@ private val HINT_CIRCLE = 28.dp
 private const val RING_FRACTION = 0.60f
 private val CAPTION_FONT = 14.sp
 private val CAPTION_LINE_HEIGHT = 18.sp
+/** Lines the caption will take at [widthDp]: ~10.5 dp per character at 14 sp Nunito ExtraBold (measured: 24 characters across 331 dp at font scale 1.3), scaled by the font scale; 1–4. */
+private fun estimatedCaptionLines(caption: String, widthDp: Float, fontScale: Float): Int {
+    val perLine = (widthDp / (10.5f * fontScale)).coerceAtLeast(8f)
+    return kotlin.math.ceil(caption.length / perLine).toInt().coerceIn(1, 4)
+}
 
 /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
 private val HOLIDAY_TITLES = mapOf(
@@ -431,11 +445,19 @@ fun MuddleScreen(
             // picture area scroll, and then only the cartoon and caption ever move.
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val cartoonCap = maxHeight * CARTOON_SCREEN_FRACTION
+                val fontScale = LocalDensity.current.fontScale
+                val compact = maxHeight < 760.dp || fontScale > 1.1f || KeyboardLayoutPref.value == "michael"
+                androidx.compose.runtime.CompositionLocalProvider(LocalMuddleCompact provides compact) {
                 Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MuddleHeader(session, tick)
                     BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                         // Two caption lines (font-scaled) plus the gap under the cartoon.
-                        val captionAllowance = with(LocalDensity.current) { (CAPTION_LINE_HEIGHT * 2).toDp() } + 8.dp
+                        // Reserve the caption's real line count (estimated from its length at this
+                        // width and font scale, 1–4) so the cartoon shrinks and the caption never scrolls
+                        // out of view (Doug, 2026-09-27: a narrow phone at a large font showed two lines
+                        // and an ellipsis).
+                        val captionLines = estimatedCaptionLines(session.state.caption, minOf(maxWidth, 420.dp).value - 12f, fontScale)
+                        val captionAllowance = with(LocalDensity.current) { (CAPTION_LINE_HEIGHT * captionLines).toDp() } + 8.dp
                         val cartoonH = minOf(cartoonCap, maxWidth * 0.75f, maxOf(maxHeight - captionAllowance, CARTOON_FLOOR))
                         Column(
                             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -449,8 +471,10 @@ fun MuddleScreen(
                         Capsule("Delete", Icons.AutoMirrored.Outlined.Backspace) { SoundManager.playKeyTap(); session.back() }
                         Capsule("Clear", Icons.Filled.Cancel) { SoundManager.playKeyTap(); session.clear() }
                     }
-                    KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() })
+                    KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() },
+                                 keyHeight = if (compact) 38.dp else 44.dp)
                     Spacer(Modifier.height(4.dp))
+                }
                 }
             }
         }
@@ -634,7 +658,7 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
             },
         ),
         fontSize = CAPTION_FONT, lineHeight = CAPTION_LINE_HEIGHT, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
-        maxLines = 2, overflow = TextOverflow.Ellipsis,
+        maxLines = 4, overflow = TextOverflow.Ellipsis,
         modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 6.dp),
     )
 }
@@ -705,12 +729,12 @@ private fun WordRow(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(TILE_GAP)) {
             for (i in 0 until COLS) {
-                if (i >= w.answer.length) { Spacer(Modifier.size(WORD_TILE)); continue }
+                if (i >= w.answer.length) { Spacer(Modifier.size(wordTile())); continue }
                 val ch = if (solved) w.answer[i].toString() else entry.getOrNull(i)?.toString() ?: ""
                 val filled = ch.isNotEmpty()
                 val pinned = revealed[i] != '_'
                 val bg = if (solved) PURPLE else if (filled) (if (pinned) HINT else PURPLE) else WTheme.surface
-                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = 18.sp, modifier = Modifier.size(WORD_TILE))
+                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = if (LocalMuddleCompact.current) 16.sp else 18.sp, modifier = Modifier.size(wordTile()))
             }
         }
     }
@@ -773,9 +797,9 @@ private fun FinalRow(
         ) {
             // One line: the heading, then (once open) the circled-letter tray and the Letter circle.
             Row(Modifier.fillMaxWidth().heightIn(min = if (playable) HINT_ROW_HEIGHT else 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
+                com.wordocious.app.ui.FitText(
                     if (open || finished) "PUNCHLINE" else "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE",
-                    fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp, maxLines = 1,
+                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp,
                     modifier = if (playable) Modifier else Modifier.weight(1f),
                 )
                 if (playable) {
@@ -792,6 +816,13 @@ private fun FinalRow(
                     HintCircle(Icons.Filled.Lightbulb, "Reveal a letter", onRevealLetter)
                 }
             }
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+            // A word group never wraps, so the tile shrinks until the LONGEST group fits the row
+            // (floor 22 dp) — a ten-letter punchline lost its last letter on a narrower phone.
+            val longest = s.final.pattern.maxOrNull() ?: 1
+            val fitTile = ((maxWidth - 4.dp * (longest - 1)) / longest)
+            val tile = if (fitTile < finalTile()) maxOf(22.dp, fitTile) else finalTile()
+            val tileFont = if (tile < 28.dp) 13.sp else if (LocalMuddleCompact.current) 15.sp else 17.sp
             FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var pos = 0
                 for (len in s.final.pattern) {
@@ -803,11 +834,12 @@ private fun FinalRow(
                             val filled = ch.isNotEmpty()
                             AnswerBox(
                                 ch, if (filled) LILAC else WTheme.surface, if (filled) LILAC_BORDER else WTheme.border, LILAC_TEXT,
-                                ring = true, ringColor = PURPLE, ringAlpha = if (filled) 0.9f else 0.35f, fontSize = 17.sp, modifier = Modifier.size(FINAL_TILE),
+                                ring = true, ringColor = PURPLE, ringAlpha = if (filled) 0.9f else 0.35f, fontSize = tileFont, modifier = Modifier.size(tile),
                             )
                         }
                     }
                 }
+            }
             }
         }
     }

@@ -74,6 +74,8 @@ fun KeyboardView(
     onEnter: () -> Unit,
     // Quadrant mode (Quad/Octo/Deliverance): per-board states drive sub-cell colors.
     perBoardStates: List<Map<String, TileState>>? = null,
+    /** Override the key height (Muddle's one-screen rule asks for compact keys). */
+    keyHeight: androidx.compose.ui.unit.Dp? = null,
 ) {
     // iOS parity (KeyboardView.swift): playKeyTap on EVERY key, and the SAME
     // light `Haptics.tap()` on letters, ⌫ and ENTER alike.
@@ -81,7 +83,7 @@ fun KeyboardView(
     val layout = KeyboardLayoutPref.value
     // Michael Keyboard is a row taller — shorter keys keep total height close
     // to the 3-row layouts so tight boards (OctoWord) don't squeeze.
-    val keyH = if (layout == "michael") 44.dp else 52.dp
+    val keyH = keyHeight ?: if (layout == "michael") 44.dp else 52.dp
     val enterTap = {
         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         com.wordocious.app.data.SoundManager.playKeyTap()
@@ -295,13 +297,12 @@ private fun RowScope.WideKey(label: String, h: androidx.compose.ui.unit.Dp, onCl
             // maxLines/softWrap + a slightly smaller face: "ENTER" wrapped to
             // "ENTE / R" on a Galaxy S23, where the key is narrower than the
             // label at 14sp. Never let this key wrap.
-            Text(
+            // Shrinks to fit at a large font scale instead of clipping ("ENTEF" — Doug, 2026-09-27).
+            com.wordocious.app.ui.FitText(
                 label,
+                fontSize = 13.sp,
                 color = WTheme.keyInk,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 13.sp,
-                maxLines = 1,
-                softWrap = false,
             )
         }
     }
