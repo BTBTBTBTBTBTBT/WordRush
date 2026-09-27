@@ -835,12 +835,15 @@ struct ProStatsCard: View {
                     .chartYScale(domain: 0...100)
                     // Web parity (pro-stats.tsx): no gridlines — labels only. Nineteen
                     // bars share a phone width, so the labels stand vertical (founder,
-                    // 2026-09-27: "game titles are all mashed up here").
-                    .chartXAxis { AxisMarks { v in
-                        AxisValueLabel(orientation: .vertical) { if let s = v.as(String.self) { Text(s).font(Brand.font(9, .bold)) } } } }
+                    // 2026-09-27: "game titles are all mashed up here"). Drawn by us
+                    // under each bar from the chart proxy — Charts' own vertical axis
+                    // labels made the card disappear on 201 (founder, same morning).
+                    .chartXAxis(.hidden)
                     .chartYAxis { AxisMarks(values: [0, 50, 100]) { v in
                         AxisValueLabel { if let i = v.as(Int.self) { Text("\(i)%").font(Brand.font(9, .bold)) } } } }
-                    .frame(height: 200)
+                    .chartOverlay { proxy in VerticalBarLabels(labels: bars.map(\.label), proxy: proxy) }
+                    .frame(height: 140)
+                    .padding(.bottom, VerticalBarLabels.height)
                     .chartTapSelection(bars: bars.map(\.label), selection: $selectedWin)
 
                     HStack {
@@ -856,11 +859,12 @@ struct ProStatsCard: View {
                             .foregroundStyle(Color(hex: 0xA78BFA)).cornerRadius(3)
                             .opacity(selectedTime == nil || selectedTime == b.label ? 1 : 0.35)
                     }
-                    .chartXAxis { AxisMarks { v in
-                        AxisValueLabel(orientation: .vertical) { if let s = v.as(String.self) { Text(s).font(Brand.font(9, .bold)) } } } }
+                    .chartXAxis(.hidden)
                     .chartYAxis { AxisMarks { v in
                         AxisValueLabel { if let s = v.as(Int.self) { Text(fmt(s)).font(Brand.font(9, .bold)) } } } }
-                    .frame(height: 200)
+                    .chartOverlay { proxy in VerticalBarLabels(labels: bars.map(\.label), proxy: proxy) }
+                    .frame(height: 140)
+                    .padding(.bottom, VerticalBarLabels.height)
                     .chartTapSelection(bars: bars.map(\.label), selection: $selectedTime)
                 }
             }
@@ -918,6 +922,32 @@ private extension View {
                             selection.wrappedValue = nil
                         }
                     })
+            }
+        }
+    }
+}
+
+
+/// Vertical category labels under a bar chart, one per bar, placed from the
+/// chart proxy so each sits exactly under its bar however many bars there are
+/// (nineteen modes on a phone). Rotated -90° and hung below the plot area; the
+/// chart reserves `height` of bottom padding for them.
+struct VerticalBarLabels: View {
+    let labels: [String]
+    let proxy: ChartProxy
+    static let height: CGFloat = 58
+
+    var body: some View {
+        GeometryReader { geo in
+            let plot = geo[proxy.plotAreaFrame]
+            ForEach(labels, id: \.self) { label in
+                if let x = proxy.position(forX: label) {
+                    Text(label)
+                        .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                        .lineLimit(1).fixedSize()
+                        .rotationEffect(.degrees(-90), anchor: .center)
+                        .position(x: plot.minX + x, y: plot.maxY + Self.height / 2 + 2)
+                }
             }
         }
     }
