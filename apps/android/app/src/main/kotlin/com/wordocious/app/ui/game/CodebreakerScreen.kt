@@ -359,7 +359,9 @@ fun CodebreakerScreen(
                     Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
                     Capsule(if (revealIn > 0) "Reveal · ${clockText(revealIn)}" else "Reveal", Icons.Filled.Visibility, dim = revealIn > 0) { session.reveal(onFinished) }
                 }
-                KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advance() })
+                // Settled plain letters (given, checked-correct, hinted) fill their keys (founder, 2026-09-28).
+                val usedFills = session.state.locked.mapNotNull { session.state.mapping[it] }.associateWith { CRYPTOGRAM_ACCENT }
+                KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advance() }, keyFills = usedFills)
                 Spacer(Modifier.height(6.dp))
             }
         }

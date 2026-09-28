@@ -75,6 +75,8 @@ final class CodebreakerVM: ObservableObject {
     var revealIn: Int { max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - elapsed) }
     var codes: [String] { cryptogramCodeLetters(state.cipher) }
     var resolved: Int { codes.filter { state.locked.contains($0) || state.mapping[$0] != nil }.count }
+    /// Plain letters already settled (given, checked-correct, hinted) — their keys fill in the accent.
+    var usedPlain: Set<String> { Set(state.locked.compactMap { state.mapping[$0] }) }
     var conflicts: [String] { cryptogramConflicts(state.mapping) }
     var checksLabel: String { state.checks == 0 ? "No checks" : "\(state.checks) check\(state.checks == 1 ? "" : "s")" }
     var points: Int {
@@ -259,7 +261,8 @@ struct CodebreakerView: View {
                             capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", "eye", dim: vm.revealIn > 0) { vm.reveal() }
                         }
                     }
-                    LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.advance() }, onDelete: { vm.clearLetter() })
+                    LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.advance() }, onDelete: { vm.clearLetter() },
+                                   keyFill: { vm.usedPlain.contains($0) ? codebreakerAccent : nil })
                         .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)

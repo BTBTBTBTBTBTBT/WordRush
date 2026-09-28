@@ -16,6 +16,10 @@ struct LetterKeyboard: View {
     var keyState: (String) -> TileState? = { _ in nil }
     /// Hide ENTER for games that auto-check (Crosswordocious auto-advances).
     var showEnter: Bool = true
+    /// Codebreaker (founder, 2026-09-28): a solid fill for keys whose plain
+    /// letter is already settled (given or confirmed by a Check), so the
+    /// remaining letters stand out like used keys on the word games.
+    var keyFill: (String) -> Color? = { _ in nil }
 
     @AppStorage("pref-keyboard-layout") private var layout = "standard"
 
@@ -75,8 +79,9 @@ struct LetterKeyboard: View {
 
     private func letterKey(_ letter: String) -> some View {
         let state = keyState(letter)
-        let bg = state.map { Theme.keyColor(for: $0) } ?? Theme.keyDefault
-        let fg: Color = state == nil ? Theme.keyInk : .white
+        let fill = keyFill(letter)
+        let bg = fill ?? state.map { Theme.keyColor(for: $0) } ?? Theme.keyDefault
+        let fg: Color = (state == nil && fill == nil) ? Theme.keyInk : .white
         return Button {
             onLetter(letter)
             Haptics.tap()
@@ -91,7 +96,7 @@ struct LetterKeyboard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(letter)
-        .accessibilityValue(state?.a11yName ?? "")
+        .accessibilityValue(fill != nil ? "used" : (state?.a11yName ?? ""))
     }
 
     private func actionKey(_ label: String, action: @escaping () -> Void) -> some View {

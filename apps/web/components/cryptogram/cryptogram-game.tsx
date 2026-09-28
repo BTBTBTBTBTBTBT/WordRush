@@ -251,6 +251,10 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const finished = state.status !== 'playing';
   const codes = cryptogramCodeLetters(state.cipher);
   const resolved = codes.filter((c) => state.locked.includes(c) || state.mapping[c]).length;
+  // Settled plain letters (given, checked-correct, hinted) fill their keys in the
+  // accent so the player sees what is left (founder, 2026-09-28).
+  const usedKeyFills: Record<string, string> = {};
+  for (const c of state.locked) { const plain = state.mapping[c]; if (plain) usedKeyFills[plain] = CRYPTOGRAM_ACCENT; }
   const conflicts = cryptogramConflicts(state.mapping);
   const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - elapsedSeconds);
   const holiday = holidayTitle((BANK.holiday && Object.keys(BANK.holiday).find((k) => BANK.holiday![k].some((q) => q.id === state.id))) ?? null);
@@ -311,7 +315,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
                 <Eye className="w-3.5 h-3.5" /> {revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'}
               </button>
             </div>
-            <Keyboard onKey={onKey} />
+            <Keyboard onKey={onKey} keyFills={usedKeyFills} />
           </div>
         </>
       ) : (

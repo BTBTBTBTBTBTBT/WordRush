@@ -76,6 +76,9 @@ fun KeyboardView(
     perBoardStates: List<Map<String, TileState>>? = null,
     /** Override the key height (Muddle's one-screen rule asks for compact keys). */
     keyHeight: androidx.compose.ui.unit.Dp? = null,
+    /** Codebreaker (founder, 2026-09-28): letters already settled (given or confirmed by a
+     *  Check) fill in the mode accent so the remaining letters stand out. letter → color. */
+    keyFills: Map<String, Color> = emptyMap(),
 ) {
     // iOS parity (KeyboardView.swift): playKeyTap on EVERY key, and the SAME
     // light `Haptics.tap()` on letters, ⌫ and ENTER alike.
@@ -121,8 +124,11 @@ fun KeyboardView(
                         com.wordocious.app.data.SoundManager.playKeyTap()
                         onKey(ch)
                     }
+                    val fill = keyFills[ch.toString()]
                     if (perBoardStates != null) {
                         QuadrantKey(ch.toString(), perBoardStates, keyH, tap)
+                    } else if (fill != null) {
+                        LetterKey(ch.toString(), fill, TileState.EMPTY, keyH, tap, used = true)
                     } else {
                         val state = letterStates[ch.toString()] ?: TileState.EMPTY
                         LetterKey(ch.toString(), WTheme.keyColor(state), state, keyH, tap)
@@ -247,9 +253,9 @@ private fun quadColor(state: TileState): Color = when (state) {
 // (KeyboardView.swift:46-51) is a flat fill with NO stroke — only the wide
 // action keys and the quadrant keys are stroked.
 @Composable
-private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
-    val unstated = bg == WTheme.keyDefault
-    val stateName = tileStateName(state)
+private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit, used: Boolean = false) {
+    val unstated = bg == WTheme.keyDefault && !used
+    val stateName = if (used) "used" else tileStateName(state)
     Box(
         modifier = Modifier
             .weight(1f)

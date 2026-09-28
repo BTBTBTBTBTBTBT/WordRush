@@ -37,6 +37,10 @@ interface KeyboardProps {
   letterStates?: Record<string, LetterState>;
   boardLetterStates?: Record<string, LetterState>[];
   blackedOutLetters?: Set<string>;
+  /** Codebreaker (founder, 2026-09-28): plain letters already settled (given or
+   *  confirmed by a Check) fill with the mode accent so the remaining letters
+   *  stand out, the way the word games color used keys. letter → CSS color. */
+  keyFills?: Record<string, string>;
 }
 
 const QUADRANT_COLORS: Record<string, string> = {
@@ -117,7 +121,7 @@ function QuadrantKey({
   );
 }
 
-export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedOutLetters }: KeyboardProps) {
+export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedOutLetters, keyFills }: KeyboardProps) {
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
   const [layout, setLayout] = useState<KeyboardLayout>('standard');
   useEffect(() => {
@@ -210,11 +214,12 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
             }
 
             const state = letterStates[key];
+            const fill = keyFills?.[key];
             return (
               <button
                 key={key}
                 onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
-                aria-label={state ? `${key}, ${state}` : key}
+                aria-label={fill ? `${key}, used` : state ? `${key}, ${state}` : key}
                 className={cn(
                   keyH, 'w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-150 select-none',
@@ -222,7 +227,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   state === 'present' && 'key-present text-white',
                   state === 'absent' && 'key-absent text-white',
                 )}
-                style={{
+                style={fill ? { backgroundColor: fill, border: `1.5px solid ${fill}`, color: '#ffffff' } : {
                   backgroundColor: state ? undefined : '#e8e5f0',
                   border: state ? undefined : '1.5px solid var(--color-border)',
                   // Fixed ink over the fixed key surface — see the wide keys
