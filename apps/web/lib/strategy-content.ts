@@ -127,9 +127,8 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         ],
       },
       {
-        heading: 'The wild cards: ProperNoundle and VS Battle',
+        heading: 'The wild card: VS Battle',
         body: [
-          'ProperNoundle swaps the dictionary for proper nouns — famous names — and gives you a real clue drawn from an encyclopedia entry rather than a definition, because names are not in a standard dictionary. It rewards general knowledge as much as letter logic.',
           'VS Battle is the real-time mode: you and a live opponent race the exact same puzzle, with each other’s progress visible as you go. It is the same deduction skill under pressure, and the fastest way to find out how your solving speed stacks up against another human. Every player worldwide also shares one daily word per mode, so the daily leaderboard is a global, same-word competition.',
         ],
       },
@@ -757,7 +756,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
   },
   {
     slug: 'daily-sweep-guide',
-    title: 'The Daily Sweep: Streaks, Medals, and Playing Every Mode',
+    title: 'The Daily Sweep: Streaks, Medals, and Playing All Eight',
     description:
       'How the Wordocious daily system fits together — one shared word per mode, local-midnight resets, Daily Sweeps, Flawless Victories, medals, and the streak habits that compound XP.',
     dek: 'Every player in the world gets the same words you do today. Here is how to turn that into streaks, medals, and rank.',
@@ -773,7 +772,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Sweep the board, then keep it clean',
         body: [
-          'Completing every mode\'s daily in one day is a Daily Sweep, worth bonus XP on top of each puzzle\'s score. Winning them all — not just finishing — upgrades it to a Flawless Victory and a bigger bonus. If you are optimizing XP per minute, the sweep bonus means the last unplayed mode of the day is always worth more than replaying a favorite.',
+          'Completing all eight daily word games in one day is a Daily Sweep, worth bonus XP on top of each puzzle\'s score. Winning them all — not just finishing — upgrades it to a Flawless Victory and a bigger bonus. If you are optimizing XP per minute, the sweep bonus means the last unplayed mode of the day is always worth more than replaying a favorite.',
           'Order matters less than momentum, but a sensible route exists: warm up on Classic, ride the rhythm into Six and Seven while your letter instincts are hot, take the multi-board modes in the middle, and give the Gauntlet, as the longest commitment, an unhurried slot. The sweep is the eight word games on the home grid; ProperNoundle and the other More Games titles are extra dailies that earn XP and medals but never change whether you swept.',
         ],
       },
@@ -814,7 +813,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Position matters as much as presence',
         body: [
           'Knowing a letter is likely in the answer is half the picture; knowing where it likes to sit is the other half. First position is dominated by S — 16% of all answers start with it, nearly double the next contender. C (9%), B (8%), T (7%), P (6%), and F (6%) round out the leaders. When your candidate list is long, biasing toward S-starting words is the percentage play.',
-          'Last position tells an even sharper story. E ends 17% of answers, but the surprise is Y: it closes 15% of the entire bank. Y is a deceptive letter overall — it appears in 17% of answers, and when it does appear, 88% of the time it is the final letter. If you have a yellow Y anywhere on the board, your default assumption should be that it belongs at the end.',
+          'Last position tells an even sharper story. E ends 17% of answers, but the surprise is Y: it closes 15% of the entire bank. Y is a deceptive letter overall — it appears in 17% of answers, and when it does appear, 88% of the time it is the final letter. If you have a amber Y anywhere on the board, your default assumption should be that it belongs at the end.',
           'Two-letter endings concentrate hard: -ER closes 148 answers, -ED 116, then -CH (58), -SE (49), -CK (48), -TY (45), -AL (43), and -LY (41). When you are down to your last guesses with a couple of letters floating, running through these ending frames — does the evidence fit an -ER word? an -ED word? — resolves endgames faster than letter-by-letter trial.',
         ],
       },
@@ -828,7 +827,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Turning the atlas into a routine',
         body: [
-          'Here is the whole atlas compressed into a pre-game routine. Open with a no-repeat word built from the E-A-R-O-T-I-S-L-N pool. Read the result against the base rates: no S showing? You have still eliminated the single most common starting letter. Yellow Y? Slide it to the end. Two vowels confirmed? Stop hunting vowels and grind consonants.',
+          'Here is the whole atlas compressed into a pre-game routine. Open with a no-repeat word built from the E-A-R-O-T-I-S-L-N pool. Read the result against the base rates: no S showing? You have still eliminated the single most common starting letter. Amber Y? Slide it to the end. Two vowels confirmed? Stop hunting vowels and grind consonants.',
           'In the endgame, lean on the frames: S- up front, -ER/-ED/-Y at the back, and never re-test the rare letters unless a specific surviving candidate contains one. None of these rules solves a puzzle by itself — but each one tilts a guess a few percentage points in your favor, and across six rows those points compound into the difference between solving in five and solving in three.',
           'Want to see the atlas applied to a single word? Every entry in our Word of the Day archive breaks down a real answer with these exact statistics — how common its letters are, which answers sit one letter away, and what its pattern rewards.',
         ],
@@ -854,7 +853,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Why repeats wreck standard deduction',
         body: [
-          'The standard system — eliminate grays, relocate yellows, keep greens — silently assumes each letter appears once. Repeats violate it in both directions. A green E in slot 2 does not tell you there is no second E in slot 5. And the tile feedback for a doubled guess against a single-letter answer (one colored, one gray) reads, to most players, like a contradiction rather than a count.',
+          'The standard system — eliminate grays, relocate ambers, keep purples — silently assumes each letter appears once. Repeats violate it in both directions. A purple E in slot 2 does not tell you there is no second E in slot 5. And the tile feedback for a doubled guess against a single-letter answer (one colored, one gray) reads, to most players, like a contradiction rather than a count.',
           'The tell-tale symptom is the "impossible board": you have four confirmed letters, one open slot, and no remaining letter of the alphabet seems to fit. Nine times out of ten the missing letter is not missing at all — it is a second copy of a letter already on the board. When a board feels impossible, repeats should be your first hypothesis, not your last.',
         ],
       },
@@ -868,7 +867,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'The discipline that saves the row',
         body: [
-          'Make one habit change: every time you reach row four with an unsolved board, explicitly ask "what does this look like with a doubled letter?" before guessing. Run the confirmed letters through the double frames — could that yellow L be two Ls? could the E be at both ends? It takes five seconds, and it catches the 32% case before it costs you rows five and six.',
+          'Make one habit change: every time you reach row four with an unsolved board, explicitly ask "what does this look like with a doubled letter?" before guessing. Run the confirmed letters through the double frames — could that amber L be two Ls? could the E be at both ends? It takes five seconds, and it catches the 32% case before it costs you rows five and six.',
           'Repeats also change multi-board play. In QuadWord and OctoWord, a board that stalls while its siblings solve is disproportionately likely to be hiding a repeat — single-copy answers get swept up by your shared guesses, while doubled answers linger. Prioritize the repeat hypothesis on whichever board has resisted the longest.',
           'For a worked example, browse the Word of the Day archive: every entry flags whether the day’s word repeats a letter and how that repeat changes the solve, so you can build the instinct against real answers.',
         ],
@@ -887,7 +886,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Days 1–7: own the fundamentals in Classic',
         body: [
-          'Spend the first week exclusively in Classic and Practice, with two goals: never reuse a gray letter, and never guess a word that contradicts a yellow’s known exclusions. These sound trivial; they are not. Most streak-ending guesses violate one of them under time pressure. Practice mode exists precisely so you can drill without burning your daily.',
+          'Spend the first week exclusively in Classic and Practice, with two goals: never reuse a gray letter, and never guess a word that contradicts a amber’s known exclusions. These sound trivial; they are not. Most streak-ending guesses violate one of them under time pressure. Practice mode exists precisely so you can drill without burning your daily.',
           'Adopt one fixed opener this week — SLATE, CRANE, or any no-repeat word from the high-frequency pool — and play it every game. Fixing the opener converts your first row from a decision into a habit, which frees your full attention for the rows where deduction actually happens.',
         ],
       },

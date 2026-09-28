@@ -102,15 +102,14 @@ export const ABOUT_SECTIONS: ContentSection[] = [
   {
     heading: 'What is Wordocious?',
     paragraphs: [
-      'Wordocious is a free puzzle game that goes far beyond the classic five-letter guess. With nine core word modes, ten More Games dailies from sudoku to cryptograms, daily challenges, real-time multiplayer battles, and global leaderboards, Wordocious gives puzzle fans something new to play every single day.',
-      'Whether you enjoy a quick solo puzzle on your morning commute or a competitive showdown against friends, Wordocious has a mode for you. Every daily puzzle is the same for all players worldwide, so you can compare scores and strategies with anyone.',
+      'Wordocious is a free puzzle game that goes far beyond the classic five-letter guess. With eight daily word games, ten More Games dailies from sudoku to cryptograms, live VS matches with friends, and global leaderboards, Wordocious gives puzzle fans something new to play every single day.',
+      'Whether you enjoy a quick solo puzzle on your morning commute or a race against friends, Wordocious has a mode for you. Every daily puzzle is the same for all players worldwide, so you can compare scores and strategies with anyone.',
     ],
   },
   {
     heading: 'The Daily Word Games',
     items: [
       { heading: 'Classic', accent: '#7c3aed', body: 'The original word puzzle formula. Guess a single five-letter word in six attempts. After each guess, colored tiles reveal which letters are correct, misplaced, or not in the word at all. A perfect starting point for new players and a daily ritual for veterans.' },
-      { heading: 'VS Battle', accent: '#0d9488', body: 'Race against another player in real time. Both players receive the same word and compete to solve it first. Speed and accuracy both matter — the fastest correct solve wins the round. Invite a friend with a link, queue for a live opponent, or battle a built-in bot — each with its own personality and difficulty.' },
       { heading: 'QuadWord', accent: '#ec4899', body: 'Solve four words simultaneously with just nine total guesses. Every guess you type applies to all four boards at once, so you need to think strategically about which letters give you the most information across all four puzzles.' },
       { heading: 'OctoWord', accent: '#7e22ce', body: 'The ultimate multi-board challenge. Eight words, thirteen guesses, and the same simultaneous-solve mechanic as QuadWord. Managing eight boards at once demands careful planning and a deep vocabulary.' },
       { heading: 'Succession', accent: '#2563eb', body: 'Four words solved in sequence. Finish one puzzle to unlock the next, but all four share a single pool of ten guesses. Balancing speed against guess conservation is key — waste too many guesses early and the later words become nearly impossible.' },
@@ -136,6 +135,12 @@ export const ABOUT_SECTIONS: ContentSection[] = [
       { heading: 'Codebreaker', accent: '#92400e', body: 'A well-known saying in a letter-for-letter code with the three most common letters given. Pencil freely, Check when you dare, and the code cracks itself the moment every letter is right.' },
       { heading: 'Spyglass', accent: '#4d7c0f', body: 'Ten themed words hidden forwards in a 10 × 10 grid. Race the clock and keep your misses down — only a straight line of four or more letters that spells no listed word counts against you.' },
       { heading: 'Starsweep', accent: '#ca8a04', body: 'Place one star in every row, column and color region with no two stars touching. A 7 × 7 board early in the week and 8 × 8 from Thursday, three mistakes, and a solution you can always reach by logic alone.' },
+    ],
+  },
+  {
+    heading: 'Play with Friends',
+    items: [
+      { heading: 'VS Battle', accent: '#0d9488', body: 'Race another player on the same puzzle in real time. Both players receive the same word and compete to solve it first. Speed and accuracy both matter — the fastest correct solve wins the round. Invite a friend with a link, queue for a live opponent, or play a built-in bot — each with its own personality and difficulty.' },
     ],
   },
   {
@@ -171,7 +176,7 @@ export const ABOUT_SECTIONS: ContentSection[] = [
 // ── Support page (each Q is a heading, A is the paragraph) ───────────────────
 export const SUPPORT_SECTIONS: ContentSection[] = [
   { heading: 'How do I play Wordocious?', paragraphs: ['Wordocious is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Purple means the letter is correct and in the right spot. Amber means the letter is in the word but in the wrong position. Gray means the letter isn’t in the word at all. Each mode has its own twist — from single-word puzzles to multi-board challenges!'] },
-  { heading: 'What are the different game modes?', paragraphs: ['Wordocious offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve several puzzles at once, the five-stage Gauntlet, and real-time VS Battles against friends, live opponents, or bots. The More Games tile adds ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and the famous-names game ProperNoundle — which earn XP and medals but sit outside the Daily Sweep. Head to the home page to see every mode and find your favorite.'] },
+  { heading: 'What are the different game modes?', paragraphs: ['Wordocious offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve several puzzles at once, the five-stage Gauntlet, and live VS matches against friends, other players, or bots. The More Games tile adds ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and the famous-names game ProperNoundle — which earn XP and medals but sit outside the Daily Sweep. Head to the home page to see every mode and find your favorite.'] },
   { heading: 'How are daily scores calculated?', paragraphs: ['Your daily score is a composite that puts guesses first: a base score of 1,000 points for completing the puzzle, a guess bonus for every guess you did not need (300 points each in Classic — other modes scale to their guess budget), a speed bonus scaled by how far under the time cap you finish (always worth less than one guess, so it breaks ties rather than beating efficiency), and — on multi-board modes — a completion bonus based on how many boards you solved. For example, Classic solved in 3 guesses at 30 seconds: 1,000 base + 900 guess bonus + 216 speed + 200 completion = 2,316 points. A loss still earns a little partial credit for how far you got — correct letters on a single-board near-miss, boards solved on the multi-board modes, or stages reached in the Gauntlet — so a close miss outscores a total whiff.'] },
   { heading: 'How do XP and levels work?', paragraphs: ['You earn XP after every game. Winning awards 100 XP and losing awards 25 XP. You can earn bonus XP from win streaks (+50), completing daily challenges (+50), and earning medals (gold +100, silver +50, bronze +25). Your level is based on your total XP — every 1,000 XP advances you one level. Check your progress on your profile page.'] },
   { heading: 'How do streaks work?', paragraphs: ['Your streak counts how many consecutive days you’ve completed a daily puzzle. Play and solve at least one daily puzzle each day to keep your streak alive. If you miss a day, your current streak resets to zero — but your best streak is always saved. Streaks reset at midnight based on your local time.'] },

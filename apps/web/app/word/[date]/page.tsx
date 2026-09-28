@@ -185,7 +185,7 @@ export default async function WordOfDayPage({ params }: Props) {
               </span>
             ))}
             {insights.sameStartCount > 0
-              ? `${insights.sameStartCount} other answer${insights.sameStartCount === 1 ? '' : 's'} share the opening “${insights.prefix}-”, so two green tiles up front still leave real guessing to do.`
+              ? `${insights.sameStartCount} other answer${insights.sameStartCount === 1 ? '' : 's'} share the opening “${insights.prefix}-”, so two purple tiles up front still leave real guessing to do.`
               : `No other answer in the bank opens with “${insights.prefix}-”, so locking those first two letters all but gives it away.`}
           </p>
           <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>
@@ -202,13 +202,13 @@ export default async function WordOfDayPage({ params }: Props) {
             {insights.neighbors.length > 0 && (
               <p className="text-base leading-relaxed mb-2" style={{ color: 'var(--color-text)' }}>
                 One letter away in the answer bank: <strong>{insights.neighbors.join(', ')}</strong>. Each of these turns four
-                tiles green against {w} — the classic endgame squeeze where spending a guess on the differing letter beats
+                tiles purple against {w} — the classic endgame squeeze where spending a guess on the differing letter beats
                 burning attempts on hope.
               </p>
             )}
             {insights.anagrams.length > 0 && (
               <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>
-                Same letters, different order: <strong>{insights.anagrams.join(', ')}</strong> — yellow-heavy boards can be
+                Same letters, different order: <strong>{insights.anagrams.join(', ')}</strong> — amber-heavy boards can be
                 hiding {insights.anagrams.length === 1 ? 'this anagram' : 'one of these anagrams'} instead.
               </p>
             )}

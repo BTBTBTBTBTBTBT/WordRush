@@ -43,7 +43,7 @@ struct AuthView: View {
                     VStack(spacing: 24) {
                         VStack(spacing: 8) {
                             Wordmark(size: 30)
-                            Text("Epic Word Battles").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                            Text("Daily Word Games").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
                         }.padding(.top, 20)
 
                         card

@@ -176,7 +176,7 @@ export default function ProPage() {
                 <div className="text-3xl font-black mb-0.5" style={{ color: 'var(--color-text)' }}>
                   ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>/yr</span>
                 </div>
-                <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>$4.99/mo billed annually</p>
+                <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>$5/mo billed annually</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.yearly.id)}
                   disabled={loading !== null || !paymentsEnabled}

@@ -126,7 +126,7 @@ export function WelcomeModal() {
                   WORDOCIOUS
                 </h1>
                 <p className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                  Welcome to Epic Word Battles
+                  Welcome to Wordocious
                 </p>
               </div>
 
@@ -144,7 +144,7 @@ export function WelcomeModal() {
                       Daily Puzzles
                     </p>
                     <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      New challenges every day across 9 unique game modes
+                      Eight daily word games and ten More Games, new every day
                     </p>
                   </div>
                 </div>
@@ -158,10 +158,10 @@ export function WelcomeModal() {
                   </div>
                   <div>
                     <p className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>
-                      Compete Head-to-Head
+                      Play with Friends
                     </p>
                     <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      Challenge friends or get matched with random opponents
+                      Today's Race, a weekly finish and VS with friends
                     </p>
                   </div>
                 </div>

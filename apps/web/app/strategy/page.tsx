@@ -35,9 +35,9 @@ export default function StrategyIndexPage() {
             and it applies to every mode.
           </p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            <strong>2. Read every tile, including the gray ones.</strong> Most players read green as &quot;good&quot; and gray as
-            &quot;bad&quot; and stop there. The leaderboard reads position: a yellow tile doesn&apos;t just say the letter is present,
-            it eliminates that letter from that column, which often prunes more candidates than a green does. Deduction from
+            <strong>2. Read every tile, including the gray ones.</strong> Most players read purple as &quot;good&quot; and gray as
+            &quot;bad&quot; and stop there. The leaderboard reads position: a amber tile doesn&apos;t just say the letter is present,
+            it eliminates that letter from that column, which often prunes more candidates than a purple does. Deduction from
             negative space is the single biggest skill gap between casual and fast solvers.
           </p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>

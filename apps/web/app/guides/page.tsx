@@ -26,7 +26,7 @@ export default function GuidesIndexPage() {
           </h2>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
             The eight daily word games are really four families, and More Games adds a fifth. <strong>Single-board classics</strong> — Classic (5 letters), Six,
-            and Seven — are pure deduction: one hidden word, six guesses, and the only variable is word length. Longer words
+            and Seven — are pure deduction: one hidden word, six to eight guesses, and the only variable is word length. Longer words
             sound harder but often play easier, because every guess reveals more letters; the real difficulty jump is the
             thinner vocabulary most players have at six and seven letters. If you&apos;re new, start with Classic and work up.
           </p>

@@ -112,7 +112,7 @@ struct ProView: View {
             planCard(title: "Monthly", price: displayPrice(.monthly, fallback: monthlyPrice), unit: "/mo", note: "Cancel anytime",
                      gradient: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], best: false,
                      loading: isPurchasing(.monthly), action: { buy(.monthly) }, cta: "Subscribe Monthly")
-            planCard(title: "Yearly", price: displayPrice(.yearly, fallback: yearlyPrice), unit: "/yr", note: "$4.99/mo billed annually",
+            planCard(title: "Yearly", price: displayPrice(.yearly, fallback: yearlyPrice), unit: "/yr", note: "$5/mo billed annually",
                      gradient: [Color(hex: 0xF59E0B), gold], best: true,
                      loading: isPurchasing(.yearly), action: { buy(.yearly) }, cta: "Subscribe Yearly")
 

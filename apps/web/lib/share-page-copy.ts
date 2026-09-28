@@ -181,7 +181,7 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const more = mode === 'MoreSweep';
     const flawless = str(sp.sweep) === 'flawless';
     const w = Number(str(sp.won)) || 0;
-    const tot = Number(str(sp.tot)) || (more ? 10 : 9);
+    const tot = Number(str(sp.tot)) || (more ? 10 : 8);
     const t = Number(str(sp.t)) || 0;
     const pts = Number(str(sp.pts)) || 0;
     const label = more ? (flawless ? 'Flawless More Games' : 'More Games Sweep') : (flawless ? 'Flawless Victory' : 'Daily Sweep');

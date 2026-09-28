@@ -22,13 +22,13 @@ struct WelcomeView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 2) {
                         Wordmark(size: 24)
-                        Text("Welcome to Epic Word Battles").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                        Text("Welcome to Wordocious").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     .padding(.top, 20).padding(.bottom, 16)
 
                     VStack(alignment: .leading, spacing: 12) {
-                        pillar("sparkles", Color(hex: 0x7C3AED), Color(hex: 0xF3F0FF), "Daily Puzzles", "New challenges every day across 9 unique game modes")
-                        pillar("flag.checkered", Color(hex: 0xEC4899), Color(hex: 0xFDF2F8), "Compete Head-to-Head", "Challenge friends or get matched with random opponents")
+                        pillar("sparkles", Color(hex: 0x7C3AED), Color(hex: 0xF3F0FF), "Daily Puzzles", "Eight daily word games and ten More Games, new every day")
+                        pillar("flag.checkered", Color(hex: 0xEC4899), Color(hex: 0xFDF2F8), "Play with Friends", "Today's Race, a weekly finish and VS with friends")
                         pillar("trophy.fill", Color(hex: 0xD97706), Color(hex: 0xFFFBEB), "Climb the Leaderboards", "Earn medals, build streaks, and track your stats")
                     }
                     .padding(.bottom, 18)

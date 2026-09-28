@@ -58,7 +58,7 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
               Daily VS Used
             </h2>
             <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-              You&apos;ve played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.
+              You&apos;ve played your free daily VS match for today. Upgrade to Pro for unlimited ad-free VS matches and rematches, or come back tomorrow.
             </p>
 
             <div

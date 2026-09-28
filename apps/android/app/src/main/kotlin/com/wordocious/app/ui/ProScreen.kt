@@ -186,7 +186,7 @@ private fun PlansContent() {
             onClick = { buy(StoreManager.PRO_MONTHLY) },
         )
         PlanCard(
-            "Yearly", prices[StoreManager.PRO_YEARLY] ?: "\$59.99", "/yr", "\$4.99/mo billed annually",
+            "Yearly", prices[StoreManager.PRO_YEARLY] ?: "\$59.99", "/yr", "\$5/mo billed annually",
             listOf(Color(0xFFF59E0B), GOLD), best = true,
             cta = if (purchasingId == StoreManager.PRO_YEARLY) "Processing…" else "Subscribe Yearly",
             loading = purchasingId == StoreManager.PRO_YEARLY, enabled = !busy,

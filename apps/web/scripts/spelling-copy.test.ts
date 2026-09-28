@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /**
@@ -19,6 +19,10 @@ import { join, relative } from 'node:path';
 const ROOT = join(__dirname, '..');
 const DIRS = ['app', 'components', 'lib', 'hooks', 'data'].map((d) => join(ROOT, d));
 const CATALOG = join(ROOT, '..', '..', 'packages', 'core', 'modes.json');
+/** Copy outside the source dirs: the PWA manifest, the offline page and the Supabase auth emails. */
+const EMAILS = join(ROOT, '..', '..', 'supabase', 'email-templates');
+const EXTRA = [join(ROOT, 'public', 'manifest.json'), join(ROOT, 'public', 'offline.html'),
+  ...(existsSync(EMAILS) ? readdirSync(EMAILS).filter((n) => n.endsWith('.html')).map((n) => join(EMAILS, n)) : [])].filter((p) => existsSync(p));
 const SKIP = /^(allowed(-\d)?|solutions(-\d)?(-legacy)?|.*lexicon.*|hub-puzzles|wordsearch-puzzles|wordsearch-themes|propernoundle-puzzles|propernoundle-holidays|sense-rank-fixtures|ladder-puzzles)\.json$/;
 /** Exact literals that are stored values, not copy: [file suffix, word]. */
 const ALLOW: [string, string][] = [['lib/invite-service.ts', 'cancelled']]; // invites.status enum value in the database
@@ -158,6 +162,7 @@ function* walk(dir: string): Generator<string> {
 }
 /** The player-readable parts of a file: everything in JSON (values only, answers and keys excluded), comments + strings + JSX text in code. */
 function readable(file: string, text: string): string[] {
+  if (file.endsWith('.html')) return [text.replace(/<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ')];
   if (file.endsWith('.json')) {
     const out: string[] = [];
     const visit = (v: unknown, key: string) => {
@@ -182,7 +187,7 @@ function readable(file: string, text: string): string[] {
 describe('American spelling in player-facing copy', () => {
   it('has no British spellings in app copy, components, banks, dictionary or the catalog', () => {
     const hits: string[] = [];
-    for (const file of [...DIRS.flatMap((d) => [...walk(d)]), CATALOG]) {
+    for (const file of [...DIRS.flatMap((d) => [...walk(d)]), CATALOG, ...EXTRA]) {
       const text = readFileSync(file, 'utf8');
       for (const chunk of readable(file, text)) { const m = chunk.match(PATTERN)?.filter((w) => !ALLOW.some(([f, word]) => file.endsWith(f) && w === word)); if (m?.length) hits.push(`${relative(ROOT, file)}: ${[...new Set(m)].join(', ')} — ${chunk.slice(0, 80)}`); }
     }

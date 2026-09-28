@@ -70,7 +70,7 @@ export async function GET() {
               display: 'flex',
             }}
           >
-            Epic Word Battles
+            Daily Word Games
           </div>
 
           {/* Game mode pills */}

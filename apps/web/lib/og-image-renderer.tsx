@@ -9,7 +9,7 @@ import { MODES } from './modes.generated';
 // Next.js requires — while sharing the actual visual definition.
 
 export const OG_SIZE = { width: 1200, height: 630 };
-export const OG_ALT = 'Wordocious — Epic Word Battles';
+export const OG_ALT = 'Wordocious — Daily Word Games';
 export const OG_CONTENT_TYPE = 'image/png';
 
 /**
@@ -182,7 +182,7 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
               display: 'flex',
             }}
           >
-            Epic Word Battles
+            Daily Word Games
           </div>
 
           {/* Game mode pills — every daily mode with its REAL tile icon
@@ -198,7 +198,7 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
               maxWidth: '1100px',
             }}
           >
-            {MODES.filter((m) => m.dailyEligible).map((m) => (
+            {MODES.filter((m) => m.sweep).map((m) => (
               <div
                 key={m.id}
                 style={{

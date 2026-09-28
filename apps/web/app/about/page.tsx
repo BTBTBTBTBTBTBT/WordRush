@@ -4,7 +4,7 @@ import { ABOUT_SECTIONS } from '@/lib/content/static-content';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export const metadata: Metadata = {
-  title: 'About Wordocious — Epic Word Battles',
+  title: 'About Wordocious — Daily Word Games',
   description:
     'Wordocious is a free online puzzle game with nineteen ways to play: Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, real-time VS Battles, and ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Play daily puzzles, climb leaderboards, and compete with friends.',
 };
@@ -16,7 +16,7 @@ export default function AboutPage() {
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
       <InfoPageHeader title="About Wordocious" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Epic Word Battles &mdash; Daily Puzzles &amp; Multiplayer Showdowns</p>
+        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Daily Word Games &mdash; the same puzzles for everyone</p>
 
         <div className="space-y-4">
           {ABOUT_SECTIONS.map((section) => (

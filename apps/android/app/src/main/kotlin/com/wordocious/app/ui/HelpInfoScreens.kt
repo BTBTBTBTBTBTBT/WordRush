@@ -176,7 +176,7 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
         "about" -> "About Wordocious"; "privacy" -> "Privacy Policy"; "terms" -> "Terms of Service"; else -> "Help & Support"
     }
     val subtitle = when (kind) {
-        "about" -> "Epic Word Battles — Daily Puzzles & Multiplayer Showdowns"
+        "about" -> "Daily Word Games — the same puzzles for everyone"
         "privacy" -> "Effective July 30, 2026"
         "terms" -> "Effective April 10, 2026"
         else -> "Got a question? We've got answers."

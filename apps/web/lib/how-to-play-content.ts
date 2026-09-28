@@ -83,10 +83,6 @@ export const HOW_TO_PLAY: HTPSection[] = [
         body: 'The standard word puzzle experience. You have six attempts to guess a single five-letter word. Start with a word that contains common letters like E, A, R, S, and T to eliminate possibilities quickly. Pay attention to gray tiles — knowing which letters are not in the word is just as valuable as finding correct ones.',
       },
       {
-        name: 'VS Battle — Real-Time Multiplayer', accent: '#0d9488',
-        body: 'A head-to-head race on the same puzzle. The match happens in real time — you can see when your opponent submits guesses. Speed matters, but accuracy matters more: a wrong guess wastes precious time. Invite a friend with a link, queue up for a live opponent, or battle one of the built-in bot opponents — each has its own personality and difficulty, so there is always a match waiting.',
-      },
-      {
         name: 'QuadWord — 4 Words, 9 Guesses', accent: '#ec4899',
         body: 'Solve four different words at the same time using a shared pool of nine guesses. Every word you type is checked against all four boards simultaneously. The strategy shifts compared to Classic — choose guesses that give useful information across multiple boards rather than targeting a single word. Once a board is solved, it locks in and you can focus on the remaining ones.',
       },
@@ -115,6 +111,10 @@ export const HOW_TO_PLAY: HTPSection[] = [
         body: 'A five-stage endurance test: The Opening (a single word), then QuadWord, Succession, Deliverance, and finally OctoWord. Each stage is more demanding than the last, and one failed stage ends the run. Completing the full Gauntlet requires consistent performance across every style of play — only the most skilled players finish all five stages.',
       },
       {
+        name: 'VS Battle — Live Matches', accent: '#0d9488',
+        body: 'A head-to-head race on the same puzzle. The match happens in real time — you can see when your opponent submits guesses. Speed matters, but accuracy matters more: a wrong guess wastes precious time. Invite a friend with a link, queue up for a live opponent, or battle one of the built-in bot opponents — each has its own personality and difficulty, so there is always a match waiting.',
+      },
+      {
         name: 'More Games — Ten Extra Dailies', accent: '#4f46e5',
         body: 'The More Games tile on the home screen opens a menu of ten extra daily puzzles — number logic, star placement, word ladders, a word search, a hub game, a cryptogram, groups of four, a crossword, a scramble and the famous-names game ProperNoundle. They live outside the Daily Sweep: each one earns XP, medals, leaderboard places and achievements like every other mode, but none of them changes your sweep count or Flawless Victory — those stay the eight word games on the home grid. Every title below has its own full guide behind the ? button in play.',
       },
@@ -123,7 +123,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
         body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. ProperNoundle now lives under More Games, so it no longer counts toward the Daily Sweep or Flawless Victory — it still earns XP, medals and its own leaderboard every day. With more than 650 puzzles in the pool, every day brings a fresh challenge.',
       },
       {
-        name: 'Sudocious — Daily Sudoku, 3 Mistakes', accent: '#1e40af',
+        name: 'Sudocious — Number Logic, 3 Mistakes', accent: '#1e40af',
         body: 'A classic nine-by-nine sudoku: fill the grid so every row, column and 3 × 3 box holds the digits 1 to 9 exactly once. The daily is always Medium and has exactly one solution, so careful scanning solves it without a single guess. A wrong digit turns red and counts as a mistake — two are allowed, and the third ends the puzzle. Turn on Notes to pencil candidates into a cell for free, and use Hint to fill a cell for 100 points when you would rather pay than risk a mistake. Every mistake you avoid is worth 300 points, so a clean grid always outranks a fast one.',
       },
       {

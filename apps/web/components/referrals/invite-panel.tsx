@@ -147,7 +147,7 @@ export function InvitePanel() {
 
   const copyLink = async (code: string) => {
     const url = `https://wordocious.com/join/${code}`;
-    const text = `I'm gifting you 7 days of Wordocious Pro — daily word puzzles, battles, the works.`;
+    const text = `I'm gifting you 7 days of Wordocious Pro — eight daily word games, ten More Games, the works.`;
     try {
       if (navigator.share) {
         // Pass url SEPARATELY from text: iOS then renders the share-sheet

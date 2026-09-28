@@ -25,10 +25,10 @@ type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProper
 // components/home/mode-chrome.tsx): real game icons everywhere, except
 // QuadWord/OctoWord which brand with roman numerals.
 type LandingMode = { title: string; desc: string; accent: string; roman?: string; guide?: string; Icon?: IconCmp };
-// The home grid: the eight Daily Sweep word games plus VS Battle.
+// The eight Daily Sweep word games (VS Battle has its own card under More Games).
+const VS_MODE: LandingMode = { title: 'VS Battle', desc: 'Race a friend or a live opponent on the same puzzle.', accent: '#0d9488', Icon: Swords };
 const MODES: LandingMode[] = [
   { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed', guide: 'classic', Icon: WordleGridIcon },
-  { title: 'VS Battle', desc: 'Race a live opponent on the same puzzle in real time.', accent: '#0d9488', Icon: Swords },
   { title: 'QuadWord', desc: 'Solve four words at once with nine shared guesses.', accent: '#ec4899', roman: 'IV', guide: 'quadword' },
   { title: 'OctoWord', desc: 'Eight boards, thirteen guesses — the ultimate grid.', accent: '#7e22ce', roman: 'VIII', guide: 'octoword' },
   { title: 'Succession', desc: 'Four words, unlocked and solved one at a time.', accent: '#2563eb', guide: 'succession', Icon: TrendingUp },
@@ -74,8 +74,8 @@ function ModeCard({ m }: { m: LandingMode }) {
 
 const FAQ: { q: string; a: string }[] = [
   { q: 'Is Wordocious free to play?', a: 'Yes. A new daily puzzle in every mode is free every day. An optional Pro subscription removes ads and unlocks unlimited replays.' },
-  { q: 'How is it different from other word games?', a: 'Wordocious bundles nineteen ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, real-time VS battles, and ten More Games dailies from sudoku and star logic to word searches, cryptograms, crosswords and famous names — all sharing one daily seed so everyone plays the same puzzles.' },
-  { q: 'Do I need an account?', a: 'You can read about every mode here without signing in. To play, save your streaks, and climb the daily leaderboards, sign in with Google or email.' },
+  { q: 'How is it different from other word games?', a: 'Wordocious bundles nineteen ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, ten More Games dailies from sudoku and star logic to word searches, cryptograms, crosswords and famous names, and live VS matches with friends — all sharing one daily seed so everyone plays the same puzzles.' },
+  { q: 'Do I need an account?', a: 'You can read about every mode here without signing in. To play, save your streaks, and climb the daily leaderboards, sign in with Google, Apple or email.' },
   { q: 'How do daily challenges work?', a: 'Each mode has one shared daily puzzle that resets at local midnight. Finish all eight word games for a Daily Sweep, or win them all for a Flawless Victory and bonus XP.' },
   { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each earns XP, medals, achievements and its own leaderboard, but none of them counts toward the Daily Sweep, which stays the eight word games.' },
   { q: 'What are leaderboards and medals?', a: 'Every daily puzzle has a leaderboard ranked by a composite of guesses and solve time. Top finishers earn gold, silver, and bronze medals shown on their profile.' },
@@ -107,12 +107,12 @@ export function Landing() {
       <section className="text-center px-6 pt-8 pb-10 max-w-2xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={wordmarkStyle}>WORDOCIOUS</h1>
         <p className="text-base font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-          One daily puzzle game. Nineteen ways to play.
+          Daily word games. Eight on the home screen, ten more behind one tile.
         </p>
         <p className="text-sm font-medium mb-6 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           A fresh set of puzzles every day — from the classic five-letter chase to eight-board
-          marathons, a five-stage Gauntlet, real-time head-to-head battles, and ten More Games dailies
-          from sudoku to cryptograms. Everyone plays the same daily puzzles, climbs the same
+          marathons, a five-stage Gauntlet, and ten More Games dailies from sudoku to
+          cryptograms, plus live VS matches with friends. Everyone plays the same daily puzzles, climbs the same
           leaderboards, and chases the same streaks.
         </p>
         <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm" style={ctaStyle}>
@@ -146,6 +146,13 @@ export function Landing() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {MORE_GAMES.map((m) => <ModeCard key={m.title} m={m} />)}
+        </div>
+
+        <h2 className="text-xs font-black uppercase tracking-widest mt-8 mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          Play with Friends
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ModeCard m={VS_MODE} />
         </div>
         <p className="text-xs font-medium mt-3" style={{ color: 'var(--color-text-secondary)' }}>
           Want the deep dives? The <Link href="/guides" style={{ color: '#7c3aed', fontWeight: 800 }}>mode guides</Link> cover

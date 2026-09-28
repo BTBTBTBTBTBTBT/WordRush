@@ -34,8 +34,8 @@ const nunito = Nunito({
 // `openGraph.images` or `twitter.images` here, or the explicit metadata
 // wins over the dynamic renderer and a stale static PNG gets served.
 export const metadata: Metadata = {
-  title: 'Wordocious — Epic Word Battles',
-  description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
+  title: 'Wordocious — Daily Word Games',
+  description: 'Eight daily word games and ten More Games: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
   metadataBase: new URL('https://wordocious.com'),
   manifest: '/manifest.json',
   themeColor: '#a78bfa',
@@ -61,16 +61,16 @@ export const metadata: Metadata = {
   // entity-level ban — publicly asserting ownership of a dead publisher does
   // nothing but misrepresent the site.
   openGraph: {
-    title: 'Wordocious — Epic Word Battles',
-    description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
+    title: 'Wordocious — Daily Word Games',
+    description: 'Eight daily word games and ten More Games: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
     url: 'https://wordocious.com',
     siteName: 'Wordocious',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Wordocious — Epic Word Battles',
-    description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
+    title: 'Wordocious — Daily Word Games',
+    description: 'Eight daily word games and ten More Games: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
   },
 };
 

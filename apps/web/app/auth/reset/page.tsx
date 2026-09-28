@@ -92,7 +92,7 @@ function ResetPasswordInner() {
             WORDOCIOUS
           </h1>
           <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Epic Word Battles
+            Daily Word Games
           </p>
         </div>
 

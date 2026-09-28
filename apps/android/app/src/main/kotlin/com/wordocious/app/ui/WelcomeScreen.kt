@@ -81,7 +81,7 @@ fun WelcomeScreen() {
                         "WORDOCIOUS", fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
                         style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)), fontFamily = Nunito),
                     )
-                    Text("Welcome to Epic Word Battles", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("Welcome to Wordocious", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
                 Spacer(Modifier.height(16.dp))
 
@@ -89,9 +89,9 @@ fun WelcomeScreen() {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Glyphs match iOS WelcomeView: sparkles / checkered flag / trophy.
                     Pillar(icon = Icons.Filled.AutoAwesome, tint = Color(0xFF7C3AED), bg = Color(0xFFF3F0FF),
-                        title = "Daily Puzzles", sub = "New challenges every day across 9 unique game modes")
+                        title = "Daily Puzzles", sub = "Eight daily word games and ten More Games, new every day")
                     Pillar(icon = Icons.Filled.SportsScore, tint = Color(0xFFEC4899), bg = Color(0xFFFDF2F8),
-                        title = "Compete Head-to-Head", sub = "Challenge friends or get matched with random opponents")
+                        title = "Play with Friends", sub = "Today's Race, a weekly finish and VS with friends")
                     Pillar(icon = Icons.Filled.EmojiEvents, tint = Color(0xFFD97706), bg = Color(0xFFFFFBEB),
                         title = "Climb the Leaderboards", sub = "Earn medals, build streaks, and track your stats")
                 }

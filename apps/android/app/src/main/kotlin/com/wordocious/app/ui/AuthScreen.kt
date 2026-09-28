@@ -127,7 +127,7 @@ fun AuthScreen(
             style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
         )
         Text(
-            "Epic Word Battles",
+            "Daily Word Games",
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = WTheme.textMuted,

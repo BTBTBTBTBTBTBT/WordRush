@@ -102,7 +102,7 @@ struct InfoPage: View {
     }
     private var subtitle: String? {
         switch kind {
-        case .about: return "Epic Word Battles — Daily Puzzles & Multiplayer Showdowns"
+        case .about: return "Daily Word Games — the same puzzles for everyone"
         case .privacy: return "Effective July 30, 2026"
         case .terms: return "Effective April 10, 2026"
         case .support: return "Got a question? We've got answers."

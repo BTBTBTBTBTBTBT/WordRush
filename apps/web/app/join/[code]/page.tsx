@@ -119,7 +119,7 @@ export default function JoinReferralPage() {
       </h1>
       <p className="text-xs font-bold mt-1 mb-4" style={{ color: 'var(--color-text-muted)' }}>
         7 days of <span style={{ color: '#d97706' }}>Wordocious Pro</span> — free. Ad-free play,
-        unlimited replays, VS battles on every mode, and more.
+        unlimited replays, VS in every mode, and more.
       </p>
     </>
   );

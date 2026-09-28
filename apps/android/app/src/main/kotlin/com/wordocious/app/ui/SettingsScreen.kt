@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
  * About links · Sign out · Delete account · version. Full-screen with Done.
  */
 private val THEMES = listOf(
-    Triple("light", "Default", "Classic green & gold tiles"),
+    Triple("light", "Default", "Purple & amber tiles"),
     Triple("dark", "Dark", "Easy on the eyes"),
     Triple("ocean", "Ocean", "Blue and teal tones"),
     Triple("forest", "Forest", "Green and earth tones"),
