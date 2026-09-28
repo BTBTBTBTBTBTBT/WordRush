@@ -10,7 +10,7 @@ import { Clock, Delete, XCircle } from 'lucide-react';
 import {
   scramblePuzzleForDay, scramblePuzzleForSeed, scrambleDailyNumber, createScrambleState, scrambleReduce, scrambleMatchRow, scrambleGuessCount, scrambleBoardsSolved,
   scrambleActiveRow, scrambleFinalOpen, scrambleFinalLetters, SCRAMBLE_FINAL, SCRAMBLE_MAX_CHECKS, SCRAMBLE_TOTAL_BOARDS, generateDailySeed,
-  type ScrambleState, type ScrambleAction, type ScrambleBank,
+  type ScrambleState, type ScrambleAction, type ScrambleBank, type ScramblePuzzle,
 } from '@wordle-duel/core';
 import scrambleBankJson from '@/data/scramble-puzzles.json';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
@@ -26,10 +26,11 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { scrambleElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -68,6 +69,8 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const [noLocalSave, setNoLocalSave] = useState(false);
   const { checking, completion } = useCompletedElsewhere('SCRAMBLE', mode === 'daily' && noLocalSave);
   const holdPlay = checking || !!completion;
+  // The finished puzzle (with its cartoon) and exact breakdown inputs from the matches row when today's daily was played elsewhere.
+  const [elsewhere, setElsewhere] = useState<{ result: ReturnType<typeof scrambleElsewhere>; puzzle: ScramblePuzzle | null } | null>(null);
 
   const status = state?.status ?? 'playing';
   const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
@@ -119,6 +122,23 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
   }, [state, elapsedSeconds, mode, holdPlay]);
+
+  // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
+  // the matches row holds what daily_results does not — rows solved before the
+  // thirteenth check and hints_used — so a loss scores the same partial
+  // credit the phone recorded instead of assuming zero rows.
+  useEffect(() => {
+    if (!completion || !profile || mode !== 'daily') return;
+    const today = getTodayLocal();
+    const seed = generateDailySeed(today, 'SCRAMBLE');
+    let cancelled = false;
+    fetchSolvedDailyRow(profile.id, 'SCRAMBLE', seed).then((row) => {
+      if (cancelled || !row) return;
+      const puzzle = scramblePuzzleForDay(BANK, today, HOLIDAY_TABLE);
+      setElsewhere({ result: scrambleElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, puzzle), puzzle });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [completion, profile, mode]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -218,6 +238,10 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const holiday = holidayTitle(puzzle?.holiday ?? null);
   const checksLabel = `${state.checks} check${state.checks === 1 ? '' : 's'}`;
   const captionParts = state.caption.split('____');
+  // The other-device puzzle, when the matches row rebuilt it (rendered above the completed card).
+  const es = elsewhere?.result.state ?? null;
+  const esCaption = es ? es.caption.split('____') : null;
+  const noop = () => {};
   // Compact rule (§5, founder 2026-09-23): 30px capsules; the ::before pseudo stretches the hit target to 44px without adding height.
   const capsule = (dim: boolean) => `relative flex items-center gap-1 text-xs font-bold px-3 h-[30px] rounded-full border transition-all before:content-[''] before:absolute before:-inset-y-[7px] before:inset-x-0 ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${MUDDLE_ACCENT}66`, color: MUDDLE_ACCENT, background: `${MUDDLE_ACCENT}0d` };
@@ -248,8 +272,27 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       </div>
 
       {completion ? (
-        // Today's daily was finished on another device (founder, 2026-09-28).
-        <CompletedCustomDaily dbKey="SCRAMBLE" completion={completion} />
+        // Today's daily was finished on another device (founder, 2026-09-28): the
+        // cartoon, caption and the rows solved from the matches row, then the card.
+        <CompletedCustomDaily dbKey="SCRAMBLE" completion={completion}
+          boardsSolved={elsewhere?.result.progress.boardsSolved} totalBoards={elsewhere?.result.progress.totalBoards} hintsUsed={elsewhere?.result.progress.hintsUsed}>
+          {es && esCaption && (
+            <>
+              <CartoonPanel src={elsewhere?.puzzle?.cartoon ?? null} alt={elsewhere?.puzzle?.altText ?? 'Cartoon'} fixed />
+              <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1.5 line-clamp-2" style={{ fontSize: 14, lineHeight: 1.25, color: 'var(--color-text)' }}>
+                {esCaption[0]}
+                <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{es.final.answer.toLowerCase()}</span>
+                {esCaption[1] ?? ''}
+              </p>
+              <div className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
+                {es.words.map((_, i) => (
+                  <WordRow key={i} state={es} row={i} active={false} shaking={false} finished onSelect={noop} onTapTile={noop} onRevealLetter={noop} onSolveWord={noop} />
+                ))}
+                <FinalRow state={es} active={false} shaking={false} finished onSelect={noop} onTapTile={noop} onRevealLetter={noop} />
+              </div>
+            </>
+          )}
+        </CompletedCustomDaily>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-puzzle flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />

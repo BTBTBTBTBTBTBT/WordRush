@@ -27,11 +27,12 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed, pnGuessBlocked } from '@wordle-duel/core';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { propernoundleElsewhere } from '@/lib/elsewhere-progress';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -156,6 +157,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const [noLocalSave, setNoLocalSave] = useState(false);
   const { checking, completion } = useCompletedElsewhere('PROPERNOUNDLE', mode === 'daily' && noLocalSave);
   const holdPlay = checking || !!completion;
+  // The recorded rows and exact breakdown inputs from the matches row when today's daily was played elsewhere.
+  const [elsewhere, setElsewhere] = useState<ReturnType<typeof propernoundleElsewhere>>(null);
   const {
     elapsedSeconds: elapsedTime,
     reset: resetTimer,
@@ -285,6 +288,21 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   // Track whether we've recorded this game to avoid duplicate recordings
   const hasRecordedRef = useRef(false);
+
+  // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
+  // the matches row holds what daily_results does not — hints_used and the
+  // rows themselves, whose best green count is the loss formula's near-miss
+  // credit — so the card scores the same inputs the phone recorded.
+  useEffect(() => {
+    if (!completion || !profile || mode !== 'daily') return;
+    const seed = generateDailySeed(getTodayLocal(), 'PROPERNOUNDLE');
+    let cancelled = false;
+    fetchSolvedDailyRow(profile.id, 'PROPERNOUNDLE', seed).then((row) => {
+      if (cancelled || !row) return;
+      setElsewhere(propernoundleElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [completion, profile, mode]);
 
   // Total hint actions used this game. ProperNoundle exposes three
   // distinct hint slots (Wikipedia clue, vowel reveal, consonant
@@ -748,8 +766,21 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
            After game ends: hint + board + result card flow in a scrollable area so
            nothing gets clipped by the fixed BottomNav on small screens. */}
       {completion ? (
-        // Today's daily was finished on another device (founder, 2026-09-28).
-        <CompletedCustomDaily dbKey="PROPERNOUNDLE" completion={completion} />
+        // Today's daily was finished on another device (founder, 2026-09-28): the
+        // recorded rows (hint rows at their real positions) from the matches row, then the card.
+        <CompletedCustomDaily dbKey="PROPERNOUNDLE" completion={completion}
+          boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}
+          bestCorrectLetters={elsewhere?.progress.bestCorrectLetters}>
+          {elsewhere && (
+            <NoundleBoard
+              guesses={elsewhere.rows}
+              currentGuess=""
+              maxGuesses={MAX_GUESSES}
+              answerLength={elsewhere.answer.length}
+              answerDisplay={normalizeString(puzzle.answer) === elsewhere.answer ? puzzle.display : undefined}
+            />
+          )}
+        </CompletedCustomDaily>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />

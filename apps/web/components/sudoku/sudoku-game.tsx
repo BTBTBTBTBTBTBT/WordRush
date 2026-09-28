@@ -23,10 +23,11 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { sudokuElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -69,6 +70,8 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   const [noLocalSave, setNoLocalSave] = useState(false);
   const { checking, completion } = useCompletedElsewhere('SUDOKU', mode === 'daily' && noLocalSave);
   const holdPlay = checking || !!completion;
+  // The finished board and exact breakdown inputs from the matches row when today's daily was played elsewhere.
+  const [elsewhere, setElsewhere] = useState<ReturnType<typeof sudokuElsewhere> | null>(null);
 
   const status = state?.status ?? 'playing';
   const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
@@ -125,6 +128,20 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
   }, [state, elapsedSeconds, mode, holdPlay]);
+
+  // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
+  // the matches row holds what daily_results does not — hints_used and the
+  // finished grid — so the card scores the same inputs the phone recorded.
+  useEffect(() => {
+    if (!completion || !profile || mode !== 'daily') return;
+    const seed = generateDailySeed(getTodayLocal(), 'SUDOKU');
+    let cancelled = false;
+    fetchSolvedDailyRow(profile.id, 'SUDOKU', seed).then((row) => {
+      if (cancelled || !row) return;
+      setElsewhere(sudokuElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [completion, profile, mode]);
 
   const hintsUsed = state?.hintsUsed ?? 0;
   const mistakes = state?.mistakes ?? 0;
@@ -297,8 +314,12 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
       </div>
 
       {completion ? (
-        // Today's daily was finished on another device (founder, 2026-09-28).
-        <CompletedCustomDaily dbKey="SUDOKU" completion={completion} />
+        // Today's daily was finished on another device (founder, 2026-09-28): the
+        // day's grid from the matches row (a loss shows the solution muted), then the card.
+        <CompletedCustomDaily dbKey="SUDOKU" completion={completion}
+          boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
+          {elsewhere?.state && <SudokuBoard state={elsewhere.state} selected={null} onSelect={() => {}} revealSolution={!completion.won} />}
+        </CompletedCustomDaily>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />

@@ -24,10 +24,11 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { improveDailyRun } from '@/lib/daily-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { hubElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -83,6 +84,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const [noLocalSave, setNoLocalSave] = useState(false);
   const { checking, completion } = useCompletedElsewhere('HUB', mode === 'daily' && noLocalSave);
   const holdPlay = checking || !!completion;
+  // The finished hive (rank, points, words) and exact breakdown inputs from the matches row when today's daily was played elsewhere.
+  const [elsewhere, setElsewhere] = useState<ReturnType<typeof hubElsewhere> | null>(null);
 
   const status = state?.status ?? 'playing';
   // The clock runs only while the board itself is in front: not under the
@@ -142,6 +145,22 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds, recordedRankRef.current, recordedSeconds);
     else savePractice(state.seed, state, elapsedSeconds, recordedRankRef.current, recordedSeconds);
   }, [state, elapsedSeconds, recordedSeconds, mode, holdPlay]);
+
+  // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
+  // the matches row holds what daily_results does not — the points behind the
+  // 20 score-fraction boards and hints_used (both raised by every later
+  // rank-up through improveDailyRun) — so the card scores what the phone did.
+  useEffect(() => {
+    if (!completion || !profile || mode !== 'daily') return;
+    const today = getTodayLocal();
+    const seed = generateDailySeed(today, 'HUB');
+    let cancelled = false;
+    fetchSolvedDailyRow(profile.id, 'HUB', seed).then((row) => {
+      if (cancelled || !row) return;
+      setElsewhere(hubElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, hubPuzzleForDay(BANK, today)));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [completion, profile, mode]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -301,7 +320,6 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const centre = state.letters[0];
   const rank = hubRank(state);
   const rankName = HUB_RANKS[rank].name;
-  const nextThreshold = rank < 9 ? hubRankThreshold(rank + 1, state.max) : null;
   const won = state.status === 'won';
   const capsule = (dim: boolean, filled = false) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : filled ? 'text-white' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean, filled = false) => dim ? undefined : filled ? { background: HUB_ACCENT, borderColor: HUB_ACCENT } : { borderColor: `${HUB_ACCENT}66`, color: HUB_ACCENT, background: `${HUB_ACCENT}0d` };
@@ -316,19 +334,32 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     </button>
   );
 
-  const rankBar = (
-    <div className="w-full max-w-md mx-auto px-2">
-      <div className="flex items-center justify-between text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-        <span className="font-black" style={{ color: HUB_ACCENT }}>{rankName}</span>
-        <span>{state.points} pts{nextThreshold != null ? ` · ${nextThreshold - state.points} to ${HUB_RANKS[rank + 1].name}` : ' · maximum'}</span>
+  // A function of the state it draws so the other-device hive (rebuilt from the
+  // matches row) shares the live board's rank bar (founder, 2026-09-28).
+  const renderRankBar = (s: HubState) => {
+    const rk = hubRank(s), name = HUB_RANKS[rk].name, next = rk < 9 ? hubRankThreshold(rk + 1, s.max) : null;
+    return (
+      <div className="w-full max-w-md mx-auto px-2">
+        <div className="flex items-center justify-between text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="font-black" style={{ color: HUB_ACCENT }}>{name}</span>
+          <span>{s.points} pts{next != null ? ` · ${next - s.points} to ${HUB_RANKS[rk + 1].name}` : ' · maximum'}</span>
+        </div>
+        <div className="flex items-center gap-1 mt-1" role="progressbar" aria-valuenow={rk} aria-valuemin={0} aria-valuemax={9} aria-label={`Rank ${name}`}>
+          {HUB_RANKS.map((r, i) => (
+            <div key={r.name} className="flex-1 h-2 rounded-full" style={{ background: i <= rk ? HUB_ACCENT : 'var(--color-border-light)', opacity: i === HUB_SOLVED_RANK && i > rk ? 0.6 : 1, outline: i === HUB_SOLVED_RANK ? `2px solid ${HUB_ACCENT}55` : undefined }} title={r.name} />
+          ))}
+        </div>
       </div>
-      <div className="flex items-center gap-1 mt-1" role="progressbar" aria-valuenow={rank} aria-valuemin={0} aria-valuemax={9} aria-label={`Rank ${rankName}`}>
-        {HUB_RANKS.map((r, i) => (
-          <div key={r.name} className="flex-1 h-2 rounded-full" style={{ background: i <= rank ? HUB_ACCENT : 'var(--color-border-light)', opacity: i === HUB_SOLVED_RANK && i > rank ? 0.6 : 1, outline: i === HUB_SOLVED_RANK ? `2px solid ${HUB_ACCENT}55` : undefined }} title={r.name} />
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
+  const rankBar = renderRankBar(state);
+
+  // Every word of the puzzle once it has ended: found ones solid (pangrams in the accent), the rest muted.
+  const allWordChips = (s: HubState) => [...s.words, ...s.bonusFound].sort().map((w) => (
+    <span key={w} className="text-[11px] font-bold px-2 py-0.5 rounded-full border" style={s.found.includes(w) || s.bonusFound.includes(w)
+      ? (s.pangrams.includes(w) ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' })
+      : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }}>{w}{s.pangrams.includes(w) ? ' ★' : ''}</span>
+  ));
 
   const wordChips = (words: string[], dim = false) => words.map((w) => {
     const pangram = state.pangrams.includes(w);
@@ -426,13 +457,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
               {state.ended ? 'ALL WORDS' : `FOUND SO FAR · ${state.words.length - state.found.length} MORE TO FIND`}
             </div>
             <div className="flex flex-wrap justify-center gap-1.5">
-              {state.ended
-                ? [...state.words, ...state.bonusFound].sort().map((w) => (
-                  <span key={w} className="text-[11px] font-bold px-2 py-0.5 rounded-full border" style={state.found.includes(w) || state.bonusFound.includes(w)
-                    ? (state.pangrams.includes(w) ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' })
-                    : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }}>{w}{state.pangrams.includes(w) ? ' ★' : ''}</span>
-                ))
-                : wordChips(sortedFound)}
+              {state.ended ? allWordChips(state) : wordChips(sortedFound)}
             </div>
           </div>
           <ScoreBreakdownCard gameMode="HUB" completed={won} guessCount={hubGuessCount(rank)} timeSeconds={scoredSeconds}
@@ -476,8 +501,20 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       </div>
 
       {completion ? (
-        // Today's daily was finished on another device (founder, 2026-09-28).
-        <CompletedCustomDaily dbKey="HUB" completion={completion} />
+        // Today's daily was finished on another device (founder, 2026-09-28): the
+        // rank reached and every word (found ones solid) from the matches row, then the card.
+        <CompletedCustomDaily dbKey="HUB" completion={completion}
+          boardsSolved={elsewhere?.progress?.boardsSolved} totalBoards={elsewhere?.progress?.totalBoards} hintsUsed={elsewhere?.progress?.hintsUsed}>
+          {elsewhere?.state && (
+            <div className="w-full flex flex-col gap-3">
+              {renderRankBar(elsewhere.state)}
+              <div className="w-full max-w-md mx-auto">
+                <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>ALL WORDS</div>
+                <div className="flex flex-wrap justify-center gap-1.5">{allWordChips(elsewhere.state)}</div>
+              </div>
+            </div>
+          )}
+        </CompletedCustomDaily>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-hive flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />

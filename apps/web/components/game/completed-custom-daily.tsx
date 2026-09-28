@@ -23,6 +23,9 @@ interface CompletedCustomDailyProps {
   boardsSolved?: number;
   totalBoards?: number;
   hintsUsed?: number;
+  /** ProperNoundle's near-miss credit on a loss (most green tiles in any row),
+   *  rebuilt from the matches row (founder, 2026-09-28: exact everywhere). */
+  bestCorrectLetters?: number;
   /** The finished board, when the game can rebuild it — rendered above the card. */
   children?: ReactNode;
 }
@@ -36,7 +39,7 @@ interface CompletedCustomDailyProps {
  * ScoreBreakdownCard → NextDailyCta with its Pro "Keep playing: Unlimited" link
  * → BottomNav), so the screen reads as finished, never as an empty board.
  */
-export function CompletedCustomDaily({ dbKey, completion, boardsSolved, totalBoards, hintsUsed = 0, children }: CompletedCustomDailyProps) {
+export function CompletedCustomDaily({ dbKey, completion, boardsSolved, totalBoards, hintsUsed = 0, bestCorrectLetters, children }: CompletedCustomDailyProps) {
   const meta = MODE_BY_DBKEY[dbKey];
   const title = meta?.title ?? modeLabel(dbKey);
   const accent = meta?.accentHex ?? '#7c3aed';
@@ -87,7 +90,7 @@ export function CompletedCustomDaily({ dbKey, completion, boardsSolved, totalBoa
             </div>
           </div>
           <ScoreBreakdownCard gameMode={dbKey} completed={won} guessCount={completion.guesses} timeSeconds={completion.timeSeconds}
-            boardsSolved={solved} totalBoards={total} hintsUsed={hintsUsed} day={getTodayLocal()} />
+            boardsSolved={solved} totalBoards={total} hintsUsed={hintsUsed} bestCorrectLetters={bestCorrectLetters} day={getTodayLocal()} />
           <NextDailyCta currentMode={dbKey} />
         </div>
       </div>
