@@ -56,28 +56,29 @@ describe('Starsweep reducer', () => {
   const star = (r: number) => r * n + (p.solution.charCodeAt(r) - 48);
   const wrongIn = (r: number) => { for (let c = 0; c < n; c++) if (r * n + c !== star(r)) return r * n + c; return -1; };
 
-  it('tap cycles empty → cross → star → empty; a correct star auto-crosses what it rules out', () => {
+  // Tap = star first, again = ×, again = clear (founder, 2026-09-28).
+  it('tap cycles empty → star → cross → empty; a correct star auto-crosses what it rules out', () => {
     let s = createRegionsState(p, 0);
-    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
-    expect(s.board[star(0)]).toBe('x');
     s = regionsReduce(s, { type: 'TAP', cell: star(0) });
     expect(s.board[star(0)]).toBe('*');
     expect(s.mistakes).toBe(0);
     for (const i of regionsRuledOut(n, p.regions, star(0))) expect(s.board[i]).toBe('x');
     s = regionsReduce(s, { type: 'TAP', cell: star(0) });
-    expect(s.board[star(0)]).toBe('.');
+    expect(s.board[star(0)]).toBe('x');
     expect(regionsRemaining(s)).toBe(n);
+    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
+    expect(s.board[star(0)]).toBe('.');
   });
 
   it('a wrong star counts a mistake that clearing never refunds; the third ends the game', () => {
     let s = createRegionsState(p, 0);
     const w = wrongIn(0);
-    s = regionsReduce(s, { type: 'TAP', cell: w }); s = regionsReduce(s, { type: 'TAP', cell: w });
+    s = regionsReduce(s, { type: 'TAP', cell: w });
     expect(s.mistakes).toBe(1); expect(s.wrongMask[w]).toBe('1');
     s = regionsReduce(s, { type: 'TAP', cell: w });
-    expect(s.board[w]).toBe('.'); expect(s.wrongMask[w]).toBe('0'); expect(s.mistakes).toBe(1);
-    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(2) }); s = regionsReduce(s, { type: 'TAP', cell: wrongIn(2) });
-    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(4) }); s = regionsReduce(s, { type: 'TAP', cell: wrongIn(4) }, 42);
+    expect(s.board[w]).toBe('x'); expect(s.wrongMask[w]).toBe('0'); expect(s.mistakes).toBe(1);
+    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(2) });
+    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(4) }, 42);
     expect(s.mistakes).toBe(REGIONS_MAX_MISTAKES); expect(s.status).toBe('lost'); expect(s.endTime).toBe(42);
     expect(regionsReduce(s, { type: 'TAP', cell: star(6) })).toBe(s);
   });
@@ -96,7 +97,7 @@ describe('Starsweep reducer', () => {
 
   it('placing every star wins, clears history, and round-trips through the matches row', () => {
     let s = createRegionsState(p, 0);
-    for (let r = 0; r < n; r++) { s = regionsReduce(s, { type: 'TAP', cell: star(r) }); s = regionsReduce(s, { type: 'TAP', cell: star(r) }, 7); }
+    for (let r = 0; r < n; r++) s = regionsReduce(s, { type: 'TAP', cell: star(r) }, 7);
     expect(s.status).toBe('won'); expect(s.endTime).toBe(7); expect(regionsRemaining(s)).toBe(0);
     const row = regionsMatchRow(s);
     expect(row.solutions).toEqual([p.regions, p.solution]);
@@ -109,7 +110,7 @@ describe('Starsweep reducer', () => {
   it('auto-cross can be switched off', () => {
     let s = createRegionsState(p, 0);
     s = regionsReduce(s, { type: 'SET_AUTO_CROSS', value: false });
-    s = regionsReduce(s, { type: 'TAP', cell: star(0) }); s = regionsReduce(s, { type: 'TAP', cell: star(0) });
+    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
     const others = regionsRuledOut(n, p.regions, star(0));
     expect(others.every((i) => s.board[i] === '.')).toBe(true);
   });
