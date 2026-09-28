@@ -192,12 +192,15 @@ export function regionsDailyNumber(day: string): number {
 // ── Reducer ──────────────────────────────────────────────────────────────
 
 export type RegionsStatus = 'playing' | 'won' | 'lost';
-export type RegionsCell = '.' | 'x' | '*';
+/** '.' empty, 'x' crossed, 'o' a black (pending, unjudged) star, '*' a committed star (purple, or red if in wrongMask). */
+export type RegionsCell = '.' | 'x' | 'o' | '*';
 
 export interface RegionsSnapshot {
   board: string;
   hintMask: string;
   wrongMask: string;
+  /** '1' where an × was drawn by Auto-cross (not by hand); those are withdrawn when the star that drew them goes. */
+  autoMask: string;
 }
 
 export interface RegionsState extends RegionsSnapshot {
@@ -207,7 +210,7 @@ export interface RegionsState extends RegionsSnapshot {
   solution: string;
   mistakes: number;
   hintsUsed: number;
-  /** Placing a correct star crosses out its row, column, region and neighbors. */
+  /** Placing a star (black or purple) crosses out its row, column, region and neighbors. */
   autoCross: boolean;
   status: RegionsStatus;
   history: RegionsSnapshot[];
@@ -216,26 +219,35 @@ export interface RegionsState extends RegionsSnapshot {
 }
 
 export type RegionsAction =
-  | { type: 'TAP'; cell: number }        // empty → cross → star → empty
+  | { type: 'TAP'; cell: number }        // empty → black star → × → empty; a committed star → ×
+  | { type: 'COMMIT'; cell: number }     // double tap: judge the star (purple or red); on an empty cell, place and judge
   | { type: 'ERASE'; cell: number }
   | { type: 'UNDO' }
   | { type: 'HINT'; cell?: number }
   | { type: 'SET_AUTO_CROSS'; value: boolean }
+  | { type: 'SETTLE' }                   // re-check win/loss (a restored save that is already solved finishes)
   | { type: 'FINISH'; now: number };
 
 export function createRegionsState(puzzle: RegionsPuzzle, startTime: number): RegionsState {
   const blank = '.'.repeat(puzzle.n * puzzle.n);
   return {
     seed: puzzle.seed, n: puzzle.n, regions: puzzle.regions, solution: puzzle.solution,
-    board: blank, hintMask: '0'.repeat(puzzle.n * puzzle.n), wrongMask: '0'.repeat(puzzle.n * puzzle.n),
+    board: blank, hintMask: '0'.repeat(puzzle.n * puzzle.n), wrongMask: '0'.repeat(puzzle.n * puzzle.n), autoMask: '0'.repeat(puzzle.n * puzzle.n),
     mistakes: 0, hintsUsed: 0, autoCross: true, status: 'playing', history: [], startTime, endTime: null,
   };
+}
+
+/** A save from before black stars (no autoMask) → every existing × counts as hand-placed. */
+export function normalizeRegionsState(s: RegionsState): RegionsState {
+  const blank = '0'.repeat(s.n * s.n);
+  const fix = <T extends RegionsSnapshot>(x: T): T => (typeof x.autoMask === 'string' && x.autoMask.length === s.n * s.n ? x : { ...x, autoMask: blank });
+  return { ...fix(s), history: (s.history ?? []).map(fix) };
 }
 
 const setChar = (s: string, i: number, ch: string) => s.slice(0, i) + ch + s.slice(i + 1);
 const isStarCell = (s: RegionsState, i: number) => s.solution.charCodeAt(Math.floor(i / s.n)) - 48 === i % s.n;
 
-function snapshot(s: RegionsState): RegionsSnapshot { return { board: s.board, hintMask: s.hintMask, wrongMask: s.wrongMask }; }
+function snapshot(s: RegionsState): RegionsSnapshot { return { board: s.board, hintMask: s.hintMask, wrongMask: s.wrongMask, autoMask: s.autoMask }; }
 function pushHistory(s: RegionsState): RegionsSnapshot[] {
   const h = s.history.concat([snapshot(s)]);
   return h.length > HISTORY_CAP ? h.slice(h.length - HISTORY_CAP) : h;
@@ -255,40 +267,77 @@ export function regionsRuledOut(n: number, regions: string, cell: number): numbe
   return Array.from(out).sort((a, b) => a - b);
 }
 
-function crossOut(board: string, cells: number[]): string {
-  let b = board;
-  for (const i of cells) if (b[i] === '.') b = setChar(b, i, 'x');
-  return b;
+/** Auto-cross: × every still-empty cell in `cells`, marking them as auto-drawn. */
+function crossOut(board: string, autoMask: string, cells: number[]): { board: string; autoMask: string } {
+  let b = board, m = autoMask;
+  for (const i of cells) if (b[i] === '.') { b = setChar(b, i, 'x'); m = setChar(m, i, '1'); }
+  return { board: b, autoMask: m };
 }
 
+/** A star that rules cells out: a black star, or a purple (correct, committed) one. Red stars rule nothing out. */
+const isRulingStar = (board: string, wrongMask: string, i: number) =>
+  board[i] === 'o' || (board[i] === '*' && wrongMask[i] === '0');
+
+/**
+ * Withdraw auto-drawn ×s that no remaining star rules out (founder, 2026-09-28: a star that
+ * turns red or is erased takes its ×s with it). Hand-placed ×s and ×s another star still
+ * justifies stay.
+ */
+function withdrawCrosses(s: RegionsState, board: string, autoMask: string, wrongMask: string): { board: string; autoMask: string } {
+  const keep = new Set<number>();
+  for (let i = 0; i < s.n * s.n; i++) if (isRulingStar(board, wrongMask, i)) for (const c of regionsRuledOut(s.n, s.regions, i)) keep.add(c);
+  let b = board, m = autoMask;
+  for (let i = 0; i < s.n * s.n; i++) if (m[i] === '1' && b[i] === 'x' && !keep.has(i)) { b = setChar(b, i, '.'); m = setChar(m, i, '0'); }
+  return { board: b, autoMask: m };
+}
+
+/** Black stars left on the board when the game ends are cleared (they were never played). */
+const clearPending = (board: string) => board.replace(/o/g, '.');
+
+/**
+ * Solved = every row's star is played. A red star left on the board does not block the win
+ * (founder, 2026-09-28: two red stars stayed after the last correct star, so the board never
+ * finished) — its mistake is already counted.
+ */
 function isSolved(s: RegionsState): boolean {
   for (let r = 0; r < s.n; r++) if (s.board[r * s.n + (s.solution.charCodeAt(r) - 48)] !== '*') return false;
-  for (let i = 0; i < s.n * s.n; i++) if (s.board[i] === '*' && !isStarCell(s, i)) return false;
   return true;
 }
 
 function settle(s: RegionsState, now: number): RegionsState {
   if (s.status !== 'playing') return s;
-  if (isSolved(s)) return { ...s, status: 'won', endTime: now, history: [] };
-  if (s.mistakes >= REGIONS_MAX_MISTAKES) return { ...s, status: 'lost', endTime: now, history: [] };
+  if (isSolved(s)) return { ...s, board: clearPending(s.board), status: 'won', endTime: now, history: [] };
+  if (s.mistakes >= REGIONS_MAX_MISTAKES) return { ...s, board: clearPending(s.board), status: 'lost', endTime: now, history: [] };
   return s;
 }
 
-/** Place a star at `cell` (correct or wrong), with the shared bookkeeping. */
+/** Commit (judge) a star at `cell` — from empty, from a black star, or via a hint. */
 function placeStar(s: RegionsState, cell: number, viaHint: boolean, now: number): RegionsState {
   const correct = isStarCell(s, cell);
+  const wrongMask = setChar(s.wrongMask, cell, correct ? '0' : '1');
   let board = setChar(s.board, cell, '*');
-  if (correct && s.autoCross) board = crossOut(board, regionsRuledOut(s.n, s.regions, cell));
+  let autoMask = setChar(s.autoMask, cell, '0');
+  if (correct && s.autoCross) ({ board, autoMask } = crossOut(board, autoMask, regionsRuledOut(s.n, s.regions, cell)));
+  // A red star rules nothing out: whatever it drew as a black star goes.
+  if (!correct) ({ board, autoMask } = withdrawCrosses(s, board, autoMask, wrongMask));
   const next: RegionsState = {
     ...s,
     history: pushHistory(s),
     board,
+    autoMask,
     hintMask: viaHint ? setChar(s.hintMask, cell, '1') : s.hintMask,
-    wrongMask: setChar(s.wrongMask, cell, correct ? '0' : '1'),
+    wrongMask,
     mistakes: s.mistakes + (correct ? 0 : 1),
     hintsUsed: s.hintsUsed + (viaHint ? 1 : 0),
   };
   return settle(next, now);
+}
+
+/** Set `cell` to `ch` ('.' or 'x', by hand), withdrawing any ×s a star there had drawn. */
+function clearTo(s: RegionsState, cell: number, ch: '.' | 'x'): RegionsState {
+  const wrongMask = setChar(s.wrongMask, cell, '0');
+  const r = withdrawCrosses(s, setChar(s.board, cell, ch), setChar(s.autoMask, cell, '0'), wrongMask);
+  return { ...s, history: pushHistory(s), board: r.board, autoMask: r.autoMask, wrongMask };
 }
 
 /** Pure reducer; `now` stamps endTime on a win/loss. */
@@ -297,24 +346,36 @@ export function regionsReduce(s: RegionsState, a: RegionsAction, now = 0): Regio
   if (a.type === 'FINISH') return s.status === 'playing' ? s : { ...s, endTime: s.endTime ?? a.now };
   if (s.status !== 'playing') return s;
   const total = s.n * s.n;
+  if (a.type === 'SETTLE') return settle(s, now);
 
   switch (a.type) {
     case 'TAP': {
       if (a.cell < 0 || a.cell >= total) return s;
       const cur = s.board[a.cell];
-      // Tap = star FIRST (founder, 2026-09-28: hand-placed ×s looked like the auto-crossed
-      // cells and got lost), tap again = × (your own "no star here"), again = clear.
-      // A hint star is locked.
+      // Tap = a BLACK star (founder, 2026-09-28 afternoon: nothing is judged until you
+      // double-tap); it auto-crosses like a real star so you can see what it rules out.
+      // Tap a black star = × (your own "no star here"), tap an × = clear. A committed star
+      // tapped becomes an × (a red star's red goes; the mistake stands). A hint star is locked.
       if (cur === '*' && s.hintMask[a.cell] === '1') return s;
-      if (cur === '.') return placeStar(s, a.cell, false, now);
-      // cur === '*' → × (a wrong star's red goes with it; the mistake stands)
-      if (cur === '*') return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, 'x'), wrongMask: setChar(s.wrongMask, a.cell, '0') };
-      return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, '.') };
+      if (cur === '.') {
+        let board = setChar(s.board, a.cell, 'o'), autoMask = setChar(s.autoMask, a.cell, '0');
+        if (s.autoCross) ({ board, autoMask } = crossOut(board, autoMask, regionsRuledOut(s.n, s.regions, a.cell)));
+        return { ...s, history: pushHistory(s), board, autoMask };
+      }
+      if (cur === 'o' || cur === '*') return clearTo(s, a.cell, 'x');
+      return clearTo(s, a.cell, '.');
+    }
+    case 'COMMIT': {
+      // Double tap: judge the star — purple and it stays, red is a mistake and its ×s go.
+      if (a.cell < 0 || a.cell >= total) return s;
+      const cur = s.board[a.cell];
+      if (cur === 'o' || cur === '.') return placeStar(s, a.cell, false, now);
+      return s;
     }
     case 'ERASE': {
       if (a.cell < 0 || a.cell >= total || s.board[a.cell] === '.') return s;
       if (s.board[a.cell] === '*' && s.hintMask[a.cell] === '1') return s;
-      return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, '.'), wrongMask: setChar(s.wrongMask, a.cell, '0') };
+      return clearTo(s, a.cell, '.');
     }
     case 'UNDO': {
       if (s.history.length === 0) return s;

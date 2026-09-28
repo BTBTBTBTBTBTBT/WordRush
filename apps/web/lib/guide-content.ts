@@ -476,7 +476,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     accent: '#ca8a04',
     tagline: 'One star in every row, column and color region, none touching — a pure logic puzzle you can finish without a single guess',
     metaDescription:
-      'Wordocious Starsweep guide: the one-star rule, why stars can never touch, how a tap places a star (purple when right, red when wrong) and Auto-cross rules out the rest, the exact scoring formula, and the region-counting strategy that solves every board by logic.',
+      'Wordocious Starsweep guide: the one-star rule, why stars can never touch, how a tap sets a black star and a double tap plays it (purple when right, red when wrong), how Auto-cross rules out the rest, the exact scoring formula, and the region-counting strategy that solves every board by logic.',
     facts: [
       { label: 'Board', value: '7 × 7 Monday–Wednesday, 8 × 8 Thursday–Sunday' },
       { label: 'Pro Unlimited', value: '7 × 7 · 8 × 8 · 9 × 9' },
@@ -486,8 +486,8 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     rules: [
       'The board is split into color regions, one for every row. Place exactly one star in every row, every column and every region. Stars can never touch, not even at a corner, so once a star is down all eight cells around it are out. Every board has exactly one solution and is built on your device from the day\'s seed, so everyone plays the same board.',
-      'Tap an empty cell to place a star. A star in the right cell turns purple and stays; a star in a wrong cell turns red and counts as a mistake — tap it again to take it back, but the mistake stands. Tap a star a second time to turn it into a small × ("no star here") and a third time to clear the cell. Three mistakes end the game. Crosses are notes for your own reasoning: they are never judged and never cost anything.',
-      'Auto-cross is on by default: when you place a correct star, every cell it rules out — its row, its column, its region and the eight neighbors — is crossed out for you. Switch it off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
+      'Tap an empty cell to set a black star: a pencil mark that is never judged and costs nothing. Double-tap it to play it. A played star in the right cell turns purple and stays; one in a wrong cell turns red and counts as a mistake — tap it to take it back, but the mistake stands. Tap a black star once to turn it into a small × ("no star here") and tap the × to clear the cell; Erase clears any black star or ×. Double-tapping an empty cell plays a star straight away. Three mistakes end the game. Black stars and crosses are notes for your own reasoning: they are never judged and never cost anything.',
+      'Auto-cross is on by default: when you set a black star or play a correct one, every cell it rules out — its row, its column, its region and the eight neighbors — is crossed out for you, so you can see a tentative star\'s consequences before you commit. If that star turns red, or you erase it or turn it into an ×, the crosses it drew disappear with it (crosses you placed yourself, and crosses another star still justifies, stay). Switch Auto-cross off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
       'The daily is the same for everyone and counts once on the leaderboard. Starsweep lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
     scoring: [
@@ -496,8 +496,8 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     controls: [
       { icon: 'undo-2', label: 'Undo', body: 'Steps back one action — a star, a cross or a clear. Free, unlimited, and it never gives a mistake or a hint back.' },
-      { icon: 'eraser', label: 'Erase', body: 'Clears the cell you last tapped, whether it holds a cross or a star. Stars placed by a Hint cannot be erased. Free.' },
-      { icon: 'x', label: 'Auto-cross', body: 'A toggle. While it is filled in, placing a correct star crosses out every cell it rules out for you. Purely a convenience; it never costs anything.' },
+      { icon: 'eraser', label: 'Erase', body: 'Clears the cell you last tapped, whether it holds a cross, a black star or a played star, along with any crosses that star drew. Stars placed by a Hint cannot be erased. Free.' },
+      { icon: 'x', label: 'Auto-cross', body: 'A toggle. While it is filled in, a black star or a correct played star crosses out every cell it rules out for you, and a star that turns red or is removed takes its crosses back. Purely a convenience; it never costs anything.' },
       { icon: 'lightbulb', label: 'Hint', body: 'Places the correct star for the row of the cell you last tapped, or the first row still missing one. Costs 100 points of score, never a mistake, and rules out a Perfect run.' },
     ],
     tips: [
@@ -511,7 +511,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Let the stars do the crossing',
-        body: 'The game is won by elimination, not inspiration. Every correct star (purple) rules out its row, its column, its region and the eight cells around it, and Auto-cross marks them for you — so each sure star clears a swath of the board. When a row is down to one open cell, that is your next star. If you want a mark of your own, tap a cell twice: the star becomes a small ×, free and never judged.',
+        body: 'The game is won by elimination, not inspiration. Every star rules out its row, its column, its region and the eight cells around it, and Auto-cross marks them for you — so a black star shows you exactly what it would clear before you play it. If the picture holds together, double-tap to play it; if it leaves a region with nowhere to go, tap it into an × and its crosses lift. When a row is down to one open cell, that is your next star.',
       },
       {
         heading: 'A tall region that spans one column owns it',
@@ -519,7 +519,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Never place a star you cannot prove',
-        body: 'Every tap is judged on the spot: a wrong star turns red and costs one of your three mistakes and 300 points, even after you take it back. If two cells both seem possible, keep reasoning instead of tapping — the board is built to be solved by logic alone, so a guess is never required, only ever a shortcut with a price.',
+        body: 'Black stars are free; the double tap is where you are judged. A played star in the wrong cell turns red and costs one of your three mistakes and 300 points, even after you take it back. If two cells both seem possible, set a black star in one, follow its crosses, and only play it once the rest of the board agrees — the puzzle is built to be solved by logic alone, so a guess is never required, only ever a shortcut with a price.',
       },
     ],
     related: ['sudocious', 'classic', 'gauntlet'],

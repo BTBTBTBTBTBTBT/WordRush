@@ -9,7 +9,7 @@ final class RegionsFixtureTests: XCTestCase {
     private struct Gen: Decodable { let seed: String; let n: Int; let regions: String; let solution: String; let sizes: [Int]; let rerolls: Int; let unique: Bool }
     private struct Act: Decodable { let type: String; let cell: Int?; let value: Bool?; let now: Double? }
     private struct Expect: Decodable {
-        let board: String; let hintMask: String; let wrongMask: String; let mistakes: Int; let hintsUsed: Int
+        let board: String; let hintMask: String; let wrongMask: String; let autoMask: String; let mistakes: Int; let hintsUsed: Int
         let status: String; let autoCross: Bool; let historyLength: Int; let endTime: Double?
     }
     private struct Row: Decodable { let solutions: [String]; let guesses: [String] }
@@ -29,6 +29,7 @@ final class RegionsFixtureTests: XCTestCase {
     private func action(_ a: Act) -> RegionsAction {
         switch a.type {
         case "TAP": return .tap(cell: a.cell!)
+        case "COMMIT": return .commit(cell: a.cell!)
         case "ERASE": return .erase(cell: a.cell!)
         case "UNDO": return .undo
         case "HINT": return .hint(cell: a.cell)
@@ -62,6 +63,7 @@ final class RegionsFixtureTests: XCTestCase {
             XCTAssertEqual(s.board, sc.expect.board, "\(sc.name) board")
             XCTAssertEqual(s.hintMask, sc.expect.hintMask, "\(sc.name) hintMask")
             XCTAssertEqual(s.wrongMask, sc.expect.wrongMask, "\(sc.name) wrongMask")
+            XCTAssertEqual(s.autoMask, sc.expect.autoMask, "\(sc.name) autoMask")
             XCTAssertEqual(s.mistakes, sc.expect.mistakes, "\(sc.name) mistakes")
             XCTAssertEqual(s.hintsUsed, sc.expect.hintsUsed, "\(sc.name) hintsUsed")
             XCTAssertEqual(s.status.rawValue, sc.expect.status, "\(sc.name) status")

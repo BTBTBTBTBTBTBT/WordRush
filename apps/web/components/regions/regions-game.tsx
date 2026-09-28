@@ -40,12 +40,15 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
 // Starsweep (More Games §18b): place one star in every row, column and color
 // region, no two stars touching. Daily 7 × 7 Monday–Wednesday, 8 × 8
-// Thursday–Sunday; Pro Unlimited picks 7 / 8 / 9. Tap = cross out, tap again =
-// star, again = clear. A wrong star is a mistake, the third loses; a hint
+// Thursday–Sunday; Pro Unlimited picks 7 / 8 / 9. Tap = a black (unjudged) star
+// that auto-crosses, double-tap = play it (purple right, red wrong — a red star's
+// ×s go), tap a black star = ×, tap an × = clear. A wrong star is a mistake, the third loses; a hint
 // places one correct star for a score cost, never a mistake.
 // guess_count = mistakes + 1 (perfect = 1), boards 1/1 — the Sudocious scoring row.
 
 const SIZES: RegionsSize[] = [7, 8, 9];
+/** Two taps on one cell within this window are a double tap (play the star). */
+const DOUBLE_TAP_MS = 350;
 
 interface RegionsGameProps {
   /** /starsweep?daily=true → today's board, recorded to daily_results. */
@@ -184,22 +187,42 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
     restoredRef.current = false;
   }, [state?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // A board with every star played must end (a save from before the red-star fix could sit
+  // solved with the clock running — founder, 2026-09-28).
+  useEffect(() => {
+    if (state && state.status === 'playing' && regionsRemaining(state) === 0) dispatch({ type: 'SETTLE' });
+  }, [state, dispatch]);
+
   useEffect(() => {
     if (profile && state && state.status !== 'playing') recordResult();
   }, [profile, recordResult, state]);
 
-  // Input: a tap cycles the cell; the cell becomes the focus for Erase/keys.
+  // Input: a tap cycles the cell (empty → black star → × → empty) and applies at once;
+  // a second tap on the same cell within DOUBLE_TAP_MS, when the first tap started from
+  // empty or a black star, is a double tap: undo the first tap and COMMIT the star
+  // (founder, 2026-09-28 afternoon). The cell becomes the focus for Erase/keys.
+  const lastTapRef = useRef<{ cell: number; at: number; from: string } | null>(null);
+  const commitCell = useCallback((cell: number, undoFirst: boolean) => {
+    if (!state) return;
+    const r = Math.floor(cell / state.n);
+    if (state.solution.charCodeAt(r) - 48 !== cell % state.n) { haptic('medium'); playInvalid(); }
+    if (undoFirst) dispatch({ type: 'UNDO' });
+    dispatch({ type: 'COMMIT', cell });
+  }, [state, dispatch]);
   const tapCell = useCallback((cell: number) => {
     if (!state || state.status !== 'playing') return;
     setFocused(cell);
     if (state.board[cell] === '*' && state.hintMask[cell] === '1') { playInvalid(); return; }
-    // Placing a star (cross → star) on a non-solution cell is the mistake path.
-    if (state.board[cell] === 'x') {
-      const r = Math.floor(cell / state.n);
-      if (state.solution.charCodeAt(r) - 48 !== cell % state.n) { haptic('medium'); playInvalid(); }
+    const now = Date.now();
+    const last = lastTapRef.current;
+    if (last && last.cell === cell && now - last.at <= DOUBLE_TAP_MS && (last.from === '.' || last.from === 'o')) {
+      lastTapRef.current = null;
+      commitCell(cell, true);
+      return;
     }
+    lastTapRef.current = { cell, at: now, from: state.board[cell] };
     dispatch({ type: 'TAP', cell });
-  }, [state, dispatch]);
+  }, [state, dispatch, commitCell]);
   const erase = useCallback(() => { if (focused != null) dispatch({ type: 'ERASE', cell: focused }); }, [focused, dispatch]);
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), [dispatch]);
   const toggleAutoCross = useCallback(() => { if (state) dispatch({ type: 'SET_AUTO_CROSS', value: !state.autoCross }); }, [state, dispatch]);
@@ -214,7 +237,9 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
       if (!state || state.status !== 'playing') return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === ' ' || e.key === 'Enter') { if (focused != null) { e.preventDefault(); tapCell(focused); } return; }
+      if (e.key === ' ') { if (focused != null) { e.preventDefault(); tapCell(focused); } return; }
+      // Enter plays the focused black star (the keyboard's double tap).
+      if (e.key === 'Enter') { if (focused != null && (state.board[focused] === 'o' || state.board[focused] === '.')) { e.preventDefault(); commitCell(focused, false); } return; }
       if (e.key === 'Backspace' || e.key === 'Delete') { erase(); return; }
       if (e.key.toLowerCase() === 'h') { hint(); return; }
       const n = state.n, cur = focused ?? 0;
@@ -228,7 +253,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [state, focused, tapCell, erase, undo, hint]);
+  }, [state, focused, tapCell, commitCell, erase, undo, hint]);
 
   const handleShare = useCallback(async () => {
     if (!state) return;

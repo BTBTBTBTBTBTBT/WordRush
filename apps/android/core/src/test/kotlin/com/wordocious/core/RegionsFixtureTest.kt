@@ -20,7 +20,7 @@ class RegionsFixtureTest {
     private data class Gen(val seed: String, val n: Int, val regions: String, val solution: String, val sizes: List<Int>, val rerolls: Int, val unique: Boolean)
     private data class Act(val type: String, val cell: Int?, val value: Boolean?, val now: Double?)
     private data class Expect(
-        val board: String, val hintMask: String, val wrongMask: String, val mistakes: Int, val hintsUsed: Int,
+        val board: String, val hintMask: String, val wrongMask: String, val autoMask: String, val mistakes: Int, val hintsUsed: Int,
         val status: String, val autoCross: Boolean, val historyLength: Int, val endTime: Double?,
     )
     private data class Row(val solutions: List<String>, val guesses: List<String>)
@@ -32,6 +32,7 @@ class RegionsFixtureTest {
 
     private fun action(a: Act): RegionsAction = when (a.type) {
         "TAP" -> RegionsAction.Tap(a.cell!!)
+        "COMMIT" -> RegionsAction.Commit(a.cell!!)
         "ERASE" -> RegionsAction.Erase(a.cell!!)
         "UNDO" -> RegionsAction.Undo
         "HINT" -> RegionsAction.Hint(a.cell)
@@ -67,6 +68,7 @@ class RegionsFixtureTest {
             assertEquals("${sc.name} board", sc.expect.board, s.board)
             assertEquals("${sc.name} hintMask", sc.expect.hintMask, s.hintMask)
             assertEquals("${sc.name} wrongMask", sc.expect.wrongMask, s.wrongMask)
+            assertEquals("${sc.name} autoMask", sc.expect.autoMask, s.autoMaskOrBlank)
             assertEquals("${sc.name} mistakes", sc.expect.mistakes, s.mistakes)
             assertEquals("${sc.name} hintsUsed", sc.expect.hintsUsed, s.hintsUsed)
             assertEquals("${sc.name} status", sc.expect.status, s.status.key)

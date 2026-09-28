@@ -230,24 +230,30 @@ export function renderRegionsFixtures() {
   const wrongIn = (r: number) => { for (let c = 0; c < n; c++) { const i = r * n + c; if (i !== star(r)) return i; } return -1; };
   const scripts: Array<{ name: string; actions: RegionsAction[] }> = [
     { name: 'mixed', actions: [
-      // Tap = star first, again = ×, again = clear (founder, 2026-09-28).
-      { type: 'TAP', cell: star(0) },                                              // star (correct, auto-cross)
-      { type: 'TAP', cell: wrongIn(3) },                                           // wrong star → mistake
+      // Tap = black star, COMMIT (double tap) = play it, tap black = ×, tap × = clear (founder, 2026-09-28 afternoon).
+      { type: 'TAP', cell: star(0) }, { type: 'COMMIT', cell: star(0) },          // black → purple (auto-cross)
+      { type: 'TAP', cell: wrongIn(3) },                                           // black star, crosses drawn
+      { type: 'COMMIT', cell: wrongIn(3) },                                        // red → mistake, its crosses go
       { type: 'TAP', cell: wrongIn(3) },                                           // → × (mistake stands)
       { type: 'TAP', cell: wrongIn(3) },                                           // → clear
+      { type: 'TAP', cell: wrongIn(5) }, { type: 'TAP', cell: wrongIn(5) },        // black → × (crosses lift)
+      { type: 'TAP', cell: star(2) }, { type: 'ERASE', cell: star(2) },            // black star erased with its crosses
       { type: 'HINT', cell: star(5) }, { type: 'UNDO' }, { type: 'HINT' },        // hint row 5, undo, hint first missing row
-      { type: 'TAP', cell: star(0) }, { type: 'TAP', cell: star(0) },              // placed star → × → clear
+      { type: 'TAP', cell: star(0) }, { type: 'TAP', cell: star(0) },              // purple star → × → clear
       { type: 'ERASE', cell: 1 }, { type: 'SET_AUTO_CROSS', value: false }, { type: 'TAP', cell: star(7) },
+      { type: 'COMMIT', cell: star(6) },                                           // play from empty, no auto-cross
     ] },
     { name: 'loss', actions: [
-      { type: 'TAP', cell: wrongIn(0) },
-      { type: 'TAP', cell: wrongIn(2) },
-      { type: 'TAP', cell: wrongIn(4) },
-      { type: 'TAP', cell: star(6) },
+      { type: 'TAP', cell: star(1) },                                              // a black star left on the board
+      { type: 'COMMIT', cell: wrongIn(0) },
+      { type: 'TAP', cell: wrongIn(2) }, { type: 'COMMIT', cell: wrongIn(2) },
+      { type: 'COMMIT', cell: wrongIn(4) },
+      { type: 'COMMIT', cell: star(6) },
     ] },
-    { name: 'win', actions: Array.from({ length: n }, (_, r): RegionsAction => ({ type: 'TAP', cell: star(r) })) },
+    { name: 'win', actions: Array.from({ length: n }, (_, r): RegionsAction => ({ type: 'COMMIT', cell: star(r) })) },
+    { name: 'win-with-red', actions: [{ type: 'COMMIT', cell: wrongIn(2) } as RegionsAction, ...Array.from({ length: n }, (_, r): RegionsAction => ({ type: 'COMMIT', cell: star(r) }))] },
     { name: 'noops', actions: [
-      { type: 'UNDO' }, { type: 'ERASE', cell: 0 }, { type: 'TAP', cell: 99 }, { type: 'HINT', cell: 0 }, { type: 'TAP', cell: star(0) }, { type: 'ERASE', cell: star(0) },
+      { type: 'UNDO' }, { type: 'ERASE', cell: 0 }, { type: 'TAP', cell: 99 }, { type: 'COMMIT', cell: 99 }, { type: 'HINT', cell: 0 }, { type: 'TAP', cell: star(0) }, { type: 'COMMIT', cell: star(0) }, { type: 'ERASE', cell: star(0) },
     ] },
   ];
   const reducer = scripts.map((sc) => {
@@ -256,7 +262,7 @@ export function renderRegionsFixtures() {
     const row = regionsMatchRow(s);
     return {
       name: sc.name, seed: base.seed, n, actions: sc.actions,
-      expect: { board: s.board, hintMask: s.hintMask, wrongMask: s.wrongMask, mistakes: s.mistakes, hintsUsed: s.hintsUsed, status: s.status, autoCross: s.autoCross, historyLength: s.history.length, endTime: s.endTime },
+      expect: { board: s.board, hintMask: s.hintMask, wrongMask: s.wrongMask, autoMask: s.autoMask, mistakes: s.mistakes, hintsUsed: s.hintsUsed, status: s.status, autoCross: s.autoCross, historyLength: s.history.length, endTime: s.endTime },
       row, reconstruct: reconstructRegions(row.solutions, row.guesses),
     };
   });

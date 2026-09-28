@@ -340,8 +340,8 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Cross before you star',
         body: [
-          'Starsweep is won by elimination, not inspiration. Tap a cell once to cross it out; the mark is free, never judged and never counted, and it is where the actual solving happens. Every cross you place is a fact about the board that stays visible, so the more you mark, the less you have to hold in your head. When a row is down to one uncrossed cell, that cell is the star — and it cost you nothing to have been thorough.',
-          'Auto-cross is on by default and does the mechanical half of this for you: place a correct star and its row, column, region and eight neighbors are crossed automatically. Leave it on. Your job is the other half — the crosses that follow from reasoning about regions, not from a star already placed.',
+          'Starsweep is won by elimination, not inspiration. Tap a cell to set a black star, and tap it again to turn it into a cross; both marks are free, never judged and never counted, and they are where the actual solving happens. Only a double tap plays a star and gets judged. Every cross you place is a fact about the board that stays visible, so the more you mark, the less you have to hold in your head. When a row is down to one uncrossed cell, that cell is the star — and it cost you nothing to have been thorough.',
+          'Auto-cross is on by default and does the mechanical half of this for you: set a black star or play a correct one and its row, column, region and eight neighbors are crossed automatically — and if a black star turns out wrong, erasing it lifts exactly the crosses it drew. Leave it on: a black star is a free what-if. Your job is the other half — the crosses that follow from reasoning about regions, not from a star already placed.',
         ],
       },
       {

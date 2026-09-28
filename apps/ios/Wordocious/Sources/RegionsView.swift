@@ -77,7 +77,9 @@ final class RegionsVM: ObservableObject {
         if stale { UserDefaults.standard.removeObject(forKey: storageKey); return }
         state = snap.state
         restoredElapsedMs = Double(snap.elapsed) * 1000
-        if state.status != .playing { finalTimeSeconds = snap.elapsed; recorded = true; restoredFinished = true }
+        if state.status != .playing { finalTimeSeconds = snap.elapsed; recorded = true; restoredFinished = true }        // A board with every star played must end (a save from before the red-star fix could sit
+        // solved with the clock running — founder, 2026-09-28).
+        else if regionsRemaining(state) == 0 { DispatchQueue.main.async { [weak self] in self?.dispatch(.settle) } }
     }
 
     // MARK: - Actions
@@ -91,15 +93,29 @@ final class RegionsVM: ObservableObject {
         persist()
     }
 
-    /// A tap cycles the cell (empty → × → star → empty) and makes it the focus for Erase/Hint.
+    /// A tap cycles the cell (empty → black star → × → empty) at once and makes it the focus for
+    /// Erase/Hint. A second tap on the same cell within `doubleTapWindow`, when the first began
+    /// from empty or a black star, is a double tap: undo the first and COMMIT (play) the star —
+    /// purple when right, red when wrong (founder, 2026-09-28 afternoon).
+    private var lastTap: (cell: Int, at: Date, from: Character)?
+    private let doubleTapWindow: TimeInterval = 0.35
     func tap(_ cell: Int) {
         guard !isFinished, cell >= 0, cell < n * n else { return }
         focused = cell
         let cur = ch(state.board, cell)
         if cur == "*" && ch(state.hintMask, cell) == "1" { SoundManager.shared.playInvalid(); return }
-        let placingWrong = cur == "x" && (Int(ch(state.solution, cell / n).asciiValue!) - 48) != cell % n
+        let now = Date()
+        if let last = lastTap, last.cell == cell, now.timeIntervalSince(last.at) <= doubleTapWindow, last.from == "." || last.from == "o" {
+            lastTap = nil
+            let wrong = (Int(ch(state.solution, cell / n).asciiValue!) - 48) != cell % n
+            dispatch(.undo)
+            dispatch(.commit(cell: cell))
+            if wrong && !isFinished { Haptics.error(); SoundManager.shared.playInvalid() } else { SoundManager.shared.playKeyTap() }
+            return
+        }
+        lastTap = (cell, now, cur)
         dispatch(.tap(cell: cell))
-        if placingWrong && !isFinished { Haptics.error(); SoundManager.shared.playInvalid() } else { SoundManager.shared.playKeyTap() }
+        SoundManager.shared.playKeyTap()
     }
     func erase() { guard let cell = focused else { return }; dispatch(.erase(cell: cell)) }
     func undo() { dispatch(.undo) }
@@ -164,7 +180,7 @@ struct RegionsView: View {
                     Spacer(minLength: 4)
                     board.padding(.horizontal, 6)
                     Spacer(minLength: 4)
-                    Text(vm.remaining == vm.n && vm.state.history.isEmpty ? "Tap a cell: × first, then a star" : "\(vm.remaining) star\(vm.remaining == 1 ? "" : "s") left")
+                    Text(vm.remaining == vm.n && vm.state.history.isEmpty ? "Tap for a black star · double-tap to play it" : "\(vm.remaining) star\(vm.remaining == 1 ? "" : "s") left")
                         .font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
                     RegionsPad(vm: vm).padding(.bottom, 6)
                 }
@@ -405,6 +421,9 @@ struct RegionsBoardView: View {
                 Rectangle().fill(tint)
                 if mark == "*" {
                     Image(systemName: "star.fill").font(.system(size: cell * 0.5, weight: .bold)).foregroundStyle(starColor)
+                } else if mark == "o" {
+                    // Black star: placed, not yet played (double-tap judges it).
+                    Image(systemName: "star.fill").font(.system(size: cell * 0.5, weight: .bold)).foregroundStyle(Color(hex: 0x1F2937))
                 } else if mark == "x" {
                     Image(systemName: "xmark").font(.system(size: cell * 0.34, weight: .bold)).foregroundStyle(cross)
                 } else if missing {
@@ -416,7 +435,7 @@ struct RegionsBoardView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Row \(i / n + 1) column \(i % n + 1), region \(region + 1), \(mark == "*" ? (isWrong ? "wrong star" : "star") : mark == "x" ? "crossed out" : "empty")")
+        .accessibilityLabel("Row \(i / n + 1) column \(i % n + 1), region \(region + 1), \(mark == "*" ? (isWrong ? "wrong star" : "star") : mark == "o" ? "black star, double-tap to play" : mark == "x" ? "crossed out" : "empty")")
         .accessibilityAddTraits(i == focused ? .isSelected : [])
     }
 }

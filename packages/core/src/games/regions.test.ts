@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateRegions, countRegionsSolutions, regionsN4, regionsSizeForDay, regionsSizeForSeed, regionsDailyNumber,
-  createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, regionsRuledOut, regionsRemaining, REGIONS_MAX_MISTAKES,
+  createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, regionsRuledOut, regionsRemaining, REGIONS_MAX_MISTAKES, normalizeRegionsState,
 } from './regions';
 
 const cells = (s: string) => Array.from(s, (ch) => ch.charCodeAt(0) - 48);
@@ -56,31 +56,85 @@ describe('Starsweep reducer', () => {
   const star = (r: number) => r * n + (p.solution.charCodeAt(r) - 48);
   const wrongIn = (r: number) => { for (let c = 0; c < n; c++) if (r * n + c !== star(r)) return r * n + c; return -1; };
 
-  // Tap = star first, again = ×, again = clear (founder, 2026-09-28).
-  it('tap cycles empty → star → cross → empty; a correct star auto-crosses what it rules out', () => {
+  // Tap = black star (never judged), double tap (COMMIT) = play it, tap a black star = ×,
+  // tap an × = clear (founder, 2026-09-28 afternoon).
+  it('tap cycles empty → black star → cross → empty; a black star auto-crosses and is never judged', () => {
     let s = createRegionsState(p, 0);
-    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
-    expect(s.board[star(0)]).toBe('*');
+    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(0) });
+    expect(s.board[wrongIn(0)]).toBe('o');
     expect(s.mistakes).toBe(0);
-    for (const i of regionsRuledOut(n, p.regions, star(0))) expect(s.board[i]).toBe('x');
-    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
-    expect(s.board[star(0)]).toBe('x');
-    expect(regionsRemaining(s)).toBe(n);
-    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
-    expect(s.board[star(0)]).toBe('.');
+    for (const i of regionsRuledOut(n, p.regions, wrongIn(0))) { expect(s.board[i]).toBe('x'); expect(s.autoMask[i]).toBe('1'); }
+    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(0) });
+    expect(s.board[wrongIn(0)]).toBe('x');
+    expect(s.board.replace(/[.]/g, '')).toBe('x');                      // its crosses went with it
+    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(0) });
+    expect(s.board).toBe('.'.repeat(n * n));
+    expect(s.mistakes).toBe(0);
   });
 
-  it('a wrong star counts a mistake that clearing never refunds; the third ends the game', () => {
+  it('commit judges: a right star turns purple and keeps its crosses', () => {
     let s = createRegionsState(p, 0);
-    const w = wrongIn(0);
+    s = regionsReduce(s, { type: 'TAP', cell: star(0) });
+    s = regionsReduce(s, { type: 'COMMIT', cell: star(0) });
+    expect(s.board[star(0)]).toBe('*'); expect(s.wrongMask[star(0)]).toBe('0'); expect(s.mistakes).toBe(0);
+    for (const i of regionsRuledOut(n, p.regions, star(0))) expect(s.board[i]).toBe('x');
+    expect(regionsRemaining(s)).toBe(n - 1);
+    expect(regionsReduce(s, { type: 'COMMIT', cell: star(0) })).toBe(s);    // already played
+  });
+
+  it('a red star is a mistake and takes back only the crosses it drew', () => {
+    let s = createRegionsState(p, 0);
+    const w = wrongIn(3);
+    s = regionsReduce(s, { type: 'TAP', cell: star(0) });                   // black star, correct cell
+    const hand = (() => { for (let i = 0; i < n * n; i++) if (s.board[i] === '.' && !regionsRuledOut(n, p.regions, w).includes(i) && i !== w) return i; return -1; })();
+    s = regionsReduce(s, { type: 'TAP', cell: hand }); s = regionsReduce(s, { type: 'TAP', cell: hand });  // hand ×
+    expect(s.board[hand]).toBe('x'); expect(s.autoMask[hand]).toBe('0');
+    const before = s.board;
     s = regionsReduce(s, { type: 'TAP', cell: w });
-    expect(s.mistakes).toBe(1); expect(s.wrongMask[w]).toBe('1');
-    s = regionsReduce(s, { type: 'TAP', cell: w });
+    s = regionsReduce(s, { type: 'COMMIT', cell: w });
+    expect(s.board[w]).toBe('*'); expect(s.wrongMask[w]).toBe('1'); expect(s.mistakes).toBe(1);
+    // Every cell other than the red star is exactly as before it: star(0)'s crosses and the hand × stay.
+    for (let i = 0; i < n * n; i++) if (i !== w) expect(s.board[i]).toBe(before[i]);
+    s = regionsReduce(s, { type: 'TAP', cell: w });                         // red → × (mistake stands)
     expect(s.board[w]).toBe('x'); expect(s.wrongMask[w]).toBe('0'); expect(s.mistakes).toBe(1);
-    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(2) });
-    s = regionsReduce(s, { type: 'TAP', cell: wrongIn(4) }, 42);
+  });
+
+  it('commit on an empty cell plays straight away; erase clears a black star and its crosses', () => {
+    let s = createRegionsState(p, 0);
+    s = regionsReduce(s, { type: 'COMMIT', cell: star(1) });
+    expect(s.board[star(1)]).toBe('*'); expect(s.mistakes).toBe(0);
+    s = regionsReduce(s, { type: 'TAP', cell: star(4) });
+    s = regionsReduce(s, { type: 'ERASE', cell: star(4) });
+    expect(s.board[star(4)]).toBe('.');
+    const keep = new Set(regionsRuledOut(n, p.regions, star(1)));
+    for (let i = 0; i < n * n; i++) if (i !== star(1)) expect(s.board[i]).toBe(keep.has(i) ? 'x' : '.');
+  });
+
+  it('three red stars lose; black stars are cleared from the final board', () => {
+    let s = createRegionsState(p, 0);
+    s = regionsReduce(s, { type: 'TAP', cell: star(7) });
+    for (const r of [0, 2]) s = regionsReduce(s, { type: 'COMMIT', cell: wrongIn(r) });
+    expect(s.mistakes).toBe(2);
+    s = regionsReduce(s, { type: 'COMMIT', cell: wrongIn(4) }, 42);
     expect(s.mistakes).toBe(REGIONS_MAX_MISTAKES); expect(s.status).toBe('lost'); expect(s.endTime).toBe(42);
+    expect(s.board.includes('o')).toBe(false);
     expect(regionsReduce(s, { type: 'TAP', cell: star(6) })).toBe(s);
+  });
+
+  it('a red star left on the board does not block the win (the stuck-board bug)', () => {
+    let s = createRegionsState(p, 0);
+    s = regionsReduce(s, { type: 'COMMIT', cell: wrongIn(0) });
+    expect(s.mistakes).toBe(1);
+    for (let r = 0; r < n; r++) s = regionsReduce(s, { type: 'COMMIT', cell: star(r) }, 9);
+    expect(s.status).toBe('won'); expect(s.endTime).toBe(9);
+  });
+
+  it('old saves without autoMask are normalized (every × counts as hand-placed)', () => {
+    const s = createRegionsState(p, 0);
+    const { autoMask: _drop, ...legacy } = s;
+    const fixed = normalizeRegionsState({ ...legacy, history: [{ board: s.board, hintMask: s.hintMask, wrongMask: s.wrongMask }] } as unknown as typeof s);
+    expect(fixed.autoMask).toBe('0'.repeat(n * n));
+    expect(fixed.history[0].autoMask).toBe('0'.repeat(n * n));
   });
 
   it('hint places the row star (locked), undo restores the board but keeps the hint count', () => {
@@ -97,7 +151,7 @@ describe('Starsweep reducer', () => {
 
   it('placing every star wins, clears history, and round-trips through the matches row', () => {
     let s = createRegionsState(p, 0);
-    for (let r = 0; r < n; r++) s = regionsReduce(s, { type: 'TAP', cell: star(r) }, 7);
+    for (let r = 0; r < n; r++) s = regionsReduce(s, { type: 'COMMIT', cell: star(r) }, 7);
     expect(s.status).toBe('won'); expect(s.endTime).toBe(7); expect(regionsRemaining(s)).toBe(0);
     const row = regionsMatchRow(s);
     expect(row.solutions).toEqual([p.regions, p.solution]);

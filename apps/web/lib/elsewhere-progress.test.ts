@@ -85,8 +85,7 @@ describe('Starsweep', () => {
     s = regionsReduce(s, { type: 'HINT' }, 1);
     for (let cell = 0; cell < 64 && s.status === 'playing'; cell++) {
       if (isStar(cell) || s.board[cell] !== '.') continue;
-      s = regionsReduce(s, { type: 'TAP', cell }, 2);
-      if (s.board[cell] === 'x') s = regionsReduce(s, { type: 'TAP', cell }, 3);
+      s = regionsReduce(s, { type: 'COMMIT', cell }, 2);
     }
     expect(s.status).toBe('lost');
     const gc = s.mistakes + 1;

@@ -176,6 +176,9 @@ public struct RegionsSnapshot: Codable, Equatable {
     public var board: String
     public var hintMask: String
     public var wrongMask: String
+    /// "1" where an × was drawn by Auto-cross. Optional so saves from before black stars decode (nil = all hand-placed).
+    public var autoMaskRaw: String? = nil
+    public var autoMask: String { autoMaskRaw.flatMap { $0.count == board.count ? $0 : nil } ?? String(repeating: "0", count: board.count) }
 }
 
 public struct RegionsState: Codable, Equatable {
@@ -186,6 +189,12 @@ public struct RegionsState: Codable, Equatable {
     public var board: String
     public var hintMask: String
     public var wrongMask: String
+    /// "1" where an × was drawn by Auto-cross (withdrawn when the star that drew it goes). Optional for old saves.
+    public var autoMaskRaw: String?
+    public var autoMask: String {
+        get { autoMaskRaw.flatMap { $0.count == n * n ? $0 : nil } ?? String(repeating: "0", count: n * n) }
+        set { autoMaskRaw = newValue }
+    }
     public var mistakes: Int
     public var hintsUsed: Int
     public var autoCross: Bool
@@ -197,19 +206,21 @@ public struct RegionsState: Codable, Equatable {
     public init(puzzle: RegionsPuzzle, startTime: Double) {
         seed = puzzle.seed; n = puzzle.n; regions = puzzle.regions; solution = puzzle.solution
         board = String(repeating: ".", count: n * n)
-        hintMask = String(repeating: "0", count: n * n); wrongMask = hintMask
+        hintMask = String(repeating: "0", count: n * n); wrongMask = hintMask; autoMaskRaw = hintMask
         mistakes = 0; hintsUsed = 0; autoCross = true; status = .playing; history = []
         self.startTime = startTime; endTime = nil
     }
-    var snapshot: RegionsSnapshot { RegionsSnapshot(board: board, hintMask: hintMask, wrongMask: wrongMask) }
+    var snapshot: RegionsSnapshot { RegionsSnapshot(board: board, hintMask: hintMask, wrongMask: wrongMask, autoMaskRaw: autoMask) }
 }
 
 public enum RegionsAction: Equatable {
-    case tap(cell: Int)
+    case tap(cell: Int)          // empty → black star → × → empty; a committed star → ×
+    case commit(cell: Int)       // double tap: judge the star (purple or red); on an empty cell, place and judge
     case erase(cell: Int)
     case undo
     case hint(cell: Int?)
     case setAutoCross(Bool)
+    case settle                  // re-check win/loss (a restored save that is already solved finishes)
     case finish(now: Double)
 }
 
@@ -224,7 +235,7 @@ private func pushHistory(_ s: RegionsState) -> [RegionsSnapshot] {
     return h
 }
 
-/// Cells a correct star rules out: its row, column, region and the eight neighbours.
+/// Cells a star rules out: its row, column, region and the eight neighbors.
 public func regionsRuledOut(_ n: Int, _ regions: String, _ cell: Int) -> [Int] {
     let r = cell / n, c = cell % n
     let regs = Array(regions), g = regs[cell]
@@ -236,36 +247,67 @@ public func regionsRuledOut(_ n: Int, _ regions: String, _ cell: Int) -> [Int] {
     return out.sorted()
 }
 
-private func crossOut(_ board: String, _ cellsToCross: [Int]) -> String {
-    var a = Array(board)
-    for i in cellsToCross where a[i] == "." { a[i] = "x" }
-    return String(a)
+/// Auto-cross: × every still-empty cell, marking it as auto-drawn.
+private func crossOut(_ board: String, _ autoMask: String, _ cellsToCross: [Int]) -> (String, String) {
+    var a = Array(board), m = Array(autoMask)
+    for i in cellsToCross where a[i] == "." { a[i] = "x"; m[i] = "1" }
+    return (String(a), String(m))
+}
+
+/// Withdraw auto-drawn ×s that no remaining black or purple star rules out (a red or removed
+/// star takes its ×s with it — founder, 2026-09-28). Hand ×s stay.
+private func withdrawCrosses(_ s: RegionsState, _ board: String, _ autoMask: String, _ wrongMask: String) -> (String, String) {
+    var a = Array(board), m = Array(autoMask)
+    let w = Array(wrongMask)
+    var keep = Set<Int>()
+    for i in 0..<(s.n * s.n) where a[i] == "o" || (a[i] == "*" && w[i] == "0") { for c in regionsRuledOut(s.n, s.regions, i) { keep.insert(c) } }
+    for i in 0..<(s.n * s.n) where m[i] == "1" && a[i] == "x" && !keep.contains(i) { a[i] = "."; m[i] = "0" }
+    return (String(a), String(m))
+}
+
+/// Black stars left when the game ends are cleared (never played).
+private func clearPending(_ board: String) -> String { board.replacingOccurrences(of: "o", with: ".") }
+
+/// Set `cell` to "." or "x" by hand, withdrawing any ×s a star there had drawn.
+private func clearTo(_ s: RegionsState, _ cell: Int, _ ch: Character) -> RegionsState {
+    var n = s
+    n.history = pushHistory(s)
+    n.wrongMask = setChar(s.wrongMask, cell, "0")
+    let (b, m) = withdrawCrosses(s, setChar(s.board, cell, ch), setChar(s.autoMask, cell, "0"), n.wrongMask)
+    n.board = b; n.autoMask = m
+    return n
 }
 
 private func isSolved(_ s: RegionsState) -> Bool {
     let b = Array(s.board)
+    // Every row's star played; a red star left on the board does not block the win (its mistake
+    // is already counted — founder, 2026-09-28: the board never finished with two red stars).
     for r in 0..<s.n where b[starOfRow(s, r)] != "*" { return false }
-    for i in 0..<(s.n * s.n) where b[i] == "*" && !isStarCell(s, i) { return false }
     return true
 }
 
 private func settle(_ s: RegionsState, _ now: Double) -> RegionsState {
     guard s.status == .playing else { return s }
     var n = s
-    if isSolved(s) { n.status = .won; n.endTime = now; n.history = []; return n }
-    if s.mistakes >= REGIONS_MAX_MISTAKES { n.status = .lost; n.endTime = now; n.history = []; return n }
+    if isSolved(s) { n.board = clearPending(s.board); n.status = .won; n.endTime = now; n.history = []; return n }
+    if s.mistakes >= REGIONS_MAX_MISTAKES { n.board = clearPending(s.board); n.status = .lost; n.endTime = now; n.history = []; return n }
     return s
 }
 
 private func placeStar(_ s: RegionsState, _ cell: Int, viaHint: Bool, _ now: Double) -> RegionsState {
     let correct = isStarCell(s, cell)
+    let wrongMask = setChar(s.wrongMask, cell, correct ? "0" : "1")
     var board = setChar(s.board, cell, "*")
-    if correct && s.autoCross { board = crossOut(board, regionsRuledOut(s.n, s.regions, cell)) }
+    var autoMask = setChar(s.autoMask, cell, "0")
+    if correct && s.autoCross { (board, autoMask) = crossOut(board, autoMask, regionsRuledOut(s.n, s.regions, cell)) }
+    // A red star rules nothing out: whatever it drew as a black star goes.
+    if !correct { (board, autoMask) = withdrawCrosses(s, board, autoMask, wrongMask) }
     var n = s
     n.history = pushHistory(s)
     n.board = board
+    n.autoMask = autoMask
     if viaHint { n.hintMask = setChar(s.hintMask, cell, "1") }
-    n.wrongMask = setChar(s.wrongMask, cell, correct ? "0" : "1")
+    n.wrongMask = wrongMask
     n.mistakes = s.mistakes + (correct ? 0 : 1)
     n.hintsUsed = s.hintsUsed + (viaHint ? 1 : 0)
     return settle(n, now)
@@ -280,23 +322,36 @@ public func regionsReduce(_ s: RegionsState, _ a: RegionsAction, now: Double = 0
     }
     guard s.status == .playing else { return s }
     let total = s.n * s.n
+    if case .settle = a { return settle(s, now) }
 
     switch a {
     case .tap(let cell):
         guard cell >= 0, cell < total else { return s }
         let cur = charAt(s.board, cell)
-        // Tap = star first, again = ×, again = clear (founder, 2026-09-28); a hint star is locked.
+        // Tap = a BLACK star (never judged; auto-crosses), tap a black star = ×, tap an × = clear;
+        // a committed star tapped → × (red goes, the mistake stands). A hint star is locked.
+        // (founder, 2026-09-28 afternoon)
         if cur == "*" && charAt(s.hintMask, cell) == "1" { return s }
-        if cur == "." { return placeStar(s, cell, viaHint: false, now) }
-        if cur == "*" { var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "x"); n.wrongMask = setChar(s.wrongMask, cell, "0"); return n }
-        var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "."); return n
+        if cur == "." {
+            var board = setChar(s.board, cell, "o"), autoMask = setChar(s.autoMask, cell, "0")
+            if s.autoCross { (board, autoMask) = crossOut(board, autoMask, regionsRuledOut(s.n, s.regions, cell)) }
+            var n = s; n.history = pushHistory(s); n.board = board; n.autoMask = autoMask; return n
+        }
+        if cur == "o" || cur == "*" { return clearTo(s, cell, "x") }
+        return clearTo(s, cell, ".")
+    case .commit(let cell):
+        // Double tap: judge the star — purple stays, red is a mistake and its ×s go.
+        guard cell >= 0, cell < total else { return s }
+        let cur = charAt(s.board, cell)
+        if cur == "o" || cur == "." { return placeStar(s, cell, viaHint: false, now) }
+        return s
     case .erase(let cell):
         guard cell >= 0, cell < total, charAt(s.board, cell) != "." else { return s }
         if charAt(s.board, cell) == "*" && charAt(s.hintMask, cell) == "1" { return s }
-        var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "."); n.wrongMask = setChar(s.wrongMask, cell, "0"); return n
+        return clearTo(s, cell, ".")
     case .undo:
         guard let prev = s.history.last else { return s }
-        var n = s; n.board = prev.board; n.hintMask = prev.hintMask; n.wrongMask = prev.wrongMask; n.history = Array(s.history.dropLast()); return n
+        var n = s; n.board = prev.board; n.hintMask = prev.hintMask; n.wrongMask = prev.wrongMask; n.autoMask = prev.autoMask; n.history = Array(s.history.dropLast()); return n
     case .hint(let cell):
         var target = -1
         if let cell, cell >= 0, cell < total { let t = starOfRow(s, cell / s.n); if charAt(s.board, t) != "*" { target = t } }

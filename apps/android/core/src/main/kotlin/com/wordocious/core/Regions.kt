@@ -159,29 +159,39 @@ fun regionsDailyNumber(day: String): Int {
 
 enum class RegionsStatus(val key: String) { PLAYING("playing"), WON("won"), LOST("lost") }
 
-data class RegionsSnapshot(val board: String, val hintMask: String, val wrongMask: String)
+/** [autoMask]: '1' where an × was drawn by Auto-cross; "" (old saves) = every × hand-placed. */
+data class RegionsSnapshot(val board: String, val hintMask: String, val wrongMask: String, val autoMask: String = "")
 
 data class RegionsState(
     val seed: String, val n: Int, val regions: String, val solution: String,
     val board: String, val hintMask: String, val wrongMask: String,
     val mistakes: Int, val hintsUsed: Int, val autoCross: Boolean,
     val status: RegionsStatus, val history: List<RegionsSnapshot>, val startTime: Long, val endTime: Long?,
+    /** '1' where an × was drawn by Auto-cross (withdrawn when the star that drew it goes); "" (old saves) = none. */
+    val autoMask: String = "",
 ) {
-    val snapshot: RegionsSnapshot get() = RegionsSnapshot(board, hintMask, wrongMask)
+    /** [autoMask], padded for saves from before black stars. */
+    val autoMaskOrBlank: String get() = if (autoMask.length == n * n) autoMask else "0".repeat(n * n)
+    val snapshot: RegionsSnapshot get() = RegionsSnapshot(board, hintMask, wrongMask, autoMaskOrBlank)
     companion object {
         fun create(p: RegionsPuzzle, startTime: Long): RegionsState = RegionsState(
             p.seed, p.n, p.regions, p.solution, ".".repeat(p.n * p.n), "0".repeat(p.n * p.n), "0".repeat(p.n * p.n),
-            0, 0, true, RegionsStatus.PLAYING, emptyList(), startTime, null,
+            0, 0, true, RegionsStatus.PLAYING, emptyList(), startTime, null, "0".repeat(p.n * p.n),
         )
     }
 }
 
 sealed class RegionsAction {
+    /** empty → black star → × → empty; a committed star → ×. */
     data class Tap(val cell: Int) : RegionsAction()
+    /** Double tap: judge the star (purple or red); on an empty cell, place and judge. */
+    data class Commit(val cell: Int) : RegionsAction()
     data class Erase(val cell: Int) : RegionsAction()
     object Undo : RegionsAction()
     data class Hint(val cell: Int? = null) : RegionsAction()
     data class SetAutoCross(val value: Boolean) : RegionsAction()
+    /** Re-check win/loss (a restored save that is already solved finishes). */
+    object Settle : RegionsAction()
     data class Finish(val now: Long) : RegionsAction()
 }
 
@@ -193,7 +203,7 @@ private fun pushHistory(s: RegionsState): List<RegionsSnapshot> {
     return if (h.size > REGIONS_HISTORY_CAP) h.takeLast(REGIONS_HISTORY_CAP) else h
 }
 
-/** Cells a correct star rules out: its row, column, region and the eight neighbors. */
+/** Cells a star rules out: its row, column, region and the eight neighbors. */
 fun regionsRuledOut(n: Int, regions: String, cell: Int): List<Int> {
     val r = cell / n; val c = cell % n; val g = regions[cell]
     val out = HashSet<Int>()
@@ -204,34 +214,62 @@ fun regionsRuledOut(n: Int, regions: String, cell: Int): List<Int> {
     return out.sorted()
 }
 
-private fun crossOut(board: String, cells: List<Int>): String {
-    val a = board.toCharArray()
-    for (i in cells) if (a[i] == '.') a[i] = 'x'
-    return String(a)
+/** Auto-cross: × every still-empty cell, marking it as auto-drawn. */
+private fun crossOut(board: String, autoMask: String, cells: List<Int>): Pair<String, String> {
+    val a = board.toCharArray(); val m = autoMask.toCharArray()
+    for (i in cells) if (a[i] == '.') { a[i] = 'x'; m[i] = '1' }
+    return String(a) to String(m)
+}
+
+/**
+ * Withdraw auto-drawn ×s that no remaining black or purple star rules out (a red or removed
+ * star takes its ×s with it — founder, 2026-09-28). Hand ×s stay.
+ */
+private fun withdrawCrosses(s: RegionsState, board: String, autoMask: String, wrongMask: String): Pair<String, String> {
+    val a = board.toCharArray(); val m = autoMask.toCharArray()
+    val keep = HashSet<Int>()
+    for (i in 0 until s.n * s.n) if (a[i] == 'o' || (a[i] == '*' && wrongMask[i] == '0')) keep.addAll(regionsRuledOut(s.n, s.regions, i))
+    for (i in 0 until s.n * s.n) if (m[i] == '1' && a[i] == 'x' && i !in keep) { a[i] = '.'; m[i] = '0' }
+    return String(a) to String(m)
+}
+
+/** Black stars left when the game ends are cleared (never played). */
+private fun clearPending(board: String): String = board.replace('o', '.')
+
+/** Set [cell] to '.' or 'x' by hand, withdrawing any ×s a star there had drawn. */
+private fun clearTo(s: RegionsState, cell: Int, ch: Char): RegionsState {
+    val wrongMask = setChar(s.wrongMask, cell, '0')
+    val (b, m) = withdrawCrosses(s, setChar(s.board, cell, ch), setChar(s.autoMaskOrBlank, cell, '0'), wrongMask)
+    return s.copy(history = pushHistory(s), board = b, autoMask = m, wrongMask = wrongMask)
 }
 
 private fun isSolved(s: RegionsState): Boolean {
+    // Every row's star played; a red star left on the board does not block the win (its mistake
+    // is already counted — founder, 2026-09-28: the board never finished with two red stars).
     for (r in 0 until s.n) if (s.board[starOfRow(s, r)] != '*') return false
-    for (i in 0 until s.n * s.n) if (s.board[i] == '*' && !isStarCell(s, i)) return false
     return true
 }
 
 private fun settle(s: RegionsState, now: Long): RegionsState {
     if (s.status != RegionsStatus.PLAYING) return s
-    if (isSolved(s)) return s.copy(status = RegionsStatus.WON, endTime = now, history = emptyList())
-    if (s.mistakes >= REGIONS_MAX_MISTAKES) return s.copy(status = RegionsStatus.LOST, endTime = now, history = emptyList())
+    if (isSolved(s)) return s.copy(board = clearPending(s.board), status = RegionsStatus.WON, endTime = now, history = emptyList())
+    if (s.mistakes >= REGIONS_MAX_MISTAKES) return s.copy(board = clearPending(s.board), status = RegionsStatus.LOST, endTime = now, history = emptyList())
     return s
 }
 
 private fun placeStar(s: RegionsState, cell: Int, viaHint: Boolean, now: Long): RegionsState {
     val correct = isStarCell(s, cell)
+    val wrongMask = setChar(s.wrongMask, cell, if (correct) '0' else '1')
     var board = setChar(s.board, cell, '*')
-    if (correct && s.autoCross) board = crossOut(board, regionsRuledOut(s.n, s.regions, cell))
+    var autoMask = setChar(s.autoMaskOrBlank, cell, '0')
+    if (correct && s.autoCross) crossOut(board, autoMask, regionsRuledOut(s.n, s.regions, cell)).let { board = it.first; autoMask = it.second }
+    // A red star rules nothing out: whatever it drew as a black star goes.
+    if (!correct) withdrawCrosses(s, board, autoMask, wrongMask).let { board = it.first; autoMask = it.second }
     return settle(
         s.copy(
-            history = pushHistory(s), board = board,
+            history = pushHistory(s), board = board, autoMask = autoMask,
             hintMask = if (viaHint) setChar(s.hintMask, cell, '1') else s.hintMask,
-            wrongMask = setChar(s.wrongMask, cell, if (correct) '0' else '1'),
+            wrongMask = wrongMask,
             mistakes = s.mistakes + if (correct) 0 else 1,
             hintsUsed = s.hintsUsed + if (viaHint) 1 else 0,
         ),
@@ -248,26 +286,40 @@ fun regionsReduce(s: RegionsState, a: RegionsAction, now: Long = 0): RegionsStat
     }
     if (s.status != RegionsStatus.PLAYING) return s
     val total = s.n * s.n
+    if (a is RegionsAction.Settle) return settle(s, now)
     return when (a) {
         is RegionsAction.Tap -> {
             if (a.cell !in 0 until total) return s
             val cur = s.board[a.cell]
             if (cur == '*' && s.hintMask[a.cell] == '1') return s
-            // Tap = star first, again = ×, again = clear (founder, 2026-09-28); a hint star is locked.
+            // Tap = a BLACK star (never judged; auto-crosses), tap a black star = ×, tap an × = clear;
+            // a committed star tapped → × (red goes, the mistake stands). A hint star is locked.
+            // (founder, 2026-09-28 afternoon)
             when (cur) {
-                '.' -> placeStar(s, a.cell, false, now)
-                '*' -> s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, 'x'), wrongMask = setChar(s.wrongMask, a.cell, '0'))
-                else -> s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, '.'))
+                '.' -> {
+                    var board = setChar(s.board, a.cell, 'o'); var autoMask = setChar(s.autoMaskOrBlank, a.cell, '0')
+                    if (s.autoCross) crossOut(board, autoMask, regionsRuledOut(s.n, s.regions, a.cell)).let { board = it.first; autoMask = it.second }
+                    s.copy(history = pushHistory(s), board = board, autoMask = autoMask)
+                }
+                'o', '*' -> clearTo(s, a.cell, 'x')
+                else -> clearTo(s, a.cell, '.')
             }
+        }
+        is RegionsAction.Commit -> {
+            // Double tap: judge the star — purple stays, red is a mistake and its ×s go.
+            if (a.cell !in 0 until total) return s
+            val cur = s.board[a.cell]
+            if (cur == 'o' || cur == '.') placeStar(s, a.cell, false, now) else s
         }
         is RegionsAction.Erase -> {
             if (a.cell !in 0 until total || s.board[a.cell] == '.') return s
             if (s.board[a.cell] == '*' && s.hintMask[a.cell] == '1') return s
-            s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, '.'), wrongMask = setChar(s.wrongMask, a.cell, '0'))
+            clearTo(s, a.cell, '.')
         }
         is RegionsAction.Undo -> {
             val prev = s.history.lastOrNull() ?: return s
-            s.copy(board = prev.board, hintMask = prev.hintMask, wrongMask = prev.wrongMask, history = s.history.dropLast(1))
+            val prevAuto = if (prev.autoMask.length == prev.board.length) prev.autoMask else "0".repeat(prev.board.length)
+            s.copy(board = prev.board, hintMask = prev.hintMask, wrongMask = prev.wrongMask, autoMask = prevAuto, history = s.history.dropLast(1))
         }
         is RegionsAction.Hint -> {
             var target = -1

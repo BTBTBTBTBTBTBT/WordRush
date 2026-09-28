@@ -3,7 +3,7 @@
 // practice save so navigating away and back resumes the same board. The
 // reducer state is stored whole (history included) so Undo survives a reload.
 
-import type { RegionsState } from '@wordle-duel/core';
+import { normalizeRegionsState, type RegionsState } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
 
 const DAILY_KEY = 'wordocious-regions-daily';
@@ -28,7 +28,7 @@ export function loadDailySave(seed: string): RegionsSave | null {
       localStorage.removeItem(DAILY_KEY);
       return null;
     }
-    return parsed;
+    return { ...parsed, state: normalizeRegionsState(parsed.state) };
   } catch { return null; }
 }
 
@@ -47,7 +47,7 @@ export function loadPracticeSave(): RegionsSave | null {
       localStorage.removeItem(PRACTICE_KEY);
       return null;
     }
-    return parsed;
+    return { ...parsed, state: normalizeRegionsState(parsed.state) };
   } catch { return null; }
 }
 

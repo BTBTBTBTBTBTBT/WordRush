@@ -190,7 +190,15 @@
           "cell": 1
         },
         {
+          "type": "COMMIT",
+          "cell": 1
+        },
+        {
           "type": "TAP",
+          "cell": 24
+        },
+        {
+          "type": "COMMIT",
           "cell": 24
         },
         {
@@ -200,6 +208,22 @@
         {
           "type": "TAP",
           "cell": 24
+        },
+        {
+          "type": "TAP",
+          "cell": 40
+        },
+        {
+          "type": "TAP",
+          "cell": 40
+        },
+        {
+          "type": "TAP",
+          "cell": 16
+        },
+        {
+          "type": "ERASE",
+          "cell": 16
         },
         {
           "type": "HINT",
@@ -230,17 +254,22 @@
         {
           "type": "TAP",
           "cell": 59
+        },
+        {
+          "type": "COMMIT",
+          "cell": 53
         }
       ],
       "expect": {
-        "board": "x.xxxxxxxxxxxxx*.xxxx.xx.xxx..xx.xxx...x.x.....x.x.....x.x.*...x",
+        "board": "......xxxxxxxxx*......xx......xx.......xx......x.....*.x...o...x",
         "hintMask": "0000000000000001000000000000000000000000000000000000000000000000",
         "wrongMask": "0000000000000000000000000000000000000000000000000000000000000000",
+        "autoMask": "0000001111111110000000110000001100000001000000010000000100000001",
         "mistakes": 1,
         "hintsUsed": 2,
         "status": "playing",
         "autoCross": false,
-        "historyLength": 8,
+        "historyLength": 15,
         "endTime": null
       },
       "row": {
@@ -249,7 +278,7 @@
           "17046253"
         ],
         "guesses": [
-          "x.xxxxxxxxxxxxx*.xxxx.xx.xxx..xx.xxx...x.x.....x.x.....x.x.*...x",
+          "......xxxxxxxxx*......xx......xx.......xx......x.....*.x...o...x",
           "0000000000000001000000000000000000000000000000000000000000000000"
         ]
       },
@@ -257,7 +286,7 @@
         "n": 8,
         "regions": "0111112201111222001113320011332200113442005536440077766400076664",
         "solution": "17046253",
-        "board": "x.xxxxxxxxxxxxx*.xxxx.xx.xxx..xx.xxx...x.x.....x.x.....x.x.*...x",
+        "board": "......xxxxxxxxx*......xx......xx.......xx......x.....*.x...o...x",
         "hintMask": "0000000000000001000000000000000000000000000000000000000000000000",
         "solved": false
       }
@@ -269,6 +298,10 @@
       "actions": [
         {
           "type": "TAP",
+          "cell": 15
+        },
+        {
+          "type": "COMMIT",
           "cell": 0
         },
         {
@@ -276,18 +309,23 @@
           "cell": 17
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
+          "cell": 17
+        },
+        {
+          "type": "COMMIT",
           "cell": 32
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 53
         }
       ],
       "expect": {
-        "board": "*................*..............*...............................",
+        "board": "*.....xxxxxxxxx..*....xx......xx*......x.......x.......x.......x",
         "hintMask": "0000000000000000000000000000000000000000000000000000000000000000",
         "wrongMask": "1000000000000000010000000000000010000000000000000000000000000000",
+        "autoMask": "0000001111111110000000110000001100000001000000010000000100000001",
         "mistakes": 3,
         "hintsUsed": 0,
         "status": "lost",
@@ -301,7 +339,7 @@
           "17046253"
         ],
         "guesses": [
-          "*................*..............*...............................",
+          "*.....xxxxxxxxx..*....xx......xx*......x.......x.......x.......x",
           "0000000000000000000000000000000000000000000000000000000000000000"
         ]
       },
@@ -309,7 +347,7 @@
         "n": 8,
         "regions": "0111112201111222001113320011332200113442005536440077766400076664",
         "solution": "17046253",
-        "board": "*................*..............*...............................",
+        "board": "*.....xxxxxxxxx..*....xx......xx*......x.......x.......x.......x",
         "hintMask": "0000000000000000000000000000000000000000000000000000000000000000",
         "solved": false
       }
@@ -320,35 +358,35 @@
       "n": 8,
       "actions": [
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 1
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 15
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 16
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 28
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 38
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 42
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 53
         },
         {
-          "type": "TAP",
+          "type": "COMMIT",
           "cell": 59
         }
       ],
@@ -356,6 +394,7 @@
         "board": "x*xxxxxxxxxxxxx**xxxxxxxxxxx*xxxxxxxxx*xxx*xxxxxxxxxx*xxxxx*xxxx",
         "hintMask": "0000000000000000000000000000000000000000000000000000000000000000",
         "wrongMask": "0000000000000000000000000000000000000000000000000000000000000000",
+        "autoMask": "1011111111111110011111111111011111111101110111111111101111101111",
         "mistakes": 0,
         "hintsUsed": 0,
         "status": "won",
@@ -383,6 +422,79 @@
       }
     },
     {
+      "name": "win-with-red",
+      "seed": "daily-2026-10-03-REGIONS",
+      "n": 8,
+      "actions": [
+        {
+          "type": "COMMIT",
+          "cell": 17
+        },
+        {
+          "type": "COMMIT",
+          "cell": 1
+        },
+        {
+          "type": "COMMIT",
+          "cell": 15
+        },
+        {
+          "type": "COMMIT",
+          "cell": 16
+        },
+        {
+          "type": "COMMIT",
+          "cell": 28
+        },
+        {
+          "type": "COMMIT",
+          "cell": 38
+        },
+        {
+          "type": "COMMIT",
+          "cell": 42
+        },
+        {
+          "type": "COMMIT",
+          "cell": 53
+        },
+        {
+          "type": "COMMIT",
+          "cell": 59
+        }
+      ],
+      "expect": {
+        "board": "x*xxxxxxxxxxxxx***xxxxxxxxxx*xxxxxxxxx*xxx*xxxxxxxxxx*xxxxx*xxxx",
+        "hintMask": "0000000000000000000000000000000000000000000000000000000000000000",
+        "wrongMask": "0000000000000000010000000000000000000000000000000000000000000000",
+        "autoMask": "1011111111111110001111111111011111111101110111111111101111101111",
+        "mistakes": 1,
+        "hintsUsed": 0,
+        "status": "won",
+        "autoCross": true,
+        "historyLength": 0,
+        "endTime": 1000
+      },
+      "row": {
+        "solutions": [
+          "0111112201111222001113320011332200113442005536440077766400076664",
+          "17046253"
+        ],
+        "guesses": [
+          "x*xxxxxxxxxxxxx***xxxxxxxxxx*xxxxxxxxx*xxx*xxxxxxxxxx*xxxxx*xxxx",
+          "0000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      },
+      "reconstruct": {
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "solution": "17046253",
+        "board": "x*xxxxxxxxxxxxx***xxxxxxxxxx*xxxxxxxxx*xxx*xxxxxxxxxx*xxxxx*xxxx",
+        "hintMask": "0000000000000000000000000000000000000000000000000000000000000000",
+        "solved": true
+      }
+    },
+    {
       "name": "noops",
       "seed": "daily-2026-10-03-REGIONS",
       "n": 8,
@@ -399,11 +511,19 @@
           "cell": 99
         },
         {
+          "type": "COMMIT",
+          "cell": 99
+        },
+        {
           "type": "HINT",
           "cell": 0
         },
         {
           "type": "TAP",
+          "cell": 1
+        },
+        {
+          "type": "COMMIT",
           "cell": 1
         },
         {
@@ -415,6 +535,7 @@
         "board": "x*xxxxxxxxxxx....xxxx....xxx.....xxx.....x.......x.......x......",
         "hintMask": "0100000000000000000000000000000000000000000000000000000000000000",
         "wrongMask": "0000000000000000000000000000000000000000000000000000000000000000",
+        "autoMask": "1011111111111000011110000111000001110000010000000100000001000000",
         "mistakes": 0,
         "hintsUsed": 1,
         "status": "playing",

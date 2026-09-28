@@ -27,6 +27,7 @@ const STAR = '#7c3aed'; // correct star = Wordocious purple (founder, 2026-09-28
 const WRONG = '#dc2626';
 const HINT = '#8b5cf6';
 const CROSS = '#6b7280';
+const PENDING = '#1f2937'; // black star: placed but not yet played (double-tap judges it)
 const RULE = 'rgba(76, 29, 149, 0.22)';   // hairline within a region
 const HEAVY = '#4c1d95';                  // region + outer rules
 const FOCUS = '#ca8a04';
@@ -68,7 +69,7 @@ export const RegionsBoard = memo(function RegionsBoard({ state, focused, onTap, 
           const rightHeavy = c < n - 1 && reg[i + 1] !== reg[i];
           const bottomHeavy = r < n - 1 && reg[i + n] !== reg[i];
           const color = wrong ? WRONG : hinted ? HINT : STAR;
-          const label = `Row ${r + 1} column ${c + 1}, region ${g + 1}, ${mark === '*' ? (wrong ? 'wrong star' : 'star') : mark === 'x' ? 'crossed out' : 'empty'}`;
+          const label = `Row ${r + 1} column ${c + 1}, region ${g + 1}, ${mark === '*' ? (wrong ? 'wrong star' : 'star') : mark === 'o' ? 'black star, double-tap to play' : mark === 'x' ? 'crossed out' : 'empty'}`;
           return (
             <button
               key={i}
@@ -87,6 +88,8 @@ export const RegionsBoard = memo(function RegionsBoard({ state, focused, onTap, 
             >
               {mark === '*' ? (
                 <Star className="w-[62%] h-[62%]" style={{ color, fill: color }} strokeWidth={1.5} />
+              ) : mark === 'o' ? (
+                <Star className="w-[62%] h-[62%]" style={{ color: PENDING, fill: PENDING }} strokeWidth={1.5} />
               ) : mark === 'x' ? (
                 <X className="w-[42%] h-[42%]" style={{ color: CROSS }} strokeWidth={2.5} />
               ) : missing ? (

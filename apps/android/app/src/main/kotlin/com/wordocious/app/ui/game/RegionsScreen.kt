@@ -150,14 +150,17 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
     fun pauseForGuide() { if (guidePauseStart == null && !isFinished) guidePauseStart = System.currentTimeMillis() }
     fun resumeFromGuide() { guidePauseStart?.let { startMs += System.currentTimeMillis() - it; guidePauseStart = null } }
 
+    private companion object { const val DOUBLE_TAP_MS = 350L }
+
     // Persistence (mirrors components/regions/persistence.ts).
-    @Serializable private data class SnapDto(val board: String, val hintMask: String, val wrongMask: String)
+    @Serializable private data class SnapDto(val board: String, val hintMask: String, val wrongMask: String, val autoMask: String = "")
     @Serializable private data class SaveDto(
         val seed: String, val date: String, val elapsed: Int, val savedAt: Long,
         val n: Int, val regions: String, val solution: String,
         val board: String, val hintMask: String, val wrongMask: String,
         val mistakes: Int, val hintsUsed: Int, val autoCross: Boolean,
         val status: String, val history: List<SnapDto>, val startTime: Long, val endTime: Long?,
+        val autoMask: String = "",
     )
     private val storageKey get() = if (isDaily) "regions-save-daily" else "regions-save-$seed"
 
@@ -167,7 +170,7 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
             s.n, s.regions, s.solution, s.board, s.hintMask, s.wrongMask,
             s.mistakes, s.hintsUsed, s.autoCross, s.status.key,
-            s.history.map { SnapDto(it.board, it.hintMask, it.wrongMask) }, s.startTime, s.endTime,
+            s.history.map { SnapDto(it.board, it.hintMask, it.wrongMask, it.autoMask) }, s.startTime, s.endTime, s.autoMaskOrBlank,
         )
         runCatching { SettingsPref.set(storageKey, json.encodeToString(dto)) }
     }
@@ -184,7 +187,7 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
         state = RegionsState(
             seed, dto.n, dto.regions, dto.solution, dto.board, dto.hintMask, dto.wrongMask,
             dto.mistakes, dto.hintsUsed, dto.autoCross, status,
-            dto.history.map { RegionsSnapshot(it.board, it.hintMask, it.wrongMask) }, dto.startTime, dto.endTime,
+            dto.history.map { RegionsSnapshot(it.board, it.hintMask, it.wrongMask, it.autoMask) }, dto.startTime, dto.endTime, dto.autoMask,
         )
         restoredElapsedMs = dto.elapsed * 1000L
         if (status != RegionsStatus.PLAYING) { finalTimeSeconds = dto.elapsed; recorded = true; restoredFinished = true }
@@ -198,16 +201,35 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
         persist()
     }
 
-    /** A tap cycles the cell (empty → × → star → empty) and makes it the focus for Erase/Hint. */
+    /**
+     * A tap cycles the cell (empty → black star → × → empty) at once and makes it the focus for
+     * Erase/Hint. A second tap on the same cell within [DOUBLE_TAP_MS], when the first began from
+     * empty or a black star, is a double tap: undo the first and COMMIT (play) the star — purple
+     * when right, red when wrong (founder, 2026-09-28 afternoon).
+     */
+    private var lastTapCell = -1
+    private var lastTapAt = 0L
+    private var lastTapFrom = ' '
     fun tap(cell: Int, onFinished: () -> Unit) {
         if (isFinished || cell !in 0 until n * n) return
         focused = cell
         val cur = state.board[cell]
         if (cur == '*' && state.hintMask[cell] == '1') { SoundManager.playInvalid(); return }
-        val placingWrong = cur == 'x' && (state.solution[cell / n] - '0') != cell % n
+        val now = System.currentTimeMillis()
+        if (lastTapCell == cell && now - lastTapAt <= DOUBLE_TAP_MS && (lastTapFrom == '.' || lastTapFrom == 'o')) {
+            lastTapCell = -1
+            val wrong = (state.solution[cell / n] - '0') != cell % n
+            dispatch(RegionsAction.Undo, onFinished)
+            dispatch(RegionsAction.Commit(cell), onFinished)
+            if (wrong && !isFinished) SoundManager.playInvalid() else SoundManager.playKeyTap()
+            return
+        }
+        lastTapCell = cell; lastTapAt = now; lastTapFrom = cur
         dispatch(RegionsAction.Tap(cell), onFinished)
-        if (placingWrong && !isFinished) SoundManager.playInvalid() else SoundManager.playKeyTap()
+        SoundManager.playKeyTap()
     }
+    /** A board with every star played must end (a save from before the red-star fix could sit solved with the clock running — founder, 2026-09-28). */
+    fun settleIfSolved(onFinished: () -> Unit) { if (!isFinished && regionsRemaining(state) == 0) dispatch(RegionsAction.Settle, onFinished) }
     fun erase(onFinished: () -> Unit) { focused?.let { dispatch(RegionsAction.Erase(it), onFinished) } }
     fun undo(onFinished: () -> Unit) = dispatch(RegionsAction.Undo, onFinished)
     fun toggleAutoCross(onFinished: () -> Unit) = dispatch(RegionsAction.SetAutoCross(!state.autoCross), onFinished)
@@ -280,6 +302,7 @@ fun RegionsScreen(
             }
         }
     }
+    LaunchedEffect(seed) { session.settleIfSolved(onFinished) }
 
     androidx.activity.compose.BackHandler { onBack() }
 
@@ -302,7 +325,7 @@ fun RegionsScreen(
                 Spacer(Modifier.weight(1f))
                 val remaining = session.remaining
                 Text(
-                    if (remaining == session.n && session.state.history.isEmpty()) "Tap a cell: × first, then a star" else "$remaining star${if (remaining == 1) "" else "s"} left",
+                    if (remaining == session.n && session.state.history.isEmpty()) "Tap for a black star · double-tap to play it" else "$remaining star${if (remaining == 1) "" else "s"} left",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 )
                 RegionsPad(session, onFinished)
@@ -406,6 +429,8 @@ fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, on
                         ) {
                             when {
                                 mark == '*' -> Icon(Icons.Filled.Star, null, tint = starColor, modifier = Modifier.fillMaxSize(0.62f))
+                                // Black star: placed, not yet played (double-tap judges it).
+                                mark == 'o' -> Icon(Icons.Filled.Star, null, tint = Color(0xFF1F2937), modifier = Modifier.fillMaxSize(0.62f))
                                 mark == 'x' -> Icon(Icons.Filled.Close, null, tint = cross, modifier = Modifier.fillMaxSize(0.42f))
                                 missing -> Icon(Icons.Filled.Star, null, tint = WTheme.textMuted, modifier = Modifier.fillMaxSize(0.62f).alpha(0.55f))
                             }

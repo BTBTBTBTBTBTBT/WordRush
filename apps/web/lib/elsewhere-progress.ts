@@ -73,7 +73,7 @@ export function regionsElsewhere(row: SolvedDailyRow, d: ElsewhereDaily): { prog
     wrongMask += r.board[i] === '*' && !isStar ? '1' : '0';
   }
   const state: RegionsState = {
-    seed: d.seed, n, regions: r.regions, solution: r.solution, board: r.board, hintMask: r.hintMask, wrongMask,
+    seed: d.seed, n, regions: r.regions, solution: r.solution, board: r.board.replace(/o/g, '.'), hintMask: r.hintMask, wrongMask, autoMask: '0'.repeat(n * n),
     mistakes: Math.max(0, d.guessCount - 1), hintsUsed: progress.hintsUsed, autoCross: true, status: status(d.won), history: [], startTime: 0, endTime: 0,
   };
   return { progress, state };
