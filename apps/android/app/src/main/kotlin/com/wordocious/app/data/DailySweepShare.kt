@@ -145,8 +145,10 @@ object DailySweepShare {
             // (Classic/Succession/Deliverance/Gauntlet/Proper); Six/Seven draw
             // the brand hand (WHITE) with the accent digit over the palm — iOS
             // DailySweepShare shareGlyph parity; the numeral modes (IV/VIII)
-            // keep their glyph — same as the home cards.
-            val shareCard = com.wordocious.app.ui.MODE_CARDS.firstOrNull { it.engineMode?.name == r.dbKey }
+            // keep their glyph — same as the home cards. Look up by dbKey across
+            // ALL cards (founder, 2026-09-28): the home grid alone missed the
+            // ten More Games titles, which fell back to letter glyphs.
+            val shareCard = com.wordocious.app.ui.modeCardForKey(r.dbKey)
             val handRes = com.wordocious.app.ui.modeIconRes(shareCard?.hand)
             val iconRes = com.wordocious.app.ui.modeIconRes(shareCard?.lucide)
             val handDrawable = handRes?.let { androidx.core.content.ContextCompat.getDrawable(context, it) }

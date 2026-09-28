@@ -97,7 +97,10 @@ object GameResultsService {
      *  first finalization). Touches ONLY the score-bearing rows — daily_results
      *  via recordDailyResult (already only-better) and this seed's matches row
      *  (player1_score = the guess-count bucket, lower = better) — never games,
-     *  wins, XP, level or streaks. Safe to call any number of times. */
+     *  wins, XP, level or streaks. Safe to call any number of times.
+     *  matches.player1_time is NOT rewritten (founder, 2026-09-28): it feeds
+     *  "Fastest Win" and must stay the time to first reach Hubbub;
+     *  daily_results.time_seconds moves with the final rank (leaderboard tiebreak). */
     suspend fun improve(
         gameMode: GameMode, seed: String, completed: Boolean, guessCount: Int, timeSeconds: Int,
         boardsSolved: Int, totalBoards: Int, hintsUsed: Int, guesses: List<String>,
@@ -107,7 +110,6 @@ object GameResultsService {
         runCatching {
             client.postgrest["matches"].update({
                 set("player1_score", guessCount)
-                set("player1_time", timeSeconds)
                 set("winner_id", if (completed) uid else null)
                 set("hints_used", hintsUsed)
                 set("player1_guesses", guesses)

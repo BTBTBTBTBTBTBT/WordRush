@@ -1304,9 +1304,11 @@ export async function improveDailyRun(args: {
     // matches.player1_score is the GUESS COUNT (the distribution bucket —
     // for Hubbub the rank position, lower = better), never the composite: a
     // rank-up lowers it, so only rows still holding a WORSE (higher) count move.
+    // player1_time is deliberately NOT patched (founder, 2026-09-28): it feeds
+    // Fastest Win / personal bests and must stay the time to FIRST reach Hubbub;
+    // daily_results.time_seconds (updated above) is the tiebreak at the final rank.
     const patch: Record<string, unknown> = {
       player1_score: args.guessCount,
-      player1_time: args.timeSeconds,
       winner_id: args.completed ? args.userId : null,
       hints_used: args.hintsUsed ?? 0,
     };

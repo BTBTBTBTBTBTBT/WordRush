@@ -24,22 +24,29 @@ interface VictoryAnimationProps {
   /** §242: shown as a "Play again" button on the card — pass ONLY on
    *  unlimited (non-daily) games where the caller's restart handler exists. */
   onPlayAgain?: () => void;
+  /** Explicit choices in place of tap-anywhere (founder, 2026-09-28: Hubbub's
+   *  "Keep playing" / "I'm done"). When supplied, the backdrop no longer
+   *  dismisses and the "Tap anywhere" caption is hidden; every other game
+   *  keeps the default behavior. */
+  actions?: { label: string; onClick: () => void; primary?: boolean }[];
 }
 
-export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain, actions }: VictoryAnimationProps) {
   useEffect(() => { haptic('heavy'); playSuccess(); }, []);
   const { definition } = useWordDefinition(solution || null);
+  const hasActions = !!actions && actions.length > 0;
 
+  // M:SS past a minute (founder, 2026-09-28: "35m 17s" wrapped inside the stat cell).
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
-    return `${Math.floor(s / 60)}m ${s % 60}s`;
+    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-5 animate-fade-in"
       style={{ backgroundColor: 'rgba(24, 24, 46, 0.6)' }}
-      onClick={onComplete}
+      onClick={hasActions ? undefined : onComplete}
     >
       <Confetti />
 
@@ -160,7 +167,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                 )}
                 {timeSeconds != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                    <div className={`font-black whitespace-nowrap ${formatTime(timeSeconds).length > 5 ? 'text-lg' : 'text-xl'}`} style={{ color: 'var(--color-text)' }}>
                       {formatTime(timeSeconds)}
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Time</div>
@@ -179,7 +186,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
 
             {/* §242 (founder: "go right into the next game without going
                 back"): unlimited games offer the next puzzle on the card. */}
-            {onPlayAgain && (
+            {onPlayAgain && !hasActions && (
               <button
                 onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}
                 className="mt-4 px-7 py-2.5 rounded-full text-sm font-black text-white active:scale-95 transition-transform"
@@ -188,9 +195,27 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                 Play again
               </button>
             )}
-            <p className="text-xs font-bold mt-4" style={{ color: '#c4b5fd' }}>
-              Tap anywhere to continue
-            </p>
+            {hasActions ? (
+              <div className="mt-4 flex justify-center gap-2 flex-wrap">
+                {actions!.map((a) => (
+                  <button
+                    key={a.label}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); a.onClick(); }}
+                    className={`px-6 py-2.5 rounded-full text-sm font-black active:scale-95 transition-transform ${a.primary ? 'text-white' : ''}`}
+                    style={a.primary
+                      ? { background: 'linear-gradient(135deg, #a78bfa, #ec4899)' }
+                      : { border: '1.5px solid var(--color-border)', color: 'var(--color-text)', background: 'var(--color-bg)' }}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs font-bold mt-4" style={{ color: '#c4b5fd' }}>
+                Tap anywhere to continue
+              </p>
+            )}
           </div>
         </div>
       </div>

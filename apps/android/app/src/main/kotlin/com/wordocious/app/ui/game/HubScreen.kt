@@ -69,6 +69,7 @@ import com.wordocious.app.data.SettingsPref
 import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
+import com.wordocious.app.ui.FitText
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.pressScale
 import com.wordocious.app.ui.theme.Nunito
@@ -102,6 +103,15 @@ import kotlinx.serialization.json.Json
 // HubView.swift. Seven letters, one required center, words of 4+ letters.
 // Finalizes ONCE (Hubbub = win, End below it = loss); play continues after the
 // win and each later rank-up goes through GameResultsService.improve.
+//
+// Clock contract (founder, 2026-09-28; identical on iOS/web): the clock runs
+// ONLY while the board is visible — not under the victory card, not on the
+// results view, never once ended. `recordedSeconds` is the time the current
+// rank was reached (set at finalise and every improve); it is what results,
+// the share text and the score breakdown show after a win, and what "I'm done"
+// / Finish freezes as the final time. matches.player1_time stays the time to
+// FIRST reach Hubbub (Fastest Win); daily_results.time_seconds moves with the
+// final rank (leaderboard tiebreak).
 
 private val HUB_ACCENT = Color(0xFFC026D3)
 
@@ -123,6 +133,9 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     var showResults by mutableStateOf(false)
     var finalTimeSeconds by mutableStateOf<Int?>(null)
         private set
+    /** Seconds on the clock when the current rank was reached (finalise + every improve). 0 = never recorded. */
+    var recordedSeconds by mutableStateOf(0)
+        private set
     var xpResult by mutableStateOf<GameResultsService.XpResult?>(null)
     var restoredFinished = false
         private set
@@ -131,16 +144,24 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
 
     private var startMs = System.currentTimeMillis()
     private var restoredElapsedMs = 0L
-    private var guidePauseStart: Long? = null
     private var recordedRank = -1
 
-    val elapsed: Int get() = finalTimeSeconds ?: maxOf(0, ((System.currentTimeMillis() - startMs) / 1000).toInt())
+    /** Why the clock is stopped. It runs only while the set is empty. */
+    enum class Pause { VIEW, GUIDE }
+    private val pausedFor = mutableStateListOf<Pause>()
+    private var pauseStart: Long? = null
+    val clockRunning: Boolean get() = !state.ended && pausedFor.isEmpty()
+
+    /** Wall-clock seconds while playing (pauses excluded); frozen once ended. */
+    val elapsed: Int get() = finalTimeSeconds ?: maxOf(0, (((pauseStart ?: System.currentTimeMillis()) - startMs) / 1000).toInt())
+    /** What results, share and the score breakdown show: the recorded time after a win, the live clock otherwise. */
+    val displaySeconds: Int get() = if (state.status == HubStatus.WON && recordedSeconds > 0) recordedSeconds else elapsed
     val dailyNumber get() = hubDailyNumber(todayLocalDate())
     val centre get() = state.centre
     val pct get() = if (state.max > 0) state.points * 100 / state.max else 0
     val pangramsFound get() = state.found.count { it in state.pangrams }
     val points: Int get() = com.wordocious.app.data.DailyScoring.breakdown(
-        GameMode.HUB.name, state.status == HubStatus.WON, state.guessCount, elapsed, state.boardsSolved, HUB_TOTAL_BOARDS, state.hintsUsed,
+        GameMode.HUB.name, state.status == HubStatus.WON, state.guessCount, displaySeconds, state.boardsSolved, HUB_TOTAL_BOARDS, state.hintsUsed,
     ).total.toInt()
 
     // Declared BEFORE init: restore() runs inside init and needs it. Declared below the
@@ -150,15 +171,31 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
 
     init { restore() }
 
-    fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
-    fun pauseForGuide() { if (guidePauseStart == null && !state.ended) guidePauseStart = System.currentTimeMillis() }
-    fun resumeFromGuide() { guidePauseStart?.let { startMs += System.currentTimeMillis() - it; guidePauseStart = null } }
+    fun beginTimer() {
+        val now = System.currentTimeMillis()
+        startMs = now - restoredElapsedMs
+        // A restored WON daily opens on results, already paused: the pause starts with the clock.
+        if (pausedFor.isNotEmpty()) pauseStart = now
+    }
+    /** Stop the clock for [why]; idempotent, and the clock stays stopped until every reason is lifted. */
+    fun pauseClock(why: Pause) {
+        if (state.ended || why in pausedFor) return
+        if (pausedFor.isEmpty()) pauseStart = System.currentTimeMillis()
+        pausedFor.add(why)
+    }
+    fun resumeClock(why: Pause) {
+        if (!pausedFor.remove(why) || pausedFor.isNotEmpty()) return
+        pauseStart?.let { startMs += System.currentTimeMillis() - it; pauseStart = null }
+    }
+    fun pauseForGuide() = pauseClock(Pause.GUIDE)
+    fun resumeFromGuide() = resumeClock(Pause.GUIDE)
 
     @Serializable private data class SaveDto(
         val seed: String, val date: String, val elapsed: Int, val savedAt: Long, val recordedRank: Int,
         val id: String, val letters: String, val words: List<String>, val bonus: List<String>, val pangrams: List<String>, val max: Int,
         val found: List<String>, val bonusFound: List<String>, val revealed: List<String>, val hinted: List<String>,
         val points: Int, val hintsUsed: Int, val events: List<String>, val status: String, val ended: Boolean, val startTime: Long, val endTime: Long?,
+        val recordedSeconds: Int = 0, // default so saves from before 2026-09-28 still decode
     )
     private val storageKey get() = if (isDaily) "hub-save-daily" else "hub-save-$seed"
 
@@ -166,7 +203,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         val s = state
         val dto = SaveDto(seed, todayLocalDate(), elapsed, System.currentTimeMillis(), recordedRank,
             s.id, s.letters, s.words, s.bonus, s.pangrams, s.max, s.found, s.bonusFound, s.revealed, s.hinted,
-            s.points, s.hintsUsed, s.events, s.status.key, s.ended, s.startTime, s.endTime)
+            s.points, s.hintsUsed, s.events, s.status.key, s.ended, s.startTime, s.endTime, recordedSeconds)
         runCatching { SettingsPref.set(storageKey, json.encodeToString(dto)) }
     }
     private fun restore() {
@@ -180,8 +217,14 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
             dto.points, dto.hintsUsed, dto.events, status, dto.ended, null, dto.startTime, dto.endTime)
         recordedRank = dto.recordedRank
         restoredElapsedMs = dto.elapsed * 1000L
-        if (status != HubStatus.PLAYING) restoredFinished = true
-        if (dto.ended) { finalTimeSeconds = dto.elapsed; showResults = true }
+        if (status != HubStatus.PLAYING) {
+            restoredFinished = true
+            // Saves from before recordedSeconds existed: the saved clock is the best time we have.
+            recordedSeconds = if (dto.recordedSeconds > 0) dto.recordedSeconds else dto.elapsed
+        }
+        if (dto.ended) { finalTimeSeconds = if (status == HubStatus.WON) recordedSeconds else dto.elapsed; showResults = true }
+        // A won-but-not-ended daily reopens on results with the clock stopped, not on a running board.
+        else if (status == HubStatus.WON) { showResults = true; pauseClock(Pause.VIEW) }
     }
 
     private fun dispatch(a: HubAction) {
@@ -213,7 +256,14 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     }
     fun hintStart() = dispatch(HubAction.HintStart)
     fun hintReveal() = dispatch(HubAction.HintReveal)
-    fun end() { dispatch(HubAction.End); finalTimeSeconds = elapsed; showResults = true }
+    /** "End puzzle" below Hubbub (a loss) or "I'm done" / Finish after the win: the game ends and
+     *  the frozen time is the recorded one — the clock kept moving while the player played on. */
+    fun end() {
+        if (state.ended) { showResults = true; return }
+        dispatch(HubAction.End) // a loss finalises here, recording its own seconds
+        finalTimeSeconds = if (recordedSeconds > 0) recordedSeconds else elapsed
+        showResults = true
+    }
 
     private fun rejectCopy(r: HubReject) = when (r) {
         HubReject.ENDED -> "This puzzle is finished"; HubReject.SHORT -> "Four letters or more"; HubReject.CENTRE -> "Must use the center letter"
@@ -230,7 +280,8 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     }
     private fun finalise() {
         recordedRank = state.rank
-        val s = state; val won = s.status == HubStatus.WON; val secs = elapsed
+        recordedSeconds = elapsed
+        val s = state; val won = s.status == HubStatus.WON; val secs = recordedSeconds
         val (solutions, guesses) = hubMatchRow(s)
         scope.launch {
             val xp = GameResultsService.record(
@@ -245,8 +296,9 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     private fun improve() {
         if (state.rank <= recordedRank) return
         recordedRank = state.rank
+        recordedSeconds = elapsed // the new rank's time; matches.player1_time keeps the first Hubbub time
         if (!isDaily) return
-        val s = state; val secs = elapsed
+        val s = state; val secs = recordedSeconds
         val (_, guesses) = hubMatchRow(s)
         scope.launch { GameResultsService.improve(GameMode.HUB, seed, true, s.guessCount, secs, s.boardsSolved, HUB_TOTAL_BOARDS, s.hintsUsed, guesses) }
     }
@@ -275,6 +327,10 @@ fun HubScreen(
         else { adGateDone = true; session.beginTimer() }
     }
     LaunchedEffect(session.toast) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
+    // The clock runs only while the board itself is on screen (founder, 2026-09-28).
+    LaunchedEffect(showOverlay, session.showResults) {
+        if (showOverlay || session.showResults) session.pauseClock(HubSession.Pause.VIEW) else session.resumeClock(HubSession.Pause.VIEW)
+    }
     androidx.activity.compose.BackHandler { onBack() }
 
     Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
@@ -312,6 +368,8 @@ private fun HubHeader(session: HubSession) {
                     Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
                     val s = session.elapsed
                     Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    // After the win the clock keeps moving while the player chases a higher rank — say so.
+                    if (session.state.status == HubStatus.WON) Text("· playing on", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted.copy(alpha = 0.8f))
                 }
             }
         }
@@ -439,7 +497,10 @@ private fun HubBoard(session: HubSession) {
                 }
             }
             // Pinned at the very bottom; the navigation-bar inset is respected by the BoxWithConstraints above.
-            if (s.status == HubStatus.WON) Text("See results", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HUB_ACCENT, modifier = Modifier.clickableNoRipple { session.showResults = true })
+            // Won: "Finish" is the same as the card's "I'm done" — ends the game at the recorded time.
+            if (s.status == HubStatus.WON) Row(Modifier.clickableNoRipple { session.end() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Filled.Flag, null, tint = HUB_ACCENT, modifier = Modifier.size(12.dp)); Text("Finish", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HUB_ACCENT)
+            }
             else Row(Modifier.clickableNoRipple { session.end() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Filled.Flag, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp)); Text("End puzzle and see answers", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
@@ -467,7 +528,7 @@ private fun HubResults(
     session: HubSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
-    val s = session.state; val won = s.status == HubStatus.WON; val secs = session.elapsed
+    val s = session.state; val won = s.status == HubStatus.WON; val secs = session.displaySeconds
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         RankBar(session)
@@ -509,8 +570,9 @@ private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}"
 
 @Composable
 private fun HubOverlay(session: HubSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
-    val won = session.state.status == HubStatus.WON; val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
+    val won = session.state.status == HubStatus.WON; val secs = session.displaySeconds
+    // Won: the card is a decision (Keep playing / I'm done), so a stray tap must not dismiss it; a loss still taps away.
+    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(if (won) ({}) else onDismiss), contentAlignment = Alignment.Center) {
         Column(Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.fillMaxWidth().height(6.dp).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
             Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -524,7 +586,15 @@ private fun HubOverlay(session: HubSession, onPlayAgain: (() -> Unit)?, onDismis
                     Text(if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
                         modifier = Modifier.clip(CircleShape).background(if (won) androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171)))).clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp))
                 }
-                Text(if (won) "Keep going for a higher rank" else "Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
+                if (won) Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Keep playing → back to the board, clock resumes. I'm done → End at the recorded time, results.
+                    // Keep playing is the filled (primary) choice on all three platforms.
+                    Text("Keep playing", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
+                        modifier = Modifier.clip(CircleShape).background(HUB_ACCENT).clickableNoRipple(onDismiss).padding(horizontal = 18.dp, vertical = 9.dp))
+                    Text("I'm done", fontSize = 13.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT,
+                        modifier = Modifier.clip(CircleShape).border(1.5.dp, HUB_ACCENT, CircleShape).clickableNoRipple { session.end(); onDismiss() }.padding(horizontal = 18.dp, vertical = 9.dp))
+                }
+                else Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
         }
     }
@@ -533,7 +603,8 @@ private fun HubOverlay(session: HubSession, onPlayAgain: (() -> Unit)?, onDismis
 @Composable
 private fun StatBlock(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
+        // One line always — "35:17" must never break inside its cell (founder, 2026-09-28).
+        FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
     }
 }

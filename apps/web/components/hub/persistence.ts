@@ -16,6 +16,11 @@ export interface HubSave {
   elapsedSeconds: number;
   /** The rank index already sent through recordGameResult / improveDailyRun. */
   recordedRank: number;
+  /** Elapsed seconds at the moment the current rank was recorded — the frozen
+   *  time results/share show after a win (founder, 2026-09-28: the clock keeps
+   *  running while the player hunts on, but the recorded time is what counts).
+   *  0 in saves from before this field → callers fall back to elapsedSeconds. */
+  recordedSeconds?: number;
   date?: string;
   savedAt?: number;
 }
@@ -31,9 +36,9 @@ export function loadDailySave(seed: string): HubSave | null {
   } catch { return null; }
 }
 
-export function saveDaily(seed: string, state: HubState, elapsedSeconds: number, recordedRank: number): void {
+export function saveDaily(seed: string, state: HubState, elapsedSeconds: number, recordedRank: number, recordedSeconds = 0): void {
   if (typeof window === 'undefined') return;
-  try { localStorage.setItem(DAILY_KEY, JSON.stringify({ date: getTodayLocal(), seed, state, elapsedSeconds, recordedRank } satisfies HubSave)); } catch {}
+  try { localStorage.setItem(DAILY_KEY, JSON.stringify({ date: getTodayLocal(), seed, state, elapsedSeconds, recordedRank, recordedSeconds } satisfies HubSave)); } catch {}
 }
 
 export function loadPracticeSave(): HubSave | null {
@@ -47,7 +52,7 @@ export function loadPracticeSave(): HubSave | null {
   } catch { return null; }
 }
 
-export function savePractice(seed: string, state: HubState, elapsedSeconds: number, recordedRank: number): void {
+export function savePractice(seed: string, state: HubState, elapsedSeconds: number, recordedRank: number, recordedSeconds = 0): void {
   if (typeof window === 'undefined') return;
-  try { localStorage.setItem(PRACTICE_KEY, JSON.stringify({ seed, state, elapsedSeconds, recordedRank, savedAt: Date.now() } satisfies HubSave)); } catch {}
+  try { localStorage.setItem(PRACTICE_KEY, JSON.stringify({ seed, state, elapsedSeconds, recordedRank, recordedSeconds, savedAt: Date.now() } satisfies HubSave)); } catch {}
 }

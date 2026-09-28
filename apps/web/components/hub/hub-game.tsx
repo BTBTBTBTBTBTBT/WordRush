@@ -70,9 +70,16 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const [shake, setShake] = useState(false);
   const recordedRankRef = useRef(-1);   // -1 = never finalized
   const restoredRef = useRef(false);
+  // Elapsed seconds when the current rank was recorded (finalize / improve).
+  // After a win the clock keeps running while the player hunts on, but the
+  // time results, the share and the leaderboard carry is THIS one (founder,
+  // 2026-09-28; the same contract as iOS/Android). 0 = not recorded yet.
+  const [recordedSeconds, setRecordedSeconds] = useState(0);
 
   const status = state?.status ?? 'playing';
-  const running = !!state && !state.ended && view === 'board';
+  // The clock runs only while the board itself is in front: not under the
+  // victory/game-over card, not on results, never once the puzzle has ended.
+  const running = !!state && !state.ended && view === 'board' && !showVictory && !showGameOver;
   const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(running, 0);
 
   const startPractice = useCallback(() => {
@@ -82,9 +89,13 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     setState(createHubState(p, seed, Date.now()));
     setOuter(p.letters.slice(1).split(''));
     setTyping(''); setView('board'); setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
-    resetTimer(0);
+    resetTimer(0); setRecordedSeconds(0);
     recordedRankRef.current = -1; restoredRef.current = false;
   }, [resetTimer]);
+
+  // Old saves (before recordedSeconds) that had already recorded a rank fall back to their elapsed time.
+  const restoreRecordedSeconds = (saved: { recordedSeconds?: number; elapsedSeconds: number; recordedRank: number }) =>
+    setRecordedSeconds(saved.recordedSeconds || (saved.recordedRank >= 0 ? saved.elapsedSeconds : 0));
 
   useEffect(() => {
     if (mode === 'daily') {
@@ -92,9 +103,10 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       const seed = generateDailySeed(today, 'HUB');
       const saved = loadDailySave(seed);
       if (saved) {
-        setState(saved.state); setOuter(saved.state.letters.slice(1).split('')); resetTimer(saved.elapsedSeconds);
+        setState(saved.state); setOuter(saved.state.letters.slice(1).split('')); resetTimer(saved.elapsedSeconds); restoreRecordedSeconds(saved);
         recordedRankRef.current = saved.recordedRank; restoredRef.current = saved.state.status !== 'playing';
-        if (saved.state.ended) setView('results');
+        // A won-but-unfinished daily reopens on results (clock paused), never mid-hunt with the clock moving.
+        if (saved.state.ended || saved.state.status !== 'playing') setView('results');
         return;
       }
       const p = hubPuzzleForDay(BANK, today);
@@ -103,9 +115,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     } else {
       const saved = loadPracticeSave();
       if (saved) {
-        setState(saved.state); setOuter(saved.state.letters.slice(1).split('')); resetTimer(saved.elapsedSeconds);
+        setState(saved.state); setOuter(saved.state.letters.slice(1).split('')); resetTimer(saved.elapsedSeconds); restoreRecordedSeconds(saved);
         recordedRankRef.current = saved.recordedRank; restoredRef.current = saved.state.status !== 'playing';
-        if (saved.state.ended) setView('results');
+        if (saved.state.ended || saved.state.status !== 'playing') setView('results');
         return;
       }
       startPractice();
@@ -114,19 +126,25 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   useEffect(() => {
     if (!state) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds, recordedRankRef.current);
-    else savePractice(state.seed, state, elapsedSeconds, recordedRankRef.current);
-  }, [state, elapsedSeconds, mode]);
+    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds, recordedRankRef.current, recordedSeconds);
+    else savePractice(state.seed, state, elapsedSeconds, recordedRankRef.current, recordedSeconds);
+  }, [state, elapsedSeconds, recordedSeconds, mode]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
+  // The time a won run is scored, shown and shared with: the recorded time,
+  // never the still-moving clock (falls back to elapsed for pre-field saves).
+  const isWon = state?.status === 'won';
+  const scoredSeconds = isWon ? (recordedSeconds || elapsedSeconds) : elapsedSeconds;
+
   // ── Recording: finalize once, then improve on every later rank-up ─────────
-  const points = state ? computeScoreBreakdown('HUB', state.status === 'won', hubGuessCount(hubRank(state)), elapsedSeconds, hubBoardsSolved(state.points, state.max), HUB_TOTAL_BOARDS, state.hintsUsed).total : 0;
+  const points = state ? computeScoreBreakdown('HUB', isWon, hubGuessCount(hubRank(state)), scoredSeconds, hubBoardsSolved(state.points, state.max), HUB_TOTAL_BOARDS, state.hintsUsed).total : 0;
 
   const finalise = useCallback((s: HubState) => {
     if (!profile || recordedRankRef.current >= 0) return;
     const rank = hubRank(s);
     recordedRankRef.current = rank;
+    setRecordedSeconds(elapsedSeconds);
     const won = s.status === 'won';
     const gc = hubGuessCount(rank);
     const seed = mode === 'daily' ? s.seed : undefined;
@@ -145,6 +163,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     const rank = hubRank(s);
     if (rank <= recordedRankRef.current) return;
     recordedRankRef.current = rank;
+    setRecordedSeconds(elapsedSeconds);   // the time for the rank now on the board
     if (mode !== 'daily') return;   // Unlimited has no leaderboard row to raise
     const row = hubMatchRow(s);
     improveDailyRun({
@@ -177,7 +196,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     if (!state) return;
     const rank = hubRank(state);
     if (state.status !== 'playing' && recordedRankRef.current < 0) {
-      if (!restoredRef.current) { if (state.status === 'won') setShowVictory(true); else setShowGameOver(true); }
+      // Freeze the win time here too, so a signed-out player's card and results agree.
+      if (!restoredRef.current) { setRecordedSeconds(elapsedSeconds); if (state.status === 'won') setShowVictory(true); else setShowGameOver(true); }
       recordModePlayed('hubbub');
       finalise(state);
       restoredRef.current = false;
@@ -199,6 +219,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const hintStart = useCallback(() => dispatch({ type: 'HINT_START' }), [dispatch]);
   const hintReveal = useCallback(() => dispatch({ type: 'HINT_REVEAL' }), [dispatch]);
   const endPuzzle = useCallback(() => { dispatch({ type: 'END' }); setView('results'); }, [dispatch]);
+  // "I'm done" / Finish after a win: same END as before, results show the recorded time.
+  const finish = useCallback(() => { setShowVictory(false); endPuzzle(); }, [endPuzzle]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -219,13 +241,13 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     const rank = hubRank(state);
     const out = await shareResult({
       layout: 'hub', mode: 'Hubbub', won: rank >= HUB_SOLVED_RANK,
-      guesses: hubGuessCount(rank), maxGuesses: 10, timeSeconds: elapsedSeconds,
+      guesses: hubGuessCount(rank), maxGuesses: 10, timeSeconds: scoredSeconds,
       rankName: HUB_RANKS[rank].name, pct: Math.floor((state.points * 100) / Math.max(1, state.max)), wordsFound: state.found.length, wordCount: state.words.length,
       pangramsFound: state.found.filter((w) => state.pangrams.includes(w)).length,
       puzzleNumber: mode === 'daily' ? hubDailyNumber(getTodayLocal()) : undefined, points,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [state, elapsedSeconds, mode, points]);
+  }, [state, scoredSeconds, mode, points]);
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
@@ -359,7 +381,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       </div>
       <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
         {won
-          ? <button type="button" onClick={() => setView('results')} className="underline" style={{ color: HUB_ACCENT }}>See results</button>
+          ? <button type="button" onClick={finish} className="underline flex items-center gap-1" style={{ color: HUB_ACCENT }}><Flag className="w-3 h-3" /> Finish</button>
           : <button type="button" onClick={endPuzzle} className="underline text-gray-400 flex items-center gap-1"><Flag className="w-3 h-3" /> End puzzle and see answers</button>}
       </div>
     </div>
@@ -376,7 +398,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
             </div>
             <div className="flex flex-col gap-1 min-w-0">
               <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>{won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}</span>
-              <span className="text-xs text-gray-400">{state.points}/{state.max} pts · {state.found.length}/{state.words.length} words · {state.found.filter((w) => state.pangrams.includes(w)).length}/{state.pangrams.length} pangram{state.pangrams.length === 1 ? '' : 's'} · {formatTime(elapsedSeconds)}{state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}</span>
+              <span className="text-xs text-gray-400">{state.points}/{state.max} pts · {state.found.length}/{state.words.length} words · {state.found.filter((w) => state.pangrams.includes(w)).length}/{state.pangrams.length} pangram{state.pangrams.length === 1 ? '' : 's'} · {formatTime(scoredSeconds)}{state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}</span>
               <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                 <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
                 <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
@@ -400,7 +422,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
                 : wordChips(sortedFound)}
             </div>
           </div>
-          <ScoreBreakdownCard gameMode="HUB" completed={won} guessCount={hubGuessCount(rank)} timeSeconds={elapsedSeconds}
+          <ScoreBreakdownCard gameMode="HUB" completed={won} guessCount={hubGuessCount(rank)} timeSeconds={scoredSeconds}
             boardsSolved={hubBoardsSolved(state.points, state.max)} totalBoards={HUB_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
           {mode === 'daily' && <NextDailyCta currentMode="HUB" />}
         </div>
@@ -411,7 +433,10 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   return (
     <div className={`h-screen-stable flex flex-col relative ${view === 'results' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
+      {/* Victory card (founder, 2026-09-28): the clock is paused under it; the time is the
+          moment of the win. "Keep playing" resumes the hunt, "I'm done" ends the puzzle. */}
+      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={elapsedSeconds} points={points}
+        actions={[{ label: 'Keep playing', onClick: () => setShowVictory(false), primary: true }, { label: "I'm done", onClick: finish }]} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -424,7 +449,11 @@ export function HubGame({ isDaily = false }: HubGameProps) {
           {mode === 'daily' && <span>#{hubDailyNumber(getTodayLocal())}</span>}
           <span>{state.found.length}/{state.words.length} words</span>
           <span>{state.points}/{state.max} pts</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          {/* After a win the header clock keeps moving on the board ("· playing on" says why);
+              once the puzzle ends it freezes on the recorded time. */}
+          {won && (state.ended || view !== 'board')
+            ? <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(scoredSeconds)}</span>
+            : <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}{won && <span className="font-medium opacity-70"> · playing on</span>}</span>}
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>

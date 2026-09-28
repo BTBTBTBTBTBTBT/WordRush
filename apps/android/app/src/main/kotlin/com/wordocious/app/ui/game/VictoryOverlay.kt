@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.ui.FitText
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
@@ -202,7 +203,8 @@ fun VictoryOverlay(
 @Composable
 private fun StatBlock(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        // One line always — a long time must never break inside its cell (founder, 2026-09-28).
+        FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = WTheme.textMuted)
     }
 }
@@ -259,5 +261,5 @@ private fun ConfettiRect(p: ConfettiPiece) {
     }
 }
 
-/** iOS PostGameEffects.timeStr — compact "45s" / "2m 5s", not m:ss. */
-private fun fmtVTime(secs: Int): String = if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
+/** Compact "45s" under a minute, "35:17" above — "35m 17s" wrapped inside the stat cell (founder, 2026-09-28; iOS/web match). */
+private fun fmtVTime(secs: Int): String = if (secs < 60) "${secs}s" else "${secs / 60}:${"%02d".format(secs % 60)}"

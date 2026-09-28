@@ -70,6 +70,13 @@ struct XpToastView: View {
 /// Celebration overlay on a win (ports effects/victory-animation.tsx): confetti,
 /// gradient "VICTORY!", the solution word(s), optional definition, and stats.
 /// Tap anywhere to dismiss.
+/// One button on the victory card (see `VictoryOverlay.actions`).
+struct VictoryAction {
+    let label: String
+    var primary = false
+    let action: () -> Void
+}
+
 struct VictoryOverlay: View {
     let won: Bool
     let guesses: Int
@@ -95,10 +102,16 @@ struct VictoryOverlay: View {
     /// Play/Try-again button on the card itself. Callers pass it ONLY on
     /// unlimited (non-daily) games — same gate as the finished screen's button.
     var onPlayAgain: (() -> Void)? = nil
+    /// Hubbub (founder, 2026-09-28): explicit choices on the card instead of
+    /// tap-anywhere — "Keep playing" / "I'm done". When non-empty the card no
+    /// longer dismisses on a background tap; every other game passes nothing.
+    var actions: [VictoryAction] = []
     var onDismiss: () -> Void
 
     private var isMulti: Bool { totalBoards > 1 }
-    private var timeStr: String { timeSeconds < 60 ? "\(timeSeconds)s" : "\(timeSeconds / 60)m \(timeSeconds % 60)s" }
+    /// "35:17", not "35m 17s" — the long form wrapped inside the stat cell on a
+    /// long Hubbub session (founder, 2026-09-28).
+    private var timeStr: String { timeSeconds < 60 ? "\(timeSeconds)s" : "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
 
     var body: some View {
         ZStack {
@@ -161,7 +174,26 @@ struct VictoryOverlay: View {
                         .buttonStyle(.plain)
                         .padding(.top, 6)
                     }
-                    Text("Tap anywhere to continue").font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xC4B5FD)).padding(.top, 4)
+                    if actions.isEmpty {
+                        Text("Tap anywhere to continue").font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xC4B5FD)).padding(.top, 4)
+                    } else {
+                        HStack(spacing: 10) {
+                            ForEach(actions.indices, id: \.self) { i in
+                                let a = actions[i]
+                                Button(action: a.action) {
+                                    Text(a.label).font(Brand.font(14, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                                        .foregroundStyle(a.primary ? .white : Color(hex: 0x7C3AED))
+                                        .padding(.horizontal, 20).padding(.vertical, 10)
+                                        .background(Capsule().fill(a.primary
+                                            ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                                            : AnyShapeStyle(Color(hex: 0x7C3AED).opacity(0.08))))
+                                        .overlay(Capsule().stroke(a.primary ? Color.clear : Color(hex: 0x7C3AED).opacity(0.4), lineWidth: 1.5))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.top, 8)
+                    }
                 }
                 .padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 18)
             }
@@ -173,7 +205,7 @@ struct VictoryOverlay: View {
             .frame(maxWidth: 380)
         }
         .contentShape(Rectangle())
-        .onTapGesture { onDismiss() }
+        .onTapGesture { if actions.isEmpty { onDismiss() } }
         // No haptic here: the game screen already fires Haptics.success/error at
         // the moment of finishing — the old unconditional success() buzzed a
         // CELEBRATION haptic on losses too.
@@ -181,7 +213,7 @@ struct VictoryOverlay: View {
 
     private func statBlock(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
-            Text(value).font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
+            Text(value).font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
             Text(label).font(Brand.font(10, .bold)).tracking(0.6).foregroundStyle(Theme.textMuted)
         }
     }

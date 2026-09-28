@@ -137,7 +137,8 @@ struct DailySweepCardView: View {
     /// Falls back to the glyph text if the mode isn't found.
     @ViewBuilder
     private func shareGlyph(_ r: DailySweepRow) -> some View {
-        if let icon = homeModes.first(where: { $0.dbKey == r.dbKey })?.icon {
+        // homeModes alone left the ten More Games titles as letter glyphs (founder, 2026-09-28).
+        if let icon = (homeModes + moreModes).first(where: { $0.dbKey == r.dbKey })?.icon {
             switch icon {
             case .asset(let name), .original(let name):
                 Image(name).renderingMode(.template).resizable().scaledToFit()

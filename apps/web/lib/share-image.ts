@@ -1473,9 +1473,10 @@ const SWEEP_GOLD: [string, string] = ['#d97706', '#b45309'];
  * Draws a mode's real game icon (WHITE) centered at (cx, cy) inside its accent
  * badge on the all-dailies share card — the same lucide art the home cards use
  * (Classic=grid, Succession=trending-up, Deliverance=shield, Gauntlet=skull,
- * ProperNoundle=crown). Returns false for the numeral modes (QuadWord/OctoWord/
- * Six/Seven) so the caller draws the glyph instead. Paths copied verbatim from
- * lucide-react@0.446 so they match the on-screen icons exactly.
+ * ProperNoundle=crown, and the More Games titles per MODE_CHROME). Returns false
+ * for the numeral modes (QuadWord/OctoWord/Six/Seven) so the caller draws the
+ * glyph instead. Paths copied verbatim from lucide-react@0.446 so they match
+ * the on-screen icons exactly.
  */
 function drawSweepBadgeIcon(
   ctx: CanvasRenderingContext2D,
@@ -1506,6 +1507,17 @@ function drawSweepBadgeIcon(
   const strokeCircle = (x: number, y: number, r: number) => {
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+  };
+  // lucide <rect rx> and <polygon> equivalents, for the More Games cases below.
+  const strokeRoundRect = (x: number, y: number, w: number, h: number, r: number) => {
+    drawRoundRect(ctx, x, y, w, h, r);
+    ctx.stroke();
+  };
+  const strokePolygon = (pts: number[][]) => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+    ctx.closePath();
     ctx.stroke();
   };
 
@@ -1552,6 +1564,81 @@ function drawSweepBadgeIcon(
           'M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z',
         );
         strokePath('M5 21h14');
+      });
+      break;
+    // More Games titles (founder, 2026-09-28: the Sweep card drew letters for
+    // them) — the same lucide art MODE_CHROME gives each card, keyed by title.
+    case 'Muddle':   // SCRAMBLE → shuffle
+      lucide(() => {
+        strokePath('M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22');
+        strokePath('m18 2 4 4-4 4');
+        strokePath('M2 6h1.9c1.5 0 2.9.9 3.6 2.2');
+        strokePath('M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8');
+        strokePath('m18 14 4 4-4 4');
+      });
+      break;
+    case 'Hubbub':   // HUB → hexagon
+      lucide(() =>
+        strokePath('M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'),
+      );
+      break;
+    case 'Crosswordocious':   // CROSSWORD → quote
+      lucide(() => {
+        strokePath('M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z');
+        strokePath('M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z');
+      });
+      break;
+    case 'Kindred':   // GROUPS → group
+      lucide(() => {
+        strokePath('M3 7V5c0-1.1.9-2 2-2h2');
+        strokePath('M17 3h2c1.1 0 2 .9 2 2v2');
+        strokePath('M21 17v2c0 1.1-.9 2-2 2h-2');
+        strokePath('M7 21H5c-1.1 0-2-.9-2-2v-2');
+        strokeRoundRect(7, 7, 7, 5, 1);
+        strokeRoundRect(10, 12, 7, 5, 1);
+      });
+      break;
+    case 'Letter Ladder':   // LADDER → the project's LadderIcon (two rails, three rungs)
+      lucide(() => {
+        strokePath('M7 3v18');
+        strokePath('M17 3v18');
+        strokePath('M7 8h10');
+        strokePath('M7 13h10');
+        strokePath('M7 18h10');
+      });
+      break;
+    case 'Codebreaker':   // CRYPTOGRAM → key-round
+      lucide(() => {
+        strokePath('M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z');
+        // lucide fills this dot with currentColor as well as stroking it.
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(16.5, 7.5, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+      break;
+    case 'Spyglass':   // WORDSEARCH → text-search
+      lucide(() => {
+        strokePath('M21 6H3');
+        strokePath('M10 12H3');
+        strokePath('M10 18H3');
+        strokeCircle(17, 15, 3);
+        strokePath('m21 19-1.9-1.9');
+      });
+      break;
+    case 'Sudocious':   // SUDOKU → grid-3x3
+      lucide(() => {
+        strokeRoundRect(3, 3, 18, 18, 2);
+        strokePath('M3 9h18');
+        strokePath('M3 15h18');
+        strokePath('M9 3v18');
+        strokePath('M15 3v18');
+      });
+      break;
+    case 'Starsweep':   // REGIONS → star
+      lucide(() => {
+        strokePolygon([[12, 2], [15.09, 8.26], [22, 9.27], [17, 14.14], [18.18, 21.02], [12, 17.77], [5.82, 21.02], [7, 14.14], [2, 9.27], [8.91, 8.26]]);
       });
       break;
     default:

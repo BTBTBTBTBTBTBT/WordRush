@@ -27,9 +27,10 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
   useEffect(() => { haptic('medium'); playGameOver(); }, []);
   const { definition: singleDef } = useWordDefinition(solution || null);
   const multiDefs = useWordDefinitions(solutions || []);
+  // M:SS past a minute (founder, 2026-09-28: "35m 17s" wrapped inside the stat cell).
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
-    return `${Math.floor(s / 60)}m ${s % 60}s`;
+    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   };
 
   return (
@@ -146,7 +147,7 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
                 )}
                 {timeSeconds != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className={`font-black whitespace-nowrap ${formatTime(timeSeconds).length > 5 ? 'text-lg' : 'text-xl'}`} style={{ color: '#1a1a2e' }}>
                       {formatTime(timeSeconds)}
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Time</div>

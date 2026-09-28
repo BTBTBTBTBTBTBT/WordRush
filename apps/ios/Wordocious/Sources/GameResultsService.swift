@@ -120,8 +120,11 @@ enum GameResultsService {
         _ = await DailyResultsService.record(gameMode: gameMode, completed: completed, guessCount: guessCount, timeSeconds: timeSeconds,
                                              boardsSolved: boardsSolved, totalBoards: totalBoards, hintsUsed: hintsUsed, seed: seed)
         guard let userId = localUserId() else { return }
-        struct Patch: Encodable { let player1_score: Int; let player1_time: Int; let winner_id: String?; let hints_used: Int; let player1_guesses: [String] }
-        let patch = Patch(player1_score: guessCount, player1_time: timeSeconds, winner_id: completed ? userId : nil, hints_used: hintsUsed, player1_guesses: guesses)
+        // player1_time is deliberately NOT rewritten (founder, 2026-09-28): matches.player1_time
+        // feeds Fastest Win / personal bests and stays the time to FIRST reach Hubbub.
+        // daily_results.time_seconds (updated above) is the leaderboard tiebreak at the rank.
+        struct Patch: Encodable { let player1_score: Int; let winner_id: String?; let hints_used: Int; let player1_guesses: [String] }
+        let patch = Patch(player1_score: guessCount, winner_id: completed ? userId : nil, hints_used: hintsUsed, player1_guesses: guesses)
         do {
             try await AuthService.shared.client.from("matches").update(patch)
                 .eq("player1_id", value: userId).eq("game_mode", value: gameMode.rawValue).eq("seed", value: seed)

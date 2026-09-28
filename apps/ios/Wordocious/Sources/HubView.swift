@@ -25,13 +25,20 @@ final class HubVM: ObservableObject {
     @Published var shake = false
     @Published private(set) var finalTimeSeconds: Int?
     @Published var xpResult: GameResultsService.XpResult?
+    /// Active seconds at the last finalize / improve — the time the current rank
+    /// was recorded with. After the win this is what the results, breakdown and
+    /// share show; the header clock keeps counting the hunt (founder, 2026-09-28).
+    @Published private(set) var recordedSeconds = 0
 
     let isDaily: Bool
     let seed: String
 
     private var startMs = Date().timeIntervalSince1970 * 1000
     private var restoredElapsedMs: Double = 0
-    private var guidePauseStart: Double?
+    /// The clock runs only while the board is in front: the guide, the victory
+    /// card and the results view each hold a pause reason (founder, 2026-09-28).
+    private var pauseReasons: Set<String> = []
+    private var pauseStart: Double?
     /// The rank already sent to recordGameResult / improve; -1 = never finalized.
     private var recordedRank = -1
     private(set) var restoredFinished = false
@@ -49,26 +56,51 @@ final class HubVM: ObservableObject {
     }
 
     var isFinished: Bool { state.status != .playing }
-    var elapsed: Int { finalTimeSeconds ?? max(0, Int((Date().timeIntervalSince1970 * 1000 - startMs) / 1000)) }
+    var elapsed: Int {
+        if let f = finalTimeSeconds { return f }
+        let now = pauseStart ?? Date().timeIntervalSince1970 * 1000
+        return max(0, Int((now - startMs) / 1000))
+    }
+    /// Time shown for the result: the recorded time once won, the live clock before.
+    var displaySeconds: Int { state.status == .won && recordedSeconds > 0 ? recordedSeconds : elapsed }
     var dailyNumber: Int { hubDailyNumber(LeaderboardService.todayLocal()) }
     var centre: Character { state.centre }
     var points: Int {
         Int(DailyScoring.breakdown(gameMode: GameMode.hub.rawValue, completed: state.status == .won, guessCount: state.guessCount,
-                                   timeSeconds: elapsed, boardsSolved: state.boardsSolved, totalBoards: HUB_TOTAL_BOARDS, hintsUsed: state.hintsUsed).total)
+                                   timeSeconds: displaySeconds, boardsSolved: state.boardsSolved, totalBoards: HUB_TOTAL_BOARDS, hintsUsed: state.hintsUsed).total)
     }
     var pct: Int { state.max > 0 ? (state.points * 100) / state.max : 0 }
     var pangramsFound: Int { state.found.filter { state.pangrams.contains($0) }.count }
 
-    func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 - restoredElapsedMs }
-    func pauseForGuide() { guard guidePauseStart == nil, !state.ended else { return }; guidePauseStart = Date().timeIntervalSince1970 * 1000 }
-    func resumeFromGuide() { guard let s = guidePauseStart else { return }; startMs += Date().timeIntervalSince1970 * 1000 - s; guidePauseStart = nil }
+    func beginTimer() {
+        let now = Date().timeIntervalSince1970 * 1000
+        startMs = now - restoredElapsedMs
+        if pauseStart != nil { pauseStart = now }   // restored straight into results: nothing counted before the first look
+    }
+    func pauseClock(_ reason: String) {
+        pauseReasons.insert(reason)
+        if pauseStart == nil { pauseStart = Date().timeIntervalSince1970 * 1000 }
+    }
+    func resumeClock(_ reason: String) {
+        pauseReasons.remove(reason)
+        guard pauseReasons.isEmpty, let s = pauseStart else { return }
+        startMs += Date().timeIntervalSince1970 * 1000 - s; pauseStart = nil
+    }
+    func pauseForGuide() { pauseClock("guide") }
+    func resumeFromGuide() { resumeClock("guide") }
+    /// Results in front = clock paused; back to the board = it runs again.
+    func setResults(_ on: Bool) {
+        showResults = on
+        if on { pauseClock("results") } else { resumeClock("results") }
+    }
+    func setOverlay(_ on: Bool) { if on { pauseClock("overlay") } else { resumeClock("overlay") } }
 
     // MARK: - Persistence
-    private struct Snapshot: Codable { let seed: String; let date: String; let state: HubState; let elapsed: Int; let savedAt: Double; let recordedRank: Int }
+    private struct Snapshot: Codable { let seed: String; let date: String; let state: HubState; let elapsed: Int; let savedAt: Double; let recordedRank: Int; let recordedSeconds: Int? }
     private var storageKey: String { isDaily ? "hub-save-daily" : "hub-save-\(seed)" }
     private static let practiceTTLms: Double = 24 * 60 * 60 * 1000
     private func persist() {
-        let snap = Snapshot(seed: seed, date: LeaderboardService.todayLocal(), state: state, elapsed: elapsed, savedAt: Date().timeIntervalSince1970 * 1000, recordedRank: recordedRank)
+        let snap = Snapshot(seed: seed, date: LeaderboardService.todayLocal(), state: state, elapsed: elapsed, savedAt: Date().timeIntervalSince1970 * 1000, recordedRank: recordedRank, recordedSeconds: recordedSeconds)
         if let data = try? JSONEncoder().encode(snap) { UserDefaults.standard.set(data, forKey: storageKey) }
     }
     private func restore() {
@@ -77,8 +109,13 @@ final class HubVM: ObservableObject {
         if stale { UserDefaults.standard.removeObject(forKey: storageKey); return }
         state = snap.state; recordedRank = snap.recordedRank
         restoredElapsedMs = Double(snap.elapsed) * 1000
+        // Older saves carried no recordedSeconds: the saved elapsed is the best stand-in.
+        if recordedRank >= 0 { recordedSeconds = snap.recordedSeconds ?? snap.elapsed }
         if state.status != .playing { restoredFinished = true }
-        if state.ended { finalTimeSeconds = snap.elapsed; showResults = true }
+        if state.ended { finalTimeSeconds = state.status == .won && recordedSeconds > 0 ? recordedSeconds : snap.elapsed; setResults(true) }
+        // A won puzzle that is not finished re-opens on its results, clock paused,
+        // with Keep going to resume the hunt (founder, 2026-09-28).
+        else if state.status == .won { setResults(true) }
     }
 
     // MARK: - Actions
@@ -109,7 +146,13 @@ final class HubVM: ObservableObject {
     }
     func hintStart() { dispatch(.hintStart) }
     func hintReveal() { dispatch(.hintReveal) }
-    func end() { dispatch(.end); finalTimeSeconds = elapsed; showResults = true }
+    /// "I'm done" / Finish after the win, "End puzzle" before it. Freezes the
+    /// clock at the recorded time once won (the hunt after Hubbub is not scored).
+    func end() {
+        dispatch(.end)
+        finalTimeSeconds = state.status == .won && recordedSeconds > 0 ? recordedSeconds : elapsed
+        setResults(true)
+    }
 
     private func rejectCopy(_ r: HubReject) -> String {
         switch r {
@@ -134,6 +177,7 @@ final class HubVM: ObservableObject {
     }
     private func finalise() {
         recordedRank = state.rank
+        recordedSeconds = elapsed
         let won = state.status == .won, secs = elapsed, gc = state.guessCount, used = state.hintsUsed, boards = state.boardsSolved
         let row = hubMatchRow(state), seed = self.seed
         Task {
@@ -148,6 +192,7 @@ final class HubVM: ObservableObject {
     private func improve() {
         guard state.rank > recordedRank else { return }
         recordedRank = state.rank
+        recordedSeconds = elapsed
         guard isDaily else { return }
         let gc = state.guessCount, secs = elapsed, used = state.hintsUsed, boards = state.boardsSolved, row = hubMatchRow(state), seed = self.seed
         Task { await GameResultsService.improve(gameMode: .hub, seed: seed, completed: true, guessCount: gc, timeSeconds: secs, boardsSolved: boards, totalBoards: HUB_TOTAL_BOARDS, hintsUsed: used, guesses: row.guesses) }
@@ -183,10 +228,17 @@ struct HubView: View {
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
-                VictoryOverlay(won: vm.state.status == .won, guesses: vm.state.found.count, maxGuesses: 0, timeSeconds: vm.elapsed,
+                let won = vm.state.status == .won
+                VictoryOverlay(won: won, guesses: vm.state.found.count, maxGuesses: 0, timeSeconds: vm.displaySeconds,
                                boardsSolved: vm.state.boardsSolved, totalBoards: HUB_TOTAL_BOARDS, solution: nil, solutions: [], showDefinition: false,
                                statLabel: "WORDS", points: vm.points,
-                               onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                               onPlayAgain: (!won && onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                               // After Hubbub the player chooses (founder, 2026-09-28): keep hunting
+                               // with the clock running, or finish and see the answers.
+                               actions: won ? [
+                                   VictoryAction(label: "Keep playing", primary: true) { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } },
+                                   VictoryAction(label: "I'm done") { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false }; vm.end() },
+                               ] : [],
                                onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -196,6 +248,7 @@ struct HubView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
+        .onChange(of: showOverlay) { vm.setOverlay($0) }
         .hidesBottomNav()
         .swipeToGoBack { dismiss() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
@@ -232,8 +285,12 @@ struct HubView: View {
                 Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                 if !vm.state.ended {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        HStack(spacing: 2) { Image(systemName: "clock").font(.system(size: 9)); Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))") }
-                            .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        HStack(spacing: 2) {
+                            Image(systemName: "clock").font(.system(size: 9)); Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                            // The clock keeps counting the hunt after Hubbub; say so (founder, 2026-09-28).
+                            if vm.state.status == .won { Text("· playing on").font(Brand.caption(10)) }
+                        }
+                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -374,7 +431,7 @@ struct HubView: View {
                     .padding(.vertical, 2)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if s.status == .won { Button("See results") { vm.showResults = true }.font(Brand.font(12, .bold)).foregroundStyle(hubAccent).underline() }
+                if s.status == .won { Button { vm.end() } label: { Label("Finish", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(hubAccent).buttonStyle(.plain) }
                 else { Button { vm.end() } label: { Label("End puzzle and see answers", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(Theme.textMuted).buttonStyle(.plain) }
             }
             .padding(.bottom, 6)
@@ -383,7 +440,7 @@ struct HubView: View {
     }
 
     private var results: some View {
-        let s = vm.state, won = s.status == .won, secs = vm.elapsed
+        let s = vm.state, won = s.status == .won, secs = vm.displaySeconds
         return ScrollView {
             VStack(spacing: 10) {
                 rankBar
@@ -393,7 +450,7 @@ struct HubView: View {
                 HStack(spacing: 16) {
                     Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
                     Button { share() } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
-                    if !s.ended { Button { vm.showResults = false } label: { Label("Keep going", systemImage: "arrow.uturn.left").font(Brand.font(13, .black)) } }
+                    if !s.ended { Button { vm.setResults(false) } label: { Label("Keep going", systemImage: "arrow.uturn.left").font(Brand.font(13, .black)) } }
                     if let onPlayAgain, !vm.isDaily, isPro { Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }.foregroundStyle(Color(hex: 0xD97706)) }
                 }
                 .foregroundStyle(hubAccent).padding(.top, 2)
@@ -422,7 +479,7 @@ struct HubView: View {
         ShareEvents.log(kind: "image", gameMode: GameMode.hub.rawValue, surface: "post_game")
         ShareService.share(kind: .hub(rankName: s.rankName, pct: vm.pct, wordsFound: s.found.count, wordCount: s.words.count, pangramsFound: vm.pangramsFound, puzzleNumber: vm.isDaily ? vm.dailyNumber : nil),
                            mode: .hub, modeLabel: "HUBBUB", accent: hubAccent, won: s.status == .won,
-                           guesses: s.guessCount, maxGuesses: 10, timeSeconds: vm.elapsed, points: vm.points, puzzleNumber: vm.isDaily ? vm.dailyNumber : nil)
+                           guesses: s.guessCount, maxGuesses: 10, timeSeconds: vm.displaySeconds, points: vm.points, puzzleNumber: vm.isDaily ? vm.dailyNumber : nil)
     }
 }
 
