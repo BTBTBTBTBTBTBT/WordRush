@@ -26,6 +26,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -76,10 +78,17 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   // 2026-09-28; the same contract as iOS/Android). 0 = not recorded yet.
   const [recordedSeconds, setRecordedSeconds] = useState(0);
 
+  // Daily with no local save for today's seed → ask daily_results whether it
+  // was finished on another device before showing a fresh hive (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('HUB', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
+
   const status = state?.status ?? 'playing';
   // The clock runs only while the board itself is in front: not under the
-  // victory/game-over card, not on results, never once the puzzle has ended.
-  const running = !!state && !state.ended && view === 'board' && !showVictory && !showGameOver;
+  // victory/game-over card, not on results, never once the puzzle has ended,
+  // and not while the other-device check holds the board back.
+  const running = !!state && !state.ended && view === 'board' && !showVictory && !showGameOver && !holdPlay;
   const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(running, 0);
 
   const startPractice = useCallback(() => {
@@ -112,6 +121,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       const p = hubPuzzleForDay(BANK, today);
       if (p) { setState(createHubState(p, seed, Date.now())); setOuter(p.letters.slice(1).split('')); }
       resetTimer(0);
+      setNoLocalSave(true);
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -126,9 +136,12 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   useEffect(() => {
     if (!state) return;
+    // Never write the untouched fresh hive while the other-device check is
+    // pending or positive: that save would hide the completed card on reload.
+    if (mode === 'daily' && holdPlay) return;
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds, recordedRankRef.current, recordedSeconds);
     else savePractice(state.seed, state, elapsedSeconds, recordedRankRef.current, recordedSeconds);
-  }, [state, elapsedSeconds, recordedSeconds, mode]);
+  }, [state, elapsedSeconds, recordedSeconds, mode, holdPlay]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -432,7 +445,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   );
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${view === 'results' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className={`h-screen-stable flex flex-col relative ${view === 'results' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Victory card (founder, 2026-09-28): the clock is paused under it; the time is the
           moment of the win. "Keep playing" resumes the hunt, "I'm done" ends the puzzle. */}
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={elapsedSeconds} points={points}
@@ -462,7 +475,13 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         )}
       </div>
 
-      {view === 'board' ? boardView : resultsView}
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28).
+        <CompletedCustomDaily dbKey="HUB" completion={completion} />
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-hive flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : view === 'board' ? boardView : resultsView}
     </div>
   );
 }

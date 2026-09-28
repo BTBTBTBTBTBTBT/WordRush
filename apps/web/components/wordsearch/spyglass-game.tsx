@@ -9,7 +9,7 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, Lightbulb, List, Eye } from 'lucide-react';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount,
-  generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank,
+  reconstructWordsearch, generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank,
 } from '@wordle-duel/core';
 import wordsearchBankJson from '@/data/wordsearch-puzzles.json';
 import { GameHomeButton } from '@/components/game/game-home-button';
@@ -23,8 +23,10 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -62,9 +64,16 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const [message, setMessage] = useState('');
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
+  // Daily with no local save for today's seed → ask daily_results whether it
+  // was finished on another device before showing a fresh grid (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('WORDSEARCH', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
+  // The finished grid rebuilt from the matches row when today's daily was played elsewhere.
+  const [elsewhereState, setElsewhereState] = useState<WordsearchState | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing', 0);
+  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-WORDSEARCH-${Date.now()}`;
@@ -92,6 +101,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
       if (p) setState(createWordsearchState(p, seed, Date.now()));
       resetTimer(0);
       restoredRef.current = false;
+      setNoLocalSave(true);
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -106,9 +116,37 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
   useEffect(() => {
     if (!state) return;
+    // Never write the untouched fresh grid while the other-device check is
+    // pending or positive: that save would hide the completed card on reload.
+    if (mode === 'daily' && holdPlay) return;
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode]);
+  }, [state, elapsedSeconds, mode, holdPlay]);
+
+  // Played elsewhere today: rebuild the finished grid from the matches row
+  // (solutions + event log, mirror of iOS solvedDaily) over the bank puzzle,
+  // so the completed screen shows the day's grid with its found words.
+  useEffect(() => {
+    if (!completion || !profile || mode !== 'daily') return;
+    const today = getTodayLocal();
+    const seed = generateDailySeed(today, 'WORDSEARCH');
+    const p = wordsearchPuzzleForDay(BANK, today);
+    if (!p) return;
+    let cancelled = false;
+    fetchSolvedDailyRow(profile.id, 'WORDSEARCH', seed).then((row) => {
+      if (cancelled) return;
+      const base = createWordsearchState(p, seed, 0);
+      const r = row ? reconstructWordsearch(row.solutions, row.guesses) : null;
+      const listed = new Set(base.words.map((w) => w.w));
+      const found = r ? r.found.filter((w) => listed.has(w)) : (completion.won ? base.words.map((w) => w.w) : []);
+      setElsewhereState({
+        ...base, found, misses: r?.misses ?? 0, hintsUsed: r?.hintsUsed ?? row?.hintsUsed ?? 0,
+        wordsShown: r?.wordsShown ?? false, lateFinds: r?.lateFinds ?? 0,
+        status: completion.won ? 'won' : 'lost', endTime: 0,
+      });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [completion, profile, mode]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -184,13 +222,13 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${WORDSEARCH_ACCENT}66`, color: WORDSEARCH_ACCENT, background: `${WORDSEARCH_ACCENT}0d` };
 
-  const wordList = (
+  const renderWordList = (s: WordsearchState, done: boolean) => (
     <div className="flex flex-wrap justify-center gap-2 px-2" aria-label="Words to find">
-      {state.words.map((p) => {
-        const found = state.found.includes(p.w);
-        const hinted = state.hinted.includes(p.w) && !found;
+      {s.words.map((p) => {
+        const found = s.found.includes(p.w);
+        const hinted = s.hinted.includes(p.w) && !found;
         // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
-        const visible = found || !!state.wordsShown || finished;
+        const visible = found || !!s.wordsShown || done;
         return (
           <span key={p.w} className={`text-sm font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
             style={found
@@ -203,9 +241,10 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
       })}
     </div>
   );
+  const wordList = renderWordList(state, finished);
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.misses} guessLabel="Misses" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.misses} guessLabel="Misses" boardsSolved={state.found.length} totalBoards={state.words.length} timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -229,7 +268,22 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         )}
       </div>
 
-      {!finished ? (
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28): the
+        // day's grid with the found words from the matches row, then the completed card.
+        <CompletedCustomDaily dbKey="WORDSEARCH" completion={completion}
+          boardsSolved={elsewhereState?.found.length} totalBoards={elsewhereState?.words.length} hintsUsed={elsewhereState?.hintsUsed}>
+          {elsewhereState && (
+            <>
+              <SpyglassGrid state={elsewhereState} onSelect={() => {}} disabled revealMissing={!completion.won} />
+              {renderWordList(elsewhereState, true)}
+            </>
+          )}
+        </CompletedCustomDaily>
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-grid flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : !finished ? (
         <>
           {/* Grid, word chips and the two capsules are one centred block (founder, 2026-09-24). */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center gap-3 px-3 pb-3">

@@ -1211,6 +1211,60 @@ export async function fetchTodayDailyCompletions(
   return out;
 }
 
+/** One finished daily as its `matches` row records it (web + native solo plays
+ *  both write this row, keyed by the deterministic daily seed). */
+export interface SolvedDailyRow {
+  guesses: string[];
+  solutions: string[];
+  won: boolean;
+  guessCount: number;
+  timeSeconds: number;
+  hintsUsed: number;
+}
+
+/**
+ * The newest `matches` row this user recorded for a daily seed — the web twin
+ * of iOS MatchStatsService.solvedDaily. A More Games daily finished on the
+ * phone leaves no localStorage save on the web, so the completed screen
+ * rebuilds the board from this row instead (founder, 2026-09-28: today's
+ * Spyglass, finished on the phone, opened as an EMPTY grid on wordocious.com).
+ * Null when no row exists or it has no solutions to rebuild from.
+ */
+export async function fetchSolvedDailyRow(
+  userId: string,
+  gameMode: string,
+  seed: string,
+): Promise<SolvedDailyRow | null> {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_guesses, solutions, winner_id, player1_score, player1_time, hints_used')
+    .eq('player1_id', userId)
+    .eq('game_mode', gameMode)
+    .eq('seed', seed)
+    .order('created_at', { ascending: false })
+    .limit(1) as {
+    data: Array<{
+      player1_guesses: string[] | null;
+      solutions: string[] | null;
+      winner_id: string | null;
+      player1_score: number | null;
+      player1_time: number | null;
+      hints_used: number | null;
+    }> | null;
+  };
+  const row = data?.[0];
+  if (!row || !row.solutions || row.solutions.length === 0) return null;
+  const guesses = row.player1_guesses ?? [];
+  return {
+    guesses,
+    solutions: row.solutions,
+    won: row.winner_id === userId,
+    guessCount: row.player1_score ?? guesses.length,
+    timeSeconds: Math.round(row.player1_time ?? 0),
+    hintsUsed: row.hints_used ?? 0,
+  };
+}
+
 // The current Daily Sweep set, from the catalog (More Games Stage 4): never a literal.
 const SWEEP_MODE_KEYS = new Set<string>(SWEEP_MODES.map((m) => m.dbKey as string));
 const DAILY_SWEEP_XP = 200;

@@ -29,6 +29,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -63,8 +65,14 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
+  // Daily with no local save for today's seed → ask daily_results whether it
+  // was finished on another device before showing a fresh cipher (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('CRYPTOGRAM', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
+
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing', 0);
+  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
 
   /** Reading-order code letters that are not yet resolved (unmapped, or mapped but not locked). */
   const nextOpen = useCallback((s: CryptogramState, after: string | null): string | null => {
@@ -102,6 +110,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       if (p) { const s = createCryptogramState(p, seed, Date.now()); setState(s); setSelected(nextOpen(s, null)); }
       resetTimer(0);
       restoredRef.current = false;
+      setNoLocalSave(true);
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -116,9 +125,12 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
 
   useEffect(() => {
     if (!state) return;
+    // Never write the untouched fresh cipher while the other-device check is
+    // pending or positive: that save would hide the completed card on reload.
+    if (mode === 'daily' && holdPlay) return;
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode]);
+  }, [state, elapsedSeconds, mode, holdPlay]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -263,7 +275,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${CRYPTOGRAM_ACCENT}66`, color: CRYPTOGRAM_ACCENT, background: `${CRYPTOGRAM_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -287,7 +299,13 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         )}
       </div>
 
-      {!finished ? (
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28).
+        <CompletedCustomDaily dbKey="CRYPTOGRAM" completion={completion} />
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-board flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : !finished ? (
         <>
           <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
             {/* The board alone, centred in the band; the cell shrinks (floor 26px) so it never has to scroll. */}

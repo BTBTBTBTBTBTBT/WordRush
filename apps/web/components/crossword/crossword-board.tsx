@@ -13,6 +13,9 @@ interface BoardProps {
   activeCells: number[];
   onSelect: (cell: number) => void;
   finished: boolean;
+  /** Cell side in px when the game fits the grid to its band (founder, 2026-09-28: the board was
+   *  cut off behind the clue bar on a short desktop window); undefined = the 42px cap + width rule. */
+  cell?: number;
 }
 
 /**
@@ -22,14 +25,14 @@ interface BoardProps {
  * the letter (round 7/8). The active entry wears a 10% accent wash and the
  * selected cell an accent cursor border.
  */
-export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, activeCells, onSelect, finished }: BoardProps) {
+export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, activeCells, onSelect, finished, cell }: BoardProps) {
   const numbers = new Map<number, number>();
   for (const e of state.entries) { const start = e.r * state.w + e.c; if (!numbers.has(start)) numbers.set(start, e.n); }
   const active = new Set(activeCells);
   return (
     <div
       className="grid select-none mx-auto"
-      style={{ gridTemplateColumns: `repeat(${state.w}, minmax(0, 1fr))`, gap: 3, width: `min(100%, ${state.w * 42}px)` }}
+      style={{ gridTemplateColumns: `repeat(${state.w}, minmax(0, 1fr))`, gap: 3, width: cell ? `${state.w * cell + (state.w - 1) * 3}px` : `min(100%, ${state.w * 42}px)`, maxWidth: '100%' }}
       role="grid"
       aria-label="Crossword grid"
     >
@@ -57,9 +60,9 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
             role="gridcell"
             aria-label={`${n ? `${n}, ` : ''}${ch || 'empty'}${locked ? ', locked' : ''}`}
             className={`relative rounded-md border-2 font-black flex items-center justify-center leading-none ${wrong ? 'animate-shake' : ''}`}
-            style={{ aspectRatio: '1', background: bg, borderColor: border, color, fontSize: 'clamp(12px, 3.6vw, 18px)', boxShadow: isSel ? `0 0 0 2px var(--color-surface), 0 0 0 4px ${CROSSWORD_ACCENT}` : undefined }}
+            style={{ aspectRatio: '1', background: bg, borderColor: border, color, fontSize: cell ? `${Math.max(11, Math.round(cell * 0.43))}px` : 'clamp(12px, 3.6vw, 18px)', boxShadow: isSel ? `0 0 0 2px var(--color-surface), 0 0 0 4px ${CROSSWORD_ACCENT}` : undefined }}
           >
-            {n !== undefined && <span className="absolute font-black leading-none" style={{ top: 1, left: 2, fontSize: 'clamp(7px, 1.9vw, 9px)', color: revealed ? '#fff' : PURPLE }}>{n}</span>}
+            {n !== undefined && <span className="absolute font-black leading-none" style={{ top: 1, left: 2, fontSize: cell ? `${Math.max(7, Math.round(cell * 0.21))}px` : 'clamp(7px, 1.9vw, 9px)', color: revealed ? '#fff' : PURPLE }}>{n}</span>}
             {ch}
           </button>
         );

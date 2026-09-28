@@ -28,6 +28,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -61,8 +63,14 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
+  // Daily with no local save for today's seed → ask daily_results whether it
+  // was finished on another device before showing a fresh puzzle (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('SCRAMBLE', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
+
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing', 0);
+  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-SCRAMBLE-${Date.now()}`;
@@ -90,6 +98,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       if (p) { const s = createScrambleState(p, seed, Date.now()); setState(s); setRow(0); }
       resetTimer(0);
       restoredRef.current = false;
+      setNoLocalSave(true);
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -104,9 +113,12 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
 
   useEffect(() => {
     if (!state) return;
+    // Never write the untouched fresh puzzle while the other-device check is
+    // pending or positive: that save would hide the completed card on reload.
+    if (mode === 'daily' && holdPlay) return;
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode]);
+  }, [state, elapsedSeconds, mode, holdPlay]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -211,7 +223,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${MUDDLE_ACCENT}66`, color: MUDDLE_ACCENT, background: `${MUDDLE_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -235,6 +247,14 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
         )}
       </div>
 
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28).
+        <CompletedCustomDaily dbKey="SCRAMBLE" completion={completion} />
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-puzzle flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : (
+      <>
       {/* Compact rule (§5, founder 2026-09-23): one flex column — the cartoon
           flexes to the height left over (96px floor, 26vh cap), caption and
           words never shrink, and only this region scrolls on a short screen;
@@ -296,6 +316,8 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
         </div>
       ) : <BottomNav />}
       {finished && void scrambleFinalLetters}
+      </>
+      )}
     </div>
   );
 }

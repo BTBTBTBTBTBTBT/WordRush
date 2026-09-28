@@ -26,6 +26,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -69,8 +71,14 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
+  // Daily with no local save for today's seed → ask daily_results whether it
+  // was finished on another device before showing a fresh board (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('REGIONS', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
+
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing', 0);
+  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
 
   const startPractice = useCallback((n: RegionsSize) => {
     // The trailing size segment is what regionsSizeForSeed() reads back.
@@ -97,6 +105,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
       setState(buildState(seed, regionsSizeForDay(today)));
       resetTimer(0);
       restoredRef.current = false;
+      setNoLocalSave(true);
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -115,9 +124,12 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
 
   useEffect(() => {
     if (!state) return;
+    // Never write the untouched fresh board while the other-device check is
+    // pending or positive: that save would hide the completed card on reload.
+    if (mode === 'daily' && holdPlay) return;
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode]);
+  }, [state, elapsedSeconds, mode, holdPlay]);
 
   const mistakes = state?.mistakes ?? 0;
 
@@ -246,7 +258,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
 
   return (
     <div
-      className={`h-screen-stable flex flex-col relative ${finished ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', true, state.mistakes + 1, elapsedSeconds, 1, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
@@ -271,7 +283,13 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
         )}
       </div>
 
-      {!finished ? (
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28).
+        <CompletedCustomDaily dbKey="REGIONS" completion={completion} />
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-board flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : !finished ? (
         <>
           {mode !== 'daily' && isPro && (
             <div className="shrink-0 flex justify-center gap-2 px-4 pb-2" role="radiogroup" aria-label="Board size">

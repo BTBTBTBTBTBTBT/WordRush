@@ -28,6 +28,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
@@ -53,6 +55,27 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
 
   const [state, setState] = useState<CrosswordState | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  // Fit the grid to the band between the header and the pinned clue bar / keyboard
+  // (founder, 2026-09-28: on a short desktop window the last rows hid behind them).
+  // cell = clamp((bandHeight − padding − gaps) / rows, 26, 42); below the floor the band scrolls.
+  const bandRef = useRef<HTMLDivElement | null>(null);
+  const [boardCell, setBoardCell] = useState<number | undefined>(undefined);
+  const rows = state?.h ?? 0, cols = state?.w ?? 0;
+  useEffect(() => {
+    const el = bandRef.current;
+    if (!el || !rows) return;
+    const measure = () => {
+      const h = el.clientHeight - 16;               // pt-1/pb-1 plus a little air before the clues
+      const w = el.clientWidth - 24;
+      const byH = Math.floor((h - (rows - 1) * 3) / rows);
+      const byW = Math.floor((w - (cols - 1) * 3) / cols);
+      const next = Math.max(26, Math.min(42, byH, byW));
+      setBoardCell((prev) => (prev === next ? prev : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    return () => ro.disconnect();
+  }, [rows, cols]);
   const [dir, setDir] = useState<CrosswordDir>('A');
   const [armReveal, setArmReveal] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
@@ -63,8 +86,14 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
+  // Daily with no local save for today's seed → ask daily_results whether it
+  // was finished on another device before showing a fresh grid (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('CROSSWORD', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
+
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing', 0);
+  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
 
   const firstOpenCell = (s: CrosswordState): number => { const e = s.entries[0]; const cells = crosswordEntryCells(s, e); return cells.find((i) => s.fill[i] === CROSSWORD_EMPTY) ?? cells[0]; };
 
@@ -94,6 +123,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
       if (p) { const s = createCrosswordState(p, seed, Date.now()); setState(s); setSelected(firstOpenCell(s)); setDir(s.entries[0].dir); }
       resetTimer(0);
       restoredRef.current = false;
+      setNoLocalSave(true);
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -108,9 +138,12 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
 
   useEffect(() => {
     if (!state) return;
+    // Never write the untouched fresh grid while the other-device check is
+    // pending or positive: that save would hide the completed card on reload.
+    if (mode === 'daily' && holdPlay) return;
     if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
     else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode]);
+  }, [state, elapsedSeconds, mode, holdPlay]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
 
@@ -271,7 +304,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const capsuleStyle = (dim: boolean, danger = false) => dim ? undefined : danger ? { borderColor: '#dc262666', color: '#dc2626', background: '#dc26260d' } : { borderColor: `${CROSSWORD_ACCENT}66`, color: CROSSWORD_ACCENT, background: `${CROSSWORD_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -296,10 +329,16 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
         )}
       </div>
 
-      {!finished ? (
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28).
+        <CompletedCustomDaily dbKey="CROSSWORD" completion={completion} />
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-board flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : !finished ? (
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-3 px-3 pb-1 pt-1">
-            <CrosswordBoard state={state} selected={selected} activeCells={activeCells} onSelect={selectCell} finished={false} />
+          <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-3 px-3 pb-1 pt-1">
+            <CrosswordBoard state={state} selected={selected} activeCells={activeCells} onSelect={selectCell} finished={false} cell={boardCell} />
             <ClueColumns state={state} activeEntry={activeEntry} onPick={pickEntry} finished={false} />
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">

@@ -30,6 +30,8 @@ import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
+import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -149,10 +151,15 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
+  // Daily with no local save for today's puzzle → ask daily_results whether it
+  // was finished on another device before showing a fresh board (founder, 2026-09-28).
+  const [noLocalSave, setNoLocalSave] = useState(false);
+  const { checking, completion } = useCompletedElsewhere('PROPERNOUNDLE', mode === 'daily' && noLocalSave);
+  const holdPlay = checking || !!completion;
   const {
     elapsedSeconds: elapsedTime,
     reset: resetTimer,
-  } = useActivePlayTimer(gameStatus === 'playing', 0);
+  } = useActivePlayTimer(gameStatus === 'playing' && !holdPlay, 0);
   const [playedIds, setPlayedIds] = useState<string[]>([]);
   const [wikiImageUrl, setWikiImageUrl] = useState<string | null>(null);
   const [wikiImageLoaded, setWikiImageLoaded] = useState(false);
@@ -225,6 +232,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       setMessage('');
       resetTimer(0);
       restoredDailyRef.current = false;
+      setNoLocalSave(true);
     } else {
       // Practice: first check for a saved in-progress or completed practice
       // session so navigating away and back resumes on the same puzzle.
@@ -532,6 +540,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
+      if (holdPlay) return;            // board held back: played elsewhere today, or still checking
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') handleKey('ENTER');
       else if (e.key === 'Backspace') handleKey('BACK');
@@ -539,7 +548,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKey]);
+  }, [handleKey, holdPlay]);
 
   // Map our TileState to Keyboard's LetterState
   const keyboardLetterStates = useMemo(() => {
@@ -693,7 +702,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   return (
     <div
-      className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
@@ -738,7 +747,13 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       {/* During play: hint, board, hint buttons, keyboard are in a fixed flex column.
            After game ends: hint + board + result card flow in a scrollable area so
            nothing gets clipped by the fixed BottomNav on small screens. */}
-      {gameStatus === 'playing' ? (
+      {completion ? (
+        // Today's daily was finished on another device (founder, 2026-09-28).
+        <CompletedCustomDaily dbKey="PROPERNOUNDLE" completion={completion} />
+      ) : checking ? (
+        // Header only while daily_results is read: no fresh-board flash, no clock.
+        <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : gameStatus === 'playing' ? (
         <>
           {/* Hint clue text */}
           {hints.hint && (
