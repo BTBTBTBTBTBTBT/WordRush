@@ -200,6 +200,22 @@ struct KindredView: View {
 
     private var isPro: Bool { AuthService.shared.isProActive }
 
+    // Band estimates for the in-play layout (see body).
+    private static let railHeight: CGFloat = 20        // progress rail row
+    private static let barHeight: CGFloat = 58         // one solved-group bar (label + words)
+    private static let chipRowHeight: CGFloat = 26     // Name-a-category chips row
+    private static let tileMin: CGFloat = 56, tileMax: CGFloat = 92
+
+    /// tile = clamp((band − rail − bars − chips − gaps) / rows, 56, 92); each grid cell carries a
+    /// 3 pt ring margin on every side, hence the −6.
+    private static func tileHeight(band: CGFloat, tiles: Int, bars: Int, chips: Bool) -> CGFloat {
+        let rows = CGFloat(max(1, (tiles + 3) / 4))
+        var reserved = railHeight + CGFloat(bars) * (barHeight + 6) + 8 * 3
+        if chips { reserved += chipRowHeight + 8 }
+        let cell = ((band - reserved) / rows).rounded(.down) - 6
+        return min(tileMax, max(tileMin, cell))
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
@@ -219,26 +235,36 @@ struct KindredView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            if !vm.state.solved.isEmpty {
-                                VStack(spacing: 6) {
-                                    ForEach(vm.state.solved, id: \.tier) { g in KindredGroupBar(group: g) }
+                    // Board layout (founder, 2026-09-28: "the whole bottom half is empty"): the
+                    // grid is the hero and scales to the band between the header and the pinned
+                    // controls; solved groups stack UNDER it (the tiles never move as you solve);
+                    // a progress rail (groups found · mistakes left) sits between them from the
+                    // first second. Heights below are estimates so the tile can be sized before
+                    // the first layout pass — same approach as Hubbub's cluster.
+                    GeometryReader { geo in
+                        let revealed = vm.revealedLabels
+                        let tileH = Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, chips: !revealed.isEmpty)
+                        ScrollView {
+                            VStack(spacing: 8) {
+                                if !revealed.isEmpty {
+                                    WordWrapLayout(spacing: 6, lineSpacing: 6) {
+                                        ForEach(revealed, id: \.tier) { g in KindredCategoryChip(group: g) }
+                                    }
+                                }
+                                KindredTileGrid(vm: vm, tileHeight: tileH)
+                                    .modifier(ShakeEffect(animatableData: vm.shakeCount))
+                                KindredProgressRail(solvedTiers: Set(vm.state.solved.map { $0.tier }), mistakes: vm.state.mistakes)
+                                if !vm.state.solved.isEmpty {
+                                    VStack(spacing: 6) {
+                                        ForEach(vm.state.solved, id: \.tier) { g in KindredGroupBar(group: g) }
+                                    }
                                 }
                             }
-                            let revealed = vm.revealedLabels
-                            if !revealed.isEmpty {
-                                WordWrapLayout(spacing: 6, lineSpacing: 6) {
-                                    ForEach(revealed, id: \.tier) { g in KindredCategoryChip(group: g) }
-                                }
-                            }
-                            KindredTileGrid(vm: vm)
-                                .modifier(ShakeEffect(animatableData: vm.shakeCount))
-                            KindredMistakeDots(mistakes: vm.state.mistakes, max: GROUPS_MAX_MISTAKES)
+                            .frame(maxWidth: 420)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
                         }
-                        .frame(maxWidth: 420)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
+                        .frame(width: geo.size.width, height: geo.size.height)
                     }
                     VStack(spacing: 8) {
                         HStack(spacing: 8) {
@@ -450,10 +476,14 @@ struct KindredCategoryChip: View {
 /// fill with the accent; hinted pairs wear a violet ring; long words shrink.
 struct KindredTileGrid: View {
     @ObservedObject var vm: KindredVM
+    /// Scaled by the board to fill its band (founder, 2026-09-28); 56 was the fixed height before.
+    var tileHeight: CGFloat = 56
 
     var body: some View {
         let s = vm.state
         let ringed = vm.ringed
+        let fontNormal = min(15, max(12, (tileHeight * 0.22).rounded()))
+        let fontLong = min(13, max(10, (tileHeight * 0.18).rounded()))
         // Founder (2026-09-25, on build 191): the pair ring was cut off at the screen edge.
         // A lazy grid clips to its own bounds, and the ring is drawn 3 pt OUTSIDE the tile, so
         // the outer columns lost it. Every cell now carries a 3 pt transparent margin (the grid
@@ -463,11 +493,11 @@ struct KindredTileGrid: View {
                 let sel = s.selected.contains(w)
                 let long = w.count > 8
                 Button { vm.toggle(w) } label: {
-                    Text(w).font(Brand.font(long ? 10 : 12, .black))
+                    Text(w).font(Brand.font(long ? fontLong : fontNormal, .black))
                         .lineLimit(1).minimumScaleFactor(0.55)
                         .foregroundStyle(sel ? Color.white : Theme.textPrimary)
                         .padding(.horizontal, 4)
-                        .frame(maxWidth: .infinity).frame(height: 56)
+                        .frame(maxWidth: .infinity).frame(height: tileHeight)
                         .background(RoundedRectangle(cornerRadius: 8).fill(sel ? kindredAccent : Theme.surface))
                         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(sel ? kindredAccent : Theme.border, lineWidth: 2))
                         .overlay(ringed.contains(w) ? RoundedRectangle(cornerRadius: 11).stroke(kindredPairRing, lineWidth: 2).padding(-3) : nil)
@@ -482,6 +512,33 @@ struct KindredTileGrid: View {
         .padding(.horizontal, -1)
         .animation(Theme.animation(.easeInOut(duration: 0.25)), value: s.tiles)
         .accessibilityLabel("Words")
+    }
+}
+
+/// Groups found · mistakes left, on one row between the grid and the solved bars
+/// (founder, 2026-09-28). The four pips wear the tier ramp: filled once that tier
+/// is solved, a ring until then — so the lower band reads as progress from 0 of 4.
+struct KindredProgressRail: View {
+    let solvedTiers: Set<Int>
+    let mistakes: Int
+    var body: some View {
+        HStack {
+            HStack(spacing: 6) {
+                Text("Groups").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text("\(solvedTiers.count) of \(GROUPS_TOTAL_BOARDS)").font(Brand.font(11, .black)).foregroundStyle(Theme.textPrimary)
+                ForEach(1...4, id: \.self) { tier in
+                    let c = KindredTierStyle.of(tier).bg
+                    Circle().fill(solvedTiers.contains(tier) ? c : Color.clear)
+                        .overlay(Circle().stroke(c, lineWidth: 1.5))
+                        .frame(width: 10, height: 10)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(solvedTiers.count) of \(GROUPS_TOTAL_BOARDS) groups found")
+            Spacer(minLength: 12)
+            KindredMistakeDots(mistakes: mistakes, max: GROUPS_MAX_MISTAKES)
+        }
+        .padding(.horizontal, 4)
     }
 }
 

@@ -476,7 +476,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     accent: '#ca8a04',
     tagline: 'One star in every row, column and color region, none touching — a pure logic puzzle you can finish without a single guess',
     metaDescription:
-      'Wordocious Starsweep guide: the one-star rule, why stars can never touch, how crossing out and Auto-cross work, the exact scoring formula, and the region-counting strategy that solves every board by logic.',
+      'Wordocious Starsweep guide: the one-star rule, why stars can never touch, how a tap places a star (purple when right, red when wrong) and Auto-cross rules out the rest, the exact scoring formula, and the region-counting strategy that solves every board by logic.',
     facts: [
       { label: 'Board', value: '7 × 7 Monday–Wednesday, 8 × 8 Thursday–Sunday' },
       { label: 'Pro Unlimited', value: '7 × 7 · 8 × 8 · 9 × 9' },
@@ -486,7 +486,7 @@ export const MODE_GUIDES: ModeGuide[] = [
     ],
     rules: [
       'The board is split into color regions, one for every row. Place exactly one star in every row, every column and every region. Stars can never touch, not even at a corner, so once a star is down all eight cells around it are out. Every board has exactly one solution and is built on your device from the day\'s seed, so everyone plays the same board.',
-      'Tap an empty cell once to cross it out (a small ×: "no star here"), tap again to place a star, tap a third time to clear it. A star in the right cell stays; a star in a wrong cell turns red and counts as a mistake — you can clear it, but the mistake stands. Three mistakes end the game. Crosses are notes for your own reasoning: they are never judged and never cost anything.',
+      'Tap an empty cell to place a star. A star in the right cell turns purple and stays; a star in a wrong cell turns red and counts as a mistake — tap it again to take it back, but the mistake stands. Tap a star a second time to turn it into a small × ("no star here") and a third time to clear the cell. Three mistakes end the game. Crosses are notes for your own reasoning: they are never judged and never cost anything.',
       'Auto-cross is on by default: when you place a correct star, every cell it rules out — its row, its column, its region and the eight neighbors — is crossed out for you. Switch it off if you prefer to keep your own marks. Undo steps back through stars and crosses alike; it never refunds a mistake or a hint.',
       'The daily is the same for everyone and counts once on the leaderboard. Starsweep lives under More Games, so it never affects your Daily Sweep, Flawless Victory or the sweep celebration — those stay the eight word games.',
     ],
@@ -510,8 +510,8 @@ export const MODE_GUIDES: ModeGuide[] = [
         body: 'If two regions fit entirely inside two rows, those two rows\' stars must be in those regions, so every other cell in those rows is out. The same works for columns. This counting argument breaks open the middle of almost every 8 × 8 board.',
       },
       {
-        heading: 'Cross before you star',
-        body: 'The game is won by elimination, not inspiration. Mark the cells a star cannot go in, and the cell it must go in reveals itself. When a row is down to one uncrossed cell, that is your star — and it costs nothing to have been thorough.',
+        heading: 'Let the stars do the crossing',
+        body: 'The game is won by elimination, not inspiration. Every correct star (purple) rules out its row, its column, its region and the eight cells around it, and Auto-cross marks them for you — so each sure star clears a swath of the board. When a row is down to one open cell, that is your next star. If you want a mark of your own, tap a cell twice: the star becomes a small ×, free and never judged.',
       },
       {
         heading: 'A tall region that spans one column owns it',
@@ -519,7 +519,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Never place a star you cannot prove',
-        body: 'Three mistakes end the game and each one costs 300 points. If two cells both seem possible, keep reasoning — the board is built to be solved by logic alone, so a guess is never required, only ever a shortcut with a price.',
+        body: 'Every tap is judged on the spot: a wrong star turns red and costs one of your three mistakes and 300 points, even after you take it back. If two cells both seem possible, keep reasoning instead of tapping — the board is built to be solved by logic alone, so a guess is never required, only ever a shortcut with a price.',
       },
     ],
     related: ['sudocious', 'classic', 'gauntlet'],

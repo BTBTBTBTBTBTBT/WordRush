@@ -285,10 +285,11 @@ public func regionsReduce(_ s: RegionsState, _ a: RegionsAction, now: Double = 0
     case .tap(let cell):
         guard cell >= 0, cell < total else { return s }
         let cur = charAt(s.board, cell)
+        // Tap = star first, again = ×, again = clear (founder, 2026-09-28); a hint star is locked.
         if cur == "*" && charAt(s.hintMask, cell) == "1" { return s }
-        if cur == "." { var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "x"); return n }
-        if cur == "x" { return placeStar(s, cell, viaHint: false, now) }
-        var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "."); n.wrongMask = setChar(s.wrongMask, cell, "0"); return n
+        if cur == "." { return placeStar(s, cell, viaHint: false, now) }
+        if cur == "*" { var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "x"); n.wrongMask = setChar(s.wrongMask, cell, "0"); return n }
+        var n = s; n.history = pushHistory(s); n.board = setChar(s.board, cell, "."); return n
     case .erase(let cell):
         guard cell >= 0, cell < total, charAt(s.board, cell) != "." else { return s }
         if charAt(s.board, cell) == "*" && charAt(s.hintMask, cell) == "1" { return s }

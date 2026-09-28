@@ -253,10 +253,11 @@ fun regionsReduce(s: RegionsState, a: RegionsAction, now: Long = 0): RegionsStat
             if (a.cell !in 0 until total) return s
             val cur = s.board[a.cell]
             if (cur == '*' && s.hintMask[a.cell] == '1') return s
+            // Tap = star first, again = ×, again = clear (founder, 2026-09-28); a hint star is locked.
             when (cur) {
-                '.' -> s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, 'x'))
-                'x' -> placeStar(s, a.cell, false, now)
-                else -> s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, '.'), wrongMask = setChar(s.wrongMask, a.cell, '0'))
+                '.' -> placeStar(s, a.cell, false, now)
+                '*' -> s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, 'x'), wrongMask = setChar(s.wrongMask, a.cell, '0'))
+                else -> s.copy(history = pushHistory(s), board = setChar(s.board, a.cell, '.'))
             }
         }
         is RegionsAction.Erase -> {

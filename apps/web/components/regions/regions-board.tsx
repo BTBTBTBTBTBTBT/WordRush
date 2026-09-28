@@ -23,7 +23,7 @@ export const REGION_TINTS = [
   '#ecfccb', // lime
   '#e2e8f0', // slate (9 × 9 only)
 ];
-const STAR = 'var(--color-text)';
+const STAR = '#7c3aed'; // correct star = Wordocious purple (founder, 2026-09-28); was the text color
 const WRONG = '#dc2626';
 const HINT = '#8b5cf6';
 const CROSS = '#6b7280';

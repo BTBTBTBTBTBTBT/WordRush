@@ -10,7 +10,7 @@ export const REGIONS_HEADER = 'STARSWEEP';
 export const REGIONS_WIN_TITLE = 'Board cleared';
 export const REGIONS_WIN_SHORT = 'Starsweep solved';
 export const REGIONS_LOSS_TITLE = 'Out of mistakes';
-export const REGIONS_TAP_HINT = 'Tap a cell: × first, then a star';
+export const REGIONS_TAP_HINT = 'Tap a cell to place a star';
 export const REGIONS_SIZE_LABEL: Record<number, string> = { 7: '7 × 7', 8: '8 × 8', 9: '9 × 9' };
 export const REGIONS_ALL_COPY: string[] = [
   REGIONS_TITLE, REGIONS_HEADER, REGIONS_WIN_TITLE, REGIONS_WIN_SHORT, REGIONS_LOSS_TITLE, REGIONS_TAP_HINT,

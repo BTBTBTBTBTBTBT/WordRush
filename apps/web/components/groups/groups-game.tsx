@@ -17,7 +17,7 @@ import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import { GroupBar, TileGrid, MistakeDots, GROUPS_ACCENT, TIER_STYLE } from './groups-board';
+import { GroupBar, TileGrid, ProgressRail, GROUPS_ACCENT, TIER_STYLE } from './groups-board';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -181,6 +181,49 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
+  // Layout rule (founder, 2026-09-28, on the real build): the grid is the hero of the in-play band
+  // instead of sitting content-sized above dead space. Tile height = clamp((band − chips − rail −
+  // solved bars − gaps) / rows, 56, 92) with rows = ceil(tiles / 4), so as bars stack under the
+  // grid the remaining rows shrink to stay balanced with them. The band is the flex-1 column
+  // measured with a ResizeObserver (never window.innerHeight); it keeps overflow-y-auto as the
+  // fallback for very short screens — tiles at the 56 floor plus bars may overflow, the pinned
+  // buttons never do. Until the first measurement the vw clamp stands in.
+  const bandRef = useRef<HTMLDivElement>(null);
+  const [tileFit, setTileFit] = useState<{ h: number; w: number } | null>(null);
+  const playing = !!state && state.status === 'playing';
+  const tileCount = state?.tiles.length ?? 0;
+  const solvedCount = state?.solved.length ?? 0;
+  const revealedCount = state?.revealedTiers.length ?? 0;
+  useEffect(() => {
+    const band = bandRef.current;
+    if (!band || !playing || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const cs = getComputedStyle(band);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const gap = parseFloat(cs.rowGap) || 0;
+      let grid: HTMLElement | null = null;
+      let others = 0;
+      let count = 0;
+      for (const child of Array.from(band.children) as HTMLElement[]) {
+        count++;
+        if (child.dataset.groupsGrid !== undefined) grid = child; else others += child.offsetHeight;
+      }
+      if (!grid || band.clientHeight <= 0) return;
+      const gcs = getComputedStyle(grid);
+      const rowGap = parseFloat(gcs.rowGap) || 0;
+      const colGap = parseFloat(gcs.columnGap) || 0;
+      const rows = Math.max(1, Math.ceil(tileCount / 4));
+      const free = band.clientHeight - padY - others - gap * Math.max(0, count - 1) - rowGap * (rows - 1);
+      const h = Math.round(Math.min(92, Math.max(56, free / rows)));
+      const w = (grid.clientWidth - colGap * 3) / 4;
+      setTileFit((prev) => (prev && prev.h === h && Math.abs(prev.w - w) < 0.5 ? prev : { h, w }));
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(band);
+    measure();
+    return () => ro.disconnect();
+  }, [playing, tileCount, solvedCount, revealedCount]);
+
   if (!state) return null;
 
   const finished = state.status !== 'playing';
@@ -218,12 +261,13 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
 
       {!finished ? (
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-2 px-3 pb-1 pt-1">
-            <div className="w-full max-w-md flex flex-col gap-1.5">
-              {state.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
-            </div>
+          {/* In-play column order (founder, 2026-09-28): category chips → grid (scaled to the band) →
+              progress rail → solved bars (newest at the bottom) → pinned controls. Solved groups stack
+              UNDER the grid so the tiles never get pushed down as you solve; nothing is moved up and
+              no filler is added. Every direct child except the grid is subtracted by the band fit. */}
+          <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-2 px-3 pb-1 pt-1">
             {revealedLabels.length > 0 && (
-              <div className="w-full max-w-md flex flex-wrap justify-center gap-1.5">
+              <div className="w-full max-w-md flex flex-wrap justify-center gap-1.5 shrink-0">
                 {revealedLabels.map((g) => (
                   <span key={g.tier} className="text-[11px] font-black px-2.5 py-1 rounded-full" style={{ background: TIER_STYLE[g.tier].bg, color: TIER_STYLE[g.tier].fg }}>
                     <span className="text-[7px] tracking-[2px] mr-1.5" aria-hidden>{'●'.repeat(g.tier)}</span>{g.label}
@@ -231,8 +275,13 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
                 ))}
               </div>
             )}
-            <TileGrid state={state} onToggle={toggle} shaking={shaking} />
-            <MistakeDots mistakes={state.mistakes} max={GROUPS_MAX_MISTAKES} />
+            <TileGrid state={state} onToggle={toggle} shaking={shaking} fit={tileFit} />
+            <ProgressRail solvedTiers={state.solved.map((g) => g.tier)} total={GROUPS_TOTAL_BOARDS} mistakes={state.mistakes} maxMistakes={GROUPS_MAX_MISTAKES} />
+            {state.solved.length > 0 && (
+              <div className="w-full max-w-md flex flex-col gap-1.5 shrink-0">
+                {state.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
+              </div>
+            )}
           </div>
           <div className="shrink-0 pb-3 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Kindred controls">

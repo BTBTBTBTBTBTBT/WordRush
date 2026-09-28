@@ -230,20 +230,22 @@ export function renderRegionsFixtures() {
   const wrongIn = (r: number) => { for (let c = 0; c < n; c++) { const i = r * n + c; if (i !== star(r)) return i; } return -1; };
   const scripts: Array<{ name: string; actions: RegionsAction[] }> = [
     { name: 'mixed', actions: [
-      { type: 'TAP', cell: star(0) }, { type: 'TAP', cell: star(0) },                 // cross then star (correct, auto-cross)
-      { type: 'TAP', cell: wrongIn(3) }, { type: 'TAP', cell: wrongIn(3) },           // wrong star → mistake
-      { type: 'TAP', cell: wrongIn(3) },                                            // clear it (mistake stands)
+      // Tap = star first, again = ×, again = clear (founder, 2026-09-28).
+      { type: 'TAP', cell: star(0) },                                              // star (correct, auto-cross)
+      { type: 'TAP', cell: wrongIn(3) },                                           // wrong star → mistake
+      { type: 'TAP', cell: wrongIn(3) },                                           // → × (mistake stands)
+      { type: 'TAP', cell: wrongIn(3) },                                           // → clear
       { type: 'HINT', cell: star(5) }, { type: 'UNDO' }, { type: 'HINT' },        // hint row 5, undo, hint first missing row
-      { type: 'TAP', cell: star(0) },                                              // clearing a placed star
-      { type: 'ERASE', cell: 1 }, { type: 'SET_AUTO_CROSS', value: false }, { type: 'TAP', cell: star(7) }, { type: 'TAP', cell: star(7) },
+      { type: 'TAP', cell: star(0) }, { type: 'TAP', cell: star(0) },              // placed star → × → clear
+      { type: 'ERASE', cell: 1 }, { type: 'SET_AUTO_CROSS', value: false }, { type: 'TAP', cell: star(7) },
     ] },
     { name: 'loss', actions: [
-      { type: 'TAP', cell: wrongIn(0) }, { type: 'TAP', cell: wrongIn(0) },
-      { type: 'TAP', cell: wrongIn(2) }, { type: 'TAP', cell: wrongIn(2) },
-      { type: 'TAP', cell: wrongIn(4) }, { type: 'TAP', cell: wrongIn(4) },
+      { type: 'TAP', cell: wrongIn(0) },
+      { type: 'TAP', cell: wrongIn(2) },
+      { type: 'TAP', cell: wrongIn(4) },
       { type: 'TAP', cell: star(6) },
     ] },
-    { name: 'win', actions: Array.from({ length: n }, (_, r): RegionsAction[] => [{ type: 'TAP', cell: star(r) }, { type: 'TAP', cell: star(r) }]).flat() },
+    { name: 'win', actions: Array.from({ length: n }, (_, r): RegionsAction => ({ type: 'TAP', cell: star(r) })) },
     { name: 'noops', actions: [
       { type: 'UNDO' }, { type: 'ERASE', cell: 0 }, { type: 'TAP', cell: 99 }, { type: 'HINT', cell: 0 }, { type: 'TAP', cell: star(0) }, { type: 'ERASE', cell: star(0) },
     ] },

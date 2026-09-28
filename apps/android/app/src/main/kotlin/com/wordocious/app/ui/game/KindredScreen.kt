@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -53,12 +54,15 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AdsManager
@@ -353,20 +357,41 @@ fun KindredScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 KindredHeader(session, tick)
-                Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
+                // The grid is the hero (founder, 2026-09-28, on the real build: a content-sized
+                // 4×4 at the top left the bottom half of the phone empty). The band between the
+                // header and the pinned controls is measured here — never the window — and the
+                // tiles scale to fill it: tile = (band − rail − solved bars − gaps) / rows,
+                // clamped 56–92 dp. Bars are ESTIMATED (≈56 dp + 6 dp each, rail ≈24 dp), like
+                // Muddle's tier estimation, so the remaining rows and their bars stay balanced
+                // without measuring every child. Order: chips → grid → rail → bars; the column
+                // still scrolls as a fallback on very short screens (tiles at the floor may
+                // overflow, the buttons never do).
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                     val s = session.state
-                    if (s.solved.isNotEmpty()) {
-                        Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            s.solved.forEach { g -> GroupBar(g) }
+                    val revealedLabels = s.revealedTiers.mapNotNull { t -> s.groups.firstOrNull { it.tier == t } }.filter { g -> s.solved.none { it.tier == g.tier } }
+                    val rows = ((s.tiles.size + 3) / 4).coerceAtLeast(1)
+                    val gap = 8.dp
+                    val railH = 24.dp
+                    val barsH = (56.dp + 6.dp) * s.solved.size
+                    val chipsH = if (revealedLabels.isNotEmpty()) 26.dp + gap else 0.dp
+                    val gapsH = 8.dp /* column vertical padding */ + gap /* grid→rail */ +
+                        (if (s.solved.isNotEmpty()) gap else 0.dp) /* rail→bars */ + 6.dp * (rows - 1) /* between tile rows */ + chipsH
+                    val tileH = ((maxHeight - railH - barsH - gapsH) / rows).coerceIn(56.dp, 92.dp)
+                    Column(
+                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
+                    ) {
+                        if (revealedLabels.isNotEmpty()) RevealedChips(revealedLabels)
+                        TileGrid(session, tileH)
+                        ProgressRail(s)
+                        // Solved groups stack UNDER the grid in solve order, newest at the bottom,
+                        // so the tiles never get pushed down as you solve (founder, 2026-09-28).
+                        if (s.solved.isNotEmpty()) {
+                            Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                s.solved.forEach { g -> GroupBar(g) }
+                            }
                         }
                     }
-                    val revealedLabels = s.revealedTiers.mapNotNull { t -> s.groups.firstOrNull { it.tier == t } }.filter { g -> s.solved.none { it.tier == g.tier } }
-                    if (revealedLabels.isNotEmpty()) RevealedChips(revealedLabels)
-                    TileGrid(session)
-                    MistakeDots(s.mistakes)
                 }
                 val sel = session.state.selected.size
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -474,9 +499,10 @@ private fun RevealedChips(groups: List<GroupsGroup>) {
 }
 
 /** The unsolved words as a 4-wide grid of Classic-style tiles; selected tiles
- *  fill with the accent; hinted pairs wear a violet ring. Shakes on a miss. */
+ *  fill with the accent; hinted pairs wear a violet ring. Shakes on a miss.
+ *  [tileH] comes from the band measurement in KindredScreen (56–92 dp). */
 @Composable
-private fun TileGrid(session: KindredSession) {
+private fun TileGrid(session: KindredSession, tileH: Dp) {
     val s = session.state
     val ringed = s.pairs.flatten().filter { it in s.tiles }.toSet()
     Column(
@@ -485,7 +511,7 @@ private fun TileGrid(session: KindredSession) {
     ) {
         for (row in s.tiles.chunked(4)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (w in row) Box(Modifier.weight(1f)) { WordTile(w, selected = w in s.selected, ringed = w in ringed) { session.toggle(w) } }
+                for (w in row) Box(Modifier.weight(1f)) { WordTile(w, tileH, selected = w in s.selected, ringed = w in ringed) { session.toggle(w) } }
                 repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
@@ -493,18 +519,21 @@ private fun TileGrid(session: KindredSession) {
 }
 
 @Composable
-private fun WordTile(word: String, selected: Boolean, ringed: Boolean, onTap: () -> Unit) {
+private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean, onTap: () -> Unit) {
     val shape = RoundedCornerShape(10.dp)
+    // The label scales with the tile (founder, 2026-09-28): normal words
+    // clamp(tile × 0.22, 12–15 sp), long words (> 8 chars) clamp(tile × 0.18, 10–13 sp).
+    val base = if (word.length > 8) (tileH.value * 0.18f).coerceIn(10f, 13f).sp else (tileH.value * 0.22f).coerceIn(12f, 15f).sp
     // Shrink-to-fit on ONE line (Doug, Android, 2026-09-26: PRESENCE broke as
     // "PRESENC / E" at his font scale). The old three-step size table could not
-    // know the tile width or the user's font scale; now the text lays out at 12 sp,
-    // and while it overflows the tile it steps down (floor 6.5 sp) before it is
-    // drawn, so no word ever wraps or clips. iOS does the same with minimumScaleFactor.
-    var scale by remember(word) { mutableFloatStateOf(1f) }
-    var fitted by remember(word) { mutableStateOf(false) }
-    val fs = 12.sp * scale
+    // know the tile width or the user's font scale; now the text lays out at the
+    // base size, and while it overflows the tile it steps down (floor 55%) before
+    // it is drawn, so no word ever wraps or clips. iOS does the same with minimumScaleFactor.
+    var scale by remember(word, base) { mutableFloatStateOf(1f) }
+    var fitted by remember(word, base) { mutableStateOf(false) }
+    val fs = base * scale
     Box(
-        Modifier.fillMaxWidth().height(60.dp)
+        Modifier.fillMaxWidth().height(tileH)
             .then(if (ringed) Modifier.border(2.dp, PAIR_RING, RoundedCornerShape(14.dp)).padding(3.dp) else Modifier.padding(3.dp)),
     ) {
         Box(
@@ -521,6 +550,33 @@ private fun WordTile(word: String, selected: Boolean, ringed: Boolean, onTap: ()
                 onTextLayout = { r -> if (r.hasVisualOverflow && scale > 0.55f) scale -= 0.05f else fitted = true },
             )
         }
+    }
+}
+
+/** The rail between the grid and the solved bars (founder, 2026-09-28): left,
+ *  "Groups · N of 4" with four pips in the tier ramp — filled once that tier is
+ *  solved, a ring until then; right, the mistake dots. It is there from the first
+ *  second so the lower band never starts fully empty. Same max width as the grid. */
+@Composable
+private fun ProgressRail(s: GroupsState) {
+    val found = s.solved.size
+    Row(
+        Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            Modifier.clearAndSetSemantics { contentDescription = "$found of $GROUPS_TOTAL_BOARDS groups found" },
+            horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Groups", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text("$found of $GROUPS_TOTAL_BOARDS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            for (tier in 1..GROUPS_TOTAL_BOARDS) {
+                val c = tierStyle(tier).bg
+                val solved = s.solved.any { it.tier == tier }
+                Box(Modifier.size(10.dp).clip(CircleShape).then(if (solved) Modifier.background(c) else Modifier.border(1.5.dp, c, CircleShape)))
+            }
+        }
+        MistakeDots(s.mistakes)
     }
 }
 

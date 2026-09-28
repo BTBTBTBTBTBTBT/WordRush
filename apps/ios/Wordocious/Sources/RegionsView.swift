@@ -4,7 +4,7 @@ import WordociousCore
 // Starsweep (More Games §18b) — the iOS twin of components/regions/*. Place one
 // star in every row, column and color region, no two touching. Daily 7 × 7
 // Monday–Wednesday, 8 × 8 Thursday–Sunday; Pro Unlimited picks 7 / 8 / 9.
-// Tap = cross out, again = star, again = clear. A wrong star is a mistake, the
+// Tap = star, again = cross out, again = clear (founder, 2026-09-28). A wrong star is a mistake, the
 // third loses; a hint places one correct star for a score cost, never a
 // mistake. guess_count = mistakes + 1 (the Sudoku scoring row).
 //
@@ -399,7 +399,7 @@ struct RegionsBoardView: View {
     @ViewBuilder
     private func cellView(_ i: Int, mark: Character, tint: Color, hinted: Bool, isWrong: Bool, missing: Bool, cell: CGFloat, region: Int) -> some View {
         let n = state.n
-        let starColor: Color = isWrong ? wrong : hinted ? hint : Theme.textPrimary
+        let starColor: Color = isWrong ? wrong : hinted ? hint : Color(hex: 0x7C3AED)   // correct = Wordocious purple (founder, 2026-09-28)
         Button { onTap(i) } label: {
             ZStack {
                 Rectangle().fill(tint)

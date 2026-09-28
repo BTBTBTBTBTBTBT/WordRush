@@ -191,10 +191,6 @@
         },
         {
           "type": "TAP",
-          "cell": 1
-        },
-        {
-          "type": "TAP",
           "cell": 24
         },
         {
@@ -220,16 +216,16 @@
           "cell": 1
         },
         {
+          "type": "TAP",
+          "cell": 1
+        },
+        {
           "type": "ERASE",
           "cell": 1
         },
         {
           "type": "SET_AUTO_CROSS",
           "value": false
-        },
-        {
-          "type": "TAP",
-          "cell": 59
         },
         {
           "type": "TAP",
@@ -244,7 +240,7 @@
         "hintsUsed": 2,
         "status": "playing",
         "autoCross": false,
-        "historyLength": 9,
+        "historyLength": 8,
         "endTime": null
       },
       "row": {
@@ -277,19 +273,7 @@
         },
         {
           "type": "TAP",
-          "cell": 0
-        },
-        {
-          "type": "TAP",
           "cell": 17
-        },
-        {
-          "type": "TAP",
-          "cell": 17
-        },
-        {
-          "type": "TAP",
-          "cell": 32
         },
         {
           "type": "TAP",
@@ -341,19 +325,7 @@
         },
         {
           "type": "TAP",
-          "cell": 1
-        },
-        {
-          "type": "TAP",
           "cell": 15
-        },
-        {
-          "type": "TAP",
-          "cell": 15
-        },
-        {
-          "type": "TAP",
-          "cell": 16
         },
         {
           "type": "TAP",
@@ -365,14 +337,6 @@
         },
         {
           "type": "TAP",
-          "cell": 28
-        },
-        {
-          "type": "TAP",
-          "cell": 38
-        },
-        {
-          "type": "TAP",
           "cell": 38
         },
         {
@@ -381,19 +345,7 @@
         },
         {
           "type": "TAP",
-          "cell": 42
-        },
-        {
-          "type": "TAP",
           "cell": 53
-        },
-        {
-          "type": "TAP",
-          "cell": 53
-        },
-        {
-          "type": "TAP",
-          "cell": 59
         },
         {
           "type": "TAP",

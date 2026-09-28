@@ -397,7 +397,7 @@ fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, on
                         val isWrong = state.wrongMask[i] == '1'
                         val hinted = state.hintMask[i] == '1'
                         val missing = revealSolution && mark != '*' && (state.solution[r] - '0') == c
-                        val starColor = when { isWrong -> wrong; hinted -> hint; else -> WTheme.text }
+                        val starColor = when { isWrong -> wrong; hinted -> hint; else -> Color(0xFF7C3AED) } // correct = Wordocious purple (founder, 2026-09-28)
                         Box(
                             Modifier.weight(1f).fillMaxSize().background(REGIONS_TINTS[g % REGIONS_TINTS.size])
                                 .then(if (i == focused) Modifier.padding(1.dp).border(2.dp, REGIONS_ACCENT) else Modifier)

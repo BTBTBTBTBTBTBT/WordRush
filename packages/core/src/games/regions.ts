@@ -302,12 +302,14 @@ export function regionsReduce(s: RegionsState, a: RegionsAction, now = 0): Regio
     case 'TAP': {
       if (a.cell < 0 || a.cell >= total) return s;
       const cur = s.board[a.cell];
-      // A hint star is locked; a correct star toggles off like any other.
+      // Tap = star FIRST (founder, 2026-09-28: hand-placed ×s looked like the auto-crossed
+      // cells and got lost), tap again = × (your own "no star here"), again = clear.
+      // A hint star is locked.
       if (cur === '*' && s.hintMask[a.cell] === '1') return s;
-      if (cur === '.') return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, 'x') };
-      if (cur === 'x') return placeStar(s, a.cell, false, now);
-      // cur === '*' → clear (a wrong star's red goes with it; the mistake stands)
-      return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, '.'), wrongMask: setChar(s.wrongMask, a.cell, '0') };
+      if (cur === '.') return placeStar(s, a.cell, false, now);
+      // cur === '*' → × (a wrong star's red goes with it; the mistake stands)
+      if (cur === '*') return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, 'x'), wrongMask: setChar(s.wrongMask, a.cell, '0') };
+      return { ...s, history: pushHistory(s), board: setChar(s.board, a.cell, '.') };
     }
     case 'ERASE': {
       if (a.cell < 0 || a.cell >= total || s.board[a.cell] === '.') return s;
