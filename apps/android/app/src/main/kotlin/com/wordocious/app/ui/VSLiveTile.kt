@@ -51,9 +51,11 @@ fun VSLiveTile(
 ) {
     // Web useLivePlayerCount: poll {server}/presence every 10s for body.online;
     // null until the first success, keep the last value on errors.
+    val hidden = LocalTabHidden.current
     val count by produceState<Int?>(initialValue = null) {
         kotlinx.coroutines.delay(2_000)
         while (true) {
+            hidden.awaitShown() // paused under a game / another tab (founder, 2026-09-29)
             val online = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
                     val conn = java.net.URL(com.wordocious.app.data.VSConfig.SERVER_URL + "/presence")

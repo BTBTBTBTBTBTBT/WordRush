@@ -5,8 +5,8 @@
 // copied into src/test/resources/fixtures). Word lists live in
 // src/main/resources/data (same files the fixtures were generated from).
 plugins {
-    kotlin("jvm") version "2.0.20"
-    kotlin("plugin.serialization") version "2.0.20"
+    kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 repositories {

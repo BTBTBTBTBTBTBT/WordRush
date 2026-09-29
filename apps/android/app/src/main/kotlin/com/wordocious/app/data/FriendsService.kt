@@ -385,6 +385,8 @@ object FriendsService {
             runCatching {
                 val token = client.auth.currentSessionOrNull()?.accessToken ?: return@withContext null
                 val conn = URL("https://wordocious.com$path").openConnection() as HttpURLConnection
+                // No timeout meant a stalled link hung the Friends tab forever (founder, 2026-09-29).
+                conn.connectTimeout = 10_000; conn.readTimeout = 15_000
                 conn.requestMethod = method
                 conn.setRequestProperty("Authorization", "Bearer $token")
                 if (body != null) {

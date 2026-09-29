@@ -71,4 +71,16 @@ class GamePersistenceTest {
         assertNull(GamePersistence.dailyDateFrom("game-DUEL-unlimited-1752680000"))
         assertNull(GamePersistence.dailyDateFrom("game-DUEL-daily-garbage"))
     }
+
+    @Test
+    fun unlimited_ttl_uses_savedAt_else_startTime() {
+        val day = GamePersistence.PRACTICE_TTL_MS
+        val now = 10 * day
+        assertEquals(true, GamePersistence.isFreshUnlimited(GamePersistence.VersionedSave(1, now - day + 1, state()), now))
+        assertEquals(false, GamePersistence.isFreshUnlimited(GamePersistence.VersionedSave(1, now - day - 1, state()), now))
+        // Legacy save (savedAt 0) falls back to the game's own startTime.
+        val legacy = state().copy(startTime = (now - 1000).toDouble())
+        assertEquals(true, GamePersistence.isFreshUnlimited(GamePersistence.VersionedSave(1, 0L, legacy), now))
+        assertEquals(false, GamePersistence.isFreshUnlimited(GamePersistence.VersionedSave(1, 0L, state()), now))
+    }
 }

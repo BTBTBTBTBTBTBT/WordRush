@@ -19,6 +19,8 @@ object SettingsPref {
     fun get(key: String, default: String): String = prefs.getString(key, default) ?: default
     fun set(key: String, value: String) = prefs.edit().putString(key, value).apply()
 
+    fun remove(key: String) = prefs.edit().remove(key).apply()
+
     fun get(key: String, default: Int): Int = prefs.getInt(key, default)
     fun set(key: String, value: Int) = prefs.edit().putInt(key, value).apply()
 

@@ -186,12 +186,13 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "regions-save-daily" else "regions-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return } // an over Unlimited board has nothing to resume (founder, 2026-09-29)
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
             s.n, s.regions, s.solution, s.board, s.hintMask, s.wrongMask,
             s.mistakes, s.hintsUsed, s.autoCross, s.status.key,
-            s.history.map { SnapDto(it.board, it.hintMask, it.wrongMask, it.autoMask) }, s.startTime, s.endTime, s.autoMaskOrBlank,
+            s.history.takeLast(MAX_SAVED_UNDO).map { SnapDto(it.board, it.hintMask, it.wrongMask, it.autoMask) }, s.startTime, s.endTime, s.autoMaskOrBlank,
         )
         runCatching { SettingsPref.set(storageKey, json.encodeToString(dto)) }
     }
@@ -605,3 +606,6 @@ private fun StatBlock(value: String, label: String) {
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
     }
 }
+
+/** Undo steps kept in a save (the reducer keeps 200 in memory); bounds the prefs write per move. */
+private const val MAX_SAVED_UNDO = 50

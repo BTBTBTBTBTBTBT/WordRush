@@ -92,7 +92,11 @@ fun FriendsPanel(
         val remove = FriendsService.addListener { version = FriendsService.version }
         onDispose { remove() }
     }
-    LaunchedEffect(Unit) { FriendsService.load() }
+    // The tab stays composed under games now: revalidate (30 s SWR inside load) each time it
+    // comes back on screen and when a daily result lands (founder, 2026-09-29).
+    val panelHidden by LocalTabHidden.current
+    val recordedTick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
+    LaunchedEffect(panelHidden, recordedTick) { if (!panelHidden) FriendsService.load() }
 
     // §294: the profile drives the shield-gift menu item (streak_shields) and
     // the notification-prefs bell; collected so a refresh re-renders both.
@@ -274,20 +278,8 @@ fun FriendsPanel(
                 // it closes. Weeks run Mon-Sun, reset Monday 00:00 local.
                 // Live clock (a static "4d" carried no urgency) — ticks every
                 // second like the daily countdown.
-                var raceTick by remember { mutableIntStateOf(0) }
-                LaunchedEffect(Unit) { while (true) { delay(1_000); raceTick++ } }
-                val weekEndsLabel = remember(raceTick) {
-                    val now = java.time.LocalDateTime.now()
-                    val end = now.toLocalDate()
-                        .plusDays((8 - now.dayOfWeek.value).toLong())
-                        .atStartOfDay()
-                    val secs = java.time.Duration.between(now, end).seconds.coerceAtLeast(0)
-                    val d = secs / 86400
-                    val clock = String.format(
-                        "%02d:%02d:%02d", (secs % 86400) / 3600, (secs % 3600) / 60, secs % 60,
-                    )
-                    if (d >= 1) "ends Sunday · ${d}d $clock" else "ends tonight · $clock"
-                }
+                // The tick lives inside WeekEndsCountdown, so only that text recomposes each
+                // second, and it waits while the tab is hidden (founder, 2026-09-29).
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         "THIS WEEK'S RACE", fontSize = 9.sp,
@@ -295,11 +287,7 @@ fun FriendsPanel(
                         letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
                     )
                     Spacer(Modifier.weight(1f))
-                    Text(
-                        weekEndsLabel, fontSize = 10.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = WTheme.textMuted, fontFamily = Nunito,
-                    )
+                    WeekEndsCountdown()
                     // §234: share the race as a card — the panel's own cached
                     // digest is the whole input, so no fetch. Hidden until
                     // anyone scored (a zero-point board brags about nothing).
@@ -1287,4 +1275,23 @@ internal fun FriendAvatar(f: FriendsService.FriendProfile) {
             )
         }
     }
+}
+
+/** "ends Sunday · 2d 04:12:09" — the weekly race's live clock (weeks run Mon-Sun, reset Monday 00:00 local). */
+@Composable
+private fun WeekEndsCountdown() {
+    val hidden = LocalTabHidden.current
+    val label by androidx.compose.runtime.produceState(weekEndsLabel()) {
+        while (true) { delay(1_000); hidden.awaitShown(); value = weekEndsLabel() }
+    }
+    Text(label, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted, fontFamily = Nunito)
+}
+
+private fun weekEndsLabel(): String {
+    val now = java.time.LocalDateTime.now()
+    val end = now.toLocalDate().plusDays((8 - now.dayOfWeek.value).toLong()).atStartOfDay()
+    val secs = java.time.Duration.between(now, end).seconds.coerceAtLeast(0)
+    val d = secs / 86400
+    val clock = String.format("%02d:%02d:%02d", (secs % 86400) / 3600, (secs % 3600) / 60, secs % 60)
+    return if (d >= 1) "ends Sunday · ${d}d $clock" else "ends tonight · $clock"
 }

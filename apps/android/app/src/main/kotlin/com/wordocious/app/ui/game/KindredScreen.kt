@@ -234,6 +234,7 @@ class KindredSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "groups-save-daily" else "groups-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
@@ -358,10 +359,6 @@ fun KindredScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    // One clock for the header.
-    val tick by produceState(0, session.isFinished) {
-        while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
-    }
 
     Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         if (session.isFinished) {
@@ -369,7 +366,7 @@ fun KindredScreen(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                KindredHeader(session, tick)
+                KindredHeader(session)
                 Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     session.state.solved.forEach { g -> GroupBar(g) }
                     groupsUnsolved(session.state).forEach { g -> GroupBar(g, revealed = true) }
@@ -378,7 +375,7 @@ fun KindredScreen(
             }
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                KindredHeader(session, tick)
+                KindredHeader(session)
                 // The grid is the hero (founder, 2026-09-28, on the real build: a content-sized
                 // 4×4 at the top left the bottom half of the phone empty). The band between the
                 // header and the pinned controls is measured here — never the window — and the
@@ -443,7 +440,8 @@ fun KindredScreen(
 }
 
 @Composable
-private fun KindredHeader(session: KindredSession, tick: Int) {
+private fun KindredHeader(session: KindredSession) {
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         Text("KINDRED", fontSize = 24.sp, fontWeight = FontWeight.Black, color = GROUPS_ACCENT, fontFamily = Nunito)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -204,6 +204,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     private val storageKey get() = if (isDaily) "hub-save-daily" else "hub-save-$seed"
 
     private fun persist() {
+        if (!isDaily && state.ended) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(seed, todayLocalDate(), elapsed, System.currentTimeMillis(), recordedRank,
             s.id, s.letters, s.words, s.bonus, s.pangrams, s.max, s.found, s.bonusFound, s.revealed, s.hinted,

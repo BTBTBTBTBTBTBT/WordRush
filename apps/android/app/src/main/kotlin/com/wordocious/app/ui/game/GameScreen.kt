@@ -85,6 +85,13 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
 /** Format elapsed seconds as M:SS for the game header. */
 private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
 
+/** The header clock — the only thing that recomposes on the per-second tick. */
+@Composable
+private fun ClockText(elapsed: kotlinx.coroutines.flow.StateFlow<Int>, size: androidx.compose.ui.unit.TextUnit) {
+    val secs by elapsed.collectAsState()
+    Text(fmtClock(secs), color = WTheme.textMuted, fontSize = size, fontWeight = FontWeight.Bold)
+}
+
 /**
  * Horizontal shake for a rejected guess (spec: ±4px `4*sin(d*π*6)` linear 0.4s).
  * Re-fires whenever [shakeKey] changes. No-op under Reduced Motion.
@@ -345,7 +352,10 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     )
     val state by vm.state.collectAsState()
     val input by vm.currentInput.collectAsState()
-    val elapsed by vm.elapsed.collectAsState()
+    // The clock is NOT collected here (founder, 2026-09-29): reading it in this body
+    // recomposed the whole game screen every second. ClockText subscribes on its own;
+    // effects read vm.elapsed.value when they run; the finished views collect it below
+    // (the ticker has stopped by then).
 
     // Active-play timer screen hooks (iOS GameScreen onAppear/onDisappear
     // parity): the VM is activity-scoped (no NavHost), so backing out to Home
@@ -358,6 +368,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     }
 
     val multiBoard = state.boards.size > 1
+    // ProperNoundle row split ("Taylor Swift") — computed once, not on every keystroke recomposition.
+    val pnWordGroups = remember(vm) { if (mode == GameMode.PROPERNOUNDLE) vm.pnPuzzle?.let { com.wordocious.core.ProperNoundle.wordGroups(it.display) } else null }
     // Sequence standalone OR the Gauntlet "Succession" stage. Read from the VM
     // so this can't drift from the activeBoardIndex it is paired with below —
     // when the two disagreed, every board rendered locked and the stage stalled.
@@ -527,7 +539,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 gameMode = mode,
                 won = rs.won,
                 guessCount = rs.guessCount,
-                timeSeconds = elapsed,
+                timeSeconds = vm.elapsed.value,
                 boardsSolved = rs.boardsSolved,
                 totalBoards = rs.totalBoards,
                 seed = seed,
@@ -584,7 +596,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
                 com.wordocious.app.data.DailyResultsService.recordDailyResult(
                     mode = mode, completed = rs.won, guessCount = rs.guessCount,
-                    elapsedSeconds = elapsed, boardsSolved = rs.boardsSolved,
+                    elapsedSeconds = vm.elapsed.value, boardsSolved = rs.boardsSolved,
                     totalBoards = rs.totalBoards, hintsUsed = vm.hintsUsed, seed = seed,
                     stagesCompleted = rs.stagesCompleted, bestCorrectLetters = rs.bestCorrectLetters,
                 )
@@ -598,6 +610,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     }
 
     if (showVictory) {
+        val elapsed by vm.elapsed.collectAsState()
         // Gauntlet only celebrates a WON run (web parity: a lost run goes
         // straight to the results screen, no overlay).
         if (mode != GameMode.GAUNTLET || state.status == GameStatus.WON) {
@@ -645,6 +658,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 
     // Show the stats / post-game screen
     if (isFinished) {
+        val elapsed by vm.elapsed.collectAsState()
         // ProperNoundle: the revealed (redacted) Clue stays in the finished
         // header on iOS (ProperNoundleView.header shows vm.clue post-game too).
         val pnFinishedClue by vm.clue.collectAsState()
@@ -790,7 +804,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                             tint = Color(0xFF60A5FA), modifier = Modifier.size(statIcon),
                         )
                         Spacer(Modifier.width(3.dp))
-                        Text(fmtClock(elapsed), color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
+                        ClockText(vm.elapsed, statSp)
                     }
                 }
                 // ProperNoundle Clue text (italic, centered) once revealed (spec).
@@ -831,9 +845,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     modifier = Modifier.fillMaxSize(),
                     // ProperNoundle answers can be multi-word ("Taylor Swift") —
                     // iOS NoundleBoard splits the row on those word boundaries.
-                    wordGroups = if (mode == GameMode.PROPERNOUNDLE) {
-                        vm.pnPuzzle?.let { com.wordocious.core.ProperNoundle.wordGroups(it.display) }
-                    } else null,
+                    wordGroups = pnWordGroups,
                 )
             }
         }

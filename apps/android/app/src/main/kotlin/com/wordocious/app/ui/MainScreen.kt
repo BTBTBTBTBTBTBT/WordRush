@@ -46,10 +46,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
+import kotlinx.coroutines.flow.first
 import com.wordocious.app.ui.game.GameScreen
 import com.wordocious.app.ui.theme.WTheme
 
@@ -190,12 +192,24 @@ private fun freshUnlimitedSeed(mode: com.wordocious.core.GameMode): String {
 }
 
 /**
+ * True while a tab is off screen — another tab is selected, or a full-screen layer covers the
+ * tabs. Its pollers and one-second tickers wait on it instead of running (founder, 2026-09-29).
+ */
+val LocalTabHidden = androidx.compose.runtime.staticCompositionLocalOf<androidx.compose.runtime.State<Boolean>> { androidx.compose.runtime.mutableStateOf(false) }
+
+/** Suspends while the tab is hidden; returns at once when it is on screen. */
+suspend fun androidx.compose.runtime.State<Boolean>.awaitShown() {
+    if (value) androidx.compose.runtime.snapshotFlow { value }.first { !it }
+}
+
+/**
  * Hidden-but-alive tab: kept in composition so its state survives a tab switch
  * (iOS `TabView` keeps every tab alive — RootTabView.swift:8-9), but drawn as
  * nothing, laid under the active tab, and blocked from receiving touches.
  */
 private fun Modifier.hiddenTab(): Modifier = this
     .zIndex(0f)
+    .clearAndSetSemantics {} // off screen = out of the accessibility tree too (TalkBack read hidden tabs)
     .drawWithContent { /* inactive tab: composed for state only, never drawn */ }
     .pointerInput(Unit) {
         awaitPointerEventScope {
@@ -213,9 +227,10 @@ fun MainScreen() {
     // non-daily seed); null falls back to today's daily seed.
     var activeSeed by remember { mutableStateOf<String?>(null) }
     // Founder + JP (2026-09-26): the More Games sheet's open state lives HERE, not in
-    // HomeScreen — HomeScreen leaves the composition while a game is up (the early
-    // returns below), so a flag inside it could never survive the round trip. A game
-    // launched from the sheet returns to Home WITH the sheet open on every exit.
+    // HomeScreen — HomeScreen used to leave the composition while a game was up, so a
+    // flag inside it could never survive the round trip (it stays composed since
+    // 2026-09-29, but the flag stays here). A game launched from the sheet returns to
+    // Home WITH the sheet open on every exit.
     var showMoreSheet by remember { mutableStateOf(false) }
     var launchedFromMore by remember { mutableStateOf(false) }
     val exitGame: () -> Unit = {
@@ -344,441 +359,459 @@ fun MainScreen() {
         }
     }
 
-    vsInvite?.let { (inviteMode, code) ->
-        androidx.activity.compose.BackHandler { vsInvite = null }
-        com.wordocious.app.ui.vs.VSGameScreen(
-            mode = inviteMode, isDaily = false, inviteCode = code,
-            onHome = { vsInvite = null },
-            onGoPro = { vsInvite = null; infoRoute = "pro" },
-        )
-        return
-    }
-
-    // VS match (fullscreen, no bottom nav)
-    vsActive?.let { (vsMode, vsDaily) ->
-        androidx.activity.compose.BackHandler { vsActive = null }
-        com.wordocious.app.ui.vs.VSGameScreen(
-            mode = vsMode, isDaily = vsDaily,
-            onHome = { vsActive = null; vsLobby = false },
-            onGoPro = { vsActive = null; infoRoute = "pro" },
-            // Pro "Play Unlimited VS" from the already-played daily screen → lobby.
-            onPlayUnlimited = { vsActive = null; vsLobby = true },
-        )
-        return
-    }
-    if (vsLobby) {
-        androidx.activity.compose.BackHandler { vsLobby = false }
-        com.wordocious.app.ui.vs.VSLobbyScreen(
-            onPlay = { m, daily -> vsActive = m to daily },
-            onEnterInvite = { m, code -> vsLobby = false; vsInvite = m to code },
-            onGoPro = { vsLobby = false; infoRoute = "pro" },
-            onClose = { vsLobby = false },
-        )
-        return
-    }
-
-    // Game screen shown fullscreen (no bottom nav — matches web behavior)
-    val card = activeGame
-    // More Games titles have their own screens (More Games §4): route them
-    // BEFORE the word-engine fallthrough, which would hand a Sudoku card to the
-    // shared GameScreen.
-    if (card?.engineMode?.isCustomEngine == true) {
-        val mode = card.engineMode
-        androidx.activity.compose.BackHandler(onBack = exitGame)
-        when (mode) {
-            com.wordocious.core.GameMode.SUDOKU -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.SudokuScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    // Pro Unlimited: a fresh seed carrying the chosen difficulty.
-                    onPlayAgain = { d -> activeSeed = "unlimited-SUDOKU-${System.currentTimeMillis()}-${d.key}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.REGIONS -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.RegionsScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    // Pro Unlimited: a fresh seed whose trailing segment is the board size (regionsSizeForSeed).
-                    onPlayAgain = { n -> activeSeed = "unlimited-REGIONS-${System.currentTimeMillis()}-$n" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.LADDER -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.LadderScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-LADDER-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.WORDSEARCH -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.SpyglassScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-WORDSEARCH-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.HUB -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.HubScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-HUB-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.CRYPTOGRAM -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.CodebreakerScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-CRYPTOGRAM-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.GROUPS -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.KindredScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-GROUPS-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.CROSSWORD -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.CrosswordScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-CROSSWORD-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            com.wordocious.core.GameMode.SCRAMBLE -> {
-                val isDaily = activeSeed == null
-                val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
-                com.wordocious.app.ui.game.MuddleScreen(
-                    seed = seed, isDaily = isDaily,
-                    onBack = exitGame,
-                    onPlayAgain = { activeSeed = "unlimited-SCRAMBLE-${System.currentTimeMillis()}" },
-                    onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-                    onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
-                    onOpenLeaderboard = { m ->
-                        activeGame = null; activeSeed = null; launchedFromMore = false
-                        publicProfileId = null
-                        LeaderboardDeepLink.pendingMode.value = m.name
-                        selectedTab = 1
-                    },
-                )
-            }
-            else -> {
-                // A catalog record enabled before its screen landed — never a
-                // crash, just a plain note and the way back.
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().appBackground(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    androidx.compose.material3.Text("${card.title} is coming soon", fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                        color = com.wordocious.app.ui.theme.WTheme.textMuted,
-                        modifier = Modifier.clickableNoRipple { activeGame = null; activeSeed = null })
-                }
-            }
+    // Founder, 2026-09-29: the tab Scaffold stays composed UNDER every full-screen layer (VS,
+    // games, info/settings/sign-in) instead of being torn down by early returns, so coming back
+    // from a game keeps each tab's scroll position and fetched rows (it used to refetch it all).
+    // While a layer covers them the tabs draw nothing, take no touches, leave the accessibility
+    // tree, register their BackHandlers on an inert dispatcher (the layer's own back always
+    // wins; they re-register in tree order once uncovered) and pause pollers via LocalTabHidden.
+    val coveredState = remember {
+        androidx.compose.runtime.derivedStateOf {
+            vsInvite != null || vsActive != null || vsLobby || activeGame?.engineMode != null ||
+                infoRoute != null || showSignIn || showSettings
         }
-        return
     }
-    if (card?.engineMode != null) {
-        // Latch the seed for the lifetime of this game: todayLocalSeed()
-        // re-evaluated on every recomposition, so any recomposition after
-        // local midnight (foreground return, profile refresh) minted the NEXT
-        // day's seed and replaced the in-progress board with a fresh puzzle.
-        // activeSeed IS a key: Play Again / "Keep playing: Unlimited" swap in a
-        // fresh unlimited seed for the SAME card, which must re-latch (card
-        // alone left the old seed — and the old VM — in place).
-        val seed = androidx.compose.runtime.remember(card, activeSeed) {
-            activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
+    val covered by coveredState
+    val realBackOwner = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current
+    val inertBackOwner = remember(mainLifecycleOwner) {
+        object : androidx.activity.OnBackPressedDispatcherOwner {
+            override val onBackPressedDispatcher = androidx.activity.OnBackPressedDispatcher()
+            override val lifecycle get() = mainLifecycleOwner.lifecycle
         }
-        androidx.activity.compose.BackHandler(onBack = exitGame)
-        GameScreen(
-            mode = card.engineMode,
-            title = card.title,
-            seed = seed,
-            onBack = exitGame,
-            // Pro Unlimited: "Play Again" mints a fresh non-daily seed for the
-            // same mode (web parity — Play Again on non-daily games).
-            onPlayAgain = { activeSeed = "unlimited-${card.engineMode.name}-${System.nanoTime()}" },
-            // U3: "Next Daily" handoff from the results screen — same route as
-            // the leaderboard Play CTA (swap activeGame; null seed = today's
-            // daily). remember(card) re-mints the seed for the new mode.
-            onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
-            // "Keep playing: Unlimited <Mode>" (Pro) from a daily result — the
-            // SAME mode with a fresh unlimited seed (same launch state the home
-            // grid's Unlimited cards set).
-            onOpenUnlimited = { m ->
-                modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it }
-            },
-            // §214 (Lindsay): "View Leaderboard" from a daily result — close
-            // the game and land on the Leaderboard tab with the mode selected.
-            onOpenLeaderboard = { m ->
-                activeGame = null; activeSeed = null; launchedFromMore = false
-                publicProfileId = null
-                LeaderboardDeepLink.pendingMode.value = m.name
-                selectedTab = 1
-            },
-        )
-        return
     }
+    Box(Modifier.fillMaxSize()) {
+      Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab() else Modifier)) {
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides (if (covered || realBackOwner == null) inertBackOwner else realBackOwner),
+        ) {
+            Scaffold(
+                containerColor = WTheme.bg,
+                bottomBar = {
+                    // §252: the ad banner that used to sit above the nav is gone. Banner
+                    // RPM is pennies and it taxed every screen of a daily-habit game;
+                    // the game-start interstitial carries the free tier instead.
+                    Column(Modifier.fillMaxWidth()) {
+                        // Switching tabs pops the public-profile push, mirroring iOS's
+                        // per-tab path reset (RootTabView.swift:38-47).
+                        BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showRecords = false; selectedTab = it })
+                    }
+                },
+            ) { innerPadding ->
+                androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                    // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield)
+                    AppHeader(
+                        onSettings = { showSettings = true },
+                        onNav = { infoRoute = it },
+                        onSignIn = { showSignIn = true },
+                    )
+                    Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                        // iOS hosts all four tabs in a TabView, "which keeps every tab's
+                        // state alive" (RootTabView.swift:8-9). A `when` disposed the whole
+                        // subtree, so e.g. the leaderboard's mode pick, scroll position and
+                        // fetched rows reset on every tab switch. Compose each tab on first
+                        // visit and keep it alive thereafter, hidden when inactive.
+                        // Plain (non-snapshot) set: adding to it must not itself trigger a
+                        // recomposition — the tab switch already did.
+                        val visitedTabs = remember { mutableSetOf(0) }
+                        visitedTabs.add(selectedTab)
+                        // Insertion-ordered and append-only, so each tab keeps its slot
+                        // (and therefore its state) across recompositions.
+                        visitedTabs.forEach { tab ->
+                            val activeTab = tab == selectedTab
+                            val tabHidden = remember(tab) { androidx.compose.runtime.derivedStateOf { coveredState.value || selectedTab != tab } }
+                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())) {
+                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden) {
+                                when (tab) {
+                                    0 -> HomeScreen(
+                                        onJoinInvite = { m, code -> vsInvite = m to code },
+                                        onSelectMode = { card, unlimited ->
+                                            if (card.id == "vs") {
+                                                // Unlimited VS (Pro): the mode-picker lobby. Daily VS:
+                                                // launch the shared daily Classic match directly (queue
+                                                // or already-played finished screen).
+                                                if (unlimited) vsLobby = true
+                                                else vsActive = com.wordocious.core.GameMode.DUEL to true
+                                            } else {
+                                                launchedFromMore = MORE_CARDS.any { it.id == card.id }
+                                                activeGame = card
+                                                activeSeed = if (unlimited && card.engineMode != null)
+                                                    resolvedUnlimitedSeed(card.engineMode) else null
+                                            }
+                                        },
+                                        showMore = showMoreSheet && selectedTab == 0,
+                                        onShowMoreChange = { showMoreSheet = it },
+                                        onGoPro = { infoRoute = "pro" },
+                                        onVs = { card -> card.engineMode?.let { vsActive = it to false } },
+                                        onNavigate = { infoRoute = it },
+                                    )
+                                    1 -> LeaderboardScreen(
+                                        onOpenProfile = { publicProfileId = it },
+                                        onPlay = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
+                                        // Empty Friends board CTA → the Friends tab (§207 Tier 2).
+                                        onOpenFriends = { selectedTab = 3 },
+                                        // "All-time →" in the header → the global Records screen (D2 step 3).
+                                        onOpenRecords = { showRecords = true },
+                                    )
+                                    2 -> ProfileScreen(
+                                        onGoPro = { infoRoute = "pro" },
+                                        onEditProfile = { infoRoute = "edit" },
+                                        // Today's Dailies badge → open that mode's daily game (completed
+                                        // puzzle if played, fresh if not) — web parity.
+                                        onPlayDaily = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
+                                        // Friends card rows → push the friend's profile in-tab.
+                                        onOpenProfile = { publicProfileId = it },
+                                        // Compact FRIENDS row → the Friends tab (§207 Tier 3).
+                                        onOpenFriends = { selectedTab = 3 },
+                                        // D2 step 3: the Global Records tile on the All-time page → the Hall of Fame.
+                                        onOpenRecords = { showRecords = true },
+                                    )
+                                    3 -> FriendsScreen(
+                                        // Tab root: "Back" returns to Stats until D3 restyles the page.
+                                        onClose = { selectedTab = 2 },
+                                        onOpenProfile = { publicProfileId = it },
+                                        // D3: a Challenge from Today's Race opens the private lobby with its code.
+                                        onJoinInvite = { m, code -> vsInvite = m to code },
+                                    )
+                                }
+                              }
+                            }
+                        }
 
-    // Status-bar inset for the OVERLAY surfaces. These three blocks `return`
-    // before the Scaffold below, and the Scaffold is what supplies the top inset
-    // (no topBar slot -> innerPadding.top == contentWindowInsets.top). The root
-    // Surface in MainActivity supplies navigationBarsPadding ONLY, so under
-    // targetSdk 35's forced edge-to-edge on Android 15+ the Done / Close / Save
-    // controls on Settings, Pro, Edit Profile, Auth and the info screens drew
-    // under the system clock — and the top-right ones were often untappable.
-    // Paywall and profile-commit surfaces, so this was revenue and lost edits.
-    infoRoute?.let { route ->
-      androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
-        androidx.activity.compose.BackHandler { infoRoute = null }
-        when (route) {
-            "help" -> HowToPlayScreen(onDone = { infoRoute = null })
-            "faq" -> HelpScreen(onDone = { infoRoute = null }, initialTab = 2, showTabs = false)
-            "guides" -> GuidesIndexScreen(onDone = { infoRoute = null })
-            "strategy" -> StrategyScreen(onDone = { infoRoute = null })
-            "words" -> WordsScreen(onDone = { infoRoute = null })
-            "pastwords" -> WordsScreen(onDone = { infoRoute = null }, navTitle = "Word of the Day")
-            "pro" -> ProScreen(onDone = { infoRoute = null })
-            "edit" -> EditProfileScreen(onDone = { infoRoute = null })
-            else -> InfoScreen(kind = route, onDone = { infoRoute = null })
-        }
-      }
-        return
-    }
+                        // Records — the GLOBAL Daily / All-Time boards, pushed inside the current
+                        // tab (from the Leaderboard header's "All-time →" or the Stats page's
+                        // Global Records tile). Your own records live on the Stats tab (D2 step 3).
+                        if (showRecords) {
+                            androidx.activity.compose.BackHandler { showRecords = false }
+                            Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
+                                RecordsScreen(
+                                    onOpenProfile = { publicProfileId = it },
+                                    onOpenStats = { showRecords = false; selectedTab = 2 },
+                                )
+                            }
+                        }
 
-    // Settings overlay (opened from the shared header gear, on any tab)
-    // Guest sign-in overlay (header "Sign In"). Presented OVER the tabs and
-    // dismissible, like iOS's AuthView sheet — guest state is untouched, so
-    // backing out returns you to the exact tab you were on. On success the
-    // auth state flow flips and the root gate re-composes on its own.
-    if (showSignIn) {
-        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
-            AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false })
-        }
-        return
-    }
+                        // Public profile is a PUSH INSIDE the tab, not a new root: iOS
+                        // renders it in the tab's NavigationStack without .hidesBottomNav
+                        // (ProfileTab.swift:1005-1015), so header + nav + ad banner stay.
+                        publicProfileId?.let { pid ->
+                            androidx.activity.compose.BackHandler { publicProfileId = null }
+                            Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
+                                PublicProfileScreen(
+                                    userId = pid,
+                                    onClose = { publicProfileId = null },
+                                    // Profile-to-profile hop (nemesis row / podium rows):
+                                    // same push-inside-the-tab pattern, new target id.
+                                    onOpenProfile = { publicProfileId = it },
+                                )
+                            }
+                        }
 
-    if (showSettings) {
-        androidx.activity.compose.BackHandler { showSettings = false }
-        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
-            SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
-        }
-        return
-    }
-
-    Scaffold(
-        containerColor = WTheme.bg,
-        bottomBar = {
-            // §252: the ad banner that used to sit above the nav is gone. Banner
-            // RPM is pennies and it taxed every screen of a daily-habit game;
-            // the game-start interstitial carries the free tier instead.
-            Column(Modifier.fillMaxWidth()) {
-                // Switching tabs pops the public-profile push, mirroring iOS's
-                // per-tab path reset (RootTabView.swift:38-47).
-                BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showRecords = false; selectedTab = it })
-            }
-        },
-    ) { innerPadding ->
-        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield)
-            AppHeader(
-                onSettings = { showSettings = true },
-                onNav = { infoRoute = it },
-                onSignIn = { showSignIn = true },
-            )
-            Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-                // iOS hosts all four tabs in a TabView, "which keeps every tab's
-                // state alive" (RootTabView.swift:8-9). A `when` disposed the whole
-                // subtree, so e.g. the leaderboard's mode pick, scroll position and
-                // fetched rows reset on every tab switch. Compose each tab on first
-                // visit and keep it alive thereafter, hidden when inactive.
-                // Plain (non-snapshot) set: adding to it must not itself trigger a
-                // recomposition — the tab switch already did.
-                val visitedTabs = remember { mutableSetOf(0) }
-                visitedTabs.add(selectedTab)
-                // Insertion-ordered and append-only, so each tab keeps its slot
-                // (and therefore its state) across recompositions.
-                visitedTabs.forEach { tab ->
-                    val activeTab = tab == selectedTab
-                    Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())) {
-                        when (tab) {
-                            0 -> HomeScreen(
-                                onJoinInvite = { m, code -> vsInvite = m to code },
-                                onSelectMode = { card, unlimited ->
-                                    if (card.id == "vs") {
-                                        // Unlimited VS (Pro): the mode-picker lobby. Daily VS:
-                                        // launch the shared daily Classic match directly (queue
-                                        // or already-played finished screen).
-                                        if (unlimited) vsLobby = true
-                                        else vsActive = com.wordocious.core.GameMode.DUEL to true
-                                    } else {
-                                        launchedFromMore = MORE_CARDS.any { it.id == card.id }
-                                        activeGame = card
-                                        activeSeed = if (unlimited && card.engineMode != null)
-                                            resolvedUnlimitedSeed(card.engineMode) else null
-                                    }
+                        if (showShieldModal && !covered) {
+                            val p = profile
+                            StreakShieldModal(
+                                streak = p?.dailyLoginStreak ?: 0,
+                                shields = p?.streakShields ?: 0,
+                                onUseShield = {
+                                    p?.id?.let { com.wordocious.app.data.ShieldService.useShield(it) }
+                                    com.wordocious.app.data.AuthService.refreshProfile()
+                                    // Modal shows its "Streak saved!" beat, then calls onClose itself.
                                 },
-                                showMore = showMoreSheet && selectedTab == 0,
-                                onShowMoreChange = { showMoreSheet = it },
-                                onGoPro = { infoRoute = "pro" },
-                                onVs = { card -> card.engineMode?.let { vsActive = it to false } },
-                                onNavigate = { infoRoute = it },
-                            )
-                            1 -> LeaderboardScreen(
-                                onOpenProfile = { publicProfileId = it },
-                                onPlay = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
-                                // Empty Friends board CTA → the Friends tab (§207 Tier 2).
-                                onOpenFriends = { selectedTab = 3 },
-                                // "All-time →" in the header → the global Records screen (D2 step 3).
-                                onOpenRecords = { showRecords = true },
-                            )
-                            2 -> ProfileScreen(
-                                onGoPro = { infoRoute = "pro" },
-                                onEditProfile = { infoRoute = "edit" },
-                                // Today's Dailies badge → open that mode's daily game (completed
-                                // puzzle if played, fresh if not) — web parity.
-                                onPlayDaily = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
-                                // Friends card rows → push the friend's profile in-tab.
-                                onOpenProfile = { publicProfileId = it },
-                                // Compact FRIENDS row → the Friends tab (§207 Tier 3).
-                                onOpenFriends = { selectedTab = 3 },
-                                // D2 step 3: the Global Records tile on the All-time page → the Hall of Fame.
-                                onOpenRecords = { showRecords = true },
-                            )
-                            3 -> FriendsScreen(
-                                // Tab root: "Back" returns to Stats until D3 restyles the page.
-                                onClose = { selectedTab = 2 },
-                                onOpenProfile = { publicProfileId = it },
-                                // D3: a Challenge from Today's Race opens the private lobby with its code.
-                                onJoinInvite = { m, code -> vsInvite = m to code },
+                                onDecline = {
+                                    p?.id?.let { com.wordocious.app.data.ShieldService.declineStreak(it) }
+                                    com.wordocious.app.data.AuthService.refreshProfile()
+                                    showShieldModal = false
+                                },
+                                onClose = { showShieldModal = false },
                             )
                         }
                     }
                 }
-
-                // Records — the GLOBAL Daily / All-Time boards, pushed inside the current
-                // tab (from the Leaderboard header's "All-time →" or the Stats page's
-                // Global Records tile). Your own records live on the Stats tab (D2 step 3).
-                if (showRecords) {
-                    androidx.activity.compose.BackHandler { showRecords = false }
-                    Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
-                        RecordsScreen(
-                            onOpenProfile = { publicProfileId = it },
-                            onOpenStats = { showRecords = false; selectedTab = 2 },
-                        )
-                    }
-                }
-
-                // Public profile is a PUSH INSIDE the tab, not a new root: iOS
-                // renders it in the tab's NavigationStack without .hidesBottomNav
-                // (ProfileTab.swift:1005-1015), so header + nav + ad banner stay.
-                publicProfileId?.let { pid ->
-                    androidx.activity.compose.BackHandler { publicProfileId = null }
-                    Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
-                        PublicProfileScreen(
-                            userId = pid,
-                            onClose = { publicProfileId = null },
-                            // Profile-to-profile hop (nemesis row / podium rows):
-                            // same push-inside-the-tab pattern, new target id.
-                            onOpenProfile = { publicProfileId = it },
-                        )
-                    }
-                }
-
-                if (showShieldModal) {
-                    val p = profile
-                    StreakShieldModal(
-                        streak = p?.dailyLoginStreak ?: 0,
-                        shields = p?.streakShields ?: 0,
-                        onUseShield = {
-                            p?.id?.let { com.wordocious.app.data.ShieldService.useShield(it) }
-                            com.wordocious.app.data.AuthService.refreshProfile()
-                            // Modal shows its "Streak saved!" beat, then calls onClose itself.
-                        },
-                        onDecline = {
-                            p?.id?.let { com.wordocious.app.data.ShieldService.declineStreak(it) }
-                            com.wordocious.app.data.AuthService.refreshProfile()
-                            showShieldModal = false
-                        },
-                        onClose = { showShieldModal = false },
-                    )
-                }
             }
         }
+      }
+
+      if (covered) Box(Modifier.fillMaxSize().zIndex(3f)) {
+        val card = activeGame
+        val invite = vsInvite
+        val active = vsActive
+        val route = infoRoute
+        if (invite != null) {
+            val (inviteMode, code) = invite
+            androidx.activity.compose.BackHandler { vsInvite = null }
+            com.wordocious.app.ui.vs.VSGameScreen(
+                mode = inviteMode, isDaily = false, inviteCode = code,
+                onHome = { vsInvite = null },
+                onGoPro = { vsInvite = null; infoRoute = "pro" },
+            )
+        } else if (active != null) {
+            // VS match (fullscreen, no bottom nav)
+            val (vsMode, vsDaily) = active
+            androidx.activity.compose.BackHandler { vsActive = null }
+            com.wordocious.app.ui.vs.VSGameScreen(
+                mode = vsMode, isDaily = vsDaily,
+                onHome = { vsActive = null; vsLobby = false },
+                onGoPro = { vsActive = null; infoRoute = "pro" },
+                // Pro "Play Unlimited VS" from the already-played daily screen → lobby.
+                onPlayUnlimited = { vsActive = null; vsLobby = true },
+            )
+        } else if (vsLobby) {
+            androidx.activity.compose.BackHandler { vsLobby = false }
+            com.wordocious.app.ui.vs.VSLobbyScreen(
+                onPlay = { m, daily -> vsActive = m to daily },
+                onEnterInvite = { m, code -> vsLobby = false; vsInvite = m to code },
+                onGoPro = { vsLobby = false; infoRoute = "pro" },
+                onClose = { vsLobby = false },
+            )
+        } else if (card?.engineMode?.isCustomEngine == true) {
+            // Game screen shown fullscreen (no bottom nav — matches web behavior)
+            // More Games titles have their own screens (More Games §4): route them
+            // BEFORE the word-engine fallthrough, which would hand a Sudoku card to the
+            // shared GameScreen.
+            val mode = card.engineMode
+            androidx.activity.compose.BackHandler(onBack = exitGame)
+            when (mode) {
+                com.wordocious.core.GameMode.SUDOKU -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.SudokuScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        // Pro Unlimited: a fresh seed carrying the chosen difficulty.
+                        onPlayAgain = { d -> activeSeed = "unlimited-SUDOKU-${System.currentTimeMillis()}-${d.key}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.REGIONS -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.RegionsScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        // Pro Unlimited: a fresh seed whose trailing segment is the board size (regionsSizeForSeed).
+                        onPlayAgain = { n -> activeSeed = "unlimited-REGIONS-${System.currentTimeMillis()}-$n" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.LADDER -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.LadderScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-LADDER-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.WORDSEARCH -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.SpyglassScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-WORDSEARCH-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.HUB -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.HubScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-HUB-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.CRYPTOGRAM -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.CodebreakerScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-CRYPTOGRAM-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.GROUPS -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.KindredScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-GROUPS-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.CROSSWORD -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.CrosswordScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-CROSSWORD-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                com.wordocious.core.GameMode.SCRAMBLE -> {
+                    val isDaily = activeSeed == null
+                    val seed = androidx.compose.runtime.remember(card, activeSeed) { activeSeed ?: com.wordocious.app.todayLocalSeed(mode.name) }
+                    com.wordocious.app.ui.game.MuddleScreen(
+                        seed = seed, isDaily = isDaily,
+                        onBack = exitGame,
+                        onPlayAgain = { activeSeed = "unlimited-SCRAMBLE-${System.currentTimeMillis()}" },
+                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
+                        onOpenLeaderboard = { m ->
+                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            publicProfileId = null
+                            LeaderboardDeepLink.pendingMode.value = m.name
+                            selectedTab = 1
+                        },
+                    )
+                }
+                else -> {
+                    // A catalog record enabled before its screen landed — never a
+                    // crash, just a plain note and the way back.
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().appBackground(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        androidx.compose.material3.Text("${card.title} is coming soon", fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                            color = com.wordocious.app.ui.theme.WTheme.textMuted,
+                            modifier = Modifier.clickableNoRipple { activeGame = null; activeSeed = null })
+                    }
+                }
+            }
+        } else if (card?.engineMode != null) {
+            // Latch the seed for the lifetime of this game: todayLocalSeed()
+            // re-evaluated on every recomposition, so any recomposition after
+            // local midnight (foreground return, profile refresh) minted the NEXT
+            // day's seed and replaced the in-progress board with a fresh puzzle.
+            // activeSeed IS a key: Play Again / "Keep playing: Unlimited" swap in a
+            // fresh unlimited seed for the SAME card, which must re-latch (card
+            // alone left the old seed — and the old VM — in place).
+            val seed = androidx.compose.runtime.remember(card, activeSeed) {
+                activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
+            }
+            androidx.activity.compose.BackHandler(onBack = exitGame)
+            GameScreen(
+                mode = card.engineMode,
+                title = card.title,
+                seed = seed,
+                onBack = exitGame,
+                // Pro Unlimited: "Play Again" mints a fresh non-daily seed for the
+                // same mode (web parity — Play Again on non-daily games).
+                onPlayAgain = { activeSeed = "unlimited-${card.engineMode.name}-${System.nanoTime()}" },
+                // U3: "Next Daily" handoff from the results screen — same route as
+                // the leaderboard Play CTA (swap activeGame; null seed = today's
+                // daily). remember(card) re-mints the seed for the new mode.
+                onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                // "Keep playing: Unlimited <Mode>" (Pro) from a daily result — the
+                // SAME mode with a fresh unlimited seed (same launch state the home
+                // grid's Unlimited cards set).
+                onOpenUnlimited = { m ->
+                    modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it }
+                },
+                // §214 (Lindsay): "View Leaderboard" from a daily result — close
+                // the game and land on the Leaderboard tab with the mode selected.
+                onOpenLeaderboard = { m ->
+                    activeGame = null; activeSeed = null; launchedFromMore = false
+                    publicProfileId = null
+                    LeaderboardDeepLink.pendingMode.value = m.name
+                    selectedTab = 1
+                },
+            )
+        } else if (route != null) {
+        // Status-bar inset for the OVERLAY surfaces. These three layers sit OVER
+        // the Scaffold, not inside it, and the Scaffold is what supplies the top inset
+        // (no topBar slot -> innerPadding.top == contentWindowInsets.top). The root
+        // Surface in MainActivity supplies navigationBarsPadding ONLY, so under
+        // targetSdk 35's forced edge-to-edge on Android 15+ the Done / Close / Save
+        // controls on Settings, Pro, Edit Profile, Auth and the info screens drew
+        // under the system clock — and the top-right ones were often untappable.
+        // Paywall and profile-commit surfaces, so this was revenue and lost edits.
+          androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            androidx.activity.compose.BackHandler { infoRoute = null }
+            when (route) {
+                "help" -> HowToPlayScreen(onDone = { infoRoute = null })
+                "faq" -> HelpScreen(onDone = { infoRoute = null }, initialTab = 2, showTabs = false)
+                "guides" -> GuidesIndexScreen(onDone = { infoRoute = null })
+                "strategy" -> StrategyScreen(onDone = { infoRoute = null })
+                "words" -> WordsScreen(onDone = { infoRoute = null })
+                "pastwords" -> WordsScreen(onDone = { infoRoute = null }, navTitle = "Word of the Day")
+                "pro" -> ProScreen(onDone = { infoRoute = null })
+                "edit" -> EditProfileScreen(onDone = { infoRoute = null })
+                else -> InfoScreen(kind = route, onDone = { infoRoute = null })
+            }
+          }
+        } else if (showSignIn) {
+        // Settings overlay (opened from the shared header gear, on any tab)
+        // Guest sign-in overlay (header "Sign In"). Presented OVER the tabs and
+        // dismissible, like iOS's AuthView sheet — guest state is untouched, so
+        // backing out returns you to the exact tab you were on. On success the
+        // auth state flow flips and the root gate re-composes on its own.
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false })
+            }
+        } else if (showSettings) {
+            androidx.activity.compose.BackHandler { showSettings = false }
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
+            }
+        }
+      }
     }
 }

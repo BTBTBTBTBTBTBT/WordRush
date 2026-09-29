@@ -170,6 +170,7 @@ class LadderSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "ladder-save-daily" else "ladder-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),

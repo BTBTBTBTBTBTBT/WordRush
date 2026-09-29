@@ -203,8 +203,11 @@ fun HomeScreen(
     var moreCeleb by remember {
         mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
     }
-    androidx.compose.runtime.LaunchedEffect(completions, sweepCeleb) {
-        if (sweepCeleb != null) return@LaunchedEffect
+    // Celebrations wait until Home is on screen: Home stays composed under a game now, and
+    // the jingle + rating ask must not fire over the game's own results (founder, 2026-09-29).
+    val homeHidden by LocalTabHidden.current
+    androidx.compose.runtime.LaunchedEffect(completions, sweepCeleb, homeHidden) {
+        if (sweepCeleb != null || homeHidden) return@LaunchedEffect
         val tier = moreSweepTier(completions, MORE_CARDS) ?: return@LaunchedEffect
         val day = com.wordocious.app.todayLocalDate()
         val token = "$day:${if (tier == MoreSweepTier.FLAWLESS) "flawless" else "sweep"}"
@@ -213,7 +216,8 @@ fun HomeScreen(
         com.wordocious.app.data.SettingsPref.set("more-sweep-celebrated-day", token)
         moreCeleb = completions
     }
-    androidx.compose.runtime.LaunchedEffect(completions) {
+    androidx.compose.runtime.LaunchedEffect(completions, homeHidden) {
+        if (homeHidden) return@LaunchedEffect
         if (com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
         val totals = com.wordocious.app.data.DailyCompletionsService.totals(completions)
         // Hard guard (iOS parity): a "sweep" with zero recorded wins is by
@@ -410,6 +414,9 @@ fun HomeScreen(
         run {
             val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
             val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+            // Opening the sheet warms every bank off-main (idempotent) so the tapped game's
+            // session finds its puzzles decoded (Prewarm).
+            androidx.compose.runtime.LaunchedEffect(showMore) { if (showMore) com.wordocious.app.data.Prewarm.banks() }
             MoreGamesMorphPanel(visible = showMore, origin = moreBandBounds, onRequestClose = { onShowMoreChange(false) }) {
                 MoreGamesSheetContent(
                     modifier = Modifier.fillMaxSize(),
@@ -692,13 +699,22 @@ private data class WordOfTheDay(
  */
 private val WOTD_BLOCKED = setOf("HYMEN", "OVARY", "PUBIC", "GROIN", "BOSOM", "FECES", "FECAL", "URINE", "VOMIT", "ENEMA", "BOWEL", "MUCUS", "OPIUM", "BOOZE", "LEPER", "TUMOR", "ULCER", "BLOOD")
 
+private fun WordsService.Entry.toWotd() = WordOfTheDay(
+    word,
+    if (definition.isNotEmpty()) com.wordocious.app.data.DefinitionService.WordDefinition(phonetic, partOfSpeech, definition) else null,
+)
+
 @Composable
 private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
-    val wotd by produceState<WordOfTheDay?>(initialValue = null) {
-        DictionaryLoader.ensureLoaded()
-        // Pool for THIS displayed local date — pre-cutover dates keep the legacy
-        // word (matches the archive), curated after.
-        val localDay = com.wordocious.app.todayLocalDate()
+    // Nothing here may block the UI thread (founder, 2026-09-29): the card used to call
+    // DictionaryLoader.ensureLoaded() on main during cold start. It now paints from the
+    // last-persisted /api/words copy first (memory, then disk decoded off-main), and the
+    // dictionary loads on Dispatchers.Default only for the offline fallback walk.
+    val localDay = remember { com.wordocious.app.todayLocalDate() }
+    val wotd by produceState(initialValue = WordsService.cachedInMemory()?.firstOrNull { it.date == localDay }?.toWotd()) {
+        if (value == null) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            WordsService.cached()?.firstOrNull { it.date == localDay }
+        }?.let { value = it.toWotd() }
         // SERVER FIRST (iOS/web parity): /api/words is rendered by the same
         // module as the Past Words archive, so taking today's entry from it
         // makes the card and the archive agree by construction. The local walk
@@ -706,15 +722,15 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
         // checks use a different dictionary than the server's committed
         // dataset, which made the two surfaces feature different words.
         runCatching { WordsService.words().firstOrNull { it.date == localDay } }.getOrNull()?.let { e ->
-            value = WordOfTheDay(
-                e.word,
-                if (e.definition.isNotEmpty())
-                    com.wordocious.app.data.DefinitionService.WordDefinition(e.phonetic, e.partOfSpeech, e.definition)
-                else null,
-            )
+            value = e.toWotd()
             return@produceState
         }
-        val sols = GameDictionary.solutionPool(localDay)
+        if (value != null) return@produceState // offline: keep the cached server word
+        // Pool for THIS displayed local date — pre-cutover dates keep the legacy
+        // word (matches the archive), curated after.
+        val sols = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            DictionaryLoader.ensureLoaded(); GameDictionary.solutionPool(localDay)
+        }
         if (sols.isEmpty()) return@produceState
         // Day index of the LOCAL calendar date (not currentTimeMillis/86400000,
         // which rolls at UTC midnight — 7 PM Central — and flipped the card to
@@ -883,11 +899,13 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
 private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
     // Web useLivePlayerCount: poll {server}/presence every 10s for body.online;
     // null until the first success, keep last value on errors.
+    val hidden = LocalTabHidden.current
     val count by androidx.compose.runtime.produceState<Int?>(initialValue = null) {
         // Defer the FIRST request ~2s so it doesn't compete with the home
         // screen's initial loads; 10s cadence after as before.
         kotlinx.coroutines.delay(2_000)
         while (true) {
+            hidden.awaitShown() // no polling under a game or another tab (founder, 2026-09-29)
             val online = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
                     val conn = java.net.URL(com.wordocious.app.data.VSConfig.SERVER_URL + "/presence")
@@ -975,11 +993,15 @@ private fun FooterLinks(onNavigate: (String) -> Unit = {}) {
 }
 
 @Composable
-private fun rememberMidnightCountdown() = produceState(initialValue = secondsUntilLocalMidnight()) {
+private fun rememberMidnightCountdown(): androidx.compose.runtime.State<Long> {
+  val hidden = LocalTabHidden.current
+  return produceState(initialValue = secondsUntilLocalMidnight()) {
     while (true) {
+        hidden.awaitShown()
         value = secondsUntilLocalMidnight()
         delay(1000)
     }
+  }
 }
 
 /**

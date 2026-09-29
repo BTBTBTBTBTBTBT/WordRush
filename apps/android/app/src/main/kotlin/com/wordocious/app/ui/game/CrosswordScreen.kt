@@ -245,6 +245,7 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "crossword-save-daily" else "crossword-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
@@ -461,10 +462,6 @@ fun CrosswordScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    // One clock for the header.
-    val tick by produceState(0, session.isFinished) {
-        while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
-    }
 
     Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         if (session.isFinished) {
@@ -472,14 +469,14 @@ fun CrosswordScreen(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CrosswordHeader(session, tick)
+                CrosswordHeader(session)
                 CrosswordGrid(session, finished = true)
                 ClueColumns(session, finished = true)
                 CrosswordResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
             }
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                CrosswordHeader(session, tick)
+                CrosswordHeader(session)
                 Column(
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -526,7 +523,9 @@ private fun FitTitle(text: String) {
 }
 
 @Composable
-private fun CrosswordHeader(session: CrosswordSession, tick: Int) {
+private fun CrosswordHeader(session: CrosswordSession) {
+    // The tick lives HERE, not in the screen body, so only the header recomposes each second (founder, 2026-09-29).
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 6.dp)) {
         FitTitle("CROSSWORDOCIOUS")

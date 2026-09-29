@@ -992,10 +992,11 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
 
 @Composable
 private fun DailyCountdownChip() {
+    val hidden = LocalTabHidden.current
     val secs by androidx.compose.runtime.produceState(
         initialValue = secondsUntilMidnight()
     ) {
-        while (true) { value = secondsUntilMidnight(); kotlinx.coroutines.delay(1000) }
+        while (true) { hidden.awaitShown(); value = secondsUntilMidnight(); kotlinx.coroutines.delay(1000) }
     }
     val h = secs / 3600; val m = (secs % 3600) / 60; val s = secs % 60
     // iOS pairs the countdown with a calendar chip carrying today's abbreviated

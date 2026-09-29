@@ -88,6 +88,7 @@ object ReferralService {
     private fun apiPost(path: String, body: String? = null): String? = runCatching {
         val token = client.auth.currentSessionOrNull()?.accessToken ?: return null
         val conn = URL("https://wordocious.com$path").openConnection() as HttpURLConnection
+        conn.connectTimeout = 10_000; conn.readTimeout = 15_000
         conn.requestMethod = "POST"
         conn.setRequestProperty("Authorization", "Bearer $token")
         if (body != null) {

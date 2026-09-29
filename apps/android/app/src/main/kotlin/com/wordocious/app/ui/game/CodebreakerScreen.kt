@@ -203,6 +203,7 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "cryptogram-save-daily" else "cryptogram-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
@@ -346,10 +347,6 @@ fun CodebreakerScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    // One clock for the header and the Reveal countdown.
-    val tick by produceState(0, session.isFinished) {
-        while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
-    }
 
     Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         if (session.isFinished) {
@@ -357,7 +354,7 @@ fun CodebreakerScreen(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CodebreakerHeader(session, tick)
+                CodebreakerHeader(session)
                 CipherBoard(session, finished = true)
                 Text(
                     "“${session.state.text}”", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
@@ -367,20 +364,13 @@ fun CodebreakerScreen(
             }
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                CodebreakerHeader(session, tick)
+                CodebreakerHeader(session)
                 // The board + frequency strip block is centered in the band between the
                 // header and the capsule row; capsules and keyboard stay pinned below.
                 CipherBand(session, Modifier.weight(1f).fillMaxWidth())
                 // Pinned: the letter frequencies always sit right above the buttons and keyboard.
                 FrequencyStrip(session, chipSp = 12.sp)
-                @Suppress("UNUSED_EXPRESSION") tick
-                val revealIn = maxOf(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - session.elapsed)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
-                    Capsule(if (session.state.checks > 0) "Check · ${session.state.checks}" else "Check", Icons.Filled.DoneAll) { session.check(onFinished) }
-                    Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
-                    Capsule(if (revealIn > 0) "Reveal · ${clockText(revealIn)}" else "Reveal", Icons.Filled.Visibility, dim = revealIn > 0) { session.reveal(onFinished) }
-                }
+                CodebreakerCapsules(session, onFinished)
                 // Settled plain letters (given, checked-correct, hinted) fill their keys (founder, 2026-09-28).
                 val usedFills = session.state.locked.mapNotNull { session.state.mapping[it] }.associateWith { CRYPTOGRAM_ACCENT }
                 KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advance() }, keyFills = usedFills)
@@ -401,8 +391,23 @@ fun CodebreakerScreen(
     }
 }
 
+/** The capsule row owns the Reveal countdown's tick, so the countdown recomposes only this row. */
 @Composable
-private fun CodebreakerHeader(session: CodebreakerSession, tick: Int) {
+private fun CodebreakerCapsules(session: CodebreakerSession, onFinished: () -> Unit) {
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
+    @Suppress("UNUSED_EXPRESSION") tick
+    val revealIn = maxOf(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - session.elapsed)
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
+        Capsule(if (session.state.checks > 0) "Check · ${session.state.checks}" else "Check", Icons.Filled.DoneAll) { session.check(onFinished) }
+        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+        Capsule(if (revealIn > 0) "Reveal · ${clockText(revealIn)}" else "Reveal", Icons.Filled.Visibility, dim = revealIn > 0) { session.reveal(onFinished) }
+    }
+}
+
+@Composable
+private fun CodebreakerHeader(session: CodebreakerSession) {
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
     val codes = cryptogramCodeLetters(s.cipher)
     val resolved = codes.count { it in s.locked || !s.mapping[it].isNullOrEmpty() }

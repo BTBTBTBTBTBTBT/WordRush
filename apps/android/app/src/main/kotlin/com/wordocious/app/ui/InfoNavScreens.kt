@@ -218,7 +218,10 @@ object WordsService {
     @Serializable data class Sense(val partOfSpeech: String = "", val definition: String = "")
     @Serializable private data class Payload(val words: List<Entry> = emptyList())
     private const val CACHE_KEY = "words-cache-v1"
-    private var memCache: List<Entry>? = null
+    @Volatile private var memCache: List<Entry>? = null
+
+    /** The in-memory copy only — never touches disk, safe on the UI thread. */
+    fun cachedInMemory(): List<Entry>? = memCache
 
     /** Last-persisted words for an instant first render (ContentService parity). */
     fun cached(): List<Entry>? {

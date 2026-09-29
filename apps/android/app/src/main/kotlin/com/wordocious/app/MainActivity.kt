@@ -54,10 +54,9 @@ class MainActivity : ComponentActivity() {
         // Warm the ~635KB word-list JSON decode off-main at launch (iOS parity:
         // RootTabView.init preloads). DictionaryLoader.ensureLoaded() is
         // idempotent + thread-safe (double-checked locking), so the synchronous
-        // call in GameViewModel stays as a no-op safety fallback.
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            com.wordocious.core.DictionaryLoader.ensureLoaded()
-        }
+        // call in GameViewModel stays as a no-op safety fallback. The More Games
+        // banks follow shortly after the first frame (Prewarm, founder 2026-09-29).
+        com.wordocious.app.data.Prewarm.dictionary()
         AuthService.initialize()
         // Re-fire any solo results whose record flow was cut off (killed
         // mid-flight / offline finish) — idempotent, solo-only, waits for a

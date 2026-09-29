@@ -136,6 +136,50 @@ object GamePersistence {
         }
     }
 
+    /** Unlimited (non-daily) saves past [PRACTICE_TTL_MS] (savedAt, else the game's startTime):
+     *  never resumable (resolvedUnlimitedSeed wants < 24 h) yet never deleted, so every
+     *  Unlimited game ever played stayed in this file and in each main-thread prefs load
+     *  (founder, 2026-09-29). Drops their elapsed/hint keys too. Daily keys are untouched. */
+    fun cleanupStaleUnlimitedGames(now: Long = System.currentTimeMillis()) {
+        runCatching {
+            val all = prefs.all
+            val live = mutableSetOf<String>()
+            val editor = prefs.edit()
+            for ((k, v) in all) {
+                if (!k.startsWith("game-") || dailyDateFrom(k) != null) continue
+                val save = (v as? String)?.let(::decodeVersionedSave)
+                if (save != null && isFreshUnlimited(save, now)) live.add(k.removePrefix("game-")) else editor.remove(k)
+            }
+            for (k in all.keys) {
+                val rest = when { k.startsWith("elapsed-") -> k.removePrefix("elapsed-"); k.startsWith("hints-") -> k.removePrefix("hints-"); else -> continue }
+                if (dailyDateFrom(k) == null && rest !in live) editor.remove(k)
+            }
+            editor.apply()
+        }
+    }
+
+    /** Pure — unit-tested. */
+    fun isFreshUnlimited(save: VersionedSave, now: Long): Boolean =
+        now - (if (save.savedAt > 0) save.savedAt else save.state.startTime.toLong()) <= PRACTICE_TTL_MS
+
+    /** More Games Unlimited saves ("<game>-save-<seed>" in wordocious_prefs) past the same TTL —
+     *  restore() only drops a stale one when that exact seed reopens, which never happens. */
+    private val MORE_UNLIMITED_SAVE = Regex("""^(regions|sudoku|muddle|crossword|groups|ladder|cryptogram|wordsearch|hub)-save-(?!daily$).+""")
+    fun cleanupStaleMoreGamesSaves(now: Long = System.currentTimeMillis()) {
+        runCatching {
+            val p = App.instance.getSharedPreferences("wordocious_prefs", Context.MODE_PRIVATE)
+            val editor = p.edit()
+            for ((k, v) in p.all) {
+                if (!MORE_UNLIMITED_SAVE.matches(k)) continue
+                val savedAt = (v as? String)?.let { raw ->
+                    runCatching { (json.parseToJsonElement(raw) as? kotlinx.serialization.json.JsonObject)?.get("savedAt")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.content?.toLongOrNull() } }.getOrNull()
+                } ?: 0L
+                if (now - savedAt > PRACTICE_TTL_MS) editor.remove(k)
+            }
+            editor.apply()
+        }
+    }
+
     fun clear(seed: String, mode: GameMode) {
         prefs.edit().remove(key(seed, mode)).apply()
     }

@@ -5,12 +5,12 @@ require "jwt"; require "json"; require "net/http"; require "openssl"
 # disk and never printed.
 APP = "6775966055"; VERSION = ENV.fetch("VER", "2.3"); BUILD = ENV.fetch("BUILD", "204")
 WHATS_NEW = <<~TXT.strip
-  • Hubbub: after you reach Hubbub, choose Keep playing or I'm done. The clock pauses whenever you step away, and your recorded time stays put.
-  • Hubbub knows modern words now — nerd, email, selfie, podcast and hundreds more.
-  • Kindred: the board fills the screen; solved groups stack below the tiles with a progress rail.
-  • Starsweep: a tap places a star straight away — purple when right, red when wrong.
-  • Codebreaker: the keyboard shows which letters are already settled.
-  • Share cards show every More Games icon, and long times fit on the victory card.
+  • Starsweep: tap for a black star, double-tap to play it — purple when right, red when wrong. A red or erased star takes its crosses with it, and a red star no longer stops the board from finishing.
+  • Completed today now shows your finished puzzle for every More Games title.
+  • Today's Games groups your Unlimited games into one row per game.
+  • Game clocks stop while you're away from the app.
+  • Faster: smoother Stats and Leaderboard, quicker first opens, cached images.
+  • Muddle's caption always shows in full.
 TXT
 kid = "C8FRS9T697"; iss = "8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
 p8 = File.join(Dir.home, ".appstoreconnect/private_keys/AuthKey_#{kid}.p8")
@@ -80,6 +80,17 @@ else
   locs.each do |l|
     call("PATCH", "/v1/appStoreVersionLocalizations/#{l["id"]}", { data: { type: "appStoreVersionLocalizations", id: l["id"], attributes: { whatsNew: WHATS_NEW } } })
     puts "What's New set for #{l["attributes"]["locale"]}"
+  end
+end
+
+# 4b. Listing text (LISTING=1): description, keywords and promotional text from listing-copy.py.
+if ENV["LISTING"] == "1"
+  copy = JSON.parse(`python3 -c 'import json,sys; sys.path.insert(0, "#{__dir__}"); import importlib; m = importlib.import_module("listing-copy"); print(json.dumps({"d": m.IOS_DESC, "k": m.KEYWORDS, "p": m.PROMO}))'`)
+  call("GET", "/v1/appStoreVersions/#{VID}/appStoreVersionLocalizations?fields[appStoreVersionLocalizations]=locale")["data"].each do |l|
+    next unless l["attributes"]["locale"] == "en-US"
+    call("PATCH", "/v1/appStoreVersionLocalizations/#{l["id"]}", { data: { type: "appStoreVersionLocalizations", id: l["id"], attributes: { description: copy["d"], keywords: copy["k"], promotionalText: copy["p"] } } })
+    back = call("GET", "/v1/appStoreVersionLocalizations/#{l["id"]}")["data"]["attributes"]
+    puts "listing text set: description #{back["description"].to_s.length} chars, keywords #{back["keywords"].inspect}"
   end
 end
 

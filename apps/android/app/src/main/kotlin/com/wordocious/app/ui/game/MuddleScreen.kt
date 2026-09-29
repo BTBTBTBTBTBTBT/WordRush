@@ -313,6 +313,7 @@ class MuddleSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "muddle-save-daily" else "muddle-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
@@ -458,10 +459,6 @@ fun MuddleScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    // One clock for the header.
-    val tick by produceState(0, session.isFinished) {
-        while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
-    }
 
     Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         if (session.isFinished) {
@@ -470,7 +467,7 @@ fun MuddleScreen(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                MuddleHeader(session, tick)
+                MuddleHeader(session)
                 MuddlePicture(session, finished = true, cartoonHeight = cartoonH)
                 MuddlePuzzle(session, finished = true, onFinished)
                 MuddleResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
@@ -490,7 +487,7 @@ fun MuddleScreen(
                 val sizes = MUDDLE_TIERS[tier]
                 androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
                 Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MuddleHeader(session, tick)
+                    MuddleHeader(session)
                     BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                         // Two caption lines (font-scaled) plus the gap under the cartoon.
                         // Reserve the caption's real line count (estimated from its length at this
@@ -548,7 +545,8 @@ fun MuddleScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MuddleHeader(session: MuddleSession, tick: Int) {
+private fun MuddleHeader(session: MuddleSession) {
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
     // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) sit either side.
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 2.dp)) {

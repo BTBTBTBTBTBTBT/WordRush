@@ -50,9 +50,10 @@ object SupabaseConfig {
             // The library's default gives a request 10 seconds. Doug's Ladder win
             // (2026-09-27) lost its matches row AND its user_stats read to "Request
             // timeout has expired" on a weak 5G link — a finished game must not hinge
-            // on a ten-second window. 30 s here; record() also retries a timed-out
-            // write once before handing it to the pending queue.
-            requestTimeout = kotlin.time.Duration.parse("30s")
+            // on a ten-second window; record() also retries a timed-out write once
+            // before handing it to the pending queue. 15 s (founder, 2026-09-29): at
+            // 30 s × (1 + 2 GET retries) a dead link held a screen for ~1.5 minutes.
+            requestTimeout = kotlin.time.Duration.parse("15s")
             httpConfig {
                 // Retry READS that time out (the stats / profile / existing-row selects
                 // every finish starts with) twice with backoff. Writes are NOT retried

@@ -775,6 +775,9 @@ object GameResultsService {
 
         // Refresh in-memory profile so XP/streak/level reflect immediately on Profile/Home.
         AuthService.refreshProfile()
+        // Unlimited results refresh the Stats tab too: it stays composed under games now
+        // (founder, 2026-09-29), and daily rows already bump this tick in DailyResultsService.
+        if (!isDailySeed(seed) && playType == "solo") DailyCompletionsService.noteRecorded()
 
         // All-time "hall of records" writes (web stats-service.ts parity —
         // previously deferred). Run AFTER stats/profile updates so the fresh

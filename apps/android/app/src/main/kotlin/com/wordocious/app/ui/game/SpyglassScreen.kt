@@ -183,6 +183,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "wordsearch-save-daily" else "wordsearch-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
@@ -310,13 +311,7 @@ fun SpyglassScreen(
                 Spacer(Modifier.weight(1f))
                 SpyglassGrid(session, revealMissing = false) { from, to -> session.select(from, to, onFinished) }
                 WordChips(session)
-                val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
-                @Suppress("UNUSED_EXPRESSION") tick
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
-                    Capsule(if (session.state.wordsShown) "Words shown" else "Show words", Icons.AutoMirrored.Filled.List, dim = session.state.wordsShown) { session.showWords(onFinished) }
-                    Capsule(if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}", Icons.Filled.Visibility, dim = !session.canReveal) { session.reveal(onFinished) }
-                }
+                SpyglassCapsules(session, onFinished)
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.height(4.dp))
             }
@@ -332,6 +327,18 @@ fun SpyglassScreen(
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(SPY_ACCENT, onBack) }
         CornerHelpButton(SPY_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
         if (showGuide) GuideSheet(mode = GameMode.WORDSEARCH, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
+}
+
+/** The capsule row owns the Reveal countdown's tick, so only this row recomposes each second. */
+@Composable
+private fun SpyglassCapsules(session: SpyglassSession, onFinished: () -> Unit) {
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
+    @Suppress("UNUSED_EXPRESSION") tick
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+        Capsule(if (session.state.wordsShown) "Words shown" else "Show words", Icons.AutoMirrored.Filled.List, dim = session.state.wordsShown) { session.showWords(onFinished) }
+        Capsule(if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}", Icons.Filled.Visibility, dim = !session.canReveal) { session.reveal(onFinished) }
     }
 }
 

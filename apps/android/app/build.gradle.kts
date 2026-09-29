@@ -1,13 +1,16 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application") version "8.6.1"
-    kotlin("android") version "2.0.20"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
-    kotlin("plugin.serialization") version "2.0.20"
+    id("com.android.application")
+    kotlin("android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("plugin.serialization")
     // Reads app/google-services.json and generates the Firebase config
     // resources. Resolves from google() in settings.gradle.kts pluginManagement.
-    id("com.google.gms.google-services") version "4.4.2"
+    id("com.google.gms.google-services")
+    // Baseline Profile consumer (founder, 2026-09-29): release builds ship the profile the
+    // :baselineprofile generator writes to src/release/generated/baselineProfiles.
+    id("androidx.baselineprofile")
 }
 
 android {
@@ -25,7 +28,7 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 159
+        versionCode = 160
         versionName = "2.4"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -50,7 +53,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 shrink + optimize, no renaming (-dontobfuscate in proguard-rules.pro keeps
+            // Sentry traces readable); unused resources dropped (founder, 2026-09-29).
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (!keystoreProps.isEmpty) signingConfig = signingConfigs.getByName("release")
         }
@@ -72,6 +78,9 @@ android {
 
 dependencies {
     implementation(project(":core"))
+    // Installs the bundled Baseline Profile on sideloads/older Play installs too.
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    baselineProfile(project(":baselineprofile"))
 
     // Supabase Kotlin client (same project as iOS — eniiqqsxpmuyrspvepiw)
     val supabaseBom = platform("io.github.jan-tennert.supabase:bom:3.0.2")
@@ -90,8 +99,11 @@ dependencies {
     implementation("com.google.android.play:review-ktx:2.0.2")
 
     // Socket.IO client for realtime VS (same server.wordocious.com socket.io
-    // server the web + iOS connect to). Pulls org.json + OkHttp transitively.
-    implementation("io.socket:socket.io-client:2.1.0")
+    // server the web + iOS connect to). Pulls OkHttp transitively.
+    // org.json is excluded (founder, 2026-09-29): Android ships org.json in the framework, and
+    // with R8 on, the bundled 2009 copy got inlined into socket.io callers and crashed VS with
+    // NoSuchFieldError JSONArray.myArrayList (the socket.io Android docs exclude it the same way).
+    implementation("io.socket:socket.io-client:2.1.0") { exclude(group = "org.json", module = "json") }
 
     // Firebase Cloud Messaging — remote push. MESSAGING ONLY: no analytics SDK,
     // so linking a Google Analytics account during project setup collects

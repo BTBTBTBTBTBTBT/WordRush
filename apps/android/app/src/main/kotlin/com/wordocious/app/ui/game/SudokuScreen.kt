@@ -177,12 +177,13 @@ class SudokuSession(val seed: String, val isDaily: Boolean) {
     private val storageKey get() = if (isDaily) "sudoku-save-daily" else "sudoku-save-$seed"
 
     private fun persist() {
+        if (!isDaily && isFinished) { SettingsPref.remove(storageKey); return }
         val s = state
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
             s.difficulty.key, s.givens, s.solution, s.board, s.notes, s.hintMask, s.wrongMask,
             s.mistakes, s.hintsUsed, s.notesMode, s.autoClearNotes, s.status.key,
-            s.history.map { SnapDto(it.board, it.notes, it.hintMask, it.wrongMask) }, s.startTime, s.endTime,
+            s.history.takeLast(MAX_SAVED_UNDO).map { SnapDto(it.board, it.notes, it.hintMask, it.wrongMask) }, s.startTime, s.endTime,
         )
         runCatching { SettingsPref.set(storageKey, json.encodeToString(dto)) }
     }
@@ -656,3 +657,6 @@ fun CustomCompletedDailyCard(mode: GameMode) {
         }
     }
 }
+
+/** Undo steps kept in a save (the reducer keeps 200 in memory); bounds the prefs write per move. */
+private const val MAX_SAVED_UNDO = 50
