@@ -8,7 +8,7 @@ const VictoryAnimation = dynamic(() => import('@/components/effects/victory-anim
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock, Delete, Shuffle, CornerDownLeft, Lightbulb, Eye, Flag } from 'lucide-react';
 import {
-  hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, hubRank, hubRankThreshold, hubGuessCount, hubBoardsSolved,
+  hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, hubRank, hubGuessCount, hubBoardsSolved,
   hubIsPangram, hubWordScore, HUB_RANKS, HUB_SOLVED_RANK, HUB_TOTAL_BOARDS, generateDailySeed,
   type HubState, type HubAction, type HubBank, type HubReject,
 } from '@wordle-duel/core';
@@ -16,6 +16,7 @@ import hubBankJson from '@/data/hub-puzzles.json';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
+import { HubRankBar, HubAllWordChips, HUB_ACCENT } from './hub-finished';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -44,7 +45,7 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // score and the matches row without paying XP twice.
 
 const BANK = hubBankJson as HubBank;
-export const HUB_ACCENT = '#c026d3';
+export { HUB_ACCENT };
 const REJECT_COPY: Record<HubReject, string> = {
   ended: 'This puzzle is finished',
   short: 'Four letters or more',
@@ -336,30 +337,11 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   // A function of the state it draws so the other-device hive (rebuilt from the
   // matches row) shares the live board's rank bar (founder, 2026-09-28).
-  const renderRankBar = (s: HubState) => {
-    const rk = hubRank(s), name = HUB_RANKS[rk].name, next = rk < 9 ? hubRankThreshold(rk + 1, s.max) : null;
-    return (
-      <div className="w-full max-w-md mx-auto px-2">
-        <div className="flex items-center justify-between text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          <span className="font-black" style={{ color: HUB_ACCENT }}>{name}</span>
-          <span>{s.points} pts{next != null ? ` · ${next - s.points} to ${HUB_RANKS[rk + 1].name}` : ' · maximum'}</span>
-        </div>
-        <div className="flex items-center gap-1 mt-1" role="progressbar" aria-valuenow={rk} aria-valuemin={0} aria-valuemax={9} aria-label={`Rank ${name}`}>
-          {HUB_RANKS.map((r, i) => (
-            <div key={r.name} className="flex-1 h-2 rounded-full" style={{ background: i <= rk ? HUB_ACCENT : 'var(--color-border-light)', opacity: i === HUB_SOLVED_RANK && i > rk ? 0.6 : 1, outline: i === HUB_SOLVED_RANK ? `2px solid ${HUB_ACCENT}55` : undefined }} title={r.name} />
-          ))}
-        </div>
-      </div>
-    );
-  };
+  const renderRankBar = (s: HubState) => <HubRankBar state={s} />;
   const rankBar = renderRankBar(state);
 
   // Every word of the puzzle once it has ended: found ones solid (pangrams in the accent), the rest muted.
-  const allWordChips = (s: HubState) => [...s.words, ...s.bonusFound].sort().map((w) => (
-    <span key={w} className="text-[11px] font-bold px-2 py-0.5 rounded-full border" style={s.found.includes(w) || s.bonusFound.includes(w)
-      ? (s.pangrams.includes(w) ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' })
-      : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }}>{w}{s.pangrams.includes(w) ? ' ★' : ''}</span>
-  ));
+  const allWordChips = (s: HubState) => <HubAllWordChips state={s} />;
 
   const wordChips = (words: string[], dim = false) => words.map((w) => {
     const pangram = state.pangrams.includes(w);

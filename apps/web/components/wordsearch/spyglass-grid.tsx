@@ -137,3 +137,26 @@ export const SpyglassGrid = memo(function SpyglassGrid({ state, onSelect, disabl
     </div>
   );
 });
+
+/** The word list under the grid (shared by the game and the leaderboard's Completed Today card). */
+export function SpyglassWordList({ state: s, done }: { state: WordsearchState; done: boolean }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-2 px-2" aria-label="Words to find">
+      {s.words.map((p) => {
+        const found = s.found.includes(p.w);
+        const hinted = s.hinted.includes(p.w) && !found;
+        // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
+        const visible = found || !!s.wordsShown || done;
+        return (
+          <span key={p.w} className={`text-sm font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
+            style={found
+              ? { background: `${WORDSEARCH_ACCENT}22`, borderColor: `${WORDSEARCH_ACCENT}55`, color: '#365314' }
+              : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: visible ? 'var(--color-text)' : 'var(--color-text-muted)', letterSpacing: visible ? undefined : '0.2em' }}
+            aria-label={visible ? p.w : `${p.w.length}-letter word`}>
+            {visible ? p.w : '•'.repeat(p.w.length)}
+          </span>
+        );
+      })}
+    </div>
+  );
+}

@@ -9,13 +9,13 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, Lightbulb, List, Eye } from 'lucide-react';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount,
-  reconstructWordsearch, generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank,
+  generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank,
 } from '@wordle-duel/core';
 import wordsearchBankJson from '@/data/wordsearch-puzzles.json';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import { SpyglassGrid, WORDSEARCH_ACCENT } from './spyglass-grid';
+import { SpyglassGrid, SpyglassWordList, WORDSEARCH_ACCENT } from './spyglass-grid';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -27,6 +27,7 @@ import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { wordsearchElsewhere } from '@/lib/elsewhere-progress';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -135,15 +136,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
     let cancelled = false;
     fetchSolvedDailyRow(profile.id, 'WORDSEARCH', seed).then((row) => {
       if (cancelled) return;
-      const base = createWordsearchState(p, seed, 0);
-      const r = row ? reconstructWordsearch(row.solutions, row.guesses) : null;
-      const listed = new Set(base.words.map((w) => w.w));
-      const found = r ? r.found.filter((w) => listed.has(w)) : (completion.won ? base.words.map((w) => w.w) : []);
-      setElsewhereState({
-        ...base, found, misses: r?.misses ?? 0, hintsUsed: r?.hintsUsed ?? row?.hintsUsed ?? 0,
-        wordsShown: r?.wordsShown ?? false, lateFinds: r?.lateFinds ?? 0,
-        status: completion.won ? 'won' : 'lost', endTime: 0,
-      });
+      setElsewhereState(wordsearchElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, p));
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [completion, profile, mode]);
@@ -222,25 +215,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${WORDSEARCH_ACCENT}66`, color: WORDSEARCH_ACCENT, background: `${WORDSEARCH_ACCENT}0d` };
 
-  const renderWordList = (s: WordsearchState, done: boolean) => (
-    <div className="flex flex-wrap justify-center gap-2 px-2" aria-label="Words to find">
-      {s.words.map((p) => {
-        const found = s.found.includes(p.w);
-        const hinted = s.hinted.includes(p.w) && !found;
-        // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
-        const visible = found || !!s.wordsShown || done;
-        return (
-          <span key={p.w} className={`text-sm font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
-            style={found
-              ? { background: `${WORDSEARCH_ACCENT}22`, borderColor: `${WORDSEARCH_ACCENT}55`, color: '#365314' }
-              : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: visible ? 'var(--color-text)' : 'var(--color-text-muted)', letterSpacing: visible ? undefined : '0.2em' }}
-            aria-label={visible ? p.w : `${p.w.length}-letter word`}>
-            {visible ? p.w : '•'.repeat(p.w.length)}
-          </span>
-        );
-      })}
-    </div>
-  );
+  const renderWordList = (s: WordsearchState, done: boolean) => <SpyglassWordList state={s} done={done} />;
   const wordList = renderWordList(state, finished);
 
   return (

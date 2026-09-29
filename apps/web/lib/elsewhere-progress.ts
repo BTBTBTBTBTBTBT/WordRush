@@ -1,9 +1,9 @@
 import {
-  reconstructSudoku, reconstructRegions, reconstructLadder, reconstructHub, reconstructCryptogram, reconstructGroups, reconstructCrossword, reconstructScramble,
-  createHubState, createCrosswordState, createScrambleState, hubBoardsSolved, cryptogramCodeLetters, scrambleTarget,
+  reconstructSudoku, reconstructRegions, reconstructLadder, reconstructHub, reconstructCryptogram, reconstructGroups, reconstructCrossword, reconstructScramble, reconstructWordsearch,
+  createHubState, createCrosswordState, createScrambleState, createWordsearchState, hubBoardsSolved, cryptogramCodeLetters, scrambleTarget,
   HUB_TOTAL_BOARDS, CRYPTOGRAM_TOTAL_BOARDS, GROUPS_TOTAL_BOARDS, CROSSWORD_TOTAL_BOARDS, SCRAMBLE_TOTAL_BOARDS, CROSSWORD_BLOCK, CROSSWORD_EMPTY,
   type SudokuState, type RegionsState, type LadderState, type HubState, type HubPuzzle, type CryptogramState, type GroupsGroup,
-  type CrosswordState, type CrosswordPuzzle, type ScrambleState, type ScramblePuzzle,
+  type CrosswordState, type CrosswordPuzzle, type ScrambleState, type ScramblePuzzle, type WordsearchState, type WordsearchPuzzle,
 } from '@wordle-duel/core';
 import type { SolvedDailyRow } from '@/lib/daily-service';
 import { rebuildPNRow } from '@/components/propernoundle/reconstruct';
@@ -156,6 +156,20 @@ export function scrambleElsewhere(row: SolvedDailyRow, d: ElsewhereDaily, puzzle
     events: [...row.guesses], status: status(d.won), ended: true, endTime: 0,
   };
   return { progress, state };
+}
+
+// ── Spyglass: the day's bank grid with the found words replayed from the log ──
+/** A missing row still draws the grid: every word found on a win, none on a loss. */
+export function wordsearchElsewhere(row: SolvedDailyRow | null, d: ElsewhereDaily, puzzle: WordsearchPuzzle): WordsearchState {
+  const base = createWordsearchState(puzzle, d.seed, 0);
+  const r = row ? reconstructWordsearch(row.solutions, row.guesses) : null;
+  const listed = new Set(base.words.map((w) => w.w));
+  const found = r ? r.found.filter((w) => listed.has(w)) : (d.won ? base.words.map((w) => w.w) : []);
+  return {
+    ...base, found, misses: r?.misses ?? 0, hintsUsed: r?.hintsUsed ?? row?.hintsUsed ?? 0,
+    wordsShown: r?.wordsShown ?? false, lateFinds: r?.lateFinds ?? 0,
+    status: status(d.won), endTime: 0,
+  };
 }
 
 // ── ProperNoundle: boards 1/1 plus the near-miss credit the loss formula reads ──

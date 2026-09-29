@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { evaluateGuess, GameStatus, BoardState, generateDailySeed, type GameState, type GameMode } from '@wordle-duel/core';
 import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { replayRecordedGuesses } from '@/hooks/use-game-snapshot';
@@ -19,90 +18,10 @@ import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
 import { normalizeString, checkWin as pnCheckWin } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
 import { rebuildPNRow, PN_PLACEHOLDER } from '@/components/propernoundle/reconstruct';
+import { CollapsibleCompletedCard } from '@/components/game/collapsible-completed-card';
+import { CompletedMoreBoard, isMoreBoardMode } from '@/components/game/completed-more-board';
 
 const MULTI_BOARD_MODES = new Set(['QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE']);
-
-/** Collapsible card wrapper used by all completed daily board variants */
-function CollapsibleCompletedCard({
-  won,
-  summaryLabel,
-  children,
-}: {
-  won: boolean;
-  summaryLabel: string;
-  children: React.ReactNode;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div
-      className="mb-4"
-      style={{
-        background: 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-        borderRadius: '16px',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Top accent */}
-      <div
-        className="h-1"
-        style={{
-          background: won
-            ? 'linear-gradient(90deg, #7c3aed, #a78bfa)'
-            : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
-        }}
-      />
-
-      {/* Collapsible header */}
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-2.5"
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0"
-            style={{
-              background: won ? '#f5f3ff' : '#fee2e2',
-              color: won ? '#7c3aed' : '#dc2626',
-            }}
-          >
-            {won ? '✓' : '✗'}
-          </span>
-          <span
-            className="text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ color: won ? '#7c3aed' : 'var(--color-text-muted)' }}
-          >
-            {won ? 'Completed' : 'Attempted'} Today
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            {summaryLabel}
-          </span>
-          <ChevronDown
-            className="w-3.5 h-3.5 transition-transform duration-200"
-            style={{
-              color: 'var(--color-text-muted)',
-              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
-          />
-        </div>
-      </button>
-
-      {/* Collapsible content */}
-      <div
-        className="overflow-hidden transition-all duration-200"
-        style={{ maxHeight: expanded ? '2000px' : '0px', opacity: expanded ? 1 : 0 }}
-      >
-        <div className="px-4 pb-4">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface SavedSession {
   version: number;
@@ -328,6 +247,13 @@ function writeRowCache(modeId: string, guesses: string[], time: number) {
 }
 
 export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
+  // More Games titles (custom engine, not ProperNoundle) rebuild their own
+  // finished board from the matches row; keyed so a mode switch starts fresh.
+  if (isMoreBoardMode(modeId)) return <CompletedMoreBoard key={modeId} dbKey={modeId} />;
+  return <CompletedWordBoard modeId={modeId} />;
+}
+
+function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
   ensureDictionaryInitialized();
 
   const isGauntlet = modeId === 'GAUNTLET';
