@@ -152,18 +152,18 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             LeaderboardDeepLink.pendingMode.value = null
         }
     }
-    var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    var fetchedEntries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterdaySweep by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
     var showYesterday by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
-    var playerCount by remember { mutableStateOf(0) }
+    var fetchedPlayerCount by remember { mutableStateOf(0) }
     // Rank banner ("You're ranked #N of M") — web getUserDailyRank parity:
     // true total even past a full page, and a computed rank when the user
     // sits outside the top 50.
-    var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    var fetchedUserRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
     // "Your neighborhood" rows when the user placed past the top-50 list
     // (e.g. #425 sees ~421–429 below a "···" separator, own row highlighted).
     var rankWindow by remember { mutableStateOf<LeaderboardService.RankWindow?>(null) }
@@ -193,6 +193,34 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
+    // The player's own daily row on the board at once (founder, 2026-09-29 — iOS parity): the board
+    // paints a cached copy (often from before they played) and the refetch can race the insert,
+    // while today's completion is already on the phone. Placed by the server's order (score desc,
+    // time asc) whenever the rows in hand lack it; not past a full top 50 (the rank window's job).
+    // The fetched rows, count and rank stay server-only in the cache.
+    val profileNow = AuthService.profile.value
+    val mine = run {
+        val c = completions[selectedMode]
+        if (isSweep || c == null || c.score <= 0.0 || profileNow == null) return@run null
+        if (fetchedEntries.any { it.userId.equals(profileNow.id, ignoreCase = true) }) return@run null
+        val i = fetchedEntries.indexOfFirst { it.compositeScore < c.score || (it.compositeScore == c.score && it.timeSeconds > c.timeSeconds) }
+        val at = if (i < 0) fetchedEntries.size else i
+        if (at >= 50) return@run null
+        val row = LeaderboardService.LeaderboardEntry(
+            userId = profileNow.id,
+            profiles = LeaderboardService.ProfileRef(profileNow.username, profileNow.avatarUrl, profileNow.avatarEmoji),
+            compositeScore = c.score, guessCount = c.guessCount, timeSeconds = c.timeSeconds,
+            boardsSolved = if (c.completed) 1 else 0, totalBoards = 1, completed = c.completed,
+        )
+        val rows = fetchedEntries.take(at) + row + fetchedEntries.drop(at)
+        val total = maxOf(fetchedPlayerCount + 1, rows.size)
+        Triple(rows, total, LeaderboardService.RankInfo(at + 1, total))
+    }
+    val entries = mine?.first ?: fetchedEntries
+    val playerCount = mine?.second ?: fetchedPlayerCount
+    val userRank = fetchedUserRank ?: mine?.third
+    val boardLoading = loading && mine == null
+
     // FRIENDS (§207): All|Friends toggle — dense friend ranks + ghost rows
     // for friends who haven't played this mode today, with the canned-taunt
     // dialog (fixed phrases only). friendsVersion re-keys the fetches when
@@ -248,7 +276,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             val cachedSweep = LeaderboardService.cachedSweep(sweepKey)
             if (cachedSweep != null) {
                 sweepEntries = cachedSweep.entries
-                playerCount = cachedSweep.entries.size
+                fetchedPlayerCount = cachedSweep.entries.size
                 sweepRank = cachedSweep.rank
                 sweepDetails = cachedSweep.details
                 loading = false
@@ -259,7 +287,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             ensureActive()
             if (rows == null) { loading = false; return@LaunchedEffect }
             sweepEntries = rows
-            playerCount = rows.size
+            fetchedPlayerCount = rows.size
             loading = false
             // §223: the dot strip + guess/hint totals land AFTER the rows paint,
             // so the board never waits on the detail query (web parity — the
@@ -281,15 +309,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         val key = LeaderboardService.cacheKey(mode, day, userId) + if (friends) ":friends" else ""
         val cached = LeaderboardService.cachedBoard(key)
         if (cached != null) {
-            entries = cached.entries
-            playerCount = cached.playerCount
-            userRank = cached.rank
+            fetchedEntries = cached.entries
+            fetchedPlayerCount = cached.playerCount
+            fetchedUserRank = cached.rank
             rankWindow = cached.rankWindow
             loading = false
         } else {
             loading = true
-            entries = emptyList()
-            userRank = null
+            fetchedEntries = emptyList()
+            fetchedUserRank = null
             rankWindow = null
         }
         // FRIENDS board (§207): one fetch restricted to friends∪me holds the
@@ -299,13 +327,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             val lbF = LeaderboardService.fetchDailyLeaderboardOrNull(mode, day = day, userIds = ids)
             ensureActive()
             if (lbF == null) { loading = false; return@LaunchedEffect }
-            entries = lbF
-            playerCount = lbF.size
+            fetchedEntries = lbF
+            fetchedPlayerCount = lbF.size
             loading = false
             val idx = lbF.indexOfFirst { it.userId == userId }
             // §217: exact (score, time) ties share the rank on the friends board too.
             val rank = if (idx >= 0) LeaderboardService.RankInfo(LeaderboardService.competitionRank(lbF, idx), lbF.size) else null
-            userRank = rank
+            fetchedUserRank = rank
             rankWindow = null
             LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lbF, lbF.size, rank, null))
             return@LaunchedEffect
@@ -325,14 +353,14 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         // cached rows beat clobbering them with a blank list; never cache the failure.
         if (lbOpt == null) { loading = false; return@LaunchedEffect }
         val lb = lbOpt
-        entries = lb
-        playerCount = count
+        fetchedEntries = lb
+        fetchedPlayerCount = count
         loading = false
         val rank = if (userId != null) {
             LeaderboardService.getUserDailyRank(userId, mode, day = day, topEntries = lb)
         } else null
         ensureActive()
-        userRank = rank
+        fetchedUserRank = rank
         // Ranked past the visible list → also fetch the rows around them.
         val win = if (rank != null && rank.rank > 50) {
             LeaderboardService.fetchRankWindow(mode, userRank = rank.rank, day = day)
@@ -605,7 +633,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 color = WTheme.textMuted,
                             )
                             // Today's-board share (web: Share icon beside the caption).
-                            if (!loading && entries.isNotEmpty()) {
+                            if (!boardLoading && entries.isNotEmpty()) {
                                 Icon(
                                     Icons.Filled.Share, "Share leaderboard",
                                     tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
@@ -630,7 +658,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 }
             }
             // Leaderboard body
-            if (loading) {
+            if (boardLoading) {
                 // Web parity: animate-pulse skeleton rows, not a spinner.
                 item { LeaderboardSkeleton() }
             } else if (isSweep) {

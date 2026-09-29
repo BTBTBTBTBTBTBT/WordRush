@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -122,7 +123,8 @@ function LeaderboardSkeleton() {
 }
 
 export default function DailyPage() {
-  const { user, isProActive } = useAuth();
+  const { user, profile, isProActive } = useAuth();
+  const { todayDailies, dailiesDay } = useDailyCompletions();
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
@@ -134,11 +136,11 @@ export default function DailyPage() {
     const m = new URLSearchParams(window.location.search).get('mode');
     if (m && (m === 'SWEEP' || PROFILE_MODES.some((pm) => pm.dbKey === m))) setSelectedMode(m);
   }, []);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [fetchedLeaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
-  const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [fetchedUserRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [rankWindow, setRankWindow] = useState<{ startRank: number; entries: LeaderboardEntry[] } | null>(null);
-  const [playerCount, setPlayerCount] = useState(0);
+  const [fetchedPlayerCount, setPlayerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showYesterday, setShowYesterday] = useState(false);
   const [yesterdayLeaderboard, setYesterdayLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -184,6 +186,32 @@ export default function DailyPage() {
     loadFriends().then(() => setFriendsVersion((v) => v + 1));
     return onFriendsChange(() => setFriendsVersion((v) => v + 1));
   }, [user]);
+
+  // The player's own daily row on the board at once (founder, 2026-09-29 — iOS/Android parity):
+  // the board paints a cached copy (often from before they played) and the refetch can race the
+  // result's insert, while today's completion is already on hand. Placed by the server's order
+  // (score desc, time asc) whenever the rows in hand lack it; not past a full top 50 (that is the
+  // rank window's job). The fetched rows, count and rank stay server-only in the cache.
+  const mine = (() => {
+    const c = todayDailies.get(selectedMode);
+    if (selectedMode === 'SWEEP' || !c || !(c.score > 0) || !profile || dailiesDay !== getTodayLocal()) return null;
+    if (fetchedLeaderboard.some((e) => e.user_id === profile.id)) return null;
+    const i = fetchedLeaderboard.findIndex((e) => e.composite_score < c.score || (e.composite_score === c.score && e.time_seconds > c.timeSeconds));
+    const at = i < 0 ? fetchedLeaderboard.length : i;
+    if (at >= 50) return null;
+    const row: LeaderboardEntry = {
+      user_id: profile.id, username: profile.username, avatar_url: profile.avatar_url ?? null, avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
+      composite_score: c.score, guess_count: c.guesses, time_seconds: c.timeSeconds, boards_solved: c.won ? 1 : 0, total_boards: 1,
+      hints_used: 0, vs_wins: 0, vs_losses: 0, vs_games: 0, completed: c.won,
+    };
+    const rows = [...fetchedLeaderboard.slice(0, at), row, ...fetchedLeaderboard.slice(at)];
+    const total = Math.max(fetchedPlayerCount + 1, rows.length);
+    return { rows, total, rank: { rank: at + 1, totalPlayers: total } };
+  })();
+  const leaderboard = mine?.rows ?? fetchedLeaderboard;
+  const playerCount = mine?.total ?? fetchedPlayerCount;
+  const userRank = fetchedUserRank ?? mine?.rank ?? null;
+  const boardLoading = loading && !mine;
 
   // Canned-taunt picker (fixed phrases only — §207's no-free-text rule).
   const [tauntTarget, setTauntTarget] = useState<FriendProfile | null>(null);
@@ -796,7 +824,7 @@ export default function DailyPage() {
                   a near-miss" — it ranks by points, not wins. */}
               {isSweep ? 'Ranked by total points across all modes' : 'Daily games only'}
             </div>
-            {!loading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
+            {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
               <button
                 onClick={handleShareLeaderboard}
                 disabled={sharingLb}
@@ -818,7 +846,7 @@ export default function DailyPage() {
             borderRadius: '16px',
           }}
         >
-          {loading ? (
+          {boardLoading ? (
             <LeaderboardSkeleton />
           ) : isSweep ? (
             sweepLeaderboard.length === 0 ? (
