@@ -1382,7 +1382,7 @@ struct LeaderboardTab: View {
         ScrollView {
             VStack(spacing: 12) {
                 header
-                HModePicker(selected: $mode, isSweep: $isSweep)
+                HModePicker(selected: modeSelection, isSweep: $isSweep)
                 if isSweep {
                     sweepBoard
                 } else {
@@ -2052,6 +2052,28 @@ struct LeaderboardTab: View {
         return (out, total, (rank: i + 1, total: total))
     }
 
+    /// A mode tap sets the mode AND paints that mode's cached board in the same update (founder,
+    /// 2026-09-29: switching showed one frame of the new header over the previous mode's rows and
+    /// count before load() — which only runs after the render — swapped them).
+    private var modeSelection: Binding<GameMode> {
+        Binding(get: { mode }, set: { new in
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) {
+                mode = new
+                let key = LeaderboardCache.key(mode: new, userId: auth.profile?.id) + (friendsOnly ? ":friends" : "")
+                if let cached = LeaderboardCache.shared[key] {
+                    let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
+                    entries = rows; playerCount = n; userRank = cached.userRank ?? mineRank
+                    rankWindow = cached.rankWindow; loading = false
+                } else {
+                    let seeded = withMine([], 0)
+                    entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
+                    loading = seeded.0.isEmpty
+                }
+            }
+        })
+    }
+
     private func load() async {
         // Stale-while-revalidate (web parity: lbCache in app/daily/page.tsx) —
         // a cache hit paints the last-known rows instantly (no skeleton) while
@@ -2314,6 +2336,12 @@ struct SweepModeDots: View {
 /// Shared mode picker — the sweep modes (+ Sweep, + a More chip once a More Games title is enabled) laid out 5-across on one screen
 /// (no horizontal scroll), matching the Profile "Today's Dailies" arrangement.
 /// Selecting a mode highlights it in the mode's accent color.
+/// No pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
+/// newly selected tile read as unselected for ~0.15 s after every tap (founder, 2026-09-29).
+struct InstantButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { configuration.label.contentShape(Rectangle()) }
+}
+
 struct HModePicker: View {
     @Binding var selected: GameMode
     // Parallel selection flag for the Sweep tile — GameMode can't hold SWEEP, so
@@ -2404,7 +2432,7 @@ struct HModePicker: View {
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(InstantButtonStyle())
     }
 
     /// The "Sweep" tile — leaderboard/records only, never the Home grid.
@@ -2419,7 +2447,7 @@ struct HModePicker: View {
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(isSweep ? sweepAccent.opacity(0.08) : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(isSweep ? sweepAccent : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(InstantButtonStyle())
     }
 
     /// The "More" chip: opens the More Games list. When one of those modes is

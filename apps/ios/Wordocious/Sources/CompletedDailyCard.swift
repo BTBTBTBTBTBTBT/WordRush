@@ -17,6 +17,16 @@ struct CompletedDailyCard: View {
     @State private var elapsedMs = 0
     @State private var reloadToken = 0
 
+    /// Paint from the day's disk copy in the FIRST frame (founder, 2026-09-29: switching modes on
+    /// the leaderboard showed the card missing for a frame, the rank banner and board jumping up,
+    /// then the card snapping in — the cache used to be read only in .task, after first render).
+    init(mode: GameMode) {
+        self.mode = mode
+        let seed = DailySeed.today(mode: mode)
+        _data = State(initialValue: Self.readCache(mode: mode, seed: seed))
+        _maxGuesses = State(initialValue: createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 6)
+    }
+
     private var boardCount: Int { localBoards?.count ?? data?.solutions.count ?? 1 }
 
     /// Header summary: gauntlet shows stages/guesses/time, others guesses·time.
@@ -158,7 +168,8 @@ struct CompletedDailyCard: View {
             // data (notably the Gauntlet stage breakdown) leaks into this mode when
             // its own local save isn't reloaded, rendering e.g. Gauntlet's stages
             // under Classic.
-            localBoards = nil; gauntlet = nil; data = nil
+            // data is NOT cleared: .id(mode) gives every mode a fresh card seeded from its own cache in init.
+            localBoards = nil; gauntlet = nil
             let seed = DailySeed.today(mode: mode)
             var localStatus: GameStatus? = nil
             if let state = GamePersistence.shared.load(seed: seed, mode: mode),
@@ -216,12 +227,12 @@ struct CompletedDailyCard: View {
     // The seed embeds the date, so a stale slot simply misses — no pruning.
     private struct CacheEntry: Codable { let seed: String; let solved: MatchStatsService.SolvedDaily }
     private static func cacheKey(_ mode: GameMode) -> String { "completed-daily-cache-\(mode.rawValue)" }
-    private static func readCache(mode: GameMode, seed: String) -> MatchStatsService.SolvedDaily? {
+    static func readCache(mode: GameMode, seed: String) -> MatchStatsService.SolvedDaily? {
         guard let d = UserDefaults.standard.data(forKey: cacheKey(mode)),
               let e = try? JSONDecoder().decode(CacheEntry.self, from: d), e.seed == seed else { return nil }
         return e.solved
     }
-    private static func writeCache(_ solved: MatchStatsService.SolvedDaily, mode: GameMode, seed: String) {
+    static func writeCache(_ solved: MatchStatsService.SolvedDaily, mode: GameMode, seed: String) {
         if let d = try? JSONEncoder().encode(CacheEntry(seed: seed, solved: solved)) {
             UserDefaults.standard.set(d, forKey: cacheKey(mode))
         }

@@ -513,6 +513,12 @@ struct CustomCompletedDailyCard: View {
     @State private var expanded = false
     @State private var reloadToken = 0
 
+    /// The header paints from the day's disk copy in the first frame (founder, 2026-09-29).
+    init(mode: GameMode) {
+        self.mode = mode
+        _data = State(initialValue: CompletedDailyCard.readCache(mode: mode, seed: DailySeed.today(mode: mode)))
+    }
+
     var body: some View {
         Group {
             if let d = data {
@@ -558,11 +564,17 @@ struct CustomCompletedDailyCard: View {
         }
         .onDailyRecorded { reloadToken += 1 }
         .task(id: "\(mode.rawValue)-\(reloadToken)") {
-            data = nil; board = nil; progress = nil
-            let seed = generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: mode.rawValue)
-            guard let d = await MatchStatsService.solvedDaily(mode: mode, seed: seed) else { return }
-            let built = CompletedCustomBoard.build(mode: mode, seed: seed, row: d)
-            board = built.board; progress = built.progress; data = d
+            let seed = DailySeed.today(mode: mode)
+            // The day's disk copy first (seeded in init for the header), then the board from it, then
+            // a silent refresh — this card used to wait on the network on every mode switch.
+            if let d = data, board == nil {
+                let built = CompletedCustomBoard.build(mode: mode, seed: seed, row: d)
+                board = built.board; progress = built.progress
+            }
+            guard let fresh = await MatchStatsService.solvedDaily(mode: mode, seed: seed) else { return }
+            CompletedDailyCard.writeCache(fresh, mode: mode, seed: seed)
+            let built = CompletedCustomBoard.build(mode: mode, seed: seed, row: fresh)
+            board = built.board; progress = built.progress; data = fresh
         }
     }
 }
