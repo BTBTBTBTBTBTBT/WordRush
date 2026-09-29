@@ -94,9 +94,24 @@ private struct EmptyChart: View {
 private struct GuessDistributionChart: View {
     let mode: GameMode?
     var playType: String = "solo"
-    @State private var data: [MatchStatsService.GuessBucket] = []
+    @State private var data: [MatchStatsService.GuessBucket]
     /// Tapped bar's label — shows "N guesses · X wins · Y% of wins".
     @State private var selected: String?
+    /// Data in hand (memo or fetch) — until then the chart slot holds a skeleton, never
+    /// the "Win a game…" empty line.
+    @State private var loaded: Bool
+
+    /// The memo paints in the FIRST frame (founder, 2026-09-29: switching a Stats page showed
+    /// every card empty for a frame, then filled — the memo used to be read only in .task).
+    init(mode: GameMode?, playType: String = "solo") {
+        self.mode = mode; self.playType = playType
+        let cached: [MatchStatsService.GuessBucket]? = StatsMemo.shared.get(Self.memoKey(mode, playType))
+        _data = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static func memoKey(_ mode: GameMode?, _ playType: String) -> String {
+        "guessDist:\(StatsMemo.uid):\(mode?.rawValue ?? "all"):\(playType)"
+    }
 
     private func color(_ g: Int) -> Color {
         g <= 2 ? Color(hex: 0x7C3AED) : g <= 4 ? Color(hex: 0xF59E0B) : Color(hex: 0x9CA3AF)
@@ -118,7 +133,9 @@ private struct GuessDistributionChart: View {
         // All-time: word games only here (one histogram cannot mix guesses,
         // mistakes and checks); each game page has its own.
         LegacyChartCard(title: "\(noun.one.uppercased()) DISTRIBUTION", hint: mode == nil ? "word games" : nil) {
-            if totalWins == 0 {
+            if !loaded {
+                SkeletonBlock(height: 130, cornerRadius: 10)
+            } else if totalWins == 0 {
                 EmptyChart(copy: "Win a game to see your \(noun.one) distribution")
             } else {
                 Chart(data) { b in
@@ -144,10 +161,11 @@ private struct GuessDistributionChart: View {
         .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
             // P-cache: seed from the session memo (instant repaint), then
             // fetch fresh exactly as before and store back.
-            let key = "guessDist:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
-            if let cached: [MatchStatsService.GuessBucket] = StatsMemo.shared.get(key) { data = cached }
+            let key = Self.memoKey(mode, playType)
+            if let cached: [MatchStatsService.GuessBucket] = StatsMemo.shared.get(key) { data = cached; loaded = true }
             let fresh = await MatchStatsService.guessDistribution(mode: mode, playType: playType)
             data = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
         }
@@ -158,7 +176,14 @@ private struct GuessDistributionChart: View {
 
 private struct ActivityCalendarView: View {
     let mode: GameMode?
-    @State private var data: [MatchStatsService.DayActivity] = []
+    @State private var data: [MatchStatsService.DayActivity]
+
+    /// Memo in the first frame (founder, 2026-09-29) — the card used to pop in after .task.
+    init(mode: GameMode?) {
+        self.mode = mode
+        _data = State(initialValue: StatsMemo.shared.get(Self.memoKey(mode)) ?? [])
+    }
+    private static func memoKey(_ mode: GameMode?) -> String { "activityCal:\(StatsMemo.uid):\(mode?.rawValue ?? "all")" }
     /// Tapped day — shows "Jul 3 · 12 games · 9 wins" in the footer.
     @State private var selected: MatchStatsService.DayActivity?
     /// Measured card content width (drives the fill-width cell size).
@@ -199,7 +224,7 @@ private struct ActivityCalendarView: View {
             }
         }
         .task(id: mode?.rawValue ?? "all") {
-            let key = "activityCal:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all")"
+            let key = Self.memoKey(mode)
             if let cached: [MatchStatsService.DayActivity] = StatsMemo.shared.get(key) { data = cached }
             let fresh = await MatchStatsService.activityCalendar(mode: mode)
             data = fresh
@@ -346,7 +371,8 @@ private struct ActivityCalendarView: View {
 /// of games played, with a header game count. Self-fetches the last 7 days from
 /// the 90-day activity calendar so it never depends on parent state timing.
 struct SevenDayActivityCard: View {
-    @State private var data: [MatchStatsService.DayActivity] = []
+    @State private var data: [MatchStatsService.DayActivity] =
+        StatsMemo.shared.get("activity7:\(StatsMemo.uid)") ?? []   // first frame (founder, 2026-09-29)
 
     private var lastSeven: [MatchStatsService.DayActivity] {
         let cal = Calendar.current
@@ -442,9 +468,21 @@ struct ProfileInsightsCard: View {
 private struct SolveTimeChart: View {
     let mode: GameMode?
     var playType: String = "solo"
-    @State private var data: [MatchStatsService.SolvePoint] = []
+    @State private var data: [MatchStatsService.SolvePoint]
     /// Tapped point's index — shows "Jul 3 · Classic · 1m 24s".
     @State private var selected: Int?
+    @State private var loaded: Bool
+
+    /// Memo in the first frame; skeleton (not "Win more games…") until data is in hand (founder, 2026-09-29).
+    init(mode: GameMode?, playType: String = "solo") {
+        self.mode = mode; self.playType = playType
+        let cached: [MatchStatsService.SolvePoint]? = StatsMemo.shared.get(Self.memoKey(mode, playType))
+        _data = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static func memoKey(_ mode: GameMode?, _ playType: String) -> String {
+        "solveTimes:\(StatsMemo.uid):\(mode?.rawValue ?? "all"):\(playType)"
+    }
 
     private func modeColor(_ raw: String) -> Color {
         GameMode(rawValue: raw).map { ModeStyle.accent($0) } ?? Theme.primary
@@ -459,7 +497,9 @@ private struct SolveTimeChart: View {
 
     var body: some View {
         LegacyChartCard(title: "SOLVE TIME — LAST \(data.count) WINS") {
-            if data.count < 2 {
+            if !loaded {
+                SkeletonBlock(height: 140, cornerRadius: 10)
+            } else if data.count < 2 {
                 EmptyChart(copy: "Win more games to see your solve time trend")
             } else {
                 Chart {
@@ -513,10 +553,11 @@ private struct SolveTimeChart: View {
             }
         }
         .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
-            let key = "solveTimes:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
-            if let cached: [MatchStatsService.SolvePoint] = StatsMemo.shared.get(key) { data = cached }
+            let key = Self.memoKey(mode, playType)
+            if let cached: [MatchStatsService.SolvePoint] = StatsMemo.shared.get(key) { data = cached; loaded = true }
             let fresh = await MatchStatsService.solveTimes(mode: mode, playType: playType)
             data = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }
@@ -535,14 +576,27 @@ private struct SolveTimeChart: View {
 private struct TimeOfDayHeatmap: View {
     let mode: GameMode?
     var playType: String = "solo"
-    @State private var data: [MatchStatsService.HourBucket] = []
+    @State private var data: [MatchStatsService.HourBucket]
     /// Tapped hour — shows "8am · 65 games · 52 wins" instead of the peak line.
     @State private var selected: Int?
-    @State private var loaded = false
+    @State private var loaded: Bool
+
+    /// Memo in the first frame (founder, 2026-09-29).
+    init(mode: GameMode?, playType: String = "solo") {
+        self.mode = mode; self.playType = playType
+        let cached: [MatchStatsService.HourBucket]? = StatsMemo.shared.get(Self.memoKey(mode, playType))
+        _data = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static func memoKey(_ mode: GameMode?, _ playType: String) -> String {
+        "timeOfDay:\(StatsMemo.uid):\(mode?.rawValue ?? "all"):\(playType)"
+    }
 
     var body: some View {
         Group {
-            if !data.contains(where: { $0.played > 0 }), loaded, playType != "vs_cpu" {
+            if !loaded, playType != "vs_cpu" {
+                LegacyChartCard(title: "WHEN YOU PLAY") { SkeletonBlock(height: 64, cornerRadius: 10) }
+            } else if !data.contains(where: { $0.played > 0 }), loaded, playType != "vs_cpu" {
                 StatsEmptyCard(title: "When You Play", accent: Theme.primary,
                                hint: "Play a few games and your active hours map out here.")
             } else if data.contains(where: { $0.played > 0 }) {
@@ -583,8 +637,8 @@ private struct TimeOfDayHeatmap: View {
             }
         }
         .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
-            let key = "timeOfDay:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
-            if let cached: [MatchStatsService.HourBucket] = StatsMemo.shared.get(key) { data = cached }
+            let key = Self.memoKey(mode, playType)
+            if let cached: [MatchStatsService.HourBucket] = StatsMemo.shared.get(key) { data = cached; loaded = true }
             let fresh = await MatchStatsService.timeOfDay(mode: mode, playType: playType)
             data = fresh
             loaded = true
@@ -604,12 +658,25 @@ private struct TimeOfDayHeatmap: View {
 private struct TopWordsCard: View {
     let mode: GameMode?
     var playType: String = "solo"
-    @State private var data: [MatchStatsService.TopWord] = []
-    @State private var loaded = false
+    @State private var data: [MatchStatsService.TopWord]
+    @State private var loaded: Bool
+
+    /// Memo in the first frame (founder, 2026-09-29).
+    init(mode: GameMode?, playType: String = "solo") {
+        self.mode = mode; self.playType = playType
+        let cached: [MatchStatsService.TopWord]? = StatsMemo.shared.get(Self.memoKey(mode, playType))
+        _data = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static func memoKey(_ mode: GameMode?, _ playType: String) -> String {
+        "topWords:\(StatsMemo.uid):\(mode?.rawValue ?? "all"):\(playType)"
+    }
 
     var body: some View {
         Group {
-            if data.isEmpty, loaded, playType != "vs_cpu" {
+            if !loaded, playType != "vs_cpu" {
+                LegacyChartCard(title: "TOP WORDS") { SkeletonBlock(height: 100, cornerRadius: 10) }
+            } else if data.isEmpty, loaded, playType != "vs_cpu" {
                 StatsEmptyCard(title: "Top Words", accent: Color(hex: 0xD97706),
                                hint: "Your most-guessed words appear here as you play.")
             } else if !data.isEmpty {
@@ -642,8 +709,8 @@ private struct TopWordsCard: View {
             }
         }
         .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
-            let key = "topWords:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
-            if let cached: [MatchStatsService.TopWord] = StatsMemo.shared.get(key) { data = cached }
+            let key = Self.memoKey(mode, playType)
+            if let cached: [MatchStatsService.TopWord] = StatsMemo.shared.get(key) { data = cached; loaded = true }
             let fresh = await MatchStatsService.topWords(mode: mode, playType: playType)
             data = fresh
             loaded = true
@@ -658,8 +725,18 @@ private struct ProInsightsCard: View {
     let mode: GameMode
     var playType: String = "solo"
     @ObservedObject private var auth = AuthService.shared
-    @State private var s = MatchStatsService.ProInsights()
+    @State private var s: MatchStatsService.ProInsights
     private let gold = Color(hex: 0xD97706)
+
+    /// Memo in the first frame (founder, 2026-09-29) — the card popped in after .task.
+    init(mode: GameMode, playType: String = "solo") {
+        self.mode = mode; self.playType = playType
+        _s = State(initialValue: (AuthService.shared.isProActive ? StatsMemo.shared.get(Self.memoKey(mode, playType)) : nil)
+                   ?? MatchStatsService.ProInsights())
+    }
+    private static func memoKey(_ mode: GameMode, _ playType: String) -> String {
+        "proInsights:\(StatsMemo.uid):\(mode.rawValue):\(playType)"
+    }
     /// The mode's guess semantics — "Fewest Guesses" reads "Fewest Mistakes" /
     /// "Best vs Par" / "Best Rank" with a matching value (More Games §11).
     private var meta: GenMode? { ModeGen.byDbKey(mode.rawValue) }
@@ -726,10 +803,10 @@ private struct ProInsightsCard: View {
             }
         }
         .task(id: "\(mode.rawValue)-\(auth.isProActive)-\(playType)") {
-            s = MatchStatsService.ProInsights()
+            let key = Self.memoKey(mode, playType)
+            // Memo or blank in one assignment — no reset-then-refill.
+            s = (auth.isProActive ? StatsMemo.shared.get(key) : nil) ?? MatchStatsService.ProInsights()
             if auth.isProActive {
-                let key = "proInsights:\(auth.profile?.id ?? "anon"):\(mode.rawValue):\(playType)"
-                if let cached: MatchStatsService.ProInsights = StatsMemo.shared.get(key) { s = cached }
                 let fresh = await MatchStatsService.proInsights(mode: mode, playType: playType)
                 s = fresh
                 StatsMemo.shared.set(key, fresh)

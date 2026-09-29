@@ -62,6 +62,13 @@ struct WeeklyFinishesCard: View {
     let userId: String
     @State private var rows: [WeeklyRace.Row]?
 
+    /// Session memo in the first frame (founder, 2026-09-29: the card popped in on every
+    /// All-time visit — it had no cache at all).
+    init(userId: String) {
+        self.userId = userId
+        _rows = State(initialValue: StatsMemo.shared.get("weeklyFinishes:\(userId)"))
+    }
+
     private static let purple = Color(hex: 0x7C3AED)
 
     var body: some View {
@@ -95,7 +102,11 @@ struct WeeklyFinishesCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
-        .task(id: userId) { rows = await WeeklyRace.fetchFinishes(userId: userId) }
+        .task(id: userId) {
+            let fresh = await WeeklyRace.fetchFinishes(userId: userId)
+            rows = fresh
+            StatsMemo.shared.set("weeklyFinishes:\(userId)", fresh)
+        }
     }
 
     private func count(_ rows: [WeeklyRace.Row], _ rank: Int) -> Int { rows.filter { $0.rank == rank }.count }

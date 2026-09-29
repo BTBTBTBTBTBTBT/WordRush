@@ -35,11 +35,17 @@ struct ProfileTab: View {
     // Per-mode win streak for the mode-detail grid (computed from match history,
     // mirrors web mode-detail-panel's fetchModeWinStreak). Not stored in
     // user_stats, so it's fetched when the selected mode changes.
-    @State private var modeWinStreak: (current: Int, best: Int) = (0, 0)
-    /// The selected mode's pure aggregate over the player's own matches rows
-    /// (ModeStats.modeAggregates) — the custom games' grid cells (Clean, Avg
-    /// Mistakes, Pangrams, …) read from it; word modes ignore it.
-    @State private var modeAggregates: ModeAggregates = .empty
+    // + the selected mode's pure aggregate over the player's own matches rows
+    // (ModeStats.modeAggregates) — the custom games' grid cells (Clean, Avg
+    // Mistakes, Pangrams, …) read from it; word modes ignore it.
+    // Keyed "uid:mode:tab" and mirrored to StatsMemo (founder, 2026-09-29): one shared pair used to
+    // be RESET to zero on every page switch, so the grid showed "0" / "—" cells for a frame (or a
+    // round trip) and then filled. Now the new page's cells read their own entry in the first frame.
+    private struct ModeCells { var streak: (current: Int, best: Int); var aggregates: ModeAggregates }
+    @State private var modeCells: [String: ModeCells] = [:]
+    private func modeCellsKey(_ mode: GameMode, _ tab: String) -> String {
+        "modeCells:\(auth.profile?.id ?? "anon"):\(mode.rawValue):\(tab)"
+    }
     // Solo/VS/VS-CPU scope for the per-game charts (restat B1). A game page's
     // Solo | VS toggle drives it; the VS page pins it to vs (or vs_cpu for
     // practice); the All-time charts read it like the web.
@@ -113,11 +119,14 @@ struct ProfileTab: View {
     /// Rail selection — web `setSelected`: landing on VS lifts a Solo scope to
     /// VS; landing on a game without a VS board drops the scope to Solo.
     private func select(_ key: String) {
-        // One explicit fade for the page swap. The old implicit
-        // `.animation(value:)` on the whole scroll content animated every frame
-        // in the ScrollView through the `.id` swap and left the page rendered
-        // magnified and stuck (founder, 2026-09-26: "zooming in and freezing").
-        withAnimation(Theme.animation(.easeOut(duration: 0.18))) {
+        // The page swaps in ONE un-animated transaction (founder, 2026-09-29: the rail showed a
+        // "page loading in" — the 0.18 s crossfade kept the old page laid out under the new one
+        // while it faded, and the new page's cards then filled in behind it). Every card now
+        // paints from the session memo in its first frame, so there is nothing left to fade.
+        // (2026-09-26: the old implicit `.animation(value:)` on the scroll content is what left
+        // the page magnified and stuck — never reintroduce it.)
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) {
             selected = key
             if key == StatsRailKey.vs {
                 if activeTab == "solo" { activeTab = "vs" }
@@ -127,6 +136,12 @@ struct ProfileTab: View {
                 activeTab = "solo"
             }
         }
+    }
+
+    /// Solo | VS and Live | CPU — the same un-animated swap as the rail.
+    private func setActiveTab(_ t: String) {
+        var tx = Transaction(); tx.disablesAnimations = true
+        withTransaction(tx) { activeTab = t }
     }
 
     /// Swipe on the page moves one chip along the rail (founder: no 19-page
@@ -306,8 +321,8 @@ struct ProfileTab: View {
     private func content(_ p: Profile) -> some View {
         // Web order (app/stats/page.tsx, D2): player card →
         // StatsRail → ONE page keyed on the selection (Today · a game page ·
-        // VS · All-time). The page swaps with the F1 fade+rise the old picker
-        // used; a horizontal swipe on it moves one chip along the rail.
+        // VS · All-time). The page swaps instantly (select()); a horizontal
+        // swipe on it moves one chip along the rail.
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
@@ -326,7 +341,6 @@ struct ProfileTab: View {
                     }
                 }
                 .id("page-\(selected)-\(activeTab)")
-                .transition(.opacity)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 24).onEnded { v in
                         guard abs(v.translation.width) >= 70, abs(v.translation.height) <= 50 else { return }
@@ -444,7 +458,7 @@ struct ProfileTab: View {
             HStack(spacing: 4) {
                 ForEach(["vs", "vs_cpu"], id: \.self) { t in
                     let active = tab == t
-                    Button { withAnimation(Theme.animation(.easeOut(duration: 0.18))) { activeTab = t } } label: {
+                    Button { setActiveTab(t) } label: {
                         Text(t == "vs" ? "Live" : "CPU").font(Brand.font(10, .heavy))
                             .foregroundStyle(active ? Theme.primary : Theme.textMuted)
                             .padding(.horizontal, 10).padding(.vertical, 5)
@@ -454,10 +468,17 @@ struct ProfileTab: View {
                 }
             }
         }
-        modeDetailHeader(vsMode, tab: tab)
-        modeStats(p, mode: vsMode, tab: tab)
-        ProfileDashboard(mode: vsMode, playType: tab)
-        ProDeepModeCard(gameMode: vsMode.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(vsMode), playType: tab)
+        // Keyed on the game so a board-chip tap builds fresh cards that paint the new game's memo
+        // in their first frame (founder, 2026-09-29: the page id doesn't carry vsMode, so the charts
+        // kept the PREVIOUS game's data under the new header until their .task swapped it). Same
+        // 16 pt spacing as the page stack, so the layout is unchanged.
+        VStack(spacing: 16) {
+            modeDetailHeader(vsMode, tab: tab)
+            modeStats(p, mode: vsMode, tab: tab)
+            ProfileDashboard(mode: vsMode, playType: tab)
+            ProDeepModeCard(gameMode: vsMode.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(vsMode), playType: tab)
+        }
+        .id(vsMode)
         // CPU practice writes aggregate totals only — per-game charts
         // have no data to draw from, so say so instead of blanks.
         if tab == "vs_cpu" {
@@ -1003,7 +1024,8 @@ struct ProfileTab: View {
         HStack(spacing: 8) {
             ForEach(["solo", "vs"], id: \.self) { t in
                 let active = gamePageTab == t
-                Button { Haptics.tap(); withAnimation(Theme.animation(.easeOut(duration: 0.18))) { activeTab = t } } label: {
+                // Instant, like the rail (founder, 2026-09-29) — the page re-keys on activeTab.
+                Button { Haptics.tap(); setActiveTab(t) } label: {
                     HStack(spacing: 6) {
                         if t == "solo" {
                             Image(systemName: "person.fill").font(.system(size: 12, weight: .bold))
@@ -1126,13 +1148,16 @@ struct ProfileTab: View {
         // The eight cells come from the shared per-mode stats registry (ModeStats,
         // More Games §18) — same lines, same fixtures as web and Android.
         let meta = ModeGen.byDbKey(mode.rawValue)
+        let cellsKey = modeCellsKey(mode, tab)
+        let known = modeCells[cellsKey] ?? StatsMemo.shared.get(cellsKey)
+        let streak: (current: Int, best: Int) = known?.streak ?? (0, 0)
         // WordociousCore.ModeStats — the app has its own `ModeStats` aggregate struct in UserStatsService.
         let cells: [(String, String)] = WordociousCore.ModeStats.statLines(
             dbKey: mode.rawValue,
             totals: StatTotals(wins: s.wins, losses: s.losses, totalGames: s.totalGames, bestScore: s.bestScore,
-                               fastestTime: s.fastestTime, streak: modeWinStreak.current, bestStreak: modeWinStreak.best),
+                               fastestTime: s.fastestTime, streak: streak.current, bestStreak: streak.best),
             semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1,
-            aggregates: modeAggregates
+            aggregates: known?.aggregates ?? .empty
         ).map { ($0.label, $0.value) }
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
             ForEach(cells, id: \.0) { c in
@@ -1149,16 +1174,17 @@ struct ProfileTab: View {
         // Fetch the per-mode win streak AND the mode's matches aggregate from
         // match history whenever the selected mode OR the play-type toggle
         // changes (web mode-detail-panel parity — restat B1 scopes both to the
-        // toggle). Reset first so a stale value from the previous mode never
-        // flashes.
-        .task(id: "\(mode.rawValue)-\(tab)") {
-            modeWinStreak = (0, 0)
-            modeAggregates = .empty
+        // toggle). Keyed per mode+tab, so a previous mode's value can never
+        // show here — and this mode's last value shows at once.
+        .task(id: cellsKey) {
             if let uid = auth.profile?.id {
-                async let streak = MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: tab)
+                async let streakF = MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: tab)
                 async let rows = MatchStatsService.modeMatches(uid: uid, mode: mode, playType: tab)
-                modeWinStreak = await streak
-                modeAggregates = WordociousCore.ModeStats.modeAggregates(mode.rawValue, await rows, guessBase: meta?.guessBase ?? 1)
+                let fresh = ModeCells(streak: await streakF,
+                                      aggregates: WordociousCore.ModeStats.modeAggregates(mode.rawValue, await rows, guessBase: meta?.guessBase ?? 1))
+                guard !Task.isCancelled else { return }
+                modeCells[cellsKey] = fresh
+                StatsMemo.shared.set(cellsKey, fresh)
             }
         }
     }
@@ -1184,8 +1210,18 @@ struct LeaderboardTab: View {
     @State private var sweepRank: (rank: Int, total: Int)?
     @State private var sweepLoading = false
     @State private var entries: [LeaderboardEntry] = []
-    @State private var yesterday: [LeaderboardEntry] = []
-    @State private var yesterdaySweep: [SweepEntry] = []
+    // Yesterday's Winners, settled and so kept per "day:mode:scope" (founder, 2026-09-29): one
+    // shared list used to keep the PREVIOUS mode's podium under the new mode until the refetch
+    // landed, and flashed "No results from yesterday" before the first fetch. nil = not loaded.
+    @State private var yesterdayByKey: [String: [LeaderboardEntry]] = [:]
+    @State private var ySweepByDay: [String: [SweepEntry]] = [:]
+    private var yesterdayKey: String {
+        "\(LeaderboardService.yesterdayLocal()):\(mode.rawValue):\(friendsOnly ? "friends" : "all")"
+    }
+    private var yesterdayKnown: [LeaderboardEntry]? { yesterdayByKey[yesterdayKey] }
+    private var yesterday: [LeaderboardEntry] { yesterdayKnown ?? [] }
+    private var ySweepKnown: [SweepEntry]? { ySweepByDay[LeaderboardService.yesterdayLocal()] }
+    private var yesterdaySweep: [SweepEntry] { ySweepKnown ?? [] }
     // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
     @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
     // §248: current flawless streaks for FLAWLESS rows — the ×N pills.
@@ -1244,6 +1280,22 @@ struct LeaderboardTab: View {
     /// the picked mode); VS is excluded (no daily leaderboard).
     private let pickerModes: [HomeMode] = (homeModes + moreModes).filter { $0.dbKey != nil }
 
+    /// The default board paints from the cache in the FIRST frame (founder, 2026-09-29: opening the
+    /// tab showed "No daily results yet · 0 players" for a frame before load() ran). The player's
+    /// own row folds in on appear (paintCachedBoard), before the network.
+    init(path: Binding<[String]>) {
+        _path = path
+        let key = LeaderboardCache.key(mode: .duel, userId: AuthService.shared.profile?.id)
+        if let c = LeaderboardCache.shared[key] {
+            _entries = State(initialValue: c.entries)
+            _playerCount = State(initialValue: c.playerCount)
+            _userRank = State(initialValue: c.userRank)
+            _rankWindow = State(initialValue: c.rankWindow)
+        } else {
+            _loading = State(initialValue: true)
+        }
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
@@ -1290,16 +1342,14 @@ struct LeaderboardTab: View {
             .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
                 guard let key = note.object as? String, let gm = GameMode(rawValue: key) else { return }
                 NextDailyCTA.pendingLeaderboardMode = nil
-                isSweep = false
-                mode = gm
+                selectMode(gm)
             }
             // §264: the tab may not have EXISTED when the note was posted (TabView
             // builds tabs lazily) — pick the requested mode up on appear instead.
             .onAppear {
                 if let key = NextDailyCTA.pendingLeaderboardMode, let gm = GameMode(rawValue: key) {
                     NextDailyCTA.pendingLeaderboardMode = nil
-                    isSweep = false
-                    mode = gm
+                    selectMode(gm)
                 }
             }
         }
@@ -1321,7 +1371,12 @@ struct LeaderboardTab: View {
                     Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                     HStack(spacing: 4) {
                         Image(systemName: "person.2.fill").font(.system(size: 10))
-                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
+                        // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
+                        if loading && playerCount == 0 {
+                            Text("000 players today").font(Brand.font(10, .bold)).redacted(reason: .placeholder)
+                        } else {
+                            Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
+                        }
                     }.foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
@@ -1382,7 +1437,7 @@ struct LeaderboardTab: View {
         ScrollView {
             VStack(spacing: 12) {
                 header
-                HModePicker(selected: modeSelection, isSweep: $isSweep)
+                HModePicker(selected: modeSelection, isSweep: sweepSelection)
                 if isSweep {
                     sweepBoard
                 } else {
@@ -1397,6 +1452,9 @@ struct LeaderboardTab: View {
             // that the siblings' magic 72 quietly under-clears.
             .padding(.bottom, max(72, chrome.bottomInset))
         }
+        // Before the first frame: the selected board from the cache with the player's own row
+        // (load() repeats this, but only after the render).
+        .onAppear { if isSweep { paintCachedSweep() } else { paintCachedBoard() } }
         .task(id: "\(mode.rawValue)-\(reloadToken)-\(friendsOnly)-\(friendsVersion)") { await load() }
         .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
         // Warms the modes the user has NOT opened yet today (§253). Keyed on
@@ -1513,7 +1571,9 @@ struct LeaderboardTab: View {
             }
         }
         if showYesterday {
-            if yesterdaySweep.isEmpty {
+            if ySweepKnown == nil {
+                LeaderboardSkeleton()
+            } else if yesterdaySweep.isEmpty {
                 Text("No sweeps yesterday")
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
@@ -1558,8 +1618,9 @@ struct LeaderboardTab: View {
                     HStack(spacing: 6) {
                         SweepModeDots(details: ySweepDetails[entry.userId],
                                       day: LeaderboardService.yesterdayLocal())
+                        // Yesterday's rows read yesterday's settled streaks (web/Android parity).
                         sweepPill(isFlawless: entry.isFlawless,
-                                  streak: flawlessStreaks[entry.userId] ?? 0)
+                                  streak: yFlawlessStreaks[entry.userId] ?? 0)
                     }
                 }
             }.buttonStyle(.plain)
@@ -1584,14 +1645,16 @@ struct LeaderboardTab: View {
                         let accent = ModeStyle.accent(mode)
                         HStack(spacing: 0) {
                             ForEach([false, true], id: \.self) { f in
-                                Button { friendsOnly = f } label: {
+                                // All|Friends repaints its cached board in the same transaction (founder,
+                                // 2026-09-29: a frame of the global rows and "of N" under "Friends").
+                                Button { if friendsOnly != f { instantly { friendsOnly = f; paintCachedBoard() } } } label: {
                                     Text(f ? "Friends" : "All")
                                         .font(Brand.font(9, .heavy))
                                         .foregroundStyle(friendsOnly == f ? accent : Theme.textMuted)
                                         .padding(.horizontal, 8).padding(.vertical, 3)
                                         .background(friendsOnly == f ? accent.opacity(0.08) : Theme.surface)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(InstantButtonStyle())
                             }
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -1724,7 +1787,9 @@ struct LeaderboardTab: View {
                     }
                 }
                 if showYesterday {
-                    if yesterday.isEmpty {
+                    if yesterdayKnown == nil {
+                        LeaderboardSkeleton()
+                    } else if yesterday.isEmpty {
                         Text("No results from yesterday")
                             .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                             .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
@@ -2056,22 +2121,58 @@ struct LeaderboardTab: View {
     /// 2026-09-29: switching showed one frame of the new header over the previous mode's rows and
     /// count before load() — which only runs after the render — swapped them).
     private var modeSelection: Binding<GameMode> {
-        Binding(get: { mode }, set: { new in
-            var t = Transaction(); t.disablesAnimations = true
-            withTransaction(t) {
-                mode = new
-                let key = LeaderboardCache.key(mode: new, userId: auth.profile?.id) + (friendsOnly ? ":friends" : "")
-                if let cached = LeaderboardCache.shared[key] {
-                    let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
-                    entries = rows; playerCount = n; userRank = cached.userRank ?? mineRank
-                    rankWindow = cached.rankWindow; loading = false
-                } else {
-                    let seeded = withMine([], 0)
-                    entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
-                    loading = seeded.0.isEmpty
-                }
-            }
-        })
+        Binding(get: { mode }, set: { new in instantly { mode = new; paintCachedBoard() } })
+    }
+
+    /// Post-game "View Leaderboard" hand-off — the same one-transaction paint as a tile tap.
+    private func selectMode(_ gm: GameMode) {
+        instantly { isSweep = false; mode = gm; paintCachedBoard() }
+    }
+
+    /// The Sweep tile paints the cached sweep board in the same transaction as the selection
+    /// (founder, 2026-09-29: one frame of "No sweeps yet today. Be the first!" before loadSweep ran).
+    private var sweepSelection: Binding<Bool> {
+        Binding(get: { isSweep }, set: { on in instantly { isSweep = on; if on { paintCachedSweep() } } })
+    }
+
+    /// Paints the selected board (mode + All/Friends) from the cache with the player's own row
+    /// folded in — no network. Nothing cached → the player's row alone, else the skeleton.
+    private func paintCachedBoard() {
+        let key = LeaderboardCache.key(mode: mode, userId: auth.profile?.id) + (friendsOnly ? ":friends" : "")
+        if let cached = LeaderboardCache.shared[key] {
+            let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
+            entries = rows; playerCount = n
+            userRank = cached.userRank ?? mineRank ?? rowsRank(rows, n)
+            rankWindow = cached.rankWindow; loading = false
+        } else {
+            let seeded = withMine([], 0)
+            entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
+            loading = seeded.0.isEmpty
+        }
+    }
+
+    /// The player's rank read off the rows in hand when they're on the list — the same
+    /// (competition rank, total) LeaderboardService.userRank returns for a top-list hit. The
+    /// prefetched boards cache no rank, so the banner used to pop in (pushing the board down)
+    /// only after the rank query (founder, 2026-09-29).
+    private func rowsRank(_ rows: [LeaderboardEntry], _ count: Int) -> (rank: Int, total: Int)? {
+        guard let uid = auth.profile?.id.lowercased(),
+              let i = rows.firstIndex(where: { $0.userId.lowercased() == uid }) else { return nil }
+        return (LeaderboardService.competitionRank(rows, i), rows.count < 50 ? rows.count : max(count, rows.count))
+    }
+
+    private func paintCachedSweep() {
+        if let cached = SweepCache.shared.daily(SweepCache.dailyKey()) {
+            sweepEntries = cached.entries
+            sweepRank = cached.userRank
+            sweepDetails = cached.details
+            sweepLoading = false
+        } else {
+            sweepLoading = true
+            sweepRank = nil
+            sweepEntries = []
+            sweepDetails = [:]
+        }
     }
 
     private func load() async {
@@ -2080,24 +2181,8 @@ struct LeaderboardTab: View {
         // the fresh fetch below swaps in silently. Skeleton = true first load only.
         let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id)
             + (friendsOnly ? ":friends" : "")
-        let seeded = withMine([], 0)
-        if let cached = LeaderboardCache.shared[cacheKey] {
-            let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
-            entries = rows
-            playerCount = n
-            userRank = cached.userRank ?? mineRank
-            rankWindow = cached.rankWindow
-            loading = false
-        } else if !seeded.0.isEmpty {
-            // No cached board yet, but the player just finished this daily: show their row now.
-            entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
-            loading = false
-        } else {
-            loading = true
-            userRank = nil
-            rankWindow = nil
-            entries = []
-        }
+        // Cached board (or the player's own row, or the skeleton) — the same paint a tap does.
+        paintCachedBoard()
 
         // FRIENDS board (§207): one fetch restricted to friends∪me holds the
         // whole board — rank is the dense index, no rank query or window.
@@ -2140,6 +2225,8 @@ struct LeaderboardTab: View {
         entries = shown
         playerCount = shownCount
         loading = false
+        // The banner lands WITH the rows when the player is on them (the rank query only refines it).
+        if userRank == nil { userRank = mineRank ?? rowsRank(shown, shownCount) }
 
         var rank: (rank: Int, total: Int)? = nil
         var win: (startRank: Int, entries: [LeaderboardEntry])? = nil
@@ -2162,7 +2249,7 @@ struct LeaderboardTab: View {
             let day = LeaderboardService.yesterdayLocal()
             let rows = (try? await SweepLeaderboardService.fetchDailySweep(day: day, limit: 5)) ?? []
             guard !Task.isCancelled else { return }
-            yesterdaySweep = rows
+            ySweepByDay[day] = rows
             // §223: dot-strip + guess/hint detail rides in behind the rows —
             // the podium paints first, dots fill in when the fetch lands.
             let details = await LeaderboardService.fetchSweepModeDetails(
@@ -2177,6 +2264,7 @@ struct LeaderboardTab: View {
             return
         }
         // Friends toggle carries into Yesterday's Winners: podium among friends.
+        let key = yesterdayKey
         var ids: [String]? = nil
         if friendsOnly, let uid = auth.profile?.id {
             ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
@@ -2186,23 +2274,13 @@ struct LeaderboardTab: View {
         // .task(id:) cancels this on a mode switch — don't let the previous
         // mode's slow response overwrite the new mode's podium.
         guard !Task.isCancelled else { return }
-        yesterday = rows
+        yesterdayByKey[key] = rows
     }
 
     /// Loads the daily-sweep board (stale-while-revalidate, same shape as load()).
     private func loadSweep() async {
         let cacheKey = SweepCache.dailyKey()
-        if let cached = SweepCache.shared.daily(cacheKey) {
-            sweepEntries = cached.entries
-            sweepRank = cached.userRank
-            sweepDetails = cached.details
-            sweepLoading = false
-        } else {
-            sweepLoading = true
-            sweepRank = nil
-            sweepEntries = []
-            sweepDetails = [:]
-        }
+        paintCachedSweep()
 
         let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
         guard !Task.isCancelled else { return }
@@ -2342,6 +2420,13 @@ struct InstantButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View { configuration.label.contentShape(Rectangle()) }
 }
 
+/// One un-animated transaction: a selection and the cached content it paints land in the SAME
+/// frame, with nothing easing in (founder, 2026-09-29).
+@MainActor func instantly(_ body: () -> Void) {
+    var t = Transaction(); t.disablesAnimations = true
+    withTransaction(t, body)
+}
+
 struct HModePicker: View {
     @Binding var selected: GameMode
     // Parallel selection flag for the Sweep tile — GameMode can't hold SWEEP, so
@@ -2467,7 +2552,7 @@ struct HModePicker: View {
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? accent.opacity(0.08) : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? accent : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(InstantButtonStyle())
     }
 }
 
@@ -2488,7 +2573,10 @@ func placeholder(icon: String, title: String, subtitle: String) -> some View {
 /// builder stays state-free.
 struct FlawlessBannerFooter: View {
     let total: Int
-    @State private var sweep = MatchStatsService.DailySweepStats()
+    /// The Stats tab's session memo in the first frame (founder, 2026-09-29: the streak line popped in
+    /// above the footer after .task, pushing the card taller).
+    @State private var sweep: MatchStatsService.DailySweepStats =
+        StatsMemo.shared.get("sweepStats:\(StatsMemo.uid)") ?? MatchStatsService.DailySweepStats()
     @State private var sharing = false
 
     var body: some View {

@@ -185,9 +185,17 @@ struct SignatureCard: View {
     let userId: String
     @State private var stats: SignatureStats.Signature?
 
+    /// Memo in the first frame (founder, 2026-09-29) — the card popped in under its header.
+    init(userId: String) {
+        self.userId = userId
+        _stats = State(initialValue: StatsMemo.shared.get("signature:\(userId)"))
+    }
+
     var body: some View {
         Group {
-            if let s = stats {
+            if stats == nil {
+                SkeletonBlock(height: 76, cornerRadius: 16)
+            } else if let s = stats {
                 KitCard {
                     HStack(spacing: 8) {
                         StatCell(icon: "calendar", label: "Best day",
@@ -225,6 +233,12 @@ struct StandingTrendCard: View {
     let isPro: Bool
     @State private var points: [SignatureStats.StandingPoint]?
 
+    /// Memo in the first frame (founder, 2026-09-29).
+    init(userId: String, isPro: Bool) {
+        self.userId = userId; self.isPro = isPro
+        _points = State(initialValue: isPro ? StatsMemo.shared.get("standingTrend:\(userId)") : nil)
+    }
+
     private static let purple = Color(hex: 0x7C3AED)
     private static let amber = Color(hex: 0xD97706)
     private static let sample: [SignatureStats.StandingPoint] =
@@ -239,7 +253,9 @@ struct StandingTrendCard: View {
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Standing Trend", accent: Self.purple)
-                    if isPro {
+                    if isPro && points == nil {
+                        SkeletonBlock(height: 130, cornerRadius: 16)
+                    } else if isPro {
                         chart
                     } else {
                         ProLockOverlay(label: "Standing trend — Pro") { chart }

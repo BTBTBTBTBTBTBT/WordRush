@@ -126,15 +126,26 @@ struct SkillRadarCard: View {
     var statRows: [UserStatRow] = []
     @State private var data: StatsDeepService.SkillRadarData?
 
+    /// Memo in the first frame (founder, 2026-09-29) — the radar popped in after .task.
+    init(isPro: Bool, statRows: [UserStatRow] = []) {
+        self.isPro = isPro; self.statRows = statRows
+        let cached: StatsDeepService.SkillRadarData? = isPro ? StatsMemo.shared.get(Self.memoKey) : nil
+        _data = State(initialValue: cached)
+        _radarLoaded = State(initialValue: cached != nil)
+    }
+    private static var memoKey: String { "skillRadar:\(StatsMemo.uid)" }
+
     /// Locked preview uses the web's static sample so free users see the shape.
     private static let sample = StatsDeepService.SkillRadarData(
         speed: 62, accuracy: 74, consistency: 55, endurance: 40, versatility: 68)
 
-    @State private var radarLoaded = false
+    @State private var radarLoaded: Bool
 
     var body: some View {
         Group {
-            if isPro, data == nil, radarLoaded {
+            if isPro, data == nil, !radarLoaded {
+                StatsCardPlaceholder(title: "Skill Radar", height: 260)
+            } else if isPro, data == nil, radarLoaded {
                 StatsEmptyCard(title: "Skill Radar",
                                hint: "Play 5+ solo games to generate your skill radar.")
             } else if let d = isPro ? data : Self.sample {
@@ -159,7 +170,7 @@ struct SkillRadarCard: View {
         }
         .task(id: "\(isPro)-\(statRows.count)") {
             guard isPro else { return }
-            let key = "skillRadar:\(AuthService.shared.profile?.id ?? "anon")"
+            let key = Self.memoKey
             if let cached: StatsDeepService.SkillRadarData = StatsMemo.shared.get(key) { data = cached }
             let times = await MatchStatsService.solveTimes(limit: 20)
             let fresh = statRows.isEmpty
@@ -187,8 +198,17 @@ private struct RadarLabeledChart: View {
 /// Most-faced opponents with head-to-head W–L + win-share bar (Pro).
 struct RivalriesCard: View {
     let isPro: Bool
-    @State private var rows: [StatsDeepService.Rivalry] = []
-    @State private var loaded = false
+    @State private var rows: [StatsDeepService.Rivalry]
+    @State private var loaded: Bool
+
+    /// Memo in the first frame (founder, 2026-09-29).
+    init(isPro: Bool) {
+        self.isPro = isPro
+        let cached: [StatsDeepService.Rivalry]? = isPro ? StatsMemo.shared.get(Self.memoKey) : nil
+        _rows = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static var memoKey: String { "rivalries:\(StatsMemo.uid)" }
 
     private static let sample: [StatsDeepService.Rivalry] = [
         .init(opponentId: "1", username: "WordSmith", wins: 4, losses: 2, draws: 0, total: 6),
@@ -198,7 +218,9 @@ struct RivalriesCard: View {
     var body: some View {
         let display = isPro ? rows : Self.sample
         Group {
-            if isPro, display.isEmpty, loaded {
+            if isPro, display.isEmpty, !loaded {
+                StatsCardPlaceholder(title: "Rivalries", accent: Color(hex: 0xEC4899), height: 110)
+            } else if isPro, display.isEmpty, loaded {
                 StatsEmptyCard(title: "Rivalries", accent: Color(hex: 0xEC4899),
                                hint: "Face the same opponent a few times to start a rivalry.")
             } else if !(isPro && display.isEmpty) {
@@ -220,8 +242,8 @@ struct RivalriesCard: View {
         }
         .task(id: isPro) {
             guard isPro else { return }
-            let key = "rivalries:\(AuthService.shared.profile?.id ?? "anon")"
-            if let cached: [StatsDeepService.Rivalry] = StatsMemo.shared.get(key) { rows = cached }
+            let key = Self.memoKey
+            if let cached: [StatsDeepService.Rivalry] = StatsMemo.shared.get(key) { rows = cached; loaded = true }
             let fresh = await StatsDeepService.rivalries(limit: 5)
             rows = fresh
             loaded = true
@@ -283,6 +305,15 @@ struct ProDeepModeCard: View {
 
     @State private var data: DeepData?
 
+    /// Memo in the first frame (founder, 2026-09-29) — the section popped in after .task.
+    init(gameMode: String, isPro: Bool, accent: Color, playType: String = "solo") {
+        self.gameMode = gameMode; self.isPro = isPro; self.accent = accent; self.playType = playType
+        _data = State(initialValue: isPro ? StatsMemo.shared.get(Self.memoKey(gameMode, playType)) : nil)
+    }
+    private static func memoKey(_ gameMode: String, _ playType: String) -> String {
+        "deepMode:\(StatsMemo.uid):\(gameMode):\(playType)"
+    }
+
     /// Locked preview uses static sample content so free users see the shape.
     private static let sample = DeepData(
         openers: [.init(word: "CRANE", count: 12, avgGreens: 1.2, avgYellows: 1.6, winRate: 75)],
@@ -296,7 +327,9 @@ struct ProDeepModeCard: View {
     var body: some View {
         let d = isPro ? data : Self.sample
         Group {
-            if isPro, let real = data, !real.hasAny, playType != "vs_cpu" {
+            if isPro, data == nil, playType != "vs_cpu" {
+                StatsCardPlaceholder(title: "Deep Insights", accent: accent, height: 200)
+            } else if isPro, let real = data, !real.hasAny, playType != "vs_cpu" {
                 StatsEmptyCard(title: "Deep Insights", accent: accent,
                                hint: "Play more of this mode to unlock openers, accuracy and almanac insights.")
             } else if let d, d.hasAny, playType != "vs_cpu" {
@@ -321,7 +354,7 @@ struct ProDeepModeCard: View {
             guard isPro, playType != "vs_cpu" else { return }
             // P-cache: seed from the session memo so re-tapping a mode paints
             // instantly; the fresh fetch below swaps in as before.
-            let memoKey = "deepMode:\(AuthService.shared.profile?.id ?? "anon"):\(gameMode):\(playType)"
+            let memoKey = Self.memoKey(gameMode, playType)
             if let cached: DeepData = StatsMemo.shared.get(memoKey) { data = cached } else { data = nil }
             // P4: one shared 400-row guess-log fetch feeds every section (was
             // 4 identical `matches` reads). wordAlmanac takes a prefix(24)

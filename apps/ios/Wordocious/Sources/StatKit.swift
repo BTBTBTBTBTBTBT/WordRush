@@ -252,6 +252,25 @@ final class StatsMemo {
 
     func get<T>(_ key: String) -> T? { store[key] as? T }
     func set<T>(_ key: String, _ value: T) { store[key] = value }
+
+    /// The signed-in id every memo key carries ("anon" before auth lands).
+    static var uid: String { AuthService.shared.profile?.id ?? "anon" }
+}
+
+/// Where a self-fetching stats card will land, on its FIRST load of the session (nothing in
+/// StatsMemo yet): a pulsing block in the card's slot instead of a zero-height view that pops
+/// in, or an empty-state line that flashes before the real data (founder, 2026-09-29). Later
+/// visits never show it — every card seeds its @State from the memo in init.
+struct StatsCardPlaceholder: View {
+    var title: String? = nil
+    var accent: Color = Theme.primary
+    var height: CGFloat = 120
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title { SectionHeader(title, accent: accent) }
+            SkeletonBlock(height: height, cornerRadius: 16)
+        }
+    }
 }
 
 /// Visible "no data yet" chrome for a stats card whose fetch returned nothing.

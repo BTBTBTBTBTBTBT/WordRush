@@ -8,7 +8,11 @@ import WordociousCore
 /// GET /api/friends/feed (FriendsService.fetchFeed). Native twin of
 /// components/friends/activity-feed.tsx, wearing the FRIENDS card shell.
 struct ActivityFeedView: View {
-    @State private var events: [FriendsService.FeedEvent]?
+    /// The session's last feed in the FIRST frame (founder, 2026-09-29: every open of the Friends
+    /// screen — the Leaderboard sheet, a profile push, the first tab visit — flashed the 3-row
+    /// skeleton, then the feed snapped in at a different height). Refreshed underneath as before.
+    @State private var events: [FriendsService.FeedEvent]? = StatsMemo.shared.get(Self.memoKey)
+    private static var memoKey: String { "friendsFeed:\(StatsMemo.uid)" }
     @State private var expanded = false
     @State private var pulse = false
 
@@ -72,7 +76,9 @@ struct ActivityFeedView: View {
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
         .task(id: AuthService.shared.profile?.id) {
             guard AuthService.shared.profile != nil else { return }
-            events = await FriendsService.fetchFeed()
+            let fresh = await FriendsService.fetchFeed()
+            events = fresh
+            StatsMemo.shared.set(Self.memoKey, fresh)
         }
     }
 

@@ -89,16 +89,19 @@ struct RecordsTab: View {
                 .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(InstantButtonStyle())   // no pressed fade on the new selection (founder, 2026-09-29)
     }
 }
 
 /// All-Time records — Hall of Fame (global) + By Game Mode (mode picker).
 struct AllTimeRecordsView: View {
     @EnvironmentObject private var auth: AuthService
-    @State private var records: [AllTimeRecord] = []
+    /// Session copy of the last fetch: re-opening All-Time paints it in the first frame and
+    /// revalidates underneath (founder, 2026-09-29: the card skeleton showed on every open).
+    private static var cachedRecords: [AllTimeRecord]?
+    @State private var records: [AllTimeRecord] = Self.cachedRecords ?? []
     @State private var mode: GameMode = .duel
-    @State private var loading = true
+    @State private var loading = Self.cachedRecords == nil
     // Sweep tile — the all-time sweep ranking (lifetime sweep totals).
     @State private var isSweep = false
     @State private var sweepEntries: [AllTimeSweepEntry] = []
@@ -133,7 +136,7 @@ struct AllTimeRecordsView: View {
 
                 // By Game Mode
                 Text(isSweep ? "SWEEP RANKING" : "BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                HModePicker(selected: $mode, isSweep: $isSweep)
+                HModePicker(selected: $mode, isSweep: sweepSelection)
                 if isSweep {
                     sweepCard
                 } else {
@@ -168,8 +171,31 @@ struct AllTimeRecordsView: View {
                 }
             }
         }
-        .task { if loading { records = (try? await RecordsService.fetchAll()) ?? []; loading = false } }
+        .task {
+            // Same single fetch per open as before; a cached copy is already on screen.
+            if let fresh = try? await RecordsService.fetchAll() { records = fresh; Self.cachedRecords = fresh }
+            else if Self.cachedRecords == nil { records = [] }
+            loading = false
+        }
         .task(id: "sweep-\(isSweep)") { if isSweep { await loadSweep() } }
+    }
+
+    /// The Sweep tile paints the cached ranking in the same transaction as the selection
+    /// (founder, 2026-09-29: one frame of "No sweeps yet" before loadSweep ran).
+    private var sweepSelection: Binding<Bool> {
+        Binding(get: { isSweep }, set: { on in instantly { isSweep = on; if on { paintCachedSweep() } } })
+    }
+
+    private func paintCachedSweep() {
+        if let cached = SweepCache.shared.allTime {
+            sweepEntries = cached.entries
+            sweepRank = cached.userRank
+            sweepLoading = false
+        } else {
+            sweepLoading = true
+            sweepRank = nil
+            sweepEntries = []
+        }
     }
 
     /// The all-time sweep-ranking card — players ranked by lifetime sweep count
@@ -257,15 +283,7 @@ struct AllTimeRecordsView: View {
     }
 
     private func loadSweep() async {
-        if let cached = SweepCache.shared.allTime {
-            sweepEntries = cached.entries
-            sweepRank = cached.userRank
-            sweepLoading = false
-        } else {
-            sweepLoading = true
-            sweepRank = nil
-            sweepEntries = []
-        }
+        paintCachedSweep()
 
         let fetchedOpt = try? await SweepLeaderboardService.fetchAllTimeSweep()
         guard !Task.isCancelled else { return }
@@ -368,6 +386,58 @@ struct DailyRecordsView: View {
 
     private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
 
+    /// The default board paints from the cache in the FIRST frame (founder, 2026-09-29: opening
+    /// Records showed "No results yet today" for a frame before load() ran).
+    init() {
+        let key = LeaderboardCache.key(mode: .duel, userId: AuthService.shared.profile?.id, playType: "solo")
+        if let c = LeaderboardCache.shared[key] {
+            _entries = State(initialValue: c.entries)
+            _userRank = State(initialValue: c.userRank)
+            _rankWindow = State(initialValue: c.rankWindow)
+        } else {
+            _loading = State(initialValue: true)
+        }
+    }
+
+    /// Mode, Solo|VS and Sweep selections paint their cached board in the same transaction as
+    /// the selection (the LeaderboardTab fix, founder 2026-09-29) — never the previous board's
+    /// rows and rank under the new header for a frame.
+    private var modeSelection: Binding<GameMode> {
+        Binding(get: { mode }, set: { new in instantly { mode = new; paintCached() } })
+    }
+    private var sweepSelection: Binding<Bool> {
+        Binding(get: { isSweep }, set: { on in instantly { isSweep = on; if on { paintCachedSweep() } } })
+    }
+
+    private func paintCached() {
+        let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id, playType: playType)
+        if let cached = LeaderboardCache.shared[cacheKey] {
+            entries = cached.entries
+            userRank = cached.userRank
+            rankWindow = cached.rankWindow
+            loading = false
+        } else {
+            loading = true
+            userRank = nil
+            rankWindow = nil
+            entries = []
+        }
+    }
+
+    private func paintCachedSweep() {
+        if let cached = SweepCache.shared.daily(SweepCache.dailyKey()) {
+            sweepEntries = cached.entries
+            sweepRank = cached.userRank
+            sweepDetails = cached.details
+            sweepLoading = false
+        } else {
+            sweepLoading = true
+            sweepRank = nil
+            sweepEntries = []
+            sweepDetails = [:]
+        }
+    }
+
     private var shareButton: some View {
         Button {
             guard !sharingLb else { return }
@@ -395,7 +465,7 @@ struct DailyRecordsView: View {
         HStack(spacing: 0) {
             ForEach(["solo", "vs"], id: \.self) { t in
                 let active = playType == t
-                Button { playType = t } label: {
+                Button { instantly { playType = t; paintCached() } } label: {
                     HStack(spacing: 4) {
                         Image(systemName: t == "solo" ? "person.fill" : "flag.2.crossed.fill").font(.system(size: 12))
                         Text(t == "solo" ? "Solo" : "VS").font(Brand.font(10, .heavy))
@@ -403,7 +473,7 @@ struct DailyRecordsView: View {
                     .foregroundStyle(active ? accent : Theme.textMuted)
                     .padding(.horizontal, 14).padding(.vertical, 6)
                     .background(active ? accent.opacity(0.08) : Theme.surface)
-                }.buttonStyle(.plain)
+                }.buttonStyle(InstantButtonStyle())
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -415,7 +485,7 @@ struct DailyRecordsView: View {
         let m = homeModes.first { $0.dbKey == mode.rawValue }
         let total = userRank?.total ?? entries.count
         return VStack(spacing: 10) {
-            HModePicker(selected: $mode, isSweep: $isSweep)
+            HModePicker(selected: modeSelection, isSweep: sweepSelection)
 
             // §254: the completed-daily dropdown, mounted exactly as the daily
             // leaderboard (ProfileTab) mounts it — the founder wants Records to
@@ -597,17 +667,7 @@ struct DailyRecordsView: View {
 
     private func loadSweep() async {
         let cacheKey = SweepCache.dailyKey()
-        if let cached = SweepCache.shared.daily(cacheKey) {
-            sweepEntries = cached.entries
-            sweepRank = cached.userRank
-            sweepDetails = cached.details
-            sweepLoading = false
-        } else {
-            sweepLoading = true
-            sweepRank = nil
-            sweepEntries = []
-            sweepDetails = [:]
-        }
+        paintCachedSweep()
 
         let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
         guard !Task.isCancelled else { return }
@@ -688,17 +748,7 @@ struct DailyRecordsView: View {
         // stale-while-revalidate cache paint, rows painted the moment the
         // fetch lands (rank banner fills in after), index fast-path rank.
         let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id, playType: playType)
-        if let cached = LeaderboardCache.shared[cacheKey] {
-            entries = cached.entries
-            userRank = cached.userRank
-            rankWindow = cached.rankWindow
-            loading = false
-        } else {
-            loading = true
-            userRank = nil
-            rankWindow = nil
-            entries = []
-        }
+        paintCached()
 
         let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, playType: playType)
         // .task(id:) cancels on mode/playType switch — bail before assigning
@@ -736,7 +786,15 @@ struct YesterdayPodiumCard: View {
     let playType: String
     let accent: Color
     @EnvironmentObject private var auth: AuthService
-    @State private var top3: [LeaderboardEntry] = []
+    /// Settled podiums by "day:mode:playType" — session-lived (yesterday never changes), so a
+    /// mode switch shows THAT mode's podium at once, never the previous mode's rows under the
+    /// new board until the fetch lands (founder, 2026-09-29).
+    private static var podiums: [String: [LeaderboardEntry]] = [:]
+    @State private var version = 0
+    private var key: String { "\(LeaderboardService.yesterdayLocal()):\(mode.rawValue):\(playType)" }
+    /// nil = this podium hasn't loaded yet this session.
+    private var known: [LeaderboardEntry]? { _ = version; return Self.podiums[key] }
+    private var top3: [LeaderboardEntry] { known ?? [] }
     @State private var open = false
     @State private var sharing = false
     private var podiumScoreLabels: [Double: String] { tieAwareScoreLabels(top3.map(\.compositeScore)) }
@@ -744,7 +802,9 @@ struct YesterdayPodiumCard: View {
 
     var body: some View {
         Group {
-            if !top3.isEmpty {
+            // Unknown yet → keep the header row in place (a skeleton under it when open) rather
+            // than collapsing the card and popping it back in.
+            if known == nil || !top3.isEmpty {
                 VStack(spacing: 0) {
                     // Header split into sibling buttons (web parity) so the
                     // share icon is independently tappable next to the toggle.
@@ -756,8 +816,8 @@ struct YesterdayPodiumCard: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }.buttonStyle(.plain)
-                        // Settled-podium share — only once the podium is open.
-                        if open {
+                        // Settled-podium share — only once the podium is open with rows.
+                        if open && !top3.isEmpty {
                             Button {
                                 guard !sharing else { return }
                                 sharing = true
@@ -782,7 +842,11 @@ struct YesterdayPodiumCard: View {
                         }.buttonStyle(.plain)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    if open {
+                    if open && known == nil {
+                        Divider().overlay(Theme.border)
+                        VStack(spacing: 8) { ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 20, cornerRadius: 6) } }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                    } else if open {
                         Divider().overlay(Theme.border)
                         ForEach(Array(top3.enumerated()), id: \.element.id) { i, e in
                             HStack(spacing: 12) {
@@ -801,8 +865,12 @@ struct YesterdayPodiumCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
-        .task(id: "\(mode.rawValue)-\(playType)") {
-            top3 = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), playType: playType, limit: 5)) ?? []
+        .task(id: key) {
+            let k = key
+            let rows = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), playType: playType, limit: 5)) ?? []
+            guard !Task.isCancelled else { return }
+            Self.podiums[k] = rows
+            version += 1
         }
     }
 }

@@ -231,7 +231,14 @@ struct FriendsPanelView: View {
 
             // Friends list — rows into their profiles (H2H lives there).
             if friends.isEmpty {
-                if incoming.isEmpty && outgoing.isEmpty {
+                if !FriendsService.loaded {
+                    // Roster not fetched yet (cold launch): hold the rows' place instead of
+                    // flashing the no-friends teaching copy at a player who has friends
+                    // (founder, 2026-09-29).
+                    VStack(spacing: 10) {
+                        ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
+                    }
+                } else if incoming.isEmpty && outgoing.isEmpty {
                     // Teaching empty state: explain the whole loop (Tier 1, Aug 11).
                     VStack(alignment: .leading, spacing: 5) {
                         Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")

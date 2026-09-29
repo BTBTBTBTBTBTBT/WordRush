@@ -25,10 +25,16 @@ struct InvitePanelView: View {
     private struct LeaderboardResponse: Decodable { let leaders: [Leader] }
     private struct CreateResponse: Decodable { let code: String?; let error: String? }
 
-    @State private var invites: [ReferralRow] = []
+    /// Last load this session — painted in the FIRST frame and replaced in ONE pass when the
+    /// reads land (founder, 2026-09-29: the rows, then the names, then the leaders each popped
+    /// in on their own, and the slot count read "3 left" until the rows arrived).
+    private struct Snapshot { var invites: [ReferralRow]; var names: [String: String]; var leaders: [Leader] }
+    private static var memoKey: String { "invitePanel:\(StatsMemo.uid)" }
+    private static var memo: Snapshot? { StatsMemo.shared.get(memoKey) }
+    @State private var invites: [ReferralRow] = Self.memo?.invites ?? []
     // §251: invitee_id → username for the settled rows.
-    @State private var inviteeNames: [String: String] = [:]
-    @State private var leaders: [Leader] = []
+    @State private var inviteeNames: [String: String] = Self.memo?.names ?? [:]
+    @State private var leaders: [Leader] = Self.memo?.leaders ?? []
     @State private var creating = false
     @State private var error: String?
     @State private var shareURL: URL?
@@ -197,17 +203,24 @@ struct InvitePanelView: View {
             .order("created_at", ascending: false)
             .limit(20)
             .execute().value
-        if let rows { invites = rows }
         // §251 (founder's sister: "what friends correspond to those invites"):
         // resolve redeemers — profiles is world-readable, one batched read.
         let ids = Array(Set((rows ?? []).compactMap(\.invitee_id)))
-        if !ids.isEmpty { inviteeNames = await PublicProfileService.usernames(ids: ids) }
+        let names: [String: String]? = ids.isEmpty ? nil : await PublicProfileService.usernames(ids: ids)
 
+        var fetchedLeaders: [Leader]? = nil
         if let url = URL(string: "https://wordocious.com/api/referrals/leaderboard"),
            let (data, _) = try? await Net.api.data(from: url),
            let resp = try? JSONDecoder().decode(LeaderboardResponse.self, from: data) {
-            leaders = resp.leaders
+            fetchedLeaders = resp.leaders
         }
+        // The same three reads as before, applied together so the card re-lays out once.
+        instantly {
+            if let rows { invites = rows }
+            if let names { inviteeNames = names }
+            if let fetchedLeaders { leaders = fetchedLeaders }
+        }
+        StatsMemo.shared.set(Self.memoKey, Snapshot(invites: invites, names: inviteeNames, leaders: leaders))
     }
 
     private func apiPOST(path: String, body: [String: String]? = nil) async throws -> Data {

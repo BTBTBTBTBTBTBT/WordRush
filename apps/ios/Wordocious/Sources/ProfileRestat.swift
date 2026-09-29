@@ -107,12 +107,23 @@ struct DailyStandingStrip: View {
 struct OpenerLabCard: View {
     /// Play-type scope from the page toggle (restat B1); vs_cpu → empty → hidden.
     var playType: String = "solo"
-    @State private var openers: [StatsDeepService.OpenerStat] = []
-    @State private var loaded = false
+    @State private var openers: [StatsDeepService.OpenerStat]
+    @State private var loaded: Bool
+
+    /// Memo in the first frame (founder, 2026-09-29) — the card popped in after .task.
+    init(playType: String = "solo") {
+        self.playType = playType
+        let cached: [StatsDeepService.OpenerStat]? = StatsMemo.shared.get(Self.memoKey(playType))
+        _openers = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static func memoKey(_ playType: String) -> String { "openerLab:\(StatsMemo.uid):\(playType)" }
 
     var body: some View {
         Group {
-            if openers.isEmpty, loaded, playType != "vs_cpu" {
+            if !loaded, playType != "vs_cpu" {
+                StatsCardPlaceholder(title: "Opener Lab", accent: Color(hex: 0x06B6D4), height: 150)
+            } else if openers.isEmpty, loaded, playType != "vs_cpu" {
                 StatsEmptyCard(title: "Opener Lab", accent: Color(hex: 0x06B6D4),
                                hint: "Win a few games and your favorite starting words show up here.")
             } else if !openers.isEmpty {
@@ -153,8 +164,8 @@ struct OpenerLabCard: View {
         }
         .task(id: playType) {
             // P-cache: seed from the session memo, then fetch fresh as before.
-            let key = "openerLab:\(AuthService.shared.profile?.id ?? "anon"):\(playType)"
-            if let cached: [StatsDeepService.OpenerStat] = StatsMemo.shared.get(key) { openers = cached }
+            let key = Self.memoKey(playType)
+            if let cached: [StatsDeepService.OpenerStat] = StatsMemo.shared.get(key) { openers = cached; loaded = true }
             let fresh = await StatsDeepService.openerStats(limit: 5, playType: playType)
             openers = fresh
             loaded = true
@@ -169,8 +180,17 @@ struct OpenerLabCard: View {
 struct WeekdayFormCard: View {
     /// Play-type scope from the page toggle (restat B1); vs_cpu → zero days → hidden.
     var playType: String = "solo"
-    @State private var days: [StatsDeepService.WeekdayFormDay] = []
-    @State private var loaded = false
+    @State private var days: [StatsDeepService.WeekdayFormDay]
+    @State private var loaded: Bool
+
+    /// Memo in the first frame (founder, 2026-09-29).
+    init(playType: String = "solo") {
+        self.playType = playType
+        let cached: [StatsDeepService.WeekdayFormDay]? = StatsMemo.shared.get(Self.memoKey(playType))
+        _days = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static func memoKey(_ playType: String) -> String { "weekdayForm:\(StatsMemo.uid):\(playType)" }
 
     private let labels = ["S", "M", "T", "W", "T", "F", "S"]
     private let dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -182,7 +202,9 @@ struct WeekdayFormCard: View {
 
     var body: some View {
         Group {
-            if !days.contains(where: { $0.played > 0 }), loaded, playType != "vs_cpu" {
+            if !loaded, playType != "vs_cpu" {
+                StatsCardPlaceholder(title: "Weekday Form", accent: Color(hex: 0xF97316), height: 110)
+            } else if !days.contains(where: { $0.played > 0 }), loaded, playType != "vs_cpu" {
                 StatsEmptyCard(title: "Weekday Form", accent: Color(hex: 0xF97316),
                                hint: "Play across the week to see your win rate by day.")
             } else if days.contains(where: { $0.played > 0 }) {
@@ -219,8 +241,8 @@ struct WeekdayFormCard: View {
             }
         }
         .task(id: playType) {
-            let key = "weekdayForm:\(AuthService.shared.profile?.id ?? "anon"):\(playType)"
-            if let cached: [StatsDeepService.WeekdayFormDay] = StatsMemo.shared.get(key) { days = cached }
+            let key = Self.memoKey(playType)
+            if let cached: [StatsDeepService.WeekdayFormDay] = StatsMemo.shared.get(key) { days = cached; loaded = true }
             let fresh = await StatsDeepService.weekdayForm(playType: playType)
             days = fresh
             loaded = true
@@ -234,12 +256,22 @@ struct WeekdayFormCard: View {
 /// Points-per-day line (sweep/flawless days marked) — split out of the old
 /// sweep-counts card; the counts moved to Records → You (single home).
 struct DailyPointsChartCard: View {
-    @State private var points: [MatchStatsService.DailyPointsPoint] = []
-    @State private var loaded = false
+    @State private var points: [MatchStatsService.DailyPointsPoint]
+    @State private var loaded: Bool
+
+    /// Memo in the first frame (founder, 2026-09-29).
+    init() {
+        let cached: [MatchStatsService.DailyPointsPoint]? = StatsMemo.shared.get(Self.memoKey)
+        _points = State(initialValue: cached ?? [])
+        _loaded = State(initialValue: cached != nil)
+    }
+    private static var memoKey: String { "dailyPoints:\(StatsMemo.uid)" }
 
     var body: some View {
         Group {
-            if points.count < 2, loaded {
+            if !loaded {
+                StatsCardPlaceholder(title: "Daily Points", accent: Color(hex: 0xEC4899), height: 150)
+            } else if points.count < 2, loaded {
                 StatsEmptyCard(title: "Daily Points", accent: Color(hex: 0xEC4899),
                                hint: "Finish dailies on a few different days to chart your points.")
             } else if points.count >= 2 {
@@ -268,8 +300,8 @@ struct DailyPointsChartCard: View {
             }
         }
         .task {
-            let key = "dailyPoints:\(AuthService.shared.profile?.id ?? "anon")"
-            if let cached: [MatchStatsService.DailyPointsPoint] = StatsMemo.shared.get(key) { points = cached }
+            let key = Self.memoKey
+            if let cached: [MatchStatsService.DailyPointsPoint] = StatsMemo.shared.get(key) { points = cached; loaded = true }
             let fresh = await MatchStatsService.dailyPointsOverTime(days: 30)
             points = fresh
             loaded = true
