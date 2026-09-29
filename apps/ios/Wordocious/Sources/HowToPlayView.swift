@@ -46,7 +46,7 @@ final class HowToPlayService: ObservableObject {
         guard let url = URL(string: "https://wordocious.com/api/howtoplay") else { return }
         var req = URLRequest(url: url)
         req.cachePolicy = .reloadIgnoringLocalCacheData
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await Net.api.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         sections = payload.sections
         loaded = true

@@ -95,6 +95,8 @@ final class LadderVM: ObservableObject {
     private static let practiceTTLms: Double = 24 * 60 * 60 * 1000
 
     private func persist() {
+        // A finished Unlimited game is never resumed — drop its save (founder, 2026-09-29).
+        if !isDaily && isFinished { UserDefaults.standard.removeObject(forKey: storageKey); return }
         let snap = Snapshot(seed: seed, date: LeaderboardService.todayLocal(), state: state, elapsed: elapsed, savedAt: Date().timeIntervalSince1970 * 1000)
         if let data = try? JSONEncoder().encode(snap) { UserDefaults.standard.set(data, forKey: storageKey) }
     }

@@ -45,7 +45,7 @@ enum ShieldService {
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        _ = try? await URLSession.shared.data(for: req)
+        _ = try? await Net.api.data(for: req)
         await AuthService.shared.refreshProfile()
     }
 

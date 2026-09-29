@@ -22,12 +22,16 @@ struct AvatarView: View {
     var body: some View {
         Group {
             if let url, let u = URL(string: url) {
+                #if canImport(UIKit)
+                CachedAvatarImage(url: u) { fallback }
+                #else
                 AsyncImage(url: u) { phase in
                     switch phase {
                     case .success(let img): img.resizable().scaledToFill()
                     default: fallback
                     }
                 }
+                #endif
             } else {
                 fallback
             }
@@ -47,6 +51,43 @@ struct AvatarView: View {
     }
 }
 
+#if canImport(UIKit)
+/// Decoded avatars kept in memory for the session (founder, 2026-09-29):
+/// AsyncImage has no memory cache, so every leaderboard mode switch re-fetched
+/// and flashed the initials first. A cached URL paints on the first frame;
+/// a miss loads through Net.api (URLCache-backed) and decodes off the main thread.
+enum AvatarImageCache {
+    private static let cache: NSCache<NSURL, UIImage> = { let c = NSCache<NSURL, UIImage>(); c.countLimit = 300; return c }()
+    static func cached(_ url: URL) -> UIImage? { cache.object(forKey: url as NSURL) }
+    static func load(_ url: URL) async -> UIImage? {
+        if let hit = cached(url) { return hit }
+        guard let (data, resp) = try? await Net.api.data(from: url),
+              (resp as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true,
+              let raw = UIImage(data: data) else { return nil }
+        let img = await raw.byPreparingForDisplay() ?? raw
+        cache.setObject(img, forKey: url as NSURL)
+        return img
+    }
+}
+
+/// The avatar photo from AvatarImageCache, `placeholder` until it arrives.
+private struct CachedAvatarImage<Placeholder: View>: View {
+    let url: URL
+    @ViewBuilder let placeholder: () -> Placeholder
+    @State private var loaded: (url: URL, image: UIImage)?
+
+    var body: some View {
+        if let img = loaded?.url == url ? loaded?.image : AvatarImageCache.cached(url) {
+            Image(uiImage: img).resizable().scaledToFill()
+        } else {
+            placeholder().task(id: url) {
+                if let img = await AvatarImageCache.load(url) { loaded = (url, img) }
+            }
+        }
+    }
+}
+#endif
+
 /// Uploads a chosen photo to the public `avatars` bucket and returns the
 /// cache-busted public URL — ports components/profile/avatar-upload.tsx
 /// (resize to 256², JPEG, path `<uid>/avatar.jpg`, upsert).
@@ -59,7 +100,8 @@ enum AvatarUploader {
               let jpeg = resize(image, to: 256).jpegData(compressionQuality: 0.85) else { return nil }
         let path = "\(uid)/avatar.jpg"
         do {
-            try await client.storage.from("avatars")
+            // Upload client: same session token, long-timeout URLSession (founder, 2026-09-29).
+            try await AuthService.shared.uploadClient.storage.from("avatars")
                 .upload(path, data: jpeg, options: FileOptions(contentType: "image/jpeg", upsert: true))
         } catch { return nil }
         // Deterministic public URL (matches getPublicURL output) + a cache-buster

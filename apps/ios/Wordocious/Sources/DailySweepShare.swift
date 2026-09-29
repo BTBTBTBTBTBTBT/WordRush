@@ -260,7 +260,7 @@ extension ShareService {
         let dateStr = f.string(from: Date())
         let key = "\(uid)/Profile-\(dateStr)"
         do {
-            try await client.storage.from("share-images").upload(
+            try await AuthService.shared.uploadClient.storage.from("share-images").upload(
                 "\(key).png", data: png, options: FileOptions(contentType: "image/png", upsert: true))
         } catch { return nil }
         let q: [String: String] = [
@@ -289,7 +289,7 @@ extension ShareService {
         let dateStr = f.string(from: Date())
         let key = "\(uid)/\(shareMode)-\(dateStr)"
         do {
-            try await client.storage.from("share-images").upload(
+            try await AuthService.shared.uploadClient.storage.from("share-images").upload(
                 "\(key).png", data: png, options: FileOptions(contentType: "image/png", upsert: true))
         } catch { return nil }
         let q: [String: String] = [

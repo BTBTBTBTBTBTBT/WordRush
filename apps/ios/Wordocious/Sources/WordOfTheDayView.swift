@@ -241,7 +241,7 @@ struct WordOfTheDayView: View {
         var req = URLRequest(url: url)
         req.cachePolicy = .reloadIgnoringLocalCacheData
         req.timeoutInterval = 8
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await Net.api.data(for: req),
               let payload = try? JSONDecoder().decode(ArchivePayload.self, from: data),
               let e = payload.words.first(where: { $0.date == LeaderboardService.todayLocal() })
         else { return nil }
@@ -251,9 +251,19 @@ struct WordOfTheDayView: View {
                         definition: e.definition.isEmpty ? nil : e.definition)
     }
 
-    private func lookup(_ word: String) async -> WordInfo? { await Self.definition(for: word) }
+    private func lookup(_ word: String) async -> WordInfo? { await WordDefinitions.definition(for: word) }
+}
 
-    /// Shared dictionaryapi.dev lookup (used by Word of the Day + post-game).
+/// Shared definition lookup (Word of the Day + post-game DefinitionCard).
+/// The 4.7 MB word-definitions.json used to be a lazy static on the View,
+/// decoded on the MAIN thread by the first win card — a visible hitch
+/// (founder, 2026-09-29). It lives here, off any actor: `localDict` is a
+/// thread-safe lazy static, AppWarmup decodes it on a utility thread a couple
+/// of seconds after launch, and `definition(for:)` is nonisolated async, so a
+/// lookup before the warm-up lands decodes off-main instead of blocking.
+enum WordDefinitions {
+    typealias WordInfo = WordOfTheDayView.WordInfo
+
     /// §250: the committed local dictionary (bundled word-definitions.json —
     /// the same dataset the web ships). Loaded once, off the main thread on
     /// first use. Covers the 5-letter solution lists today; the API below is
@@ -269,7 +279,10 @@ struct WordOfTheDayView: View {
         return dict
     }()
 
-    static func localDefinition(for word: String) -> WordInfo? {
+    /// Forces the decode (AppWarmup calls this on a utility thread).
+    static func prewarm() { _ = localDict.count }
+
+    private static func localDefinition(for word: String) -> WordInfo? {
         // §259: lead with the best sense, not the file's first (NASTY led with
         // "Something nasty."). The dataset is pre-ranked; this is the read-time guard.
         guard let rec = localDict[word.lowercased()], rec.miss != true,
@@ -278,10 +291,11 @@ struct WordOfTheDayView: View {
         return WordInfo(word: word, phonetic: rec.phonetic, partOfSpeech: sense.pos, definition: def)
     }
 
+    /// Local dictionary first, dictionaryapi.dev as the fallback.
     static func definition(for word: String) async -> WordInfo? {
         if let local = localDefinition(for: word) { return local }
         guard let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/\(word.lowercased())") else { return nil }
-        guard let (data, resp) = try? await URLSession.shared.data(from: url),
+        guard let (data, resp) = try? await Net.api.data(from: url),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
               let entry = arr.first else { return nil }

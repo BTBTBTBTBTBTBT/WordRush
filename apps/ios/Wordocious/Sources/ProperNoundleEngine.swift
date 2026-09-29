@@ -47,6 +47,8 @@ enum ProperNoundle {
         Dictionary(grouping: all) { $0.themeCategory ?? "general" }
     }()
     private static let categoryCycle: [String] = byCategory.keys.sorted()
+    /// Decodes the banks ahead of first use (AppWarmup, utility thread — founder, 2026-09-29).
+    static func prewarm() { _ = categoryCycle.count; _ = holidayBank.count }
 
     // MARK: Holidays (More Games §20)
 

@@ -94,7 +94,7 @@ enum MedalService {
             let sweepAwarded: Bool?
             let flawlessAwarded: Bool?
         }
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await Net.api.data(for: req),
               let res = try? JSONDecoder().decode(AwardResponse.self, from: data),
               res.awarded == true
         else { return (0, 0) }

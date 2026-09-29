@@ -226,6 +226,7 @@ final class StoreManager: ObservableObject {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try? JSONSerialization.data(withJSONObject: ["signedTransaction": verification.jwsRepresentation])
         do {
+            // URLSession.shared on purpose: the server verifies with Apple, which can outlast Net.api's 15 s.
             let (_, resp) = try await URLSession.shared.data(for: req)
             guard let http = resp as? HTTPURLResponse else { return .failed }
             switch http.statusCode {

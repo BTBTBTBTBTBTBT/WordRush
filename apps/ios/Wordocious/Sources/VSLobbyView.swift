@@ -73,7 +73,7 @@ struct VSLobbyView: View {
     private func pollCounts() async {
         guard let url = VSConfig.serverURL?.appendingPathComponent("vs/counts") else { return }
         while !Task.isCancelled {
-            if let (data, _) = try? await URLSession.shared.data(from: url),
+            if let (data, _) = try? await Net.api.data(from: url),
                let obj = try? JSONDecoder().decode(VSCountsResponse.self, from: data) {
                 let keys = Set((obj.waiting ?? [:]).keys).union((obj.playing ?? [:]).keys)
                 counts = Dictionary(uniqueKeysWithValues: keys.map {

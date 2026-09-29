@@ -1225,11 +1225,9 @@ struct LeaderboardTab: View {
     @State private var friendsVersion = 0
     @State private var tauntTarget: FriendsService.FriendProfile?
     @State private var tauntStatus: String?
-    @State private var secondsLeft = secondsUntilLocalMidnight()
     /// D2 step 3: the global Records screen (Hall of Fame, all-time boards)
     /// is reached from here now that the Stats row is gone.
     @State private var showRecords = false
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     /// Today's completed dailies (seeded instantly from the on-device cache) so
     /// the Play CTA knows "View vs Play" with zero flash, before the per-mode
     /// leaderboard rank loads.
@@ -1359,14 +1357,7 @@ struct LeaderboardTab: View {
             Text("DAILY CHALLENGE").font(Brand.font(28, .black)).tracking(-0.5)
                 .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
             HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    Image(systemName: "calendar").font(.system(size: 11))
-                    Text(Date().formatted(.dateTime.month(.abbreviated).day()))
-                }
-                HStack(spacing: 4) {
-                    Image(systemName: "clock").font(.system(size: 11))
-                    Text(String(format: "%02d:%02d:%02d", secondsLeft / 3600, (secondsLeft % 3600) / 60, secondsLeft % 60)).monospacedDigit()
-                }
+                DailyCountdownLabel()
                 Button { showRecords = true } label: {
                     Text("All-time →").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
                 }
@@ -1428,7 +1419,6 @@ struct LeaderboardTab: View {
         .task { await completions.load() }
         .onDailyCompletion { Task { await completions.load() } }
         .onDailyRecorded { reloadToken += 1 }
-        .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
     }
 
     /// The cross-mode Sweep board — players who completed every sweep daily today,
@@ -2213,6 +2203,27 @@ func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetail
 /// Aug 18: relative "best on board" dies in a crowd). Red = loss, hollow =
 /// not played. The [0.35, 0.9] remap spreads real-world ratios (~0.4–0.9)
 /// across the full visual range. Mirrors SweepModeDots in app/daily/page.tsx.
+/// The header's date + time-to-midnight. Only this label ticks each second —
+/// a Timer at the LeaderboardTab root re-rendered the whole tab every second
+/// (founder, 2026-09-29). The date shares the timeline so it flips at midnight.
+private struct DailyCountdownLabel: View {
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            let left = secondsUntilLocalMidnight()
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar").font(.system(size: 11))
+                    Text(ctx.date.formatted(.dateTime.month(.abbreviated).day()))
+                }
+                HStack(spacing: 4) {
+                    Image(systemName: "clock").font(.system(size: 11))
+                    Text(String(format: "%02d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60)).monospacedDigit()
+                }
+            }
+        }
+    }
+}
+
 struct SweepModeDots: View {
     let details: LeaderboardService.SweepDetails?
     let day: String

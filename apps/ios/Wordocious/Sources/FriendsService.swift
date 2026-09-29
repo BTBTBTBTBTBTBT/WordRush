@@ -125,7 +125,7 @@ enum FriendsService {
         }
         guard let url = URL(string: "https://wordocious.com/api/friends?day=\(localDay())&weekStart=\(localWeekStart())") else { return }
         let req = await PublicProfileService.authedRequest(url)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let payload = try? JSONDecoder().decode(FriendsPayload.self, from: data)
         else { return }
@@ -169,7 +169,7 @@ enum FriendsService {
         else { return [] }
         struct SearchPayload: Decodable { let users: [FriendProfile] }
         let req = await PublicProfileService.authedRequest(url)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let payload = try? JSONDecoder().decode(SearchPayload.self, from: data)
         else { return [] }
@@ -184,7 +184,7 @@ enum FriendsService {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               let http = resp as? HTTPURLResponse else { return nil }
         return (http.statusCode, data)
     }
@@ -334,7 +334,7 @@ enum FriendsService {
         guard let url = URL(string: "https://wordocious.com/api/friends/feed?day=\(localDay())") else { return [] }
         struct FeedPayload: Decodable { let events: [FeedEvent] }
         let req = await PublicProfileService.authedRequest(url)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let payload = try? JSONDecoder().decode(FeedPayload.self, from: data)
         else { return [] }

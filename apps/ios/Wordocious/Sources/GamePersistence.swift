@@ -185,4 +185,66 @@ final class GamePersistence {
             }
         }
     }
+
+    // MARK: - Unlimited / practice save sweep
+
+    /// Unlimited games are keyed by seed, so their saves (classic files +
+    /// elapsed/hint keys, and the More Games `<game>-save-<seed>` snapshots)
+    /// were never deleted (founder, 2026-09-29). Nothing resumes one after
+    /// 24 h — classic resume requires startTime < 24 h, every More Games
+    /// restore enforces the same practice TTL, and More Games Unlimited always
+    /// mints a fresh seed — so anything older goes. Dailies ("-daily-" files,
+    /// "<game>-save-daily" slots) and pending-records are never touched.
+    /// Runs on a utility thread (AppWarmup); FileManager + UserDefaults are thread-safe.
+    static let practiceTTL: TimeInterval = 24 * 60 * 60
+    private static let moreSavePrefixes = ["regions", "sudoku", "ladder", "wordsearch", "hub", "cryptogram",
+                                           "groups", "crossword", "scramble", "pn"].map { "\($0)-save-" }
+    private static let sweepSeenKey = "wordocious-save-sweep-seen"
+    private struct SavedAt: Decodable { let savedAt: Double }
+
+    func sweepStalePracticeSaves() {
+        let now = Date().timeIntervalSince1970
+        let fm = FileManager.default
+        // Classic Unlimited (and any other non-daily) save files, by last write.
+        var liveSeeds: Set<String> = []
+        if let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey]) {
+            for f in files where !f.lastPathComponent.contains("-daily-") {
+                let modified = (try? f.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+                if let modified, now - modified.timeIntervalSince1970 < Self.practiceTTL {
+                    liveSeeds.insert(f.deletingPathExtension().lastPathComponent)
+                } else {
+                    try? fm.removeItem(at: f)
+                }
+            }
+        }
+        let defaults = UserDefaults.standard
+        let seen = defaults.dictionary(forKey: Self.sweepSeenKey) as? [String: Double] ?? [:]
+        var seenNow: [String: Double] = [:]
+        for (key, value) in defaults.dictionaryRepresentation() {
+            // Classic elapsed/hint keys: drop once the seed is past the TTL and its save file is gone.
+            if key.contains("-unlimited-"), key.hasPrefix("wordocious-elapsed-") || key.hasPrefix("wordocious-hints-") {
+                let fileKey = "wordocious-" + key.dropFirst(key.hasPrefix("wordocious-elapsed-") ? 19 : 17)
+                if let started = Self.seedEpoch(key), now - started > Self.practiceTTL,
+                   !liveSeeds.contains(fileKey.replacingOccurrences(of: "/", with: "_")) {
+                    defaults.removeObject(forKey: key)
+                }
+                continue
+            }
+            // More Games Unlimited snapshots all carry savedAt (ms). One without it
+            // falls back to its seed's timestamp, else to the first sweep that saw it.
+            guard Self.moreSavePrefixes.contains(where: { key.hasPrefix($0) }), !key.hasSuffix("-save-daily") else { continue }
+            let stamped = (value as? Data).flatMap { try? JSONDecoder().decode(SavedAt.self, from: $0) }.map { $0.savedAt / 1000 }
+                ?? Self.seedEpoch(key)
+            let savedAt = stamped ?? seen[key] ?? now
+            if now - savedAt > Self.practiceTTL { defaults.removeObject(forKey: key) }
+            else if stamped == nil { seenNow[key] = savedAt }
+        }
+        if seenNow != seen { defaults.set(seenNow, forKey: Self.sweepSeenKey) }
+    }
+
+    /// The epoch seconds in an "unlimited-<MODE>-<epoch>[-…]" seed (or a key embedding one).
+    private static func seedEpoch(_ s: String) -> TimeInterval? {
+        guard let r = s.range(of: "unlimited-") else { return nil }
+        return s[r.upperBound...].split(separator: "-").lazy.compactMap { $0.count >= 9 ? Double($0) : nil }.first
+    }
 }

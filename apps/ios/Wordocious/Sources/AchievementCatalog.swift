@@ -25,7 +25,7 @@ final class AchievementCatalog: ObservableObject {
         // achievements ship. Fetch fresh once per session.
         var req = URLRequest(url: url)
         req.cachePolicy = .reloadIgnoringLocalCacheData
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await Net.api.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         loaded = true
         all = payload.achievements

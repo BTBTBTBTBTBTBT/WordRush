@@ -27,7 +27,7 @@ enum WikipediaHint {
         var req = URLRequest(url: url)
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         do {
-            let (data, resp) = try await URLSession.shared.data(for: req)
+            let (data, resp) = try await Net.api.data(for: req)
             guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode),
                   let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let extract = obj["extract"] as? String, !extract.isEmpty else { return nil }
@@ -54,7 +54,7 @@ enum WikipediaHint {
         var req = URLRequest(url: url)
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         do {
-            let (data, resp) = try await URLSession.shared.data(for: req)
+            let (data, resp) = try await Net.api.data(for: req)
             guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode),
                   let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
             let thumb = (obj["thumbnail"] as? [String: Any])?["source"] as? String

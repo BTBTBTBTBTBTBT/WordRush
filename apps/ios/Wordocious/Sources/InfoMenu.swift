@@ -259,7 +259,7 @@ final class StrategyService: ObservableObject {
         guard let url = URL(string: "https://wordocious.com/api/strategy") else { return }
         var req = URLRequest(url: url)
         req.cachePolicy = .reloadIgnoringLocalCacheData
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await Net.api.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         articles = payload.articles
         loaded = true
@@ -374,7 +374,7 @@ final class WordsService: ObservableObject {
     func load() async {
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/words") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        guard let (data, _) = try? await Net.api.data(from: url),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         words = payload.words
         loaded = true

@@ -30,7 +30,7 @@ extension PublicProfileService {
     static func persona(id: String) async -> Persona? {
         guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/persona") else { return nil }
         let req = await authedRequest(url)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
         return try? JSONDecoder().decode(Persona.self, from: data)
     }
@@ -63,7 +63,7 @@ extension PublicProfileService {
         else { return .failed }
         var req = URLRequest(url: url)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               let http = resp as? HTTPURLResponse else { return .failed }
         if http.statusCode == 403 { return .locked }
         guard http.statusCode == 200,

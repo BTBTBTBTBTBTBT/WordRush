@@ -7,8 +7,9 @@ import WordociousCore
 /// exactly the eight sweep games. Mirrors web vs-live-tile.tsx.
 struct VSLiveTile<Destination: View>: View {
     let mode: HomeMode
-    /// nil while the presence endpoint has not answered yet.
-    let liveCount: Int?
+    /// The live count is observed HERE, not by Home, so a new count redraws
+    /// this tile only (founder, 2026-09-29). nil until the endpoint answers.
+    @ObservedObject private var live = LivePlayerCount.shared
     /// Today's daily VS result: true won, false lost, nil not played (Daily mode only).
     let vsDailyWon: Bool?
     let playMode: PlayMode
@@ -16,11 +17,17 @@ struct VSLiveTile<Destination: View>: View {
     let onInvite: () -> Void
     @ViewBuilder let destination: () -> Destination
 
+    init(mode: HomeMode, vsDailyWon: Bool?, playMode: PlayMode, isPro: Bool,
+         onInvite: @escaping () -> Void, @ViewBuilder destination: @escaping () -> Destination) {
+        self.mode = mode; self.vsDailyWon = vsDailyWon; self.playMode = playMode
+        self.isPro = isPro; self.onInvite = onInvite; self.destination = destination
+    }
+
     var body: some View {
         let accent = mode.accent
         let done = playMode == .daily && vsDailyWon != nil
         let countText: String = {
-            guard let n = liveCount else { return "Players online" }
+            guard let n = live.count else { return "Players online" }
             return "\(n) \(n == 1 ? "player" : "players") online"
         }()
         let subtitle: String = done

@@ -60,7 +60,7 @@ final class GuideService: ObservableObject {
         loadBundled()
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/guides") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        guard let (data, _) = try? await Net.api.data(from: url),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         // Merge: the network copy wins per slug; bundled-only entries (a game
         // production has not published yet) stay.

@@ -204,7 +204,7 @@ struct InvitePanelView: View {
         if !ids.isEmpty { inviteeNames = await PublicProfileService.usernames(ids: ids) }
 
         if let url = URL(string: "https://wordocious.com/api/referrals/leaderboard"),
-           let (data, _) = try? await URLSession.shared.data(from: url),
+           let (data, _) = try? await Net.api.data(from: url),
            let resp = try? JSONDecoder().decode(LeaderboardResponse.self, from: data) {
             leaders = resp.leaders
         }
@@ -222,7 +222,7 @@ struct InvitePanelView: View {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(body)
         }
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await Net.api.data(for: req)
         return data
     }
 

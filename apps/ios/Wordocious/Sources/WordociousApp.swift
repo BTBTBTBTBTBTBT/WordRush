@@ -23,6 +23,9 @@ struct WordociousApp: App {
     @State private var lastActiveDay = LeaderboardService.todayLocal()
 
     init() {
+        // Sized before any request so AsyncImage (avatars, Muddle cartoons, PN
+        // photos) and Net's sessions share a real disk cache (founder, 2026-09-29).
+        URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 200 * 1024 * 1024)
         // Cold starts always land on the DAILY surface (founder-approved UX):
         // the Pro Daily⇄Unlimited toggle choice is deliberately NOT restored
         // across launches — the founder's sister reopened the app, tapped
@@ -53,6 +56,8 @@ struct WordociousApp: App {
                 .preferredColorScheme(themeManager.colorScheme)
                 .id(themeManager.theme)
                 .task {
+                    // Utility-thread warm-up ~2 s in: Unlimited save sweep, puzzle banks, definitions.
+                    AppWarmup.start()
                     GamePersistence.shared.cleanupStaleDailyGames()
                     await auth.bootstrap()
                     // Remote flags (More Games §7): the kill switch + tester
@@ -91,6 +96,7 @@ struct WordociousApp: App {
                             NotificationCenter.default.post(name: .dayRolledOver, object: nil)
                         }
                         PresenceService.shared.start()
+                        LivePlayerCount.shared.setBackgrounded(false)
                         Task { await FlagsService.shared.load() }
                         // Recompute the daily reminder: if today's 9 dailies are
                         // done (or it's past 18:00) it rolls to tomorrow, so a
@@ -102,6 +108,7 @@ struct WordociousApp: App {
                         // its next brief background/return.
                         lastActiveDay = LeaderboardService.todayLocal()
                         PresenceService.shared.stop()
+                        LivePlayerCount.shared.setBackgrounded(true)
                     }
                 }
                 // Every daily completion re-evaluates the reminder — completing

@@ -124,7 +124,7 @@ enum PublicProfileService {
     static func recentMatchesGated(id: String) async -> Gated<[RecentMatch]> {
         guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/matches") else { return .failed }
         let req = await authedRequest(url)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req) else { return .failed }
+        guard let (data, resp) = try? await Net.api.data(for: req) else { return .failed }
         if isPrivateGate(resp, data) { return .privateProfile }
         guard (resp as? HTTPURLResponse)?.statusCode == 200,
               let env = try? JSONDecoder().decode(MatchesEnvelope.self, from: data) else { return .failed }
@@ -150,7 +150,7 @@ enum PublicProfileService {
     static func topWords(userId id: String, mode: GameMode, playType: String = "solo", limit: Int = 5) async -> [MatchStatsService.TopWord] {
         guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/top-words?mode=\(mode.rawValue)&play=\(playType == "vs" ? "vs" : "solo")") else { return [] }
         let req = await authedRequest(url)
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await Net.api.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let env = try? JSONDecoder().decode(TopWordsEnvelope.self, from: data) else { return [] }
         return env.topWords.prefix(limit).map { MatchStatsService.TopWord(word: $0.word, count: $0.count, wins: $0.wins) }

@@ -16,7 +16,6 @@ struct HomeView: View {
     @State private var vsDailyWon: Bool? = nil     // today's daily VS outcome (nil = not played) → card W/L badge
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
     @State private var showInvite = false
-    @StateObject private var livePlayers = LivePlayerCount()
     /// Remote flags (Stage 7): the More tile and every More Games title are
     /// shown only when their app_flags row says so for this viewer.
     @ObservedObject private var flags = FlagsService.shared
@@ -201,7 +200,7 @@ struct HomeView: View {
                                               onShare: { ShareEvents.log(kind: "image", gameMode: "", surface: "more_sweep"); ShareService.shareMoreSweep(byMode: completions.byMode) })
                             }
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
-                                VSLiveTile(mode: vs, liveCount: livePlayers.count, vsDailyWon: vsDailyWon, playMode: effectiveMode,
+                                VSLiveTile(mode: vs, vsDailyWon: vsDailyWon, playMode: effectiveMode,
                                            isPro: auth.isProActive, onInvite: { showInvite = true }) {
                                     if effectiveMode == .unlimited { VSLobbyView() } else { VSGameView(mode: .duel, isDaily: true) }
                                 }
@@ -401,7 +400,14 @@ struct HomeView: View {
             // Refresh today's daily completions whenever Home reappears (returning
             // from a daily push like ProperNoundle) so a just-finished game shows
             // its completed state immediately — no longer needs a tab round-trip.
-            .onAppear { livePlayers.start(); reloadDaily() }
+            .onAppear { LivePlayerCount.shared.start(); reloadDaily() }
+            // Stop the live-count poll while Home is off screen (founder, 2026-09-29).
+            .onDisappear { LivePlayerCount.shared.stop() }
+            // Today's Muddle cartoon into URLCache so its panel paints at once (founder,
+            // 2026-09-29). Keyed on the flag: flags usually land after Home first appears.
+            .task(id: visibleMoreModes.contains { $0.id == "scramble" }) {
+                if visibleMoreModes.contains(where: { $0.id == "scramble" }) { AppWarmup.prefetchMuddleCartoon() }
+            }
             // Foreground return on a NEW local day (WordociousApp posts) → reset
             // Home to the Daily surface like a cold start: toggle back to Daily
             // and dismiss the solo game covers. The unlimited board's save (and
@@ -735,40 +741,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - LIVE banner + footer (ports the web home bottom)
-
-    /// Real-time connected-player count + (Pro-only) Invite button.
-    private var liveBar: some View {
-        HStack {
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    LivePulseDot()
-                    Text("LIVE").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
-                }
-                Text(liveCountLabel).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-            }
-            Spacer()
-            if auth.isProActive {
-                Button { showInvite = true } label: {
-                    Text("Invite").font(Brand.font(10, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(
-                            LinearGradient(colors: [Color(hex: 0xEC4899), Color(hex: 0xDB2777)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                        .shadow(color: Color(hex: 0x9F1239), radius: 0, x: 0, y: 2)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
-        .padding(.top, 4)
-    }
-
-    private var liveCountLabel: String {
-        guard let n = livePlayers.count else { return "Players online" }
-        return "\(n) \(n == 1 ? "player" : "players") online"
-    }
+    // MARK: - Footer (ports the web home bottom; the LIVE count lives in VSLiveTile)
 
     private var signOutButton: some View {
         Button { Task { await auth.signOut() } } label: {

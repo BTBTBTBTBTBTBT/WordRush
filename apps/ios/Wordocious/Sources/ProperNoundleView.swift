@@ -136,6 +136,8 @@ final class ProperNoundleVM: ObservableObject {
 
     private func persist() {
         guard let key = storageKey, let p = puzzle else { return }
+        // A finished Unlimited game is never resumed — drop its save (founder, 2026-09-29).
+        if !isDaily && isFinished { UserDefaults.standard.removeObject(forKey: key); return }
         let snap = Snapshot(
             puzzleId: p.id, date: LeaderboardService.todayLocal(),
             guessWords: guesses.map(\.word), guessTiles: guesses.map(\.tiles),

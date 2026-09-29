@@ -4,6 +4,13 @@ import UIKit
 import GoogleSignIn
 import Security
 
+/// Session storage for AuthService.uploadClient, which never holds a session.
+struct NoAuthStorage: AuthLocalStorage {
+    func store(key: String, value: Data) throws {}
+    func retrieve(key: String) throws -> Data? { nil }
+    func remove(key: String) throws {}
+}
+
 /// Supabase auth-session storage that prefers the Keychain (secure, used on
 /// real devices) but transparently falls back to UserDefaults when a Keychain
 /// write is rejected — e.g. on the iOS Simulator, where an unsigned build has
@@ -99,6 +106,11 @@ final class AuthService: ObservableObject {
     // clears the Swift 6 main-actor-isolation warnings at every `AuthService.shared.client`
     // call site without changing behavior. The @Published UI state stays main-actor.
     nonisolated let client: SupabaseClient
+    /// Storage uploads only (avatar photo, share cards). `client` runs on Net.api
+    /// (15 s request timeout — founder, 2026-09-29), too short for a photo on a
+    /// slow uplink, so uploads go through this second client on Net.upload. It
+    /// never signs in: every request borrows `client`'s current access token.
+    nonisolated let uploadClient: SupabaseClient
 
     /// Pro entitlement, with a launch-window fallback to the last known value.
     ///
@@ -123,10 +135,20 @@ final class AuthService: ObservableObject {
     }
 
     nonisolated private init() {
-        client = SupabaseClient(
-            supabaseURL: SupabaseConfig.url,
-            supabaseKey: SupabaseConfig.isConfigured ? SupabaseConfig.anonKey : "anon-key-not-set",
-            options: .init(auth: .init(storage: ResilientAuthStorage()))
+        let key = SupabaseConfig.isConfigured ? SupabaseConfig.anonKey : "anon-key-not-set"
+        let main = SupabaseClient(
+            supabaseURL: SupabaseConfig.url, supabaseKey: key,
+            // Realtime keeps URLSession.shared's defaults: its socket copies the session's
+            // config, and a 15 s idle limit would drop a quiet socket between heartbeats.
+            options: .init(auth: .init(storage: ResilientAuthStorage()), global: .init(session: Net.api),
+                           realtime: .init(session: .shared))
+        )
+        client = main
+        uploadClient = SupabaseClient(
+            supabaseURL: SupabaseConfig.url, supabaseKey: key,
+            options: .init(auth: .init(storage: NoAuthStorage(), storageKey: "wordocious-upload-client", autoRefreshToken: false,
+                                       accessToken: { try? await main.auth.session.accessToken }),
+                           global: .init(session: Net.upload))
         )
     }
 
@@ -343,6 +365,7 @@ final class AuthService: ObservableObject {
         req.httpMethod = "POST"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         do {
+            // URLSession.shared on purpose: the server-side cascade can outlast Net.api's 15 s.
             let (_, resp) = try await URLSession.shared.data(for: req)
             guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return false }
             await signOut()

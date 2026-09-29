@@ -450,7 +450,7 @@ struct DefinitionCard: View {
             }
         }
         .task(id: solution) {
-            def = await WordOfTheDayView.definition(for: solution)
+            def = await WordDefinitions.definition(for: solution)
             loaded = true
         }
     }
