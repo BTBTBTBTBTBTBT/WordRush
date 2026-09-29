@@ -228,21 +228,20 @@ export default function DailyPage() {
         setSweepDetails(new Map());
       }
 
+      // The player's rank needs nothing from the board, so it runs alongside it; details and
+      // streaks then load together (was four round trips in a row — founder, 2026-09-29).
+      const rankP = user ? getUserSweepRank(user.id, day) : Promise.resolve(null);
       const lb = await fetchDailySweepLeaderboard(day, 50);
       if (seq !== loadSeq.current) return;
       setSweepLeaderboard(lb);
       setLoading(false);
-      const details = await fetchSweepModeDetails(day, lb.map((e) => e.user_id));
-      if (seq === loadSeq.current) setSweepDetails(details);
       // §248: only rows already FLAWLESS today can be on a live streak.
-      const streaks = await fetchFlawlessStreaks(day, lb.filter((e) => e.is_flawless).map((e) => e.user_id));
-      if (seq === loadSeq.current) setFlawlessStreaks(streaks);
-
-      let rank: { rank: number; totalPlayers: number } | null = null;
-      if (user) {
-        rank = await getUserSweepRank(user.id, day);
-        if (seq === loadSeq.current) setUserRank(rank);
-      }
+      const [details, streaks, rank] = await Promise.all([
+        fetchSweepModeDetails(day, lb.map((e) => e.user_id)),
+        fetchFlawlessStreaks(day, lb.filter((e) => e.is_flawless).map((e) => e.user_id)),
+        rankP,
+      ]);
+      if (seq === loadSeq.current) { setSweepDetails(details); setFlawlessStreaks(streaks); if (user) setUserRank(rank); }
       // No dedicated count RPC — the rank query yields the true total when the
       // user swept; otherwise the (≤50) board length is the best estimate.
       const count = rank?.totalPlayers ?? lb.length;
@@ -320,9 +319,12 @@ export default function DailyPage() {
     if (selectedMode === 'SWEEP') {
       fetchDailySweepLeaderboard(yesterday, 5).then(async (lb) => {
         setYesterdaySweep(lb);
-        setYSweepDetails(await fetchSweepModeDetails(yesterday, lb.map((e) => e.user_id)));
         // §248: streaks as they stood at yesterday's settled board.
-        setYFlawlessStreaks(await fetchFlawlessStreaks(yesterday, lb.filter((e) => e.is_flawless).map((e) => e.user_id)));
+        const [d, st] = await Promise.all([
+          fetchSweepModeDetails(yesterday, lb.map((e) => e.user_id)),
+          fetchFlawlessStreaks(yesterday, lb.filter((e) => e.is_flawless).map((e) => e.user_id)),
+        ]);
+        setYSweepDetails(d); setYFlawlessStreaks(st);
       });
     } else {
       // Friends toggle carries into Yesterday's Winners: podium among friends.

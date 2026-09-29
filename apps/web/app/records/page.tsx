@@ -192,20 +192,19 @@ function DailyRecordsView({ userId }: { userId?: string }) {
     if (selectedMode === 'SWEEP') {
       setLoading(true);
       setUserRank(null);
+      // Rank runs alongside the board; details and streaks load together (founder, 2026-09-29).
+      const rankP = userId ? getUserSweepRank(userId, today) : Promise.resolve(null);
       const lb = await fetchDailySweepLeaderboard(today, 50);
       if (seq !== loadSeq.current) return;
       setSweepLeaderboard(lb);
       setLoading(false);
-      const details = await fetchSweepModeDetails(today, lb.map((e) => e.user_id));
-      if (seq === loadSeq.current) setSweepDetails(details);
       // §248: only rows already FLAWLESS today can be on a live streak.
-      const streaks = await fetchFlawlessStreaks(today, lb.filter((e) => e.is_flawless).map((e) => e.user_id));
-      if (seq === loadSeq.current) setFlawlessStreaks(streaks);
-      let rank: { rank: number; totalPlayers: number } | null = null;
-      if (userId) {
-        rank = await getUserSweepRank(userId, today);
-        if (seq === loadSeq.current) setUserRank(rank);
-      }
+      const [details, streaks, rank] = await Promise.all([
+        fetchSweepModeDetails(today, lb.map((e) => e.user_id)),
+        fetchFlawlessStreaks(today, lb.filter((e) => e.is_flawless).map((e) => e.user_id)),
+        rankP,
+      ]);
+      if (seq === loadSeq.current) { setSweepDetails(details); setFlawlessStreaks(streaks); if (userId) setUserRank(rank); }
       if (seq === loadSeq.current) setPlayerCount(rank?.totalPlayers ?? lb.length);
       return;
     }
