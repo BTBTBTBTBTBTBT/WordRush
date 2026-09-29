@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // replays) used to push the morning's dailies past the old flat 50. 36 h covers
   // "today" in every time zone.
   const admin = getAdminSupabase();
-  const cols = 'id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit';
+  const cols = 'id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit, seed';
   const mine = `player1_id.eq.${id},player2_id.eq.${id}`;
   const since = new Date(Date.now() - TODAY_WINDOW_H * 3600_000).toISOString();
   const [recent, today] = await Promise.all([
@@ -43,7 +43,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (recent.error || today.error) return NextResponse.json({ error: 'Lookup failed' }, { status: 500 });
   const byId = new Map<string, NonNullable<typeof recent.data>[number]>();
   for (const m of [...(today.data ?? []), ...(recent.data ?? [])]) byId.set(m.id, m);
-  const data = Array.from(byId.values()).sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+  // `daily` (from the seed, which itself is not sent) lets Today's Games list each daily on its
+  // own row and fold the Unlimited replays into one row per game.
+  const data = Array.from(byId.values())
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
+    .map(({ seed, ...m }) => ({ ...m, daily: typeof seed === 'string' ? seed.startsWith('daily-') : null }));
 
   return NextResponse.json(
     { matches: data },

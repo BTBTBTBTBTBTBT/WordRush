@@ -50,7 +50,7 @@ import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
 import { useYourRecords, NextUpCard, SweepRecordsCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
 import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
-import { RecentMatchesList, isPlayedToday } from '@/components/stats/recent-matches';
+import { RecentMatchesList, isPlayedToday, isUnlimitedSolo } from '@/components/stats/recent-matches';
 import { SignatureCard, StandingTrendCard } from '@/components/stats/signature-cards';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { GameRail, buildRailItems, RAIL_TODAY, RAIL_VS, RAIL_ALL } from '@/components/stats/game-rail';
@@ -165,12 +165,18 @@ export default function StatsPage() {
         // Matches + opponent usernames chained INSIDE the Promise.all — the
         // name lookup used to run after it, adding a round trip to everything.
         (async () => {
-          const { data } = await supabase.from('matches')
-            .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
-            .or(`player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`)
-            .order('created_at', { ascending: false })
-            .limit(50);
-          const matchRows = (data || []) as Match[];
+          // The newest 50 plus every game of the last 36 h, so Today's Games is never cut short
+          // by a long Unlimited session (founder, 2026-09-29); `seed` tells daily from Unlimited.
+          const cols = 'id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit, seed';
+          const mine = `player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`;
+          const since = new Date(Date.now() - 36 * 3600_000).toISOString();
+          const [recent, today] = await Promise.all([
+            supabase.from('matches').select(cols).or(mine).order('created_at', { ascending: false }).limit(50),
+            supabase.from('matches').select(cols).or(mine).gte('created_at', since).order('created_at', { ascending: false }).limit(400),
+          ]);
+          const byId = new Map<string, Match>();
+          for (const m of [...((today.data || []) as Match[]), ...((recent.data || []) as Match[])]) byId.set(m.id, m);
+          const matchRows = Array.from(byId.values()).sort((x, y) => (x.created_at < y.created_at ? 1 : x.created_at > y.created_at ? -1 : 0));
           const oppIds = Array.from(new Set(
             matchRows
               .filter((m) => m.player2_id)
@@ -236,6 +242,8 @@ export default function StatsPage() {
   const stats = staticData?.stats ?? [];
   const matches = staticData?.matches ?? [];
   const opponentNames = staticData?.opponentNames ?? {};
+  // Unlimited is a Pro feature: free players see only their dailies and VS games here (founder, 2026-09-29).
+  const todaysMatches = matches.filter((m) => isPlayedToday(m.created_at) && (isProActive || !isUnlimitedSolo(m)));
   const medals = staticData?.medals ?? [];
   const userAchievements = staticData?.userAchievements ?? new Set<string>();
   const todayDailies = staticData?.todayDailies ?? new Map<string, DailyCompletion>();
@@ -578,7 +586,7 @@ export default function StatsPage() {
                   the full history stays on All-time. Same rows, same stats. */}
               <SectionHeader label="Today's Games" accent="#2563eb" />
               {/* Founder, 2026-09-27: every game played TODAY (daily and unlimited), no cap, no "See all" — the full history lives on All-time. */}
-              <RecentMatchesList matches={matches.filter((m) => isPlayedToday(m.created_at))} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} emptyText="No games yet today — play a daily to start the list." />
+              <RecentMatchesList matches={todaysMatches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} groupUnlimited emptyText="No games yet today — play a daily to start the list." />
             </>
           )}
 

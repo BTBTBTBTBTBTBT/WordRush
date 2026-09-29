@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap } from 'lucide-react';
+import { ChevronDown, Zap } from 'lucide-react';
 import { WIN_FG } from '@/lib/tile-theme';
 import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
@@ -49,6 +49,8 @@ interface Props {
   onSeeAll?: () => void;
   /** Empty-state line (Today: "No games yet today…"). */
   emptyText?: string;
+  /** Today's Games: fold each game's Unlimited replays into one expandable row (founder, 2026-09-29). */
+  groupUnlimited?: boolean;
 }
 
 /** Whether a match's `created_at` (UTC ISO-8601) falls on the viewer's local calendar day today. */
@@ -58,7 +60,7 @@ export function isPlayedToday(createdAt: string): boolean {
   return d.toDateString() === new Date().toDateString();
 }
 
-export function RecentMatchesList({ matches, opponentNames, profileId, loading, limit = 5, onSeeAll, emptyText = 'No games played yet.' }: Props) {
+export function RecentMatchesList({ matches, opponentNames, profileId, loading, limit = 5, onSeeAll, emptyText = 'No games played yet.', groupUnlimited = false }: Props) {
   const [showAll, setShowAll] = useState(false);
   if (loading) {
     return (
@@ -85,49 +87,11 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
   const shown = showAll && !onSeeAll ? matches : matches.slice(0, limit);
   return (
     <div className="space-y-2">
-      {shown.map((match) => {
-        const isWinner = match.winner_id === profileId;
-        const isPlayer1 = match.player1_id === profileId;
-        const score = isPlayer1 ? match.player1_score : (match.player2_score ?? 0);
-        const playerTime = isPlayer1 ? match.player1_time : (match.player2_time ?? 0);
-        const matchDate = new Date(match.created_at);
-        const cfg = gameModeIcons[match.game_mode];
-        const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
-        const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
-        return (
-          <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
-              {(() => {
-                if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
-                if (cfg.romanNumeral) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
-                if (cfg.icon) { const Icon = cfg.icon; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; }
-                return <Zap className="w-4 h-4" style={{ color: cfg.color }} />;
-              })()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{gameModeTitles[match.game_mode] || match.game_mode}</span>
-                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#eff6ff', color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
-                  {match.player2_id ? 'VS' : 'Solo'}
-                </span>
-                {(match as any).forfeit && (
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: '#fef3c7', color: '#b45309' }}>FORFEIT</span>
-                )}
-              </div>
-              <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
-                {matchStat(match.game_mode, score)} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
-                {opponentName ? ` · vs ${opponentName}` : ''}
-              </div>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <div className="text-xs font-extrabold" style={{ color: isWinner ? WIN_FG : '#dc2626' }}>{isWinner ? 'Win' : 'Loss'}</div>
-              <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+      {groupUnlimited
+        ? groupToday(shown).map((it) => it.kind === 'row'
+          ? <MatchRow key={it.match.id} match={it.match} opponentNames={opponentNames} profileId={profileId} />
+          : <UnlimitedGroup key={`u-${it.mode}`} mode={it.mode} matches={it.matches} opponentNames={opponentNames} profileId={profileId} />)
+        : shown.map((match) => <MatchRow key={match.id} match={match} opponentNames={opponentNames} profileId={profileId} />)}
       {matches.length > limit && (
         onSeeAll ? (
           <button onClick={onSeeAll} className="w-full mt-1 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
@@ -138,6 +102,101 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
             {showAll ? 'Show less' : `View all ${matches.length} →`}
           </button>
         )
+      )}
+    </div>
+  );
+}
+
+function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentNames: Record<string, string>; profileId: string }) {
+  const isWinner = match.winner_id === profileId;
+  const isPlayer1 = match.player1_id === profileId;
+  const score = isPlayer1 ? match.player1_score : (match.player2_score ?? 0);
+  const playerTime = isPlayer1 ? match.player1_time : (match.player2_time ?? 0);
+  const matchDate = new Date(match.created_at);
+  const cfg = gameModeIcons[match.game_mode];
+  const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
+  const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
+  return (
+    <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
+        {(() => {
+          if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
+          if (cfg.romanNumeral) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
+          if (cfg.icon) { const Icon = cfg.icon; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; }
+          return <Zap className="w-4 h-4" style={{ color: cfg.color }} />;
+        })()}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{gameModeTitles[match.game_mode] || match.game_mode}</span>
+          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#eff6ff', color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
+            {match.player2_id ? 'VS' : 'Solo'}
+          </span>
+          {(match as any).forfeit && (
+            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: '#fef3c7', color: '#b45309' }}>FORFEIT</span>
+          )}
+        </div>
+        <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
+          {matchStat(match.game_mode, score)} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
+          {opponentName ? ` · vs ${opponentName}` : ''}
+        </div>
+      </div>
+      <div className="text-right flex-shrink-0">
+        <div className="text-xs font-extrabold" style={{ color: isWinner ? WIN_FG : '#dc2626' }}>{isWinner ? 'Win' : 'Loss'}</div>
+        <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+          {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TodayItem = { kind: 'row'; match: Match } | { kind: 'group'; mode: string; matches: Match[] };
+
+/** A solo Unlimited game (seed not daily); VS and dailies — and rows without a seed — stay individual. */
+export const isUnlimitedSolo = (m: Pick<Match, 'player2_id' | 'seed'>) => !m.player2_id && typeof m.seed === 'string' && !m.seed.startsWith('daily-');
+
+/** Newest-first rows with each game's Unlimited replays folded into one group at its newest game's place. */
+function groupToday(matches: Match[]): TodayItem[] {
+  const groups = new Map<string, Match[]>();
+  for (const m of matches) if (isUnlimitedSolo(m)) groups.set(m.game_mode, [...(groups.get(m.game_mode) ?? []), m]);
+  const out: TodayItem[] = [];
+  const placed = new Set<string>();
+  for (const m of matches) {
+    const g = isUnlimitedSolo(m) ? groups.get(m.game_mode)! : null;
+    if (!g || g.length < 2) { out.push({ kind: 'row', match: m }); continue; }
+    if (placed.has(m.game_mode)) continue;
+    placed.add(m.game_mode);
+    out.push({ kind: 'group', mode: m.game_mode, matches: g });
+  }
+  return out;
+}
+
+function UnlimitedGroup({ mode, matches, opponentNames, profileId }: { mode: string; matches: Match[]; opponentNames: Record<string, string>; profileId: string }) {
+  const [open, setOpen] = useState(false);
+  const cfg = gameModeIcons[mode];
+  const wins = matches.filter((m) => m.winner_id === profileId);
+  const best = wins.map((m) => m.player1_time).filter((t) => t > 0).reduce((a, b) => Math.min(a, b), Infinity);
+  return (
+    <div className="space-y-2">
+      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-3 p-3 text-left" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }} aria-expanded={open}>
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
+          {cfg?.romanNumeral ? <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
+            : cfg?.icon ? (() => { const Icon = cfg.icon!; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; })()
+            : <Zap className="w-4 h-4" style={{ color: cfg?.color ?? '#d97706' }} />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{gameModeTitles[mode] || mode} Unlimited</div>
+          <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
+            {matches.length} played · {wins.length} win{wins.length === 1 ? '' : 's'}{Number.isFinite(best) ? ` · best ${formatDuration(best)}` : ''}
+          </div>
+        </div>
+        <ChevronDown className="w-4 h-4 flex-shrink-0 transition-transform" style={{ color: 'var(--color-text-muted)', transform: open ? 'rotate(180deg)' : undefined }} />
+      </button>
+      {open && (
+        <div className="space-y-2 pl-4">
+          {matches.map((m) => <MatchRow key={m.id} match={m} opponentNames={opponentNames} profileId={profileId} />)}
+        </div>
       )}
     </div>
   );
