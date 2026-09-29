@@ -14,12 +14,20 @@ struct DailyCompletion: Codable {
     /// Per-mode daily composite score (daily_results.composite_score). Optional in
     /// the on-device cache written before this field existed → defaults to 0.
     let score: Double
+    /// Boards and hints (optional: older caches and older call sites lack them) — let the
+    /// leaderboard draw the player's own row before the server's rows include it.
+    var boardsSolved: Int? = nil
+    var totalBoards: Int? = nil
+    var hintsUsed: Int? = nil
     enum CodingKeys: String, CodingKey {
         case gameMode = "game_mode"
         case completed
         case guessCount = "guess_count"
         case timeSeconds = "time_seconds"
         case score = "composite_score"
+        case boardsSolved = "boards_solved"
+        case totalBoards = "total_boards"
+        case hintsUsed = "hints_used"
     }
     init(gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Double, score: Double = 0) {
         self.gameMode = gameMode; self.completed = completed
@@ -32,6 +40,9 @@ struct DailyCompletion: Codable {
         guessCount = try c.decode(Int.self, forKey: .guessCount)
         timeSeconds = try c.decode(Double.self, forKey: .timeSeconds)
         score = (try? c.decodeIfPresent(Double.self, forKey: .score)) ?? 0
+        boardsSolved = try? c.decodeIfPresent(Int.self, forKey: .boardsSolved)
+        totalBoards = try? c.decodeIfPresent(Int.self, forKey: .totalBoards)
+        hintsUsed = try? c.decodeIfPresent(Int.self, forKey: .hintsUsed)
     }
 }
 
@@ -171,7 +182,7 @@ final class DailyCompletionsStore: ObservableObject {
         }
         do {
             let rows: [DailyCompletion] = try await client.from("daily_results")
-                .select("game_mode, completed, guess_count, time_seconds, composite_score")
+                .select("game_mode, completed, guess_count, time_seconds, composite_score, boards_solved, total_boards, hints_used")
                 .eq("user_id", value: userId)
                 .eq("day", value: today)
                 .eq("play_type", value: "solo")

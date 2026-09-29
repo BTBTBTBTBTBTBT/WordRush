@@ -1419,6 +1419,13 @@ struct LeaderboardTab: View {
         .task { await completions.load() }
         .onDailyCompletion { Task { await completions.load() } }
         .onDailyRecorded { reloadToken += 1 }
+        // The player's own result can land after the board was painted: fold it in right away.
+        .onChange(of: completions.byMode[mode.rawValue]?.score) { _ in
+            let (rows, n, mineRank) = withMine(entries, playerCount)
+            guard rows.count != entries.count else { return }
+            entries = rows; playerCount = n
+            if userRank == nil { userRank = mineRank }
+        }
     }
 
     /// The cross-mode Sweep board — players who completed every sweep daily today,
@@ -2023,17 +2030,45 @@ struct LeaderboardTab: View {
         }
     }
 
+    /// The player's own daily result on the board at once (founder, 2026-09-29: "Completed today"
+    /// was instant but the leaderboard showed "No daily results yet" until a refetch). Built from
+    /// today's completion the phone already holds and placed by (score desc, time asc) — the
+    /// server's order — whenever the rows in hand don't include the player yet.
+    private func withMine(_ rows: [LeaderboardEntry], _ count: Int) -> ([LeaderboardEntry], Int, (rank: Int, total: Int)?) {
+        guard let p = auth.profile, let c = completions.byMode[mode.rawValue], c.score > 0,
+              completions.dataDay == LeaderboardService.todayLocal(),
+              !rows.contains(where: { $0.userId.lowercased() == p.id.lowercased() }) else { return (rows, count, nil) }
+        let mine = LeaderboardEntry(
+            userId: p.id, compositeScore: c.score, guessCount: c.guessCount, timeSeconds: c.timeSeconds,
+            boardsSolved: c.boardsSolved ?? (c.completed ? 1 : 0), totalBoards: c.totalBoards ?? 1, hintsUsed: c.hintsUsed,
+            vsWins: nil, vsLosses: nil, vsGames: nil, completed: c.completed,
+            profiles: .init(username: p.username, avatarUrl: p.avatarUrl, avatarEmoji: p.avatarEmoji))
+        var out = rows
+        let i = out.firstIndex { $0.compositeScore < c.score || ($0.compositeScore == c.score && $0.timeSeconds > c.timeSeconds) } ?? out.count
+        // Past a full top-50 list the player's row belongs in the rank window, not here.
+        if i >= 50 { return (rows, count, nil) }
+        out.insert(mine, at: i)
+        let total = max(count + 1, out.count)
+        return (out, total, (rank: i + 1, total: total))
+    }
+
     private func load() async {
         // Stale-while-revalidate (web parity: lbCache in app/daily/page.tsx) —
         // a cache hit paints the last-known rows instantly (no skeleton) while
         // the fresh fetch below swaps in silently. Skeleton = true first load only.
         let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id)
             + (friendsOnly ? ":friends" : "")
+        let seeded = withMine([], 0)
         if let cached = LeaderboardCache.shared[cacheKey] {
-            entries = cached.entries
-            playerCount = cached.playerCount
-            userRank = cached.userRank
+            let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
+            entries = rows
+            playerCount = n
+            userRank = cached.userRank ?? mineRank
             rankWindow = cached.rankWindow
+            loading = false
+        } else if !seeded.0.isEmpty {
+            // No cached board yet, but the player just finished this daily: show their row now.
+            entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
             loading = false
         } else {
             loading = true
@@ -2049,8 +2084,9 @@ struct LeaderboardTab: View {
             let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, userIds: ids)
             guard !Task.isCancelled else { return }
             guard let fetched = fetchedOpt else { loading = false; return }
-            entries = fetched
-            playerCount = fetched.count
+            let (shown, shownCount, _) = withMine(fetched, fetched.count)
+            entries = shown
+            playerCount = shownCount
             loading = false
             // §217: exact (score, time) ties share the rank on the friends board too.
             let rank: (rank: Int, total: Int)? = fetched
@@ -2077,8 +2113,10 @@ struct LeaderboardTab: View {
         guard let fetched = fetchedOpt else { loading = false; return }
         // Paint the rows the moment they arrive — the rank banner fills in on
         // its own instead of holding the whole list behind its extra queries.
-        entries = fetched
-        playerCount = count
+        // A result recorded a moment ago may not be in them yet: keep the player's own row.
+        let (shown, shownCount, mineRank) = withMine(fetched, count)
+        entries = shown
+        playerCount = shownCount
         loading = false
 
         var rank: (rank: Int, total: Int)? = nil
@@ -2086,7 +2124,7 @@ struct LeaderboardTab: View {
         if let uid = auth.profile?.id {
             rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, topEntries: fetched)
             guard !Task.isCancelled else { return }
-            userRank = rank
+            userRank = rank ?? mineRank
             // Ranked past the visible list → also fetch the rows around them.
             if let r = rank, r.rank > 50 {
                 win = await LeaderboardService.fetchRankWindow(gameMode: mode, userRank: r.rank)
