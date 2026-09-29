@@ -1,9 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import holidayFile from '@/data/propernoundle-holidays.json';
 import { HOLIDAY_TABLE } from '@/lib/holidays';
 import { holidayOccurrence } from '@wordle-duel/core';
-import { getDailyPuzzle, getDailyPuzzleNumber, dailyHolidayKey } from './puzzle-service';
+import { getDailyPuzzle, getDailyPuzzleNumber, dailyHolidayKey, loadProperNoundleBank } from './puzzle-service';
 import type { Puzzle } from './types';
+
+beforeAll(() => loadProperNoundleBank());
 
 // More Games §20: on a calendar holiday the daily comes from
 // apps/web/data/propernoundle-holidays.json (the k-th recurrence of the holiday

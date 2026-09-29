@@ -12,7 +12,8 @@ import {
   scrambleActiveRow, scrambleFinalOpen, scrambleFinalLetters, SCRAMBLE_FINAL, SCRAMBLE_MAX_CHECKS, SCRAMBLE_TOTAL_BOARDS, generateDailySeed,
   type ScrambleState, type ScrambleAction, type ScrambleBank, type ScramblePuzzle,
 } from '@wordle-duel/core';
-import scrambleBankJson from '@/data/scramble-puzzles.json';
+import { bankSession, useSessionPuzzle } from '@/lib/bank-loader';
+import { GameLoading } from '@/components/game/game-loading';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
@@ -28,6 +29,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useThrottledSave } from '@/hooks/use-throttled-save';
+import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { scrambleElsewhere } from '@/lib/elsewhere-progress';
@@ -44,7 +47,8 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // checks itself (wrong = a mistake, letters go back); every check counts,
 // thirteen lose. Hints (Letter 75, Solve 150) never count as checks.
 
-const BANK = scrambleBankJson as unknown as ScrambleBank;
+// Puzzles are fetched one at a time from /banks (lib/bank-loader.ts; founder, 2026-09-29).
+const BANK = bankSession<ScrambleBank, ScramblePuzzle>('scramble', (b, d) => scramblePuzzleForDay(b, d, HOLIDAY_TABLE), scramblePuzzleForSeed);
 
 interface MuddleGameProps { isDaily?: boolean }
 
@@ -61,6 +65,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
@@ -73,17 +78,20 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const [elsewhere, setElsewhere] = useState<{ result: ReturnType<typeof scrambleElsewhere>; puzzle: ScramblePuzzle | null } | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
+  // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
+  const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-SCRAMBLE-${Date.now()}`;
-    const p = scramblePuzzleForSeed(BANK, seed);
-    if (!p) return;
-    const s = createScrambleState(p, seed, Date.now());
-    setState(s); setRow(scrambleActiveRow(s) ?? 0);
-    setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
-    resetTimer(0);
-    restoredRef.current = false; hasRecordedRef.current = false;
+    BANK.seed(seed).then((p) => {
+      if (!p) return;
+      const s = createScrambleState(p, seed, Date.now());
+      setState(s); setRow(scrambleActiveRow(s) ?? 0);
+      setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
+      resetTimer(0);
+      restoredRef.current = false; hasRecordedRef.current = false;
+    }).catch(() => setLoadFailed(true));
   }, [resetTimer]);
 
   useEffect(() => {
@@ -97,11 +105,13 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
         restoredRef.current = done; hasRecordedRef.current = done;
         return;
       }
-      const p = scramblePuzzleForDay(BANK, today, HOLIDAY_TABLE);
-      if (p) { const s = createScrambleState(p, seed, Date.now()); setState(s); setRow(0); }
-      resetTimer(0);
-      restoredRef.current = false;
+      // The other-device check runs while the puzzle is fetched.
       setNoLocalSave(true);
+      BANK.day(today).then((p) => {
+        if (p) { const s = createScrambleState(p, seed, Date.now()); setState(s); setRow(0); }
+        resetTimer(0);
+        restoredRef.current = false;
+      }).catch(() => setLoadFailed(true));
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -114,14 +124,12 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!state) return;
-    // Never write the untouched fresh puzzle while the other-device check is
-    // pending or positive: that save would hide the completed card on reload.
-    if (mode === 'daily' && holdPlay) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
-    else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode, holdPlay]);
+  // Never write the untouched fresh puzzle while the other-device check is
+  // pending or positive: that save would hide the completed card on reload.
+  useThrottledSave(!state || (mode === 'daily' && holdPlay) ? null : (sec) => {
+    if (mode === 'daily') saveDaily(state.seed, state, sec);
+    else savePractice(state.seed, state, sec);
+  }, getElapsed, [state, mode, holdPlay]);
 
   // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
   // the matches row holds what daily_results does not — rows solved before the
@@ -132,9 +140,8 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
     const today = getTodayLocal();
     const seed = generateDailySeed(today, 'SCRAMBLE');
     let cancelled = false;
-    fetchSolvedDailyRow(profile.id, 'SCRAMBLE', seed).then((row) => {
+    Promise.all([fetchSolvedDailyRow(profile.id, 'SCRAMBLE', seed), BANK.day(today)]).then(([row, puzzle]) => {
       if (cancelled || !row) return;
-      const puzzle = scramblePuzzleForDay(BANK, today, HOLIDAY_TABLE);
       setElsewhere({ result: scrambleElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, puzzle), puzzle });
     }).catch(() => {});
     return () => { cancelled = true; };
@@ -158,6 +165,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   }, [flash]);
 
   const recordResult = useCallback(() => {
+    const elapsedSeconds = getElapsed();
     if (!profile || !state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
@@ -172,7 +180,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       solutions: r.solutions, guesses: r.guesses,
       startedAtIso: new Date(Date.now() - elapsedSeconds * 1000).toISOString(), hintsUsed: state.hintsUsed,
     });
-  }, [profile, state, elapsedSeconds, mode]);
+  }, [profile, state, getElapsed, mode]);
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
@@ -231,10 +239,12 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
-  if (!state) return null;
+  // The bank entry behind this session (fresh or restored): its cartoon and holiday.
+  const puzzle = useSessionPuzzle(BANK, state?.id, state?.seed);
+
+  if (!state) return <GameLoading failed={loadFailed} />;
 
   const finished = state.status !== 'playing';
-  const puzzle = [...BANK.daily, ...BANK.extra, ...Object.values(BANK.holiday ?? {}).flat()].find((q) => q.id === state.id);
   const holiday = holidayTitle(puzzle?.holiday ?? null);
   const checksLabel = `${state.checks} check${state.checks === 1 ? '' : 's'}`;
   const captionParts = state.caption.split('____');
@@ -262,7 +272,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
           {holiday && <span style={{ color: MUDDLE_ACCENT }}>{holiday}</span>}
           <span>{scrambleBoardsSolved(state)}/{SCRAMBLE_TOTAL_BOARDS} solved</span>
           <span>{checksLabel} · {SCRAMBLE_MAX_CHECKS - state.checks} left</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '60px' }}>

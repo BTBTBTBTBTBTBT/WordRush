@@ -21,7 +21,9 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordMatch, recordCpuResult, type XpResult } from '@/lib/stats-service';
 import { fetchHeadToHead, fetchVsProfile, type HeadToHeadRecord, type VsProfile } from '@/lib/head-to-head';
 import { XpToast } from '@/components/effects/xp-toast';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { useDictionary, dictLengthsForMode } from '@/lib/init-dictionary';
+import { useProperNoundleBank } from '@/components/propernoundle/puzzle-service';
+import { GameLoading } from '@/components/game/game-loading';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
@@ -31,7 +33,6 @@ import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine , VsOverlayWordmark, INTRO_DURATION_MS } from './match-intro';
 import { VsMatchHeader } from './vs-match-header';
 import { FinalBoards, ScoreCard, logSolved, type EvaluatedRow } from './vs-result-detail';
-import { generateVsShareImage, logToGrids } from '@/lib/vs-share-image';
 import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 import {
   hasPlayedModeToday,
@@ -251,8 +252,16 @@ function bestRowGreens(tiles: Record<number, string[][]>): number {
   return best;
 }
 
-export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
-  ensureDictionaryInitialized();
+/** Word lists (and ProperNoundle's puzzles) load on demand (founder, 2026-09-29): the match
+ *  mounts only once they are in, so no guess or bot plan ever runs against an empty list. */
+export function VsGame(props: VsGameProps) {
+  const isPN = props.mode === GameMode.PROPERNOUNDLE;
+  const dict = useDictionary(dictLengthsForMode(props.mode));
+  const pn = useProperNoundleBank(isPN);
+  return dict && pn ? <VsGameInner {...props} /> : <GameLoading />;
+}
+
+function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   const { profile, session, isProActive, isGuest, exitGuest } = useAuth();
   const isPro = isProActive;
@@ -1465,6 +1474,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       if (matchResult) {
         try {
           const solutions = matchResult.solutions ?? [];
+          // Loaded on the Share tap, not with the match (founder, 2026-09-29).
+          const { generateVsShareImage, logToGrids } = await import('@/lib/vs-share-image');
           const blob = await generateVsShareImage({
             modeLabel: `VS ${label}`,
             isWin,

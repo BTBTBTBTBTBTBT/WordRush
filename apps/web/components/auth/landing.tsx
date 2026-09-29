@@ -9,7 +9,9 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
 import { LadderIcon } from '@/components/ui/ladder-icon';
-import { LoginScreen } from './login-screen';
+import dynamic from 'next/dynamic';
+// Loaded on the "Sign in" tap only (founder, 2026-09-29).
+const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
 
 type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;

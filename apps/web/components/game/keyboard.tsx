@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
@@ -31,6 +31,7 @@ const LAYOUT_ROWS: Record<KeyboardLayout, string[][]> = {
 };
 
 type LetterState = 'correct' | 'present' | 'absent';
+const EMPTY_STATES: Record<string, LetterState> = {};
 
 interface KeyboardProps {
   onKey: (key: string) => void;
@@ -121,7 +122,10 @@ function QuadrantKey({
   );
 }
 
-export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedOutLetters, keyFills }: KeyboardProps) {
+// Memoized (founder, 2026-09-29): the game screens pass stable props (useCallback
+// handlers, memoized letter states), so a tick or a message elsewhere on the
+// screen no longer re-renders every key.
+export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STATES, boardLetterStates, blackedOutLetters, keyFills }: KeyboardProps) {
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
   const [layout, setLayout] = useState<KeyboardLayout>('standard');
   useEffect(() => {
@@ -244,4 +248,4 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
       ))}
     </div>
   );
-}
+});

@@ -1,2 +1,4 @@
 .vercel
 .bible.md
+# Generated per-puzzle bank files (scripts/split-banks.js, run by next.config.js)
+public/banks/

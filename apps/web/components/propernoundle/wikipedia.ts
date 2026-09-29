@@ -10,24 +10,40 @@ interface WikiSummary {
   originalimage?: { source: string; width: number; height: number };
 }
 
+// One summary request per answer (founder, 2026-09-29): the clue hint, the
+// result-screen clue and the thumbnail all read the same page summary, which
+// used to be fetched twice and only at game end. The game starts it when the
+// puzzle loads (prefetchWikipediaSummary); everything after reads the cache.
+const summaries = new Map<string, Promise<WikiSummary>>();
+
+function fetchWikipediaSummary(displayName: string, wikiTitle?: string): Promise<WikiSummary> {
+  const title = encodeURIComponent(
+    (wikiTitle || displayName).replace(/\s+/g, '_')
+  );
+  let p = summaries.get(title);
+  if (!p) {
+    p = fetch(`${WIKI_API}/${title}`, { headers: { Accept: 'application/json' } }).then((response) => {
+      if (!response.ok) throw new Error(`Wikipedia API returned ${response.status}`);
+      return response.json() as Promise<WikiSummary>;
+    });
+    // A failed request may be retried by the next caller.
+    p.catch(() => summaries.delete(title));
+    summaries.set(title, p);
+  }
+  return p;
+}
+
+/** Starts the summary request early (puzzle load) so the clue and result screen are instant. */
+export function prefetchWikipediaSummary(displayName: string, wikiTitle?: string): void {
+  fetchWikipediaSummary(displayName, wikiTitle).catch(() => {});
+}
+
 export async function fetchWikipediaHint(
   displayName: string,
   wikiTitle?: string,
   redact = true
 ): Promise<string> {
-  const title = encodeURIComponent(
-    (wikiTitle || displayName).replace(/\s+/g, '_')
-  );
-
-  const response = await fetch(`${WIKI_API}/${title}`, {
-    headers: { Accept: 'application/json' },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Wikipedia API returned ${response.status}`);
-  }
-
-  const data: WikiSummary = await response.json();
+  const data = await fetchWikipediaSummary(displayName, wikiTitle);
 
   if (!data.extract) {
     throw new Error('No summary available');
@@ -50,18 +66,8 @@ export async function fetchWikipediaImage(
   displayName: string,
   wikiTitle?: string
 ): Promise<string | null> {
-  const title = encodeURIComponent(
-    (wikiTitle || displayName).replace(/\s+/g, '_')
-  );
-
   try {
-    const response = await fetch(`${WIKI_API}/${title}`, {
-      headers: { Accept: 'application/json' },
-    });
-
-    if (!response.ok) return null;
-
-    const data: WikiSummary = await response.json();
+    const data = await fetchWikipediaSummary(displayName, wikiTitle);
     return data.thumbnail?.source || data.originalimage?.source || null;
   } catch {
     return null;

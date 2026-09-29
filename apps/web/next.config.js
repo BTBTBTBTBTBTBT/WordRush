@@ -1,5 +1,17 @@
 const { withSentryConfig } = require('@sentry/nextjs');
 
+// More Games banks → one static JSON per puzzle under public/banks/<game>/<hash>/
+// plus lib/banks-manifest.json (founder, 2026-09-29; scripts/split-banks.js).
+// Runs whenever Next loads this config (dev, build, start), so the files always
+// match data/ without a separate build step. A build must not ship without
+// them; anywhere else (a read-only server loading this config) only warns.
+try {
+  require('./scripts/split-banks').splitBanks();
+} catch (e) {
+  if (process.argv.includes('build')) throw e;
+  console.warn(`split-banks: skipped (${e.message})`);
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // /portal is Jasson's short URL for the engineering portal. The real page
@@ -76,6 +88,14 @@ const nextConfig = {
         ],
       },
       {
+        // Per-puzzle bank files live under a content-hash directory
+        // (scripts/split-banks.js), so a URL never changes meaning: immutable.
+        source: '/banks/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         // Cache images served through next/image
         source: '/_next/image',
         headers: [
@@ -124,6 +144,9 @@ module.exports = withSentryConfig(nextConfig, {
   webpack: {
     treeshake: {
       removeDebugLogging: true,
+      // Every Sentry.init has tracesSampleRate: 0 and nothing starts spans, so
+      // the tracing code is dead weight in every bundle (founder, 2026-09-29).
+      removeTracing: true,
     },
   },
 });

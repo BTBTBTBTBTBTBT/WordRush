@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LoginScreen } from './login-screen';
+import dynamic from 'next/dynamic';
+// Loaded on the "Sign in" tap only (founder, 2026-09-29).
+const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
 import { getGuide, PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 

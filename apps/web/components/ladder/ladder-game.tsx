@@ -9,10 +9,11 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, Undo2, Lightbulb } from 'lucide-react';
 import {
   ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, ladderGuessCount, ladderMaxMoves,
-  generateDailySeed, getAllowedWordsForLength, type LadderState, type LadderAction, type LadderBank, type LadderReject,
+  generateDailySeed, getAllowedWordsForLength, type LadderState, type LadderAction, type LadderBank, type LadderPuzzle, type LadderReject,
 } from '@wordle-duel/core';
-import ladderBankJson from '@/data/ladder-puzzles.json';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { bankSession } from '@/lib/bank-loader';
+import { GameLoading } from '@/components/game/game-loading';
+import { useDictionary } from '@/lib/init-dictionary';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
@@ -27,6 +28,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useThrottledSave } from '@/hooks/use-throttled-save';
+import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { ladderElsewhere } from '@/lib/elsewhere-progress';
@@ -44,7 +47,8 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // is par + 5; Undo is free but spent moves stay spent; Hint places the next
 // rung on a shortest path and counts as a move. guess_count = moves − par + 1.
 
-const BANK = ladderBankJson as LadderBank;
+// Puzzles are fetched one at a time from /banks (lib/bank-loader.ts; founder, 2026-09-29).
+const BANK = bankSession<LadderBank, LadderPuzzle>('ladder', (b, d) => ladderPuzzleForDay(b, d), ladderPuzzleForSeed);
 const REJECT_COPY: Record<LadderReject, string> = {
   finished: 'This ladder is finished',
   length: 'Five letters, please',
@@ -58,7 +62,12 @@ interface LadderGameProps {
   isDaily?: boolean;
 }
 
-export function LadderGame({ isDaily = false }: LadderGameProps) {
+/** Rungs are checked against the 5-letter list, which loads on demand (founder, 2026-09-29). */
+export function LadderGame(props: LadderGameProps) {
+  return useDictionary([5]) ? <LadderGameInner {...props} /> : <GameLoading />;
+}
+
+function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
   const mode: 'daily' | 'practice' = isDaily ? 'daily' : 'practice';
@@ -72,11 +81,12 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
   // The engine's dictionary: the 5-letter allowed list, uppercased once.
-  const allowed = useMemo(() => { ensureDictionaryInitialized(); return new Set(getAllowedWordsForLength(5).map((w) => w.toUpperCase())); }, []);
+  const allowed = useMemo(() => { return new Set(getAllowedWordsForLength(5).map((w) => w.toUpperCase())); }, []);
 
   // Daily with no local save for today's seed → ask daily_results whether it
   // was finished on another device before showing a fresh ladder (founder, 2026-09-28).
@@ -87,17 +97,20 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
   const [elsewhere, setElsewhere] = useState<ReturnType<typeof ladderElsewhere> | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
+  // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
+  const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-LADDER-${Date.now()}`;
-    const p = ladderPuzzleForSeed(BANK, seed);
-    if (!p) return;
-    setState(createLadderState(p, seed, Date.now()));
-    setTyping(''); setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
-    resetTimer(0);
-    restoredRef.current = false;
-    hasRecordedRef.current = false;
+    BANK.seed(seed).then((p) => {
+      if (!p) return;
+      setState(createLadderState(p, seed, Date.now()));
+      setTyping(''); setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
+      resetTimer(0);
+      restoredRef.current = false;
+      hasRecordedRef.current = false;
+    }).catch(() => setLoadFailed(true));
   }, [resetTimer]);
 
   useEffect(() => {
@@ -111,11 +124,13 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
         restoredRef.current = done; hasRecordedRef.current = done;
         return;
       }
-      const p = ladderPuzzleForDay(BANK, today);
-      if (p) setState(createLadderState(p, seed, Date.now()));
-      resetTimer(0);
-      restoredRef.current = false;
+      // The other-device check runs while the puzzle is fetched.
       setNoLocalSave(true);
+      BANK.day(today).then((p) => {
+        if (p) setState(createLadderState(p, seed, Date.now()));
+        resetTimer(0);
+        restoredRef.current = false;
+      }).catch(() => setLoadFailed(true));
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -128,14 +143,12 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!state) return;
-    // Never write the untouched fresh ladder while the other-device check is
-    // pending or positive: that save would hide the completed card on reload.
-    if (mode === 'daily' && holdPlay) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
-    else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode, holdPlay]);
+  // Never write the untouched fresh ladder while the other-device check is
+  // pending or positive: that save would hide the completed card on reload.
+  useThrottledSave(!state || (mode === 'daily' && holdPlay) ? null : (sec) => {
+    if (mode === 'daily') saveDaily(state.seed, state, sec);
+    else savePractice(state.seed, state, sec);
+  }, getElapsed, [state, mode, holdPlay]);
 
   // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
   // the matches row holds what daily_results does not — hints_used and the
@@ -145,9 +158,9 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
     const today = getTodayLocal();
     const seed = generateDailySeed(today, 'LADDER');
     let cancelled = false;
-    fetchSolvedDailyRow(profile.id, 'LADDER', seed).then((row) => {
+    Promise.all([fetchSolvedDailyRow(profile.id, 'LADDER', seed), BANK.day(today)]).then(([row, p]) => {
       if (cancelled || !row) return;
-      setElsewhere(ladderElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, ladderPuzzleForDay(BANK, today)?.id));
+      setElsewhere(ladderElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, p?.id));
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [completion, profile, mode]);
@@ -169,6 +182,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
   }, [allowed, flash]);
 
   const recordResult = useCallback(() => {
+    const elapsedSeconds = getElapsed();
     if (!profile || !state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
@@ -183,7 +197,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
       solutions: row.solutions, guesses: row.guesses,
       startedAtIso: new Date(Date.now() - elapsedSeconds * 1000).toISOString(), hintsUsed: state.hintsUsed,
     });
-  }, [profile, state, elapsedSeconds, mode]);
+  }, [profile, state, getElapsed, mode]);
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
@@ -233,7 +247,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
-  if (!state) return null;
+  if (!state) return <GameLoading failed={loadFailed} />;
 
   const finished = state.status !== 'playing';
   const won = state.status === 'won';
@@ -258,7 +272,7 @@ export function LadderGame({ isDaily = false }: LadderGameProps) {
           {mode === 'daily' && <span>#{ladderDailyNumber(getTodayLocal())}</span>}
           <span>Par {state.par}</span>
           <span>{state.moves} move{state.moves === 1 ? '' : 's'} · {movesLeft} left</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>

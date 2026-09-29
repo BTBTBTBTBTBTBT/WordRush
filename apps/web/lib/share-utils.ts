@@ -1,4 +1,4 @@
-import { generateShareImage, type ShareImageInput, type ShareLeaderboardInput, type ShareMode } from './share-image';
+import type { ShareImageInput, ShareLeaderboardInput, ShareMode } from './share-image';
 import { openSharePreview } from '@/components/share/share-preview-modal';
 import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
@@ -261,6 +261,8 @@ export async function shareResult(
 ): Promise<ShareResultOutcome> {
   let blob: Blob | null = null;
   try {
+    // The canvas renderer loads on the Share tap, not with the page (founder, 2026-09-29).
+    const { generateShareImage } = await import('./share-image');
     blob = await generateShareImage(input);
   } catch {
     blob = null;

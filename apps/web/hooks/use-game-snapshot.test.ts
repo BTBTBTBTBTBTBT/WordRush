@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { GameMode, GameStatus, generateDailySeed, createInitialState } from '@wordle-duel/core';
 import { replayRecordedGuesses } from './use-game-snapshot';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { loadDictionary } from '@/lib/init-dictionary';
 
-// The app initializes dictionaries at boot; the replay needs them to seed a board.
-ensureDictionaryInitialized();
+// The game routes load the word lists before they mount; the replay needs them to seed a board.
+await loadDictionary();
 
 /**
  * Guards the Six/Seven half of a bug class that has bitten three times: a

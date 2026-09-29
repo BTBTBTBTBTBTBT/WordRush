@@ -31,13 +31,39 @@ function subscribeGuide(cb: () => void) {
  * The accumulator-based pattern here only advances while the page is
  * visible.
  */
+export interface PlayTimer {
+  /** Re-renders the caller on every tick unless `{ tick: false }`; then it updates only on pause/reset. */
+  elapsedSeconds: number;
+  reset: (toSeconds?: number) => void;
+  /** The live elapsed seconds, read at call time (for saves, records, gates). */
+  getElapsed: () => number;
+  /** Tick subscription for <PlayClock> (useSyncExternalStore). */
+  subscribe: (cb: () => void) => () => void;
+  /** The seconds last published to subscribers (a stable snapshot). */
+  getSnapshot: () => number;
+}
+
 export function useActivePlayTimer(
   isPlaying: boolean,
   initialSeconds: number = 0,
-): { elapsedSeconds: number; reset: (toSeconds?: number) => void } {
-  const [elapsedSeconds, setElapsedSeconds] = useState(initialSeconds);
+  // `tick: false` (founder, 2026-09-29): the ticking value goes only to
+  // subscribers (a <PlayClock> in the header), so the board around it does not
+  // re-render every second; callers read getElapsed() when they need the time.
+  { tick: tickState = true }: { tick?: boolean } = {},
+): PlayTimer {
+  const [elapsedSeconds, setElapsed] = useState(initialSeconds);
   const accumulatedMs = useRef(initialSeconds * 1000);
   const resumeAtMs = useRef<number | null>(null);
+  const shown = useRef(initialSeconds);
+  const [listeners] = useState(() => new Set<() => void>());
+  const publish = useCallback((sec: number, force: boolean) => {
+    if (sec !== shown.current) { shown.current = sec; listeners.forEach((l) => l()); }
+    if (force || tickState) setElapsed(sec);
+  }, [listeners, tickState]);
+  const setElapsedSeconds = useCallback((sec: number) => publish(sec, true), [publish]);
+  const getElapsed = useCallback(() => Math.floor((accumulatedMs.current + (resumeAtMs.current !== null ? Date.now() - resumeAtMs.current : 0)) / 1000), []);
+  const subscribe = useCallback((cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb); }; }, [listeners]);
+  const getSnapshot = useCallback(() => shown.current, []);
   // The in-game guide pauses the clock while open — fold it into the "playing"
   // condition so the existing pause/resume machinery handles it for free.
   const guideOpen = useSyncExternalStore(subscribeGuide, () => guidePaused, () => false);
@@ -49,7 +75,7 @@ export function useActivePlayTimer(
       resumeAtMs.current = null;
       setElapsedSeconds(Math.floor(accumulatedMs.current / 1000));
     }
-  }, []);
+  }, [setElapsedSeconds]);
 
   const reset = useCallback(
     (toSeconds: number = 0) => {
@@ -59,7 +85,7 @@ export function useActivePlayTimer(
         : null;
       setElapsedSeconds(toSeconds);
     },
-    [active],
+    [active, setElapsedSeconds],
   );
 
   useEffect(() => {
@@ -75,7 +101,7 @@ export function useActivePlayTimer(
     const tick = () => {
       if (resumeAtMs.current === null) return;
       const totalMs = accumulatedMs.current + (Date.now() - resumeAtMs.current);
-      setElapsedSeconds(Math.floor(totalMs / 1000));
+      publish(Math.floor(totalMs / 1000), false);
     };
     const interval = setInterval(tick, 1000);
 
@@ -105,7 +131,7 @@ export function useActivePlayTimer(
       window.removeEventListener('focus', resume);
       flush();
     };
-  }, [active, flush]);
+  }, [active, flush, publish]);
 
-  return { elapsedSeconds, reset };
+  return { elapsedSeconds, reset, getElapsed, subscribe, getSnapshot };
 }

@@ -3,10 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
-import { Landing } from './landing';
-import { ModeLanding } from './mode-landing';
-import { DailyLanding } from './daily-landing';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import dynamic from 'next/dynamic';
+
+// Signed-out-only screens load as their own chunks (founder, 2026-09-29): a
+// signed-in player never downloads them. Still server-rendered, so crawlers
+// get the full landing content. The word lists no longer load here at all —
+// each game route loads the lengths it needs (lib/init-dictionary.ts).
+const Landing = dynamic(() => import('./landing').then((m) => m.Landing));
+const ModeLanding = dynamic(() => import('./mode-landing').then((m) => m.ModeLanding));
+const DailyLanding = dynamic(() => import('./daily-landing').then((m) => m.DailyLanding));
 
 // Public (no login) so AdSense / search crawlers can index real content —
 // not just the login wall. These are static content pages.
@@ -57,7 +62,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    ensureDictionaryInitialized();
   }, []);
 
   // Let public pages through without auth. Segment-boundary match — a bare

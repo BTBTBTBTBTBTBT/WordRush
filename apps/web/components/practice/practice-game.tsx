@@ -15,7 +15,6 @@ import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { recordDailyResult } from '@/lib/daily-service';
@@ -39,8 +38,8 @@ interface PracticeGameProps {
   isDaily?: boolean;
 }
 
+// Mounted by the route only after useDictionary() has loaded this mode's lists.
 export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGameProps) {
-  ensureDictionaryInitialized();
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
   // Attempt to restore any previously saved session for this mode+variant.

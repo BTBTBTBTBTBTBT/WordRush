@@ -9,12 +9,12 @@ import { Board } from '@/components/game/board';
 import { CompletedMiniBoard, GauntletStageBreakdown } from '@/components/game/completed-mini-board';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { useWordDefinition } from '@/hooks/use-word-definition';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { useDictionary, dictLengthsForMode } from '@/lib/init-dictionary';
 import { getTodayLocal, formatHintsLabel } from '@/lib/daily-service';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { fetchGauntletStages } from '@/lib/stats-service';
-import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
+import { getDailyPuzzle, useProperNoundleBank } from '@/components/propernoundle/puzzle-service';
 import { normalizeString, checkWin as pnCheckWin } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
 import { rebuildPNRow, PN_PLACEHOLDER } from '@/components/propernoundle/reconstruct';
@@ -250,11 +250,20 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   // More Games titles (custom engine, not ProperNoundle) rebuild their own
   // finished board from the matches row; keyed so a mode switch starts fresh.
   if (isMoreBoardMode(modeId)) return <CompletedMoreBoard key={modeId} dbKey={modeId} />;
+  return <CompletedWordBoardGate modeId={modeId} />;
+}
+
+// The replay needs this mode's word lists (ProperNoundle: its puzzle list),
+// which load on demand now (founder, 2026-09-29) — the board waits for them.
+function CompletedWordBoardGate({ modeId }: CompletedDailyBoardProps) {
+  const isPN = modeId === 'PROPERNOUNDLE';
+  const dict = useDictionary(isPN ? [] : dictLengthsForMode(modeId));
+  const pn = useProperNoundleBank(isPN);
+  if (!dict || !pn) return <div className="text-[10px] font-bold text-center py-2" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>;
   return <CompletedWordBoard modeId={modeId} />;
 }
 
 function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
-  ensureDictionaryInitialized();
 
   const isGauntlet = modeId === 'GAUNTLET';
   const isProperNoundle = modeId === 'PROPERNOUNDLE';

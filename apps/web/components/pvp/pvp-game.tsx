@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
 import { usePresenceId } from '@/lib/presence-id';
 import { Loader2 } from 'lucide-react';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 interface PvPGameProps {
   mode: GameMode;
@@ -19,8 +18,8 @@ interface PvPGameProps {
 
 type PvPScreen = 'queue' | 'warmup' | 'match' | 'result';
 
+// Unmounted legacy screen; a caller must await loadDictionary() before mounting it.
 export function PvPGame({ mode, onBack }: PvPGameProps) {
-  ensureDictionaryInitialized();
   const [screen, setScreen] = useState<PvPScreen>('queue');
   const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
   const presenceId = usePresenceId();

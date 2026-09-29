@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -10,9 +10,10 @@ import { Clock, Delete, CheckCheck, Lightbulb, Eye } from 'lucide-react';
 import {
   cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, createCryptogramState, cryptogramReduce, cryptogramMatchRow,
   cryptogramGuessCount, cryptogramCodeLetters, cryptogramConflicts, CRYPTOGRAM_ALPHABET, CRYPTOGRAM_REVEAL_AFTER_SECONDS, CRYPTOGRAM_TOTAL_BOARDS,
-  generateDailySeed, type CryptogramState, type CryptogramAction, type CryptogramBank,
+  generateDailySeed, type CryptogramState, type CryptogramAction, type CryptogramBank, type CryptogramPuzzle,
 } from '@wordle-duel/core';
-import cryptogramBankJson from '@/data/cryptogram-puzzles.json';
+import { bankSession, useSessionPuzzle } from '@/lib/bank-loader';
+import { GameLoading } from '@/components/game/game-loading';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
@@ -29,6 +30,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useThrottledSave } from '@/hooks/use-throttled-save';
+import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { cryptogramElsewhere } from '@/lib/elsewhere-progress';
@@ -47,7 +50,8 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // Reveal (after 5:00) shows the answer and records a loss. The puzzle
 // completes itself the moment every letter is right.
 
-const BANK = cryptogramBankJson as unknown as CryptogramBank;
+// Puzzles are fetched one at a time from /banks (lib/bank-loader.ts; founder, 2026-09-29).
+const BANK = bankSession<CryptogramBank, CryptogramPuzzle>('cryptogram', (b, d) => cryptogramPuzzleForDay(b, d, HOLIDAY_TABLE), cryptogramPuzzleForSeed);
 
 interface CryptogramGameProps { isDaily?: boolean }
 
@@ -63,6 +67,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
@@ -75,7 +80,9 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const [elsewhere, setElsewhere] = useState<ReturnType<typeof cryptogramElsewhere> | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
+  // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
+  const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
   /** Reading-order code letters that are not yet resolved (unmapped, or mapped but not locked). */
   const nextOpen = useCallback((s: CryptogramState, after: string | null): string | null => {
@@ -89,13 +96,14 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-CRYPTOGRAM-${Date.now()}`;
-    const p = cryptogramPuzzleForSeed(BANK, seed);
-    if (!p) return;
-    const s = createCryptogramState(p, seed, Date.now());
-    setState(s); setSelected(nextOpen(s, null));
-    setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
-    resetTimer(0);
-    restoredRef.current = false; hasRecordedRef.current = false;
+    BANK.seed(seed).then((p) => {
+      if (!p) return;
+      const s = createCryptogramState(p, seed, Date.now());
+      setState(s); setSelected(nextOpen(s, null));
+      setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
+      resetTimer(0);
+      restoredRef.current = false; hasRecordedRef.current = false;
+    }).catch(() => setLoadFailed(true));
   }, [resetTimer, nextOpen]);
 
   useEffect(() => {
@@ -109,11 +117,13 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         restoredRef.current = done; hasRecordedRef.current = done;
         return;
       }
-      const p = cryptogramPuzzleForDay(BANK, today, HOLIDAY_TABLE);
-      if (p) { const s = createCryptogramState(p, seed, Date.now()); setState(s); setSelected(nextOpen(s, null)); }
-      resetTimer(0);
-      restoredRef.current = false;
+      // The other-device check runs while the puzzle is fetched.
       setNoLocalSave(true);
+      BANK.day(today).then((p) => {
+        if (p) { const s = createCryptogramState(p, seed, Date.now()); setState(s); setSelected(nextOpen(s, null)); }
+        resetTimer(0);
+        restoredRef.current = false;
+      }).catch(() => setLoadFailed(true));
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -126,14 +136,12 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!state) return;
-    // Never write the untouched fresh cipher while the other-device check is
-    // pending or positive: that save would hide the completed card on reload.
-    if (mode === 'daily' && holdPlay) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
-    else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode, holdPlay]);
+  // Never write the untouched fresh cipher while the other-device check is
+  // pending or positive: that save would hide the completed card on reload.
+  useThrottledSave(!state || (mode === 'daily' && holdPlay) ? null : (sec) => {
+    if (mode === 'daily') saveDaily(state.seed, state, sec);
+    else savePractice(state.seed, state, sec);
+  }, getElapsed, [state, mode, holdPlay]);
 
   // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
   // the matches row holds what daily_results does not — hints_used and the
@@ -165,6 +173,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   }, [flash]);
 
   const recordResult = useCallback(() => {
+    const elapsedSeconds = getElapsed();
     if (!profile || !state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
@@ -179,7 +188,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       solutions: row.solutions, guesses: row.guesses,
       startedAtIso: new Date(Date.now() - elapsedSeconds * 1000).toISOString(), hintsUsed: state.hintsUsed,
     });
-  }, [profile, state, elapsedSeconds, mode]);
+  }, [profile, state, getElapsed, mode]);
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
@@ -212,7 +221,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   }, [state, setLetter, clearLetter, nextOpen]);
   const check = useCallback(() => { if (state && Object.keys(state.mapping).some((c) => !state.locked.includes(c))) dispatch({ type: 'CHECK' }); else flash('Pencil some letters first'); }, [state, dispatch, flash]);
   const hint = useCallback(() => { dispatch({ type: 'HINT' }); haptic('light'); }, [dispatch]);
-  const reveal = useCallback(() => { if (elapsedSeconds >= CRYPTOGRAM_REVEAL_AFTER_SECONDS) dispatch({ type: 'REVEAL' }); }, [dispatch, elapsedSeconds]);
+  const reveal = useCallback(() => { if (getElapsed() >= CRYPTOGRAM_REVEAL_AFTER_SECONDS) dispatch({ type: 'REVEAL' }); }, [dispatch, getElapsed]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -275,18 +284,25 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const boardWidth = fit?.width ?? null;
   const chipFont = 12;
 
-  if (!state) return null;
+  // The bank entry behind this session (fresh or restored) names its holiday.
+  const sessionPuzzle = useSessionPuzzle(BANK, state?.id, state?.seed);
+  // Settled plain letters (given, checked-correct, hinted) fill their keys in the
+  // accent so the player sees what is left (founder, 2026-09-28). Memoized so
+  // memo(Keyboard) skips renders that do not change them (founder, 2026-09-29).
+  const locked = state?.locked, mapping = state?.mapping;
+  const usedKeyFills = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const c of locked ?? []) { const plain = mapping?.[c]; if (plain) out[plain] = CRYPTOGRAM_ACCENT; }
+    return out;
+  }, [locked, mapping]);
+
+  if (!state) return <GameLoading failed={loadFailed} />;
 
   const finished = state.status !== 'playing';
   const codes = cryptogramCodeLetters(state.cipher);
   const resolved = codes.filter((c) => state.locked.includes(c) || state.mapping[c]).length;
-  // Settled plain letters (given, checked-correct, hinted) fill their keys in the
-  // accent so the player sees what is left (founder, 2026-09-28).
-  const usedKeyFills: Record<string, string> = {};
-  for (const c of state.locked) { const plain = state.mapping[c]; if (plain) usedKeyFills[plain] = CRYPTOGRAM_ACCENT; }
   const conflicts = cryptogramConflicts(state.mapping);
-  const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - elapsedSeconds);
-  const holiday = holidayTitle((BANK.holiday && Object.keys(BANK.holiday).find((k) => BANK.holiday![k].some((q) => q.id === state.id))) ?? null);
+  const holiday = holidayTitle(sessionPuzzle?.holiday ?? null);
   const checksLabel = state.checks === 0 ? 'No checks' : `${state.checks} check${state.checks === 1 ? '' : 's'}`;
   const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${CRYPTOGRAM_ACCENT}66`, color: CRYPTOGRAM_ACCENT, background: `${CRYPTOGRAM_ACCENT}0d` };
@@ -307,7 +323,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
           {holiday && <span style={{ color: CRYPTOGRAM_ACCENT }}>{holiday}</span>}
           <span>{resolved}/{codes.length} letters</span>
           <span>{checksLabel}</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
@@ -355,9 +371,11 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
               <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: reveal one letter">
                 <Lightbulb className="w-3.5 h-3.5" /> Hint{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
               </button>
+              {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
+              <PlayClock timer={timer}>{(sec) => { const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - sec); return (
               <button type="button" onClick={() => { haptic('medium'); reveal(); }} disabled={revealIn > 0} className={capsule(revealIn > 0)} style={capsuleStyle(revealIn > 0)} aria-label={revealIn > 0 ? `Reveal available in ${formatTime(revealIn)}` : 'Reveal the answer (records a loss)'}>
                 <Eye className="w-3.5 h-3.5" /> {revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'}
-              </button>
+              </button>); }}</PlayClock>
             </div>
             <Keyboard onKey={onKey} keyFills={usedKeyFills} />
           </div>

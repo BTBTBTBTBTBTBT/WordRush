@@ -25,6 +25,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useThrottledSave } from '@/hooks/use-throttled-save';
+import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { sudokuElsewhere } from '@/lib/elsewhere-progress';
@@ -74,7 +76,9 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   const [elsewhere, setElsewhere] = useState<ReturnType<typeof sudokuElsewhere> | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
+  // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
+  const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
   const startPractice = useCallback((d: SudokuDifficulty) => {
     const seed = `unlimited-SUDOKU-${Date.now()}-${d}`;
@@ -120,14 +124,12 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
 
   // Persist every change (board, notes, history and the clock) so a reload —
   // or a device switch via the completed-today card — lands on the same board.
-  useEffect(() => {
-    if (!state) return;
-    // Never write the untouched fresh board while the other-device check is
-    // pending or positive: that save would hide the completed card on reload.
-    if (mode === 'daily' && holdPlay) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
-    else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode, holdPlay]);
+  // Never write the untouched fresh board while the other-device check is
+  // pending or positive: that save would hide the completed card on reload.
+  useThrottledSave(!state || (mode === 'daily' && holdPlay) ? null : (sec) => {
+    if (mode === 'daily') saveDaily(state.seed, state, sec);
+    else savePractice(state.seed, state, sec);
+  }, getElapsed, [state, mode, holdPlay]);
 
   // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
   // the matches row holds what daily_results does not — hints_used and the
@@ -147,6 +149,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   const mistakes = state?.mistakes ?? 0;
 
   const recordResult = useCallback(() => {
+    const elapsedSeconds = getElapsed();
     if (!profile || !state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
@@ -170,7 +173,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
       startedAtIso: new Date(Date.now() - elapsedSeconds * 1000).toISOString(),
       hintsUsed: state.hintsUsed,
     });
-  }, [profile, state, elapsedSeconds, mode]);
+  }, [profile, state, getElapsed, mode]);
 
   // Game-over effects: overlay once (never on a restored finished board), then record.
   useEffect(() => {
@@ -268,6 +271,10 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
     return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`;
   };
 
+  // Stable so memo(SudokuBoard) skips re-renders that do not touch the board (founder, 2026-09-29).
+  const isFinished = !!state && state.status !== 'playing';
+  const onSelectCell = useCallback((i: number) => { if (!isFinished) setSelected(i); }, [isFinished]);
+
   if (!state) return null;
 
   const finished = state.status !== 'playing';
@@ -282,7 +289,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   );
 
   const board = (
-    <SudokuBoard state={state} selected={finished ? null : selected} onSelect={(i) => { if (!finished) setSelected(i); }} revealSolution={state.status === 'lost'} />
+    <SudokuBoard state={state} selected={finished ? null : selected} onSelect={onSelectCell} revealSolution={state.status === 'lost'} />
   );
 
   return (
@@ -304,7 +311,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
           {mode === 'daily' && <span>#{sudokuDailyNumber(getTodayLocal())}</span>}
           <span>{DIFFICULTY_LABEL[state.difficulty]}</span>
           <span className="flex items-center gap-1">Mistakes {mistakeDots}</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>

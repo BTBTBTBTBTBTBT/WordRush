@@ -10,9 +10,10 @@ import { Clock, Shuffle, XCircle, CheckCircle2, Tag, Link2 } from 'lucide-react'
 import {
   groupsPuzzleForDay, groupsPuzzleForSeed, groupsDailyNumber, createGroupsState, groupsReduce, groupsMatchRow, groupsGuessCount, groupsBoardsSolved,
   groupsUnsolved, groupsLabelTarget, groupsPairTarget, GROUPS_MAX_MISTAKES, GROUPS_TOTAL_BOARDS, generateDailySeed,
-  type GroupsState, type GroupsAction, type GroupsBank,
+  type GroupsState, type GroupsAction, type GroupsBank, type GroupsPuzzle,
 } from '@wordle-duel/core';
-import groupsBankJson from '@/data/groups-puzzles.json';
+import { bankSession, useSessionPuzzle } from '@/lib/bank-loader';
+import { GameLoading } from '@/components/game/game-loading';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
@@ -27,6 +28,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useThrottledSave } from '@/hooks/use-throttled-save';
+import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { groupsElsewhere } from '@/lib/elsewhere-progress';
@@ -42,7 +45,8 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // away", a repeated set is free. Name a category (100) / Show a pair (200)
 // never cost a mistake. guess_count = submissions (4 perfect) or found + 4 on a loss.
 
-const BANK = groupsBankJson as unknown as GroupsBank;
+// Puzzles are fetched one at a time from /banks (lib/bank-loader.ts; founder, 2026-09-29).
+const BANK = bankSession<GroupsBank, GroupsPuzzle>('groups', (b, d) => groupsPuzzleForDay(b, d, HOLIDAY_TABLE), groupsPuzzleForSeed);
 
 interface GroupsGameProps { isDaily?: boolean }
 
@@ -58,6 +62,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
@@ -70,16 +75,19 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   const [elsewhere, setElsewhere] = useState<ReturnType<typeof groupsElsewhere> | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
+  // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
+  const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-GROUPS-${Date.now()}`;
-    const p = groupsPuzzleForSeed(BANK, seed);
-    if (!p) return;
-    setState(createGroupsState(p, seed, Date.now()));
-    setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
-    resetTimer(0);
-    restoredRef.current = false; hasRecordedRef.current = false;
+    BANK.seed(seed).then((p) => {
+      if (!p) return;
+      setState(createGroupsState(p, seed, Date.now()));
+      setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
+      resetTimer(0);
+      restoredRef.current = false; hasRecordedRef.current = false;
+    }).catch(() => setLoadFailed(true));
   }, [resetTimer]);
 
   useEffect(() => {
@@ -93,11 +101,13 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
         restoredRef.current = done; hasRecordedRef.current = done;
         return;
       }
-      const p = groupsPuzzleForDay(BANK, today, HOLIDAY_TABLE);
-      if (p) setState(createGroupsState(p, seed, Date.now()));
-      resetTimer(0);
-      restoredRef.current = false;
+      // The other-device check runs while the puzzle is fetched.
       setNoLocalSave(true);
+      BANK.day(today).then((p) => {
+        if (p) setState(createGroupsState(p, seed, Date.now()));
+        resetTimer(0);
+        restoredRef.current = false;
+      }).catch(() => setLoadFailed(true));
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -110,14 +120,12 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!state) return;
-    // Never write the untouched fresh grid while the other-device check is
-    // pending or positive: that save would hide the completed card on reload.
-    if (mode === 'daily' && holdPlay) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
-    else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode, holdPlay]);
+  // Never write the untouched fresh grid while the other-device check is
+  // pending or positive: that save would hide the completed card on reload.
+  useThrottledSave(!state || (mode === 'daily' && holdPlay) ? null : (sec) => {
+    if (mode === 'daily') saveDaily(state.seed, state, sec);
+    else savePractice(state.seed, state, sec);
+  }, getElapsed, [state, mode, holdPlay]);
 
   // Played elsewhere today (founder, 2026-09-28: "make it exact everywhere"):
   // the matches row holds what daily_results does not — groups found before
@@ -154,6 +162,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   }, [flash]);
 
   const recordResult = useCallback(() => {
+    const elapsedSeconds = getElapsed();
     if (!profile || !state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
@@ -168,7 +177,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
       solutions: row.solutions, guesses: row.guesses,
       startedAtIso: new Date(Date.now() - elapsedSeconds * 1000).toISOString(), hintsUsed: state.hintsUsed,
     });
-  }, [profile, state, elapsedSeconds, mode]);
+  }, [profile, state, getElapsed, mode]);
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
@@ -254,10 +263,13 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
     return () => ro.disconnect();
   }, [playing, tileCount, solvedCount, revealedCount]);
 
-  if (!state) return null;
+  // The bank entry behind this session (fresh or restored) names its holiday.
+  const sessionPuzzle = useSessionPuzzle(BANK, state?.id, state?.seed);
+
+  if (!state) return <GameLoading failed={loadFailed} />;
 
   const finished = state.status !== 'playing';
-  const holiday = holidayTitle((BANK.holiday && Object.keys(BANK.holiday).find((k) => BANK.holiday![k].some((q) => q.id === state.id))) ?? null);
+  const holiday = holidayTitle(sessionPuzzle?.holiday ?? null);
   const revealedLabels = state.revealedTiers.map((t) => state.groups.find((g) => g.tier === t)!).filter((g) => !state.solved.some((s) => s.tier === g.tier));
   const unsolved = groupsUnsolved(state);
   const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
@@ -280,7 +292,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
           {holiday && <span style={{ color: GROUPS_ACCENT }}>{holiday}</span>}
           <span>{state.solved.length}/{GROUPS_TOTAL_BOARDS} groups</span>
           <span>{mistakesLabel}</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>

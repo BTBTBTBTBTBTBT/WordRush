@@ -9,7 +9,7 @@ import { computeDailyTotals } from '@/lib/daily-service';
 import { shareDailySweep, shareMoreSweep } from '@/lib/daily-share';
 import { computeMoreTotals, moreSweepTier, MORE_SWEEP_COPY } from '@/lib/more-games';
 import type { ShareMode } from '@/lib/share-image';
-import { MODE_SHARE_GLYPH } from '@/lib/share-image';
+import { MODE_SHARE_GLYPH } from '@/lib/share-grid';
 import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
 

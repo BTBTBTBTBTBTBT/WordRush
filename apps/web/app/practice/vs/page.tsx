@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GameMode, initDictionary } from '@wordle-duel/core';
 import { VsGame } from '@/components/vs/vs-game';
@@ -12,7 +11,6 @@ function VsClassicInner() {
   const searchParams = useSearchParams();
   const isDaily = searchParams.get('daily') === 'true';
   const inviteCode = searchParams.get('inviteCode') ?? undefined;
-  useEffect(() => { ensureDictionaryInitialized(); }, []);
   return (
     <AdGate>
       {/* ?daily=true is the one free VS door — the gate lets it through. */}

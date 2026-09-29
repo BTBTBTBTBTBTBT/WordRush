@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { usePresenceId } from '@/lib/presence-id';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
@@ -36,19 +36,25 @@ export function SitePresenceProvider({ children }: { children: React.ReactNode }
     // with the initial page load's critical network requests (auth,
     // profile fetch, daily completions). Presence is a background signal
     // — a few-second delay is invisible to the user.
-    let socket: ReturnType<typeof io> | null = null;
+    // socket.io-client loads with it, never in the page's first-load JS (founder, 2026-09-29).
+    let socket: Socket | null = null;
+    let cancelled = false;
     const timer = setTimeout(() => {
-      socket = io(SERVER_URL, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 2000,
-        reconnectionDelayMax: 10000,
-        // Server dedupes /presence by this id — see apps/server/src/index.ts.
-        auth: { presenceId },
-      });
+      import('socket.io-client').then(({ io }) => {
+        if (cancelled) return;
+        socket = io(SERVER_URL, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionDelay: 2000,
+          reconnectionDelayMax: 10000,
+          // Server dedupes /presence by this id — see apps/server/src/index.ts.
+          auth: { presenceId },
+        });
+      }).catch(() => {});
     }, 3000);
 
     return () => {
+      cancelled = true;
       clearTimeout(timer);
       if (socket) {
         socket.removeAllListeners();

@@ -334,12 +334,13 @@ export default function HomePage() {
   // home page only uses them for pre-warming and Word of the Day — both can wait.
   useEffect(() => {
     cleanupOldPlayData();
-    // Pre-warm via the central loader — it loads ALL lists (5/6/7 + the
-    // legacy answer banks the date-gate needs). A hand-rolled 2-arg init here
-    // once wiped the legacy list and crashed every pre-cutover daily.
-    import('@/lib/init-dictionary')
-      .then((m) => m.ensureDictionaryInitialized())
-      .catch(() => {});
+    // Pre-warm the 5-letter lists once the page is idle, through the central
+    // loader (it always loads a length's legacy answer bank with it — a
+    // hand-rolled 2-arg init once wiped that list and crashed every
+    // pre-cutover daily). Six/Seven load on their own routes (founder, 2026-09-29).
+    const warm = () => { import('@/lib/init-dictionary').then((m) => m.loadDictionary([5])).catch(() => {}); };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 2000);
   }, []);
 
   // Hydrate the play-limits localStorage cache from the DB so freshly-

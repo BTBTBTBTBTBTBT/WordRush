@@ -14,11 +14,12 @@ import { SoundToggle } from '@/components/game/sound-toggle';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
-import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById, dailyHolidayKey } from './puzzle-service';
+import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById, dailyHolidayKey, useProperNoundleBank } from './puzzle-service';
+import { GameLoading } from '@/components/game/game-loading';
 import { holidayTitle } from '@/lib/holidays';
 import { useHints, type PersistedHintState } from './use-hints';
 import Image from 'next/image';
-import { fetchWikipediaImage, fetchWikipediaHint } from './wikipedia';
+import { fetchWikipediaImage, fetchWikipediaHint, prefetchWikipediaSummary } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { chooseShareVariant } from '@/components/share/share-variant-modal';
@@ -135,7 +136,12 @@ interface ProperNoundleGameProps {
   isDaily?: boolean;
 }
 
-export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = {}) {
+/** The puzzle lists load on demand; the game mounts once they are in. */
+export function ProperNoundleGame(props: ProperNoundleGameProps = {}) {
+  return useProperNoundleBank() ? <ProperNoundleGameInner {...props} /> : <GameLoading />;
+}
+
+function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
   // URL-driven, no persistence — the Daily/Practice switcher is gone, so
@@ -169,6 +175,9 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   // Full (un-redacted) Wikipedia clue shown on the result screen — doubles as
   // the definition (proper nouns aren't in the dictionary).
   const [resultClue, setResultClue] = useState<string | null>(null);
+  // Start the answer's Wikipedia summary as soon as the puzzle is known — the
+  // clue hint, the result clue and the photo all read it (founder, 2026-09-29).
+  useEffect(() => { if (puzzle) prefetchWikipediaSummary(puzzle.display, puzzle.wikiTitle); }, [puzzle]);
   const [copied, setCopied] = useState(false);
   const restoredDailyRef = useRef(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);

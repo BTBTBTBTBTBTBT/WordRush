@@ -18,7 +18,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { chooseShareVariant } from '@/components/share/share-variant-modal';
-import { boardToGrid, boardToLetters } from '@/lib/share-image';
+import { boardToGrid, boardToLetters } from '@/lib/share-grid';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useSquareBoardFit } from '@/hooks/use-square-board-fit';

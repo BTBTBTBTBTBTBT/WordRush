@@ -3,7 +3,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   generateDailySeed, ladderPuzzleForDay, hubPuzzleForDay, crosswordPuzzleForDay, scramblePuzzleForDay, wordsearchPuzzleForDay,
-  type LadderBank, type HubBank, type CrosswordBank, type ScrambleBank, type ScramblePuzzle, type WordsearchBank,
+  type LadderBank, type LadderPuzzle, type HubBank, type HubPuzzle, type CrosswordBank, type CrosswordPuzzle, type ScrambleBank, type ScramblePuzzle,
+  type WordsearchBank, type WordsearchPuzzle,
   type SudokuState, type RegionsState, type LadderState, type HubState, type CryptogramState, type GroupsGroup,
   type CrosswordState, type ScrambleState, type WordsearchState,
 } from '@wordle-duel/core';
@@ -11,6 +12,7 @@ import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_SCORE_CONFIG } from '@/lib/composite-scoring';
 import { formatGuessStat } from '@/lib/format';
 import { HOLIDAY_TABLE } from '@/lib/holidays';
+import { loadBankPuzzle } from '@/lib/bank-loader';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { fetchSolvedDailyRow, getTodayLocal, type DailyCompletion, type SolvedDailyRow } from '@/lib/daily-service';
@@ -105,13 +107,12 @@ async function buildMoreBoard(dbKey: string, row: SolvedDailyRow, d: ElsewhereDa
       return { progress: r.progress, board: r.state ? { kind: 'REGIONS', state: r.state } : null };
     }
     case 'LADDER': {
-      const bank = (await import('@/data/ladder-puzzles.json')).default as unknown as LadderBank;
-      const r = ladderElsewhere(row, d, ladderPuzzleForDay(bank, day)?.id);
+      const p = await loadBankPuzzle<LadderBank, LadderPuzzle>('ladder', (b) => ladderPuzzleForDay(b, day));
+      const r = ladderElsewhere(row, d, p?.id);
       return { progress: r.progress, board: r.state ? { kind: 'LADDER', state: r.state } : null };
     }
     case 'HUB': {
-      const bank = (await import('@/data/hub-puzzles.json')).default as unknown as HubBank;
-      const r = hubElsewhere(row, d, hubPuzzleForDay(bank, day));
+      const r = hubElsewhere(row, d, await loadBankPuzzle<HubBank, HubPuzzle>('hub', (b) => hubPuzzleForDay(b, day)));
       return { progress: r.progress, board: r.state ? { kind: 'HUB', state: r.state } : null };
     }
     case 'CRYPTOGRAM': {
@@ -123,19 +124,17 @@ async function buildMoreBoard(dbKey: string, row: SolvedDailyRow, d: ElsewhereDa
       return { progress: r.progress, board: r.solved.length || r.unsolved.length ? { kind: 'GROUPS', solved: r.solved, unsolved: r.unsolved } : null };
     }
     case 'CROSSWORD': {
-      const bank = (await import('@/data/crossword-puzzles.json')).default as unknown as CrosswordBank;
-      const r = crosswordElsewhere(row, d, crosswordPuzzleForDay(bank, day, HOLIDAY_TABLE));
+      const r = crosswordElsewhere(row, d, await loadBankPuzzle<CrosswordBank, CrosswordPuzzle>('crossword', (b) => crosswordPuzzleForDay(b, day, HOLIDAY_TABLE)));
       return { progress: r.progress, board: r.state ? { kind: 'CROSSWORD', state: r.state } : null };
     }
     case 'SCRAMBLE': {
-      const bank = (await import('@/data/scramble-puzzles.json')).default as unknown as ScrambleBank;
-      const puzzle = scramblePuzzleForDay(bank, day, HOLIDAY_TABLE);
+      const puzzle = await loadBankPuzzle<ScrambleBank, ScramblePuzzle>('scramble', (b) => scramblePuzzleForDay(b, day, HOLIDAY_TABLE));
       const r = scrambleElsewhere(row, d, puzzle);
       return { progress: r.progress, board: r.state && puzzle ? { kind: 'SCRAMBLE', state: r.state, puzzle } : null };
     }
     case 'WORDSEARCH': {
-      const bank = (await import('@/data/wordsearch-puzzles.json')).default as unknown as WordsearchBank;
-      const p = wordsearchPuzzleForDay(bank, day);
+      // One bank entry, fetched on its own (lib/bank-loader.ts; founder, 2026-09-29).
+      const p = await loadBankPuzzle<WordsearchBank, WordsearchPuzzle>('wordsearch', (b) => wordsearchPuzzleForDay(b, day));
       if (!p) return NOTHING;
       const state = wordsearchElsewhere(row, d, p);
       return { progress: { boardsSolved: state.found.length, totalBoards: state.words.length, hintsUsed: state.hintsUsed }, board: { kind: 'WORDSEARCH', state } };

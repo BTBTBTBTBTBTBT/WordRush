@@ -23,7 +23,6 @@ import {
   GAUNTLET_TOTAL_SOLUTIONS,
   TileState,
 } from '@wordle-duel/core';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 import type { BotDifficulty, BotTier } from './bot-personas';
@@ -287,7 +286,7 @@ export function buildBotPlan(
   difficulty: BotDifficulty,
   opts: BuildOpts = {},
 ): BotPlan {
-  ensureDictionaryInitialized();
+  // The word lists are loaded before any VS match mounts (VsGame waits on useDictionary).
   const state = createInitialState(seed, mode);
   const totalBoards = boardCountForMode(mode);
   const params = resolveParams(difficulty, opts.adaptive);

@@ -40,8 +40,10 @@ export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false
   return (
     <div className="rounded-2xl border overflow-hidden" style={{ background: '#fdf8ec', borderColor: 'var(--color-border)', aspectRatio: '4 / 3', maxWidth: '100%', ...size }} role="img" aria-label={alt}>
       {src ? (
+        // While playing the cartoon is the screen's hero: load it eagerly at high
+        // priority (founder, 2026-09-29). React 18 passes only the lowercase attribute.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/muddle/${src}`} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+        <img src={`/muddle/${src}`} alt={alt} className="w-full h-full object-cover" loading={fixed ? 'lazy' : 'eager'} {...(fixed ? {} : { fetchpriority: 'high' })} />
       ) : (
         <svg viewBox="0 0 400 300" className="w-full h-full" aria-hidden>
           <rect x="0" y="0" width="400" height="300" fill="#fdf8ec" />

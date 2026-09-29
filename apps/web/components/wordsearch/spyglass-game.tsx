@@ -9,9 +9,10 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, Lightbulb, List, Eye } from 'lucide-react';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount,
-  generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank,
+  generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank, type WordsearchPuzzle,
 } from '@wordle-duel/core';
-import wordsearchBankJson from '@/data/wordsearch-puzzles.json';
+import { bankSession } from '@/lib/bank-loader';
+import { GameLoading } from '@/components/game/game-loading';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
@@ -25,6 +26,8 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { useThrottledSave } from '@/hooks/use-throttled-save';
+import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
 import { wordsearchElsewhere } from '@/lib/elsewhere-progress';
@@ -44,7 +47,8 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 // (founder, 2026-09-26): chips show only each word's length; Show words lists
 // the rest and every later find counts like a miss. guess_count = min(10 + misses + late finds, 15).
 
-const BANK = wordsearchBankJson as WordsearchBank;
+// Puzzles are fetched one at a time from /banks (lib/bank-loader.ts; founder, 2026-09-29).
+const BANK = bankSession<WordsearchBank, WordsearchPuzzle>('wordsearch', (b, d) => wordsearchPuzzleForDay(b, d), wordsearchPuzzleForSeed);
 const REVEAL_AFTER_SECONDS = 300;
 
 interface SpyglassGameProps {
@@ -63,6 +67,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
   // Daily with no local save for today's seed → ask daily_results whether it
@@ -74,17 +79,20 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const [elsewhereState, setElsewhereState] = useState<WordsearchState | null>(null);
 
   const status = state?.status ?? 'playing';
-  const { elapsedSeconds, reset: resetTimer } = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0);
+  // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
+  const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
   const startPractice = useCallback(() => {
     const seed = `unlimited-WORDSEARCH-${Date.now()}`;
-    const p = wordsearchPuzzleForSeed(BANK, seed);
-    if (!p) return;
-    setState(createWordsearchState(p, seed, Date.now()));
-    setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
-    resetTimer(0);
-    restoredRef.current = false;
-    hasRecordedRef.current = false;
+    BANK.seed(seed).then((p) => {
+      if (!p) return;
+      setState(createWordsearchState(p, seed, Date.now()));
+      setShowVictory(false); setShowGameOver(false); setXpResult(null); setMessage('');
+      resetTimer(0);
+      restoredRef.current = false;
+      hasRecordedRef.current = false;
+    }).catch(() => setLoadFailed(true));
   }, [resetTimer]);
 
   useEffect(() => {
@@ -98,11 +106,13 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         restoredRef.current = done; hasRecordedRef.current = done;
         return;
       }
-      const p = wordsearchPuzzleForDay(BANK, today);
-      if (p) setState(createWordsearchState(p, seed, Date.now()));
-      resetTimer(0);
-      restoredRef.current = false;
+      // The other-device check runs while the puzzle is fetched.
       setNoLocalSave(true);
+      BANK.day(today).then((p) => {
+        if (p) setState(createWordsearchState(p, seed, Date.now()));
+        resetTimer(0);
+        restoredRef.current = false;
+      }).catch(() => setLoadFailed(true));
     } else {
       const saved = loadPracticeSave();
       if (saved) {
@@ -115,14 +125,12 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!state) return;
-    // Never write the untouched fresh grid while the other-device check is
-    // pending or positive: that save would hide the completed card on reload.
-    if (mode === 'daily' && holdPlay) return;
-    if (mode === 'daily') saveDaily(state.seed, state, elapsedSeconds);
-    else savePractice(state.seed, state, elapsedSeconds);
-  }, [state, elapsedSeconds, mode, holdPlay]);
+  // Never write the untouched fresh grid while the other-device check is
+  // pending or positive: that save would hide the completed card on reload.
+  useThrottledSave(!state || (mode === 'daily' && holdPlay) ? null : (sec) => {
+    if (mode === 'daily') saveDaily(state.seed, state, sec);
+    else savePractice(state.seed, state, sec);
+  }, getElapsed, [state, mode, holdPlay]);
 
   // Played elsewhere today: rebuild the finished grid from the matches row
   // (solutions + event log, mirror of iOS solvedDaily) over the bank puzzle,
@@ -131,11 +139,9 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
     if (!completion || !profile || mode !== 'daily') return;
     const today = getTodayLocal();
     const seed = generateDailySeed(today, 'WORDSEARCH');
-    const p = wordsearchPuzzleForDay(BANK, today);
-    if (!p) return;
     let cancelled = false;
-    fetchSolvedDailyRow(profile.id, 'WORDSEARCH', seed).then((row) => {
-      if (cancelled) return;
+    Promise.all([fetchSolvedDailyRow(profile.id, 'WORDSEARCH', seed), BANK.day(today)]).then(([row, p]) => {
+      if (cancelled || !p) return;
       setElsewhereState(wordsearchElsewhere(row, { seed, won: completion.won, guessCount: completion.guesses }, p));
     }).catch(() => {});
     return () => { cancelled = true; };
@@ -156,6 +162,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   }, [flash]);
 
   const recordResult = useCallback(() => {
+    const elapsedSeconds = getElapsed();
     if (!profile || !state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
@@ -170,7 +177,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
       solutions: row.solutions, guesses: row.guesses,
       startedAtIso: new Date(Date.now() - elapsedSeconds * 1000).toISOString(), hintsUsed: state.hintsUsed,
     });
-  }, [profile, state, elapsedSeconds, mode]);
+  }, [profile, state, getElapsed, mode]);
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
@@ -186,9 +193,9 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const hint = useCallback(() => dispatch({ type: 'HINT' }), [dispatch]);
   const showWords = useCallback(() => { dispatch({ type: 'SHOW' }); flash('Words shown — finds from here count like misses'); }, [dispatch, flash]);
   const reveal = useCallback(() => {
-    if (elapsedSeconds < REVEAL_AFTER_SECONDS) { flash(`Reveal unlocks at ${REVEAL_AFTER_SECONDS / 60}:00`); return; }
+    if (getElapsed() < REVEAL_AFTER_SECONDS) { flash(`Reveal unlocks at ${REVEAL_AFTER_SECONDS / 60}:00`); return; }
     dispatch({ type: 'REVEAL' });
-  }, [dispatch, elapsedSeconds, flash]);
+  }, [dispatch, getElapsed, flash]);
 
   const points = state ? computeScoreBreakdown('WORDSEARCH', state.status === 'won', wordsearchGuessCount(state), elapsedSeconds, state.found.length, state.words.length, state.hintsUsed).total : 0;
 
@@ -205,13 +212,12 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
   const formatTime = (s: number) => { const m = Math.floor(s / 60), sec = s % 60; return m > 0 ? `${m}:${sec.toString().padStart(2, '0')}` : `${sec}s`; };
 
-  if (!state) return null;
+  if (!state) return <GameLoading failed={loadFailed} />;
 
   const finished = state.status !== 'playing';
   const won = state.status === 'won';
   const gc = wordsearchGuessCount(state);
   const missLabel = formatGuessStat('misses', 10, gc);
-  const canReveal = elapsedSeconds >= REVEAL_AFTER_SECONDS;
   const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${WORDSEARCH_ACCENT}66`, color: WORDSEARCH_ACCENT, background: `${WORDSEARCH_ACCENT}0d` };
 
@@ -234,7 +240,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
           {mode === 'daily' && <span>#{wordsearchDailyNumber(getTodayLocal())}</span>}
           <span>{state.found.length}/{state.words.length} found</span>
           <span>{state.misses} miss{state.misses === 1 ? '' : 'es'}{(state.lateFinds ?? 0) > 0 ? ` · ${state.lateFinds} late` : ''}</span>
-          <span><Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedSeconds)}</span>
+          <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '104px' }}>
@@ -271,9 +277,11 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
             <button type="button" onClick={() => { if (!state.wordsShown) { haptic('light'); showWords(); } }} className={capsule(!!state.wordsShown)} style={capsuleStyle(!!state.wordsShown)} aria-label="Show words" aria-disabled={!!state.wordsShown}>
               <List className="w-3.5 h-3.5" /> {state.wordsShown ? 'Words shown' : 'Show words'}
             </button>
+            {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
+            <PlayClock timer={timer}>{(sec) => { const canReveal = sec >= REVEAL_AFTER_SECONDS; return (
             <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
-              <Eye className="w-3.5 h-3.5" /> Reveal{!canReveal ? ` · ${formatTime(REVEAL_AFTER_SECONDS - elapsedSeconds)}` : ''}
-            </button>
+              <Eye className="w-3.5 h-3.5" /> Reveal{!canReveal ? ` · ${formatTime(REVEAL_AFTER_SECONDS - sec)}` : ''}
+            </button>); }}</PlayClock>
           </div>
           </div>
         </>
