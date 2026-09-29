@@ -623,7 +623,19 @@ fun CustomCompletedDailyCard(mode: GameMode) {
     var expanded by remember { mutableStateOf(false) }
     // A row cached before `solutions` was selected can't rebuild the board: refetch it once.
     LaunchedEffect(mode, tick) { if (row?.solutions.isNullOrEmpty()) GameResultsService.fetchRecordedDailyMatch(seed)?.let { row = it } }
-    val r = row ?: return
+    // No disk-cached row yet (first view on this device): the header from today's cached
+    // completion at its final height until the row lands, instead of no card and then a
+    // card that shoves the rank banner and board down (founder, 2026-09-29).
+    val r = row ?: run {
+        DailyCompletionsService.readCache()[mode.name]?.let { c ->
+            val gm = com.wordocious.app.ModeGen.byDbKey(mode.name)
+            CompletedHeaderOnlyCard(
+                won = c.completed,
+                summary = "${formatGuessStat(gm?.guessSemantics ?: "guesses", gm?.guessBase ?: 1, c.guessCount)} · ${formatShortTime(c.timeSeconds)}",
+            )
+        }
+        return
+    }
     val uid = AuthService.profile.value?.id
     val won = r.winnerId != null && r.winnerId == uid
     val board = rememberFinishedBoard(mode, seed, r, won)
@@ -631,7 +643,9 @@ fun CustomCompletedDailyCard(mode: GameMode) {
     val guessCount = completion?.guessCount ?: 1
     val g = com.wordocious.app.ModeGen.byDbKey(mode.name)
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+        // 12dp under the card like every other completed-card variant (the leaderboard relies on
+        // the card's own bottom gap; this one sat flush on the rank banner).
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
     ) {
         Box(Modifier.fillMaxWidth().height(4.dp).background(Brush.horizontalGradient(

@@ -63,10 +63,12 @@ internal fun fmtSignatureWeek(monday: String): String = runCatching {
  *  nothing until the read lands (web returns null while loading). */
 @Composable
 fun SignatureCard(userId: String) {
-    var sig by remember { mutableStateOf<SignatureStats.Signature?>(null) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    var sig by remember(userId) { mutableStateOf(com.wordocious.app.data.StatsMemo.get<SignatureStats.Signature>("signature:$userId")) }
     LaunchedEffect(userId) {
         val memoKey = "signature:$userId"
-        com.wordocious.app.data.StatsMemo.get<SignatureStats.Signature>(memoKey)?.let { sig = it }
         SignatureStats.fetchSignature(userId)?.let { fresh ->
             sig = fresh
             com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
@@ -107,11 +109,13 @@ private val STANDING_SAMPLE: List<SignatureStats.StandingPoint> =
  *  with fewer than two points; free players see the sample curve under the lock. */
 @Composable
 fun StandingTrendCard(userId: String, isPro: Boolean, onGoPro: () -> Unit) {
-    var pts by remember { mutableStateOf<List<SignatureStats.StandingPoint>?>(null) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    var pts by remember(userId) { mutableStateOf(com.wordocious.app.data.StatsMemo.get<List<SignatureStats.StandingPoint>>("standingTrend:$userId")) }
     LaunchedEffect(userId, isPro) {
         if (!isPro) { pts = emptyList(); return@LaunchedEffect }
         val memoKey = "standingTrend:$userId"
-        com.wordocious.app.data.StatsMemo.get<List<SignatureStats.StandingPoint>>(memoKey)?.let { pts = it }
         val fresh = SignatureStats.fetchStandingTrend(userId, 30)
         pts = fresh
         com.wordocious.app.data.StatsMemo.set(memoKey, fresh)

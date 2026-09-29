@@ -151,11 +151,17 @@ fun DailyStandingStrip(reloadToken: Int = 0) {
  *  each word). Free-tier card — the deep yield version lives in Deep Insights. */
 @Composable
 fun OpenerLabCard(playType: String = "solo") {
-    var openers by remember { mutableStateOf<List<StatsDeepService.OpenerStat>>(emptyList()) }
-    var loaded by remember { mutableStateOf(false) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    val memoKey = "openerLab:${AuthService.userId}:$playType"
+    val seed = remember(playType) { com.wordocious.app.data.StatsMemo.get<List<StatsDeepService.OpenerStat>>(memoKey) }
+    var openers by remember(playType) { mutableStateOf(seed ?: emptyList()) }
+    var loaded by remember(playType) { mutableStateOf(seed != null) }
     LaunchedEffect(playType) {
         openers = AuthService.userId?.let { StatsDeepService.openerStats(it, 5, playType) } ?: emptyList()
         loaded = true
+        com.wordocious.app.data.StatsMemo.set(memoKey, openers)
     }
     if (openers.isEmpty()) {
         if (loaded && playType != "vs_cpu") StatsEmptyCard("Opener Lab", accent = Color(0xFF06B6D4),
@@ -201,11 +207,17 @@ fun OpenerLabCard(playType: String = "solo") {
 /** Win rate by day of week — highlights your best day (gold bar). */
 @Composable
 fun WeekdayFormCard(playType: String = "solo") {
-    var days by remember { mutableStateOf<List<StatsDeepService.WeekdayFormDay>>(emptyList()) }
-    var loaded by remember { mutableStateOf(false) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    val memoKey = "weekdayForm:${AuthService.userId}:$playType"
+    val seed = remember(playType) { com.wordocious.app.data.StatsMemo.get<List<StatsDeepService.WeekdayFormDay>>(memoKey) }
+    var days by remember(playType) { mutableStateOf(seed ?: emptyList()) }
+    var loaded by remember(playType) { mutableStateOf(seed != null) }
     LaunchedEffect(playType) {
         days = AuthService.userId?.let { StatsDeepService.weekdayForm(it, playType) } ?: emptyList()
         loaded = true
+        com.wordocious.app.data.StatsMemo.set(memoKey, days)
     }
     if (days.none { it.played > 0 }) {
         if (loaded && playType != "vs_cpu") StatsEmptyCard("Weekday Form", accent = Color(0xFFF97316),

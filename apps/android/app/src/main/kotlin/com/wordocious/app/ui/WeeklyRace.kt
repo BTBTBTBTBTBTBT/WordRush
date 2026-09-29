@@ -75,7 +75,10 @@ private val RACE_PURPLE = Color(0xFF7C3AED)
  */
 @Composable
 fun WeeklyFinishesCard(userId: String) {
-    var rows by remember(userId) { mutableStateOf<List<WeeklyRaceRow>>(emptyList()) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    var rows by remember(userId) { mutableStateOf(com.wordocious.app.data.StatsMemo.get<List<WeeklyRaceRow>>("weeklyFinishes:$userId") ?: emptyList()) }
     LaunchedEffect(userId) {
         rows = runCatching {
             SupabaseConfig.client.postgrest["weekly_race_results"]
@@ -85,6 +88,7 @@ fun WeeklyFinishesCard(userId: String) {
                     limit(52)
                 }
                 .decodeList<WeeklyRaceRow>()
+                .also { com.wordocious.app.data.StatsMemo.set("weeklyFinishes:$userId", it) }
         }.getOrElse { emptyList() }
     }
     if (rows.isEmpty()) return

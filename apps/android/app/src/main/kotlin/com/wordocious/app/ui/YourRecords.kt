@@ -135,7 +135,8 @@ data class YourRecordsData(
  */
 @Composable
 fun rememberYourRecords(userId: String?, statsRows: List<ProfileService.UserStat>): YourRecordsData {
-    var data by remember { mutableStateOf(YourRecordsData()) }
+    // First frame from the session memo (screen re-creation), not an empty shelf (founder, 2026-09-29).
+    var data by remember { mutableStateOf(userId?.let { com.wordocious.app.data.StatsMemo.get<YourRecordsData>("yourRecords:$it") } ?: YourRecordsData()) }
     LaunchedEffect(userId, statsRows.size) {
         if (userId == null) { data = data.copy(loading = false); return@LaunchedEffect }
         val s = statsRows
@@ -193,6 +194,7 @@ fun rememberYourRecords(userId: String?, statsRows: List<ProfileService.UserStat
             sweepRankAllTime = rankAllTime,
             loading = false,
         )
+        com.wordocious.app.data.StatsMemo.set("yourRecords:$userId", data)
     }
     return data
 }

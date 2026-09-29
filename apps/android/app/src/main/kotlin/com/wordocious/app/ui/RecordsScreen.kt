@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MilitaryTech
@@ -162,15 +161,20 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit 
 
 @Composable
 private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
+    val userId = AuthService.profile.value?.id
     var selectedMode by remember { mutableStateOf("DUEL") }
     var playType by remember { mutableStateOf("solo") }
-    var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
-    var playerCount by remember { mutableIntStateOf(0) }
-    var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    // First frame paints the (disk-backed) cached board, not a skeleton the fetch effect
+    // replaces a frame later (founder, 2026-09-29 — LeaderboardScreen parity).
+    val seedBoard = remember {
+        LeaderboardService.cachedBoard(LeaderboardService.cacheKey(selectedMode, com.wordocious.app.todayLocalDate(), userId, playType))
+    }
+    var entries by remember { mutableStateOf(seedBoard?.entries ?: emptyList()) }
+    var playerCount by remember { mutableIntStateOf(seedBoard?.playerCount ?: 0) }
+    var userRank by remember { mutableStateOf(seedBoard?.rank) }
     // "Your neighborhood" rows when the user placed past the top-50 list.
-    var rankWindow by remember { mutableStateOf<LeaderboardService.RankWindow?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    val userId = AuthService.profile.value?.id
+    var rankWindow by remember { mutableStateOf(seedBoard?.rankWindow) }
+    var loading by remember { mutableStateOf(seedBoard == null) }
     // Daily Sweep board (10th "Sweep" tile) — RPC path, mirrors LeaderboardScreen.
     val isSweep = selectedMode == SWEEP_ID
     var sweepEntries by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
@@ -188,6 +192,37 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     // rows + count fetch in parallel and paint immediately, rank fills in
     // after without blocking, and a failed fetch keeps whatever is showing.
     val tick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
+
+    // A mode or Solo|VS tap paints that board's cached rows, count and rank in the SAME update as
+    // the selection (founder, 2026-09-29; LeaderboardScreen.selectMode / iOS 3edd33c2 parity): the
+    // cache was only read inside the fetch effect below, a frame later, so the tap frame drew the
+    // new header over the previous mode's rows and count. No cached copy → the skeleton at once.
+    // Sweep paints the shared sweep cache the Leaderboard tab keeps. The fetch is unchanged.
+    fun paintCachedBoard(mode: String, pt: String) {
+        val day = com.wordocious.app.todayLocalDate()
+        if (mode == SWEEP_ID) {
+            val c = LeaderboardService.cachedSweep(LeaderboardService.sweepCacheKey(day))
+            sweepEntries = c?.entries ?: emptyList()
+            sweepRank = c?.rank
+            sweepDetails = c?.details ?: emptyMap()
+            playerCount = c?.entries?.size ?: 0
+            loading = c == null
+            return
+        }
+        val c = LeaderboardService.cachedBoard(LeaderboardService.cacheKey(mode, day, userId, pt))
+        entries = c?.entries ?: emptyList()
+        playerCount = c?.playerCount ?: 0
+        userRank = c?.rank
+        rankWindow = c?.rankWindow
+        loading = c == null
+    }
+    fun select(mode: String = selectedMode, pt: String = playType) {
+        if (mode == selectedMode && pt == playType) return
+        selectedMode = mode
+        playType = pt
+        paintCachedBoard(mode, pt)
+    }
+
     LaunchedEffect(selectedMode, playType, tick) {
         val mode = selectedMode
         val pt = playType
@@ -195,7 +230,8 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         // Daily Sweep board takes its own RPC path (play-type is irrelevant) —
         // kept ahead of the per-mode fetch so `daily_results` never sees SWEEP.
         if (mode == SWEEP_ID) {
-            loading = true
+            // Cached sweep rows (painted by select()) stay up while this refetches.
+            if (LeaderboardService.cachedSweep(LeaderboardService.sweepCacheKey(day)) == null) loading = true
             val rows = LeaderboardService.fetchDailySweepOrNull(day)
             ensureActive()
             if (rows == null) { loading = false; return@LaunchedEffect }
@@ -271,7 +307,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     var sharingLb by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ModePickerRow(selectedMode) { selectedMode = it }
+        ModePickerRow(selectedMode) { select(mode = it) }
         Spacer(Modifier.height(8.dp))
         // §254: the completed-daily dropdown, mounted exactly as the Leaderboard
         // tab mounts it — the founder wants Records to mirror that page. The
@@ -328,7 +364,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                             },
                         )
                     }
-                    SoloVsToggle(playType) { playType = it }
+                    SoloVsToggle(playType) { select(pt = it) }
                 }
             }
 
@@ -452,16 +488,25 @@ internal fun ModeIconBox(mode: String, accent: Color) {
     }
 }
 
+/** Session copy of Records' Yesterday's podium per (yesterday, mode, play type) — paint-only. */
+private val RecordsPodiumCache = mutableMapOf<String, List<LeaderboardService.LeaderboardEntry>>()
+
 /** Yesterday's top-3 for the mode (collapsible). */
 @Composable
 private fun YesterdayPodium(mode: String, playType: String, userId: String?, onOpenProfile: (String) -> Unit) {
-    var top3 by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    // Keyed on the selection and seeded from the session copy (yesterday is settled), so a mode or
+    // Solo|VS switch never shows the previous mode's podium under the new header (founder, 2026-09-29).
+    val podiumKey = "${com.wordocious.app.yesterdayLocalDate()}:records:$mode:$playType"
+    var top3 by remember(mode, playType) { mutableStateOf(RecordsPodiumCache[podiumKey] ?: emptyList()) }
     var open by remember { mutableStateOf(false) }
     val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
     val medalColors = listOf(Color(0xFFD97706), Color(0xFF9CA3AF), Color(0xFFB45309))
     // iOS rotates the chevron 180° with an animation instead of swapping ▲/▼.
     val chevronRotation by animateFloatAsState(if (open) 180f else 0f, label = "podiumChevron")
-    LaunchedEffect(mode, playType) { top3 = LeaderboardService.fetchYesterdayWinners(mode, playType) }
+    LaunchedEffect(mode, playType) {
+        top3 = LeaderboardService.fetchYesterdayWinners(mode, playType)
+        if (top3.isNotEmpty()) RecordsPodiumCache[podiumKey] = top3
+    }
     // Settled-podium share (web records YesterdayPodium parity).
     val shareContext = androidx.compose.ui.platform.LocalContext.current
     val shareScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -472,7 +517,7 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
             .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
     ) {
         Row(
-            Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().clickableNoRipple { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
@@ -537,7 +582,9 @@ private fun SoloVsToggle(playType: String, onSelect: (String) -> Unit) {
             Row(
                 modifier = Modifier
                     .background(if (active) WTheme.primary.copy(alpha = 0.10f) else WTheme.surface)
-                    .clickable { onSelect(key) }
+                    // No ripple: the Material press ripple washed over the tapped segment after
+                    // it had already turned active (founder, 2026-09-29 — iOS InstantButtonStyle).
+                    .clickableNoRipple { onSelect(key) }
                     .padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -557,8 +604,11 @@ private val PER_MODE_RECORD_TYPES = listOf("fastest_win", "fewest_guesses", "mos
 
 @Composable
 private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
-    var records by remember { mutableStateOf<List<LeaderboardService.AllTimeRecord>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
+    // Re-entering the All-time tab (it is disposed on every Daily ↔ All-time switch) paints the
+    // session copy on the first frame instead of the card skeleton (founder, 2026-09-29).
+    val seedRecords = remember { com.wordocious.app.data.StatsMemo.get<List<LeaderboardService.AllTimeRecord>>("allTimeRecords") }
+    var records by remember { mutableStateOf(seedRecords ?: emptyList()) }
+    var loading by remember { mutableStateOf(seedRecords == null) }
     var selectedMode by remember { mutableStateOf("DUEL") }
     val userId = AuthService.profile.value?.id
     // All-time sweep ranking — loaded lazily the first time SWEEP is selected.
@@ -568,7 +618,10 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
     var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
 
     LaunchedEffect(Unit) {
-        records = LeaderboardService.fetchAllTimeRecords()
+        val fresh = LeaderboardService.fetchAllTimeRecords()
+        // A failed fetch returns empty — keep the session copy on screen rather than blanking it.
+        if (fresh.isNotEmpty() || seedRecords == null) records = fresh
+        if (fresh.isNotEmpty()) com.wordocious.app.data.StatsMemo.set("allTimeRecords", fresh)
         loading = false
     }
     LaunchedEffect(isSweep) {

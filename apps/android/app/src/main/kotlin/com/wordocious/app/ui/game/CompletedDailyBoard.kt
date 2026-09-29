@@ -176,7 +176,14 @@ fun CompletedDailyBoard(modeId: String) {
                 stages = it.stages, stageResults = it.stageResults,
                 stageStartTime = 0.0, allSolutions = emptyList(),
             )
-        } ?: return
+        } ?: run {
+            // Cross-device Gauntlet waits on gauntlet_stages: hold the header's final height from
+            // the cached completion meanwhile, as the word modes do (§254) — the card used to be
+            // absent for that round trip on every mode switch, then shove the board down
+            // (founder, 2026-09-29).
+            CompletedHeaderFallback(modeId, tick)
+            return
+        }
         val gTime = if (localState != null) (GamePersistence.loadElapsed(seed, mode) ?: 0) else serverTime
         GauntletCompletedDailyCard(g = g, elapsedSeconds = gTime)
         return
@@ -185,8 +192,8 @@ fun CompletedDailyBoard(modeId: String) {
     // ProperNoundle: dedicated card — real board reconstructed from the recorded
     // guesses, tiles re-derived against today's answer, multi-word layout.
     if (mode == GameMode.PROPERNOUNDLE) {
-        val pg = pnGuesses ?: return
-        if (pg.isEmpty()) return
+        // No disk-cached row yet: the header at its final height until the fetch lands (founder, 2026-09-29).
+        val pg = pnGuesses?.takeIf { it.isNotEmpty() } ?: run { CompletedHeaderFallback(modeId, tick); return }
         val pnPuzzle = com.wordocious.core.ProperNoundle.dailyPuzzle(com.wordocious.app.todayLocalDate()) ?: return
         ProperNoundleCompletedDailyCard(guesses = pg, puzzle = pnPuzzle, timeSeconds = serverTime)
         return
@@ -197,8 +204,7 @@ fun CompletedDailyBoard(modeId: String) {
     // of nothing — so the rank banner and the board below never jump when the
     // real card lands a moment later.
     if (localState == null && serverState == null) {
-        val c = remember(modeId, tick) { com.wordocious.app.data.DailyCompletionsService.readCache()[modeId] }
-        if (c != null) CompletedHeaderOnlyCard(won = c.completed, summary = "${c.guessCount}g · ${fmt(c.timeSeconds)}")
+        CompletedHeaderFallback(modeId, tick)
         return
     }
     val state = localState ?: serverState ?: return
@@ -378,10 +384,18 @@ private fun StatsRow(stats: List<Pair<String, String>>) {
     }
 }
 
+/** §254: the header-only card from today's cached completion (nothing when the mode is
+ *  unplayed) — every completed-card variant falls back to it while its board is still loading. */
+@Composable
+private fun CompletedHeaderFallback(modeId: String, tick: Int) {
+    val c = remember(modeId, tick) { com.wordocious.app.data.DailyCompletionsService.readCache()[modeId] }
+    if (c != null) CompletedHeaderOnlyCard(won = c.completed, summary = "${c.guessCount}g · ${fmt(c.timeSeconds)}")
+}
+
 /** §254: the card's header row at its final height, no body — what shows while
  *  a cross-device board reconstructs, so nothing below it moves. */
 @Composable
-private fun CompletedHeaderOnlyCard(won: Boolean, summary: String) {
+internal fun CompletedHeaderOnlyCard(won: Boolean, summary: String) {
     Column(
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
             .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),

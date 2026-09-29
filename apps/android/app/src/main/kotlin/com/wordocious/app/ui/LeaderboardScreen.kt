@@ -88,6 +88,22 @@ internal const val MORE_ID = "MORE"
 object LeaderboardDeepLink {
     val pendingMode = androidx.compose.runtime.mutableStateOf<String?>(null)
 }
+/** Session copy of Yesterday's Winners per (yesterday, mode, All|Friends, user) — the board is
+ *  settled, so a mode switch with the dropdown open repaints it at once instead of showing the
+ *  previous mode's podium until the refetch lands (founder, 2026-09-29). Paint-only: the effect
+ *  still refetches every time, exactly as before. */
+private object YesterdayBoards {
+    data class Entry(
+        val entries: List<LeaderboardService.LeaderboardEntry>,
+        val sweep: List<LeaderboardService.SweepEntry>,
+        val sweepDetails: Map<String, LeaderboardService.SweepDetails>,
+        val flawlessStreaks: Map<String, Int>,
+    )
+    private val map = mutableMapOf<String, Entry>()
+    fun get(key: String): Entry? = map[key]
+    fun put(key: String, e: Entry) { map[key] = e }
+}
+
 /** The sweep tile's accent — the ONLY place indigo #4F46E5 is used. */
 internal val SWEEP_ACCENT = Color(0xFF4F46E5)
 
@@ -144,38 +160,45 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         return
     }
 
-    var selectedMode by remember { mutableStateOf("DUEL") }
-    // §214: consume a post-game deep link (View Leaderboard → this mode).
-    LaunchedEffect(LeaderboardDeepLink.pendingMode.value) {
-        LeaderboardDeepLink.pendingMode.value?.let { m ->
-            selectedMode = m
-            LeaderboardDeepLink.pendingMode.value = null
-        }
+    val userId = AuthService.profile.value?.id
+    // A post-game deep link (§214) picks the first mode directly, so the first frame is that board.
+    var selectedMode by remember { mutableStateOf(LeaderboardDeepLink.pendingMode.value ?: "DUEL") }
+    // First frame paints the (disk-backed) cached board instead of a skeleton that the fetch
+    // effect replaces a frame later (founder, 2026-09-29: no one-frame "page loading in").
+    val seedDay = remember { com.wordocious.app.todayLocalDate() }
+    val seedBoard = remember {
+        if (selectedMode == SWEEP_ID) null
+        else LeaderboardService.cachedBoard(LeaderboardService.cacheKey(selectedMode, seedDay, userId))
     }
-    var fetchedEntries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    val seedSweep = remember {
+        if (selectedMode == SWEEP_ID) LeaderboardService.cachedSweep(LeaderboardService.sweepCacheKey(seedDay)) else null
+    }
+    var fetchedEntries by remember { mutableStateOf(seedBoard?.entries ?: emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterdaySweep by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
     var showYesterday by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(true) }
-    val userId = AuthService.profile.value?.id
+    // Yesterday's rows in hand are not for the current mode/filter yet (no cached copy) —
+    // the card shows a blank body rather than the previous mode's podium or "No results".
+    var yesterdayPending by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(seedBoard == null && seedSweep == null) }
 
-    var fetchedPlayerCount by remember { mutableStateOf(0) }
+    var fetchedPlayerCount by remember { mutableStateOf(seedBoard?.playerCount ?: seedSweep?.entries?.size ?: 0) }
     // Rank banner ("You're ranked #N of M") — web getUserDailyRank parity:
     // true total even past a full page, and a computed rank when the user
     // sits outside the top 50.
-    var fetchedUserRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    var fetchedUserRank by remember { mutableStateOf(seedBoard?.rank) }
     // "Your neighborhood" rows when the user placed past the top-50 list
     // (e.g. #425 sees ~421–429 below a "···" separator, own row highlighted).
-    var rankWindow by remember { mutableStateOf<LeaderboardService.RankWindow?>(null) }
+    var rankWindow by remember { mutableStateOf(seedBoard?.rankWindow) }
     // Daily Sweep board (10th "Sweep" tile) — RPC-backed, separate from the
     // per-mode `daily_results` path above. Only populated when SWEEP is selected.
     val isSweep = selectedMode == SWEEP_ID
-    var sweepEntries by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
-    var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    var sweepEntries by remember { mutableStateOf(seedSweep?.entries ?: emptyList()) }
+    var sweepRank by remember { mutableStateOf(seedSweep?.rank) }
     // §223: per-user dot-strip details (per-mode score/win + guess/hint totals)
     // for today's and yesterday's sweep rows, keyed by user id. A missing entry
     // renders a row without dots or g/h — the detail fetch never blocks a row.
-    var sweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
+    var sweepDetails by remember { mutableStateOf(seedSweep?.details ?: emptyMap()) }
     // §248: current flawless streaks for FLAWLESS rows.
     var flawlessStreaks by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var ySweepDetails by remember { mutableStateOf<Map<String, LeaderboardService.SweepDetails>>(emptyMap()) }
@@ -234,6 +257,64 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     androidx.compose.runtime.DisposableEffect(Unit) {
         val remove = FriendsService.addListener { friendsVersion = FriendsService.version }
         onDispose { remove() }
+    }
+
+    // A mode tap (or the All|Friends toggle) paints that board's cached rows, count and rank in the
+    // SAME update as the selection, iOS 3edd33c2 parity (founder, 2026-09-29: the tap frame showed
+    // the new header over the previous mode's rows and player count, because the cache was only
+    // read inside the fetch LaunchedEffect — a frame later). No cached copy → the skeleton at once,
+    // never the old mode's rows. The fetch effect below still revalidates exactly as before; the
+    // player's own row (`mine`) keeps deriving from fetchedEntries.
+    fun paintCachedBoard(mode: String) {
+        val day = com.wordocious.app.todayLocalDate()
+        if (mode == SWEEP_ID) {
+            val c = LeaderboardService.cachedSweep(LeaderboardService.sweepCacheKey(day))
+            sweepEntries = c?.entries ?: emptyList()
+            sweepRank = c?.rank
+            sweepDetails = c?.details ?: emptyMap()
+            fetchedPlayerCount = c?.entries?.size ?: 0
+            loading = c == null
+            return
+        }
+        val friends = friendsOnly && userId != null
+        val c = LeaderboardService.cachedBoard(LeaderboardService.cacheKey(mode, day, userId) + if (friends) ":friends" else "")
+        fetchedEntries = c?.entries ?: emptyList()
+        fetchedPlayerCount = c?.playerCount ?: 0
+        fetchedUserRank = c?.rank
+        rankWindow = c?.rankWindow
+        loading = c == null
+    }
+    // Yesterday's Winners, same rule: the settled podium for the new mode/filter from the session
+    // copy, else a blank body until it lands — never the previous mode's podium under the new tile.
+    fun yesterdayKey(mode: String) =
+        "${com.wordocious.app.yesterdayLocalDate()}:$mode:${if (friendsOnly && userId != null) "friends" else "all"}:$userId"
+    fun paintCachedYesterday(mode: String) {
+        val y = YesterdayBoards.get(yesterdayKey(mode))
+        yesterday = y?.entries ?: emptyList()
+        yesterdaySweep = y?.sweep ?: emptyList()
+        ySweepDetails = y?.sweepDetails ?: emptyMap()
+        yFlawlessStreaks = y?.flawlessStreaks ?: emptyMap()
+        yesterdayPending = y == null
+    }
+    fun selectMode(mode: String) {
+        if (mode == selectedMode) return
+        selectedMode = mode
+        paintCachedBoard(mode)
+        if (showYesterday) paintCachedYesterday(mode)
+    }
+    fun selectFriendsOnly(f: Boolean) {
+        if (f == friendsOnly) return
+        friendsOnly = f
+        paintCachedBoard(selectedMode)
+        if (showYesterday) paintCachedYesterday(selectedMode)
+    }
+    // §214: consume a post-game deep link (View Leaderboard → this mode) — also while the tab
+    // is alive, where the remember seed above has already run.
+    LaunchedEffect(LeaderboardDeepLink.pendingMode.value) {
+        LeaderboardDeepLink.pendingMode.value?.let { m ->
+            selectMode(m)
+            LeaderboardDeepLink.pendingMode.value = null
+        }
     }
     // §253: warm the modes the user has NOT opened yet today, so a chip tap
     // paints instantly instead of starting a fresh round trip.
@@ -393,6 +474,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         yFlawlessStreaks = if (yesterdaySweep.isNotEmpty()) {
             LeaderboardService.fetchFlawlessStreaks(com.wordocious.app.yesterdayLocalDate(), yesterdaySweep.filter { it.isFlawless }.map { it.userId })
         } else emptyMap()
+        ensureActive()
+        yesterdayPending = false
+        // Yesterday is settled — keep the session copy that paints the next switch back instantly
+        // (an empty result may be a failed fetch, so it is never kept).
+        if (showYesterday && (yesterday.isNotEmpty() || yesterdaySweep.isNotEmpty())) {
+            YesterdayBoards.put(yesterdayKey(selectedMode), YesterdayBoards.Entry(yesterday, yesterdaySweep, ySweepDetails, yFlawlessStreaks))
+        }
     }
 
     // A More Games pick (via the More chip) is not in MODE_OPTIONS — read its catalog title.
@@ -517,7 +605,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 }
             }
             // Mode picker — the LazyColumn already supplies the 12.dp gutter.
-            item { ModePickerRow(selectedMode, horizontalPadding = 0.dp) { selectedMode = it } }
+            item { ModePickerRow(selectedMode, horizontalPadding = 0.dp) { selectMode(it) } }
             // Play CTA + your-board are per-mode; the Sweep board has no single
             // mode to play or a completed grid, so both are skipped for it.
             if (!isSweep) {
@@ -622,7 +710,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                             color = if (sel) accent else WTheme.textMuted,
                                             modifier = Modifier
                                                 .background(if (sel) accent.copy(alpha = 0.08f) else WTheme.surface)
-                                                .clickableNoRipple { friendsOnly = f }
+                                                .clickableNoRipple { selectFriendsOnly(f) }
                                                 .padding(horizontal = 8.dp, vertical = 3.dp),
                                         )
                                     }
@@ -798,7 +886,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
-                        Modifier.clickableNoRipple { showYesterday = !showYesterday },
+                        Modifier.clickableNoRipple {
+                            showYesterday = !showYesterday
+                            if (showYesterday) paintCachedYesterday(selectedMode)
+                        },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text("Yesterday's Winners", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
@@ -843,7 +934,14 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
                             .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
                     ) {
-                        if (isSweep) {
+                        if (yesterdayPending) {
+                            // Not this mode's rows yet — the empty-state's footprint, blank, instead
+                            // of the previous mode's podium or a false "No results" (founder, 2026-09-29).
+                            Text(
+                                " ", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            )
+                        } else if (isSweep) {
                             if (yesterdaySweep.isEmpty()) {
                                 Text(
                                     "No sweeps yesterday", fontSize = 12.sp, fontWeight = FontWeight.Bold,

@@ -135,13 +135,16 @@ private fun RadarChart(data: StatsDeepService.SkillRadarData) {
 /** Skill Radar section — the five-axis signature chart (Pro). */
 @Composable
 fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
-    var data by remember { mutableStateOf<StatsDeepService.SkillRadarData?>(null) }
-    var radarLoaded by remember { mutableStateOf(false) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    val seed = remember { AuthService.userId?.let { com.wordocious.app.data.StatsMemo.get<StatsDeepService.SkillRadarData>("skillRadar:$it") } }
+    var data by remember { mutableStateOf(seed) }
+    var radarLoaded by remember { mutableStateOf(seed != null) }
     LaunchedEffect(isPro) {
         if (isPro) AuthService.userId?.let { uid ->
-            // P-cache: seed from the session memo (instant repaint), refresh, store back.
+            // P-cache: the memo seeded the first frame above; refresh, store back.
             val memoKey = "skillRadar:$uid"
-            com.wordocious.app.data.StatsMemo.get<StatsDeepService.SkillRadarData>(memoKey)?.let { data = it }
             StatsDeepService.skillRadar(uid)?.let { fresh ->
                 data = fresh
                 com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
@@ -182,13 +185,16 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
 /** Most-faced opponents with head-to-head W–L + win-share bar (Pro). */
 @Composable
 fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
-    var rows by remember { mutableStateOf<List<StatsDeepService.Rivalry>>(emptyList()) }
-    var loaded by remember { mutableStateOf(false) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    val seed = remember { AuthService.userId?.let { com.wordocious.app.data.StatsMemo.get<List<StatsDeepService.Rivalry>>("rivalries:$it") } }
+    var rows by remember { mutableStateOf(seed ?: emptyList()) }
+    var loaded by remember { mutableStateOf(seed != null) }
     LaunchedEffect(isPro) {
         if (isPro) AuthService.userId?.let { uid ->
-            // P-cache: seed from the session memo (instant repaint), refresh, store back.
+            // P-cache: the memo seeded the first frame above; refresh, store back.
             val memoKey = "rivalries:$uid"
-            com.wordocious.app.data.StatsMemo.get<List<StatsDeepService.Rivalry>>(memoKey)?.let { rows = it }
             val fresh = StatsDeepService.rivalries(uid, 5)
             rows = fresh
             loaded = true
@@ -277,15 +283,19 @@ private val DEEP_SAMPLE = DeepData(
  */
 @Composable
 fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: () -> Unit, playType: String = "solo") {
-    var data by remember { mutableStateOf<DeepData?>(null) }
+    // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
+    // the card used to be absent on every Stats page swap, then pop in and shove the page
+    // down (founder, 2026-09-29).
+    // Keyed on the mode + play type, so a switch resets to THAT key's memo (or null), never
+    // the previous mode's insights.
+    var data by remember(gameMode, playType) {
+        mutableStateOf(AuthService.userId?.let { com.wordocious.app.data.StatsMemo.get<DeepData>("deepMode:$it:$gameMode:$playType") })
+    }
     LaunchedEffect(gameMode, isPro, playType) {
         if (!isPro || playType == "vs_cpu") return@LaunchedEffect
-        data = null
         val uid = AuthService.userId ?: return@LaunchedEffect
-        // P-cache: seed from the session memo (instant repaint on mode re-tap),
-        // then fetch fresh below and store back (SWR).
+        // P-cache: the memo seeded the first frame above; fetch fresh below and store back (SWR).
         val memoKey = "deepMode:$uid:$gameMode:$playType"
-        com.wordocious.app.data.StatsMemo.get<DeepData>(memoKey)?.let { data = it }
         // All sub-stats CONCURRENTLY (was 5 serial round-trips). Openers /
         // positions / hint honesty all consume the identical myGuessRows
         // slice (mode, limit 400, play type) — fetch it ONCE and pass it down;

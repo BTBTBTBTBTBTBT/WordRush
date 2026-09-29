@@ -135,30 +135,24 @@ private data class ProfileChartsMemo(
 fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}, onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
-    var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
-    var recentMatches by remember { mutableStateOf<List<ProfileService.RecentMatch>>(emptyList()) }
+    // The first frame paints the session memo (and today's on-device completions) instead of
+    // an empty page the fetch effect fills a frame later (founder, 2026-09-29).
+    val mainSeed = remember { profile?.id?.let { com.wordocious.app.data.StatsMemo.get<ProfileMainMemo>("profileMain:$it") } }
+    var stats by remember { mutableStateOf(mainSeed?.stats ?: emptyList()) }
+    var recentMatches by remember { mutableStateOf(mainSeed?.recentMatches ?: emptyList()) }
     // VS opponents' usernames for the "· vs <name>" line (web profile parity).
-    var opponentNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    var medals by remember { mutableStateOf<List<ProfileService.UserMedal>>(emptyList()) }
-    var todayDailies by remember { mutableStateOf<Map<String, DailyCompletionsService.Completion>>(emptyMap()) }
-    var unlockedAchievements by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var guessDist by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.GuessBucket>>(emptyList()) }
-    var activity7 by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
-    var activityCal by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
-    // Mode-scoped 90-day calendar for the mode-detail view (iOS renders
-    // ActivityCalendarView(mode:) there; the global one above is All-view only).
-    var modeCal by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
-    var solveTimes by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.SolvePoint>>(emptyList()) }
-    var timeOfDay by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.HourBucket>>(emptyList()) }
-    var topWords by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.TopWord>>(emptyList()) }
-    var proInsights by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.ProInsights()) }
+    var opponentNames by remember { mutableStateOf(mainSeed?.opponentNames ?: emptyMap()) }
+    var medals by remember { mutableStateOf(mainSeed?.medals ?: emptyList()) }
+    var todayDailies by remember { mutableStateOf(mainSeed?.todayDailies ?: DailyCompletionsService.readCache()) }
+    var unlockedAchievements by remember { mutableStateOf(mainSeed?.unlocked ?: emptySet()) }
+    var activityCal by remember { mutableStateOf(mainSeed?.activityCal ?: emptyList()) }
     // Sweep COUNTS live in the All-time page's Daily Sweeps card (SweepRecordsCard,
     // fed by sweepStats below); this series is the Daily Points trend only.
-    var sweepPoints by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>>(emptyList()) }
+    var sweepPoints by remember { mutableStateOf(mainSeed?.sweepPoints ?: emptyList()) }
     // D2: today's daily VS outcome, today's field standing, the sweep streaks.
-    var vsDailyWon by remember { mutableStateOf<Boolean?>(null) }
-    var standing by remember { mutableStateOf<com.wordocious.app.data.StatsDeepService.DailyStanding?>(null) }
-    var sweepStats by remember { mutableStateOf(MatchStatsService.DailySweepStats()) }
+    var vsDailyWon by remember { mutableStateOf(mainSeed?.vsDailyWon) }
+    var standing by remember { mutableStateOf(mainSeed?.standing) }
+    var sweepStats by remember { mutableStateOf(mainSeed?.sweepStats ?: MatchStatsService.DailySweepStats()) }
     // Which page the rail shows: RAIL_TODAY | RAIL_VS | RAIL_ALL | a daily mode dbKey.
     var selected by remember { mutableStateOf(RAIL_TODAY) }
     // A game page's Solo | VS toggle (only where the game has a live VS board).
@@ -176,18 +170,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         isGamePage -> if (hasVs(selected) && gameTab == "vs") "vs" else "solo"
         else -> "solo"
     }
-    // Per-mode win streak (current, best) from match history — mirrors web
-    // mode-stats-card / iOS mode-detail streak. Play-type-scoped (restat B1),
-    // so it reloads when the Solo/VS/VS-CPU toggle changes.
-    var modeStreaks by remember { mutableStateOf<Map<String, Pair<Int, Int>>>(emptyMap()) }
-    // Per-mode stats registry aggregate over the player's own matches rows
-    // (ModeStats.modeAggregates, More Games §18) — feeds the custom games'
-    // grid cells (Clean, Avg Mistakes, Pangrams, …). EMPTY in the All view.
-    var modeAgg by remember { mutableStateOf(com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES) }
-    // True once the chart fetches have landed at least once — gates the Top Words
-    // empty card so it never flashes before the first result (iOS `loaded`).
-    var chartsLoaded by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(mainSeed == null) }
     // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
@@ -274,24 +257,41 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // toggle changes (restat B1: every per-game stat is scoped to the toggle;
     // vs_cpu fetchers return empty and a "totals only" note shows instead).
     val isProActive = AuthService.isProActive
+    // The page's chart data is DERIVED from the selection in the same composition (founder,
+    // 2026-09-29): it used to live in vars the fetch effect re-seeded from the memo a frame
+    // AFTER a rail / Solo|VS / VS-board tap — so the new page drew the previous page's charts
+    // (and with no memo, kept them until the fetch landed). Now: this key's last fetch, else its
+    // session memo, else empty; the effect below only fetches and stores.
+    val chartsKey = userId?.let { "profileCharts:$it:${pageMode ?: "ALL"}:$pageTab:$isProActive" }
+    var chartsState by remember { mutableStateOf<Pair<String, ProfileChartsMemo>?>(null) }
+    val charts: ProfileChartsMemo? = chartsState?.takeIf { it.first == chartsKey }?.second
+        ?: chartsKey?.let { com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(it) }
+    val guessDist = charts?.guessDist ?: emptyList()
+    val activity7 = charts?.activity7 ?: emptyList()
+    // Mode-scoped 90-day calendar for the mode-detail view (iOS renders
+    // ActivityCalendarView(mode:) there; the global one above is All-view only).
+    val modeCal = charts?.modeCal ?: emptyList()
+    val solveTimes = charts?.solveTimes ?: emptyList()
+    val timeOfDay = charts?.timeOfDay ?: emptyList()
+    val topWords = charts?.topWords ?: emptyList()
+    val proInsights = charts?.proInsights ?: com.wordocious.app.data.MatchStatsService.ProInsights()
+    // Per-mode win streak (current, best) from match history — mirrors web
+    // mode-stats-card / iOS mode-detail streak. Play-type-scoped (restat B1).
+    val modeStreaks = charts?.modeStreaks ?: emptyMap()
+    // Per-mode stats registry aggregate over the player's own matches rows
+    // (ModeStats.modeAggregates, More Games §18) — feeds the custom games'
+    // grid cells (Clean, Avg Mistakes, Pangrams, …). EMPTY in the All view.
+    val modeAgg = charts?.modeAgg ?: com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES
+    // True once THIS page's chart fetch has landed — gates the Top Words empty card
+    // so it never flashes before the first result (iOS `loaded`).
+    val chartsLoaded = charts != null
     LaunchedEffect(userId, pageMode, isProActive, pageTab, tick) {
         val uid = userId ?: return@LaunchedEffect
         val m = pageMode
         val activeTab = pageTab
-        // P-cache: seed from the session memo (instant repaint on mode re-tap /
-        // toggle flip), then fetch fresh below and store back (SWR).
+        // P-cache: the composition above already paints the session memo; fetch fresh
+        // below and store back (SWR).
         val memoKey = "profileCharts:$uid:${m ?: "ALL"}:$activeTab:$isProActive"
-        com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(memoKey)?.let { saved ->
-            guessDist = saved.guessDist
-            activity7 = saved.activity7
-            modeCal = saved.modeCal
-            solveTimes = saved.solveTimes
-            timeOfDay = saved.timeOfDay
-            topWords = saved.topWords
-            proInsights = saved.proInsights
-            modeStreaks = saved.modeStreaks
-            modeAgg = saved.modeAgg
-        }
         // All chart fetches run CONCURRENTLY (was 6 serial round-trips + a
         // 9-query per-mode streak N+1 — now one consolidated streak query).
         kotlinx.coroutines.coroutineScope {
@@ -325,22 +325,15 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                     com.wordocious.app.ModeGen.byDbKey(m)?.guessBase ?: 1,
                 )
             }
-            guessDist = gdD.await()
-            activity7 = a7D.await()
-            modeCal = calD.await()
-            solveTimes = stD.await()
-            timeOfDay = todD.await()
-            topWords = twD.await()
-            proInsights = piD.await()
-            modeStreaks = streaksD.await()
-            modeAgg = aggD.await()
+            ProfileChartsMemo(
+                guessDist = gdD.await(), activity7 = a7D.await(), modeCal = calD.await(),
+                solveTimes = stD.await(), timeOfDay = todD.await(), topWords = twD.await(),
+                proInsights = piD.await(), modeStreaks = streaksD.await(), modeAgg = aggD.await(),
+            )
+        }.let { fresh ->
+            com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
+            chartsState = memoKey to fresh
         }
-        com.wordocious.app.data.StatsMemo.set(memoKey, ProfileChartsMemo(
-            guessDist = guessDist, activity7 = activity7, modeCal = modeCal, solveTimes = solveTimes,
-            timeOfDay = timeOfDay, topWords = topWords, proInsights = proInsights,
-            modeStreaks = modeStreaks, modeAgg = modeAgg,
-        ))
-        chartsLoaded = true
     }
 
     // ── The rail: Today · sweep games · VS · the More Games titles this viewer
@@ -429,10 +422,15 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── The game rail ─────────────────────────────────────────
         item { StatsRail(items = railItems, selected = selected, onSelect = { selected = it }) }
 
-        // ── ONE page below the rail. F1: fades+rises on every page / toggle
-        //    swap (SwapFade), and a horizontal swipe moves one rail chip. ──
+        // ── ONE page below the rail; a horizontal swipe moves one rail chip. The page swaps
+        //    INSTANTLY (founder, 2026-09-29): the F1 SwapFade faded+rose the whole page for
+        //    220 ms on every rail / Solo|VS / VS-board tap — the Solo|VS toggle and VS board
+        //    picker live inside the page, so the tapped control itself faded back in, the old
+        //    page cross-faded underneath, and AnimatedContent's size transform slid everything
+        //    below. key() keeps the old per-page state reset. ──
         item {
-            SwapFade(targetState = Triple(selected, pageTab, pageMode)) { (page, tab, mode) ->
+            val page = selected; val tab = pageTab; val mode = pageMode
+            androidx.compose.runtime.key(page, tab, mode) {
                 Column(Modifier.fillMaxWidth().then(swipeModifier), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when {
                         // ── Today: your day in one card (TodayCard.kt). ──
@@ -445,7 +443,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             standing = standing,
                             sweepStreak = sweepStats.currentSweepStreak,
                             flawlessStreak = sweepStats.currentFlawlessStreak,
-                            flawlessFooter = { FlawlessBannerFooter(DAILY_MODES.size) },
+                            flawlessFooter = { FlawlessBannerFooter(DAILY_MODES.size, seed = sweepStats) },
                             onPlayDaily = onPlayDaily,
                             onJump = { selected = it },
                         )
@@ -980,8 +978,10 @@ private fun CardIconButton(icon: ImageVector, label: String, tint: Color, onClic
  *  the flawless banner's footer — streak-aware copy plus the brag-card share
  *  button. Self-contained fetch (dailySweepStats). */
 @Composable
-private fun FlawlessBannerFooter(total: Int) {
-    var sweep by remember { mutableStateOf(MatchStatsService.DailySweepStats()) }
+private fun FlawlessBannerFooter(total: Int, seed: MatchStatsService.DailySweepStats = MatchStatsService.DailySweepStats()) {
+    // Seeded with the page's own sweep stats so the streak line is there on the first frame
+    // (founder, 2026-09-29); the fetch below still refreshes it.
+    var sweep by remember { mutableStateOf(seed) }
     var sharing by remember { mutableStateOf(false) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
