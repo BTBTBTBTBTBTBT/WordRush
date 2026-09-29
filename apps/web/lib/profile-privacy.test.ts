@@ -38,6 +38,7 @@ function makeQuery(table: string) {
     or: () => q,
     order: () => q,
     limit: () => q,
+    gte: () => q,
     not: () => q,
     is: () => q,
     filter: () => q,
