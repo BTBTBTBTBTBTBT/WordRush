@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AchievementService
@@ -392,7 +393,7 @@ private fun DifficultyPicker(current: SudokuDifficulty, onPick: (SudokuDifficult
  *  cell in the stronger lilac fill with its row, column and box washed; every
  *  cell holding the selected digit emphasized. Pencil marks: the 3 × 3 mini-grid. */
 @Composable
-fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, onSelect: (Int) -> Unit) {
+fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, digitSize: Dp = 22.dp, onSelect: (Int) -> Unit) {
     val rule = Color(0xFFC4B5FD); val heavy = Color(0xFF4C1D95)
     val selectedFill = Color(0xFFDDD6FE); val sameFill = Color(0xFFEDE9FE)
     val player = Color(0xFF7C3AED); val hint = Color(0xFF8B5CF6); val wrong = Color(0xFFDC2626)
@@ -428,11 +429,11 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, onS
                         ) {
                             if (value != null) {
                                 // Derived from dp through density (TileView rule): a fixed cell must not grow with font scale.
-                                val fs = with(density) { 22.dp.toSp() }
+                                val fs = with(density) { digitSize.toSp() }
                                 Text(value.toString(), fontSize = fs, fontWeight = if (given) FontWeight.Black else FontWeight.ExtraBold, color = color, fontFamily = Nunito)
                             } else if (state.notes[i] != 0) {
                                 val m = state.notes[i]
-                                val fs = with(density) { 8.5.dp.toSp() }
+                                val fs = with(density) { (digitSize * 0.39f).toSp() }
                                 Column(Modifier.fillMaxSize().padding(2.dp)) {
                                     for (rr in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth()) {
                                         for (cc in 0 until 3) {
@@ -609,8 +610,9 @@ private fun StatBlock(value: String, label: String) {
 // ── Completed-today card for custom engines ─────────────────────────────────
 
 /** The Records / Leaderboard "completed today" card for a More Games title: the
- *  word-board reconstruction does not apply, so this shows the summary line
- *  (through the mode's guess semantics) and the score breakdown. */
+ *  summary line (through the mode's guess semantics); expanded, the finished
+ *  puzzle rebuilt from the matches row (CompletedCustomBoard.kt; summary alone
+ *  when it can't be) and the score breakdown. */
 @Composable
 fun CustomCompletedDailyCard(mode: GameMode) {
     val seed = remember(mode) { com.wordocious.app.todayLocalSeed(mode.name) }
@@ -618,10 +620,12 @@ fun CustomCompletedDailyCard(mode: GameMode) {
     val cached = remember(mode, tick) { GameResultsService.prefetchedDailyMatch(seed) }
     var row by remember(mode, tick) { mutableStateOf(cached) }
     var expanded by remember { mutableStateOf(false) }
-    LaunchedEffect(mode, tick) { if (row == null) row = GameResultsService.fetchRecordedDailyMatch(seed) }
+    // A row cached before `solutions` was selected can't rebuild the board: refetch it once.
+    LaunchedEffect(mode, tick) { if (row?.solutions.isNullOrEmpty()) GameResultsService.fetchRecordedDailyMatch(seed)?.let { row = it } }
     val r = row ?: return
     val uid = AuthService.profile.value?.id
     val won = r.winnerId != null && r.winnerId == uid
+    val board = rememberFinishedBoard(mode, seed, r, won)
     val completion = DailyCompletionsService.readCache()[mode.name]
     val guessCount = completion?.guessCount ?: 1
     val g = com.wordocious.app.ModeGen.byDbKey(mode.name)
@@ -645,7 +649,8 @@ fun CustomCompletedDailyCard(mode: GameMode) {
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
         if (expanded) {
-            Box(Modifier.padding(horizontal = 14.dp).padding(bottom = 14.dp, top = 4.dp)) {
+            Column(Modifier.padding(horizontal = 14.dp).padding(bottom = 14.dp, top = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                board?.let { FinishedBoardView(it) }
                 ScoreBreakdownCard(mode, won, guessCount, r.player1Time, if (won) 1 else 0, 1, 0, day = todayLocalDate())
             }
         }

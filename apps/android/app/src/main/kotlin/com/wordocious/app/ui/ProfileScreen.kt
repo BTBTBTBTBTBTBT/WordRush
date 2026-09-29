@@ -233,7 +233,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             // gating the whole screen); only usernames chains off recentMatches.
             kotlinx.coroutines.coroutineScope {
                 val statsD = async { ProfileService.fetchUserStats(userId) }
-                val matchesD = async { ProfileService.fetchRecentMatches(userId, limit = 50) }
+                val matchesD = async { ProfileService.fetchRecentAndTodayMatches(userId) }
                 val medalsD = async { ProfileService.fetchUserMedals(userId, limit = 100) }
                 val todayD = async { DailyCompletionsService.fetchTodayCompletions() }
                 val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
@@ -455,9 +455,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         // Founder, 2026-09-27: every game played TODAY (daily and unlimited),
                         // no cap, no "See all" link — the full history lives on All-time.
                         SectionHeader("Today's Games", accent = Color(0xFF2563EB))
-                        RecentMatchesList(
-                            matches = recentMatches.filter { isPlayedToday(it.createdAt) }, opponentNames = opponentNames, userId = userId,
-                            loading = loading, limit = Int.MAX_VALUE, emptyText = "No games yet today — play a daily to start the list.",
+                        // Founder, 2026-09-29: dailies and VS keep a row each; Unlimited solo
+                        // games fold into one row per game (Pro only — free players see none).
+                        TodayGamesList(
+                            matches = recentMatches, opponentNames = opponentNames, userId = userId,
+                            loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
                         )
                         }
 
@@ -561,7 +563,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             // matches or "No matches played yet." — the section never just vanishes.
                             SectionHeader("Recent Matches", accent = Color(0xFF2563EB))
                             RecentMatchesList(
-                                matches = recentMatches, opponentNames = opponentNames, userId = userId,
+                                // The newest 50 — the list also carries all of today for Today's Games.
+                                matches = recentMatches.take(50), opponentNames = opponentNames, userId = userId,
                                 loading = loading, limit = 5,
                             )
                         }

@@ -104,10 +104,11 @@ func isProActive(_ profile: Profile?) -> Bool {
 /// Lenient timestamp parse matching JS `new Date(...)`. Supabase returns
 /// timestamps both with and without fractional seconds.
 func parseTimestamp(_ s: String) -> Date? {
-    let withFrac = ISO8601DateFormatter()
-    withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let d = withFrac.date(from: s) { return d }
-    let plain = ISO8601DateFormatter()
-    plain.formatOptions = [.withInternetDateTime]
-    return plain.date(from: s)
+    TimestampFormatters.withFrac.date(from: s) ?? TimestampFormatters.plain.date(from: s)
+}
+
+/// Built once — a formatter per call cost every list row a parse setup (founder, 2026-09-29: glitchy scrolling).
+private enum TimestampFormatters {
+    static let withFrac: ISO8601DateFormatter = { let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f }()
+    static let plain: ISO8601DateFormatter = { let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]; return f }()
 }

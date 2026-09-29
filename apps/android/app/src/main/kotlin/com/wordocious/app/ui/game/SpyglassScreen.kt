@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AdsManager
@@ -388,8 +389,13 @@ private fun WordChips(session: SpyglassSession) {
 // ── Grid ────────────────────────────────────────────────────────────────────
 
 @Composable
-fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, onSelect: (Int, Int) -> Unit) {
-    val s = session.state
+fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, onSelect: (Int, Int) -> Unit) =
+    SpyglassGrid(session.state, session.isFinished, revealMissing, onSelect = onSelect)
+
+/** The grid from a state alone: the game above, and the finished grid in the
+ *  Completed-Today card at a smaller [letterSize] (founder, 2026-09-29). */
+@Composable
+fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, letterSize: Dp = 18.dp, onSelect: (Int, Int) -> Unit) {
     val n = s.n
     val heavy = Color(0xFF4C1D95); val rule = Color(0xFF4C1D95).copy(alpha = 0.16f)
     var anchor by remember { mutableStateOf<Int?>(null) }
@@ -412,7 +418,7 @@ fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, onSelect: (In
             .clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
             .border(2.5.dp, heavy, RoundedCornerShape(14.dp))
             .then(
-                if (session.isFinished) Modifier else Modifier
+                if (finished) Modifier else Modifier
                     .pointerInput(n) {
                         detectTapGestures { p ->
                             val cell = cellAt(p) ?: return@detectTapGestures
@@ -464,7 +470,7 @@ fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, onSelect: (In
                             .then(if (i in hintCells) Modifier.padding(1.dp).border(2.dp, SPY_ACCENT) else Modifier),
                         contentAlignment = Alignment.Center,
                     ) {
-                        val fs = with(density) { 18.dp.toSp() }
+                        val fs = with(density) { letterSize.toSp() }
                         Text(s.grid[i].toString(), fontSize = fs, fontWeight = FontWeight.Black, color = if (i in foundCells) SPY_INK else WTheme.text, fontFamily = Nunito)
                     }
                 }

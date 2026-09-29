@@ -4,6 +4,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.async
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -35,7 +36,14 @@ object ProfileService {
         @SerialName("player2_time") val player2Time: Double? = null,
         @SerialName("created_at") val createdAt: String,
         val forfeit: Boolean? = null,
-    )
+        /** true daily, false Unlimited, null unknown — sent by the profile matches endpoint;
+         *  the own-profile query derives it from [seed] instead (founder, 2026-09-29). */
+        val daily: Boolean? = null,
+        val seed: String? = null,
+    ) {
+        /** Daily-ness from either source: the endpoint's flag, else the seed's "daily-" prefix. */
+        val isDaily: Boolean? get() = daily ?: seed?.startsWith("daily-")
+    }
 
     @Serializable
     data class UserMedal(
@@ -51,16 +59,29 @@ object ProfileService {
             .decodeList<UserStat>()
     }.getOrElse { emptyList() }
 
-    suspend fun fetchRecentMatches(userId: String, limit: Int = 5): List<RecentMatch> = runCatching {
+    suspend fun fetchRecentMatches(userId: String, limit: Int = 5, since: String? = null): List<RecentMatch> = runCatching {
         client.postgrest["matches"]
-            .select(Columns.raw("id,game_mode,player1_id,player2_id,winner_id,player1_score,player2_score,player1_time,player2_time,created_at,forfeit")) {
+            .select(Columns.raw("id,game_mode,player1_id,player2_id,winner_id,player1_score,player2_score,player1_time,player2_time,created_at,forfeit,seed")) {
                 // Web parity: include matches where the user is player1 OR player2 (VS).
-                filter { or { eq("player1_id", userId); eq("player2_id", userId) } }
+                filter { or { eq("player1_id", userId); eq("player2_id", userId) }; if (since != null) gte("created_at", since) }
                 order("created_at", Order.DESCENDING)
                 limit(limit.toLong())
             }
             .decodeList<RecentMatch>()
     }.getOrElse { emptyList() }
+
+    /**
+     * The newest [recent] games plus EVERY game since the device's local midnight
+     * (up to 400), newest first — the own-profile twin of the matches endpoint's
+     * window (founder, 2026-09-29: a long Starsweep Unlimited session pushed the
+     * morning's dailies out of a flat newest-50, so "Today's Games" stopped short).
+     */
+    suspend fun fetchRecentAndTodayMatches(userId: String, recent: Int = 50): List<RecentMatch> = kotlinx.coroutines.coroutineScope {
+        val midnight = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toString()
+        val recentD = async { fetchRecentMatches(userId, recent) }
+        val todayD = async { fetchRecentMatches(userId, 400, since = midnight) }
+        (todayD.await() + recentD.await()).distinctBy { it.id }.sortedByDescending { it.createdAt }
+    }
 
     @Serializable
     private data class MatchesEnvelope(val matches: List<RecentMatch> = emptyList())

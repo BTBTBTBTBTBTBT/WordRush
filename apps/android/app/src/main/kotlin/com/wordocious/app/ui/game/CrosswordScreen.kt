@@ -556,18 +556,22 @@ private fun CrosswordHeader(session: CrosswordSession, tick: Int) {
  * violet with white ink, and cells a Check just cleared flash red for 700ms.
  */
 @Composable
-private fun CrosswordGrid(session: CrosswordSession, finished: Boolean) {
-    val s = session.state
+private fun CrosswordGrid(session: CrosswordSession, finished: Boolean) = CrosswordGrid(
+    session.state, if (finished) null else session.selected, if (finished) emptySet() else session.activeCells.toSet(), session.shakeKey,
+) { if (!finished) session.selectCell(it) }
+
+/** The grid from a state alone: the game above, and the finished grid in the
+ *  Completed-Today card with smaller cells (founder, 2026-09-29). */
+@Composable
+internal fun CrosswordGrid(s: CrosswordState, selected: Int?, active: Set<Int>, shakeKey: Int, maxCell: Dp = 42.dp, onSelect: (Int) -> Unit) {
     val numbers = HashMap<Int, Int>()
     for (e in s.entries) { val start = e.r * s.w + e.c; if (start !in numbers) numbers[start] = e.n }
-    val selected = if (finished) null else session.selected
-    val active = if (finished) emptySet() else session.activeCells.toSet()
     val wrongCells = s.lastWrong.toSet()
-    val gap = 3.dp
+    val gap = if (maxCell < 42.dp) 2.dp else 3.dp
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val cell = ((maxWidth - gap * (s.w - 1)) / s.w).coerceAtMost(42.dp)
-        val fs = (cell.value * 0.43f).coerceIn(12f, 18f).sp
-        val ns = (cell.value * 0.2f).coerceIn(7f, 9f).sp
+        val cell = ((maxWidth - gap * (s.w - 1)) / s.w).coerceAtMost(maxCell)
+        val fs = (cell.value * 0.43f).coerceIn(if (maxCell < 42.dp) 9f else 12f, 18f).sp
+        val ns = (cell.value * 0.2f).coerceIn(if (maxCell < 42.dp) 5f else 7f, 9f).sp
         Column(verticalArrangement = Arrangement.spacedBy(gap)) {
             for (r in 0 until s.h) {
                 Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
@@ -588,8 +592,8 @@ private fun CrosswordGrid(session: CrosswordSession, finished: Boolean) {
                         if (isSel) border = CROSSWORD_ACCENT
                         CrosswordCell(
                             ch, numbers[i], bg, border, ink, if (revealed) Color.White else PURPLE,
-                            isSel, wrong, session.shakeKey, cell, fs, ns,
-                        ) { if (!finished) session.selectCell(i) }
+                            isSel, wrong, shakeKey, cell, fs, ns,
+                        ) { onSelect(i) }
                     }
                 }
             }

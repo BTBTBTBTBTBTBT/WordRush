@@ -98,6 +98,10 @@ final class MuddleVM: ObservableObject {
         if finished { finalTimeSeconds = elapsedFinal; recorded = true; restoredFinished = true }
         row = scrambleActiveRow(s) ?? 0
     }
+    /// Read-only: a finished board rebuilt from a matches row (the Completed-today dropdown). Never saves or records.
+    init(display s: ScrambleState, puzzle p: ScramblePuzzle) {
+        isDaily = true; seed = s.seed; puzzle = p; holidayKey = nil; state = s; finalTimeSeconds = 0; recorded = true; restoredFinished = true
+    }
 
     var isFinished: Bool { state.status != .playing }
     var elapsed: Int { finalTimeSeconds ?? max(0, Int(((pauseStart ?? Date().timeIntervalSince1970 * 1000) - startMs) / 1000)) }
@@ -441,19 +445,8 @@ struct MuddleView: View {
     /// in lowercase purple once solved. At most two lines; its height is reported
     /// up so the cartoon can take exactly what remains.
     private func caption(finished: Bool) -> some View {
-        let parts = vm.state.caption.components(separatedBy: "____")
-        let solved = finished || vm.state.solved[SCRAMBLE_FINAL]
-        let blank = solved ? " \(vm.state.final.answer.lowercased()) " : String(repeating: "\u{00A0}", count: 8)
-        return (Text(parts.first ?? "")
-                + Text(blank).foregroundColor(mdLilacText).underline(true, color: muddleAccent)
-                + Text(parts.count > 1 ? parts[1...].joined(separator: "____") : ""))
-            .font(Brand.font(MdSize.captionFont, .heavy)).foregroundStyle(Theme.textPrimary)
-            .multilineTextAlignment(.center)
-            .lineLimit(2).minimumScaleFactor(0.8)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 4)
+        muddleCaption(vm.state, solved: finished || vm.state.solved[SCRAMBLE_FINAL])
             .background(GeometryReader { g in Color.clear.preference(key: MdHeightKey.self, value: g.size.height) })
-            .accessibilityLabel(solved ? vm.state.caption.replacingOccurrences(of: "____", with: vm.state.final.answer.lowercased()) : vm.state.caption.replacingOccurrences(of: "____", with: "blank"))
     }
 
     private func cornerButton(_ symbol: String, action: @escaping () -> Void) -> some View {
@@ -557,6 +550,38 @@ struct MuddleView: View {
 }
 
 // MARK: - Board pieces
+
+/// The caption with the blank as an accent underline; once solved the punchline fills it in lowercase purple. At most two lines.
+private func muddleCaption(_ s: ScrambleState, solved: Bool) -> some View {
+    let parts = s.caption.components(separatedBy: "____")
+    let blank = solved ? " \(s.final.answer.lowercased()) " : String(repeating: "\u{00A0}", count: 8)
+    return (Text(parts.first ?? "")
+            + Text(blank).foregroundColor(mdLilacText).underline(true, color: muddleAccent)
+            + Text(parts.count > 1 ? parts[1...].joined(separator: "____") : ""))
+        .font(Brand.font(MdSize.captionFont, .heavy)).foregroundStyle(Theme.textPrimary)
+        .multilineTextAlignment(.center)
+        .lineLimit(2).minimumScaleFactor(0.8)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 4)
+        .accessibilityLabel(solved ? s.caption.replacingOccurrences(of: "____", with: s.final.answer.lowercased()) : s.caption.replacingOccurrences(of: "____", with: "blank"))
+}
+
+/// The finished puzzle, read-only: cartoon, filled caption, the four words and the punchline
+/// (founder, 2026-09-29: the Completed-today dropdown shows the board like the classic games).
+struct MuddleFinishedBoard: View {
+    @ObservedObject var vm: MuddleVM
+    var cartoonHeight: CGFloat = 150
+
+    var body: some View {
+        VStack(spacing: MdSize.wordGap) {
+            MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText).frame(height: cartoonHeight)
+            muddleCaption(vm.state, solved: true)
+            ForEach(0..<SCRAMBLE_WORDS, id: \.self) { i in MuddleWordRow(vm: vm, row: i, finished: true) }
+            MuddleFinalRow(vm: vm, finished: true)
+        }
+        .frame(maxWidth: 420)
+    }
+}
 
 /// The cartoon panel (More Games §5/§8): a standard card in the cream paper
 /// tone at 4:3. The puzzle's image when the founder's batch has produced one;

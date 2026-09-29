@@ -499,11 +499,15 @@ struct SudokuPad: View {
 // MARK: - Completed-today card for custom engines
 
 /// The Records / Profile "completed today" card for a More Games title: the
-/// word-board reconstruction does not apply, so this shows the summary line
-/// (through the mode's guess semantics) and the score breakdown.
+/// summary line (through the mode's guess semantics), then — expanded — the
+/// finished puzzle rebuilt from today's matches row (CompletedCustomBoard;
+/// founder, 2026-09-29) above the score breakdown. A row that can't be rebuilt
+/// shows the breakdown alone.
 struct CustomCompletedDailyCard: View {
     let mode: GameMode
     @State private var data: MatchStatsService.SolvedDaily?
+    @State private var board: CompletedCustomBoard?
+    @State private var progress: CompletedCustomBoard.Progress?
     @State private var expanded = false
     @State private var reloadToken = 0
 
@@ -533,10 +537,14 @@ struct CustomCompletedDailyCard: View {
                         .contentShape(Rectangle())
                     }.buttonStyle(.plain)
                     if expanded {
-                        ScoreBreakdownView(gameMode: mode.rawValue, completed: won, guessCount: d.guessCount,
-                                           timeSeconds: d.timeSeconds, boardsSolved: won ? 1 : 0, totalBoards: 1,
-                                           hintsUsed: d.hintsUsed, day: LeaderboardService.todayLocal())
-                            .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
+                        VStack(spacing: 8) {
+                            if let board { CompletedCustomBoardView(board: board) }
+                            ScoreBreakdownView(gameMode: mode.rawValue, completed: won, guessCount: d.guessCount,
+                                               timeSeconds: d.timeSeconds, boardsSolved: progress?.boardsSolved ?? (won ? 1 : 0),
+                                               totalBoards: progress?.totalBoards ?? 1, hintsUsed: progress?.hintsUsed ?? d.hintsUsed,
+                                               day: LeaderboardService.todayLocal())
+                        }
+                        .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                     }
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -548,9 +556,11 @@ struct CustomCompletedDailyCard: View {
         }
         .onDailyRecorded { reloadToken += 1 }
         .task(id: "\(mode.rawValue)-\(reloadToken)") {
-            data = nil
+            data = nil; board = nil; progress = nil
             let seed = generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: mode.rawValue)
-            data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
+            guard let d = await MatchStatsService.solvedDaily(mode: mode, seed: seed) else { return }
+            let built = CompletedCustomBoard.build(mode: mode, seed: seed, row: d)
+            board = built.board; progress = built.progress; data = d
         }
     }
 }

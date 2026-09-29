@@ -68,6 +68,10 @@ final class CodebreakerVM: ObservableObject {
         restore()
         selected = nextOpen(state, after: nil)
     }
+    /// Read-only: a finished board rebuilt from a matches row (the Completed-today dropdown). Never saves or records.
+    init(display s: CryptogramState) {
+        isDaily = true; seed = s.seed; holidayKey = nil; state = s; finalTimeSeconds = 0; recorded = true; restoredFinished = true
+    }
 
     var isFinished: Bool { state.status != .playing }
     var elapsed: Int { finalTimeSeconds ?? max(0, Int(((pauseStart ?? Date().timeIntervalSince1970 * 1000) - startMs) / 1000)) }

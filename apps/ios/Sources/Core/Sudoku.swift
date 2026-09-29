@@ -23,6 +23,10 @@ public struct SudokuPuzzle: Codable, Equatable {
     public let solution: String
     public let clues: Int
     public let rerolls: Int
+    /// Memberwise, public so the app can rebuild a finished daily from its matches row.
+    public init(seed: String, difficulty: SudokuDifficulty, givens: String, solution: String, clues: Int, rerolls: Int) {
+        self.seed = seed; self.difficulty = difficulty; self.givens = givens; self.solution = solution; self.clues = clues; self.rerolls = rerolls
+    }
 }
 
 // MARK: - PRNG helpers (rng call ORDER is the parity contract)

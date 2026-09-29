@@ -678,7 +678,7 @@ struct RecentMatchRow: View {
     var opponentName: String? = nil
 
     /// Home tiles first, then the More Games titles (Sudoku et al. live in moreModes).
-    private var mode: HomeMode? { (homeModes + moreModes).first { $0.dbKey == match.game_mode } }
+    private var mode: HomeMode? { homeModes.first { $0.dbKey == match.game_mode } ?? moreModes.first { $0.dbKey == match.game_mode } }
 
     var body: some View {
         let won = match.isWinner(profileId)
@@ -740,8 +740,9 @@ struct RecentMatchRow: View {
         s < 60 ? "\(s)s" : "\(s / 60)m \(s % 60)s"
     }
 
+    private static let dateTimeFormatter: DateFormatter = { let f = DateFormatter(); f.dateFormat = "MMM d · h:mm a"; return f }()
     private func dateTimeStr(_ d: Date) -> String {
-        let f = DateFormatter(); f.dateFormat = "MMM d · h:mm a"; return f.string(from: d)
+        Self.dateTimeFormatter.string(from: d)
     }
 }
 

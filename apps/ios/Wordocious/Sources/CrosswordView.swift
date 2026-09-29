@@ -64,6 +64,10 @@ final class CrosswordVM: ObservableObject {
         selected = Self.firstOpenCell(state)
         dir = state.entries.first?.dir ?? .across
     }
+    /// Read-only: a finished board rebuilt from a matches row (the Completed-today dropdown). Never saves or records.
+    init(display s: CrosswordState) {
+        isDaily = true; seed = s.seed; holidayKey = nil; state = s; finalTimeSeconds = 0; recorded = true; restoredFinished = true
+    }
 
     var isFinished: Bool { state.status != .playing }
     var elapsed: Int { finalTimeSeconds ?? max(0, Int(((pauseStart ?? Date().timeIntervalSince1970 * 1000) - startMs) / 1000)) }
@@ -479,12 +483,14 @@ struct CrosswordView: View {
 struct CrosswordGridView: View {
     @ObservedObject var vm: CrosswordVM
     let finished: Bool
+    /// The width to fit (a card narrower than the screen); nil = the phone less the page margins.
+    var width: CGFloat? = nil
 
     private let gap: CGFloat = 3
 
     /// Cell side that fits `w` columns on the phone, capped like the web (42px).
     private var cell: CGFloat {
-        let available = UIScreen.main.bounds.width - 40
+        let available = width ?? UIScreen.main.bounds.width - 40
         return min(42, floor((available - gap * CGFloat(vm.state.w - 1)) / CGFloat(max(1, vm.state.w))))
     }
 

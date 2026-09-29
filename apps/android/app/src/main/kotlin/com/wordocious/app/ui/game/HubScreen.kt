@@ -410,8 +410,11 @@ private fun LetterTile(ch: Char, centre: Boolean, enabled: Boolean, side: androi
 }
 
 @Composable
-private fun Chip(session: HubSession, w: String, dim: Boolean = false) {
-    val s = session.state; val pangram = w in s.pangrams; val revealed = w in s.revealed
+private fun Chip(session: HubSession, w: String, dim: Boolean = false) =
+    HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim)
+
+@Composable
+private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false) {
     Text(
         if (pangram) "$w ★" else w, fontSize = 11.sp, fontWeight = FontWeight.Bold,
         color = if (pangram) HUB_ACCENT else if (revealed) Color(0xFF8B5CF6) else WTheme.text,
@@ -611,6 +614,28 @@ private fun StatBlock(value: String, label: String) {
         // One line always — "35:17" must never break inside its cell (founder, 2026-09-28).
         FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
+    }
+}
+
+/** The finished hive for the Completed-Today card (founder, 2026-09-29), rebuilt
+ *  from the matches row alone: rank line, the 2-3-2 cluster read-only, and every
+ *  word found (pangram = all seven letters, starred like the game). */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+internal fun HubFinishedBoard(r: com.wordocious.core.HubReconstruction) {
+    val o = r.letters.drop(1).toList(); val tile = 40.dp; val gap = 6.dp
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("${r.rankName} · ${r.points}/${r.max} pts", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (r.solved) Color(0xFF7C3AED) else WTheme.textMuted, fontFamily = Nunito)
+        Column(verticalArrangement = Arrangement.spacedBy(gap), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[0], false, false, tile) {}; LetterTile(o[1], false, false, tile) {} }
+            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[2], false, false, tile) {}; LetterTile(r.letters[0], true, false, tile) {}; LetterTile(o[3], false, false, tile) {} }
+            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[4], false, false, tile) {}; LetterTile(o[5], false, false, tile) {} }
+        }
+        val words = (r.found + r.bonusFound).distinct().sorted()
+        Text("${words.size} ${if (words.size == 1) "WORD" else "WORDS"} FOUND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            for (w in words) HubChip(w, pangram = w.toSet().size == 7, revealed = w in r.revealed)
+        }
     }
 }
 

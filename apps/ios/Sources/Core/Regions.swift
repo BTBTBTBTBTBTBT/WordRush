@@ -22,6 +22,10 @@ public struct RegionsPuzzle: Codable, Equatable {
     public let solution: String
     public let sizes: [Int]
     public let rerolls: Int
+    /// Memberwise, public so the app can rebuild a finished daily from its matches row.
+    public init(seed: String, n: Int, regions: String, solution: String, sizes: [Int], rerolls: Int) {
+        self.seed = seed; self.n = n; self.regions = regions; self.solution = solution; self.sizes = sizes; self.rerolls = rerolls
+    }
 }
 
 // MARK: - PRNG helpers (rng call ORDER is the parity contract)

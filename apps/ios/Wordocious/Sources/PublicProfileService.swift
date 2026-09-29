@@ -7,7 +7,7 @@ import WordociousCore
 /// session-scoped MatchStatsService.
 enum PublicProfileService {
     /// One recent match as shown in the "Recent Matches" list.
-    struct RecentMatch: Identifiable, Decodable {
+    struct RecentMatch: Identifiable, Decodable, Equatable {
         let id: String
         let game_mode: String
         let player1_id: String
@@ -20,8 +20,12 @@ enum PublicProfileService {
         let created_at: String
         /// True when this row was a forfeit win (opponent disconnected/abandoned).
         let forfeit: Bool?
+        /// true = the daily seed, false = Unlimited, nil = unknown (older API / rows).
+        let daily: Bool?
 
         var isSolo: Bool { player2_id == nil }
+        /// A solo Unlimited game — Today's Games folds these into one row per mode.
+        var isUnlimitedSolo: Bool { player2_id == nil && daily == false }
         func opponentId(_ uid: String) -> String? {
             guard let p2 = player2_id else { return nil }
             return player1_id == uid ? p2 : player1_id

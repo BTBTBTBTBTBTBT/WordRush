@@ -717,6 +717,50 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
     )
 }
 
+/**
+ * The finished Muddle for the Completed-Today card (founder, 2026-09-29): the
+ * cartoon, the caption with the punchline filled in, then each word's answer
+ * tiles (purple solved, violet solved by hint, muted where it was never
+ * solved) and the punchline in its lilac groups — read-only, the middle fit tier.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun MuddleFinishedBoard(s: ScrambleState, puzzle: ScramblePuzzle, solvedByHint: Set<Int>) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides MUDDLE_TIERS[1]) {
+        Column(Modifier.fillMaxWidth().widthIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            CartoonPanel(puzzle.cartoon, puzzle.altText, height = 150.dp)
+            Caption(s, finished = true)
+            for (row in 0 until SCRAMBLE_FINAL) {
+                val w = s.words[row]; val solved = s.solved[row]; val circled = w.circled.toSet()
+                val fill = if (row in solvedByHint) HINT else PURPLE
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    w.answer.forEachIndexed { i, ch ->
+                        AnswerBox(
+                            ch.toString(), if (solved) fill else WTheme.surface, if (solved) fill else WTheme.border, if (solved) Color.White else WTheme.textMuted,
+                            ring = i in circled, ringColor = if (solved) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = LocalMuddleSizes.current.tileSp, modifier = Modifier.size(wordTile()),
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(color = WTheme.border, thickness = 1.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
+            val target = scrambleTarget(s, SCRAMBLE_FINAL); val solved = s.solved[SCRAMBLE_FINAL]
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                var pos = 0
+                for (len in s.final.pattern) {
+                    val start = pos; pos += len
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        for (k in 0 until len) AnswerBox(
+                            target.getOrNull(start + k)?.toString() ?: "", if (solved) LILAC else WTheme.surface, if (solved) LILAC_BORDER else WTheme.border,
+                            if (solved) LILAC_TEXT else WTheme.textMuted, ring = true, ringColor = PURPLE, ringAlpha = if (solved) 0.9f else 0.35f,
+                            fontSize = 13.sp, modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 /** Which tray letters are already placed, marked left-to-right by multiset (web parity: `dimmed`). */
 private fun usedMask(tray: String, entry: String): List<Boolean> {
     val left = scrambleRemaining(tray, entry).toMutableList()

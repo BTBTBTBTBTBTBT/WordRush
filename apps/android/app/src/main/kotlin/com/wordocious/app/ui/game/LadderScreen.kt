@@ -371,37 +371,42 @@ private fun LadderTile(letter: String, fill: Color, border: Color, ink: Color, s
 }
 
 @Composable
-private fun LadderRow(word: String, prev: String?, kind: String, invalid: Boolean = false) {
+private fun LadderRow(word: String, prev: String?, kind: String, invalid: Boolean = false, tile: androidx.compose.ui.unit.Dp = 44.dp) {
     val chars = word.padEnd(5, ' ')
     Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         for (i in 0 until 5) {
             val ch = if (chars[i] == ' ') "" else chars[i].toString()
             val changed = prev != null && prev[i] != chars[i]
             when (kind) {
-                "start" -> LadderTile(ch, Color(0xFF7C3AED), Color(0xFF7C3AED), Color.White)
-                "rung", "hint" -> if (changed) { val c = if (kind == "hint") LADDER_HINT else LADDER_ACCENT; LadderTile(ch, c, c, Color.White, ring = c) }
-                    else LadderTile(ch, WTheme.surface, WTheme.border, WTheme.text)
-                "typing" -> LadderTile(ch, if (invalid) Color(0xFFFEF2F2) else WTheme.surface, if (invalid) Color(0xFFF87171) else WTheme.border, if (invalid) Color(0xFFEF4444) else WTheme.text)
-                "end" -> LadderTile(ch, Color.Transparent, LADDER_ACCENT.copy(alpha = 0.55f), LADDER_ACCENT)
-                else -> LadderTile(ch, Color(0xFFF9FAFB), Color(0xFFE5E7EB), Color(0xFF9CA3AF))
+                "start" -> LadderTile(ch, Color(0xFF7C3AED), Color(0xFF7C3AED), Color.White, tile)
+                "rung", "hint" -> if (changed) { val c = if (kind == "hint") LADDER_HINT else LADDER_ACCENT; LadderTile(ch, c, c, Color.White, tile, ring = c) }
+                    else LadderTile(ch, WTheme.surface, WTheme.border, WTheme.text, tile)
+                "typing" -> LadderTile(ch, if (invalid) Color(0xFFFEF2F2) else WTheme.surface, if (invalid) Color(0xFFF87171) else WTheme.border, if (invalid) Color(0xFFEF4444) else WTheme.text, tile)
+                "end" -> LadderTile(ch, Color.Transparent, LADDER_ACCENT.copy(alpha = 0.55f), LADDER_ACCENT, tile)
+                else -> LadderTile(ch, Color(0xFFF9FAFB), Color(0xFFE5E7EB), Color(0xFF9CA3AF), tile)
             }
         }
     }
 }
 
 @Composable
-fun LadderBoard(session: LadderSession, revealPath: Boolean) {
-    val s = session.state
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.widthIn(max = 420.dp)) {
-        s.words.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.words[i - 1] else null, if (i == 0) "start" else if (s.hintMask[i] == '1') "hint" else "rung") }
-        if (s.status == LadderStatus.PLAYING) LadderRow(session.typing, s.current, "typing", session.invalid)
+fun LadderBoard(session: LadderSession, revealPath: Boolean) = LadderBoard(session.state, session.typing, session.invalid, revealPath)
+
+/** The rungs from a state alone — the game above, and the finished ladder in the
+ *  Completed-Today card at a smaller [tile] (founder, 2026-09-29). */
+@Composable
+fun LadderBoard(s: LadderState, typing: String, invalid: Boolean, revealPath: Boolean, tile: androidx.compose.ui.unit.Dp = 44.dp) {
+    val gap = if (tile < 44.dp) 4.dp else 6.dp
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap), modifier = Modifier.widthIn(max = 420.dp)) {
+        s.words.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.words[i - 1] else null, if (i == 0) "start" else if (s.hintMask.getOrNull(i) == '1') "hint" else "rung", tile = tile) }
+        if (s.status == LadderStatus.PLAYING) LadderRow(typing, s.current, "typing", invalid, tile)
         if (s.current != s.end) {
             Text("↓ ${if (s.status == LadderStatus.PLAYING) "REACH" else "TARGET"}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = LADDER_ACCENT.copy(alpha = 0.7f))
-            LadderRow(s.end, null, "end")
+            LadderRow(s.end, null, "end", tile = tile)
         }
         if (revealPath) {
             Text("ONE SHORTEST ROUTE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted, modifier = Modifier.padding(top = 8.dp))
-            s.path.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.path[i - 1] else null, "reveal") }
+            s.path.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.path[i - 1] else null, "reveal", tile = tile) }
         }
     }
 }

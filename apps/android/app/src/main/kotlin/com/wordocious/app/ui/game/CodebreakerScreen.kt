@@ -601,15 +601,20 @@ private fun CipherTile(plain: String, code: String, fill: Color, border: Color, 
  *  screen passes none and keeps its compact width-driven cells. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CipherBoard(session: CodebreakerSession, finished: Boolean, cell: Dp? = null) {
-    val s = session.state
+private fun CipherBoard(session: CodebreakerSession, finished: Boolean, cell: Dp? = null) =
+    CipherBoard(session.state, if (finished) null else session.selected, finished, cell) { if (!finished) session.select(it) }
+
+/** The saying from a state alone: the game above, and the finished cipher in the
+ *  Completed-Today card (founder, 2026-09-29). [maxCell] caps the width-driven cells. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun CipherBoard(s: CryptogramState, selected: String?, finished: Boolean, cell: Dp? = null, maxCell: Dp = 30.dp, onSelect: (String) -> Unit) {
     val conflicts = s.conflicts.toSet()
     val words = s.cipher.split(" ")
     val longest = words.maxOfOrNull { w -> w.count { it in CRYPTOGRAM_ALPHABET } + (w.length - w.count { it in CRYPTOGRAM_ALPHABET }) / 2 }?.coerceAtLeast(1) ?: 1
-    val selected = if (finished) null else session.selected
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxWidth().widthIn(max = 480.dp)) {
-        val side = cell ?: ((maxWidth - 8.dp - 3.dp * (longest - 1)) / longest - 6.dp).coerceIn(18.dp, 30.dp)
+        val side = cell ?: ((maxWidth - 8.dp - 3.dp * (longest - 1)) / longest - 6.dp).coerceIn(minOf(18.dp, maxCell), maxCell)
         val punctSp = cipherPunctSp(side.value).sp
         // Punctuation sits just above the code-label row so it reads against the tile bottoms.
         val punctBottom = with(density) { (cipherCodeSp(side.value) * 1.1f).sp.toDp() } + 2.dp + side * 0.15f
@@ -639,7 +644,7 @@ private fun CipherBoard(session: CodebreakerSession, finished: Boolean, cell: Dp
                                 conflict || wrong -> { border = CRYPTOGRAM_WRONG; ink = CRYPTOGRAM_WRONG }
                                 correct -> ink = CRYPTOGRAM_ACCENT
                             }
-                            CipherTile(plain, code, fill, border, ink, selected == code, side) { if (!finished) session.select(code) }
+                            CipherTile(plain, code, fill, border, ink, selected == code, side) { onSelect(code) }
                         }
                     }
                 }

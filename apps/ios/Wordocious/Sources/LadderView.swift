@@ -51,6 +51,10 @@ final class LadderVM: ObservableObject {
         state = LadderState(puzzle: puzzle, seed: self.seed, startTime: Date().timeIntervalSince1970 * 1000)
         restore()
     }
+    /// Read-only: a finished board rebuilt from a matches row (the Completed-today dropdown). Never saves or records.
+    init(display s: LadderState) {
+        isDaily = true; seed = s.seed; allowed = []; state = s; finalTimeSeconds = 0; recorded = true; restoredFinished = true
+    }
 
     var isFinished: Bool { state.status != .playing }
     var elapsed: Int { finalTimeSeconds ?? max(0, Int(((pauseStart ?? Date().timeIntervalSince1970 * 1000) - startMs) / 1000)) }

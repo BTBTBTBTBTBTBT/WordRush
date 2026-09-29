@@ -473,7 +473,7 @@ private fun Pips(tier: Int, color: Color, size: Int = 5) {
 /** A solved (or, after the game, revealed) group as a full-width bar: pips for
  *  the tier, the label, the four words. Revealed bars are dimmed and dashed. */
 @Composable
-private fun GroupBar(group: GroupsGroup, revealed: Boolean = false) {
+internal fun GroupBar(group: GroupsGroup, revealed: Boolean = false) {
     val st = tierStyle(group.tier)
     val shape = RoundedCornerShape(12.dp)
     Column(

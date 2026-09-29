@@ -51,6 +51,8 @@ struct ProfileTab: View {
     @State private var gamesThisWeek = 0
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
+    /// Today's Games rows (filtered to today + Unlimited grouped), rebuilt by setRecent / refreshToday.
+    @State private var todayEntries: [TodayGamesList.Entry] = []
     @State private var reloadToken = 0
     @State private var opponentNames: [String: String] = [:]
     @State private var recentLoading = true
@@ -181,6 +183,8 @@ struct ProfileTab: View {
                 NavigationStack { CustomDailyView(id: m.id) }
             }
             .onDailyRecorded { reloadToken += 1 }
+            .onAppear { if let uid = auth.profile?.id { seedFromMemo(uid) }; refreshToday() }   // refresh: the day may have rolled over
+            .onChange(of: auth.isProActive) { _ in refreshToday() }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
                 // P1: every independent fetch runs concurrently (was 8+ serial
                 // round trips). Only the opponent-name lookup chains off
@@ -189,25 +193,11 @@ struct ProfileTab: View {
                 async let completionsLoad: Void = completions.load()
                 async let catalogLoad: Void = achievementCatalog.load()
                 if let uid = auth.profile?.id {
-                    // P-cache: seed everything from the session memo so a tab
-                    // return repaints instantly; the fresh fetches below swap
-                    // in exactly as before.
+                    // P-cache: paint everything from the session memo first (also
+                    // done in onAppear, before the first frame, so cached rows never
+                    // flash the skeleton); the fresh fetches below swap in.
+                    seedFromMemo(uid)
                     let memo = StatsMemo.shared
-                    if let v: [UserStatRow] = memo.get("statRows:\(uid)") { statRows = v }
-                    if let v: Set<String> = memo.get("achievements:\(uid)") { unlockedAchievements = v }
-                    if let v: [MedalRow] = memo.get("medals:\(uid)") { medals = v }
-                    if let v: [String: String] = memo.get("socialLinks:\(uid)") { socialLinks = v }
-                    if let v: [PublicProfileService.RecentMatch] = memo.get("recentMatches:\(uid)") {
-                        recentMatches = v
-                        if let n: [String: String] = memo.get("opponentNames:\(uid)") { opponentNames = n }
-                        recentLoading = false
-                    }
-                    if let v: Int = memo.get("gamesThisWeek:\(uid)") { gamesThisWeek = v }
-                    if let v: Int = memo.get("sevenDayTotal:\(uid)") { sevenDayTotal = v }
-                    if let v: MatchStatsService.DailySweepStats = memo.get("sweepStats:\(uid)") { sweepStats = v }
-                    if let v: Bool? = memo.get("vsDailyWon:\(uid)") { vsDailyWon = v }
-                    if let v: StatsDeepService.DailyStanding? = memo.get("standing:\(uid)") { standing = v }
-                    if let v: YourRecordsData = memo.get("yourRecords:\(uid)") { yours = v }
                     // D2: today's VS result (the rail dot + VS card), the sweep
                     // streak and today's standing (the Today card).
                     async let vsTodayF = DailyResultsService.dailyVSResult()
@@ -222,27 +212,29 @@ struct ProfileTab: View {
                     // D2 step 3: the all-time record table + sweep ranks; the
                     // chases fold the user_stats rows in once they land.
                     async let yoursF = YourRecordsData.fetch(userId: uid)
-                    statRows = await statsF
-                    unlockedAchievements = await achievementsF
-                    medals = await medalsF
-                    socialLinks = await socialF
-                    recentMatches = await matchesF
-                    let oppIds = Array(Set(recentMatches.compactMap { $0.opponentId(uid) }))
-                    opponentNames = await PublicProfileService.usernames(ids: oppIds)
+                    // Smoothness (founder, 2026-09-29: "not really fluid, seems kind of glitchy
+                    // in the loading and scrolling"): gather every result first, then assign
+                    // them together without animation so the page re-lays out ONCE instead of
+                    // after each await.
+                    let fStats = await statsF, fAch = await achievementsF, fMedals = await medalsF, fSocial = await socialF
+                    let fMatches = await matchesF
+                    let fNames = await PublicProfileService.usernames(ids: Array(Set(fMatches.compactMap { $0.opponentId(uid) })))
                     let week = await weekF
-                    gamesThisWeek = week.reduce(0) { $0 + $1.played }
                     // Last-7-days game count for the Insights "this week" line.
                     let cal = Calendar.current
-                    let today = cal.startOfDay(for: Date())
-                    sevenDayTotal = week.filter {
-                        guard let cutoff = cal.date(byAdding: .day, value: -6, to: today) else { return true }
-                        return $0.day >= cutoff
-                    }.reduce(0) { $0 + $1.played }
-                    recentLoading = false
-                    vsDailyWon = await vsTodayF
-                    sweepStats = await sweepF
-                    standing = await standingF
-                    yours = await yoursF.resolved(userId: uid, stats: statRows)
+                    let cutoff = cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: Date()))
+                    let fWeekTotal = week.reduce(0) { $0 + $1.played }
+                    let fSeven = week.filter { cutoff == nil || $0.day >= cutoff! }.reduce(0) { $0 + $1.played }
+                    let fVs = await vsTodayF, fSweep = await sweepF, fStanding = await standingF
+                    let fYours = await yoursF.resolved(userId: uid, stats: fStats)
+                    guard !Task.isCancelled else { return }
+                    var t = Transaction(); t.disablesAnimations = true
+                    withTransaction(t) {
+                        statRows = fStats; unlockedAchievements = fAch; medals = fMedals; socialLinks = fSocial
+                        opponentNames = fNames; setRecent(fMatches)
+                        gamesThisWeek = fWeekTotal; sevenDayTotal = fSeven
+                        vsDailyWon = fVs; sweepStats = fSweep; standing = fStanding; yours = fYours
+                    }
                     // Store the fresh results back into the session memo.
                     memo.set("yourRecords:\(uid)", yours)
                     memo.set("sweepStats:\(uid)", sweepStats)
@@ -263,6 +255,43 @@ struct ProfileTab: View {
             // (the Sign-out button stays scrollable above the banner) and it
             // doesn't leak onto pushed detail views.
         }
+    }
+
+    /// Paint from the session memo in one pass (no animation). Cheap and synchronous,
+    /// so onAppear can run it before the first frame.
+    private func seedFromMemo(_ uid: String) {
+        let memo = StatsMemo.shared
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) {
+            if let v: [UserStatRow] = memo.get("statRows:\(uid)") { statRows = v }
+            if let v: Set<String> = memo.get("achievements:\(uid)") { unlockedAchievements = v }
+            if let v: [MedalRow] = memo.get("medals:\(uid)") { medals = v }
+            if let v: [String: String] = memo.get("socialLinks:\(uid)") { socialLinks = v }
+            if let v: [PublicProfileService.RecentMatch] = memo.get("recentMatches:\(uid)") {
+                if let n: [String: String] = memo.get("opponentNames:\(uid)") { opponentNames = n }
+                if v != recentMatches || recentLoading { setRecent(v) }
+            }
+            if let v: Int = memo.get("gamesThisWeek:\(uid)") { gamesThisWeek = v }
+            if let v: Int = memo.get("sevenDayTotal:\(uid)") { sevenDayTotal = v }
+            if let v: MatchStatsService.DailySweepStats = memo.get("sweepStats:\(uid)") { sweepStats = v }
+            if let v: Bool? = memo.get("vsDailyWon:\(uid)") { vsDailyWon = v }
+            if let v: StatsDeepService.DailyStanding? = memo.get("standing:\(uid)") { standing = v }
+            if let v: YourRecordsData = memo.get("yourRecords:\(uid)") { yours = v }
+        }
+    }
+
+    /// The one place recentMatches changes: today's list (filtered and grouped) is
+    /// computed here, once, never inside `body` (founder, 2026-09-29).
+    private func setRecent(_ m: [PublicProfileService.RecentMatch]) {
+        recentMatches = m
+        recentLoading = false
+        refreshToday()
+    }
+
+    private func refreshToday() {
+        guard let uid = auth.profile?.id else { todayEntries = []; return }
+        todayEntries = TodayGamesList.entries(recentMatches.filter { RecentMatchesList.isToday($0.created_at) },
+                                              profileId: uid, isPro: auth.isProActive)
     }
 
     private var signedOut: some View {
@@ -327,13 +356,14 @@ struct ProfileTab: View {
             onJump: { key in Haptics.tap(); select(key) },
             onOpenDaily: openDaily)
         if let p = auth.profile {
-            // Founder, 2026-09-27: every game played TODAY (daily and unlimited), no cap,
-            // no "See all" link — the full history lives on All-time.
-            let todays = recentMatches.filter { RecentMatchesList.isToday($0.created_at) }
+            // Founder, 2026-09-27: every game played TODAY, no cap, no "See all" link — the
+            // full history lives on All-time. 2026-09-29: Unlimited solo games fold into one
+            // row per game (Pro only); todayEntries is computed once per fetch, not per render.
             VStack(alignment: .leading, spacing: 8) {
                 SectionHeader("Today's Games", accent: Color(hex: 0x2563EB))
-                RecentMatchesList(matches: todays, profileId: p.id, opponentNames: opponentNames,
-                                  loading: recentLoading, limit: .max, emptyText: "No games yet today — play a daily to start the list.")
+                TodayGamesList(entries: todayEntries, profileId: p.id, opponentNames: opponentNames,
+                               loading: recentLoading && recentMatches.isEmpty,
+                               emptyText: "No games yet today — play a daily to start the list.")
             }
         }
     }
