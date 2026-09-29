@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { bankHolidayPick } from '@wordle-duel/core';
 import { HOLIDAY_TABLE } from '@/lib/holidays';
 import { Puzzle, ThemeCategory } from './types';
@@ -63,12 +63,17 @@ export function loadProperNoundleBank(): Promise<void> {
 }
 /** True once the lists are in (always true when `enabled` is false). Retries a failed load once. */
 export function useProperNoundleBank(enabled = true): boolean {
-  const [ready, setReady] = useState(() => !enabled || properNoundleBankLoaded());
+  // Live check (see useDictionary): a state flag still said "ready" from the
+  // disabled render when `enabled` flipped on in a mounted caller (a mode switch
+  // to ProperNoundle), until its effect ran. `bump` re-renders once the load lands.
+  const ready = !enabled || properNoundleBankLoaded();
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
+  const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
-    if (!enabled || properNoundleBankLoaded()) { setReady(true); return; }
+    if (!enabled || properNoundleBankLoaded()) { if (!readyRef.current) bump(); return; }
     let live = true;
-    setReady(false);
-    loadProperNoundleBank().catch(() => loadProperNoundleBank()).then(() => { if (live) setReady(true); }).catch(() => {});
+    loadProperNoundleBank().catch(() => loadProperNoundleBank()).then(() => { if (live) bump(); }).catch(() => {});
     return () => { live = false; };
   }, [enabled]);
   return ready;

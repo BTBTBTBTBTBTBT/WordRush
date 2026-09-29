@@ -68,6 +68,12 @@ const NOTHING: Built = { progress: null, board: null };
 // The recorded result is part of the key because Hubbub's row moves with each
 // later rank-up.
 const rowRequests = new Map<string, Promise<SolvedDailyRow | null>>();
+// The finished board once built, per (user, day, mode, result) id. This card is
+// keyed by mode, so every Leaderboard mode switch remounts it: without this, a
+// title already shown this session went back through "Loading board…" and a
+// held-back score breakdown before the same board reappeared (founder,
+// 2026-09-29 — iOS 3edd33c2 builds from its disk copy before the refresh).
+const builtBoards = new Map<string, Built>();
 const rowStoreKey = (dbKey: string) => `wordocious-completed-more-row:${dbKey}`;
 const resultSig = (c: DailyCompletion) => `${c.won ? 1 : 0}|${c.guesses}|${c.timeSeconds}`;
 
@@ -265,7 +271,10 @@ export function CompletedMoreBoard({ dbKey }: { dbKey: string }) {
     loadRow(userId, dbKey, day, id)
       .then((row) => (row ? buildMoreBoard(dbKey, row, d, day) : NOTHING))
       .catch(() => NOTHING)
-      .then((value) => { if (!cancelled) setBuilt({ id, value }); });
+      .then((value) => {
+        if (value !== NOTHING) builtBoards.set(id, value);
+        if (!cancelled) setBuilt({ id, value });
+      });
     return () => { cancelled = true; };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -278,7 +287,7 @@ export function CompletedMoreBoard({ dbKey }: { dbKey: string }) {
 
   if (!recorded) return null;
 
-  const current = built && built.id === id ? built.value : null;
+  const current = built && built.id === id ? built.value : (builtBoards.get(id) ?? null);
   const pending = !current && timedOut !== id && !!userId;
   const meta = MODE_BY_DBKEY[dbKey];
   const won = recorded.won;

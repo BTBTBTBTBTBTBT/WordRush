@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { Flag } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { ordinal } from '@/lib/weekly-race';
@@ -11,19 +11,24 @@ import { ordinal } from '@/lib/weekly-race';
 
 interface Row { week_start: string; rank: number; points: number; circle_size: number; winner_points: number | null }
 
+// SWR, not mount-time state: the All-time page mounts these on every visit, and
+// they used to render nothing until their read landed, then push the page down
+// (founder, 2026-09-29). The cached copy paints at once; the read still runs on
+// each mount (revalidate), and not on focus, as before.
 export function WeeklyFinishesCard({ userId }: { userId: string }) {
-  const [rows, setRows] = useState<Row[] | null>(null);
-  useEffect(() => {
-    let active = true;
-    (supabase as any)
-      .from('weekly_race_results')
-      .select('week_start, rank, points, circle_size, winner_points')
-      .eq('user_id', userId)
-      .order('week_start', { ascending: false })
-      .limit(52)
-      .then(({ data }: { data: Row[] | null }) => { if (active) setRows(data ?? []); }, () => { if (active) setRows([]); });
-    return () => { active = false; };
-  }, [userId]);
+  const { data: rows } = useSWR<Row[]>(['weekly-finishes', userId], async () => {
+    try {
+      const { data } = await (supabase as any)
+        .from('weekly_race_results')
+        .select('week_start, rank, points, circle_size, winner_points')
+        .eq('user_id', userId)
+        .order('week_start', { ascending: false })
+        .limit(52);
+      return (data ?? []) as Row[];
+    } catch {
+      return [];
+    }
+  }, { revalidateOnFocus: false });
   if (!rows || rows.length === 0) return null;
   const count = (r: number) => rows.filter((w) => w.rank === r).length;
   const last = rows[0];

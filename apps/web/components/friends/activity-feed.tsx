@@ -51,17 +51,27 @@ function describe(e: FeedEvent): { text: string; icon: React.ReactNode } {
   }
 }
 
+// Last feed per viewer for the session: the Friends tab remounts on every visit
+// and this card used to drop to its skeleton each time, then pop the rows in
+// (founder, 2026-09-29). The cached feed paints at once; the same read refreshes it.
+const feedCache = new Map<string, FeedEvent[]>();
+
 export function ActivityFeed() {
   const { user } = useAuth();
-  const [events, setEvents] = useState<FeedEvent[] | null>(null);
+  const [fetched, setFetched] = useState<{ userId: string; events: FeedEvent[] } | null>(null);
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     if (!user) return;
     let active = true;
-    fetchFriendsFeed().then((ev) => { if (active) setEvents(ev); });
+    const userId = user.id;
+    fetchFriendsFeed().then((ev) => {
+      feedCache.set(userId, ev);
+      if (active) setFetched({ userId, events: ev });
+    });
     return () => { active = false; };
   }, [user]);
   if (!user) return null;
+  const events = fetched?.userId === user.id ? fetched.events : (feedCache.get(user.id) ?? null);
   const today = getTodayLocal();
   const shown = events ? (expanded ? events : events.slice(0, 8)) : [];
 

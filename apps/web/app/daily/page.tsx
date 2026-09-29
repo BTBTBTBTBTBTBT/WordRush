@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share, Bell } from 'lucide-react';
 import Link from 'next/link';
@@ -79,6 +79,32 @@ const sweepCache = new Map<string, {
   details: Map<string, SweepDetails>;
 }>();
 
+// Which board the fetched state below belongs to: mode · All/Friends · viewer.
+// A mode tile or the All|Friends toggle changes the view in one render, but the
+// fetch (and its cache paint) runs in an effect after it — so for that render the
+// page used to show the new mode's header over the previous mode's rows, count and
+// rank (founder, 2026-09-29 screen recording; iOS 3edd33c2 parity). While the
+// fetched state belongs to another view, the render paints this view's cached
+// board instead, or the skeleton when there is none.
+const boardViewKey = (mode: string, friends: boolean, userId: string | undefined) =>
+  `${mode}|${mode !== 'SWEEP' && friends ? 'friends' : 'all'}|${userId ?? 'anon'}`;
+
+// Yesterday's Winners: settled boards, so a session-lived cache is exact. Keyed
+// by mode · day · All/Friends(viewer) — a mode switch with the dropdown open
+// paints that mode's podium (or a skeleton), never the previous mode's rows.
+const yesterdayCache = new Map<string, {
+  lb?: LeaderboardEntry[];
+  sweep?: SweepEntry[];
+  details?: Map<string, SweepDetails>;
+  streaks?: Map<string, number>;
+}>();
+const NO_DETAILS = new Map<string, SweepDetails>();
+const NO_STREAKS = new Map<string, number>();
+
+// Layout effect on the client (applies ?mode= before the first paint), plain
+// effect on the server (where layout effects warn and do nothing).
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 function CountdownTimer() {
   const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilMidnightLocal());
 
@@ -131,26 +157,28 @@ export default function DailyPage() {
   const [selectedMode, setSelectedMode] = useState('DUEL');
   // §214: /daily?mode=QUORDLE preselects a board — the post-game "View
   // Leaderboard" button lands on the mode you just played. Read from
-  // window (not useSearchParams) to skip the Suspense-boundary dance.
-  useEffect(() => {
+  // window (not useSearchParams) to skip the Suspense-boundary dance. Applied
+  // before the first paint, so the page never shows Classic for a frame first.
+  useIsomorphicLayoutEffect(() => {
     const m = new URLSearchParams(window.location.search).get('mode');
     if (m && (m === 'SWEEP' || PROFILE_MODES.some((pm) => pm.dbKey === m))) setSelectedMode(m);
   }, []);
-  const [fetchedLeaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
-  const [fetchedUserRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
-  const [rankWindow, setRankWindow] = useState<{ startRank: number; entries: LeaderboardEntry[] } | null>(null);
-  const [fetchedPlayerCount, setPlayerCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  // Fetched board state — shown through `board` below, which swaps in the cached
+  // board for the view on screen while this state still belongs to another view.
+  const [lbState, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [sweepLbState, setSweepLeaderboard] = useState<SweepEntry[]>([]);
+  const [rankState, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [rankWindowState, setRankWindow] = useState<{ startRank: number; entries: LeaderboardEntry[] } | null>(null);
+  const [countState, setPlayerCount] = useState(0);
+  const [loadingState, setLoading] = useState(true);
+  const [boardFor, setBoardFor] = useState<string | null>(null);
   const [showYesterday, setShowYesterday] = useState(false);
-  const [yesterdayLeaderboard, setYesterdayLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [yesterdaySweep, setYesterdaySweep] = useState<SweepEntry[]>([]);
   // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
-  const [sweepDetails, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
-  const [ySweepDetails, setYSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
+  const [sweepDetailsState, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
   // §248: current flawless streaks for FLAWLESS rows — "FLAWLESS ×4" pills.
   const [flawlessStreaks, setFlawlessStreaks] = useState<Map<string, number>>(new Map());
-  const [yFlawlessStreaks, setYFlawlessStreaks] = useState<Map<string, number>>(new Map());
+  // Bumped when a Yesterday's Winners fetch lands in yesterdayCache.
+  const [, setYesterdayVersion] = useState(0);
 
   const isPro = isProActive;
 
@@ -186,6 +214,30 @@ export default function DailyPage() {
     loadFriends().then(() => setFriendsVersion((v) => v + 1));
     return onFriendsChange(() => setFriendsVersion((v) => v + 1));
   }, [user]);
+
+  const isSweep = selectedMode === 'SWEEP';
+  const viewKey = boardViewKey(selectedMode, friendsOnly && !!user, user?.id);
+  const board = (() => {
+    if (boardFor === viewKey) {
+      return { lb: lbState, sweep: sweepLbState, count: countState, rank: rankState, win: rankWindowState, details: sweepDetailsState, loading: loadingState };
+    }
+    // Same cache keys as loadLeaderboard.
+    const day = getTodayLocal();
+    const uid = user?.id ?? 'anon';
+    if (isSweep) {
+      const c = sweepCache.get(`SWEEP:${day}:${uid}`);
+      return { lb: [] as LeaderboardEntry[], sweep: c?.lb ?? [], count: c?.count ?? 0, rank: c?.rank ?? null, win: null, details: c?.details ?? NO_DETAILS, loading: !c };
+    }
+    const c = lbCache.get(`${selectedMode}:${day}:${uid}${friendsOnly && user ? ':friends' : ''}`);
+    return { lb: c?.lb ?? [], sweep: [] as SweepEntry[], count: c?.count ?? 0, rank: c?.rank ?? null, win: c?.win ?? null, details: NO_DETAILS, loading: !c };
+  })();
+  const fetchedLeaderboard = board.lb;
+  const fetchedPlayerCount = board.count;
+  const fetchedUserRank = board.rank;
+  const rankWindow = board.win;
+  const sweepLeaderboard = board.sweep;
+  const sweepDetails = board.details;
+  const loading = board.loading;
 
   // The player's own daily row on the board at once (founder, 2026-09-29 — iOS/Android parity):
   // the board paints a cached copy (often from before they played) and the refetch can race the
@@ -241,6 +293,7 @@ export default function DailyPage() {
     if (selectedMode === 'SWEEP') {
       const sweepKey = `SWEEP:${day}:${user?.id ?? 'anon'}`;
       const cachedSweep = sweepCache.get(sweepKey);
+      setBoardFor(boardViewKey('SWEEP', false, user?.id));
       if (cachedSweep) {
         setSweepLeaderboard(cachedSweep.lb);
         setPlayerCount(cachedSweep.count);
@@ -281,6 +334,7 @@ export default function DailyPage() {
     const friends = friendsOnly && !!user;
     const cacheKey = `${selectedMode}:${day}:${user?.id ?? 'anon'}${friends ? ':friends' : ''}`;
     const cached = lbCache.get(cacheKey);
+    setBoardFor(boardViewKey(selectedMode, friends, user?.id));
     if (cached) {
       setLeaderboard(cached.lb);
       setPlayerCount(cached.count);
@@ -342,24 +396,42 @@ export default function DailyPage() {
     loadLeaderboard();
   }, [loadLeaderboard]);
 
+  const yesterdayKey = isSweep
+    ? `SWEEP:${yesterday}`
+    : `${selectedMode}:${yesterday}:${friendsOnly && user ? `friends:${user.id}` : 'all'}`;
   useEffect(() => {
     if (!showYesterday) return;
+    let live = true;
+    const key = yesterdayKey;
+    const landed = () => { if (live) setYesterdayVersion((v) => v + 1); };
     if (selectedMode === 'SWEEP') {
       fetchDailySweepLeaderboard(yesterday, 5).then(async (lb) => {
-        setYesterdaySweep(lb);
+        yesterdayCache.set(key, { ...yesterdayCache.get(key), sweep: lb });
+        landed();
         // §248: streaks as they stood at yesterday's settled board.
         const [d, st] = await Promise.all([
           fetchSweepModeDetails(yesterday, lb.map((e) => e.user_id)),
           fetchFlawlessStreaks(yesterday, lb.filter((e) => e.is_flawless).map((e) => e.user_id)),
         ]);
-        setYSweepDetails(d); setYFlawlessStreaks(st);
+        yesterdayCache.set(key, { sweep: lb, details: d, streaks: st });
+        landed();
       });
     } else {
       // Friends toggle carries into Yesterday's Winners: podium among friends.
       const ids = friendsOnly && user ? [...new Set([...getFriendIds(), user.id])] : undefined;
-      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 5, 0, ids).then(setYesterdayLeaderboard);
+      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 5, 0, ids).then((lb) => {
+        yesterdayCache.set(key, { lb });
+        landed();
+      });
     }
-  }, [showYesterday, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
+    return () => { live = false; };
+  }, [showYesterday, yesterdayKey, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
+  const yesterdayEntry = yesterdayCache.get(yesterdayKey);
+  const yesterdayLoading = !yesterdayEntry;
+  const yesterdayLeaderboard = yesterdayEntry?.lb ?? [];
+  const yesterdaySweep = yesterdayEntry?.sweep ?? [];
+  const ySweepDetails = yesterdayEntry?.details ?? NO_DETAILS;
+  const yFlawlessStreaks = yesterdayEntry?.streaks ?? NO_STREAKS;
 
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
@@ -577,8 +649,6 @@ export default function DailyPage() {
     );
   };
 
-  const isSweep = selectedMode === 'SWEEP';
-
   // Friends who haven't played this mode today — the ghost rows.
   const ghostFriends = useMemo(() => {
     if (!friendsOnly || !user || isSweep) return [];
@@ -704,7 +774,10 @@ export default function DailyPage() {
             includeSweep
             showAll={false}
             selectedMode={selectedMode}
-            onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+            // The picker sends null for a tap on the selected tile (its "All"
+            // toggle-off) — the board has no All view, so that tap keeps the
+            // mode instead of jumping to Classic.
+            onSelectMode={(m) => { if (m) setSelectedMode(m); }}
           />
         </div>
 
@@ -808,7 +881,7 @@ export default function DailyPage() {
                   <button
                     key={String(f)}
                     onClick={() => setFriendsOnly(f)}
-                    className="px-2 py-0.5 text-[10px] font-extrabold transition-all"
+                    className="px-2 py-0.5 text-[10px] font-extrabold"
                     style={{
                       background: friendsOnly === f ? `${color}15` : 'var(--color-surface)',
                       color: friendsOnly === f ? color : 'var(--color-text-muted)',
@@ -950,7 +1023,9 @@ export default function DailyPage() {
               borderRadius: '16px',
             }}
           >
-            {isSweep ? (
+            {yesterdayLoading ? (
+              <LeaderboardSkeleton />
+            ) : isSweep ? (
               yesterdaySweep.length === 0 ? (
                 <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
                   No sweeps yesterday

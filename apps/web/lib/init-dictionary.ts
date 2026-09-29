@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { initDictionary, initDictionaryForLength } from '@wordle-duel/core';
 
 // Word lists load on demand, one length at a time (founder, 2026-09-29): they
@@ -65,14 +65,21 @@ export function dictLengthsForMode(mode: string): DictLength[] {
  */
 export function useDictionary(lengths: readonly DictLength[] = ALL_LENGTHS): boolean {
   const key = lengths.join(',');
-  const [ready, setReady] = useState(() => isDictionaryLoaded(lengths));
+  // The live check, not a state flag: a flag still holds the PREVIOUS lengths'
+  // answer for the render in which `lengths` changes (its effect catches up a render
+  // later), so a mode switch on a mounted caller read "ready" for lists not yet
+  // loaded, or "loading" for lists already in (founder, 2026-09-29). `bump` only
+  // re-renders the caller once a load lands.
+  const ready = isDictionaryLoaded(lengths);
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
+  const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
-    if (isDictionaryLoaded(lengths)) { setReady(true); return; }
+    if (isDictionaryLoaded(lengths)) { if (!readyRef.current) bump(); return; }
     let live = true;
-    setReady(false);
     loadDictionary(lengths)
       .catch(() => loadDictionary(lengths))
-      .then(() => { if (live) setReady(true); })
+      .then(() => { if (live) bump(); })
       .catch(() => {});
     return () => { live = false; };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps

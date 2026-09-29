@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/lib/auth-context';
+import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { supabase } from '@/lib/supabase-client';
 import {
@@ -137,6 +138,11 @@ function writeViewParam(key: string) {
   } catch {}
 }
 
+// Layout effect on the client (the ?view= page applies before the first paint),
+// plain effect on the server (where layout effects warn and do nothing).
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+const NO_DAILIES = new Map<string, DailyCompletion>();
+
 export default function StatsPage() {
   const { profile, loading, refreshProfile, isProActive, exitGuest } = useAuth();
   const { isOn: flagOn } = useFlags();
@@ -144,9 +150,11 @@ export default function StatsPage() {
   // chart (restat B1). The VS page pins it to 'vs' (or 'vs_cpu' for practice).
   const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
   // Which page the rail shows. Starts on Today on both server and client (a
-  // lazy window read would mismatch hydration); the mount effect applies ?view=.
+  // lazy window read would mismatch hydration); the mount effect applies ?view=
+  // before the first paint — a ?view=all-time landing no longer shows Today for
+  // a frame first (founder, 2026-09-29).
   const [selected, setSelectedState] = useState<string>(RAIL_TODAY);
-  useEffect(() => { setSelectedState(readViewParam()); }, []);
+  useIsomorphicLayoutEffect(() => { setSelectedState(readViewParam()); }, []);
   const setSelected = useCallback((key: string) => {
     setSelectedState(key);
     writeViewParam(key);
@@ -246,7 +254,13 @@ export default function StatsPage() {
   const todaysMatches = matches.filter((m) => isPlayedToday(m.created_at) && (isProActive || !isUnlimitedSolo(m)));
   const medals = staticData?.medals ?? [];
   const userAchievements = staticData?.userAchievements ?? new Set<string>();
-  const todayDailies = staticData?.todayDailies ?? new Map<string, DailyCompletion>();
+  // Until the page's own read lands (first visit this session), today's results
+  // come from the completions context the whole app already holds (disk-cached,
+  // same daily_results rows) — so the Today card, the rail's W/L dots and a game
+  // page's "Today" line paint at once instead of reading "not played" and then
+  // flipping (founder, 2026-09-29).
+  const { todayDailies: ctxDailies, dailiesDay } = useDailyCompletions();
+  const todayDailies = staticData?.todayDailies ?? (dailiesDay === getTodayLocal() ? ctxDailies : NO_DAILIES);
   const sweepPoints = staticData?.sweepPoints ?? [];
   const standing = staticData?.standing ?? null;
   const vsDailyWon = staticData?.vsDailyWon ?? null;
@@ -560,10 +574,12 @@ export default function StatsPage() {
         {/* ── The game rail ── */}
         <GameRail items={railItems} selected={selected} onSelect={setSelected} />
 
-        {/* ── ONE page below the rail. Keyed so each change fades+rises (F1). ── */}
+        {/* ── ONE page below the rail, keyed per page. No fade+rise on a switch any
+            more (was F1): the new page is simply there in the tap's frame (founder,
+            2026-09-29 — Android dropped its page-swap fade, iOS likewise). ── */}
         <div
           key={`${selected}-${activeTab}`}
-          className="animate-content-swap space-y-4"
+          className="space-y-4"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
@@ -604,7 +620,7 @@ export default function StatsPage() {
                       <button
                         key={t}
                         onClick={() => setActiveTab(t)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition-all"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold"
                         style={{
                           background: activeTab === t ? 'var(--color-surface)' : 'var(--color-surface-hover)',
                           border: activeTab === t ? `1.5px solid ${accentColor}` : '1.5px solid var(--color-border)',
@@ -645,6 +661,7 @@ export default function StatsPage() {
                   gameMode={selected}
                   isPro={isProActive}
                   stats={getStatsForMode(selected)}
+                  statsLoading={loadingStats}
                   playType={activeTab === 'vs_cpu' ? 'solo' : activeTab}
                 />
               </>
@@ -762,6 +779,7 @@ export default function StatsPage() {
                     fastest_time: rows.reduce((min, r) => r.fastest_time > 0 && (min === 0 || r.fastest_time < min) ? r.fastest_time : min, 0),
                   };
                 })()}
+                statsLoading={loadingStats}
                 playType={activeTab === 'vs_cpu' ? 'vs_cpu' : 'vs'}
               />
             </>

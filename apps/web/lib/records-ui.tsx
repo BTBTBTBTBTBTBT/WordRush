@@ -15,15 +15,22 @@ import { fetchAllTimeRecords, type AllTimeRecord } from '@/lib/daily-service';
 // session-lived fetch (fresh on reload; records change rarely) instead of
 // re-querying per visit.
 let allTimeRecordsPromise: Promise<AllTimeRecord[]> | null = null;
+let allTimeRecordsValue: AllTimeRecord[] | null = null;
 export function fetchAllTimeRecordsShared(): Promise<AllTimeRecord[]> {
   if (!allTimeRecordsPromise) {
-    allTimeRecordsPromise = fetchAllTimeRecords().catch((e) => {
+    allTimeRecordsPromise = fetchAllTimeRecords().then((rows) => {
+      allTimeRecordsValue = rows;
+      return rows;
+    }).catch((e) => {
       allTimeRecordsPromise = null;  // don't memoize a failure
       throw e;
     });
   }
   return allTimeRecordsPromise;
 }
+/** The shared list if it has already landed this session — lets a remounting view
+ *  paint it in its first render instead of a skeleton frame (founder, 2026-09-29). */
+export const peekAllTimeRecords = (): AllTimeRecord[] | null => allTimeRecordsValue;
 
 export const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string }> = {
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },

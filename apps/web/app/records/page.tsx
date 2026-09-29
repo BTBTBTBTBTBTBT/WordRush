@@ -48,9 +48,31 @@ const recordsLbCache = new Map<string, {
   count: number;
   rank: { rank: number; totalPlayers: number } | null;
 }>();
+// Same for the synthetic Sweep board, keyed day:user.
+const recordsSweepCache = new Map<string, {
+  lb: SweepEntry[];
+  count: number;
+  rank: { rank: number; totalPlayers: number } | null;
+  details: Map<string, SweepDetails>;
+}>();
+const NO_DETAILS = new Map<string, SweepDetails>();
+
+// Which board the fetched state belongs to (mode · Solo/VS · All/Friends · viewer).
+// A tile tap changes the view in one render but the fetch — and its cache paint —
+// runs in an effect after it, so that render showed the new mode's header over the
+// previous mode's rows, count and rank (founder, 2026-09-29 screen recording; iOS
+// 3edd33c2 parity). While the fetched state belongs to another view, the render
+// paints this view's cached board, or the skeleton when there is none.
+const recordsViewKey = (mode: string, playType: string, friends: boolean, userId: string | undefined) =>
+  mode === 'SWEEP' ? `SWEEP|${userId ?? 'anon'}` : `${mode}|${playType}|${friends ? 'friends' : 'all'}|${userId ?? 'anon'}`;
+
+// Yesterday's podium per mode · play type · day: settled, so the cache is exact.
+const podiumCache = new Map<string, LeaderboardEntry[]>();
+// The lifetime Sweep board, once loaded this session.
+let allTimeSweepCache: AllTimeSweepEntry[] | null = null;
 
 import {
-  fetchAllTimeRecordsShared, RECORD_LABELS, recordValue, recordLabel,
+  fetchAllTimeRecordsShared, peekAllTimeRecords, RECORD_LABELS, recordValue, recordLabel,
   PER_MODE_RECORD_TYPES, GLOBAL_RECORD_TYPES, formatRecordTime as formatTime,
 } from '@/lib/records-ui';
 
@@ -170,17 +192,38 @@ function DailyRecordsView({ userId }: { userId?: string }) {
     loadFriends().then(() => setFriendsVersion((v) => v + 1));
     return onFriendsChange(() => setFriendsVersion((v) => v + 1));
   }, [userId]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
+  // Fetched board state — read through `board` below.
+  const [lbState, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [sweepLbState, setSweepLeaderboard] = useState<SweepEntry[]>([]);
   // §232: dot-strip + guess/hint detail — daily-board parity (founder ask).
-  const [sweepDetails, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
+  const [sweepDetailsState, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
   // §248: current flawless streaks for FLAWLESS rows.
   const [flawlessStreaks, setFlawlessStreaks] = useState<Map<string, number>>(new Map());
-  const [playerCount, setPlayerCount] = useState(0);
-  const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [countState, setPlayerCount] = useState(0);
+  const [rankState, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [loadingState, setLoading] = useState(true);
+  const [boardFor, setBoardFor] = useState<string | null>(null);
 
   const today = getTodayLocal();
+  const viewKey = recordsViewKey(selectedMode, playType, friendsOnly && !!userId, userId);
+  const board = (() => {
+    if (boardFor === viewKey) {
+      return { lb: lbState, sweep: sweepLbState, details: sweepDetailsState, count: countState, rank: rankState, loading: loadingState };
+    }
+    // Same cache keys as loadData.
+    if (selectedMode === 'SWEEP') {
+      const c = recordsSweepCache.get(`${today}:${userId ?? 'anon'}`);
+      return { lb: [] as LeaderboardEntry[], sweep: c?.lb ?? [], details: c?.details ?? NO_DETAILS, count: c?.count ?? 0, rank: c?.rank ?? null, loading: !c };
+    }
+    const c = recordsLbCache.get(`${selectedMode}:${playType}:${today}:${userId ?? 'anon'}${friendsOnly && userId ? ':friends' : ''}`);
+    return { lb: c?.lb ?? [], sweep: [] as SweepEntry[], details: NO_DETAILS, count: c?.count ?? 0, rank: c?.rank ?? null, loading: !c };
+  })();
+  const leaderboard = board.lb;
+  const sweepLeaderboard = board.sweep;
+  const sweepDetails = board.details;
+  const playerCount = board.count;
+  const userRank = board.rank;
+  const loading = board.loading;
   // Drops late responses from a previous mode/toggle so a slow fetch can't
   // overwrite the selection the user has since switched to.
   const loadSeq = useRef(0);
@@ -190,8 +233,21 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 
     // Synthetic Sweep board — cross-mode daily sweep ranking (no Solo/VS split).
     if (selectedMode === 'SWEEP') {
-      setLoading(true);
-      setUserRank(null);
+      const sweepKey = `${today}:${userId ?? 'anon'}`;
+      const cachedSweep = recordsSweepCache.get(sweepKey);
+      setBoardFor(recordsViewKey('SWEEP', playType, false, userId));
+      if (cachedSweep) {
+        setSweepLeaderboard(cachedSweep.lb);
+        setSweepDetails(cachedSweep.details);
+        setPlayerCount(cachedSweep.count);
+        setUserRank(cachedSweep.rank);
+        setLoading(false);
+      } else {
+        setLoading(true);
+        setUserRank(null);
+        setSweepLeaderboard([]);
+        setSweepDetails(new Map());
+      }
       // Rank runs alongside the board; details and streaks load together (founder, 2026-09-29).
       const rankP = userId ? getUserSweepRank(userId, today) : Promise.resolve(null);
       const lb = await fetchDailySweepLeaderboard(today, 50);
@@ -205,13 +261,16 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         rankP,
       ]);
       if (seq === loadSeq.current) { setSweepDetails(details); setFlawlessStreaks(streaks); if (userId) setUserRank(rank); }
-      if (seq === loadSeq.current) setPlayerCount(rank?.totalPlayers ?? lb.length);
+      const count = rank?.totalPlayers ?? lb.length;
+      if (seq === loadSeq.current) setPlayerCount(count);
+      recordsSweepCache.set(sweepKey, { lb, count, rank, details });
       return;
     }
 
     const friends = friendsOnly && !!userId;
     const cacheKey = `${selectedMode}:${playType}:${today}:${userId ?? 'anon'}${friends ? ':friends' : ''}`;
     const cached = recordsLbCache.get(cacheKey);
+    setBoardFor(recordsViewKey(selectedMode, playType, friends, userId));
     if (cached) {
       setLeaderboard(cached.lb);
       setPlayerCount(cached.count);
@@ -351,7 +410,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   };
 
   return (
-    <div className="animate-fade-in-up">
+    <div>
       {/* Mode Picker */}
       <div className="mb-3">
         <ModePicker
@@ -359,15 +418,18 @@ function DailyRecordsView({ userId }: { userId?: string }) {
           includeSweep
           showAll={false}
           selectedMode={selectedMode}
-          onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+          // null = a tap on the selected tile (the picker's toggle-off); there is
+          // no All view here, so the tap keeps the mode instead of jumping to Classic.
+          onSelectMode={(m) => { if (m) setSelectedMode(m); }}
         />
       </div>
 
       <PullToRefresh onRefresh={loadData} accentColor={color}>
-      {/* Leaderboard Card */}
+      {/* Leaderboard Card — no fade on a mode switch: the new board is simply
+          there in the tap's frame (founder, 2026-09-29; iOS/Android parity). */}
       <div
         key={`${selectedMode}-${playType}`}
-        className="overflow-hidden animate-fade-in"
+        className="overflow-hidden"
         style={{
           background: 'var(--color-surface)',
           border: '1.5px solid var(--color-border)',
@@ -424,7 +486,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                   {([false, true] as const).map((f) => (
                     <button
                       key={String(f)}
-                      className="px-3 py-1.5 text-[10px] font-extrabold transition-all"
+                      className="px-3 py-1.5 text-[10px] font-extrabold"
                       style={{
                         background: friendsOnly === f ? `${color}15` : 'var(--color-surface)',
                         color: friendsOnly === f ? color : 'var(--color-text-muted)',
@@ -443,7 +505,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                 {(['solo', 'vs'] as const).map((t) => (
                   <button
                     key={t}
-                    className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
+                    className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold"
                     style={{
                       background: playType === t ? `${color}15` : 'var(--color-surface)',
                       color: playType === t ? color : 'var(--color-text-muted)',
@@ -588,18 +650,26 @@ function DailyRecordsView({ userId }: { userId?: string }) {
    YESTERDAY'S PODIUM (collapsible)
    ═══════════════════════════════════════════════════════ */
 function YesterdayPodium({ mode, playType, color, userId }: { mode: string; playType: 'solo' | 'vs'; color: string; userId?: string }) {
-  const [top3, setTop3] = useState<LeaderboardEntry[]>([]);
   const [open, setOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [, setLanded] = useState(0);
   const yesterday = getYesterdayLocal();
+  // Read by key in the render: a mode switch used to keep the previous mode's
+  // podium on screen until this mode's fetch landed (founder, 2026-09-29).
+  const podiumKey = `${mode}:${playType}:${yesterday}`;
 
   useEffect(() => {
     let active = true;
-    fetchDailyLeaderboard(mode, playType, yesterday, 5).then((r) => { if (active) setTop3(r); });
+    fetchDailyLeaderboard(mode, playType, yesterday, 5).then((r) => {
+      podiumCache.set(podiumKey, r);
+      if (active) setLanded((v) => v + 1);
+    });
     return () => { active = false; };
-  }, [mode, playType, yesterday]);
+  }, [mode, playType, yesterday, podiumKey]);
 
-  if (top3.length === 0) return null;
+  const cachedTop3 = podiumCache.get(podiumKey);
+  const top3 = cachedTop3 ?? [];
+  if (cachedTop3 && top3.length === 0) return null;
   const podiumScoreLabels = tieAwareScoreLabels(top3.map((e) => e.composite_score));
   const medalColor = ['#d97706', '#9ca3af', '#b45309'];
 
@@ -636,7 +706,7 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
         </button>
         <div className="flex items-center gap-2">
           {/* Settled-podium share — only once the podium is open. */}
-          {open && (
+          {open && top3.length > 0 && (
             <button
               onClick={handleShare}
               disabled={sharing}
@@ -652,7 +722,12 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
           </button>
         </div>
       </div>
-      {open && (
+      {open && !cachedTop3 && (
+        <div style={{ borderTop: '1px solid var(--color-border)' }}>
+          <LeaderboardSkeleton />
+        </div>
+      )}
+      {open && cachedTop3 && (
         <div style={{ borderTop: '1px solid var(--color-border)' }}>
           {top3.filter((e) => !isBlocked(e.user_id)).map((e, i, arr) => (
             <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
@@ -671,13 +746,14 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
    ALL-TIME RECORDS VIEW
    ═══════════════════════════════════════════════════════ */
 function AllTimeRecordsView({ userId }: { userId?: string }) {
-  const [records, setRecords] = useState<AllTimeRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  // The shared list paints in the first render when it already landed this
+  // session — no skeleton frame on every Daily → All-Time switch.
+  const [records, setRecords] = useState<AllTimeRecord[]>(() => peekAllTimeRecords() ?? []);
+  const [loading, setLoading] = useState(() => peekAllTimeRecords() === null);
   const [selectedMode, setSelectedMode] = useState('DUEL');
   // §245: one trophy-case card render/upload at a time.
   const [sharingShelf, setSharingShelf] = useState(false);
-  const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[]>([]);
-  const [sweepLoading, setSweepLoading] = useState(false);
+  const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[] | null>(allTimeSweepCache);
 
   useEffect(() => {
     fetchAllTimeRecordsShared().then((data) => {
@@ -687,15 +763,15 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   }, []);
 
   // Lazily load the all-time Sweep board the first time SWEEP is selected.
+  // The skeleton shows only until the first load; later visits paint the board
+  // in hand while it refreshes (it used to drop to the skeleton on every tap).
   useEffect(() => {
     if (selectedMode !== 'SWEEP') return;
     let active = true;
-    setSweepLoading(true);
     fetchAllTimeSweepLeaderboard(50).then((rows) => {
-      if (!active) return;
-      setSweepBoard(rows);
-      setSweepLoading(false);
-    }).catch(() => { if (active) setSweepLoading(false); });
+      allTimeSweepCache = rows;
+      if (active) setSweepBoard(rows);
+    }).catch(() => { if (active) setSweepBoard((b) => b ?? []); });
     return () => { active = false; };
   }, [selectedMode]);
 
@@ -718,7 +794,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 
   if (loading) {
     return (
-      <div className="animate-fade-in-up">
+      <div>
         <AllTimeSkeleton />
       </div>
     );
@@ -731,7 +807,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   const modeRecords = modeRecordsMap.get(selectedMode) || [];
 
   return (
-    <div className="animate-fade-in-up">
+    <div>
       {/* Hall of Fame */}
       <div className="mb-5">
         <div
@@ -741,7 +817,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
           Hall of Fame
         </div>
         <div
-          className="overflow-hidden animate-fade-in-scale"
+          className="overflow-hidden"
           style={{
             background: 'var(--color-surface)',
             border: '1.5px solid var(--color-gold-border)',
@@ -786,13 +862,15 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
             includeSweep
             showAll={false}
             selectedMode={selectedMode}
-            onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+            // null = a tap on the selected tile (the picker's toggle-off); there is
+          // no All view here, so the tap keeps the mode instead of jumping to Classic.
+          onSelectMode={(m) => { if (m) setSelectedMode(m); }}
           />
         </div>
 
         <div
           key={selectedMode}
-          className="overflow-hidden animate-fade-in"
+          className="overflow-hidden"
           style={{
             background: 'var(--color-surface)',
             border: '1.5px solid var(--color-border)',
@@ -821,7 +899,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
           {isSweep ? (
             // All-time Sweep leaderboard — lifetime sweep count, flawless count,
             // and best (fastest) sweep time.
-            sweepLoading ? (
+            sweepBoard === null ? (
               <LeaderboardSkeleton />
             ) : sweepBoard.length === 0 ? (
               <div className="py-5 text-center">
@@ -948,7 +1026,7 @@ export default function RecordsPage() {
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all"
+              className="flex-1 py-2.5 rounded-xl text-xs font-extrabold"
               style={{
                 background: activeTab === key ? 'var(--color-surface)' : 'var(--color-surface-hover)',
                 border: activeTab === key ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',

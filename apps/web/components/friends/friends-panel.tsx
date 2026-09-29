@@ -21,6 +21,7 @@ import { vsHrefForMode } from '@/lib/invite-service';
 import { supabase } from '@/lib/supabase-client';
 import {
   loadFriends,
+  friendsLoaded,
   getFriends,
   getIncoming,
   getOutgoing,
@@ -111,9 +112,14 @@ export function FriendsPanel() {
     return () => document.removeEventListener('click', close);
   }, [menuFor]);
 
+  // True once the first friends read has settled (loaded or failed). Until then
+  // the panel holds a skeleton where the race and roster go — it used to show the
+  // no-friends "1. Add friends…" steps for a beat on a first visit, then swap in
+  // the race, podium and roster (founder, 2026-09-29).
+  const [settled, setSettled] = useState(() => friendsLoaded());
   useEffect(() => {
     if (!user) return;
-    loadFriends().then(() => force((v) => v + 1));
+    loadFriends().then(() => { setSettled(true); force((v) => v + 1); });
     return onFriendsChange(() => force((v) => v + 1));
   }, [user]);
 
@@ -156,6 +162,7 @@ export function FriendsPanel() {
   const friends = getFriends();
   const incoming = getIncoming();
   const outgoing = getOutgoing();
+  const pending = !settled && !friendsLoaded();
 
   // Weekly race podium (§212): me + friends by this week's daily points.
   const meDigest = getMeDigest();
@@ -391,6 +398,12 @@ export function FriendsPanel() {
         {/* D3.5: per-event notification prefs (race, challenges, nudges, moments). */}
         <NotificationPrefs />
       </div>
+
+      {pending && (
+        <div className="space-y-2 animate-pulse" aria-hidden>
+          {[0, 1, 2].map((i) => <div key={i} className="h-10 rounded-xl" style={{ background: 'var(--color-border)' }} />)}
+        </div>
+      )}
 
       {/* TODAY'S RACE (D3, 2026-09-26): ranked by today's points, challenge from any row. */}
       <TodaysRace
@@ -704,7 +717,7 @@ export function FriendsPanel() {
           })}
         </div>
       ) : (
-        incoming.length === 0 && outgoing.length === 0 && (
+        !pending && incoming.length === 0 && outgoing.length === 0 && (
           <div className="space-y-1.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <p>1. Add friends below by username, or from the <span style={{ color: '#7c3aed' }}>Add Friend</span> button on any player&apos;s profile.</p>
             <p>2. Requests you send and receive land right here.</p>

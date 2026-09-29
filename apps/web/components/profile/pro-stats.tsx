@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/lib/supabase-client';
 import { CORE_MODES } from '@/lib/modes.generated';
@@ -61,30 +61,22 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function ProStats({ userId, isPro }: ProStatsProps) {
-  const [modeStats, setModeStats] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!isPro) return;
-
-    const fetchStats = async () => {
-      const { data } = await (supabase as any)
-        .from('user_stats')
-        .select('game_mode, wins, losses, total_games, average_time, fastest_time')
-        .eq('user_id', userId)
-        .eq('play_type', 'solo');
-
-      if (data) {
-        setModeStats(data.filter((s: any) => CORE_DB_KEYS.has(s.game_mode)).map((s: any) => ({
-          mode: MODE_LABELS[s.game_mode] || s.game_mode,
-          winRate: s.total_games > 0 ? Math.round((s.wins / s.total_games) * 100) : 0,
-          avgTime: s.average_time,
-          games: s.total_games,
-        })));
-      }
-    };
-
-    fetchStats();
-  }, [userId, isPro]);
+  // SWR, not mount-time state: the All-time page mounts this on every visit, and
+  // it rendered nothing until the read landed, then pushed the page down (founder,
+  // 2026-09-29). The cached copy paints at once; the read still runs each mount.
+  const { data: modeStats = [] } = useSWR<any[]>(isPro ? ['pro-stats', userId] : null, async () => {
+    const { data } = await (supabase as any)
+      .from('user_stats')
+      .select('game_mode, wins, losses, total_games, average_time, fastest_time')
+      .eq('user_id', userId)
+      .eq('play_type', 'solo');
+    return (data ?? []).filter((s: any) => CORE_DB_KEYS.has(s.game_mode)).map((s: any) => ({
+      mode: MODE_LABELS[s.game_mode] || s.game_mode,
+      winRate: s.total_games > 0 ? Math.round((s.wins / s.total_games) * 100) : 0,
+      avgTime: s.average_time,
+      games: s.total_games,
+    }));
+  }, { revalidateOnFocus: false });
 
   // Pro-only: free users see no card here — the blurred Skill Radar section
   // below it is the single Pro gate on the profile's global view (same

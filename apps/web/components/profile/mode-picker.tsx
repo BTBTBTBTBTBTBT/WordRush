@@ -120,7 +120,9 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
     return (
       <button
         key={mode.id}
-        className={`${fullWidth ? 'w-full' : 'flex-shrink-0'} flex flex-col items-center gap-1 transition-all duration-200`}
+        // No transition: the selected highlight lands in the tap's frame, not faded in
+        // over 200 ms (founder, 2026-09-29 — iOS 3edd33c2 parity).
+        className={`${fullWidth ? 'w-full' : 'flex-shrink-0'} flex flex-col items-center gap-1`}
         style={{
           background: isActive ? `${mode.accentColor}15` : 'var(--color-surface)',
           border: isActive ? `1.5px solid ${mode.accentColor}` : '1.5px solid var(--color-border)',
@@ -164,7 +166,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
     return (
       <button
         key="MORE"
-        className="w-full flex flex-col items-center gap-1 transition-all duration-200"
+        className="w-full flex flex-col items-center gap-1"
         style={{
           background: active ? `${accent}15` : 'var(--color-surface)',
           border: active ? `1.5px solid ${accent}` : '1.5px solid var(--color-border)',
@@ -234,7 +236,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
       {/* All chip */}
       {showAll && (
         <button
-          className="flex-shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
+          className="flex-shrink-0 flex flex-col items-center gap-1"
           style={{
             background: selectedMode === null ? 'var(--color-surface-hover)' : 'var(--color-surface)',
             border: selectedMode === null ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',

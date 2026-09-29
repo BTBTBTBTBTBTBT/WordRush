@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { CalendarDays, CalendarRange, Undo2, Star, TrendingUp } from 'lucide-react';
 import { KitCard, StatCell, ChartCard, ProLockOverlay } from '@/components/profile/stat-kit';
 import { WIN_FG } from '@/lib/tile-theme';
@@ -17,13 +17,12 @@ const fmtWeek = (monday: string) => {
   return `${fmtDay(monday)}–${s.toLocaleDateString('en-US', { day: 'numeric' })}`;
 };
 
+// SWR, not mount-time state: the All-time page mounts these on every visit, and
+// they used to render nothing until their read landed, then push the page down
+// (founder, 2026-09-29). The cached copy paints at once; the read still runs on
+// each mount (revalidate), and not on focus, as before.
 export function SignatureCard({ userId }: { userId: string }) {
-  const [s, setS] = useState<SignatureStats | null>(null);
-  useEffect(() => {
-    let active = true;
-    fetchSignatureStats(userId).then((v) => { if (active) setS(v); }).catch(() => {});
-    return () => { active = false; };
-  }, [userId]);
+  const { data: s } = useSWR<SignatureStats>(['signature-stats', userId], () => fetchSignatureStats(userId), { revalidateOnFocus: false });
   if (!s) return null;
   return (
     <KitCard>
@@ -38,13 +37,12 @@ export function SignatureCard({ userId }: { userId: string }) {
 }
 
 export function StandingTrendCard({ userId, isPro }: { userId: string; isPro: boolean }) {
-  const [pts, setPts] = useState<StandingPoint[] | null>(null);
-  useEffect(() => {
-    if (!isPro) { setPts([]); return; }
-    let active = true;
-    fetchStandingTrend(userId, 30).then((v) => { if (active) setPts(v); }).catch(() => { if (active) setPts([]); });
-    return () => { active = false; };
-  }, [userId, isPro]);
+  const { data: fetched } = useSWR<StandingPoint[]>(
+    isPro ? ['standing-trend', userId] : null,
+    () => fetchStandingTrend(userId, 30).catch(() => [] as StandingPoint[]),
+    { revalidateOnFocus: false },
+  );
+  const pts: StandingPoint[] | null = isPro ? (fetched ?? null) : [];
   // A sample curve for the locked preview so free players see the shape.
   const data = isPro ? (pts ?? []) : [38, 31, 27, 22, 25, 18, 14, 16, 12, 9].map((p, i) => ({ day: `d${i}`, topPercent: p, modes: 3 }));
   if (isPro && pts !== null && pts.length < 2) return null;

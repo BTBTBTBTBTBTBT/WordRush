@@ -33,6 +33,12 @@ export interface YourRecordsData {
   loading: boolean;
 }
 
+// Last result per user for the session: the Stats page remounts on every tab
+// visit, and this hook started empty each time — the records cards and the
+// chase rows painted blank, then popped in (founder, 2026-09-29). The cached
+// copy paints at once while the same reads refresh it.
+const yoursCache = new Map<string, YourRecordsData>();
+
 /** The fetches the old Records → You view made, minus user_stats (the page has them). */
 export function useYourRecords(userId: string | undefined, stats: UserStatRow[]): YourRecordsData {
   const [data, setData] = useState<YourRecordsData>({ sweep: null, sweepRankToday: null, sweepRankAllTime: null, recordsHeld: [], chases: [], loading: true });
@@ -71,20 +77,23 @@ export function useYourRecords(userId: string | undefined, stats: UserStatRow[])
           all.push({ label: `${modeByKey(r.game_mode).title} ${recordLabel('fewest_guesses', r.game_mode).toLowerCase()}`, gap: `${gap} away`, pct: Math.round((r.record_value / mine.best_score) * 100), rel: gap / Math.max(1, r.record_value), gameMode: r.game_mode });
         }
       }
-      setData({
+      const next: YourRecordsData = {
         sweep: sweepRes,
         sweepRankToday: sweepRankTodayRes,
         sweepRankAllTime: sweepRankAllTimeRes,
         recordsHeld: [...heldByKey.values()],
         chases: all.sort((a, b) => a.rel - b.rel).map(({ rel: _rel, ...rest }) => rest),
         loading: false,
-      });
+      };
+      yoursCache.set(userId, next);
+      setData(next);
     })();
     return () => { active = false; };
   // stats identity changes on every SWR revalidation; key on its length + the user.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, stats.length]);
-  return data;
+  const cached = userId ? yoursCache.get(userId) : undefined;
+  return data.loading && cached ? cached : data;
 }
 
 const card: React.CSSProperties = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' };

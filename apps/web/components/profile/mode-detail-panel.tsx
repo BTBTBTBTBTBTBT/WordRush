@@ -46,9 +46,13 @@ interface ModeDetailPanelProps {
   /** Driven by the page-level Solo/VS/VS CPU toggle — the panel has no toggle
       of its own (the old inner Solo/VS pair was redundant and confusing). */
   playType?: 'solo' | 'vs' | 'vs_cpu';
+  /** True while the page's user_stats read (the `stats` prop) is still on its way —
+   *  the panel holds its skeleton instead of claiming "No games played" and then
+   *  popping the real cards in (founder, 2026-09-29). */
+  statsLoading?: boolean;
 }
 
-export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'solo' }: ModeDetailPanelProps) {
+export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'solo', statsLoading = false }: ModeDetailPanelProps) {
   const { user } = useAuth();
   const tab = playType;
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -65,7 +69,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
   const Icon = mode?.icon;
   const isOwnProfile = user?.id === userId;
 
-  const { data, isLoading: loading } = useSWR(
+  const { data, isLoading: dataLoading } = useSWR(
     ['mode-detail', userId, gameMode, playType],
     async () => {
       // Every per-game stat is scoped to the page-level play-type toggle
@@ -75,6 +79,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
     },
     { revalidateOnFocus: true },
   );
+  const loading = dataLoading || statsLoading;
 
   useEffect(() => {
     setInviteCopied(false);

@@ -91,7 +91,9 @@ export function GameRail({ items, selected, onSelect }: Props) {
         key={it.key}
         data-rail-key={it.key}
         type="button"
-        className={`${inGrid ? 'w-full' : 'flex-shrink-0 min-w-[62px]'} relative flex flex-col items-center gap-1 transition-all duration-200`}
+        // No transition: the selected chip's highlight lands in the tap's frame
+        // (founder, 2026-09-29 — iOS 3edd33c2 parity).
+        className={`${inGrid ? 'w-full' : 'flex-shrink-0 min-w-[62px]'} relative flex flex-col items-center gap-1`}
         style={{
           background: active ? `${it.accent}15` : 'var(--color-surface)',
           border: active ? `1.5px solid ${it.accent}` : '1.5px solid var(--color-border)',

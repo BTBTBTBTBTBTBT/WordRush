@@ -10,7 +10,8 @@ import { CompletedMiniBoard, GauntletStageBreakdown } from '@/components/game/co
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { useDictionary, dictLengthsForMode } from '@/lib/init-dictionary';
-import { getTodayLocal, formatHintsLabel } from '@/lib/daily-service';
+import { getTodayLocal, formatHintsLabel, type DailyCompletion } from '@/lib/daily-service';
+import { MODE_SCORE_CONFIG } from '@/lib/composite-scoring';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { fetchGauntletStages } from '@/lib/stats-service';
@@ -246,6 +247,31 @@ function writeRowCache(modeId: string, guesses: string[], time: number) {
   try { localStorage.setItem(rowCacheKey(modeId), JSON.stringify({ date: getTodayLocal(), guesses, time })); } catch {}
 }
 
+const fmtSecs = (s: number) => (s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`);
+
+/** The card's summary line from the recorded result alone, in the finished card's
+ *  own format wherever the record pins it down (single-board: guesses/max; a won
+ *  multi-board: all boards solved) — so the line doesn't rewrite itself when the
+ *  board lands. */
+function recordedSummary(modeId: string, r: DailyCompletion): string {
+  const t = fmtSecs(r.timeSeconds);
+  const cfg = MODE_SCORE_CONFIG[modeId];
+  if (modeId === 'GAUNTLET') return r.won ? `5/5 · ${r.guesses}g · ${t}` : `${r.guesses}g · ${t}`;
+  if (MULTI_BOARD_MODES.has(modeId)) return r.won && cfg ? `${cfg.totalBoards}/${cfg.totalBoards} · ${r.guesses}g · ${t}` : `${r.guesses}g · ${t}`;
+  return cfg ? `${r.guesses}/${cfg.maxGuesses} · ${t}` : `${r.guesses}g · ${t}`;
+}
+
+/** §254: the card's header at its final height from the (instant, cached)
+ *  completion record while the board itself is still on its way — so the rank
+ *  banner and the leaderboard below never jump when the real card lands. */
+function RecordedCardPlaceholder({ modeId, recorded }: { modeId: string; recorded: DailyCompletion }) {
+  return (
+    <CollapsibleCompletedCard won={recorded.won} summaryLabel={recordedSummary(modeId, recorded)}>
+      <div className="text-[10px] font-bold px-4 pb-3" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>
+    </CollapsibleCompletedCard>
+  );
+}
+
 export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   // More Games titles (custom engine, not ProperNoundle) rebuild their own
   // finished board from the matches row; keyed so a mode switch starts fresh.
@@ -259,7 +285,12 @@ function CompletedWordBoardGate({ modeId }: CompletedDailyBoardProps) {
   const isPN = modeId === 'PROPERNOUNDLE';
   const dict = useDictionary(isPN ? [] : dictLengthsForMode(modeId));
   const pn = useProperNoundleBank(isPN);
-  if (!dict || !pn) return <div className="text-[10px] font-bold text-center py-2" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>;
+  const recorded = useDailyCompletions().todayDailies.get(modeId);
+  // While the lists load (first visit to a 6/7-letter mode or ProperNoundle this
+  // session), hold the finished card's header at its final height — never a bare
+  // "Loading board…" line that the card then replaces (a jump), and nothing at all
+  // for a mode not played today (founder, 2026-09-29).
+  if (!dict || !pn) return recorded ? <RecordedCardPlaceholder modeId={modeId} recorded={recorded} /> : null;
   return <CompletedWordBoard modeId={modeId} />;
 }
 
@@ -277,7 +308,11 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
   // modes. Reconstruct the boards from the recorded matches row (same engine
   // replay the game pages use) so "Completed Today" shows everywhere. Gauntlet
   // has its own server fallback below; ProperNoundle is handled separately.
-  const [serverSession, setServerSession] = useState<{ state: GameState; elapsedTime: number } | null>(null);
+  // Tagged with its mode: this component stays mounted across a mode switch, and
+  // the effect that clears it runs after the switch's first render — untagged, that
+  // render showed the previous mode's board under the new mode's header.
+  const [serverSessionState, setServerSession] = useState<{ modeId: string; state: GameState; elapsedTime: number } | null>(null);
+  const serverSession = serverSessionState?.modeId === modeId ? serverSessionState : null;
   const cachedRow = useMemo(() => readRowCache(modeId), [modeId]);
   const cachedSession = useMemo(() => {
     if (!cachedRow || isGauntlet || isProperNoundle) return null;
@@ -379,7 +414,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
         writeRowCache(modeId, guesses, Math.max(0, Math.round(Number(row.player1_time) || 0)));
         const state = replayRecordedGuesses(modeId as GameMode, seed, guesses);
         if (cancelled || !state) return;
-        setServerSession({ state, elapsedTime: Math.max(0, Math.round(Number(row.player1_time) || 0)) });
+        setServerSession({ modeId, state, elapsedTime: Math.max(0, Math.round(Number(row.player1_time) || 0)) });
       } catch { /* offline / RLS — leave the card hidden, no worse than before */ }
     })();
     return () => { cancelled = true; };
@@ -427,7 +462,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
     const localGauntlet = session?.state.gauntlet ?? null;
     const stages = localGauntlet?.stages ?? serverGauntlet?.stages ?? null;
     const stageResults = localGauntlet?.stageResults ?? serverGauntlet?.stageResults ?? null;
-    if (!stages || !stageResults) return null;
+    if (!stages || !stageResults) return recorded ? <RecordedCardPlaceholder modeId={modeId} recorded={recorded} /> : null;
     const won = session ? session.state.status === 'WON' : (serverGauntlet?.won ?? false);
     const totalTimeMs = session ? session.elapsedTime * 1000 : (serverGauntlet?.totalTimeMs ?? 0);
     return (
@@ -455,11 +490,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
       // §254: header at its final height while the board reconstructs (see the
       // standard-mode fallback below for the reasoning).
       if (!recorded) return null;
-      return (
-        <CollapsibleCompletedCard won={recorded.won} summaryLabel={`${recorded.guesses}g · ${formatTime(recorded.timeSeconds)}`}>
-          <div className="text-[10px] font-bold px-4 pb-3" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>
-        </CollapsibleCompletedCard>
-      );
+      return <RecordedCardPlaceholder modeId={modeId} recorded={recorded} />;
     }
 
     // Won = the final row is all-correct (works for both the local save and the
@@ -549,13 +580,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
   // at its final height from the (instant, cached) completion record instead
   // of nothing — so the rank banner and the board below never jump when the
   // real card lands a moment later.
-  if (!session && recorded) {
-    return (
-      <CollapsibleCompletedCard won={recorded.won} summaryLabel={`${recorded.guesses}g · ${formatTime(recorded.timeSeconds)}`}>
-        <div className="text-[10px] font-bold px-4 pb-3" style={{ color: 'var(--color-text-muted)' }}>Loading board…</div>
-      </CollapsibleCompletedCard>
-    );
-  }
+  if (!session && recorded) return <RecordedCardPlaceholder modeId={modeId} recorded={recorded} />;
 
   // Standard modes
   if (!session) return null;
