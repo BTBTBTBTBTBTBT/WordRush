@@ -143,11 +143,15 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
 
     private var startMs = System.currentTimeMillis()
     private var restoredElapsedMs = 0L
-    private var guidePauseStart: Long? = null
+    private var began = false
+    /** Why the clock is stopped (guide open, app in background); it runs only while the set is empty. */
+    enum class Pause { GUIDE, BACKGROUND }
+    private val pausedFor = mutableSetOf<Pause>()
+    private var pauseStart: Long? = null
     private var recorded = false
 
     val isFinished get() = state.status != CryptogramStatus.PLAYING
-    val elapsed: Int get() = finalTimeSeconds ?: maxOf(0, ((System.currentTimeMillis() - startMs) / 1000).toInt())
+    val elapsed: Int get() = finalTimeSeconds ?: maxOf(0, (((pauseStart ?: System.currentTimeMillis()) - startMs) / 1000).toInt())
     val dailyNumber get() = cryptogramDailyNumber(todayLocalDate())
     /** The holiday this puzzle was drawn from (its display title), or null for an everyday puzzle. */
     val holidayTitle: String? get() {
@@ -168,9 +172,26 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
 
     init { restore(); if (selected == null) selected = nextOpen(state, null) }
 
-    fun beginTimer() { startMs = System.currentTimeMillis() - restoredElapsedMs }
-    fun pauseForGuide() { if (guidePauseStart == null && !isFinished) guidePauseStart = System.currentTimeMillis() }
-    fun resumeFromGuide() { guidePauseStart?.let { startMs += System.currentTimeMillis() - it; guidePauseStart = null } }
+    fun beginTimer() {
+        val now = System.currentTimeMillis()
+        startMs = now - restoredElapsedMs; began = true
+        if (pausedFor.isNotEmpty()) pauseStart = now // a pause that began before the clock starts from it
+    }
+    /** Stop the clock for [why]; idempotent, and the clock stays stopped until every reason is lifted. */
+    fun pauseClock(why: Pause) {
+        if (isFinished || why in pausedFor) return
+        if (pausedFor.isEmpty()) pauseStart = System.currentTimeMillis()
+        pausedFor.add(why)
+    }
+    fun resumeClock(why: Pause) {
+        if (!pausedFor.remove(why) || pausedFor.isNotEmpty()) return
+        pauseStart?.let { startMs += System.currentTimeMillis() - it; pauseStart = null }
+    }
+    fun pauseForGuide() = pauseClock(Pause.GUIDE)
+    fun resumeFromGuide() = resumeClock(Pause.GUIDE)
+    /** App in the background: stop the clock and save, so a process death restores without the time away. */
+    fun enterBackground() { pauseClock(Pause.BACKGROUND); if (began && !isFinished) persist() }
+    fun leaveBackground() = resumeClock(Pause.BACKGROUND)
 
     @Serializable private data class SaveDto(
         val seed: String, val date: String, val elapsed: Int, val savedAt: Long,
@@ -308,6 +329,7 @@ fun CodebreakerScreen(
             AdsManager.showGameStartInterstitial(activity) { session.beginTimer() }
         } else { adGateDone = true; session.beginTimer() }
     }
+    PauseClockInBackground(session, session::enterBackground, session::leaveBackground)
     LaunchedEffect(session.toast) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
     LaunchedEffect(session.state.lastWrong) { if (session.state.lastWrong.isNotEmpty()) { kotlinx.coroutines.delay(700); session.clearLastWrong() } }
 

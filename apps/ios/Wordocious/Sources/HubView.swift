@@ -39,6 +39,7 @@ final class HubVM: ObservableObject {
     /// card and the results view each hold a pause reason (founder, 2026-09-28).
     private var pauseReasons: Set<String> = []
     private var pauseStart: Double?
+    private var timerStarted = false
     /// The rank already sent to recordGameResult / improve; -1 = never finalized.
     private var recordedRank = -1
     private(set) var restoredFinished = false
@@ -74,7 +75,7 @@ final class HubVM: ObservableObject {
 
     func beginTimer() {
         let now = Date().timeIntervalSince1970 * 1000
-        startMs = now - restoredElapsedMs
+        startMs = now - restoredElapsedMs; timerStarted = true
         if pauseStart != nil { pauseStart = now }   // restored straight into results: nothing counted before the first look
     }
     func pauseClock(_ reason: String) {
@@ -88,6 +89,10 @@ final class HubVM: ObservableObject {
     }
     func pauseForGuide() { pauseClock("guide") }
     func resumeFromGuide() { resumeClock("guide") }
+    /// Leaving the app stops the clock and saves, so time away never counts even if iOS ends the app (founder, 2026-09-29).
+    func setBackground(_ away: Bool) {
+        if away { pauseClock("background"); if timerStarted && finalTimeSeconds == nil { persist() } } else { resumeClock("background") }
+    }
     /// Results in front = clock paused; back to the board = it runs again.
     func setResults(_ on: Bool) {
         showResults = on
@@ -204,6 +209,7 @@ struct HubView: View {
     @StateObject private var vm: HubVM
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
@@ -248,6 +254,7 @@ struct HubView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
+        .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .onChange(of: showOverlay) { vm.setOverlay($0) }
         .hidesBottomNav()
         .swipeToGoBack { dismiss() }

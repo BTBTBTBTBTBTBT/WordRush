@@ -29,7 +29,9 @@ final class RegionsVM: ObservableObject {
 
     private var startMs = Date().timeIntervalSince1970 * 1000
     private var restoredElapsedMs: Double = 0
-    private var guidePauseStart: Double?
+    private var pauseReasons: Set<String> = []
+    private var pauseStart: Double?
+    private var timerStarted = false
     private var recorded = false
     private(set) var restoredFinished = false
 
@@ -48,14 +50,33 @@ final class RegionsVM: ObservableObject {
     var mistakes: Int { state.mistakes }
     var hintsUsed: Int { state.hintsUsed }
     var n: Int { state.n }
-    var elapsed: Int { finalTimeSeconds ?? max(0, Int((Date().timeIntervalSince1970 * 1000 - startMs) / 1000)) }
+    var elapsed: Int { finalTimeSeconds ?? max(0, Int(((pauseStart ?? Date().timeIntervalSince1970 * 1000) - startMs) / 1000)) }
     var dailyNumber: Int { regionsDailyNumber(LeaderboardService.todayLocal()) }
     var remaining: Int { regionsRemaining(state) }
     var sizeLabel: String { regionsSizeLabel[n] ?? "\(n) × \(n)" }
 
-    func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 - restoredElapsedMs }
-    func pauseForGuide() { guard guidePauseStart == nil, !isFinished else { return }; guidePauseStart = Date().timeIntervalSince1970 * 1000 }
-    func resumeFromGuide() { guard let s = guidePauseStart else { return }; startMs += Date().timeIntervalSince1970 * 1000 - s; guidePauseStart = nil }
+    func beginTimer() {
+        let now = Date().timeIntervalSince1970 * 1000
+        startMs = now - restoredElapsedMs; timerStarted = true
+        if pauseStart != nil { pauseStart = now }
+    }
+    /// The clock stops while any pause reason is held (guide, background) and runs again once all are gone.
+    func pauseClock(_ reason: String) {
+        guard !isFinished else { return }
+        pauseReasons.insert(reason)
+        if pauseStart == nil { pauseStart = Date().timeIntervalSince1970 * 1000 }
+    }
+    func resumeClock(_ reason: String) {
+        pauseReasons.remove(reason)
+        guard pauseReasons.isEmpty, let s = pauseStart else { return }
+        startMs += Date().timeIntervalSince1970 * 1000 - s; pauseStart = nil
+    }
+    func pauseForGuide() { pauseClock("guide") }
+    func resumeFromGuide() { resumeClock("guide") }
+    /// Leaving the app stops the clock and saves, so time away never counts even if iOS ends the app (founder, 2026-09-29).
+    func setBackground(_ away: Bool) {
+        if away { pauseClock("background"); if timerStarted && finalTimeSeconds == nil { persist() } } else { resumeClock("background") }
+    }
 
     // MARK: - Persistence (mirrors components/regions/persistence.ts)
 
@@ -157,6 +178,7 @@ struct RegionsView: View {
     /// Pro Unlimited "Play Again" / size switch — HomeView swaps in a fresh seed.
     var onPlayAgain: ((Int) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
@@ -214,6 +236,7 @@ struct RegionsView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
+        .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
         .swipeToGoBack { dismiss() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)

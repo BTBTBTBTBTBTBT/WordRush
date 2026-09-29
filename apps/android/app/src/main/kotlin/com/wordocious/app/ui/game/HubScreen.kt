@@ -144,10 +144,11 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
 
     private var startMs = System.currentTimeMillis()
     private var restoredElapsedMs = 0L
+    private var began = false
     private var recordedRank = -1
 
     /** Why the clock is stopped. It runs only while the set is empty. */
-    enum class Pause { VIEW, GUIDE }
+    enum class Pause { VIEW, GUIDE, BACKGROUND }
     private val pausedFor = mutableStateListOf<Pause>()
     private var pauseStart: Long? = null
     val clockRunning: Boolean get() = !state.ended && pausedFor.isEmpty()
@@ -173,7 +174,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
 
     fun beginTimer() {
         val now = System.currentTimeMillis()
-        startMs = now - restoredElapsedMs
+        startMs = now - restoredElapsedMs; began = true
         // A restored WON daily opens on results, already paused: the pause starts with the clock.
         if (pausedFor.isNotEmpty()) pauseStart = now
     }
@@ -189,6 +190,9 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     }
     fun pauseForGuide() = pauseClock(Pause.GUIDE)
     fun resumeFromGuide() = resumeClock(Pause.GUIDE)
+    /** App in the background: stop the clock and save, so a process death restores without the time away. */
+    fun enterBackground() { pauseClock(Pause.BACKGROUND); if (began && !state.ended) persist() }
+    fun leaveBackground() = resumeClock(Pause.BACKGROUND)
 
     @Serializable private data class SaveDto(
         val seed: String, val date: String, val elapsed: Int, val savedAt: Long, val recordedRank: Int,
@@ -326,6 +330,7 @@ fun HubScreen(
         if (!adGateDone && !session.state.ended && activity != null && AdsManager.active) { adGateDone = true; AdsManager.showGameStartInterstitial(activity) { session.beginTimer() } }
         else { adGateDone = true; session.beginTimer() }
     }
+    PauseClockInBackground(session, session::enterBackground, session::leaveBackground)
     LaunchedEffect(session.toast) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
     // The clock runs only while the board itself is on screen (founder, 2026-09-28).
     LaunchedEffect(showOverlay, session.showResults) {

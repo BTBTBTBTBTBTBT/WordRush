@@ -48,19 +48,38 @@ final class ProperNoundleVM: ObservableObject {
     private var startMs = Date().timeIntervalSince1970 * 1000
     /// Reset the clock so the game-start ad's time isn't counted — but keep any
     /// elapsed time carried over from a restored session.
-    func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 - restoredElapsedMs }
+    func beginTimer() {
+        let now = Date().timeIntervalSince1970 * 1000
+        startMs = now - restoredElapsedMs; timerStarted = true
+        if pauseStart != nil { pauseStart = now }
+    }
 
-    /// Pause the clock while the in-game guide is open (reading it shouldn't
-    /// count). Resuming shifts startMs forward by the paused duration.
-    private var guidePauseStart: Double?
-    func pauseForGuide() { guard guidePauseStart == nil, !isFinished else { return }; guidePauseStart = Date().timeIntervalSince1970 * 1000 }
-    func resumeFromGuide() { guard let s = guidePauseStart else { return }; startMs += Date().timeIntervalSince1970 * 1000 - s; guidePauseStart = nil }
+    private var pauseReasons: Set<String> = []
+    private var pauseStart: Double?
+    private var timerStarted = false
+    /// The clock stops while any pause reason is held (guide, background) and runs again once all are gone.
+    func pauseClock(_ reason: String) {
+        guard !isFinished else { return }
+        pauseReasons.insert(reason)
+        if pauseStart == nil { pauseStart = Date().timeIntervalSince1970 * 1000 }
+    }
+    func resumeClock(_ reason: String) {
+        pauseReasons.remove(reason)
+        guard pauseReasons.isEmpty, let s = pauseStart else { return }
+        startMs += Date().timeIntervalSince1970 * 1000 - s; pauseStart = nil
+    }
+    func pauseForGuide() { pauseClock("guide") }
+    func resumeFromGuide() { resumeClock("guide") }
+    /// Leaving the app stops the clock and saves, so time away never counts even if iOS ends the app (founder, 2026-09-29).
+    func setBackground(_ away: Bool) {
+        if away { pauseClock("background"); if timerStarted && finalTimeSeconds == nil { persist() } } else { resumeClock("background") }
+    }
     private var recorded = false
     var answerLen: Int { puzzle.map { ProperNoundle.normalize($0.answer).count } ?? 0 }
     var maxGuesses: Int { ProperNoundle.maxGuesses }
     var isFinished: Bool { status != .playing }
     var hintsUsed: Int { [clue, revealedVowel, revealedConsonant].compactMap { $0 }.count }
-    var elapsed: Int { finalTimeSeconds ?? max(0, Int((Date().timeIntervalSince1970 * 1000 - startMs) / 1000)) }
+    var elapsed: Int { finalTimeSeconds ?? max(0, Int(((pauseStart ?? Date().timeIntervalSince1970 * 1000) - startMs) / 1000)) }
 
     // VS hooks (set by VSMatchViewModel when this drives a VS match).
     let isVersus: Bool
@@ -325,6 +344,7 @@ struct ProperNoundleView: View {
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh non-daily seed.
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
     @State private var showVictory = false
     @State private var showGuide = false
@@ -410,6 +430,7 @@ struct ProperNoundleView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
+        .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
         // Left-edge swipe → back to Home (parity with the web back gesture).
         .swipeToGoBack { dismiss() }
