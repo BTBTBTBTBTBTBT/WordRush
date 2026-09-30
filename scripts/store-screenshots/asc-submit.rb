@@ -5,12 +5,10 @@ require "jwt"; require "json"; require "net/http"; require "openssl"
 # disk and never printed.
 APP = "6775966055"; VERSION = ENV.fetch("VER", "2.3"); BUILD = ENV.fetch("BUILD", "204")
 WHATS_NEW = <<~TXT.strip
-  • Starsweep: tap for a black star, double-tap to play it — purple when right, red when wrong. A red or erased star takes its crosses with it, and a red star no longer stops the board from finishing.
-  • Completed today now shows your finished puzzle for every More Games title.
-  • Today's Games groups your Unlimited games into one row per game.
-  • Game clocks stop while you're away from the app.
-  • Faster: smoother Stats and Leaderboard, quicker first opens, cached images.
-  • Muddle's caption always shows in full.
+  • Type with a real keyboard: on a Mac, an iPad or with a Bluetooth keyboard, every word game takes letters, Return and Delete, and arrow keys where a game uses them.
+  • Linked sign-ins: add Google or Apple to your account in Settings so either one opens the same account.
+  • Switching leaderboard, records, stats and friends views is instant, with no loading flash.
+  • Your own score shows on the leaderboard the moment you finish a daily.
 TXT
 kid = "C8FRS9T697"; iss = "8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
 p8 = File.join(Dir.home, ".appstoreconnect/private_keys/AuthKey_#{kid}.p8")
