@@ -491,7 +491,10 @@ struct SudokuPad: View {
             case .letter("H"): vm.hint()
             case .undo: vm.undo()
             case .up, .down, .left, .right:
-                let cur = vm.selected ?? 0, r = cur / 9, c = cur % 9
+                // Nothing selected yet: the first arrow lands on the top-left
+                // cell without moving (web sudoku-game, 14914522).
+                guard let cur = vm.selected else { vm.selected = 0; return true }
+                let r = cur / 9, c = cur % 9
                 switch key {
                 case .up where r > 0: vm.selected = cur - 9
                 case .down where r < 8: vm.selected = cur + 9

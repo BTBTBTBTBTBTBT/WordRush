@@ -155,6 +155,22 @@ final class CodebreakerVM: ObservableObject {
 
     func select(_ code: String) { guard !isFinished else { return }; selected = code }
     func advance() { guard !isFinished else { return }; selected = nextOpen(state, after: selected) }
+    /// ← / → on a hardware keyboard (web cryptogram-game, 14914522): step
+    /// through every unlocked code letter in reading order, filled or not,
+    /// wrapping at both ends. Return / Tab still jump to the next OPEN letter.
+    func step(_ delta: Int) {
+        guard !isFinished else { return }
+        var order: [String] = []
+        for ch in state.cipher {
+            let c = String(ch)
+            if CRYPTOGRAM_ALPHABET.contains(c), !order.contains(c), !state.locked.contains(c) { order.append(c) }
+        }
+        guard !order.isEmpty else { return }
+        guard let sel = selected, let i = order.firstIndex(of: sel) else {
+            selected = delta > 0 ? order.first : order.last; return
+        }
+        selected = order[(i + delta + order.count) % order.count]
+    }
 
     // MARK: - Actions
 
@@ -291,12 +307,18 @@ struct CodebreakerView: View {
                     }
                     // Hardware keys (founder, 2026-09-30): web cryptogram-game keydown —
                     // A–Z pencils the selected code letter, Delete clears it,
-                    // Return / Tab / → move to the next open code letter.
+                    // Return / Tab move to the next open code letter, ← → step
+                    // through every unlocked letter (wrapping).
                     LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.advance() }, onDelete: { vm.clearLetter() },
                                    keyFill: { vm.usedPlain.contains($0) ? codebreakerAccent : nil },
                                    onHardwareKey: { key in
-                                       guard key == .tab || key == .right else { return false }
-                                       vm.advance(); SoundManager.shared.playKeyTap(); return true
+                                       switch key {
+                                       case .tab: vm.advance(); SoundManager.shared.playKeyTap()
+                                       case .right: vm.step(1)
+                                       case .left: vm.step(-1)
+                                       default: return false
+                                       }
+                                       return true
                                    })
                         .padding(.bottom, 6)
                 }
