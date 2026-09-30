@@ -266,6 +266,16 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
         if (!state.mapping[sel].isNullOrEmpty()) dispatch(CryptogramAction.Set(sel, null)) {}
     }
     fun advance() { if (!isFinished) selected = nextOpen(state, selected) }
+    /** ← / → on a physical keyboard (web cryptogram-game.tsx): every unlocked code letter in reading
+     *  order, filled or not, wrapping at both ends (Enter/Tab jump to the next OPEN one instead). */
+    fun step(dir: Int) {
+        if (isFinished) return
+        val order = ArrayList<String>()
+        for (ch in state.cipher) if (ch in CRYPTOGRAM_ALPHABET) { val c = ch.toString(); if (c !in order && c !in state.locked) order.add(c) }
+        if (order.isEmpty()) return
+        val i = selected?.let { order.indexOf(it) } ?: -1
+        selected = if (i < 0) order[if (dir > 0) 0 else order.size - 1] else order[(i + dir + order.size) % order.size]
+    }
     fun check(onFinished: () -> Unit) {
         if (isFinished) return
         if (state.mapping.keys.none { it !in state.locked }) { flash("Pencil some letters first"); return }
@@ -349,12 +359,18 @@ fun CodebreakerScreen(
 
 
     // Physical keyboard (founder, 2026-09-30; web cryptogram-game.tsx): A–Z pencils the selected
-    // code letter, Backspace/Delete clears it, Enter/Tab/→ moves to the next open code letter.
+    // code letter, Backspace/Delete clears it, Enter/Tab moves to the next open code letter,
+    // ← / → step through every unlocked code letter (wrapping).
     val cbKeys = keyboardViewKeys(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advance() })
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
-                if (k == HwKey.Tab || k == HwKey.Right) { session.advance(); true } else cbKeys(k)
+                when (k) {
+                    HwKey.Tab -> { session.advance(); true }
+                    HwKey.Right -> { session.step(1); true }
+                    HwKey.Left -> { session.step(-1); true }
+                    else -> cbKeys(k)
+                }
             }
             .background(WTheme.bg).statusBarsPadding(),
     ) {

@@ -37,7 +37,8 @@ class HardwareKeysTest {
         assertEquals(HwKey.Undo, d(Key.Z, 'z', meta = true))
         assertNull(d(Key.A, 'a', ctrl = true))
         assertNull(d(Key.Enter, alt = true))
-        assertNull(d(Key.Escape))
+        assertEquals(HwKey.Escape, d(Key.Escape))
+        assertNull(d(Key.Escape, ctrl = true))
         assertNull(d(Key.Comma, ','))
     }
 }

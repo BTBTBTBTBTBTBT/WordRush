@@ -304,7 +304,8 @@ fun SudokuScreen(
     androidx.activity.compose.BackHandler { onBack() }
 
     // Physical keyboard (founder, 2026-09-30; web sudoku-game.tsx): 1–9 place, Backspace/Delete/0
-    // erase, N notes, H hint, Ctrl/Cmd+Z undo, arrows move the selected cell.
+    // erase, N notes, H hint, Ctrl/Cmd+Z undo, arrows move the selected cell (the first one
+    // selects the top-left cell).
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
@@ -315,7 +316,8 @@ fun SudokuScreen(
                     k == HwKey.Letter('H') -> { session.hint(onFinished); true }
                     k == HwKey.Undo -> { session.undo(onFinished); true }
                     k == HwKey.Up || k == HwKey.Down || k == HwKey.Left || k == HwKey.Right -> {
-                        val cur = session.selected ?: 0
+                        // Nothing selected yet: the first arrow lands on the top-left cell (web parity).
+                        val cur = session.selected ?: run { session.selected = 0; return@hardwareKeys true }
                         val r = cur / 9
                         val c = cur % 9
                         when (k) {

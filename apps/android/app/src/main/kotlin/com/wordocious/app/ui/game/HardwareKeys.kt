@@ -26,7 +26,7 @@ import androidx.compose.ui.input.key.utf16CodePoint
  *
  * One key press, decoded. Mirrors the web boards' window `keydown` handlers (apps/web
  * components/<game>/<game>-game.tsx): letters, digits, Enter, Backspace/Delete, arrows, Tab,
- * Space and Ctrl/Cmd+Z. Anything else with Ctrl/Cmd/Alt held is left alone (system shortcuts).
+ * Space, Escape and Ctrl/Cmd+Z. Anything else with Ctrl/Cmd/Alt held is left alone (system shortcuts).
  */
 sealed interface HwKey {
     data class Letter(val ch: Char) : HwKey // always uppercase A–Z
@@ -41,6 +41,7 @@ sealed interface HwKey {
     data object Tab : HwKey
     data object Space : HwKey
     data object Undo : HwKey // Ctrl/Cmd+Z
+    data object Escape : HwKey // only Kindred opts in (deselect all); a no-op everywhere else
 
     /** Backspace and forward Delete both erase, as on the web. */
     val isErase: Boolean get() = this == Backspace || this == Delete
@@ -66,6 +67,7 @@ fun decodeHwKey(
         Key.DirectionRight -> return HwKey.Right
         Key.Tab -> return HwKey.Tab
         Key.Spacebar -> return HwKey.Space
+        Key.Escape -> return HwKey.Escape
     }
     // The printed character follows the keyboard's layout (AZERTY etc.), like the web's e.key.
     val c = char.toChar()

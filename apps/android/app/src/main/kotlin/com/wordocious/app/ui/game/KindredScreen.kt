@@ -360,7 +360,19 @@ fun KindredScreen(
     androidx.activity.compose.BackHandler { onBack() }
 
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web groups-game.tsx, iOS parity): Return submits the
+    // four picked words, Escape deselects them all.
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
+                when (k) {
+                    HwKey.Enter -> { session.submit(onFinished); true }
+                    HwKey.Escape -> { session.deselect(); true }
+                    else -> false
+                }
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         if (session.isFinished) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
