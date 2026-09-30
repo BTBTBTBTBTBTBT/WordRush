@@ -763,7 +763,7 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
  *  wording the leaderboard rows use, so All-Time and You match them. */
 private fun recordHintSuffix(r: LeaderboardService.AllTimeRecord): String {
     val h = r.hintsUsed ?: return ""
-    if (r.gameMode?.let { it in setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE") } != true) return ""
+    if (r.gameMode?.let { it in HINT_BEARING } != true) return ""
     return if (h > 0) " · $h hint${if (h == 1) "" else "s"}" else " · No hints"
 }
 

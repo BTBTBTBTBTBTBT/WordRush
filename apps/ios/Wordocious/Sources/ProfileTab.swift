@@ -2009,7 +2009,7 @@ struct LeaderboardTab: View {
         let meta = ModeGen.byDbKey(mode.rawValue)
         var s = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
         if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
-        if HINT_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
+        if HINT_BEARING_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
         return s
     }
 
@@ -2312,6 +2312,9 @@ struct LeaderboardTab: View {
 }
 
 let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
+/// Every mode with a hint button — rows show " · N hints" / " · No hints" for all of them (web
+/// HINT_BEARING_MODES; founder, 2026-09-30: a Codebreaker row hid 4 hints that explained the ranking).
+let HINT_BEARING_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS", "CROSSWORD", "SCRAMBLE"]
 
 // §223: guesses (and hints) are the numbers that actually explain the
 // ranking — the formula is guess-first, so 9 slow wins can trail 8 sharp

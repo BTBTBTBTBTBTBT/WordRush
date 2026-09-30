@@ -717,7 +717,7 @@ struct DailyRecordsView: View {
         if e.totalBoards > 1 { line += " · \(e.boardsSolved)/\(e.totalBoards)" }
         // §254: hints ride this row exactly as on the daily leaderboard row
         // (ProfileTab) — the founder wants the two pages to match.
-        if HINT_MODES.contains(mode.rawValue), let h = e.hintsUsed {
+        if HINT_BEARING_MODES.contains(mode.rawValue), let h = e.hintsUsed {
             line += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
         }
         return HStack(spacing: 12) {

@@ -1699,7 +1699,8 @@ private fun rowDetail(
     return sb.toString()
 }
 
-private val HINT_BEARING = setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE")
+/** Every mode with a hint button (web HINT_BEARING_MODES; founder, 2026-09-30: a Codebreaker row hid 4 hints). */
+internal val HINT_BEARING = setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS", "CROSSWORD", "SCRAMBLE")
 private fun formatHintsLabel(mode: String, hints: Int): String? {
     if (mode !in HINT_BEARING) return null
     if (hints <= 0) return "No hints"

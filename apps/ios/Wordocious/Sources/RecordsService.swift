@@ -40,7 +40,7 @@ struct AllTimeRecord: Identifiable, Decodable {
     /// §254: " · N hints" / " · No hints" on a hint-mode record — the exact
     /// wording the leaderboard rows use, so All-Time and You match them.
     private var hintsSuffix: String {
-        guard let h = hintsUsed, let m = gameMode, HINT_MODES.contains(m) else { return "" }
+        guard let h = hintsUsed, let m = gameMode, HINT_BEARING_MODES.contains(m) else { return "" }
         return h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
     }
 
@@ -114,7 +114,7 @@ enum RecordsService {
         await withTaskGroup(of: (Int, Int?).self) { group in
             for (i, r) in records.enumerated() {
                 guard r.recordType == "fewest_guesses" || r.recordType == "fastest_win",
-                      let m = r.gameMode, HINT_MODES.contains(m) else { continue }
+                      let m = r.gameMode, HINT_BEARING_MODES.contains(m) else { continue }
                 let field = r.recordType == "fewest_guesses" ? "player1_score" : "player1_time"
                 let value = Int(r.recordValue.rounded())
                 let holder = r.holderId
