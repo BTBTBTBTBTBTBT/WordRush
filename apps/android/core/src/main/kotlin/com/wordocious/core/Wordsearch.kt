@@ -14,6 +14,9 @@ import kotlin.math.sign
  * Hidden list (2026-09-26): the words start hidden; Show words lists the rest and every
  * later find counts like a miss. guess_count = min(10 + misses + lateFinds, 15).
  * Event sigils: + ~ x ? = !
+ * Close calls (founder, 2026-09-30): a selection spelling one of the puzzle's `near` words (a theme
+ * word or plural that really sits in the grid but is not on the list) is never a miss; the screen
+ * says it fits the theme but isn't one of today's 10.
  */
 const val WORDSEARCH_DAILY_EPOCH = "2026-09-23"
 const val WORDSEARCH_N = 10
@@ -30,7 +33,11 @@ val WORDSEARCH_DIRS: Map<String, Pair<Int, Int>> = mapOf(
 data class WordsearchPlacement(val w: String, val r: Int, val c: Int, val d: String)
 
 @Serializable
-data class WordsearchPuzzle(val id: String, val theme: String, val family: String, val title: String, val grid: String, val words: List<WordsearchPlacement>)
+data class WordsearchPuzzle(
+    val id: String, val theme: String, val family: String, val title: String, val grid: String, val words: List<WordsearchPlacement>,
+    /** Close calls: theme words / plurals in the grid that are not list words (never a miss). Optional in the bank. */
+    val near: List<String> = emptyList(),
+)
 
 @Serializable
 data class WordsearchBank(val version: Int, val epoch: String, val daily: List<WordsearchPuzzle>, val extra: List<WordsearchPuzzle>) {
@@ -86,6 +93,8 @@ data class WordsearchState(
     val wordsShown: Boolean = false,
     /** Words found after Show words (each adds one to guess_count). */
     val lateFinds: Int = 0,
+    /** Close calls from the puzzle (saves from before 2026-09-30 lack them). */
+    val near: List<String> = emptyList(),
 ) {
     /** guess_count for the result row: 10 clean, +1 per miss and per late find, capped at 15. */
     val guessCount: Int get() = minOf(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + maxOf(0, misses) + maxOf(0, lateFinds))
@@ -95,6 +104,7 @@ data class WordsearchState(
     companion object {
         fun create(p: WordsearchPuzzle, seed: String, startTime: Long) = WordsearchState(
             seed, p.id, p.title, WORDSEARCH_N, p.grid, p.words, emptyList(), 0, 0, emptyList(), emptyList(), WordsearchStatus.PLAYING, startTime, null,
+            near = p.near,
         )
     }
 }
@@ -105,6 +115,16 @@ sealed class WordsearchAction {
     object Show : WordsearchAction()
     object Reveal : WordsearchAction()
     object Finish : WordsearchAction()
+}
+
+/** The close-call word a selection spells (forwards or backwards), if it is not a list word; else null. */
+fun wordsearchNearWord(s: WordsearchState, from: Int, to: Int): String? {
+    if (s.near.isEmpty()) return null
+    val line = wordsearchLine(s.n, from, to) ?: return null
+    val letters = line.map { s.grid[it] }.joinToString("")
+    val reversed = letters.reversed()
+    if (s.words.any { it.w == letters || it.w == reversed }) return null
+    return s.near.firstOrNull { it == letters || it == reversed }
 }
 
 fun wordsearchReduce(s: WordsearchState, a: WordsearchAction, now: Long = 0): WordsearchState {
@@ -123,6 +143,7 @@ fun wordsearchReduce(s: WordsearchState, a: WordsearchAction, now: Long = 0): Wo
                 val late = s.wordsShown
                 s.copy(found = found, lateFinds = s.lateFinds + (if (late) 1 else 0), events = s.events + "${if (late) "~" else "+"}${hit.w}", status = if (won) WordsearchStatus.WON else WordsearchStatus.PLAYING, endTime = if (won) now else null)
             } else if (line.size < WORDSEARCH_MIN_MISS_LENGTH) s
+            else if (s.near.any { it == letters || it == reversed }) s // close call: never a miss
             else s.copy(misses = s.misses + 1, events = s.events + "x ${a.from / s.n},${a.from % s.n}>${a.to / s.n},${a.to % s.n}")
         }
         is WordsearchAction.Hint -> {

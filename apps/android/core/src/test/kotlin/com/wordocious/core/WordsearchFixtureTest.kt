@@ -28,15 +28,19 @@ class WordsearchFixtureTest {
     private data class Script(val name: String, val id: String, val actions: List<Act>, val expect: Expect, val row: Row, val reconstruct: Recon?)
     private data class Geo(val from: Int, val to: Int, val line: List<Int>?)
     private data class Place(val w: String, val r: Int, val c: Int, val d: String, val cells: List<Int>)
-    private data class Puzzle(val id: String, val theme: String, val family: String, val title: String, val grid: String, val words: List<Place>)
+    private data class Puzzle(val id: String, val theme: String, val family: String, val title: String, val grid: String, val words: List<Place>, val near: List<String>?)
+    private data class NearCase(val from: Int, val to: Int, val word: String?)
+    private data class NearExpect(val misses: Int, val events: List<String>, val found: List<String>)
+    private data class Near(val id: String, val list: List<String>, val cases: List<NearCase>, val actions: List<Act>, val expect: NearExpect)
     private data class Fixtures(
         val epoch: String, val dailyCount: Int, val extraCount: Int, val days: List<DayCase>, val seeds: List<SeedCase>,
         val puzzle: Puzzle, val reducer: List<Script>, val geometry: List<Geo>, val placements: List<Place>, val malformed: Recon?,
+        val near: Near,
     )
 
     private fun fixtures() = Gson().fromJson(loadFixture("wordsearch-fixtures.json"), Fixtures::class.java)
     private fun bank(): WordsearchBank = WordsearchBank.bundled!!
-    private fun puzzle(p: Puzzle) = WordsearchPuzzle(p.id, p.theme, p.family, p.title, p.grid, p.words.map { WordsearchPlacement(it.w, it.r, it.c, it.d) })
+    private fun puzzle(p: Puzzle) = WordsearchPuzzle(p.id, p.theme, p.family, p.title, p.grid, p.words.map { WordsearchPlacement(it.w, it.r, it.c, it.d) }, p.near ?: emptyList())
     private fun action(a: Act): WordsearchAction = when (a.type) {
         "SELECT" -> WordsearchAction.Select(a.from!!, a.to!!)
         "HINT" -> WordsearchAction.Hint
@@ -87,5 +91,23 @@ class WordsearchFixtureTest {
             assertEquals(sc.reconstruct?.solved, r.solved); assertEquals(sc.reconstruct?.title, r.title)
         }
         assertNull(f.malformed); assertNull(reconstructWordsearch(listOf("nope"), emptyList()))
+    }
+
+    /** Close calls (founder, 2026-09-30): near words are never a miss; the helper names them. */
+    @Test
+    fun near_words_match_shared_fixtures() {
+        val f = fixtures().near
+        val p = bank().daily.first { it.id == f.id }
+        assertEquals(f.list, p.near)
+        val s0 = WordsearchState.create(p, "fixture", 0)
+        assertEquals(f.list, s0.near)
+        for (c in f.cases) assertEquals("near ${c.from}->${c.to}", c.word, wordsearchNearWord(s0, c.from, c.to))
+        var s = s0
+        for (a in f.actions) s = wordsearchReduce(s, action(a), 1000)
+        assertEquals(f.expect.misses, s.misses); assertEquals(f.expect.events, s.events); assertEquals(f.expect.found, s.found)
+        // Old saves / states without near: no close calls, the same selection is a plain miss.
+        val old = s0.copy(near = emptyList())
+        assertNull(wordsearchNearWord(old, f.cases[0].from, f.cases[0].to))
+        assertEquals(1, wordsearchReduce(old, WordsearchAction.Select(f.cases[0].from, f.cases[0].to), 1000).misses)
     }
 }
