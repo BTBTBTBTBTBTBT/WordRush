@@ -216,6 +216,9 @@ struct GameScreen: View {
         // Custom on-screen KeyboardView only — never let a lingering SYSTEM
         // keyboard inset (e.g. from the share sheet) squeeze the board layout.
         .ignoresSafeArea(.keyboard)
+        // Physical keys (founder, 2026-09-30) go quiet under the victory card
+        // and the Gauntlet stage transition, like the on-screen keyboard.
+        .hardwareKeyboardEnabled(!showVictory && !vm.stageCleared)
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()

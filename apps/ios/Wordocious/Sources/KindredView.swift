@@ -330,6 +330,16 @@ struct KindredView: View {
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .groups) }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // Hardware keys (founder, 2026-09-30): web groups-game keydown —
+        // Return submits the selection, Escape deselects.
+        .hardwareKeyboard(enabled: !vm.isFinished && !showOverlay) { key in
+            switch key {
+            case .enter: vm.submit()
+            case .escape: vm.deselect()
+            default: return false
+            }
+            return true
+        }
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()

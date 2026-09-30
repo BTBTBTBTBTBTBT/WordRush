@@ -212,7 +212,13 @@ struct LadderView: View {
                         capsule("Undo", "arrow.uturn.backward", dim: vm.state.words.count <= 1) { vm.undo() }
                         capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
                     }
-                    LetterKeyboard(onLetter: { vm.type($0) }, onEnter: { vm.submit() }, onDelete: { vm.delete() })
+                    // Hardware keys (founder, 2026-09-30): web ladder-game keydown —
+                    // A–Z / Return / Delete as the keys, plus ⌘Z = Undo.
+                    LetterKeyboard(onLetter: { vm.type($0) }, onEnter: { vm.submit() }, onDelete: { vm.delete() },
+                                   onHardwareKey: { key in
+                                       guard key == .undo else { return false }
+                                       vm.undo(); return true
+                                   })
                         .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)

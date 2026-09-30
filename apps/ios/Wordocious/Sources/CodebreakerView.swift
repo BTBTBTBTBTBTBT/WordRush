@@ -289,8 +289,15 @@ struct CodebreakerView: View {
                             capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", "eye", dim: vm.revealIn > 0) { vm.reveal() }
                         }
                     }
+                    // Hardware keys (founder, 2026-09-30): web cryptogram-game keydown —
+                    // A–Z pencils the selected code letter, Delete clears it,
+                    // Return / Tab / → move to the next open code letter.
                     LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.advance() }, onDelete: { vm.clearLetter() },
-                                   keyFill: { vm.usedPlain.contains($0) ? codebreakerAccent : nil })
+                                   keyFill: { vm.usedPlain.contains($0) ? codebreakerAccent : nil },
+                                   onHardwareKey: { key in
+                                       guard key == .tab || key == .right else { return false }
+                                       vm.advance(); SoundManager.shared.playKeyTap(); return true
+                                   })
                         .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)

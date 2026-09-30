@@ -336,7 +336,7 @@ struct AuthView: View {
 
     // MARK: - Nonce (Sign in with Apple)
 
-    private static func randomNonceString(length: Int = 32) -> String {
+    static func randomNonceString(length: Int = 32) -> String {
         let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
         var result = ""
         var remaining = length
@@ -349,7 +349,7 @@ struct AuthView: View {
         return result
     }
 
-    private static func sha256(_ input: String) -> String {
+    static func sha256(_ input: String) -> String {
         SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 }

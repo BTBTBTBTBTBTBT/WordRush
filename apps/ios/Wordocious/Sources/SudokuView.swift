@@ -481,6 +481,28 @@ struct SudokuPad: View {
             }
         }
         .padding(.horizontal, 2)
+        // Hardware keys (founder, 2026-09-30): web sudoku-game keydown — 1–9
+        // place, Delete / 0 erase, N notes, H hint, ⌘Z undo, arrows move.
+        .hardwareKeyboard(enabled: !vm.isFinished) { key in
+            switch key {
+            case .digit(let d) where d >= 1: vm.place(d)
+            case .digit, .delete: vm.erase()
+            case .letter("N"): vm.toggleNotes()
+            case .letter("H"): vm.hint()
+            case .undo: vm.undo()
+            case .up, .down, .left, .right:
+                let cur = vm.selected ?? 0, r = cur / 9, c = cur % 9
+                switch key {
+                case .up where r > 0: vm.selected = cur - 9
+                case .down where r < 8: vm.selected = cur + 9
+                case .left where c > 0: vm.selected = cur - 1
+                case .right where c < 8: vm.selected = cur + 1
+                default: break
+                }
+            default: return false
+            }
+            return true
+        }
     }
 
     private func capsule(_ label: String, _ symbol: String, active: Bool = false, dim: Bool = false, action: @escaping () -> Void) -> some View {

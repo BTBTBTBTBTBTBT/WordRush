@@ -172,6 +172,19 @@ final class CrosswordVM: ObservableObject {
         selected = cells.first(where: { fill[$0] == CROSSWORD_EMPTY }) ?? cells.first
     }
     func toggleDirection() { guard !isFinished else { return }; SoundManager.shared.playKeyTap(); dir = dir == .across ? .down : .across }
+    /// Arrow keys on a hardware keyboard (web crossword-game keydown): hop to
+    /// the next open cell that way, skipping blocks; direction follows the arrow.
+    func moveCursor(dr: Int, dc: Int) {
+        guard !isFinished, let sel = selected else { return }
+        let sol = Array(state.solution), w = state.w, h = state.h
+        var r = sel / w, c = sel % w
+        for _ in 0..<max(w, h) {
+            r += dr; c += dc
+            if r < 0 || c < 0 || r >= h || c >= w { return }
+            let i = r * w + c
+            if sol[i] != CROSSWORD_BLOCK { selected = i; dir = dr != 0 ? .down : .across; return }
+        }
+    }
 
     /// After typing: the next open cell in the active entry, else the next unfinished entry's first empty cell.
     private func advance(from: Int, entry: CrosswordEntry?) {
@@ -330,7 +343,22 @@ struct CrosswordView: View {
                             capsule(vm.state.hintsUsed > 0 ? "Word · \(vm.state.hintsUsed)" : "Word", "eye") { SoundManager.shared.playKeyTap(); vm.revealWord() }
                             capsule(vm.armReveal ? "Reveal all?" : "Reveal all", "flag", danger: vm.armReveal) { vm.revealPuzzle() }
                         }
-                        LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.nextEntry() }, onDelete: { vm.deleteLetter() })
+                        // Hardware keys (founder, 2026-09-30): web crossword-game keydown —
+                        // A–Z / Delete as the keys, arrows move the cursor, Return or
+                        // Tab = next entry, Space flips Across/Down.
+                        LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.nextEntry() }, onDelete: { vm.deleteLetter() },
+                                       onHardwareKey: { key in
+                                           switch key {
+                                           case .left: vm.moveCursor(dr: 0, dc: -1)
+                                           case .right: vm.moveCursor(dr: 0, dc: 1)
+                                           case .up: vm.moveCursor(dr: -1, dc: 0)
+                                           case .down: vm.moveCursor(dr: 1, dc: 0)
+                                           case .tab: vm.nextEntry(); SoundManager.shared.playKeyTap()
+                                           case .space: vm.toggleDirection()
+                                           default: return false
+                                           }
+                                           return true
+                                       })
                     }
                     .padding(.bottom, 6)
                 }

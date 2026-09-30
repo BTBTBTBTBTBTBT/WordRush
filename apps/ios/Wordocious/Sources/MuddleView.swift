@@ -215,6 +215,8 @@ final class MuddleVM: ObservableObject {
     func clearRow() { guard !isFinished else { return }; dispatch(.clear(row: row)) }
     /// ENTER jumps to the row the game wants next.
     func nextRow() { guard !isFinished, let next = scrambleActiveRow(state) else { return }; row = next }
+    /// ↑ / ↓ on a hardware keyboard (web muddle-game keydown): step the active row, clamped.
+    func moveRow(_ delta: Int) { guard !isFinished else { return }; row = min(SCRAMBLE_FINAL, max(0, row + delta)) }
     func revealLetter(_ r: Int) { guard !isFinished else { return }; Haptics.tap(); dispatch(.revealLetter(row: r)) }
     func solveWord(_ r: Int) { guard !isFinished else { return }; Haptics.tap(); dispatch(.solveWord(row: r)) }
 
@@ -397,7 +399,18 @@ struct MuddleView: View {
                 capsule("Clear", "xmark.circle") { SoundManager.shared.playKeyTap(); vm.clearRow() }
             }
             .padding(.top, 2)
-            LetterKeyboard(onLetter: { vm.typeLetter($0) }, onEnter: { vm.nextRow() }, onDelete: { vm.deleteLetter() })
+            // Hardware keys (founder, 2026-09-30): web muddle-game keydown —
+            // A–Z / Delete as the keys, Return or Tab = next row, ↑ ↓ step rows.
+            LetterKeyboard(onLetter: { vm.typeLetter($0) }, onEnter: { vm.nextRow() }, onDelete: { vm.deleteLetter() },
+                           onHardwareKey: { key in
+                               switch key {
+                               case .tab: vm.nextRow()
+                               case .up: vm.moveRow(-1)
+                               case .down: vm.moveRow(1)
+                               default: return false
+                               }
+                               return true
+                           })
                 .padding(.bottom, 4)
         }
         .padding(.horizontal, MdSize.columnPad)

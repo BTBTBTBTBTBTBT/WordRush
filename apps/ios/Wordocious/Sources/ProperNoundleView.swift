@@ -689,7 +689,20 @@ struct NoundleKeyboard: View {
                     enterKey()
                 }
             }
-        }.padding(.horizontal, 4)
+        }
+        .padding(.horizontal, 4)
+        // Physical keyboard (founder, 2026-09-30) — web propernoundle-game
+        // keydown: Enter / Backspace / A–Z, same actions as the keys above.
+        .hardwareKeyboard(enabled: !vm.isFinished) { key in
+            switch key {
+            case .enter: vm.submit()
+            case .delete: vm.delete()
+            case .letter(let l): vm.type(l)
+            default: return false
+            }
+            SoundManager.shared.playKeyTap()
+            return true
+        }
     }
 
     private func enterKey() -> some View {

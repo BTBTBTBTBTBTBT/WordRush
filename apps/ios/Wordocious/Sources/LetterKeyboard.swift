@@ -20,6 +20,13 @@ struct LetterKeyboard: View {
     /// letter is already settled (given or confirmed by a Check), so the
     /// remaining letters stand out like used keys on the word games.
     var keyFill: (String) -> Color? = { _ in nil }
+    /// Physical keyboard (founder, 2026-09-30): consulted first for every
+    /// hardware key (arrows, Tab, Space…); return true to consume it. Keys it
+    /// passes on get the default map: A–Z → onLetter, Return → onEnter (when
+    /// ENTER is shown), Delete → onDelete.
+    var onHardwareKey: ((HardwareKey) -> Bool)? = nil
+    /// False while the board is inert (finished, overlay up).
+    var hardwareEnabled: Bool = true
 
     @AppStorage("pref-keyboard-layout") private var layout = "standard"
 
@@ -54,6 +61,17 @@ struct LetterKeyboard: View {
             }
         }
         .padding(.horizontal, 4)
+        .hardwareKeyboard(enabled: hardwareEnabled) { key in
+            if let custom = onHardwareKey, custom(key) { return true }
+            switch key {
+            case .letter(let l): onLetter(l)
+            case .enter where showEnter: onEnter()
+            case .delete: onDelete()
+            default: return false
+            }
+            SoundManager.shared.playKeyTap()
+            return true
+        }
     }
 
     private func enterKey() -> some View {

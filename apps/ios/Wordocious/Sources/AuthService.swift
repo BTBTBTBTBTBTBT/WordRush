@@ -271,6 +271,13 @@ final class AuthService: ObservableObject {
     /// reversed-client-ID URL scheme in Info.plist, and the iOS client id added
     /// to the Supabase Google provider's authorized client IDs.
     func signInWithGoogle() async throws {
+        let session = try await client.auth.signInWithIdToken(credentials: try await googleCredentials())
+        await handleSignedIn(userId: session.user.id.uuidString)
+    }
+
+    /// Runs the native Google sheet and returns the id-token credentials
+    /// Supabase takes — shared by sign-in and "Link Google".
+    private func googleCredentials() async throws -> OpenIDConnectCredentials {
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(
             clientID: GoogleAuth.iosClientID, serverClientID: GoogleAuth.webClientID)
         guard let presenter = Self.topViewController() else {
@@ -287,10 +294,62 @@ final class AuthService: ObservableObject {
             throw NSError(domain: "WordociousAuth", code: -2,
                           userInfo: [NSLocalizedDescriptionKey: "Google sign-in didn't return an ID token."])
         }
-        let session = try await client.auth.signInWithIdToken(
-            credentials: .init(provider: .google, idToken: idToken,
-                               accessToken: result.user.accessToken.tokenString))
-        await handleSignedIn(userId: session.user.id.uuidString)
+        return .init(provider: .google, idToken: idToken, accessToken: result.user.accessToken.tokenString)
+    }
+
+    // MARK: - Linked sign-ins (founder, 2026-09-30)
+    //
+    // A tester signed up with Google, later picked Sign in with Apple, and
+    // Apple's Hide My Email relay made Supabase create a second account.
+    // Settings → Linked sign-ins attaches Google / Apple to the SAME account
+    // with GoTrue manual identity linking (id-token grant, link_identity=true).
+    // Needs "Manual linking" enabled in the Supabase project's Auth settings.
+    // An identity that already belongs to another account is refused by the
+    // server (identity_already_exists) — nothing is merged automatically.
+
+    /// Every identity (google / apple / email) on the signed-in account, fresh from the server.
+    func linkedIdentities() async throws -> [UserIdentity] {
+        try await client.auth.userIdentities()
+    }
+
+    /// Attach an Apple ID (native Sign in with Apple id token + raw nonce) to this account.
+    func linkApple(idToken: String, rawNonce: String) async throws {
+        try await client.auth.linkIdentityWithIdToken(
+            credentials: .init(provider: .apple, idToken: idToken, nonce: rawNonce))
+    }
+
+    /// Attach a Google account (native GoogleSignIn sheet) to this account.
+    func linkGoogle() async throws {
+        try await client.auth.linkIdentityWithIdToken(credentials: try await googleCredentials())
+    }
+
+    /// Detach one identity. Callers never offer this for the last one (the
+    /// server refuses that too: single_identity_not_deletable).
+    func unlink(_ identity: UserIdentity) async throws {
+        try await client.auth.unlinkIdentity(identity)
+        // The access token still lists the old identity until it's reissued.
+        _ = try? await client.auth.refreshSession()
+    }
+
+    /// Player-facing copy for a link/unlink failure. `provider` is "Apple ID" / "Google account".
+    nonisolated static func linkErrorMessage(_ error: Error, provider: String) -> String {
+        if let e = error as? AuthError {
+            switch e.errorCode {
+            case .identityAlreadyExists:
+                return e.message.localizedCaseInsensitiveContains("another user")
+                    ? "That \(provider) is already used by another Wordocious account."
+                    : "That \(provider) is already linked to this account."
+            case .manualLinkingDisabled:
+                return "Linking sign-ins isn't switched on yet. Please try again later."
+            case .singleIdentityNotDeletable:
+                return "You need at least one way to sign in, so this one can't be removed."
+            case .sessionNotFound, .sessionExpired:
+                return "Your session has expired. Sign out and back in, then try again."
+            default:
+                if !e.message.isEmpty { return e.message }
+            }
+        }
+        return error.localizedDescription
     }
 
     /// Top-most view controller to present the Google sign-in sheet from.

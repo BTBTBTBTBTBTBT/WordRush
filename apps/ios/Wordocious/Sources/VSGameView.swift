@@ -146,6 +146,10 @@ struct VSGameView: View {
         // the layout: post-rematch the board rendered tiny with a keyboard-sized
         // dead zone at the bottom.
         .ignoresSafeArea(.keyboard)
+        // Physical keys (founder, 2026-09-30) stay off under the countdown,
+        // the Gauntlet stage transition and the upsell modals.
+        .hardwareKeyboardEnabled(vm.screen == .match && vm.countdown == nil && !(vm.game?.stageCleared ?? false)
+                                 && !showRematchUpsell && !vm.rematchProUpsell)
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         // Fullscreen like the solo games — hide the bottom tab bar (the VS game is

@@ -74,6 +74,11 @@ struct SettingsView: View {
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
+                        // Which providers open this account + link Google / Apple
+                        // to it (founder, 2026-09-30). Signed-in accounts only.
+                        if auth.isAuthenticated && SupabaseConfig.isConfigured {
+                            LinkedSignInsSection()
+                        }
                         section("SUBSCRIPTION") {
                             VStack(spacing: 0) {
                                 // Apple's native manage-subscriptions sheet (cancel,

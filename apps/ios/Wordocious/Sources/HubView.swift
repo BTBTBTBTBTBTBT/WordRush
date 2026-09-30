@@ -255,6 +255,21 @@ struct HubView: View {
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .hub) }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // Hardware keys (founder, 2026-09-30): web hub-game keydown — Return
+        // enters, Delete deletes, Space shuffles, and only the puzzle's seven
+        // letters type. Board view only; off under the victory card.
+        .hardwareKeyboard(enabled: !vm.state.ended && !vm.showResults && !showOverlay) { key in
+            switch key {
+            case .enter: vm.submit()
+            case .delete: vm.delete()
+            case .space: vm.shuffle()
+            case .letter(let l):
+                guard let ch = l.first, vm.state.letters.contains(ch) else { return false }
+                vm.type(ch)
+            default: return false
+            }
+            return true
+        }
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .onChange(of: showOverlay) { vm.setOverlay($0) }
