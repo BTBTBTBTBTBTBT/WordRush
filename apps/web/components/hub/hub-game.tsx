@@ -270,7 +270,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       if (isTypingTarget(e) || !state || state.ended || view !== 'board') return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') { submit(); return; }
-      if (e.key === 'Backspace') { del(); return; }
+      if (e.key === 'Backspace' || e.key === 'Delete') { del(); return; }
       if (e.key === ' ') { e.preventDefault(); shuffle(); return; }
       const k = e.key.toUpperCase();
       if (/^[A-Z]$/.test(k) && state.letters.includes(k)) type(k);

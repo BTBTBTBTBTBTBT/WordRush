@@ -11,6 +11,7 @@ import { SettingsDialog } from '@/components/settings-dialog';
 import { StatPopover } from '@/components/ui/stat-popover';
 import { cachedFlawlessStreak, fetchDailySweepStats } from '@/lib/stats-service';
 import { getTodayLocal } from '@/lib/daily-service';
+import { readLinkReturn } from '@/lib/identity-linking';
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
@@ -74,6 +75,12 @@ export function AppHeader() {
   const [streakOpen, setStreakOpen] = useState(false);
   const [shieldOpen, setShieldOpen] = useState(false);
   const [flawlessOpen, setFlawlessOpen] = useState(false);
+
+  // Back from a Settings › Linked sign-ins round trip (?link=apple): reopen
+  // Settings so the section can say whether it worked (founder, 2026-09-30).
+  useEffect(() => {
+    if (readLinkReturn(window.location.href)) setSettingsOpen(true);
+  }, []);
 
   // §244: the flawless-streak pill reads the day-stamped cache written by
   // fetchDailySweepStats — synchronous, no query on the render path.

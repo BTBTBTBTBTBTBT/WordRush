@@ -221,7 +221,11 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { erase(); return; }
       if (e.key.toLowerCase() === 'n') { toggleNotes(); return; }
       if (e.key.toLowerCase() === 'h') { hint(); return; }
-      const cur = selected ?? 0;
+      const isArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+      // Nothing selected yet: the first arrow lands on the top-left cell
+      // (it used to step from an implied cell 0, so → selected r1c2).
+      if (selected == null) { if (isArrow) { e.preventDefault(); setSelected(0); } return; }
+      const cur = selected;
       const r = Math.floor(cur / 9), c = cur % 9;
       if (e.key === 'ArrowUp' && r > 0) setSelected(cur - 9);
       else if (e.key === 'ArrowDown' && r < 8) setSelected(cur + 9);

@@ -8,6 +8,7 @@ import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 import { getKeyboardLayout, setKeyboardLayout, type KeyboardLayout } from '@/lib/keyboard-layout';
 import { useAuth } from '@/lib/auth-context';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
+import { LinkedSignIns } from '@/components/settings/linked-sign-ins';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -226,6 +227,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               )}
             </div>
           </div>
+
+          {user && <LinkedSignIns key={user.id} />}
 
           {user && (
             <div className="space-y-2">

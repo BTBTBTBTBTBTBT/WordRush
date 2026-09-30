@@ -225,7 +225,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') onKey('ENTER');
-      else if (e.key === 'Backspace') onKey('BACK');
+      else if (e.key === 'Backspace' || e.key === 'Delete') onKey('BACK');
       else if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
     };
     window.addEventListener('keydown', onKeyDown);

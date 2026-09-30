@@ -228,7 +228,22 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       if (isTypingTarget(e)) return;
       if (!state || state.status !== 'playing') return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'ArrowRight') { e.preventDefault(); onKey('ENTER'); }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); onKey('ENTER'); }
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        // Arrows step through every unlocked code letter in reading order,
+        // filled or not (Enter/Tab jump to the next open one) — there was no
+        // way back to a previous letter from the keyboard.
+        e.preventDefault();
+        const order: string[] = [];
+        for (const ch of state.cipher) if (CRYPTOGRAM_ALPHABET.includes(ch) && !order.includes(ch) && !state.locked.includes(ch)) order.push(ch);
+        if (!order.length) return;
+        const step = e.key === 'ArrowRight' ? 1 : -1;
+        setSelected((sel) => {
+          const i = sel ? order.indexOf(sel) : -1;
+          if (i < 0) return order[step > 0 ? 0 : order.length - 1];
+          return order[(i + step + order.length) % order.length];
+        });
+      }
       else if (e.key === 'Backspace' || e.key === 'Delete') onKey('BACK');
       else if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
     };

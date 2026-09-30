@@ -27,9 +27,18 @@ export async function GET(request: Request) {
   // dumping on the home page. Only relative paths — never absolute URLs, so
   // this can't be used as an open redirect.
   const next = searchParams.get('next');
-  if (next && next.startsWith('/') && !next.startsWith('//')) {
-    return NextResponse.redirect(new URL(next, origin));
+  const dest = next && next.startsWith('/') && !next.startsWith('//')
+    ? new URL(next, origin)
+    : new URL('/', origin);
+
+  // OAuth errors (e.g. linking an Apple ID that already belongs to another
+  // account — Settings › Linked sign-ins) arrive as query params; carry them
+  // to the destination so the page can explain what happened. (The implicit
+  // flow's #fragment copy survives the 302 on its own.)
+  for (const k of ['error', 'error_code', 'error_description']) {
+    const v = searchParams.get(k);
+    if (v) dest.searchParams.set(k, v);
   }
 
-  return NextResponse.redirect(origin);
+  return NextResponse.redirect(dest);
 }
