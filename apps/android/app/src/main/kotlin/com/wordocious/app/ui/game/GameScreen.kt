@@ -682,8 +682,21 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     }
 
     val accent = com.wordocious.app.ui.modeAccent(mode)
+    var showGuide by remember { mutableStateOf(false) }
+    // Gauntlet stage-cleared interstitial is up (see StageTransitionOverlay below).
+    val stageCleared = mode == GameMode.GAUNTLET && state.gauntlet != null &&
+        state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
+        state.boards.all { it.status == GameStatus.WON }
     Box(
         modifier = Modifier.fillMaxSize()
+            // Physical keyboard (founder, 2026-09-30): A–Z / Enter / Backspace as the keys below.
+            .hardwareKeys(enabled = !showGuide && !stageCleared) { k ->
+                keyboardViewKeys(
+                    onKey = { vm.typeLetter(it) },
+                    onDelete = { vm.deleteLetter() },
+                    onEnter = { vm.submit(applyToAll = isApplyToAll) },
+                )(k)
+            }
             .background(
                 androidx.compose.ui.graphics.Brush.verticalGradient(
                     listOf(WTheme.bg, WTheme.surfaceHover), // #F8F7FF → #F3F0FF
@@ -896,7 +909,6 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // and pauses the clock while it's open. iOS only shows a second corner
         // button (the sound toggle) in Gauntlet, so the help button only shifts
         // left there (GameScreen.swift:148).
-        var showGuide by remember { mutableStateOf(false) }
         val isGauntlet = mode == GameMode.GAUNTLET
         CornerHelpButton(
             accent = accent,
@@ -920,10 +932,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // FINAL stage waits for a manual tap (StageTransitionOverlay gates its
         // auto-advance on `next != null`) so the run's finish isn't rushed.
         val gauntlet = state.gauntlet
-        if (mode == GameMode.GAUNTLET && gauntlet != null &&
-            state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
-            state.boards.all { it.status == GameStatus.WON }
-        ) {
+        if (stageCleared && gauntlet != null) {
             StageTransitionOverlay(
                 completed = gauntlet.stages[gauntlet.currentStage],
                 next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),

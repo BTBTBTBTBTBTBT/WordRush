@@ -393,6 +393,13 @@ class MuddleSession(val seed: String, val isDaily: Boolean) {
     fun clear() { if (!isFinished) dispatch(ScrambleAction.Clear(row), row) {} }
     /** Enter jumps to the row the game wants next. */
     fun jumpToActive() { if (!isFinished) scrambleActiveRow(state)?.let { row = it; persist() } }
+    /** ↑/↓ on a physical keyboard (web muddle-game.tsx): the nearest unsolved row that way. */
+    fun stepRow(dir: Int) {
+        if (isFinished) return
+        var r = row + dir
+        while (r in 0..SCRAMBLE_FINAL && state.solved[r]) r += dir
+        if (r in 0..SCRAMBLE_FINAL) selectRow(r)
+    }
     fun revealLetter(r: Int, onFinished: () -> Unit) { if (!isFinished) dispatch(ScrambleAction.RevealLetter(r), r, onFinished) }
     fun solveWord(r: Int, onFinished: () -> Unit) { if (!isFinished) dispatch(ScrambleAction.SolveWord(r), r, onFinished) }
 
@@ -460,7 +467,21 @@ fun MuddleScreen(
     androidx.activity.compose.BackHandler { onBack() }
 
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web muddle-game.tsx): A–Z types into the active row,
+    // Backspace/Delete erases, Enter/Tab jumps to the next open row, ↑/↓ move between rows.
+    val muddleKeys = keyboardViewKeys(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() })
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
+                when (k) {
+                    HwKey.Tab -> { session.jumpToActive(); true }
+                    HwKey.Down -> { session.stepRow(1); true }
+                    HwKey.Up -> { session.stepRow(-1); true }
+                    else -> muddleKeys(k)
+                }
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         if (session.isFinished) {
             val cartoonH = LocalConfiguration.current.screenHeightDp.dp * CARTOON_SCREEN_FRACTION
             Column(

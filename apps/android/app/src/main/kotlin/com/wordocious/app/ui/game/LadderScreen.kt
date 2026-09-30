@@ -293,7 +293,16 @@ fun LadderScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web ladder-game.tsx): A–Z / Enter / Backspace as the
+    // keys below, Ctrl/Cmd+Z = Undo.
+    val ladderKeys = keyboardViewKeys(onKey = { session.type(it) }, onDelete = { session.delete() }, onEnter = { session.submit(onFinished) })
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
+                if (k == HwKey.Undo) { if (session.state.words.size > 1) session.undo(onFinished); true } else ladderKeys(k)
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         if (session.isFinished) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),

@@ -348,7 +348,16 @@ fun CodebreakerScreen(
     androidx.activity.compose.BackHandler { onBack() }
 
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web cryptogram-game.tsx): A–Z pencils the selected
+    // code letter, Backspace/Delete clears it, Enter/Tab/→ moves to the next open code letter.
+    val cbKeys = keyboardViewKeys(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advance() })
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
+                if (k == HwKey.Tab || k == HwKey.Right) { session.advance(); true } else cbKeys(k)
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         if (session.isFinished) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),

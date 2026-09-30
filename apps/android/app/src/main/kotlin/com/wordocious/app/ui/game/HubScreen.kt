@@ -339,7 +339,21 @@ fun HubScreen(
     }
     androidx.activity.compose.BackHandler { onBack() }
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web hub-game.tsx): only the seven puzzle letters type,
+    // Enter submits, Backspace/Delete erases, Space shuffles. Board view only.
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.state.ended && !session.showResults && !showOverlay && !showGuide) { k ->
+                when {
+                    k is HwKey.Letter -> { if (k.ch in session.state.letters.uppercase()) session.type(k.ch); true }
+                    k == HwKey.Enter -> { session.submit(); true }
+                    k.isErase -> { session.delete(); true }
+                    k == HwKey.Space -> { session.shuffle(); true }
+                    else -> false
+                }
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             HubHeader(session)
             if (session.showResults) HubResults(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)

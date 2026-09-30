@@ -274,6 +274,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             // (`if auth.isAuthenticated`); a guest has no session to sign out of
             // and no account to delete.
             if (isAuthenticated) {
+                LinkedSignIns()
+
                 // iOS uses .buttonStyle(.bordered).tint(red) — a soft tinted fill
                 // at a fixed 46pt height, not a hard outline.
                 Box(
@@ -375,6 +377,123 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             text = { Text("Please try again or contact support@wordocious.com.") },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = { deleteError = false }) { Text("OK") }
+            },
+        )
+    }
+}
+
+/**
+ * Settings › Linked sign-ins (founder, 2026-09-30; web linked-sign-ins.tsx parity). Lists the
+ * sign-ins on this account and links Google onto it (supabase-kt manual linking, browser round
+ * trip), so a later sign-in with it opens this same account. Apple can only be linked from the
+ * iOS app (the Supabase Apple provider is native-iOS only). Unlink only while >1 sign-in remains.
+ */
+@Composable
+private fun LinkedSignIns() {
+    val scope = rememberCoroutineScope()
+    val identities by AuthService.identities.collectAsState()
+    val notice by AuthService.linkNotice.collectAsState()
+    var loadError by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf<String?>(null) }
+    var localNotice by remember { mutableStateOf<AuthService.LinkNotice?>(null) }
+    var confirmUnlink by remember { mutableStateOf<AuthService.LinkedIdentity?>(null) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { loadError = !AuthService.loadIdentities() }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { AuthService.clearLinkNotice() } }
+
+    val list = identities
+    val linked = list.orEmpty().map { it.provider }.toSet()
+    val unlinkable = list != null && com.wordocious.app.data.IdentityLinking.canUnlink(list.size)
+    val shown = localNotice ?: notice
+    Section("LINKED SIGN-INS") {
+        Text(
+            "Link Google so it opens this same account on any device.",
+            fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted,
+        )
+        Card {
+            when {
+                loadError && list == null -> Text(
+                    "Couldn’t load your sign-ins. Close Settings and try again.",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), modifier = Modifier.padding(12.dp),
+                )
+                list == null -> Text("Loading…", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(12.dp))
+                else -> {
+                    list.forEachIndexed { i, identity ->
+                        if (i > 0) Divider()
+                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(com.wordocious.app.data.IdentityLinking.providerLabel(identity.provider), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+                                    Spacer(Modifier.width(6.dp))
+                                    Icon(Icons.Filled.CheckCircle, contentDescription = "Linked", tint = Color(0xFF16A34A), modifier = Modifier.size(14.dp))
+                                }
+                                identity.email?.let { email ->
+                                    Text(
+                                        if (com.wordocious.app.data.IdentityLinking.isHideMyEmail(email)) "Hide My Email" else email,
+                                        fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted, maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            if (unlinkable) {
+                                Text(
+                                    if (busy == identity.identityId) "Unlinking…" else "Unlink",
+                                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted,
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                        .border(1.5.dp, WTheme.border, RoundedCornerShape(8.dp))
+                                        .clickableNoRipple { if (busy == null) confirmUnlink = identity }
+                                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                                )
+                            }
+                        }
+                    }
+                    com.wordocious.app.data.IdentityLinking.LINKABLE.filter { it !in linked }.forEach { provider ->
+                        if (list.isNotEmpty()) Divider()
+                        val label = com.wordocious.app.data.IdentityLinking.providerLabel(provider)
+                        LinkRow(if (busy == provider) "Opening…" else "Link $label") {
+                            if (busy != null) return@LinkRow
+                            busy = provider
+                            localNotice = null
+                            scope.launch {
+                                AuthService.linkGoogle()?.let { localNotice = AuthService.LinkNotice(false, it) }
+                                busy = null
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (list != null && "apple" !in linked) {
+            Text(
+                "To add Apple, use Settings → Linked sign-ins in the Wordocious iOS app.",
+                fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted,
+            )
+        }
+        shown?.let {
+            Text(it.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (it.ok) Color(0xFF16A34A) else Color(0xFFDC2626))
+        }
+    }
+
+    confirmUnlink?.let { identity ->
+        val label = com.wordocious.app.data.IdentityLinking.providerLabel(identity.provider)
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmUnlink = null },
+            title = { Text("Unlink $label?", fontWeight = FontWeight.Black) },
+            text = { Text("You won’t be able to sign in to this account with $label anymore. Your stats and Pro stay put.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    confirmUnlink = null
+                    busy = identity.identityId
+                    localNotice = null
+                    AuthService.clearLinkNotice()
+                    scope.launch {
+                        val err = AuthService.unlinkIdentity(identity)
+                        localNotice = AuthService.LinkNotice(err == null, err ?: "$label unlinked.")
+                        busy = null
+                    }
+                }) { Text("Unlink", color = Color(0xFFDC2626), fontWeight = FontWeight.Black) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirmUnlink = null }) { Text("Keep it") }
             },
         )
     }

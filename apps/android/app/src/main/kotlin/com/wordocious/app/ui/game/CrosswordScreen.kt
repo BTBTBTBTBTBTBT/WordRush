@@ -305,6 +305,20 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
         persist()
     }
     fun toggleDir() { if (!isFinished) { dir = if (dir == "A") "D" else "A"; persist() } }
+    /** Arrow keys (web crossword-game.tsx move()): the next open cell that way; the cursor turns to match. */
+    fun moveCursor(dr: Int, dc: Int) {
+        if (isFinished) return
+        val sel = selected ?: return
+        val s = state
+        var r = sel / s.w
+        var c = sel % s.w
+        repeat(maxOf(s.w, s.h)) {
+            r += dr; c += dc
+            if (r < 0 || c < 0 || r >= s.h || c >= s.w) return
+            val i = r * s.w + c
+            if (s.solution[i] != CROSSWORD_BLOCK) { selected = i; dir = if (dr != 0) "D" else "A"; persist(); return }
+        }
+    }
     /** Tap a clue: its first empty cell (or its first cell) in that direction. */
     fun pickEntry(e: CrosswordEntry) {
         if (isFinished) return
@@ -463,7 +477,25 @@ fun CrosswordScreen(
     androidx.activity.compose.BackHandler { onBack() }
 
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web crossword-game.tsx): A–Z fills the selected cell,
+    // Backspace/Delete erases, Enter/Tab jumps to the next entry, arrows move, Space flips Across/Down.
+    val xwKeys = keyboardViewKeys(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advanceEntry() })
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
+                if (session.selected == null) return@hardwareKeys false
+                when (k) {
+                    HwKey.Left -> { session.moveCursor(0, -1); true }
+                    HwKey.Right -> { session.moveCursor(0, 1); true }
+                    HwKey.Up -> { session.moveCursor(-1, 0); true }
+                    HwKey.Down -> { session.moveCursor(1, 0); true }
+                    HwKey.Tab -> { session.advanceEntry(); true }
+                    HwKey.Space -> { session.toggleDir(); true }
+                    else -> xwKeys(k)
+                }
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         if (session.isFinished) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),

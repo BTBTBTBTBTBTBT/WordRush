@@ -359,6 +359,7 @@ object AuthService {
      * Fire-and-forget: the result arrives via the deep link, not a return value.
      */
     private fun startBrowserGoogleSignIn(context: android.content.Context) {
+        SettingsPref.remove(PENDING_LINK) // a sign-in, not a link round trip
         scope.launch {
             runCatching {
                 client.auth.signInWith(
@@ -380,6 +381,7 @@ object AuthService {
      * holding a perfectly good session.
      */
     fun completeBrowserSignIn(intent: android.content.Intent) {
+        if (completeIdentityLink(intent)) return
         client.handleDeeplinks(intent) { _ ->
             scope.launch {
                 val uid = client.auth.currentUserOrNull()?.id ?: return@launch
@@ -389,6 +391,99 @@ object AuthService {
                 SettingsPref.set(HAD_SESSION, true)
             }
         }
+    }
+
+    // ── Linked sign-ins (founder, 2026-09-30; web components/settings/linked-sign-ins.tsx) ──
+
+    /** One sign-in attached to the account (Supabase identity). */
+    data class LinkedIdentity(val identityId: String, val provider: String, val email: String?)
+    /** A result line under Settings › Linked sign-ins; [ok] = green, else red. */
+    data class LinkNotice(val ok: Boolean, val text: String)
+
+    private val _identities = MutableStateFlow<List<LinkedIdentity>?>(null)
+    /** null = not loaded yet. */
+    val identities: StateFlow<List<LinkedIdentity>?> = _identities.asStateFlow()
+    private val _linkNotice = MutableStateFlow<LinkNotice?>(null)
+    val linkNotice: StateFlow<LinkNotice?> = _linkNotice.asStateFlow()
+    fun clearLinkNotice() { _linkNotice.value = null }
+
+    /** Provider of a link round trip in flight (persisted: the process may die behind the browser). */
+    private const val PENDING_LINK = "pending-identity-link"
+
+    /** Reads the account's identities fresh from the server; false on failure. */
+    suspend fun loadIdentities(): Boolean = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        runCatching {
+            val user = client.auth.retrieveUserForCurrentSession(updateSession = true)
+            _identities.value = user.identities.orEmpty().map { id ->
+                val email = (id.identityData?.get("email") as? kotlinx.serialization.json.JsonPrimitive)
+                    ?.takeIf { it.isString }?.content?.takeIf { it.isNotEmpty() }
+                LinkedIdentity(id.identityId ?: id.id, id.provider, email)
+            }
+            true
+        }.getOrElse { false }
+    }
+
+    /**
+     * Link Google onto the signed-in account: supabase-kt manual linking opens Google in a Custom
+     * Tab and the provider returns to wordocious://auth-callback, where [completeIdentityLink]
+     * reads the outcome. Returns an error message when the round trip can't start.
+     */
+    suspend fun linkGoogle(): String? {
+        _linkNotice.value = null
+        SettingsPref.set(PENDING_LINK, "google")
+        return try {
+            client.auth.linkIdentity(io.github.jan.supabase.auth.providers.Google)
+            null
+        } catch (e: Exception) {
+            SettingsPref.remove(PENDING_LINK)
+            val code = (e as? io.github.jan.supabase.auth.exception.AuthRestException)?.errorCode?.value ?: ""
+            IdentityLinking.linkErrorMessage(code, e.message.orEmpty().take(160), "google")
+        }
+    }
+
+    /** Remove one sign-in (never the last). Returns an error message, or null on success. */
+    suspend fun unlinkIdentity(identity: LinkedIdentity): String? {
+        val count = _identities.value?.size ?: 0
+        if (!IdentityLinking.canUnlink(count)) return IdentityLinking.unlinkErrorMessage("single_identity_not_deletable", "")
+        return try {
+            client.auth.unlinkIdentity(identity.identityId)
+            // The access token's identity claims are stale until a refresh.
+            runCatching { client.auth.refreshCurrentSession() }
+            loadIdentities()
+            null
+        } catch (e: Exception) {
+            val code = (e as? io.github.jan.supabase.auth.exception.AuthRestException)?.errorCode?.value ?: ""
+            IdentityLinking.unlinkErrorMessage(code, e.message.orEmpty().take(160))
+        }
+    }
+
+    /**
+     * Return leg of [linkGoogle]. True when this intent was a link round trip (handled here):
+     * GoTrue's error params (identity_already_exists → "That Google account is already used by
+     * another Wordocious account…") become the notice; on success the refreshed session is
+     * imported and the identity list reloaded.
+     */
+    private fun completeIdentityLink(intent: android.content.Intent): Boolean {
+        val provider = SettingsPref.get(PENDING_LINK, "")
+        val data = intent.data ?: return false
+        if (provider.isEmpty() || data.scheme != "wordocious" || data.host != "auth-callback") return false
+        SettingsPref.remove(PENDING_LINK)
+        // Cold process (killed behind the browser): let the normal sign-in leg restore the session.
+        if (!_isAuthenticated.value) return false
+        val label = IdentityLinking.providerLabel(provider)
+        IdentityLinking.readRedirectError(data.toString())?.let { err ->
+            _linkNotice.value = LinkNotice(false, IdentityLinking.linkErrorMessage(err.code, err.description, provider))
+            return true
+        }
+        client.handleDeeplinks(intent) { _ ->
+            scope.launch {
+                loadIdentities()
+                _linkNotice.value = if (_identities.value.orEmpty().any { it.provider == provider })
+                    LinkNotice(true, "$label is now linked. You can sign in with it on any device.")
+                else LinkNotice(false, "$label wasn’t linked. Please try again.")
+            }
+        }
+        return true
     }
 
     suspend fun signInWithEmail(email: String, password: String): String? {
@@ -480,6 +575,9 @@ object AuthService {
         // guarded against is now closed on the sign-IN side by claimSavesFor,
         // which only wipes when the save owner actually changes.
         _profile.value = null
+        _identities.value = null
+        _linkNotice.value = null
+        SettingsPref.remove(PENDING_LINK)
         _isAuthenticated.value = false
         _isGuest.value = false
         SettingsPref.set(HAD_SESSION, false)

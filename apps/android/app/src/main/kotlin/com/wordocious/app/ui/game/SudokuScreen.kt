@@ -303,7 +303,34 @@ fun SudokuScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    // Physical keyboard (founder, 2026-09-30; web sudoku-game.tsx): 1–9 place, Backspace/Delete/0
+    // erase, N notes, H hint, Ctrl/Cmd+Z undo, arrows move the selected cell.
+    Box(
+        Modifier.fillMaxSize()
+            .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
+                when {
+                    k is HwKey.Digit && k.n in 1..9 -> { session.place(k.n, onFinished); true }
+                    k.isErase || (k is HwKey.Digit && k.n == 0) -> { session.erase(onFinished); true }
+                    k == HwKey.Letter('N') -> { session.toggleNotes(onFinished); true }
+                    k == HwKey.Letter('H') -> { session.hint(onFinished); true }
+                    k == HwKey.Undo -> { session.undo(onFinished); true }
+                    k == HwKey.Up || k == HwKey.Down || k == HwKey.Left || k == HwKey.Right -> {
+                        val cur = session.selected ?: 0
+                        val r = cur / 9
+                        val c = cur % 9
+                        when (k) {
+                            HwKey.Up -> if (r > 0) session.selected = cur - 9
+                            HwKey.Down -> if (r < 8) session.selected = cur + 9
+                            HwKey.Left -> if (c > 0) session.selected = cur - 1
+                            else -> if (c < 8) session.selected = cur + 1
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            }
+            .background(WTheme.bg).statusBarsPadding(),
+    ) {
         if (session.isFinished) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),

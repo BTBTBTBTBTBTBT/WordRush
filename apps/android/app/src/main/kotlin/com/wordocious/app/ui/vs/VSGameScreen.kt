@@ -73,6 +73,8 @@ import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.game.GauntletStepper
 import com.wordocious.app.ui.game.HintPills
 import com.wordocious.app.ui.game.KeyboardView
+import com.wordocious.app.ui.game.hardwareKeys
+import com.wordocious.app.ui.game.keyboardViewKeys
 import com.wordocious.app.ui.game.MultiBoardLayout
 import com.wordocious.app.ui.game.ProperNoundleHints
 import com.wordocious.app.ui.game.SingleBoard
@@ -530,7 +532,22 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
         )
     }
 
-    Box(Modifier.fillMaxSize()) {
+    // Physical keyboard (founder, 2026-09-30): same keys as the on-screen keyboard; inert during
+    // the intro/countdown, a Gauntlet stage interstitial, the forfeit dialog and once finished.
+    val vsStageCleared = vm.mode == GameMode.GAUNTLET && state.gauntlet != null &&
+        state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
+        state.boards.all { it.status == GameStatus.WON }
+    val keysLive = state.status == GameStatus.PLAYING && vm.countdown == null && !vm.showIntro &&
+        !confirmForfeit && !vsStageCleared
+    Box(
+        Modifier.fillMaxSize().hardwareKeys(enabled = keysLive) { k ->
+            keyboardViewKeys(
+                onKey = { game.typeLetter(it) },
+                onDelete = { game.deleteLetter() },
+                onEnter = { game.submit(applyToAll = multiBoard) },
+            )(k)
+        },
+    ) {
     // statusBarsPadding: VS never got the inset the solo screens did — the
     // earlier status-bar sweep touched only the disconnect banner in this file,
     // so on Android 15+ the home button, VS title and clock drew underneath the
