@@ -124,6 +124,10 @@ final class SpyglassVM: ObservableObject {
 
     func select(from: Int, to: Int) {
         guard !isFinished else { return }
+        // A theme word hiding in the filler (founder, 2026-09-30: STARS in Night Sky) — never a miss.
+        if let near = wordsearchNearWord(state, from: from, to: to) {
+            SoundManager.shared.playKeyTap(); flash("\(near) fits the theme, but it's not one of today's 10"); return
+        }
         let before = state
         dispatch(.select(from: from, to: to))
         if state.found.count > before.found.count { Haptics.tap(); SoundManager.shared.playSuccess() }

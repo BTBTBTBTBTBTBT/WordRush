@@ -18,9 +18,13 @@ final class WordsearchFixtureTests: XCTestCase {
     private struct Script: Decodable { let name: String; let id: String; let actions: [Act]; let expect: Expect; let row: Row; let reconstruct: Recon? }
     private struct Geo: Decodable { let from: Int; let to: Int; let line: [Int]? }
     private struct Place: Decodable { let w: String; let r: Int; let c: Int; let d: String; let cells: [Int] }
+    private struct NearCase: Decodable { let from: Int; let to: Int; let word: String? }
+    private struct NearExpect: Decodable { let misses: Int; let events: [String]; let found: [String] }
+    private struct Near: Decodable { let id: String; let list: [String]; let cases: [NearCase]; let actions: [Act]; let expect: NearExpect }
     private struct Fixtures: Decodable {
         let epoch: String; let dailyCount: Int; let extraCount: Int; let days: [DayCase]; let seeds: [SeedCase]
         let puzzle: WordsearchPuzzle; let reducer: [Script]; let geometry: [Geo]; let placements: [Place]; let malformed: Recon?
+        let near: Near
     }
 
     private func fixtureData(_ name: String) throws -> Data {
@@ -82,5 +86,25 @@ final class WordsearchFixtureTests: XCTestCase {
             XCTAssertEqual(r?.solved, sc.reconstruct?.solved); XCTAssertEqual(r?.title, sc.reconstruct?.title)
         }
         XCTAssertNil(f.malformed); XCTAssertNil(reconstructWordsearch(solutions: ["nope"], guesses: []))
+    }
+
+    // Close calls (founder, 2026-09-30): Night Sky hides STAR/STARS in its filler — never a miss.
+    func testCloseCallsMatchSharedFixtures() throws {
+        let f = try load(); let b = try bank()
+        guard let p = (b.daily + b.extra).first(where: { $0.id == f.near.id }) else { return XCTFail("missing \(f.near.id)") }
+        XCTAssertEqual(p.near ?? [], f.near.list)
+        let fresh = WordsearchState(puzzle: p, seed: "fixture", startTime: 0)
+        XCTAssertEqual(fresh.near, f.near.list)
+        for c in f.near.cases { XCTAssertEqual(wordsearchNearWord(fresh, from: c.from, to: c.to), c.word, "near \(c.from)→\(c.to)") }
+        var s = fresh
+        for a in f.near.actions { s = wordsearchReduce(s, action(a), now: 1000) }
+        XCTAssertEqual(s.misses, f.near.expect.misses)
+        XCTAssertEqual(s.events, f.near.expect.events)
+        XCTAssertEqual(s.found, f.near.expect.found)
+        // A save from before close calls (no "near" key) still decodes, with near = [].
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(s)) as! [String: Any]
+        json.removeValue(forKey: "near")
+        let old = try JSONDecoder().decode(WordsearchState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(old.near, []); XCTAssertEqual(old.misses, s.misses)
     }
 }

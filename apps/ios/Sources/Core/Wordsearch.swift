@@ -8,6 +8,9 @@ import Foundation
 // list word. Hidden list (2026-09-26): the words start hidden; Show words lists the
 // rest and every later find counts like a miss. guess_count = min(10 + misses + lateFinds, 15).
 // Event sigils: + ~ x ? = !
+// Close calls (founder, 2026-09-30): a selection spelling one of the puzzle's `near` words — a theme
+// word or plural that really sits in the grid but is not on the list — is never a miss; the UI says
+// it fits the theme but isn't one of today's 10.
 
 public let WORDSEARCH_DAILY_EPOCH = "2026-09-23"
 public let WORDSEARCH_N = 10
@@ -34,8 +37,10 @@ public struct WordsearchPuzzle: Codable, Equatable {
     public let title: String
     public let grid: String
     public let words: [WordsearchPlacement]
-    public init(id: String, theme: String, family: String, title: String, grid: String, words: [WordsearchPlacement]) {
-        self.id = id; self.theme = theme; self.family = family; self.title = title; self.grid = grid; self.words = words
+    /// Close calls: theme words / plurals in the grid that are not list words (never a miss).
+    public let near: [String]?
+    public init(id: String, theme: String, family: String, title: String, grid: String, words: [WordsearchPlacement], near: [String]? = nil) {
+        self.id = id; self.theme = theme; self.family = family; self.title = title; self.grid = grid; self.words = words; self.near = near
     }
 }
 
@@ -93,6 +98,8 @@ public struct WordsearchState: Codable, Equatable {
     public let n: Int
     public let grid: String
     public let words: [WordsearchPlacement]
+    /// Close calls from the puzzle (saves from before 2026-09-30 lack it — decoded as []).
+    public let near: [String]
     public var found: [String]
     public var misses: Int
     public var hintsUsed: Int
@@ -107,16 +114,17 @@ public struct WordsearchState: Codable, Equatable {
     public var endTime: Double?
 
     public init(puzzle: WordsearchPuzzle, seed: String, startTime: Double) {
-        self.seed = seed; id = puzzle.id; title = puzzle.title; n = WORDSEARCH_N; grid = puzzle.grid; words = puzzle.words
+        self.seed = seed; id = puzzle.id; title = puzzle.title; n = WORDSEARCH_N; grid = puzzle.grid; words = puzzle.words; near = puzzle.near ?? []
         found = []; misses = 0; hintsUsed = 0; hinted = []; wordsShown = false; lateFinds = 0; events = []; status = .playing; self.startTime = startTime; endTime = nil
     }
 
-    // Saves written before Show words existed lack the two new keys — decode them as their zero values.
-    private enum CodingKeys: String, CodingKey { case seed, id, title, n, grid, words, found, misses, hintsUsed, hinted, wordsShown, lateFinds, events, status, startTime, endTime }
+    // Saves written before Show words / close calls existed lack those keys — decode them as their zero values.
+    private enum CodingKeys: String, CodingKey { case seed, id, title, n, grid, words, near, found, misses, hintsUsed, hinted, wordsShown, lateFinds, events, status, startTime, endTime }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         seed = try c.decode(String.self, forKey: .seed); id = try c.decode(String.self, forKey: .id); title = try c.decode(String.self, forKey: .title)
         n = try c.decode(Int.self, forKey: .n); grid = try c.decode(String.self, forKey: .grid); words = try c.decode([WordsearchPlacement].self, forKey: .words)
+        near = try c.decodeIfPresent([String].self, forKey: .near) ?? []
         found = try c.decode([String].self, forKey: .found); misses = try c.decode(Int.self, forKey: .misses); hintsUsed = try c.decode(Int.self, forKey: .hintsUsed)
         hinted = try c.decode([String].self, forKey: .hinted)
         wordsShown = try c.decodeIfPresent(Bool.self, forKey: .wordsShown) ?? false
@@ -141,6 +149,16 @@ public enum WordsearchAction: Equatable {
     case finish
 }
 
+/// The close-call word a selection spells (forwards or backwards), if it is not a list word; else nil.
+public func wordsearchNearWord(_ s: WordsearchState, from: Int, to: Int) -> String? {
+    guard !s.near.isEmpty, let line = wordsearchLine(s.n, from: from, to: to) else { return nil }
+    let chars = Array(s.grid)
+    let letters = String(line.map { chars[$0] })
+    let reversed = String(letters.reversed())
+    if s.words.contains(where: { $0.w == letters || $0.w == reversed }) { return nil }
+    return s.near.first { $0 == letters || $0 == reversed }
+}
+
 public func wordsearchReduce(_ s: WordsearchState, _ a: WordsearchAction, now: Double = 0) -> WordsearchState {
     if case .finish = a { if s.status == .playing { return s }; var n = s; n.endTime = s.endTime ?? now; return n }
     guard s.status == .playing else { return s }
@@ -159,6 +177,7 @@ public func wordsearchReduce(_ s: WordsearchState, _ a: WordsearchAction, now: D
             return n
         }
         if line.count < WORDSEARCH_MIN_MISS_LENGTH { return s }
+        if s.near.contains(where: { $0 == letters || $0 == reversed }) { return s } // close call: never a miss
         var n = s
         n.misses += 1
         n.events.append("x \(from / s.n),\(from % s.n)>\(to / s.n),\(to % s.n)")
