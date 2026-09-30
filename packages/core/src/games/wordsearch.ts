@@ -28,6 +28,10 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../bank';
  * wordsearch-fixtures.json pins all three. Event strings start with a
  * non-letter sigil (§11): "+WORD" found, "~WORD" found after Show words,
  * "x r,c>r,c" miss, "?WORD" hint, "=" words shown, "!" reveal.
+ *
+ * Close calls (founder, 2026-09-30): a selection spelling one of the puzzle's `near` words — a theme
+ * word or plural that really sits in the grid but is not on the list (precomputed by
+ * scripts/wordsearch/add-near.mjs) — is never a miss; the UI says it fits but isn't one of today's ten.
  */
 
 export const WORDSEARCH_DAILY_EPOCH = '2026-09-23';
@@ -50,6 +54,8 @@ export interface WordsearchPuzzle {
   /** n*n uppercase letters, row-major. */
   grid: string;
   words: WordsearchPlacement[];
+  /** Close calls: theme words / plurals in the grid that are not list words (never a miss). */
+  near?: string[];
 }
 
 export interface WordsearchBank {
@@ -107,6 +113,8 @@ export interface WordsearchState {
   n: number;
   grid: string;
   words: WordsearchPlacement[];
+  /** Close calls from the puzzle (optional: saves from before 2026-09-30 lack it). */
+  near?: string[];
   /** List words found so far, in the order found. */
   found: string[];
   misses: number;
@@ -132,7 +140,7 @@ export type WordsearchAction =
 
 export function createWordsearchState(puzzle: WordsearchPuzzle, seed: string, startTime: number): WordsearchState {
   return {
-    seed, id: puzzle.id, title: puzzle.title, n: WORDSEARCH_N, grid: puzzle.grid, words: puzzle.words,
+    seed, id: puzzle.id, title: puzzle.title, n: WORDSEARCH_N, grid: puzzle.grid, words: puzzle.words, near: puzzle.near ?? [],
     found: [], misses: 0, hintsUsed: 0, hinted: [], wordsShown: false, lateFinds: 0, events: [], status: 'playing', startTime, endTime: null,
   };
 }
@@ -147,6 +155,18 @@ export function wordsearchGuessCount(s: { misses: number; lateFinds?: number }):
 export function wordsearchNextUnfound(s: WordsearchState): WordsearchPlacement | null {
   return s.words.find((p) => !s.found.includes(p.w) && !s.hinted.includes(p.w))
     ?? s.words.find((p) => !s.found.includes(p.w)) ?? null;
+}
+
+/** The close-call word a selection spells (forwards or backwards), if it is not a list word; else null. */
+export function wordsearchNearWord(s: WordsearchState, from: number, to: number): string | null {
+  const near = s.near ?? [];
+  if (!near.length) return null;
+  const line = wordsearchLine(s.n, from, to);
+  if (!line) return null;
+  const letters = line.map((i) => s.grid[i]).join('');
+  const reversed = letters.split('').reverse().join('');
+  if (s.words.some((p) => p.w === letters || p.w === reversed)) return null;
+  return near.find((w) => w === letters || w === reversed) ?? null;
 }
 
 export function wordsearchReduce(s: WordsearchState, a: WordsearchAction, now = 0): WordsearchState {
@@ -171,6 +191,7 @@ export function wordsearchReduce(s: WordsearchState, a: WordsearchAction, now = 
         };
       }
       if (line.length < WORDSEARCH_MIN_MISS_LENGTH) return s;
+      if ((s.near ?? []).some((w) => w === letters || w === reversed)) return s; // close call: never a miss
       const r0 = Math.floor(a.from / s.n), c0 = a.from % s.n, r1 = Math.floor(a.to / s.n), c1 = a.to % s.n;
       return { ...s, misses: s.misses + 1, events: [...s.events, `x ${r0},${c0}>${r1},${c1}`] };
     }

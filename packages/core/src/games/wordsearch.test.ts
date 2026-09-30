@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, wordsearchCells, wordsearchLine,
   createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchGuessCount, wordsearchNextUnfound,
-  WORDSEARCH_DIRS, WORDSEARCH_N, type WordsearchBank, type WordsearchPuzzle,
+  WORDSEARCH_DIRS, WORDSEARCH_N, wordsearchNearWord, type WordsearchBank, type WordsearchPuzzle,
 } from './wordsearch';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
@@ -109,6 +109,18 @@ describe.skipIf(!bank)('Spyglass bank', () => {
         expect(letters, `${q.id} ${w.w}`).toBe(w.w);
       }
     }
+  });
+  it('treats a theme word hiding in the filler as a close call, never a miss (Night Sky STAR/STARS)', () => {
+    const ns = b.daily.find((q) => q.id === 'ws0008')!;
+    expect(ns.near).toEqual(['STAR', 'STARS']);
+    let s = createWordsearchState(ns, 'x', 0);
+    expect(wordsearchNearWord(s, 98, 58)).toBe('STARS');
+    expect(wordsearchNearWord(s, 58, 98)).toBe('STARS');
+    expect(wordsearchNearWord(s, 98, 68)).toBe('STAR');
+    s = wordsearchReduce(s, { type: 'SELECT', from: 98, to: 58 });
+    s = wordsearchReduce(s, { type: 'SELECT', from: 98, to: 68 });
+    expect(s.misses).toBe(0);
+    for (const q of [...b.daily, ...b.extra]) for (const w of q.near ?? []) expect(q.words.some((p) => p.w === w), `${q.id} ${w}`).toBe(false);
   });
   it('keeps the variety rules: no theme within 120 days, no consecutive family, no word within 45 days', () => {
     const lastTheme = new Map<string, number>(), lastWord = new Map<string, number>();

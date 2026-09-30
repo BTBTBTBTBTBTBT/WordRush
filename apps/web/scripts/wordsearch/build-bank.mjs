@@ -15,6 +15,7 @@
 // Deterministic (seeded) — APPEND-ONLY once shipped.
 //
 //   node apps/web/scripts/wordsearch/build-bank.mjs [--daily=400] [--extra=150]
+import { addNear } from './add-near.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset } from '../more-games/lib.mjs';
@@ -144,7 +145,7 @@ for (let i = 0; i < EXTRA_COUNT; i++) {
   extra.push({ id: `ws${String(serial).padStart(4, '0')}`, theme: t.key, family: t.family, title: t.title, ...laid });
 }
 
-const bank = { version: 1, epoch: EPOCH, daily, extra };
+const bank = addNear({ version: 1, epoch: EPOCH, daily, extra }, themes); // close calls (add-near.mjs)
 const out = path.join(DATA, 'wordsearch-puzzles.json');
 fs.writeFileSync(out, JSON.stringify(bank) + '\n');
 const famRuns = daily.reduce((m, p) => ((m[p.family] = (m[p.family] || 0) + 1), m), {});

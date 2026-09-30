@@ -115,6 +115,9 @@
         "c": 4,
         "d": "E"
       }
+    ],
+    "near": [
+      "MEADOWS"
     ]
   },
   "reducer": [
@@ -1371,5 +1374,58 @@
       ]
     }
   ],
-  "malformed": null
+  "malformed": null,
+  "near": {
+    "id": "ws0008",
+    "list": [
+      "STAR",
+      "STARS"
+    ],
+    "cases": [
+      {
+        "from": 98,
+        "to": 58,
+        "word": "STARS"
+      },
+      {
+        "from": 58,
+        "to": 98,
+        "word": "STARS"
+      },
+      {
+        "from": 98,
+        "to": 68,
+        "word": "STAR"
+      },
+      {
+        "from": 0,
+        "to": 3,
+        "word": null
+      }
+    ],
+    "actions": [
+      {
+        "type": "SELECT",
+        "from": 98,
+        "to": 58
+      },
+      {
+        "type": "SELECT",
+        "from": 98,
+        "to": 68
+      },
+      {
+        "type": "SELECT",
+        "from": 0,
+        "to": 3
+      }
+    ],
+    "expect": {
+      "misses": 1,
+      "events": [
+        "x 0,0>0,3"
+      ],
+      "found": []
+    }
+  }
 }

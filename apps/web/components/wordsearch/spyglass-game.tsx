@@ -8,7 +8,7 @@ const VictoryAnimation = dynamic(() => import('@/components/effects/victory-anim
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock, Lightbulb, List, Eye } from 'lucide-react';
 import {
-  wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount,
+  wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount, wordsearchNearWord,
   generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank, type WordsearchPuzzle,
 } from '@wordle-duel/core';
 import { bankSession } from '@/lib/bank-loader';
@@ -147,14 +147,17 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
     return () => { cancelled = true; };
   }, [completion, profile, mode]);
 
-  const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
+  const flash = useCallback((m: string, ms = 1400) => { setMessage(m); setTimeout(() => setMessage(''), ms); }, []);
 
   const dispatch = useCallback((a: WordsearchAction) => {
     setState((s) => {
       if (!s) return s;
       const next = wordsearchReduce(s, a, Date.now());
       if (a.type === 'SELECT') {
-        if (next.found.length > s.found.length) { haptic('light'); playSuccess(); }
+        // A theme word hiding in the filler (founder, 2026-09-30: STARS in Night Sky) — never a miss.
+        const near = next === s ? wordsearchNearWord(s, a.from, a.to) : null;
+        if (near) { playKeyTap(); flash(`${near} fits the theme, but it's not one of today's 10`, 2600); }
+        else if (next.found.length > s.found.length) { haptic('light'); playSuccess(); }
         else if (next.misses > s.misses) { haptic('medium'); playInvalid(); flash('Not one of the words'); }
       } else if (a.type === 'HINT' && next.hintsUsed > s.hintsUsed) { playKeyTap(); }
       return next;

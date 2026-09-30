@@ -33,7 +33,7 @@ import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber,
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
-import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
+import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -380,7 +380,15 @@ export function renderWordsearchFixtures() {
   });
   const geometry = [[0, 4], [4, 0], [0, 33], [90, 63], [0, 12], [7, 7], [0, 100]].map(([from, to]) => ({ from, to, line: wordsearchLine(n, from, to) }));
   const placements = p.words.map((w) => ({ ...w, cells: wordsearchCells(n, w) }));
-  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, reducer, geometry, placements, malformed: reconstructWordsearch(['nope'], []) };
+  // Close calls (founder, 2026-09-30): Night Sky (ws0008) hides STAR/STARS in its filler (col 8, rows 9 → 5).
+  const ns = bank.daily.find((q) => q.id === 'ws0008')!;
+  const nearCases = [{ from: 98, to: 58 }, { from: 58, to: 98 }, { from: 98, to: 68 }, { from: 0, to: 3 }]
+    .map((c) => ({ ...c, word: wordsearchNearWord(createWordsearchState(ns, 'fixture', 0), c.from, c.to) }));
+  let nsState = createWordsearchState(ns, 'fixture', 0);
+  const nearActions: WordsearchAction[] = [{ type: 'SELECT', from: 98, to: 58 }, { type: 'SELECT', from: 98, to: 68 }, { type: 'SELECT', from: 0, to: 3 }];
+  for (const a of nearActions) nsState = wordsearchReduce(nsState, a, 1000);
+  const near = { id: ns.id, list: ns.near ?? [], cases: nearCases, actions: nearActions, expect: { misses: nsState.misses, events: nsState.events, found: nsState.found } };
+  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, reducer, geometry, placements, malformed: reconstructWordsearch(['nope'], []), near };
 }
 
 // More Games §12: Hubbub. Bank lookups use the REAL shipped bank; scoring
