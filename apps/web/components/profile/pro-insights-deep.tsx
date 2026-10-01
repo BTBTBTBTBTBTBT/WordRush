@@ -150,13 +150,15 @@ export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolea
 
 const HINT_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE']);
 
-export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType = 'solo' }: {
+export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType = 'solo', openers: showOpeners = true, positions: showPositions = true }: {
   userId: string; gameMode: string; isPro: boolean; accentColor: string; playType?: StatsPlayType;
+  /** The mode's statPanels flags — ProperNoundle names get neither card. */
+  openers?: boolean; positions?: boolean;
 }) {
-  const { data } = useSWR(isPro && playType !== 'vs_cpu' ? ['pro-deep', userId, gameMode, playType] : null, async () => {
+  const { data } = useSWR(isPro && playType !== 'vs_cpu' ? ['pro-deep', userId, gameMode, playType, showOpeners, showPositions] : null, async () => {
     const [openers, positions, almanac, hints, gauntlet] = await Promise.all([
-      fetchOpenerDeep(userId, gameMode, 4, playType),
-      fetchPositionAccuracy(userId, gameMode, playType),
+      showOpeners ? fetchOpenerDeep(userId, gameMode, 4, playType) : Promise.resolve([]),
+      showPositions ? fetchPositionAccuracy(userId, gameMode, playType) : Promise.resolve(null),
       fetchWordAlmanac(userId, gameMode, 24, playType),
       HINT_MODES.has(gameMode) ? fetchHintHonesty(userId, gameMode, playType) : Promise.resolve(null),
       gameMode === 'GAUNTLET' ? fetchGauntletStageStats(userId, playType) : Promise.resolve([]),

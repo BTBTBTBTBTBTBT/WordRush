@@ -239,8 +239,13 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
           )}
 
           {/* Deep Insights (restat R4): opener yield, position accuracy,
-              stage breakdown (Gauntlet), hints, Word Almanac. */}
-          <ProDeepModeCard userId={userId} gameMode={gameMode} isPro={isPro} accentColor={accentColor} playType={playType} />
+              stage breakdown (Gauntlet), hints, Word Almanac — word games only (founder,
+              2026-09-30: Sudocious/Starsweep stored 81-cell boards as "words", and Position
+              Accuracy drew 81 slots that stretched the page sideways). */}
+          {meta?.engine === 'word' && (
+            <ProDeepModeCard userId={userId} gameMode={gameMode} isPro={isPro} accentColor={accentColor} playType={playType}
+              openers={panels.openerYield} positions={panels.positionAccuracy} />
+          )}
 
           {/* CPU practice writes aggregate totals only — per-game charts have
               no data to draw from, so say so instead of showing blanks. */}

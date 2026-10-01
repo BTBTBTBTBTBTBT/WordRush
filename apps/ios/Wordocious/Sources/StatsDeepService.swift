@@ -249,6 +249,8 @@ enum StatsDeepService {
         else { rows = await myGuessRows(gameMode: gameMode, playType: playType) }
         guard let firstSolution = rows.first?.solutions.first else { return nil }
         let wordLength = firstSolution.count
+        // A word, never a board: a custom engine's 81-cell grid would draw 81 slots.
+        guard (3...8).contains(wordLength) else { return nil }
         var correct = [Int](repeating: 0, count: wordLength)
         var total = 0
         for r in rows {

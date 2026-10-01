@@ -283,6 +283,12 @@ private val DEEP_SAMPLE = DeepData(
  */
 @Composable
 fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: () -> Unit, playType: String = "solo") {
+    // Word games only (founder, 2026-09-30: Sudocious/Starsweep store 81-cell boards as their
+    // "words", and Position Accuracy drew 81 slots across the Stats page).
+    val meta = com.wordocious.app.ModeGen.byDbKey(gameMode)
+    if (meta?.engine != "word") return
+    // The mode's statPanels flags — ProperNoundle names get neither card.
+    val panels = com.wordocious.app.data.ModeStats.statPanels(gameMode, meta.guessSemantics)
     // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
     // the card used to be absent on every Stats page swap, then pop in and shove the page
     // down (founder, 2026-09-29).
@@ -310,8 +316,8 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
             val positionsD = async { StatsDeepService.positionAccuracy(uid, gameMode, playType, preloaded = rows) }
             val hintsD = async { if (gameMode in HINT_MODES) StatsDeepService.hintHonesty(uid, gameMode, playType, preloaded = rows) else null }
             DeepData(
-                openers = openersD.await(),
-                positions = positionsD.await(),
+                openers = if (panels.openerYield) openersD.await() else emptyList(),
+                positions = if (panels.positionAccuracy) positionsD.await() else null,
                 almanac = almanacD.await(),
                 hints = hintsD.await(),
                 gauntlet = gauntletD.await(),

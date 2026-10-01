@@ -324,10 +324,20 @@ struct ProDeepModeCard: View {
         ],
         hints: nil, gauntlet: [])
 
+    /// Word games only (founder, 2026-09-30: Sudocious/Starsweep store 81-cell boards as their
+    /// "words", and Position Accuracy drew 81 slots that stretched the Stats page sideways).
+    private var isWordGame: Bool { ModeGen.byDbKey(gameMode)?.engine == "word" }
+    /// The mode's statPanels flags — ProperNoundle names get neither card.
+    private var panels: WordociousCore.StatPanels {
+        WordociousCore.ModeStats.statPanels(dbKey: gameMode, semantics: ModeGen.byDbKey(gameMode)?.guessSemantics ?? "guesses")
+    }
+
     var body: some View {
         let d = isPro ? data : Self.sample
         Group {
-            if isPro, data == nil, playType != "vs_cpu" {
+            if !isWordGame {
+                Color.clear.frame(height: 0)
+            } else if isPro, data == nil, playType != "vs_cpu" {
                 StatsCardPlaceholder(title: "Deep Insights", accent: accent, height: 200)
             } else if isPro, let real = data, !real.hasAny, playType != "vs_cpu" {
                 StatsEmptyCard(title: "Deep Insights", accent: accent,
@@ -351,7 +361,8 @@ struct ProDeepModeCard: View {
             }
         }
         .task(id: "\(gameMode)-\(isPro)-\(playType)") {
-            guard isPro, playType != "vs_cpu" else { return }
+            guard isPro, playType != "vs_cpu", isWordGame else { return }
+            let showOpeners = panels.openerYield, showPositions = panels.positionAccuracy
             // P-cache: seed from the session memo so re-tapping a mode paints
             // instantly; the fresh fetch below swaps in as before.
             let memoKey = Self.memoKey(gameMode, playType)
@@ -369,7 +380,7 @@ struct ProDeepModeCard: View {
                                                              rows: Array(rows.prefix(24)))
             let hints = HINT_MODES.contains(gameMode)
                 ? await StatsDeepService.hintHonesty(gameMode: gameMode, playType: playType, rows: rows) : nil
-            let fresh = DeepData(openers: await openers, positions: await positions,
+            let fresh = DeepData(openers: showOpeners ? await openers : [], positions: showPositions ? await positions : nil,
                                  almanac: await almanac, hints: hints, gauntlet: await gauntletF)
             data = fresh
             StatsMemo.shared.set(memoKey, fresh)

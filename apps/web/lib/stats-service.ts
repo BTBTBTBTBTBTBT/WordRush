@@ -2068,6 +2068,8 @@ export async function fetchPositionAccuracy(userId: string, gameMode: string, pl
   const rows = await fetchMyGuessRows(userId, gameMode, 400, playType);
   if (rows.length === 0) return null;
   const wordLength = rows[0].solutions[0]?.length ?? 5;
+  // A word, never a board: a custom engine's 81-cell grid would draw 81 slots.
+  if (wordLength < 3 || wordLength > 8) return null;
   const correct = new Array(wordLength).fill(0);
   let total = 0;
   for (const r of rows) {

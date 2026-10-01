@@ -251,6 +251,8 @@ object StatsDeepService {
         if (playType == "vs_cpu") return null
         val rows = preloaded ?: myGuessRows(userId, gameMode, playType = playType)
         val wordLength = rows.firstOrNull()?.solutions?.firstOrNull()?.length ?: return null
+        // A word, never a board: a custom engine's 81-cell grid would draw 81 slots.
+        if (wordLength !in 3..8) return null
         val correct = IntArray(wordLength)
         var total = 0
         for (r in rows) {
