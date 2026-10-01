@@ -5,9 +5,12 @@ require "jwt"; require "json"; require "net/http"; require "openssl"
 # disk and never printed.
 APP = "6775966055"; VERSION = ENV.fetch("VER", "2.3"); BUILD = ENV.fetch("BUILD", "204")
 WHATS_NEW = <<~TXT.strip
-  • Spyglass: tracing a word that fits the theme but isn't on today's list no longer counts as a miss.
-  • Leaderboards and Records show hints used in every game that has hints, so you can see why a score ranks where it does.
-  • Fixed the Sudocious and Starsweep Stats pages stretching sideways and getting stuck.
+  • A new home screen: one banner shows your whole day across Wordocious and the 10 Puzzles, with a streak for each and a gold glow when you go flawless.
+  • Puzzles now sit right on the home screen, no extra menu.
+  • Word of the Day is a quick quiz: pick the real definition and build a word streak.
+  • Pro: the Daily / Unlimited switch now lives in the banner.
+  • Stats: a chart for every puzzle, Puzzles sweep records, a Word of the Day record, and VS stats on the All-time page.
+  • Refreshed widgets and a cleaner streak saver.
 TXT
 kid = "C8FRS9T697"; iss = "8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
 p8 = File.join(Dir.home, ".appstoreconnect/private_keys/AuthKey_#{kid}.p8")
