@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { parseDateKey, wordOfDay, dateKey } from '@/lib/word-of-day';
+import { wordQuizFor } from '@/lib/word-quiz';
 
 /**
  * Today's Word of the Day + definition for the home card, from the committed
@@ -23,8 +24,13 @@ export async function GET(req: Request) {
   const date = parseDateKey(key);
   if (!date) return NextResponse.json(null, { status: 400 });
   const e = await wordOfDay(date);
+  // Home redesign (founder, 2026-10-01): the card is a three-choice quiz. Every
+  // platform reads the same choices from here; null = no quiz today, plain card.
+  // After answering, the card shows choices[answer] (the sense the quiz asked about).
+  const quiz = wordQuizFor(date, e.word);
   return NextResponse.json(
-    { word: e.word, phonetic: e.phonetic || '', partOfSpeech: e.partOfSpeech || '', definition: e.definition || '' },
+    { word: e.word, phonetic: e.phonetic || '', partOfSpeech: e.partOfSpeech || '', definition: e.definition || '',
+      choices: quiz?.choices ?? null, answer: quiz?.answer ?? null, quizPartOfSpeech: quiz?.partOfSpeech ?? null },
     { headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400' } },
   );
 }

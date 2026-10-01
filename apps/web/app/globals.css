@@ -626,6 +626,12 @@
   100% { transform: translateX(220%) skewX(-18deg); }
 }
 .animate-foil-sweep { animation: foil-sweep 2.4s ease-in-out infinite; }
+/* Home banner (redesign, 2026-10-01): ONE band across the whole two-color card, a ~2.2 s pass then a rest. */
+@keyframes banner-shimmer {
+  0%        { transform: translateX(-140%) skewX(-18deg); }
+  55%, 100% { transform: translateX(320%) skewX(-18deg); }
+}
+.animate-banner-shimmer { animation: banner-shimmer 4s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

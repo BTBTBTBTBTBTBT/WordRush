@@ -34,6 +34,7 @@ import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, re
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
+import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, type GroupProgress } from '../src/home-banner';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -273,6 +274,36 @@ export function renderRegionsFixtures() {
 
 // Same fixture dirs the composite-scoring generator writes (web has no copy of
 // these two — they exist for the native ports).
+// Home redesign (founder, 2026-10-01): the banner's words and streak runs, so
+// iOS and Android print exactly what the web prints.
+export function renderHomeBannerFixtures() {
+  const g = (played: number, won: number, total: number): GroupProgress => ({ played, won, total });
+  const pairs: Array<[GroupProgress, GroupProgress]> = [
+    [g(0, 0, 8), g(0, 0, 10)], [g(2, 2, 8), g(1, 1, 10)], [g(3, 3, 8), g(4, 4, 10)], [g(5, 4, 8), g(6, 6, 10)],
+    [g(6, 5, 8), g(8, 8, 10)], [g(8, 8, 8), g(6, 5, 10)], [g(8, 7, 8), g(0, 0, 10)], [g(7, 7, 8), g(10, 9, 10)],
+    [g(4, 4, 8), g(10, 10, 10)], [g(8, 8, 8), g(10, 8, 10)], [g(8, 7, 8), g(10, 10, 10)], [g(8, 7, 8), g(10, 8, 10)],
+    [g(8, 8, 8), g(10, 10, 10)], [g(8, 8, 8), g(9, 9, 10)],
+  ];
+  const opts = [{ hour: 0, name: 'BMT' }, { hour: 11, name: 'BMT' }, { hour: 12, name: 'doug' }, { hour: 16, name: '' }, { hour: 17, name: 'BMT' }, { hour: 23, name: 'BMT' }];
+  const headlines = pairs.flatMap(([word, puzzles]) => opts.map((o) => ({
+    word, puzzles, hour: o.hour, name: o.name, unlimited: false, headline: bannerHeadline(word, puzzles, o),
+  })));
+  headlines.push({ word: g(3, 3, 8), puzzles: g(4, 4, 10), hour: 10, name: 'BMT', unlimited: true,
+    headline: bannerHeadline(g(3, 3, 8), g(4, 4, 10), { hour: 10, name: 'BMT', unlimited: true }) });
+  const clocks = pairs.map(([word, puzzles]) => ({ word, puzzles, clock: '07:12:40', unlimited: false, line: bannerClockLine(word, puzzles, '07:12:40') }));
+  clocks.push({ word: g(0, 0, 8), puzzles: g(0, 0, 10), clock: '07:12:40', unlimited: true, line: bannerClockLine(g(0, 0, 8), g(0, 0, 10), '07:12:40', true) });
+  const groups = [g(0, 0, 8), g(3, 2, 8), g(8, 7, 8), g(8, 8, 8), g(10, 8, 10), g(10, 10, 10), g(0, 0, 0)]
+    .map((x) => ({ group: x, tier: groupTier(x), status: groupStatus(x) }));
+  const full = { played: 10, won: 10 }, swept = { played: 10, won: 8 }, part = { played: 4, won: 4 };
+  const history = { '2026-10-01': part, '2026-09-30': full, '2026-09-29': swept, '2026-09-28': full, '2026-09-26': full,
+    '2026-03-01': full, '2026-02-28': full, '2025-12-31': swept, '2026-01-01': full };
+  const todays = ['2026-10-01', '2026-10-02', '2026-10-03', '2026-03-01', '2026-03-02', '2026-01-01', '2026-01-02'];
+  const streaks = todays.map((today) => ({ days: history, total: 10, today, ...dayStreaks(history, 10, today) }));
+  const quiz = { '2026-10-01': { played: 1, won: 1 }, '2026-09-30': { played: 1, won: 1 }, '2026-09-29': { played: 1, won: 0 } };
+  streaks.push({ days: quiz, total: 1, today: '2026-10-01', ...dayStreaks(quiz, 1, '2026-10-01') });
+  return { headlines, clocks, groups, streaks };
+}
+
 const TARGET_DIRS = [
   join(repo, 'apps', 'ios', 'Tests', 'Fixtures'),
   join(repo, 'apps', 'android', 'core', 'src', 'test', 'resources', 'fixtures'),
@@ -602,6 +633,7 @@ const FILES: Array<[string, unknown]> = [
   ['groups-fixtures.json', renderGroupsFixtures()],
   ['crossword-fixtures.json', renderCrosswordFixtures()],
   ['scramble-fixtures.json', renderScrambleFixtures()],
+  ['home-banner-fixtures.json', renderHomeBannerFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

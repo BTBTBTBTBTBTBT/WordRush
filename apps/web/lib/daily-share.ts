@@ -65,7 +65,7 @@ export function buildMoreSweepInput(
   return {
     layout: 'daily-sweep',
     mode: 'Classic',
-    title: tier === 'flawless' ? 'FLAWLESS MORE GAMES' : 'MORE GAMES SWEEP',
+    title: tier === 'flawless' ? 'PUZZLES FLAWLESS' : tier === 'sweep' ? 'PUZZLES SWEEP' : `PUZZLES · ${totals.completed}/${totals.total}`,
     flawless: tier === 'flawless',
     games,
     total: totals.total,
@@ -83,4 +83,34 @@ export async function shareMoreSweep(completions: Map<string, DailyCompletion>) 
 /** Generate + share the all-dailies card. */
 export async function shareDailySweep(completions: Map<string, DailyCompletion>) {
   return shareResult(buildDailySweepInput(completions));
+}
+
+/**
+ * The home banner's share button (redesign, 2026-10-01): today's progress so
+ * far, mid-day or done. The Wordocious card (titled with the banner headline)
+ * plus, when any Puzzles were played, the More Games card, both in one share
+ * sheet where the browser can share several images; otherwise the Wordocious
+ * card alone (one 18-row card would be too cramped to read).
+ */
+export async function shareTodayProgress(completions: Map<string, DailyCompletion>, headline: string) {
+  const word = { ...buildDailySweepInput(completions), title: headline };
+  const more = buildMoreSweepInput(completions);
+  const hasWord = word.games.length > 0;
+  const hasMore = more.games.length > 0;
+  if (!hasMore) return shareResult(word);
+  if (!hasWord) return shareResult({ ...more, title: headline });
+  try {
+    const { generateShareImage } = await import('./share-image');
+    const [a, b] = await Promise.all([generateShareImage(word), generateShareImage(more)]);
+    if (a && b && typeof navigator !== 'undefined' && navigator.share) {
+      const files = [new File([a], 'wordocious.png', { type: 'image/png' }), new File([b], 'wordocious-puzzles.png', { type: 'image/png' })];
+      if (!navigator.canShare || navigator.canShare({ files })) {
+        await navigator.share({ files, text: 'wordocious.com' });
+        return { via: 'share' as const };
+      }
+    }
+  } catch (e) {
+    if ((e as Error)?.name === 'AbortError') return { via: 'failed' as const };
+  }
+  return shareResult(word);
 }

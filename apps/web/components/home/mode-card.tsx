@@ -1,6 +1,6 @@
 'use client';
 
-import { Lock } from 'lucide-react';
+import { Lock, Infinity as InfinityIcon } from 'lucide-react';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
@@ -63,7 +63,8 @@ export function modeCardState(args: {
   return { isDailyDone, isLocked, badge, subtitle };
 }
 
-export function ModeCard({ card, state }: { card: HomeCard; state: ModeCardState }) {
+/** `unlimited`: Pro's Unlimited mode (home redesign, 2026-10-01): no badges, a small infinity mark instead. */
+export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; state: ModeCardState; unlimited?: boolean }) {
   const { isDailyDone, isLocked, badge, subtitle } = state;
   const Icon = card.icon;
   return (
@@ -95,6 +96,10 @@ export function ModeCard({ card, state }: { card: HomeCard; state: ModeCardState
           <Lock className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
         </div>
       ) : null}
+
+      {unlimited && !isLocked && (
+        <InfinityIcon className="absolute top-2.5 right-2.5 w-4 h-4" style={{ color: card.accentColor }} aria-hidden="true" />
+      )}
 
       {/* W / L pill in the top-right when today's daily is already on the books. */}
       {isDailyDone && badge && (

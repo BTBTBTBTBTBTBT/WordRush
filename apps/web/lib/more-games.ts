@@ -95,6 +95,7 @@ export function computeMoreTotals(
 
 /** The band / sheet header wording for a tier. Never the Daily Sweep strings. */
 export const MORE_SWEEP_COPY: Record<MoreSweepTier, { title: string; short: string }> = {
-  sweep: { title: 'MORE GAMES SWEEP!', short: 'More Games Sweep' },
-  flawless: { title: 'FLAWLESS MORE GAMES!', short: 'Flawless More Games' },
+  // The ten games are "Puzzles" now (founder, 2026-10-01: home redesign).
+  sweep: { title: 'PUZZLES SWEEP!', short: 'Puzzles Sweep' },
+  flawless: { title: 'PUZZLES FLAWLESS!', short: 'Puzzles Flawless' },
 };

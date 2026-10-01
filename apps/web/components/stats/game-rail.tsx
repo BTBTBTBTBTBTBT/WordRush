@@ -51,8 +51,9 @@ export function buildRailItems(
     { key: RAIL_TODAY, label: 'Today', icon: CalendarDays, accent: '#7c3aed' },
     { key: RAIL_ALL, label: 'All-time', icon: Trophy, accent: '#d97706' },
     ...sweepModes.map(game),
-    { key: RAIL_VS, label: 'VS', icon: Swords, accent: '#ec4899', dot: vsDailyWon === null ? null : vsDailyWon ? 'won' : 'lost' },
     ...moreModes.map(game),
+    // VS is the last chip (founder, 2026-10-01: rarely played, so it sits after Starsweep, not between the games).
+    { key: RAIL_VS, label: 'VS', icon: Swords, accent: '#ec4899', dot: vsDailyWon === null ? null : vsDailyWon ? 'won' : 'lost' },
   ];
 }
 

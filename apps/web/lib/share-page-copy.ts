@@ -13,7 +13,7 @@ export const MODE_DISPLAY: Record<string, string> = {
   Seven: 'Classic Seven',
   ProperNoundle: 'ProperNoundle',
   DailySweep: 'Daily Sweep',
-  MoreSweep: 'More Games Sweep',
+  MoreSweep: 'Puzzles Sweep',
   Profile: 'Player Profile',
 };
 
@@ -184,7 +184,7 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const tot = Number(str(sp.tot)) || (more ? 10 : 8);
     const t = Number(str(sp.t)) || 0;
     const pts = Number(str(sp.pts)) || 0;
-    const label = more ? (flawless ? 'Flawless More Games' : 'More Games Sweep') : (flawless ? 'Flawless Victory' : 'Daily Sweep');
+    const label = more ? (flawless ? 'Puzzles Flawless' : 'Puzzles Sweep') : (flawless ? 'Flawless Victory' : 'Daily Sweep');
     const stats = `${w}/${tot} won · ${fmtTime(t)} · ${pts.toLocaleString()} pts`;
     const title = `Wordocious ${label} — ${stats}`;
     const what = more ? 'More Games puzzles' : 'daily puzzles';
