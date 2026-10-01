@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,13 +49,16 @@ import com.wordocious.app.ui.theme.WTheme
  * The Stats tab's game rail (Stats + Friends redesign D2, founder 2026-09-26:
  * "I don't want to swipe right through 19 different games … flow like
  * butter"). One horizontal row of chips: Today · All-time · the eight sweep games ·
- * the More Games titles · VS (last, founder 2026-10-01). Tap jumps straight to that page; a swipe on
- * the page below moves one chip (ProfileScreen owns that gesture); HOLD the
- * Today chip (or tap the grid button) for the whole set as a 5-wide grid so any
- * game is one tap away. Each game chip wears today's W/L dot. Twin of web
+ * the More Games titles. No VS chip (founder, 2026-10-01): VS stats live at the
+ * bottom of All-time, so the twenty chips make an even 4 × 5 grid. Tap jumps
+ * straight to that page; a swipe on the page below moves one chip (ProfileScreen
+ * owns that gesture); HOLD the Today chip (or tap the grid button) for the whole
+ * set as a 5-wide grid so any game is one tap away. Each game chip wears today's W/L dot. Twin of web
  * components/stats/game-rail.tsx and iOS StatsRail.
  */
 const val RAIL_TODAY = "today"
+/** Not a chip any more (2026-10-01): a jump to "vs" (the Today card's VS Battle pill) opens
+ *  All-time scrolled to its VS section. */
 const val RAIL_VS = "vs"
 const val RAIL_ALL = "all"
 
@@ -64,12 +66,12 @@ const val RAIL_ALL = "all"
 val RAIL_LOSS_RED = Color(0xFFDC2626)
 
 data class RailItem(
-    /** RAIL_TODAY | RAIL_VS | RAIL_ALL | a daily mode dbKey. */
+    /** RAIL_TODAY | RAIL_ALL | a daily mode dbKey. */
     val key: String,
     val label: String,
-    /** The catalog card for a game chip (icon/glyph source); null for the three fixed chips. */
+    /** The catalog card for a game chip (icon/glyph source); null for the two fixed chips. */
     val card: ModeCard? = null,
-    /** Fixed-chip icon (Today / All-time). VS draws the swords drawable. */
+    /** Fixed-chip icon (Today / All-time). */
     val icon: ImageVector? = null,
     val accent: Color,
     /** Today's result on a game chip: true = won, false = lost, null = not played. */
@@ -80,7 +82,6 @@ fun buildRailItems(
     sweepCards: List<ModeCard>,
     moreCards: List<ModeCard>,
     todayDailies: Map<String, DailyCompletionsService.Completion>,
-    vsDailyWon: Boolean?,
 ): List<RailItem> {
     fun game(c: ModeCard): RailItem {
         val r = c.dbKey?.let { todayDailies[it] }
@@ -98,8 +99,8 @@ fun buildRailItems(
         add(RailItem(RAIL_ALL, "All-time", icon = Icons.Filled.EmojiEvents, accent = Color(0xFFD97706)))
         sweepCards.forEach { add(game(it)) }
         moreCards.forEach { add(game(it)) }
-        // VS is the last chip (founder, 2026-10-01: rarely played, so it sits after Starsweep, not between the games).
-        add(RailItem(RAIL_VS, "VS", accent = Color(0xFFEC4899), dot = vsDailyWon))
+        // No VS chip (founder, 2026-10-01): VS is rarely played and its stats moved to the bottom of
+        // All-time; each game keeps its own Solo | VS switch. Twenty chips make an even 5-wide grid.
     }
 }
 
@@ -214,10 +215,6 @@ private fun RailChip(
             ) {
                 when {
                     item.card != null -> ModeGlyph(item.card, item.accent, box = 28.dp)
-                    item.key == RAIL_VS -> Icon(
-                        painterResource(com.wordocious.app.R.drawable.ic_swords), null,
-                        tint = item.accent, modifier = Modifier.size(14.dp),
-                    )
                     item.icon != null -> Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(14.dp))
                 }
             }

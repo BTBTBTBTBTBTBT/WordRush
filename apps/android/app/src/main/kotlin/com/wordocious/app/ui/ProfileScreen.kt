@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
@@ -79,6 +82,7 @@ import com.wordocious.app.data.SettingsPref
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -86,7 +90,8 @@ import kotlinx.coroutines.launch
  * and Records merge into one Stats tab that "flows like butter"). Ported from
  * web app/stats/page.tsx. One page:
  *   identity strip (compact header) → StatsRail → ONE page below it, chosen
- *   from the rail: Today (landing) · a game page per daily mode · VS · All-time.
+ *   from the rail: Today (landing) · All-time (VS at its bottom since 2026-10-01) ·
+ *   a game page per daily mode.
  * Swipe left/right on the page moves one rail chip; hold Today (or the grid
  * button) for every game at once. Zero new fetches beyond the old profile page
  * except today's VS result, the sweep streak and today's standing.
@@ -153,23 +158,19 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var vsDailyWon by remember { mutableStateOf(mainSeed?.vsDailyWon) }
     var standing by remember { mutableStateOf(mainSeed?.standing) }
     var sweepStats by remember { mutableStateOf(mainSeed?.sweepStats ?: MatchStatsService.DailySweepStats()) }
-    // Which page the rail shows: RAIL_TODAY | RAIL_VS | RAIL_ALL | a daily mode dbKey.
+    // Which page the rail shows: RAIL_TODAY | RAIL_ALL | a daily mode dbKey.
     var selected by remember { mutableStateOf(RAIL_TODAY) }
     // A game page's Solo | VS toggle (only where the game has a live VS board).
     var gameTab by remember { mutableStateOf("solo") }
-    // The VS page: which word game's board, Live ("vs") or CPU practice ("vs_cpu").
+    // All-time's VS section: which word game's board, Live ("vs") or CPU practice ("vs_cpu").
     var vsMode by remember { mutableStateOf("DUEL") }
     var vsTab by remember { mutableStateOf("vs") }
     // The per-mode chart fetch is scoped to the page: a game page → that mode
-    // and its toggle; the VS page → the picked word game, Live/CPU; Today and
-    // All-time → the global Solo view (the charts the All-time page draws).
+    // and its toggle; Today and All-time → the global Solo view (the charts the
+    // All-time page draws). All-time's VS board has its own scope (vsCharts below).
     val isGamePage = com.wordocious.app.ModeGen.byDbKey(selected) != null
-    val pageMode: String? = when { isGamePage -> selected; selected == RAIL_VS -> vsMode; else -> null }
-    val pageTab: String = when {
-        selected == RAIL_VS -> vsTab
-        isGamePage -> if (hasVs(selected) && gameTab == "vs") "vs" else "solo"
-        else -> "solo"
-    }
+    val pageMode: String? = if (isGamePage) selected else null
+    val pageTab: String = if (isGamePage && hasVs(selected) && gameTab == "vs") "vs" else "solo"
     var loading by remember { mutableStateOf(mainSeed == null) }
     // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -292,59 +293,53 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // P-cache: the composition above already paints the session memo; fetch fresh
         // below and store back (SWR).
         val memoKey = "profileCharts:$uid:${m ?: "ALL"}:$activeTab:$isProActive"
-        // All chart fetches run CONCURRENTLY (was 6 serial round-trips + a
-        // 9-query per-mode streak N+1 — now one consolidated streak query).
-        kotlinx.coroutines.coroutineScope {
-            val gdD = async { com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m, activeTab) }
-            // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode and no
-            // play-type) and only rendered in the All view — load it unfiltered.
-            val a7D = async { com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null) }
-            // Mode-scoped 90-day calendar for the mode-detail view (iOS
-            // ActivityCalendarView(mode:)); skipped in the All view, which uses
-            // the global dailyCalendar fetched above.
-            val calD = async {
-                if (m == null) emptyList()
-                else com.wordocious.app.data.MatchStatsService.activity(uid, days = 90, mode = m)
-            }
-            val stD = async { com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab) }
-            val todD = async { com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab) }
-            val twD = async { com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab) }
-            val piD = async {
-                if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m, activeTab)
-                else com.wordocious.app.data.MatchStatsService.ProInsights()
-            }
-            // Per-mode win streaks (scoped to the toggle) — ONE query for every
-            // mode at once (modeWinStreaks) instead of stats re-fetch + per-mode.
-            val streaksD = async { com.wordocious.app.data.MatchStatsService.modeWinStreaks(uid, activeTab) }
-            // Per-mode stats registry: the player's own rows for this mode →
-            // pure aggregate (More Games §18). Only the aggregate is kept.
-            val aggD = async {
-                if (m == null) com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES
-                else com.wordocious.app.data.ModeStats.modeAggregates(
-                    m, com.wordocious.app.data.MatchStatsService.modeMatchRows(uid, m, activeTab),
-                    com.wordocious.app.ModeGen.byDbKey(m)?.guessBase ?: 1,
-                )
-            }
-            ProfileChartsMemo(
-                guessDist = gdD.await(), activity7 = a7D.await(), modeCal = calD.await(),
-                solveTimes = stD.await(), timeOfDay = todD.await(), topWords = twD.await(),
-                proInsights = piD.await(), modeStreaks = streaksD.await(), modeAgg = aggD.await(),
-            )
-        }.let { fresh ->
+        loadProfileCharts(uid, m, activeTab, isProActive).let { fresh ->
             com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
             chartsState = memoKey to fresh
         }
     }
+    // All-time's VS board (founder, 2026-10-01: VS left the rail for the bottom of All-time) draws
+    // one word game's Live/CPU charts while the page above it draws the global Solo ones, so it
+    // keeps its own scope — same memo keys as a game page's VS tab, so the two share a cache.
+    val onAllTime = selected == RAIL_ALL
+    val vsChartsKey = userId?.let { "profileCharts:$it:$vsMode:$vsTab:$isProActive" }
+    var vsChartsState by remember { mutableStateOf<Pair<String, ProfileChartsMemo>?>(null) }
+    val vsCharts: ProfileChartsMemo? = vsChartsState?.takeIf { it.first == vsChartsKey }?.second
+        ?: vsChartsKey?.let { com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(it) }
+    LaunchedEffect(userId, onAllTime, vsMode, vsTab, isProActive, tick) {
+        val uid = userId ?: return@LaunchedEffect
+        if (!onAllTime) return@LaunchedEffect
+        val memoKey = "profileCharts:$uid:$vsMode:$vsTab:$isProActive"
+        loadProfileCharts(uid, vsMode, vsTab, isProActive).let { fresh ->
+            com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
+            vsChartsState = memoKey to fresh
+        }
+    }
 
-    // ── The rail: Today · sweep games · VS · the More Games titles this viewer
-    // can see (catalog ∩ remote flags, the HomeScreen filter) · All-time. ──
+    // ── The rail: Today · All-time · sweep games · the More Games titles this viewer
+    // can see (catalog ∩ remote flags, the HomeScreen filter). No VS chip (2026-10-01). ──
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
     val visibleMore = remember(flagTable, flagsLoaded) {
         MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
     }
     val sweepCards = remember { DAILY_MODES.mapNotNull { modeCardForKey(it) } }
-    val railItems = remember(visibleMore, todayDailies, vsDailyWon) { buildRailItems(sweepCards, visibleMore, todayDailies, vsDailyWon) }
+    val railItems = remember(visibleMore, todayDailies) { buildRailItems(sweepCards, visibleMore, todayDailies) }
+    // A jump to RAIL_VS (the Today card's VS Battle pill) opens All-time and scrolls to its VS
+    // section (founder, 2026-10-01). vsSectionY is that header's offset inside the page item.
+    val listState = rememberLazyListState()
+    var vsSectionY by remember { mutableStateOf(-1) }
+    var vsJump by remember { mutableStateOf(0) }
+    fun go(key: String) {
+        if (key == RAIL_VS) { selected = RAIL_ALL; vsJump++ } else selected = key
+    }
+    LaunchedEffect(vsJump) {
+        if (vsJump == 0) return@LaunchedEffect
+        // Let the All-time page compose and measure first (web waits 60 ms too).
+        kotlinx.coroutines.delay(60)
+        val y = androidx.compose.runtime.snapshotFlow { vsSectionY }.first { it >= 0 }
+        listState.animateScrollToItem(PAGE_ITEM_INDEX, y)
+    }
     // Swipe on the page moves one chip along the rail (founder: no 19-page
     // swipe — but a swipe between neighbors is the natural gesture).
     val swipeModifier = Modifier.pointerInput(railItems, selected) {
@@ -389,6 +384,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // reserves the bottom-nav height. Extra 24dp tail matches web's pb-32.
         modifier = Modifier.fillMaxSize().appBackground()
             .padding(horizontal = 16.dp),
+        state = listState,
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -420,14 +416,14 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // The FRIENDS row is gone too: Friends is its own tab since D1.
 
         // ── The game rail ─────────────────────────────────────────
-        item { StatsRail(items = railItems, selected = selected, onSelect = { selected = it }) }
+        item { StatsRail(items = railItems, selected = selected, onSelect = { go(it) }) }
 
         // ── ONE page below the rail; a horizontal swipe moves one rail chip. The page swaps
         //    INSTANTLY (founder, 2026-09-29): the F1 SwapFade faded+rose the whole page for
         //    220 ms on every rail / Solo|VS / VS-board tap — the Solo|VS toggle and VS board
         //    picker live inside the page, so the tapped control itself faded back in, the old
         //    page cross-faded underneath, and AnimatedContent's size transform slid everything
-        //    below. key() keeps the old per-page state reset. ──
+        //    below. key() keeps the old per-page state reset. The 4th item: PAGE_ITEM_INDEX. ──
         item {
             val page = selected; val tab = pageTab; val mode = pageMode
             androidx.compose.runtime.key(page, tab, mode) {
@@ -445,7 +441,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             flawlessStreak = sweepStats.currentFlawlessStreak,
                             flawlessFooter = { FlawlessBannerFooter(DAILY_MODES.size, seed = sweepStats) },
                             onPlayDaily = onPlayDaily,
-                            onJump = { selected = it },
+                            onJump = { go(it) },
                         )
                         // Founder (2026-09-26): the most recent games — daily AND unlimited —
                         // right under the Sweep streak / Best moment row; the full history
@@ -461,30 +457,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         )
                         }
 
-                        // ── VS: record (with today's result), Rivalries, CPU practice,
-                        //    then one word game's VS board — Live or CPU. ──
-                        page == RAIL_VS -> {
-                            VsRecordCard(stats, vsDailyWon)
-                            // Rivalries — most-faced opponents with head-to-head bars
-                            // (Pro), only once there's an actual VS record (web parity).
-                            val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
-                            if (vsTotal > 0) RivalriesCard(isPro = isProActive, onGoPro = onGoPro)
-                            CpuRecordCard(stats)
-                            VsBoardPicker(
-                                modes = DAILY_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
-                                onMode = { vsMode = it }, onTab = { vsTab = it },
-                            )
-                            val m = mode ?: vsMode
-                            ModeStatsBody(
-                                mode = m, tab = tab, stats = stats, modeStreaks = modeStreaks, modeAgg = modeAgg,
-                                guessDist = guessDist, modeCal = modeCal, solveTimes = solveTimes, topWords = topWords,
-                                chartsLoaded = chartsLoaded, timeOfDay = timeOfDay, proInsights = proInsights,
-                                isProActive = isProActive, onGoPro = onGoPro,
-                            )
-                        }
-
                         // ── All-time: the snapshot hero, YOUR RECORDS, every chart the old
-                        //    "All" dashboard drew, then Progression and Recent Matches. ──
+                        //    "All" dashboard drew, then Progression, VS and Recent Matches. ──
                         page == RAIL_ALL -> {
                             SnapshotHero(
                                 totalWins = profile?.totalWins ?: 0,
@@ -556,6 +530,36 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                                 Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) }
                             }
 
+                            // ── VS (founder, 2026-10-01): VS left the game rail (rarely played; the grid
+                            //    now comes out even). Its record (with today's result), Rivalries, CPU
+                            //    practice and one word game's board — Live or CPU — live here. ──
+                            Box(Modifier.onGloballyPositioned { vsSectionY = it.positionInParent().y.toInt() }) {
+                                SectionHeader("VS", accent = Color(0xFFEC4899))
+                            }
+                            VsRecordCard(stats, vsDailyWon)
+                            // Rivalries — most-faced opponents with head-to-head bars
+                            // (Pro), only once there's an actual VS record (web parity).
+                            val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
+                            if (vsTotal > 0) RivalriesCard(isPro = isProActive, onGoPro = onGoPro)
+                            CpuRecordCard(stats)
+                            VsBoardPicker(
+                                modes = DAILY_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
+                                onMode = { vsMode = it }, onTab = { vsTab = it },
+                            )
+                            ModeStatsBody(
+                                mode = vsMode, tab = vsTab, stats = stats,
+                                modeStreaks = vsCharts?.modeStreaks ?: emptyMap(),
+                                modeAgg = vsCharts?.modeAgg ?: com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES,
+                                guessDist = vsCharts?.guessDist ?: emptyList(),
+                                modeCal = vsCharts?.modeCal ?: emptyList(),
+                                solveTimes = vsCharts?.solveTimes ?: emptyList(),
+                                topWords = vsCharts?.topWords ?: emptyList(),
+                                chartsLoaded = vsCharts != null,
+                                timeOfDay = vsCharts?.timeOfDay ?: emptyList(),
+                                proInsights = vsCharts?.proInsights ?: com.wordocious.app.data.MatchStatsService.ProInsights(),
+                                isProActive = isProActive, onGoPro = onGoPro,
+                            )
+
                             // ── Recent matches ──
                             // Web parity (profile/page.tsx): skeleton rows while loading, then the
                             // matches or "No matches played yet." — the section never just vanishes.
@@ -597,6 +601,53 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
 
         // (Account actions — Daily Reminders / Sign Out / Delete Account — live
         // in Settings now; removed from the profile page per product direction.)
+    }
+}
+
+/** The page item's index in the Stats LazyColumn (spacer · header · rail · page): the
+ *  VS jump scrolls to it, offset by the VS section header's y inside it. */
+private const val PAGE_ITEM_INDEX = 3
+
+/** One chart scope's fetch: a mode (null = the global All view) and a play type. All chart
+ *  fetches run CONCURRENTLY (was 6 serial round-trips + a 9-query per-mode streak N+1 — now
+ *  one consolidated streak query). */
+private suspend fun loadProfileCharts(uid: String, m: String?, activeTab: String, isProActive: Boolean): ProfileChartsMemo {
+    return kotlinx.coroutines.coroutineScope {
+        val gdD = async { com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m, activeTab) }
+        // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode and no
+        // play-type) and only rendered in the All view — load it unfiltered.
+        val a7D = async { com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null) }
+        // Mode-scoped 90-day calendar for the mode-detail view (iOS
+        // ActivityCalendarView(mode:)); skipped in the All view, which uses
+        // the global dailyCalendar fetched above.
+        val calD = async {
+            if (m == null) emptyList()
+            else com.wordocious.app.data.MatchStatsService.activity(uid, days = 90, mode = m)
+        }
+        val stD = async { com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab) }
+        val todD = async { com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab) }
+        val twD = async { com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab) }
+        val piD = async {
+            if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m, activeTab)
+            else com.wordocious.app.data.MatchStatsService.ProInsights()
+        }
+        // Per-mode win streaks (scoped to the toggle) — ONE query for every
+        // mode at once (modeWinStreaks) instead of stats re-fetch + per-mode.
+        val streaksD = async { com.wordocious.app.data.MatchStatsService.modeWinStreaks(uid, activeTab) }
+        // Per-mode stats registry: the player's own rows for this mode →
+        // pure aggregate (More Games §18). Only the aggregate is kept.
+        val aggD = async {
+            if (m == null) com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES
+            else com.wordocious.app.data.ModeStats.modeAggregates(
+                m, com.wordocious.app.data.MatchStatsService.modeMatchRows(uid, m, activeTab),
+                com.wordocious.app.ModeGen.byDbKey(m)?.guessBase ?: 1,
+            )
+        }
+        ProfileChartsMemo(
+            guessDist = gdD.await(), activity7 = a7D.await(), modeCal = calD.await(),
+            solveTimes = stD.await(), timeOfDay = todD.await(), topWords = twD.await(),
+            proInsights = piD.await(), modeStreaks = streaksD.await(), modeAgg = aggD.await(),
+        )
     }
 }
 
@@ -664,7 +715,7 @@ private fun TodayLineCard(dbKey: String, completion: DailyCompletionsService.Com
     }
 }
 
-/** The VS page's board picker: the VS-capable word games as small chips, and
+/** All-time's VS board picker: the VS-capable word games as small chips, and
  *  Live | CPU at the right. */
 @Composable
 private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String, onMode: (String) -> Unit, onTab: (String) -> Unit) {
@@ -705,7 +756,7 @@ private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String
 
 /** The per-mode stats content (web mode-detail-panel.tsx): header, the §18
  *  registry grid, then the cards the mode's stats profile turns on. Shared by
- *  the game pages and the VS page; unchanged from the old mode-detail view. */
+ *  the game pages and All-time's VS section; unchanged from the old mode-detail view. */
 @Composable
 private fun ModeStatsBody(
     mode: String,

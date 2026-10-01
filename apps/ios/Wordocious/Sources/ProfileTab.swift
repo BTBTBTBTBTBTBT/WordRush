@@ -7,9 +7,9 @@ import WordociousCore
 ///   player card → StatsRail → ONE page below it, chosen from the rail:
 ///   Today (landing, TodayCard + the five newest games) · a game page per
 ///   daily mode (Solo | VS toggle where a live VS board exists, today's line,
-///   the §18 registry stats) · VS (record + rivalries + CPU + a word-game
-///   board) · All-time (snapshot hero, Your Records, every chart, Signature,
-///   Standing trend, Progression, Recent Matches).
+///   the §18 registry stats) · All-time (snapshot hero, Your Records, every
+///   chart, Signature, Standing trend, Progression, VS — record + rivalries +
+///   CPU + a word-game board — then Recent Matches).
 /// A horizontal swipe on the page moves one rail chip; hold Today (or the grid
 /// button) for every game at once. Zero new fetches beyond the old page except
 /// today's VS result, the sweep streak and today's standing.
@@ -19,12 +19,14 @@ struct ProfileTab: View {
     @State private var showAuth = false
     @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
-    /// Which page the rail shows: StatsRailKey.today | .vs | .all | a mode dbKey.
+    /// Which page the rail shows: StatsRailKey.today | .all | a mode dbKey (.vs maps to .all).
     @State private var selected: String = StatsRailKey.today
-    /// The VS page's per-game board — one word game at a time (Classic by default).
+    /// Bumped by select(.vs): content() scrolls All-time to its VS section.
+    @State private var vsScrollToken = 0
+    /// The All-time VS section's per-game board — one word game at a time (Classic by default).
     @State private var vsMode: GameMode = .duel
-    /// Today's daily VS outcome (nil = not played) — the VS chip's dot, the
-    /// Today card's VS pill and the VS RECORD card's "Today:" line.
+    /// Today's daily VS outcome (nil = not played) — the Today card's VS pill
+    /// and the VS RECORD card's "Today:" line.
     @State private var vsDailyWon: Bool? = nil
     /// Sweep + flawless streaks for the Today card (MatchStatsService, §244).
     @State private var sweepStats = MatchStatsService.DailySweepStats()
@@ -46,10 +48,14 @@ struct ProfileTab: View {
     private func modeCellsKey(_ mode: GameMode, _ tab: String) -> String {
         "modeCells:\(auth.profile?.id ?? "anon"):\(mode.rawValue):\(tab)"
     }
-    // Solo/VS/VS-CPU scope for the per-game charts (restat B1). A game page's
-    // Solo | VS toggle drives it; the VS page pins it to vs (or vs_cpu for
-    // practice); the All-time charts read it like the web.
+    // Solo/VS scope for the per-game charts (restat B1). A game page's
+    // Solo | VS toggle drives it; the All-time charts read it like the web.
+    // (Never vs_cpu any more — All-time's VS section keeps its own vsSectionTab.)
     @State private var activeTab = "solo"
+    /// All-time's VS section Live | CPU ("vs" | "vs_cpu") — its OWN state, never activeTab
+    /// (founder, 2026-10-01): picking CPU there must not rebuild the All-time page, re-scope
+    /// its charts or show the CPU note up top. Web `vsTab`.
+    @State private var vsSectionTab = "vs"
     @State private var unlockedAchievements: Set<String> = []
     @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
@@ -100,24 +106,23 @@ struct ProfileTab: View {
         moreModes.filter { $0.dailyEligible && $0.dbKey != nil && FlagsService.shared.isOn($0.flagKey) }
     }
     private var railItems: [StatsRailItem] {
-        buildStatsRailItems(sweep: dailyTiles, more: visibleMore, byMode: completions.byMode, vsDailyWon: vsDailyWon)
+        buildStatsRailItems(sweep: dailyTiles, more: visibleMore, byMode: completions.byMode)
     }
     /// Word-engine games and ProperNoundle have live VS boards; the More Games titles do not.
     private func hasVs(_ dbKey: String) -> Bool {
         guard let meta = ModeGen.byDbKey(dbKey) else { return false }
         return meta.engine == "word" || dbKey == "PROPERNOUNDLE"
     }
-    /// The VS page's board picker: the sweep word games (web `vsModes`).
+    /// All-time's VS board picker: the sweep word games (web `vsModes`).
     private var vsModes: [HomeMode] { dailyTiles.filter { hasVs($0.dbKey ?? "") } }
-    /// The selected game page's catalog record (nil on Today / VS / All-time).
+    /// The selected game page's catalog record (nil on Today / All-time).
     private var selectedMeta: HomeMode? { dailyModes.first { $0.dbKey == selected } }
     /// The play-type a game page scopes to: VS only where the game has a live board.
     private var gamePageTab: String { activeTab == "vs" && hasVs(selected) ? "vs" : "solo" }
-    /// The VS page's play-type: Live or CPU practice.
-    private var vsPageTab: String { activeTab == "vs_cpu" ? "vs_cpu" : "vs" }
 
-    /// Rail selection — web `setSelected`: landing on VS lifts a Solo scope to
-    /// VS; landing on a game without a VS board drops the scope to Solo.
+    /// Rail selection — web `setSelected`: landing on a game without a VS board
+    /// drops the scope to Solo. StatsRailKey.vs (the Today card's VS Battle pill)
+    /// is All-time's VS section now (founder, 2026-10-01: VS left the rail).
     private func select(_ key: String) {
         // The page swaps in ONE un-animated transaction (founder, 2026-09-29: the rail showed a
         // "page loading in" — the 0.18 s crossfade kept the old page laid out under the new one
@@ -126,13 +131,14 @@ struct ProfileTab: View {
         // (2026-09-26: the old implicit `.animation(value:)` on the scroll content is what left
         // the page magnified and stuck — never reintroduce it.)
         var t = Transaction(); t.disablesAnimations = true
+        if key == StatsRailKey.vs {
+            withTransaction(t) { selected = StatsRailKey.all }
+            vsScrollToken += 1
+            return
+        }
         withTransaction(t) {
             selected = key
-            if key == StatsRailKey.vs {
-                if activeTab == "solo" { activeTab = "vs" }
-            } else if key != StatsRailKey.all && key != StatsRailKey.today && !hasVs(key) {
-                activeTab = "solo"
-            } else if key != StatsRailKey.all && key != StatsRailKey.today && activeTab == "vs_cpu" {
+            if key != StatsRailKey.all && key != StatsRailKey.today && !hasVs(key) {
                 activeTab = "solo"
             }
         }
@@ -142,6 +148,12 @@ struct ProfileTab: View {
     private func setActiveTab(_ t: String) {
         var tx = Transaction(); tx.disablesAnimations = true
         withTransaction(tx) { activeTab = t }
+    }
+
+    /// All-time's VS Live | CPU — the same un-animated swap, scoped to the VS section only.
+    private func setVsSectionTab(_ t: String) {
+        var tx = Transaction(); tx.disablesAnimations = true
+        withTransaction(tx) { vsSectionTab = t }
     }
 
     /// Swipe on the page moves one chip along the rail (founder: no 19-page
@@ -321,8 +333,9 @@ struct ProfileTab: View {
     private func content(_ p: Profile) -> some View {
         // Web order (app/stats/page.tsx, D2): player card →
         // StatsRail → ONE page keyed on the selection (Today · a game page ·
-        // VS · All-time). The page swaps instantly (select()); a horizontal
+        // All-time). The page swaps instantly (select()); a horizontal
         // swipe on it moves one chip along the rail.
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
@@ -330,8 +343,6 @@ struct ProfileTab: View {
                 Group {
                     if selected == StatsRailKey.today {
                         todayPage
-                    } else if selected == StatsRailKey.vs {
-                        vsPage(p)
                     } else if selected == StatsRailKey.all {
                         allTimePage(p)
                     } else if let m = selectedMeta, let gm = GameMode(rawValue: selected) {
@@ -353,6 +364,14 @@ struct ProfileTab: View {
             // custom bottom nav and stays tappable (Account actions live in
             // Settings now, not here).
             .padding(.bottom, 72)
+        }
+        // select(.vs) swapped to All-time un-animated; once that page is laid out, glide
+        // down to its VS section (web: scrollIntoView smooth, block start).
+        .onChange(of: vsScrollToken) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
+                withAnimation(Theme.animation(.easeOut(duration: 0.35))) { proxy.scrollTo(vsSectionId, anchor: .top) }
+            }
+        }
         }
     }
 
@@ -429,10 +448,16 @@ struct ProfileTab: View {
         .buttonStyle(PressableStyle())
     }
 
-    /// VS — the record (with today's result), Rivalries, the CPU practice card,
-    /// then one word game's VS board: a picker + Live | CPU over the per-mode view.
-    @ViewBuilder private func vsPage(_ p: Profile) -> some View {
-        let tab = vsPageTab
+    /// All-time's VS section scroll anchor (select(.vs) lands here).
+    private let vsSectionId = "vs-section"
+
+    /// VS (founder, 2026-10-01: VS left the rail — rarely played, and the grid now comes out
+    /// even; its page moved here, the bottom of All-time): the record (with today's result),
+    /// Rivalries, the CPU practice card, then one word game's VS board: a picker + Live | CPU
+    /// over the per-mode view.
+    @ViewBuilder private func vsSection(_ p: Profile) -> some View {
+        let tab = vsSectionTab
+        SectionHeader("VS", accent: Color(hex: 0xEC4899)).id(vsSectionId)
         vsRecordCard
         // Rivalries — most-faced opponents with head-to-head bars (Pro).
         if UserStatsService.vsRecord(statRows).total > 0 {
@@ -458,7 +483,7 @@ struct ProfileTab: View {
             HStack(spacing: 4) {
                 ForEach(["vs", "vs_cpu"], id: \.self) { t in
                     let active = tab == t
-                    Button { setActiveTab(t) } label: {
+                    Button { setVsSectionTab(t) } label: {
                         Text(t == "vs" ? "Live" : "CPU").font(Brand.font(10, .heavy))
                             .foregroundStyle(active ? Theme.primary : Theme.textMuted)
                             .padding(.horizontal, 10).padding(.vertical, 5)
@@ -478,7 +503,8 @@ struct ProfileTab: View {
             ProfileDashboard(mode: vsMode, playType: tab)
             ProDeepModeCard(gameMode: vsMode.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(vsMode), playType: tab)
         }
-        .id(vsMode)
+        // + the Live | CPU pick, so a toggle builds fresh cards too (the page id no longer carries it).
+        .id("\(vsMode.rawValue)-\(tab)")
         // CPU practice writes aggregate totals only — per-game charts
         // have no data to draw from, so say so instead of blanks.
         if tab == "vs_cpu" {
@@ -491,7 +517,7 @@ struct ProfileTab: View {
 
     /// All-time — the snapshot hero, YOUR RECORDS, every chart the old
     /// "All" view had, Insights, Pro Stats, Skill Radar, then Progression
-    /// (medals, achievements) and Recent Matches.
+    /// (medals, achievements), VS and Recent Matches.
     @ViewBuilder private func allTimePage(_ p: Profile) -> some View {
         SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
         // Your records (D2 step 3): what the Records → You view used to hold.
@@ -502,14 +528,6 @@ struct ProfileTab: View {
         WeeklyFinishesCard(userId: p.id)
         RecordsHeldRow(recordsHeld: yours.recordsHeld)
         TrophyShelf(recordsHeld: yours.recordsHeld)
-        // CPU practice records totals only — the per-game charts below draw
-        // from match rows that CPU games never write.
-        if activeTab == "vs_cpu" {
-            Text("CPU practice records totals only — charts track Solo and VS matches.")
-                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-                .frame(maxWidth: .infinity).multilineTextAlignment(.center)
-                .padding(.vertical, 4)
-        }
         // Trends charts (web order inside ProfileDashboard: activity calendar,
         // last 7 days, guess distribution, solve time, daily points, top words,
         // opener lab, weekday form), then Insights, Pro Stats, Skill Radar.
@@ -529,6 +547,7 @@ struct ProfileTab: View {
         SectionHeader("Progression", accent: Color(hex: 0xF59E0B))
         medalsSection(p)
         achievementsSection
+        vsSection(p)
         recentMatchesSection(p)
     }
 
@@ -1019,7 +1038,7 @@ struct ProfileTab: View {
 
     /// Solo | VS toggle on a game page — only where the game has a live VS
     /// board (word engines + ProperNoundle). The old page-level Solo/VS/VS-CPU
-    /// toggle is gone; the VS page's Live | CPU pair covers practice.
+    /// toggle is gone; All-time's VS section's Live | CPU pair covers practice.
     private func soloVsToggle(accent: Color) -> some View {
         HStack(spacing: 8) {
             ForEach(["solo", "vs"], id: \.self) { t in
@@ -1045,13 +1064,13 @@ struct ProfileTab: View {
         }
     }
 
-    /// "VS RECORD" summary card (VS tab only): aggregate W–L, win rate, total.
-    /// Practice record vs the CPU — its own dashed box on the VS tab, clearly
+    /// "VS RECORD" summary card (All-time VS section): aggregate W–L, win rate, total.
+    /// Practice record vs the CPU — its own dashed box in All-time's VS section, clearly
     /// unranked. Best CPU streak comes from the client-side progression store.
     @ViewBuilder private var cpuRecordCard: some View {
         let rec = UserStatsService.cpuRecord(statRows)
         let bestStreak = CpuProgressionStore.load().bestStreak
-        // Always shown on the VS tab (even at 0–0) so the practice record is
+        // Always shown in the VS section (even at 0–0) so the practice record is
         // discoverable before your first bot match; it fills in once you play one.
         HStack(spacing: 14) {
             ZStack {

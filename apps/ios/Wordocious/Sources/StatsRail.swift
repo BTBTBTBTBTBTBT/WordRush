@@ -3,19 +3,21 @@ import WordociousCore
 
 /// The Stats tab's game rail (Stats + Friends redesign D2, founder 2026-09-26:
 /// "I don't want to swipe right through 19 different games … flow like
-/// butter"). One horizontal row of chips: Today · the eight sweep games · VS ·
-/// the More Games titles · All-time. Tap jumps straight to that page; a swipe
+/// butter"). One horizontal row of chips: Today · All-time · the eight sweep
+/// games · the More Games titles. Tap jumps straight to that page; a swipe
 /// on the page below moves one chip; HOLD the Today chip (or tap the grid
 /// button) for the whole set as a 5-wide grid so any game is one tap away.
 /// Each game chip wears today's W/L dot. Twin of web components/stats/game-rail.tsx.
 enum StatsRailKey {
     static let today = "today"
+    /// No longer a chip (founder, 2026-10-01): selecting it opens All-time and
+    /// scrolls to its VS section (the Today card's VS Battle pill still sends it).
     static let vs = "vs"
     static let all = "all"
 }
 
 struct StatsRailItem: Identifiable {
-    /// "today" | "vs" | "all" | a daily mode's dbKey.
+    /// "today" | "all" | a daily mode's dbKey.
     let key: String
     let label: String
     let icon: ModeIconKind
@@ -27,7 +29,7 @@ struct StatsRailItem: Identifiable {
 
 /// Builds the rail in web order from the same catalog lists the page draws.
 func buildStatsRailItems(sweep: [HomeMode], more: [HomeMode],
-                         byMode: [String: DailyCompletion], vsDailyWon: Bool?) -> [StatsRailItem] {
+                         byMode: [String: DailyCompletion]) -> [StatsRailItem] {
     func game(_ m: HomeMode) -> StatsRailItem {
         let r = m.dbKey.flatMap { byMode[$0] }
         return StatsRailItem(key: m.dbKey ?? m.id, label: ModeGen.byId(m.id)?.shortTitle ?? m.title,
@@ -38,8 +40,8 @@ func buildStatsRailItems(sweep: [HomeMode], more: [HomeMode],
             StatsRailItem(key: StatsRailKey.all, label: "All-time", icon: .symbol("trophy.fill"), accent: Color(hex: 0xD97706), dot: nil)]
         + sweep.map(game)
         + more.map(game)
-        // VS is the last chip (founder, 2026-10-01: rarely played, so it sits after Starsweep, not between the games).
-        + [StatsRailItem(key: StatsRailKey.vs, label: "VS", icon: .asset("swords"), accent: Color(hex: 0xEC4899), dot: vsDailyWon)]
+    // No VS chip (founder, 2026-10-01): VS is rarely played and its stats moved to the bottom of
+    // All-time; each game keeps its own Solo | VS switch. Twenty chips make an even 5-wide grid.
 }
 
 struct StatsRail: View {

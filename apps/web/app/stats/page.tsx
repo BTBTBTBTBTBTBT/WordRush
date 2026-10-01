@@ -127,7 +127,7 @@ function readViewParam(): string {
     const v = new URLSearchParams(window.location.search).get(VIEW_PARAM);
     if (!v) return RAIL_TODAY;
     if (v === 'all-time' || v === RAIL_ALL) return RAIL_ALL;
-    if (v === RAIL_VS) return RAIL_VS;
+    if (v === RAIL_VS) return RAIL_ALL;   // VS now lives at the bottom of All-time (2026-10-01)
     return MODE_BY_DBKEY[v] ? v : RAIL_TODAY;
   } catch { return RAIL_TODAY; }
 }
@@ -156,10 +156,16 @@ export default function StatsPage() {
   const [selected, setSelectedState] = useState<string>(RAIL_TODAY);
   useIsomorphicLayoutEffect(() => { setSelectedState(readViewParam()); }, []);
   const setSelected = useCallback((key: string) => {
+    // The Today card's VS pill still says 'vs': that is All-time's VS section now.
+    if (key === RAIL_VS) {
+      setSelectedState(RAIL_ALL);
+      writeViewParam(RAIL_ALL);
+      setTimeout(() => document.getElementById('vs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      return;
+    }
     setSelectedState(key);
     writeViewParam(key);
-    if (key === RAIL_VS) setActiveTab((t) => (t === 'solo' ? 'vs' : t));
-    else if (key !== RAIL_ALL && key !== RAIL_TODAY && !hasVs(key)) setActiveTab('solo');
+    if (key !== RAIL_ALL && key !== RAIL_TODAY && !hasVs(key)) setActiveTab('solo');
   }, []);
 
   // P5 split: static-per-user data fetches once; only trends/openers/weekday
@@ -338,6 +344,9 @@ export default function StatsPage() {
 
   // The VS page shows one word game's VS board at a time — the most-played by default.
   const [vsMode, setVsMode] = useState<string>('DUEL');
+  // The All-time page's VS boards keep their OWN Live | CPU choice, so picking CPU there never
+  // re-scopes the rest of All-time (its charts read activeTab).
+  const [vsTab, setVsTab] = useState<'vs' | 'vs_cpu'>('vs');
   const vsModes = useMemo(() => SWEEP_MODES.filter((m) => hasVs(m.dbKey as string)), []);
 
   if (loading) {
@@ -668,123 +677,6 @@ export default function StatsPage() {
             );
           })()}
 
-          {selected === RAIL_VS && (
-            <>
-              {/* VS RECORD summary card */}
-              <div
-                className="p-4 flex items-center gap-4"
-                style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #fce7f3 100%)', border: '1.5px solid #c4b5fd', borderRadius: '16px' }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed15' }}>
-                  <Swords className="w-5 h-5" style={{ color: '#7c3aed' }} />
-                </div>
-                <div className="flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#6d28d9' }}>VS Record</div>
-                  <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
-                    {vsRecord.wins}–{vsRecord.losses}
-                  </div>
-                  <div className="text-[10px] font-extrabold" style={{ color: vsDailyWon === null ? 'var(--color-text-muted)' : vsDailyWon ? WIN_FG : '#dc2626' }}>
-                    Today: {vsDailyWon === null ? 'not played' : vsDailyWon ? 'won' : 'lost'}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-black" style={{ color: '#7c3aed' }}>{vsRecord.winRate}%</div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                    Win rate · {vsRecord.total} {vsRecord.total === 1 ? 'match' : 'matches'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Rivalries — most-faced opponents with head-to-head bars (Pro). */}
-              {vsRecord.total > 0 && <RivalriesCard userId={profile.id} isPro={isProActive} />}
-
-              {/* vs CPU record — unranked practice: no leaderboard, no XP, no streak. */}
-              <div
-                className="p-4 flex items-center gap-4"
-                style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#64748b15' }}>
-                  <Bot className="w-5 h-5" style={{ color: '#64748b' }} />
-                </div>
-                <div className="flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs CPU</div>
-                  <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
-                    {cpuRecord.wins}–{cpuRecord.losses}
-                  </div>
-                  {cpuRecord.total === 0 ? (
-                    <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Beat a bot to start your record</div>
-                  ) : cpuBestStreak > 0 && (
-                    <div className="text-[10px] font-extrabold" style={{ color: '#f97316' }}>🔥 Best streak: {cpuBestStreak}</div>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.total === 0 ? '—' : `${cpuRecord.winRate}%`}</div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                    {cpuRecord.total === 0 ? 'No games yet' : `Win rate · ${cpuRecord.total} ${cpuRecord.total === 1 ? 'match' : 'matches'}`}
-                  </div>
-                </div>
-              </div>
-
-              {/* Per-game VS board: pick the word game, Live or CPU. */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                  {vsModes.map((m) => {
-                    const active = vsMode === m.dbKey;
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => setVsMode(m.dbKey as string)}
-                        className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold"
-                        style={{
-                          background: active ? `${m.accentHex}15` : 'var(--color-surface)',
-                          border: active ? `1.5px solid ${m.accentHex}` : '1.5px solid var(--color-border)',
-                          color: active ? m.accentHex : 'var(--color-text-muted)',
-                        }}
-                      >
-                        {m.shortTitle}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  {(['vs', 'vs_cpu'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setActiveTab(t)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold"
-                      style={{
-                        background: activeTab === t ? '#7c3aed15' : 'var(--color-surface)',
-                        border: activeTab === t ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                        color: activeTab === t ? '#7c3aed' : 'var(--color-text-muted)',
-                      }}
-                    >
-                      {t === 'vs' ? 'Live' : 'CPU'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <ModeDetailPanel
-                userId={profile.id}
-                gameMode={vsMode}
-                isPro={isProActive}
-                stats={(() => {
-                  const pt = activeTab === 'vs_cpu' ? 'vs_cpu' : 'vs';
-                  const rows = stats.filter((s) => s.play_type === pt && s.game_mode === vsMode);
-                  if (rows.length === 0) return null;
-                  return {
-                    wins: rows.reduce((s, r) => s + (r.wins || 0), 0),
-                    losses: rows.reduce((s, r) => s + (r.losses || 0), 0),
-                    total_games: rows.reduce((s, r) => s + (r.total_games || 0), 0),
-                    best_score: rows.reduce((min, r) => r.best_score > 0 && (min === 0 || r.best_score < min) ? r.best_score : min, 0),
-                    fastest_time: rows.reduce((min, r) => r.fastest_time > 0 && (min === 0 || r.fastest_time < min) ? r.fastest_time : min, 0),
-                  };
-                })()}
-                statsLoading={loadingStats}
-                playType={activeTab === 'vs_cpu' ? 'vs_cpu' : 'vs'}
-              />
-            </>
-          )}
-
           {selected === RAIL_ALL && (
             <>
               {/* Lifetime headline stats + this-week strip */}
@@ -1105,6 +997,122 @@ export default function StatsPage() {
                   );
                 })}
               </div>
+
+              {/* VS (founder, 2026-10-01): VS left the game strip (rarely played; the grid now
+                  comes out even). Its record, Rivalries, CPU practice and per-game boards live here. */}
+              <div id="vs-section" style={{ scrollMarginTop: 12 }}><SectionHeader label="VS" accent="#ec4899" /></div>
+              {/* VS RECORD summary card */}
+              <div
+                className="p-4 flex items-center gap-4"
+                style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #fce7f3 100%)', border: '1.5px solid #c4b5fd', borderRadius: '16px' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed15' }}>
+                  <Swords className="w-5 h-5" style={{ color: '#7c3aed' }} />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#6d28d9' }}>VS Record</div>
+                  <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                    {vsRecord.wins}–{vsRecord.losses}
+                  </div>
+                  <div className="text-[10px] font-extrabold" style={{ color: vsDailyWon === null ? 'var(--color-text-muted)' : vsDailyWon ? WIN_FG : '#dc2626' }}>
+                    Today: {vsDailyWon === null ? 'not played' : vsDailyWon ? 'won' : 'lost'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-black" style={{ color: '#7c3aed' }}>{vsRecord.winRate}%</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                    Win rate · {vsRecord.total} {vsRecord.total === 1 ? 'match' : 'matches'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rivalries — most-faced opponents with head-to-head bars (Pro). */}
+              {vsRecord.total > 0 && <RivalriesCard userId={profile.id} isPro={isProActive} />}
+
+              {/* vs CPU record — unranked practice: no leaderboard, no XP, no streak. */}
+              <div
+                className="p-4 flex items-center gap-4"
+                style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#64748b15' }}>
+                  <Bot className="w-5 h-5" style={{ color: '#64748b' }} />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs CPU</div>
+                  <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                    {cpuRecord.wins}–{cpuRecord.losses}
+                  </div>
+                  {cpuRecord.total === 0 ? (
+                    <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Beat a bot to start your record</div>
+                  ) : cpuBestStreak > 0 && (
+                    <div className="text-[10px] font-extrabold" style={{ color: '#f97316' }}>🔥 Best streak: {cpuBestStreak}</div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.total === 0 ? '—' : `${cpuRecord.winRate}%`}</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                    {cpuRecord.total === 0 ? 'No games yet' : `Win rate · ${cpuRecord.total} ${cpuRecord.total === 1 ? 'match' : 'matches'}`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Per-game VS board: pick the word game, Live or CPU. */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  {vsModes.map((m) => {
+                    const active = vsMode === m.dbKey;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => setVsMode(m.dbKey as string)}
+                        className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold"
+                        style={{
+                          background: active ? `${m.accentHex}15` : 'var(--color-surface)',
+                          border: active ? `1.5px solid ${m.accentHex}` : '1.5px solid var(--color-border)',
+                          color: active ? m.accentHex : 'var(--color-text-muted)',
+                        }}
+                      >
+                        {m.shortTitle}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  {(['vs', 'vs_cpu'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setVsTab(t)}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold"
+                      style={{
+                        background: vsTab === t ? '#7c3aed15' : 'var(--color-surface)',
+                        border: vsTab === t ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
+                        color: vsTab === t ? '#7c3aed' : 'var(--color-text-muted)',
+                      }}
+                    >
+                      {t === 'vs' ? 'Live' : 'CPU'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <ModeDetailPanel
+                userId={profile.id}
+                gameMode={vsMode}
+                isPro={isProActive}
+                stats={(() => {
+                  const pt = vsTab;
+                  const rows = stats.filter((s) => s.play_type === pt && s.game_mode === vsMode);
+                  if (rows.length === 0) return null;
+                  return {
+                    wins: rows.reduce((s, r) => s + (r.wins || 0), 0),
+                    losses: rows.reduce((s, r) => s + (r.losses || 0), 0),
+                    total_games: rows.reduce((s, r) => s + (r.total_games || 0), 0),
+                    best_score: rows.reduce((min, r) => r.best_score > 0 && (min === 0 || r.best_score < min) ? r.best_score : min, 0),
+                    fastest_time: rows.reduce((min, r) => r.fastest_time > 0 && (min === 0 || r.fastest_time < min) ? r.fastest_time : min, 0),
+                  };
+                })()}
+                statsLoading={loadingStats}
+                playType={vsTab}
+              />
 
               {/* ── Recent Matches (every game, newest first) ── */}
               <SectionHeader label="Recent Matches" accent="#2563eb" />

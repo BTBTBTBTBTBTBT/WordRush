@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { CalendarDays, Swords, Trophy, LayoutGrid, X } from 'lucide-react';
+import { CalendarDays, Trophy, LayoutGrid, X } from 'lucide-react';
 import type { ModeMeta } from '@/lib/modes.generated';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
@@ -52,8 +52,8 @@ export function buildRailItems(
     { key: RAIL_ALL, label: 'All-time', icon: Trophy, accent: '#d97706' },
     ...sweepModes.map(game),
     ...moreModes.map(game),
-    // VS is the last chip (founder, 2026-10-01: rarely played, so it sits after Starsweep, not between the games).
-    { key: RAIL_VS, label: 'VS', icon: Swords, accent: '#ec4899', dot: vsDailyWon === null ? null : vsDailyWon ? 'won' : 'lost' },
+    // No VS chip (founder, 2026-10-01): VS is rarely played and its stats moved to the bottom of
+    // All-time; each game keeps its own Solo | VS switch. Twenty chips make an even 5-wide grid.
   ];
 }
 

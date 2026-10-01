@@ -17,7 +17,7 @@ struct TodayCard: View {
     let standing: StatsDeepService.DailyStanding?
     let sweepStreak: Int
     let flawlessStreak: Int
-    /// Rail jump: a dbKey, StatsRailKey.vs, or StatsRailKey.today.
+    /// Rail jump: a dbKey, StatsRailKey.today, or StatsRailKey.vs (All-time's VS section since 2026-10-01).
     let onJump: (String) -> Void
     /// Tap on a sweep tile — play (or reopen) that daily, exactly as the tile did.
     let onOpenDaily: (HomeMode) -> Void
