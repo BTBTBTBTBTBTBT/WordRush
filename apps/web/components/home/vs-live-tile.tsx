@@ -1,6 +1,6 @@
 'use client';
 
-import { Swords } from 'lucide-react';
+import { UserPlus, Swords } from 'lucide-react';
 import type { HomeCard } from './mode-chrome';
 
 // VS Battle as a full-width tile at the very bottom of the game area (founder +
@@ -64,12 +64,14 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
         </div>
       </button>
       {isPro && (
+        // A soft pill in the tile's own teal (founder, 2026-10-01: the hot-pink 3D button looked out of place).
         <button
           type="button"
           onClick={onInvite}
-          className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md transition-transform active:scale-95 shrink-0"
-          style={{ background: 'linear-gradient(135deg, #ec4899, #db2777)', boxShadow: '0 2px 0 #9f1239' }}
+          className="flex items-center gap-1 px-3 font-black text-[11px] rounded-full transition-transform active:scale-95 shrink-0"
+          style={{ height: 32, background: `${accent}14`, border: `1.5px solid ${accent}55`, color: '#0f766e' }}
         >
+          <UserPlus className="w-3.5 h-3.5" strokeWidth={2.6} />
           Invite
         </button>
       )}
