@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Sparkles, TrendingUp, Star, Share } from 'lucide-react';
+import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Sparkles, TrendingUp, Star, Share, BookOpen, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { getUserSweepRank, getUserAllTimeSweepRank, type AllTimeRecord } from '@/lib/daily-service';
@@ -183,6 +183,63 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
           <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
         </div>
       )}
+    </div>
+  );
+}
+
+export interface PuzzleRecords { sweepDays: number; flawlessDays: number; bestSweep: number; bestFlawless: number; sweep: number; flawless: number }
+
+/**
+ * The Puzzles' own sweep record (founder, 2026-10-01 stats audit): days every
+ * Puzzles daily was finished / won, the best runs, and the current run, the
+ * twin of the Daily Sweeps card above it.
+ */
+export function PuzzleSweepRecordsCard({ rec }: { rec: PuzzleRecords | null }) {
+  const color = '#db2777';
+  return (
+    <div className="overflow-hidden" style={card}>
+      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+      <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+          <LayoutGrid className="w-4 h-4" style={{ color }} />
+        </div>
+        <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Puzzles Sweeps</div>
+      </div>
+      {rec && (rec.sweepDays > 0 || rec.flawlessDays > 0) ? (
+        <div className="px-4 pb-3 grid grid-cols-2 gap-1">
+          <MyStatCell icon={Sparkles} value={`${rec.sweepDays}`} label="Puzzles Sweeps" color={color} />
+          <MyStatCell icon={Trophy} value={`${rec.flawlessDays}`} label="Puzzles Flawless" color="#d97706" />
+          <MyStatCell icon={Flame} value={`${rec.sweep}`} label="Current Run" color="#f97316" />
+          <MyStatCell icon={TrendingUp} value={`${rec.bestSweep}`} label={rec.bestFlawless > 0 ? `Best Run · ${rec.bestFlawless} flawless` : 'Best Run'} color="#2563eb" />
+        </div>
+      ) : (
+        <div className="py-5 text-center">
+          <LayoutGrid className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+          <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Finish every Puzzle in a day for your first sweep</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The Word of the Day record (founder, 2026-10-01 stats audit). Hidden until the first answer. */
+export function WordQuizRecordCard({ rec }: { rec: { streak: number; best: number; right: number; answered: number } | null }) {
+  if (!rec || rec.answered === 0) return null;
+  const color = '#7c3aed';
+  return (
+    <div className="overflow-hidden" style={card}>
+      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+      <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+          <BookOpen className="w-4 h-4" style={{ color }} />
+        </div>
+        <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Word of the Day</div>
+      </div>
+      <div className="px-4 pb-3 grid grid-cols-3 gap-1">
+        <MyStatCell icon={Flame} value={`${rec.streak}`} label="Word Streak" color="#f97316" />
+        <MyStatCell icon={TrendingUp} value={`${rec.best}`} label="Best Run" color="#2563eb" />
+        <MyStatCell icon={Target} value={`${Math.round((rec.right / rec.answered) * 100)}%`} label={`Right ${rec.right} of ${rec.answered}`} color={color} />
+      </div>
     </div>
   );
 }

@@ -18,7 +18,7 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { writeFileSync } from 'node:fs';
-import { statLines, statPanels, modeAggregates, type StatTotals, type MatchRow } from '../lib/mode-stats';
+import { statLines, statPanels, modeAggregates, distributionSpec, guessNoun, type StatTotals, type MatchRow } from '../lib/mode-stats';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..');
@@ -158,6 +158,9 @@ const fixtures = CASES.map(([dbKey, semantics, guessBase, totals, matches]) => {
     dbKey, semantics, guessBase, totals, matches, aggregates,
     lines: statLines(dbKey, totals, semantics, guessBase, aggregates),
     panels: statPanels(dbKey, semantics),
+    // Founder, 2026-10-01: every Puzzles game's histogram buckets + labels, and its unit.
+    distribution: distributionSpec(dbKey),
+    noun: guessNoun(semantics),
   };
 });
 

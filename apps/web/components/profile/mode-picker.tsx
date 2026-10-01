@@ -175,7 +175,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
         }}
         onClick={() => setMoreOpen((o) => !o)}
         aria-expanded={moreOpen}
-        aria-label="More Games"
+        aria-label="Puzzles"
       >
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${accent}15` }}>
           {selectedMore?.romanNumeral ? (
@@ -212,7 +212,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
             className="p-3 space-y-2 animate-fade-in-up"
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}
             role="group"
-            aria-label="More Games"
+            aria-label="Puzzles"
           >
             {morePickerSections(morePicker).map((s) => (
               <div key={s.key}>

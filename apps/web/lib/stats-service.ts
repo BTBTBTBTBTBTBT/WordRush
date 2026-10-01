@@ -14,8 +14,8 @@ import {
 import { checkAchievements } from './achievement-service';
 import { grantFreeShield } from './shield-service';
 import { DAILY_MODES, requiredDailyModeCount, sweepModesFor } from './daily-modes';
-import { MODE_BY_DBKEY } from './modes.generated';
-import { guessDistributionRange, type MatchRow } from './mode-stats';
+import { MODE_BY_DBKEY, SWEEP_MODES, MORE_GAME_MODES } from './modes.generated';
+import { guessDistributionRange, distributionSpec, type MatchRow } from './mode-stats';
 
 export interface XpResult {
   xpGain: number;
@@ -1399,17 +1399,20 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
   };
   // Kindred (4–7 submissions) and Muddle (5–13 checks) start their histogram
   // at the perfect count — a "1 guess" bar would be impossible there.
+  // Every Puzzles game has its own buckets and labels (founder, 2026-10-01 stats audit:
+  // mistakes, checks, misses, strokes over par, Hubbub's rank); the word modes keep their table.
+  const spec = distributionSpec(gameMode);
   const range = guessDistributionRange(gameMode);
-  const minBucket = range?.min ?? 1;
-  const maxBucket = range?.max ?? MAX_BUCKET[gameMode] ?? 6;
+  const minBucket = spec ? spec.buckets[0].bucket : range?.min ?? 1;
+  const maxBucket = spec ? spec.buckets[spec.buckets.length - 1].bucket : range?.max ?? MAX_BUCKET[gameMode] ?? 6;
   const clampable = gameMode === 'GAUNTLET';
   const dist: Record<number, number> = {};
   for (let g = minBucket; g <= maxBucket; g++) dist[g] = 0;
   for (const row of rows) {
-    if (row.winner_id == null) continue; // original query: .not('winner_id','is',null)
     const isP1 = row.player1_id === userId;
     const won = row.winner_id === userId;
-    if (!won) continue;
+    // Hubbub draws the rank EVERY game reached; everything else draws wins.
+    if (!spec?.countsAll && (row.winner_id == null || !won)) continue;
     const score = isP1 ? row.player1_score : 0;
     if (score <= 0) continue;
     const bucket = Math.max(minBucket, Math.min(score, maxBucket));
@@ -1418,7 +1421,7 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
   const guessDist = cpu ? [] : Object.entries(dist).map(([g, c]) => ({
     guesses: Number(g),
     count: c,
-    label: `${g}${clampable && Number(g) === maxBucket ? '+' : ''}`,
+    label: spec?.buckets.find((b) => b.bucket === Number(g))?.label ?? `${g}${clampable && Number(g) === maxBucket ? '+' : ''}`,
   }));
 
   // ── Solve-time history (fetchSolveTimeHistory, limit 30, oldest→newest) ──
@@ -1631,6 +1634,11 @@ export interface DailyPointsPoint {
   totalPoints: number;
   swept: boolean;
   flawless: boolean;
+  /** Founder, 2026-10-01 stats audit: two lines, Wordocious and Puzzles, each marking its own sweeps. */
+  wordPoints: number;
+  puzzlePoints: number;
+  puzzleSwept: boolean;
+  puzzleFlawless: boolean;
 }
 
 /** Add/subtract days from a YYYY-MM-DD local-day string. */
@@ -1752,15 +1760,17 @@ export async function fetchDailySweepStats(userId: string): Promise<DailySweepSt
   };
 }
 
+const SWEEP_KEYS_SET = new Set(SWEEP_MODES.map((m) => m.dbKey as string));
+
 export async function fetchDailyPointsOverTime(userId: string, days = 30): Promise<DailyPointsPoint[]> {
   const cutoff = dayShift(getTodayLocal(), -(days - 1));
   const { data: rows } = await (supabase as any)
     .from('daily_results')
-    .select('day, composite_score, completed')
+    .select('day, game_mode, composite_score, completed')
     .eq('user_id', userId)
     .eq('play_type', 'solo')
     .gte('day', cutoff) as {
-    data: Array<{ day: string; composite_score: number; completed: boolean }> | null;
+    data: Array<{ day: string; game_mode: string; composite_score: number; completed: boolean }> | null;
   };
   if (!rows || rows.length === 0) return [];
 
@@ -1774,11 +1784,34 @@ export async function fetchDailyPointsOverTime(userId: string, days = 30): Promi
   const sweptSet = new Set((bonuses || []).filter((b) => b.sweep_awarded).map((b) => b.day));
   const flawlessSet = new Set((bonuses || []).filter((b) => b.flawless_awarded).map((b) => b.day));
 
-  const perDay = new Map<string, number>();
-  for (const r of rows) perDay.set(r.day, (perDay.get(r.day) ?? 0) + Math.round(r.composite_score ?? 0));
+  // Wordocious (the sweep games) and Puzzles (the More Games dailies) are two
+  // lines: one total jumped at the Puzzles launch and read as a big improvement.
+  const puzzleKeys = new Set(MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).map((m) => m.dbKey as string));
+  const perDay = new Map<string, { word: number; puzzle: number; pPlayed: Set<string>; pWon: Set<string> }>();
+  for (const r of rows) {
+    const d = perDay.get(r.day) ?? { word: 0, puzzle: 0, pPlayed: new Set<string>(), pWon: new Set<string>() };
+    const pts = Math.round(r.composite_score ?? 0);
+    if (puzzleKeys.has(r.game_mode)) {
+      d.puzzle += pts;
+      d.pPlayed.add(r.game_mode);
+      if (r.completed) d.pWon.add(r.game_mode);
+    } else if (SWEEP_KEYS_SET.has(r.game_mode)) {
+      d.word += pts;
+    }
+    perDay.set(r.day, d);
+  }
 
   return [...perDay.entries()]
-    .map(([day, totalPoints]) => ({ day, totalPoints, swept: sweptSet.has(day), flawless: flawlessSet.has(day) }))
+    .map(([day, d]) => ({
+      day,
+      totalPoints: d.word + d.puzzle,
+      swept: sweptSet.has(day),
+      flawless: flawlessSet.has(day),
+      wordPoints: d.word,
+      puzzlePoints: d.puzzle,
+      puzzleSwept: puzzleKeys.size > 0 && d.pPlayed.size >= puzzleKeys.size,
+      puzzleFlawless: puzzleKeys.size > 0 && d.pWon.size >= puzzleKeys.size,
+    }))
     .sort((a, b) => a.day.localeCompare(b.day));
 }
 

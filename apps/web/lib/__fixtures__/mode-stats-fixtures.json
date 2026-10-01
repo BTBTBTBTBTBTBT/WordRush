@@ -27,7 +27,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -70,6 +71,11 @@
       "openerYield": true,
       "positionAccuracy": true,
       "stageBreakdown": false
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -100,7 +106,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -143,6 +150,11 @@
       "openerYield": true,
       "positionAccuracy": true,
       "stageBreakdown": false
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -173,7 +185,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -216,6 +229,11 @@
       "openerYield": true,
       "positionAccuracy": true,
       "stageBreakdown": false
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -246,7 +264,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -289,6 +308,11 @@
       "openerYield": true,
       "positionAccuracy": true,
       "stageBreakdown": false
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -319,7 +343,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -362,6 +387,11 @@
       "openerYield": true,
       "positionAccuracy": true,
       "stageBreakdown": true
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -392,7 +422,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -435,6 +466,11 @@
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -465,7 +501,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -508,6 +545,11 @@
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": null,
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -538,15 +580,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -566,21 +605,51 @@
         "value": "-"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Time",
+        "value": "-"
       },
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "mistake",
+      "many": "mistakes"
     }
   },
   {
@@ -697,16 +766,13 @@
       "boardsTotal": 5,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 3
     },
     "lines": [
       {
         "label": "Wins",
         "value": "4"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -725,21 +791,51 @@
         "value": "3m 58s"
       },
       {
-        "label": "No-hint Wins",
-        "value": "2"
+        "label": "Avg Time",
+        "value": "6m 57s"
       },
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "4"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "mistake",
+      "many": "mistakes"
     }
   },
   {
@@ -770,16 +866,13 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
         "value": "36"
-      },
-      {
-        "label": "Losses",
-        "value": "5"
       },
       {
         "label": "Win Rate",
@@ -798,21 +891,51 @@
         "value": "3m 58s"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Time",
+        "value": "-"
       },
       {
         "label": "Win Streak",
         "value": "6"
+      },
+      {
+        "label": "Best Streak",
+        "value": "14"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "mistake",
+      "many": "mistakes"
     }
   },
   {
@@ -843,15 +966,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -871,21 +991,51 @@
         "value": "-"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Time",
+        "value": "-"
       },
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "mistake",
+      "many": "mistakes"
     }
   },
   {
@@ -968,16 +1118,13 @@
       "boardsTotal": 3,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 1
     },
     "lines": [
       {
         "label": "Wins",
         "value": "2"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -996,21 +1143,51 @@
         "value": "2m 10s"
       },
       {
-        "label": "No-hint Wins",
-        "value": "2"
+        "label": "Avg Time",
+        "value": "2m 40s"
       },
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "2"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "mistake",
+      "many": "mistakes"
     }
   },
   {
@@ -1041,7 +1218,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -1049,8 +1227,8 @@
         "value": "0"
       },
       {
-        "label": "Losses",
-        "value": "0"
+        "label": "Win Rate",
+        "value": "0%"
       },
       {
         "label": "Par Rate",
@@ -1065,8 +1243,8 @@
         "value": "-"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Time",
+        "value": "-"
       },
       {
         "label": "Win Streak",
@@ -1078,12 +1256,46 @@
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "Par"
+        },
+        {
+          "bucket": 2,
+          "label": "+1"
+        },
+        {
+          "bucket": 3,
+          "label": "+2"
+        },
+        {
+          "bucket": 4,
+          "label": "+3"
+        },
+        {
+          "bucket": 5,
+          "label": "+4"
+        },
+        {
+          "bucket": 6,
+          "label": "+5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "par",
+      "many": "par"
     }
   },
   {
@@ -1229,7 +1441,8 @@
       "boardsTotal": 5,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 1
     },
     "lines": [
       {
@@ -1237,8 +1450,8 @@
         "value": "4"
       },
       {
-        "label": "Losses",
-        "value": "1"
+        "label": "Win Rate",
+        "value": "80%"
       },
       {
         "label": "Par Rate",
@@ -1253,8 +1466,8 @@
         "value": "1m 15s"
       },
       {
-        "label": "No-hint Wins",
-        "value": "3"
+        "label": "Avg Time",
+        "value": "2m 38s"
       },
       {
         "label": "Win Streak",
@@ -1266,12 +1479,46 @@
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "Par"
+        },
+        {
+          "bucket": 2,
+          "label": "+1"
+        },
+        {
+          "bucket": 3,
+          "label": "+2"
+        },
+        {
+          "bucket": 4,
+          "label": "+3"
+        },
+        {
+          "bucket": 5,
+          "label": "+4"
+        },
+        {
+          "bucket": 6,
+          "label": "+5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "par",
+      "many": "par"
     }
   },
   {
@@ -1302,7 +1549,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -1310,8 +1558,8 @@
         "value": "2"
       },
       {
-        "label": "Losses",
-        "value": "1"
+        "label": "Win Rate",
+        "value": "67%"
       },
       {
         "label": "Par Rate",
@@ -1326,8 +1574,8 @@
         "value": "-"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Time",
+        "value": "-"
       },
       {
         "label": "Win Streak",
@@ -1339,12 +1587,46 @@
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "Par"
+        },
+        {
+          "bucket": 2,
+          "label": "+1"
+        },
+        {
+          "bucket": 3,
+          "label": "+2"
+        },
+        {
+          "bucket": 4,
+          "label": "+3"
+        },
+        {
+          "bucket": 5,
+          "label": "+4"
+        },
+        {
+          "bucket": 6,
+          "label": "+5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "par",
+      "many": "par"
     }
   },
   {
@@ -1375,15 +1657,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -1409,6 +1688,10 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
@@ -1418,6 +1701,52 @@
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 5,
+          "label": "5"
+        },
+        {
+          "bucket": 6,
+          "label": "6"
+        },
+        {
+          "bucket": 7,
+          "label": "7"
+        },
+        {
+          "bucket": 8,
+          "label": "8"
+        },
+        {
+          "bucket": 9,
+          "label": "9"
+        },
+        {
+          "bucket": 10,
+          "label": "10"
+        },
+        {
+          "bucket": 11,
+          "label": "11"
+        },
+        {
+          "bucket": 12,
+          "label": "12"
+        },
+        {
+          "bucket": 13,
+          "label": "13"
+        }
+      ],
+      "clamped": false,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "check",
+      "many": "checks"
     }
   },
   {
@@ -1552,16 +1881,13 @@
       "boardsTotal": 20,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 3
     },
     "lines": [
       {
         "label": "Wins",
         "value": "3"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -1586,6 +1912,10 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "3"
       }
     ],
     "panels": {
@@ -1595,6 +1925,52 @@
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 5,
+          "label": "5"
+        },
+        {
+          "bucket": 6,
+          "label": "6"
+        },
+        {
+          "bucket": 7,
+          "label": "7"
+        },
+        {
+          "bucket": 8,
+          "label": "8"
+        },
+        {
+          "bucket": 9,
+          "label": "9"
+        },
+        {
+          "bucket": 10,
+          "label": "10"
+        },
+        {
+          "bucket": 11,
+          "label": "11"
+        },
+        {
+          "bucket": 12,
+          "label": "12"
+        },
+        {
+          "bucket": 13,
+          "label": "13"
+        }
+      ],
+      "clamped": false,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "check",
+      "many": "checks"
     }
   },
   {
@@ -1625,15 +2001,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Cleared",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -1659,15 +2032,53 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 10,
+          "label": "0"
+        },
+        {
+          "bucket": 11,
+          "label": "1"
+        },
+        {
+          "bucket": 12,
+          "label": "2"
+        },
+        {
+          "bucket": 13,
+          "label": "3"
+        },
+        {
+          "bucket": 14,
+          "label": "4"
+        },
+        {
+          "bucket": 15,
+          "label": "5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "miss",
+      "many": "misses"
     }
   },
   {
@@ -1844,16 +2255,13 @@
       "boardsTotal": 40,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 1
     },
     "lines": [
       {
         "label": "Cleared",
         "value": "3"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -1878,15 +2286,53 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "3"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 10,
+          "label": "0"
+        },
+        {
+          "bucket": 11,
+          "label": "1"
+        },
+        {
+          "bucket": 12,
+          "label": "2"
+        },
+        {
+          "bucket": 13,
+          "label": "3"
+        },
+        {
+          "bucket": 14,
+          "label": "4"
+        },
+        {
+          "bucket": 15,
+          "label": "5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "miss",
+      "many": "misses"
     }
   },
   {
@@ -1917,7 +2363,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -1949,17 +2396,51 @@
         "value": "-"
       },
       {
-        "label": "Win Streak",
+        "label": "Hubbub+ Run",
         "value": "0"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "Pandemonium"
+        },
+        {
+          "bucket": 2,
+          "label": "Thunder"
+        },
+        {
+          "bucket": 3,
+          "label": "Uproar"
+        },
+        {
+          "bucket": 4,
+          "label": "Hubbub"
+        },
+        {
+          "bucket": 5,
+          "label": "Racket"
+        },
+        {
+          "bucket": 6,
+          "label": "Lower"
+        }
+      ],
+      "clamped": true,
+      "countsAll": true
+    },
+    "noun": {
+      "one": "rank",
+      "many": "ranks"
     }
   },
   {
@@ -2085,7 +2566,8 @@
       "boardsTotal": 80,
       "hardestFirst": 0,
       "pangrams": 2,
-      "longestWord": "OUTDOING"
+      "longestWord": "OUTDOING",
+      "hintsTotal": 3
     },
     "lines": [
       {
@@ -2117,17 +2599,51 @@
         "value": "OUTDOING"
       },
       {
-        "label": "Win Streak",
+        "label": "Hubbub+ Run",
         "value": "1"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "Pandemonium"
+        },
+        {
+          "bucket": 2,
+          "label": "Thunder"
+        },
+        {
+          "bucket": 3,
+          "label": "Uproar"
+        },
+        {
+          "bucket": 4,
+          "label": "Hubbub"
+        },
+        {
+          "bucket": 5,
+          "label": "Racket"
+        },
+        {
+          "bucket": 6,
+          "label": "Lower"
+        }
+      ],
+      "clamped": true,
+      "countsAll": true
+    },
+    "noun": {
+      "one": "rank",
+      "many": "ranks"
     }
   },
   {
@@ -2158,7 +2674,8 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
@@ -2190,17 +2707,51 @@
         "value": "-"
       },
       {
-        "label": "Win Streak",
+        "label": "Hubbub+ Run",
         "value": "8"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "Pandemonium"
+        },
+        {
+          "bucket": 2,
+          "label": "Thunder"
+        },
+        {
+          "bucket": 3,
+          "label": "Uproar"
+        },
+        {
+          "bucket": 4,
+          "label": "Hubbub"
+        },
+        {
+          "bucket": 5,
+          "label": "Racket"
+        },
+        {
+          "bucket": 6,
+          "label": "Lower"
+        }
+      ],
+      "clamped": true,
+      "countsAll": true
+    },
+    "noun": {
+      "one": "rank",
+      "many": "ranks"
     }
   },
   {
@@ -2231,15 +2782,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -2251,8 +2799,8 @@
         "value": "0"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Checks",
+        "value": "-"
       },
       {
         "label": "Fastest",
@@ -2265,15 +2813,53 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3"
+        },
+        {
+          "bucket": 5,
+          "label": "4"
+        },
+        {
+          "bucket": 6,
+          "label": "5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "check",
+      "many": "checks"
     }
   },
   {
@@ -2385,16 +2971,13 @@
       "boardsTotal": 4,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 2
     },
     "lines": [
       {
         "label": "Wins",
         "value": "3"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -2405,8 +2988,8 @@
         "value": "1"
       },
       {
-        "label": "No-hint Wins",
-        "value": "2"
+        "label": "Avg Checks",
+        "value": "0.7"
       },
       {
         "label": "Fastest",
@@ -2419,15 +3002,53 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "3"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3"
+        },
+        {
+          "bucket": 5,
+          "label": "4"
+        },
+        {
+          "bucket": 6,
+          "label": "5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "check",
+      "many": "checks"
     }
   },
   {
@@ -2458,15 +3079,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -2478,8 +3096,8 @@
         "value": "0"
       },
       {
-        "label": "No-hint Wins",
-        "value": "0"
+        "label": "Avg Checks",
+        "value": "-"
       },
       {
         "label": "Fastest",
@@ -2492,15 +3110,53 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3"
+        },
+        {
+          "bucket": 5,
+          "label": "4"
+        },
+        {
+          "bucket": 6,
+          "label": "5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "check",
+      "many": "checks"
     }
   },
   {
@@ -2589,16 +3245,13 @@
       "boardsTotal": 3,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 1
     },
     "lines": [
       {
         "label": "Wins",
         "value": "2"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -2609,8 +3262,8 @@
         "value": "1"
       },
       {
-        "label": "No-hint Wins",
-        "value": "1"
+        "label": "Avg Checks",
+        "value": "0.5"
       },
       {
         "label": "Fastest",
@@ -2623,15 +3276,53 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "2"
       }
     ],
     "panels": {
-      "guessDistribution": false,
+      "guessDistribution": true,
       "solveTime": true,
       "topWords": false,
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 1,
+          "label": "0"
+        },
+        {
+          "bucket": 2,
+          "label": "1"
+        },
+        {
+          "bucket": 3,
+          "label": "2"
+        },
+        {
+          "bucket": 4,
+          "label": "3"
+        },
+        {
+          "bucket": 5,
+          "label": "4"
+        },
+        {
+          "bucket": 6,
+          "label": "5+"
+        }
+      ],
+      "clamped": true,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "check",
+      "many": "checks"
     }
   },
   {
@@ -2662,15 +3353,12 @@
       "boardsTotal": 0,
       "hardestFirst": 0,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 0
     },
     "lines": [
       {
         "label": "Wins",
-        "value": "0"
-      },
-      {
-        "label": "Losses",
         "value": "0"
       },
       {
@@ -2696,6 +3384,10 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "0"
       }
     ],
     "panels": {
@@ -2705,6 +3397,32 @@
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 4,
+          "label": "4"
+        },
+        {
+          "bucket": 5,
+          "label": "5"
+        },
+        {
+          "bucket": 6,
+          "label": "6"
+        },
+        {
+          "bucket": 7,
+          "label": "7"
+        }
+      ],
+      "clamped": false,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   },
   {
@@ -2825,16 +3543,13 @@
       "boardsTotal": 16,
       "hardestFirst": 2,
       "pangrams": 0,
-      "longestWord": ""
+      "longestWord": "",
+      "hintsTotal": 1
     },
     "lines": [
       {
         "label": "Wins",
         "value": "3"
-      },
-      {
-        "label": "Losses",
-        "value": "1"
       },
       {
         "label": "Win Rate",
@@ -2859,6 +3574,10 @@
       {
         "label": "Win Streak",
         "value": "0"
+      },
+      {
+        "label": "Best Streak",
+        "value": "3"
       }
     ],
     "panels": {
@@ -2868,6 +3587,32 @@
       "openerYield": false,
       "positionAccuracy": false,
       "stageBreakdown": false
+    },
+    "distribution": {
+      "buckets": [
+        {
+          "bucket": 4,
+          "label": "4"
+        },
+        {
+          "bucket": 5,
+          "label": "5"
+        },
+        {
+          "bucket": 6,
+          "label": "6"
+        },
+        {
+          "bucket": 7,
+          "label": "7"
+        }
+      ],
+      "clamped": false,
+      "countsAll": false
+    },
+    "noun": {
+      "one": "guess",
+      "many": "guesses"
     }
   }
 ]

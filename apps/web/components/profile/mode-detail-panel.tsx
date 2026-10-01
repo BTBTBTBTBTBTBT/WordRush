@@ -14,7 +14,7 @@ import { createInvite, vsHrefForMode } from '@/lib/invite-service';
 import { useAuth } from '@/lib/auth-context';
 import { ProDeepModeCard } from './pro-insights-deep';
 import { fetchModeDetail } from '@/lib/stats-service';
-import { statPanels, modeAggregates, guessNoun, type MatchRow } from '@/lib/mode-stats';
+import { statPanels, modeAggregates, guessNoun, distributionSpec, avg1, type MatchRow } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 
 interface ModeData {
@@ -79,6 +79,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
     },
     { revalidateOnFocus: true },
   );
+  const agg = data ? modeAggregates(gameMode, data.matches ?? [], meta?.guessBase ?? 1) : undefined;
   const loading = dataLoading || statsLoading;
 
   useEffect(() => {
@@ -201,13 +202,26 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             fastestTime={stats.fastest_time}
             accentColor={accentColor}
             winStreak={data?.winStreak}
-            aggregates={data ? modeAggregates(gameMode, data.matches ?? [], meta?.guessBase ?? 1) : undefined}
+            aggregates={agg}
           />
 
-          {/* Guess Distribution — gated by the mode's stats profile (Gauntlet: up to 50
-              guesses across 21 boards, a histogram is meaningless; custom engines only
-              where the count has a real range — Kindred submissions, Muddle checks). */}
-          {data && panels.guessDistribution && <GuessDistribution data={data.guessDist} accentColor={accentColor} noun={noun} />}
+          {/* Hints line (founder, 2026-10-01 stats audit): every Puzzles game has hints;
+              how often the player leans on them, and how many wins needed none. */}
+          {agg && meta?.group === 'more' && agg.games > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 12 }}>
+              <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>Hints</span>
+              <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>
+                {avg1(agg.hintsTotal, agg.games)} per game · {agg.noHintWins} no-hint {agg.noHintWins === 1 ? 'win' : 'wins'}
+              </span>
+            </div>
+          )}
+
+          {/* Distribution — gated by the mode's stats profile (Gauntlet: up to 50 guesses
+              across 21 boards, a histogram is meaningless). Every Puzzles game draws one in
+              its own unit (distributionSpec); Hubbub counts every game's rank. */}
+          {data && panels.guessDistribution && (
+            <GuessDistribution data={data.guessDist} accentColor={accentColor} noun={noun} unit={distributionSpec(gameMode)?.countsAll ? 'games' : 'wins'} />
+          )}
 
           {/* Solve Time Trend */}
           {data && panels.solveTime && data.solveHistory.length >= 2 && (

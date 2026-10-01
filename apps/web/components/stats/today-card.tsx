@@ -28,6 +28,8 @@ interface Props {
   standing: DailyStanding | null;
   sweepStreak: number;
   flawlessStreak: number;
+  /** The Puzzles row's runs (founder, 2026-10-01 stats audit; the home banner shows them too). */
+  puzzleStreaks?: { sweep: number; flawless: number };
   /** Rendered under the tiles on a Flawless day (the streak + share footer). */
   flawlessFooter?: ReactNode;
   onJump: (key: string) => void;
@@ -60,7 +62,7 @@ export function bestMomentToday(todayDailies: Map<string, DailyCompletion>): { t
   return null;
 }
 
-export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, standing, sweepStreak, flawlessStreak, flawlessFooter, onJump }: Props) {
+export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, standing, sweepStreak, flawlessStreak, puzzleStreaks, flawlessFooter, onJump }: Props) {
   const sweepToday = sweepModes.filter((m) => todayDailies.has(m.id));
   const completed = sweepToday.length;
   const wins = sweepToday.filter((m) => todayDailies.get(m.id)?.won).length;
@@ -160,15 +162,15 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
             )
         )}
 
-        {/* The rest of the day: More Games, VS, where you stand. */}
+        {/* The rest of the day: Puzzles, VS, where you stand. */}
         <div className="flex gap-2 mt-3">
-          {pill(<LayoutGrid className="w-3 h-3" />, 'More Games', moreDaily.length > 0 ? `${morePlayed} of ${moreDaily.length}` : '—', '#4f46e5',
+          {pill(<LayoutGrid className="w-3 h-3" />, 'Puzzles', moreDaily.length > 0 ? `${morePlayed} of ${moreDaily.length}` : '—', '#4f46e5',
             () => onJump(moreDaily[0]?.dbKey ?? 'today'))}
           {pill(<Swords className="w-3 h-3" />, 'VS Battle', vsDailyWon === null ? '—' : vsDailyWon ? 'W' : 'L', '#ec4899', () => onJump('vs'))}
           {pill(<TrendingUp className="w-3 h-3" />, 'Standing', standing ? `Top ${standing.topPercent}%` : '—', '#7c3aed')}
         </div>
 
-        {/* The ten More Games as tiny chips, so the day reads at a glance. */}
+        {/* The ten Puzzles as tiny chips, so the day reads at a glance. */}
         {moreDaily.length > 0 && (
           <div className="flex items-center justify-center gap-1 mt-2" aria-hidden="true">
             {moreDaily.map((m) => {
@@ -200,11 +202,15 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
         <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
           <Flame className="w-4 h-4 shrink-0" style={{ color: '#f97316' }} fill="currentColor" />
           <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Sweep streak</div>
-            <div className="text-sm font-black leading-tight" style={{ color: 'var(--color-text)' }}>
-              {sweepStreak} {sweepStreak === 1 ? 'day' : 'days'}
-              {flawlessStreak >= 2 && <span className="text-[10px] font-black ml-1" style={{ color: '#b45309' }}>· {flawlessStreak} flawless</span>}
-            </div>
+            <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Sweep streaks</div>
+            {/* Wordocious, then Puzzles: the same two runs the home banner shows. */}
+            {([['Wordocious', sweepStreak, flawlessStreak], ['Puzzles', puzzleStreaks?.sweep ?? 0, puzzleStreaks?.flawless ?? 0]] as const).map(([label, run, flaw]) => (
+              <div key={label} className="text-[12px] font-black leading-tight whitespace-nowrap" style={{ color: 'var(--color-text)' }}>
+                <span className="text-[9px] font-black uppercase mr-1" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                {run} {run === 1 ? 'day' : 'days'}
+                {flaw >= 2 && <span className="text-[10px] font-black ml-1" style={{ color: '#b45309' }}>· {flaw} flawless</span>}
+              </div>
+            ))}
           </div>
         </div>
         <button

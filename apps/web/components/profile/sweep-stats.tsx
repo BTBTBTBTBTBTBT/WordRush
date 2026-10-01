@@ -24,33 +24,52 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 
 // Exported: Profile's Trends section renders this chart alone — the sweep
 // COUNTS grid now lives solely on Records → You (page-role split).
+/** Two lines (founder, 2026-10-01 stats audit): Wordocious in violet, Puzzles in pink, each
+ *  dot marking that row's own sweep (its color) or flawless (gold) day. */
 export function PointsChart({ points }: { points: DailyPointsPoint[] }) {
   if (points.length < 2) return null;
   const W = 320, H = 90, pad = 6;
-  const max = Math.max(1, ...points.map((p) => p.totalPoints));
+  const max = Math.max(1, ...points.map((p) => Math.max(p.wordPoints ?? p.totalPoints, p.puzzlePoints ?? 0)));
   const stepX = (W - pad * 2) / (points.length - 1);
   const x = (i: number) => pad + i * stepX;
   const y = (v: number) => H - pad - (v / max) * (H - pad * 2);
-  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.totalPoints).toFixed(1)}`).join(' ');
-  const area = `${line} L ${x(points.length - 1).toFixed(1)} ${H - pad} L ${x(0).toFixed(1)} ${H - pad} Z`;
+  const path = (v: (p: DailyPointsPoint) => number) => points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(v(p)).toFixed(1)}`).join(' ');
+  const wordLine = path((p) => p.wordPoints ?? p.totalPoints);
+  const area = `${wordLine} L ${x(points.length - 1).toFixed(1)} ${H - pad} L ${x(0).toFixed(1)} ${H - pad} Z`;
+  const hasPuzzles = points.some((p) => (p.puzzlePoints ?? 0) > 0);
+  const puzzleLine = path((p) => p.puzzlePoints ?? 0);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3" style={{ height: 90 }} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="sweepArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#sweepArea)" />
-      <path d={line} fill="none" stroke="#7c3aed" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      {points.map((p, i) => (
-        (p.swept || p.flawless) ? (
-          <circle key={i} cx={x(i)} cy={y(p.totalPoints)} r={3.5}
-            fill={p.flawless ? '#f59e0b' : '#ec4899'} stroke="#fff" strokeWidth={1} />
-        ) : null
-      ))}
-    </svg>
+    <>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3" style={{ height: 90 }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="sweepArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#sweepArea)" />
+        <path d={wordLine} fill="none" stroke="#7c3aed" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {hasPuzzles && <path d={puzzleLine} fill="none" stroke="#db2777" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
+        {points.map((p, i) => (
+          (p.swept || p.flawless) ? (
+            <circle key={`w${i}`} cx={x(i)} cy={y(p.wordPoints ?? p.totalPoints)} r={3.5}
+              fill={p.flawless ? '#f59e0b' : '#7c3aed'} stroke="#fff" strokeWidth={1} />
+          ) : null
+        ))}
+        {hasPuzzles && points.map((p, i) => (
+          (p.puzzleSwept || p.puzzleFlawless) ? (
+            <circle key={`p${i}`} cx={x(i)} cy={y(p.puzzlePoints)} r={3.5}
+              fill={p.puzzleFlawless ? '#f59e0b' : '#db2777'} stroke="#fff" strokeWidth={1} />
+          ) : null
+        ))}
+      </svg>
+      <div className="flex items-center justify-center gap-3 mt-1 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-0.5 rounded" style={{ background: '#7c3aed' }} />Wordocious</span>
+        {hasPuzzles && <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-0.5 rounded" style={{ background: '#db2777' }} />Puzzles</span>}
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full" style={{ background: '#f59e0b' }} />flawless</span>
+      </div>
+    </>
   );
 }
 

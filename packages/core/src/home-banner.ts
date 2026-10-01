@@ -132,3 +132,28 @@ export function dayStreaks(
     flawless: run((v) => v.won >= total),
   };
 }
+
+/**
+ * Lifetime totals for a set of days (founder, 2026-10-01 stats audit): how many
+ * days were sweeps / flawless and the longest run of each. Feeds the All-time
+ * "Puzzles Sweeps" card (total = 10) and the Word of the Day record (total = 1).
+ */
+export function dayRunTotals(
+  days: Record<string, { played: number; won: number }>,
+  total: number,
+): { sweepDays: number; flawlessDays: number; bestSweep: number; bestFlawless: number } {
+  if (total <= 0) return { sweepDays: 0, flawlessDays: 0, bestSweep: 0, bestFlawless: 0 };
+  const tally = (ok: (d: { played: number; won: number }) => boolean) => {
+    const hits = Object.keys(days).filter((k) => ok(days[k])).sort();
+    let best = 0, run = 0, prev: string | null = null;
+    for (const d of hits) {
+      run = prev !== null && shiftDay(prev, 1) === d ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return { count: hits.length, best };
+  };
+  const sweep = tally((v) => v.played >= total);
+  const flawless = tally((v) => v.won >= total);
+  return { sweepDays: sweep.count, flawlessDays: flawless.count, bestSweep: sweep.best, bestFlawless: flawless.best };
+}

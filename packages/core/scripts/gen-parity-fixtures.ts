@@ -34,7 +34,7 @@ import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, re
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
-import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, type GroupProgress } from '../src/home-banner';
+import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -301,7 +301,13 @@ export function renderHomeBannerFixtures() {
   const streaks = todays.map((today) => ({ days: history, total: 10, today, ...dayStreaks(history, 10, today) }));
   const quiz = { '2026-10-01': { played: 1, won: 1 }, '2026-09-30': { played: 1, won: 1 }, '2026-09-29': { played: 1, won: 0 } };
   streaks.push({ days: quiz, total: 1, today: '2026-10-01', ...dayStreaks(quiz, 1, '2026-10-01') });
-  return { headlines, clocks, groups, streaks };
+  // Founder, 2026-10-01 stats audit: lifetime sweep/flawless days and best runs.
+  const totals = [
+    { days: history, total: 10, ...dayRunTotals(history, 10) },
+    { days: quiz, total: 1, ...dayRunTotals(quiz, 1) },
+    { days: {}, total: 10, ...dayRunTotals({}, 10) },
+  ];
+  return { headlines, clocks, groups, streaks, totals };
 }
 
 const TARGET_DIRS = [

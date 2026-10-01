@@ -5,7 +5,7 @@
 // rules themselves (what counts as a sweep, how a run is counted) live in the
 // shared core so iOS and Android count exactly the same way.
 
-import { dayStreaks, isDailySeed } from '@wordle-duel/core';
+import { dayStreaks, dayRunTotals, isDailySeed } from '@wordle-duel/core';
 import { supabase } from './supabase-client';
 import { getTodayLocal, toLocalDayString } from './daily-service';
 
@@ -23,7 +23,21 @@ function sinceDay(): string {
  * More Games daily modes; a day needs all of them.
  */
 export async function fetchPuzzleStreaks(userId: string, dbKeys: string[]): Promise<{ sweep: number; flawless: number }> {
-  if (!userId || dbKeys.length === 0) return { sweep: 0, flawless: 0 };
+  return dayStreaks(await puzzleDays(userId, dbKeys), dbKeys.length, getTodayLocal());
+}
+
+/**
+ * The All-time "Puzzles Sweeps" card (founder, 2026-10-01 stats audit): lifetime
+ * sweep and flawless days for the Puzzles, their best runs, and the current runs.
+ */
+export async function fetchPuzzleRecords(userId: string, dbKeys: string[]) {
+  const days = await puzzleDays(userId, dbKeys);
+  return { ...dayRunTotals(days, dbKeys.length), ...dayStreaks(days, dbKeys.length, getTodayLocal()) };
+}
+
+/** Each day's distinct Puzzles finished and won, from the player's solo daily_results. */
+async function puzzleDays(userId: string, dbKeys: string[]): Promise<Record<string, { played: number; won: number }>> {
+  if (!userId || dbKeys.length === 0) return {};
   const { data } = await (supabase as any)
     .from('daily_results')
     .select('day, game_mode, completed')
@@ -43,7 +57,7 @@ export async function fetchPuzzleStreaks(userId: string, dbKeys: string[]): Prom
   }
   const days: Record<string, { played: number; won: number }> = {};
   for (const [day, set] of played) days[day] = { played: set.size, won: won.get(day)?.size ?? 0 };
-  return dayStreaks(days, dbKeys.length, getTodayLocal());
+  return days;
 }
 
 /**
@@ -111,4 +125,22 @@ export async function saveQuizAnswer(userId: string | null, day: string, word: s
     .insert({ user_id: userId, day, word, picked: answer.picked, correct: answer.correct });
   // 23505 = already answered today on another device; the first answer stands.
   if (error && error.code !== '23505') throw error;
+}
+
+/**
+ * The All-time Word of the Day record (founder, 2026-10-01 stats audit): the
+ * current word streak, the best run, and how many answers were right.
+ */
+export async function fetchQuizRecord(userId: string): Promise<{ streak: number; best: number; right: number; answered: number }> {
+  if (!userId) return { streak: 0, best: 0, right: 0, answered: 0 };
+  const { data } = await (supabase as any)
+    .from('word_quiz_answers')
+    .select('day, correct')
+    .eq('user_id', userId)
+    .gte('day', sinceDay())
+    .limit(LOOKBACK_DAYS) as { data: Array<{ day: string; correct: boolean }> | null };
+  const days: Record<string, { played: number; won: number }> = {};
+  for (const r of data ?? []) days[r.day] = { played: 1, won: r.correct ? 1 : 0 };
+  const totals = dayRunTotals(days, 1);
+  return { streak: dayStreaks(days, 1, getTodayLocal()).flawless, best: totals.bestFlawless, right: totals.flawlessDays, answered: totals.sweepDays };
 }

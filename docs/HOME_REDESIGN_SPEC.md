@@ -89,3 +89,19 @@ Keep today's widget style (frame, footer strip, chip look). Add the Puzzles grou
 
 ## 6. Stats rail
 VS is the last chip, after Starsweep (done on all three platforms).
+
+## 7. Stats audit (founder-approved 2026-10-01, all 11 items)
+
+Reference implementation: web (`apps/web/app/stats/page.tsx`, `components/stats/*`, `components/profile/*`, `lib/mode-stats.ts`, `lib/home-streaks.ts`). Shared logic + fixtures: `apps/web/lib/mode-stats.ts` → `mode-stats-fixtures.json` (now also carries `distribution` and `noun` per case and the new `hintsTotal` aggregate); `packages/core/src/home-banner.ts` → `home-banner-fixtures.json` (new `totals` section for `dayRunTotals`).
+
+1. **Rename** every visible "More Games" on the Stats tab to "Puzzles" (Today card pill and chip header, rail/grid section labels).
+2. **Today card streak tile**: two lines, Wordocious then Puzzles, each "N days" plus "· M flawless" (when M ≥ 2, as today). Puzzles runs come from the same Puzzles streak fetch the home banner uses.
+3. **All-time Solve Time Trend**: only the 8 Wordocious (sweep) games; right-side hint "Wordocious games".
+4. **All-time Daily Points**: two series over the last 30 days: Wordocious points per day (sweep-mode daily_results) in `#7c3aed`, Puzzles points per day (visible More Games daily_results) in `#db2777`. Each series marks its own sweep and flawless days (Wordocious from daily_bonuses, Puzzles = every visible Puzzles daily played / won that day). Hint: "Last 30 days · ● sweep · ● flawless".
+5. **All-time "Your Records"**: a "Puzzles Sweeps" card under the existing Daily Sweep records card: Sweeps (days all Puzzles finished), Flawless (all won), Best sweep run, Best flawless run, from `dayRunTotals(days, total)` over the player's Puzzles daily_results (~400 days).
+6. **Distribution chart on every Puzzles game page** from `distributionSpec(dbKey)`: buckets + labels (Sudocious/Starsweep mistakes 0,1,2,3+; Codebreaker/Crosswordocious checks 0–5+; Spyglass misses 0–5+; Letter Ladder Par,+1…+5+; Hubbub rank Pandemonium…Racket, Lower; Kindred/Muddle unchanged). A row's bucket is its guess_count (player1_score) clamped into the range when `clamped`. Wins only, except Hubbub (`countsAll`: every game). Card title "<noun> distribution" with `guessNoun(semantics)` (rank/par added). Footer: tapped bar shows "<label> · N wins · X% of wins" (just the label when it isn't a number; "games" instead of "wins" for Hubbub); otherwise "N wins total" / "N games total". Labels wider than 2 characters get a wider label column.
+7. **Grids** (via ModeStats, fixtures): Best Streak on every Puzzles grid, Avg Time for Sudocious/Starsweep/Ladder/Codebreaker/Crosswordocious, Losses and No-hint Wins dropped from those grids. Exact labels are in the fixtures.
+8. **Hints line** under the grid on every Puzzles game page (the More Games group, ProperNoundle included), when the player has games: "HINTS · 0.4 per game · 23 no-hint wins" (avg = hintsTotal / games, one decimal; noHintWins from the aggregates).
+9. **Word of the Day record** in All-time "Your Records" (hidden with no answers): current word streak (dayStreaks(days,1).flawless), best run (dayRunTotals(days,1).bestFlawless), "Right N of M" with the percentage. Data: the player's word_quiz_answers.
+10. **Hubbub** grid's last cell reads "Hubbub+ Run" (in the fixtures).
+11. **Insights "strongest mode"**: only modes with ≥ 5 games and a win rate ≤ 95%; if none qualify, no strongest-mode line.

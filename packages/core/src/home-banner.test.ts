@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bannerHeadline, bannerClockLine, dayStreaks, greetingWord, groupStatus, groupTier, groupStreak, shiftDay } from './home-banner';
+import { bannerHeadline, bannerClockLine, dayStreaks, dayRunTotals, greetingWord, groupStatus, groupTier, groupStreak, shiftDay } from './home-banner';
 
 const g = (played: number, won: number, total: number) => ({ played, won, total });
 const at = (hour: number, name = 'BMT') => ({ hour, name });
@@ -88,5 +88,15 @@ describe('day streaks', () => {
   it('shiftDay crosses months and years', () => {
     expect(shiftDay('2026-03-01', -1)).toBe('2026-02-28');
     expect(shiftDay('2026-12-31', 1)).toBe('2027-01-01');
+  });
+});
+
+describe('day run totals', () => {
+  it('counts sweep and flawless days and their longest runs', () => {
+    const f = { played: 10, won: 10 }, s = { played: 10, won: 9 }, p = { played: 3, won: 3 };
+    const days = { '2026-09-24': f, '2026-09-25': f, '2026-09-26': s, '2026-09-27': p, '2026-09-28': f, '2026-09-29': f, '2026-09-30': f };
+    expect(dayRunTotals(days, 10)).toEqual({ sweepDays: 6, flawlessDays: 5, bestSweep: 3, bestFlawless: 3 });
+    expect(dayRunTotals({}, 10)).toEqual({ sweepDays: 0, flawlessDays: 0, bestSweep: 0, bestFlawless: 0 });
+    expect(dayRunTotals({ '2026-02-28': f, '2026-03-01': f }, 10).bestFlawless).toBe(2);
   });
 });

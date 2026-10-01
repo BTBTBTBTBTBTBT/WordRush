@@ -49,7 +49,7 @@ import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
-import { useYourRecords, NextUpCard, SweepRecordsCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
+import { useYourRecords, NextUpCard, SweepRecordsCard, PuzzleSweepRecordsCard, WordQuizRecordCard, GameRecordsCard, RecordsHeldRow, TrophyShelf } from '@/components/stats/your-records';
 import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
 import { RecentMatchesList, isPlayedToday, isUnlimitedSolo } from '@/components/stats/recent-matches';
 import { SignatureCard, StandingTrendCard } from '@/components/stats/signature-cards';
@@ -273,7 +273,9 @@ export default function StatsPage() {
   const sweepStats = staticData?.sweepStats ?? null;
   const activity = tabData?.activity ?? [];
   const guessDist = tabData?.guessDist ?? [];
-  const solveHistory = tabData?.solveHistory ?? [];
+  // All-time's trend is the Wordocious games only (founder, 2026-10-01 stats audit: a 6-minute
+  // Sudocious next to a 40-second Classic made the line meaningless); each Puzzles page has its own.
+  const solveHistory = (tabData?.solveHistory ?? []).filter((r) => isSweepMode(r.mode));
   const calendar = tabData?.calendar ?? [];
   const topWordsAllTime = tabData?.topWordsAllTime ?? [];
   const openers = tabData?.openers ?? [];
@@ -288,6 +290,19 @@ export default function StatsPage() {
   // The rail: Today · sweep games · VS · the More Games titles this viewer can
   // see (catalog ∩ remote flags) · All-time.
   const visibleMore = useMemo(() => MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey && flagOn(m.flagKey)), [flagOn]);
+  // Founder, 2026-10-01 stats audit: the Puzzles' runs and lifetime sweeps (Today card,
+  // All-time "Puzzles Sweeps") and the Word of the Day record.
+  const puzzleKeysParam = visibleMore.map((m) => m.dbKey as string).join(',');
+  const { data: puzzleRec } = useSWR(
+    profile ? ['puzzle-records', profile.id, puzzleKeysParam] : null,
+    () => import('@/lib/home-streaks').then((m) => m.fetchPuzzleRecords(profile!.id, puzzleKeysParam ? puzzleKeysParam.split(',') : [])),
+    { revalidateOnFocus: false },
+  );
+  const { data: quizRec } = useSWR(
+    profile ? ['quiz-record', profile.id] : null,
+    () => import('@/lib/home-streaks').then((m) => m.fetchQuizRecord(profile!.id)),
+    { revalidateOnFocus: false },
+  );
   const railItems = useMemo(() => buildRailItems(SWEEP_MODES, visibleMore, todayDailies, vsDailyWon), [visibleMore, todayDailies, vsDailyWon]);
 
   // Swipe on the page moves one chip along the rail (founder: no 19-page
@@ -403,7 +418,9 @@ export default function StatsPage() {
   // Insights for the All-time page
   const insights: string[] = (() => {
     const out: string[] = [];
-    const qualifying = stats.filter((s) => (s.total_games || 0) >= 3);
+    // Founder, 2026-10-01 stats audit: a game nearly everyone wins (Seven at 100%) says nothing,
+    // so only games with 5+ plays and a win rate of 95% or less can be the "strongest".
+    const qualifying = stats.filter((s) => (s.total_games || 0) >= 5 && s.wins / s.total_games <= 0.95);
     if (qualifying.length > 0) {
       const strongest = qualifying.reduce((best, s) => {
         const rate = s.wins / s.total_games;
@@ -601,6 +618,7 @@ export default function StatsPage() {
               standing={standing}
               sweepStreak={sweepStats?.currentSweepStreak ?? 0}
               flawlessStreak={sweepStats?.currentFlawlessStreak ?? 0}
+              puzzleStreaks={puzzleRec ? { sweep: puzzleRec.sweep, flawless: puzzleRec.flawless } : undefined}
               flawlessFooter={<FlawlessBannerFooter total={DAILY_MODES.length} />}
               onJump={setSelected}
             />
@@ -697,6 +715,8 @@ export default function StatsPage() {
               <SectionHeader label="Your Records" accent="#d97706" />
               <NextUpCard dailyStreak={profile.daily_login_streak ?? 0} chases={yours.chases} />
               <SweepRecordsCard sweep={yours.sweep} sweepRankToday={yours.sweepRankToday} sweepRankAllTime={yours.sweepRankAllTime} />
+              <PuzzleSweepRecordsCard rec={puzzleRec ?? null} />
+              <WordQuizRecordCard rec={quizRec ?? null} />
               {/* D3.3: settled weekly friends races. */}
               <WeeklyFinishesCard userId={profile.id} />
               <RecordsHeldRow recordsHeld={yours.recordsHeld} />
@@ -762,7 +782,7 @@ export default function StatsPage() {
               {/* Solve Time Trend */}
               {solveHistory.length >= 2 && (
                 <>
-                  <SectionHeader label="Solve Time Trend" accent="#0d9488" />
+                  <SectionHeader label="Solve Time Trend" accent="#0d9488" right={<span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Wordocious games</span>} />
                   <SolveTimeChart data={solveHistory} />
                 </>
               )}
@@ -771,7 +791,7 @@ export default function StatsPage() {
               {sweepPoints.length >= 2 && (
                 <>
                   <SectionHeader label="Daily Points" accent="#ec4899" />
-                  <ChartCard title="Points per day" hint="Last 30 days · ● sweep · ● flawless">
+                  <ChartCard title="Points per day" hint="Last 30 days · dots mark sweeps">
                     <PointsChart points={sweepPoints} />
                   </ChartCard>
                 </>

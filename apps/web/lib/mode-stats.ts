@@ -98,12 +98,14 @@ export interface ModeAggregates {
   pangrams: number;
   /** Hubbub: the longest word the player entered ("" = none). */
   longestWord: string;
+  /** Hints used across every game (the per-game Hints line, founder 2026-10-01). */
+  hintsTotal: number;
 }
 
 export const EMPTY_AGGREGATES: ModeAggregates = {
   games: 0, wins: 0, cleanWins: 0, perfectWins: 0, noHintWins: 0, winGuessTotal: 0,
   winTimeTotal: 0, timedWins: 0, fastestPerfect: 0, boardsSolved: 0, boardsTotal: 0,
-  hardestFirst: 0, pangrams: 0, longestWord: '',
+  hardestFirst: 0, pangrams: 0, longestWord: '', hintsTotal: 0,
 };
 
 /** "-" for none, "45s", "2m", "2m 5s" — the grid's own compact time (never "0s"). */
@@ -129,6 +131,11 @@ export function avg1(total: number, n: number, sub = 0): string {
   if (n <= 0) return '-';
   const tenths = Math.max(0, Math.round(((total - sub * n) * 10) / n));
   return `${Math.floor(tenths / 10)}.${tenths % 10}`;
+}
+
+/** Average winning time ("2m 14s"), "-" with no timed wins. */
+function avgTime(a: ModeAggregates): string {
+  return statTime(a.timedWins > 0 ? Math.round(a.winTimeTotal / a.timedWins) : 0);
 }
 
 // ── The perfect guess_count and board count per custom mode ───────────────
@@ -189,6 +196,7 @@ export function modeAggregates(dbKey: string, matches: MatchRow[], guessBase = 1
     const hints = Math.max(0, Math.floor(row.hints_used || 0));
     const ev = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
     a.games++;
+    a.hintsTotal += hints;
     if (won) {
       a.wins++;
       a.winGuessTotal += g;
@@ -244,58 +252,58 @@ function defaultLines(t: StatTotals, semantics: string, guessBase: number): Stat
   ];
 }
 
-/** Sudocious, Starsweep: Wins · Losses · Win Rate · Clean · Avg Mistakes · Fastest · No-hint Wins · Streak. */
+/** Sudocious, Starsweep: Wins · Win Rate · Clean · Avg Mistakes · Fastest · Avg Time · Streak · Best Streak. */
 const mistakesLines: Lines = (t, _s, base, a) => [
   { label: 'Wins', value: String(t.wins) },
-  { label: 'Losses', value: String(t.losses) },
   { label: 'Win Rate', value: pct(t.wins, t.totalGames) },
   { label: 'Clean', value: String(a.cleanWins) },
   { label: 'Avg Mistakes', value: avg1(a.winGuessTotal, a.wins, base) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
-  { label: 'No-hint Wins', value: String(a.noHintWins) },
-  { label: 'Win Streak', value: String(t.streak) },
-];
-
-/** Letter Ladder: Wins · Losses · Par Rate · Avg Over Par · Fastest Par · No-hint Wins · Streak · Best Streak. */
-const ladderLines: Lines = (t, _s, base, a) => [
-  { label: 'Wins', value: String(t.wins) },
-  { label: 'Losses', value: String(t.losses) },
-  { label: 'Par Rate', value: pct(a.perfectWins, a.wins) },
-  { label: 'Avg Over Par', value: avg1(a.winGuessTotal, a.wins, base) },
-  { label: 'Fastest Par', value: statTime(a.fastestPerfect) },
-  { label: 'No-hint Wins', value: String(a.noHintWins) },
+  { label: 'Avg Time', value: avgTime(a) },
   { label: 'Win Streak', value: String(t.streak) },
   { label: 'Best Streak', value: String(t.bestStreak) },
 ];
 
-/** Muddle: Wins · Losses · Win Rate · Clean · Avg Checks · Fastest · Words Solved · Streak. */
+/** Letter Ladder: Wins · Win Rate · Par Rate · Avg Over Par · Fastest Par · Avg Time · Streak · Best Streak. */
+const ladderLines: Lines = (t, _s, base, a) => [
+  { label: 'Wins', value: String(t.wins) },
+  { label: 'Win Rate', value: pct(t.wins, t.totalGames) },
+  { label: 'Par Rate', value: pct(a.perfectWins, a.wins) },
+  { label: 'Avg Over Par', value: avg1(a.winGuessTotal, a.wins, base) },
+  { label: 'Fastest Par', value: statTime(a.fastestPerfect) },
+  { label: 'Avg Time', value: avgTime(a) },
+  { label: 'Win Streak', value: String(t.streak) },
+  { label: 'Best Streak', value: String(t.bestStreak) },
+];
+
+/** Muddle: Wins · Win Rate · Clean · Avg Checks · Fastest · Words Solved · Streak · Best Streak. */
 const scrambleLines: Lines = (t, _s, _base, a) => [
   { label: 'Wins', value: String(t.wins) },
-  { label: 'Losses', value: String(t.losses) },
   { label: 'Win Rate', value: pct(t.wins, t.totalGames) },
   { label: 'Clean', value: String(a.cleanWins) },
   { label: 'Avg Checks', value: avg1(a.winGuessTotal, a.wins) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
   { label: 'Words Solved', value: String(a.boardsSolved) },
   { label: 'Win Streak', value: String(t.streak) },
+  { label: 'Best Streak', value: String(t.bestStreak) },
 ];
 
-/** Spyglass: Cleared · Losses · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak. */
+/** Spyglass: Cleared · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak · Best Streak. */
 const wordsearchLines: Lines = (t, _s, _base, a) => {
   const tenths = a.timedWins > 0 ? Math.round((a.winTimeTotal * 10) / (a.timedWins * WORDSEARCH_WORDS)) : 0;
   return [
     { label: 'Cleared', value: String(t.wins) },
-    { label: 'Losses', value: String(t.losses) },
     { label: 'Win Rate', value: pct(t.wins, t.totalGames) },
     { label: 'Clean', value: String(a.perfectWins) },
     { label: 'Fastest', value: statTime(t.fastestTime) },
-    { label: 'Avg Time', value: statTime(a.timedWins > 0 ? Math.round(a.winTimeTotal / a.timedWins) : 0) },
+    { label: 'Avg Time', value: avgTime(a) },
     { label: 'Sec / Word', value: tenths > 0 ? `${Math.floor(tenths / 10)}.${tenths % 10}s` : '-' },
     { label: 'Win Streak', value: String(t.streak) },
+    { label: 'Best Streak', value: String(t.bestStreak) },
   ];
 };
 
-/** Hubbub: Days Played · Hubbub+ · Pandemonium · Best Rank · Avg % Max · Pangrams · Longest Word · Streak. */
+/** Hubbub: Days Played · Hubbub+ · Pandemonium · Best Rank · Avg % Max · Pangrams · Longest Word · Hubbub+ Run. */
 const hubLines: Lines = (t, _s, base, a) => [
   { label: 'Days Played', value: String(t.totalGames) },
   { label: 'Hubbub+', value: String(t.wins) },
@@ -304,37 +312,38 @@ const hubLines: Lines = (t, _s, base, a) => [
   { label: 'Avg % Max', value: pct(a.boardsSolved, a.boardsTotal) },
   { label: 'Pangrams', value: String(a.pangrams) },
   { label: 'Longest Word', value: a.longestWord || '-' },
-  { label: 'Win Streak', value: String(t.streak) },
+  // A Hubbub "win" is reaching Hubbub+ (founder, 2026-10-01: "Win Streak" was unclear here).
+  { label: 'Hubbub+ Run', value: String(t.streak) },
 ];
 
-/** Crosswordocious, Codebreaker: Wins · Losses · Win Rate · Clean · No-hint Wins · Fastest · Avg Time · Streak. */
-const checksLines: Lines = (t, _s, _base, a) => [
+/** Crosswordocious, Codebreaker: Wins · Win Rate · Clean · Avg Checks · Fastest · Avg Time · Streak · Best Streak. */
+const checksLines: Lines = (t, _s, base, a) => [
   { label: 'Wins', value: String(t.wins) },
-  { label: 'Losses', value: String(t.losses) },
   { label: 'Win Rate', value: pct(t.wins, t.totalGames) },
   { label: 'Clean', value: String(a.cleanWins) },
-  { label: 'No-hint Wins', value: String(a.noHintWins) },
+  { label: 'Avg Checks', value: avg1(a.winGuessTotal, a.wins, base) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
-  { label: 'Avg Time', value: statTime(a.timedWins > 0 ? Math.round(a.winTimeTotal / a.timedWins) : 0) },
+  { label: 'Avg Time', value: avgTime(a) },
   { label: 'Win Streak', value: String(t.streak) },
+  { label: 'Best Streak', value: String(t.bestStreak) },
 ];
 
-/** Kindred: Wins · Losses · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak. */
+/** Kindred: Wins · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak · Best Streak. */
 const groupsLines: Lines = (t, _s, base, a) => [
   { label: 'Wins', value: String(t.wins) },
-  { label: 'Losses', value: String(t.losses) },
   { label: 'Win Rate', value: pct(t.wins, t.totalGames) },
   { label: 'Perfect', value: String(a.cleanWins) },
   { label: 'Avg Mistakes', value: avg1(a.winGuessTotal, a.wins, base) },
   { label: 'Hardest 1st', value: String(a.hardestFirst) },
   { label: 'Fastest', value: statTime(t.fastestTime) },
   { label: 'Win Streak', value: String(t.streak) },
+  { label: 'Best Streak', value: String(t.bestStreak) },
 ];
 
 const WORD_PANELS: StatPanels = { guessDistribution: true, solveTime: true, topWords: true, openerYield: true, positionAccuracy: true, stageBreakdown: false };
 /** Custom engines: solve-time trend only — no word rows, so no word-only cards. */
 const CUSTOM_PANELS: StatPanels = { guessDistribution: false, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false };
-/** Kindred (4–7 submissions) and Muddle (5–13 checks) have a histogram worth drawing. */
+/** Every Puzzles game draws a histogram in its own unit (founder, 2026-10-01 stats audit). */
 const CUSTOM_DIST_PANELS: StatPanels = { ...CUSTOM_PANELS, guessDistribution: true };
 
 interface StatProfile {
@@ -351,14 +360,14 @@ const PROFILES: Record<string, StatProfile> = {
   // ProperNoundle guesses names, not words: the word grid + distribution apply,
   // but "Top words" / opener yield / position accuracy would be noise.
   PROPERNOUNDLE: { lines: defaultLines, panels: { ...CUSTOM_PANELS, guessDistribution: true } },
-  SUDOKU: { lines: mistakesLines, panels: CUSTOM_PANELS },
-  REGIONS: { lines: mistakesLines, panels: CUSTOM_PANELS },
-  LADDER: { lines: ladderLines, panels: CUSTOM_PANELS },
+  SUDOKU: { lines: mistakesLines, panels: CUSTOM_DIST_PANELS },
+  REGIONS: { lines: mistakesLines, panels: CUSTOM_DIST_PANELS },
+  LADDER: { lines: ladderLines, panels: CUSTOM_DIST_PANELS },
   SCRAMBLE: { lines: scrambleLines, panels: CUSTOM_DIST_PANELS },
-  WORDSEARCH: { lines: wordsearchLines, panels: CUSTOM_PANELS },
-  HUB: { lines: hubLines, panels: CUSTOM_PANELS },
-  CROSSWORD: { lines: checksLines, panels: CUSTOM_PANELS },
-  CRYPTOGRAM: { lines: checksLines, panels: CUSTOM_PANELS },
+  WORDSEARCH: { lines: wordsearchLines, panels: CUSTOM_DIST_PANELS },
+  HUB: { lines: hubLines, panels: CUSTOM_DIST_PANELS },
+  CROSSWORD: { lines: checksLines, panels: CUSTOM_DIST_PANELS },
+  CRYPTOGRAM: { lines: checksLines, panels: CUSTOM_DIST_PANELS },
   GROUPS: { lines: groupsLines, panels: CUSTOM_DIST_PANELS },
 };
 
@@ -389,12 +398,62 @@ export function guessDistributionRange(dbKey: string): { min: number; max: numbe
   return null;
 }
 
+export interface DistributionBucket {
+  /** The guess_count (matches.player1_score) this bar counts; the last bar also takes everything above it when `clamped`. */
+  bucket: number;
+  label: string;
+}
+
+export interface DistributionSpec {
+  buckets: DistributionBucket[];
+  /** The last bucket collects everything past it ("3+"). */
+  clamped: boolean;
+  /** Hubbub counts every game's rank; the rest count wins only. */
+  countsAll: boolean;
+}
+
+const HUB_TOP_RANKS = ['Pandemonium', 'Thunder', 'Uproar', 'Hubbub', 'Racket'];
+
+/**
+ * The Puzzles games' histograms (founder, 2026-10-01 stats audit): each in its
+ * own unit. Sudocious/Starsweep mistakes 0–3+, Letter Ladder Par…+5+,
+ * Codebreaker/Crosswordocious checks 0–5+, Spyglass misses 0–5+, Hubbub the
+ * rank every game reached (top five, then "Lower"). Kindred and Muddle keep
+ * their exact ranges. Null = a word mode (its own guess table).
+ */
+export function distributionSpec(dbKey: string): DistributionSpec | null {
+  const nums = (min: number, max: number, label: (b: number) => string, clamped: boolean): DistributionSpec => ({
+    buckets: Array.from({ length: max - min + 1 }, (_, i) => {
+      const b = min + i;
+      return { bucket: b, label: label(b) + (clamped && b === max ? '+' : '') };
+    }),
+    clamped,
+    countsAll: false,
+  });
+  switch (dbKey) {
+    case 'GROUPS': return nums(4, 7, (b) => String(b), false);
+    case 'SCRAMBLE': return nums(5, 13, (b) => String(b), false);
+    case 'SUDOKU': case 'REGIONS': return nums(1, 4, (b) => String(b - 1), true);
+    case 'CROSSWORD': case 'CRYPTOGRAM': return nums(1, 6, (b) => String(b - 1), true);
+    case 'WORDSEARCH': return nums(10, 15, (b) => String(b - 10), true);
+    case 'LADDER': return nums(1, 6, (b) => (b === 1 ? 'Par' : `+${b - 1}`), true);
+    case 'HUB': return {
+      buckets: [...HUB_TOP_RANKS.map((label, i) => ({ bucket: i + 1, label })), { bucket: 6, label: 'Lower' }],
+      clamped: true,
+      countsAll: true,
+    };
+    default: return null;
+  }
+}
+
 /** The unit the histogram counts, singular and plural: guess / check / mistake / miss. */
 export function guessNoun(semantics: string): { one: string; many: string } {
   switch (semantics) {
     case 'checks': return { one: 'check', many: 'checks' };
     case 'mistakes': return { one: 'mistake', many: 'mistakes' };
     case 'misses': return { one: 'miss', many: 'misses' };
+    case 'rank': return { one: 'rank', many: 'ranks' };
+    case 'overPar': return { one: 'par', many: 'par' };
     default: return { one: 'guess', many: 'guesses' };
   }
 }

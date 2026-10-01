@@ -9,11 +9,13 @@ interface GuessDistributionProps {
   /** The unit each bar counts (More Games §18): guess/guesses by default,
    *  check/checks for Muddle — the card title, empty state and footer follow. */
   noun?: { one: string; many: string };
+  /** Hubbub's chart counts every game, not just wins (founder, 2026-10-01). */
+  unit?: 'wins' | 'games';
 }
 
 const GUESS_NOUN = { one: 'guess', many: 'guesses' };
 
-export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN }: GuessDistributionProps) {
+export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit = 'wins' }: GuessDistributionProps) {
   // Tapped bar's label — shows "N guesses · X wins · Y% of wins".
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN }: Gues
         style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
       >
         <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          Win a game to see your {title}
+          {unit === 'games' ? 'Play a game' : 'Win a game'} to see your {title}
         </p>
       </div>
     );
@@ -39,6 +41,14 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN }: Gues
   }
 
   const selectedBar = selected ? data.find((d) => barLabel(d) === selected) : undefined;
+  // Word labels (Par, +2, Hubbub's ranks) need a wider column than "1".."13".
+  const wideLabels = data.some((d) => barLabel(d).length > 3);
+  const one = unit === 'games' ? 'game' : 'win';
+  const many = unit === 'games' ? 'games' : 'wins';
+  const tappedLine = (label: string, n: number) => {
+    const head = /^\d+\+?$/.test(label) ? `${label} ${label === '1' ? noun.one : noun.many}` : label;
+    return `${head} · ${n} ${n === 1 ? one : many} · ${Math.round((n / Math.max(1, totalGames)) * 100)}% of ${many}`;
+  };
 
   return (
     <div
@@ -64,7 +74,7 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN }: Gues
               }}
             >
               <span
-                className="text-xs font-black w-6 text-right shrink-0"
+                className={`text-xs font-black text-right shrink-0 ${wideLabels ? 'w-24 truncate' : 'w-6'}`}
                 style={{ color: 'var(--color-text)' }}
               >
                 {label}
@@ -96,11 +106,11 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN }: Gues
       {/* Footer: tapped-bar detail (wins share) or the plain total. */}
       {selectedBar && selectedBar.count > 0 ? (
         <p className="text-[10px] font-black text-center mt-2" style={{ color: '#7C3AED' }}>
-          {selected} {selected === '1' ? noun.one : noun.many} · {selectedBar.count} win{selectedBar.count === 1 ? '' : 's'} · {Math.round((selectedBar.count / Math.max(1, totalGames)) * 100)}% of wins
+          {tappedLine(selected as string, selectedBar.count)}
         </p>
       ) : (
         <p className="text-[10px] font-bold text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
-          {totalGames} {totalGames === 1 ? 'win' : 'wins'} total
+          {totalGames} {totalGames === 1 ? one : many} total
         </p>
       )}
     </div>

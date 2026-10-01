@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   statLines, statPanels, modeAggregates, boardsFromEvents, avg1, guessRowLabel, fewestRecordLabel,
-  guessDistributionRange, guessNoun, EMPTY_AGGREGATES, type MatchRow,
+  guessDistributionRange, distributionSpec, guessNoun, EMPTY_AGGREGATES, type MatchRow,
 } from './mode-stats';
 import fixtures from './__fixtures__/mode-stats-fixtures.json';
 
@@ -17,6 +17,8 @@ describe('mode-stats registry', () => {
       expect(agg, `aggregates(${c.dbKey})`).toEqual(c.aggregates);
       expect(statLines(c.dbKey, c.totals, c.semantics, c.guessBase, agg), `lines(${c.dbKey})`).toEqual(c.lines);
       expect(statPanels(c.dbKey, c.semantics), `panels(${c.dbKey})`).toEqual(c.panels);
+      expect(distributionSpec(c.dbKey), `distribution(${c.dbKey})`).toEqual(c.distribution);
+      expect(guessNoun(c.semantics), `noun(${c.dbKey})`).toEqual(c.noun);
     }
   });
 
@@ -46,15 +48,17 @@ describe('mode-stats registry', () => {
   it('the custom profiles read their own eight cells', () => {
     const t = { wins: 1, losses: 0, totalGames: 1, bestScore: 1, fastestTime: 300, streak: 1, bestStreak: 1 };
     const labels = (k: string, s: string, b: number) => statLines(k, t, s, b).map((l) => l.label);
-    expect(labels('SUDOKU', 'mistakes', 1)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'Avg Mistakes', 'Fastest', 'No-hint Wins', 'Win Streak']);
+    // Founder, 2026-10-01 stats audit: Best Streak on every Puzzles grid, Avg Time where it matters,
+    // hints moved to their own line, Losses dropped.
+    expect(labels('SUDOKU', 'mistakes', 1)).toEqual(['Wins', 'Win Rate', 'Clean', 'Avg Mistakes', 'Fastest', 'Avg Time', 'Win Streak', 'Best Streak']);
     expect(labels('REGIONS', 'mistakes', 1)).toEqual(labels('SUDOKU', 'mistakes', 1));
-    expect(labels('LADDER', 'overPar', 1)).toEqual(['Wins', 'Losses', 'Par Rate', 'Avg Over Par', 'Fastest Par', 'No-hint Wins', 'Win Streak', 'Best Streak']);
-    expect(labels('SCRAMBLE', 'checks', 5)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'Avg Checks', 'Fastest', 'Words Solved', 'Win Streak']);
-    expect(labels('WORDSEARCH', 'misses', 10)).toEqual(['Cleared', 'Losses', 'Win Rate', 'Clean', 'Fastest', 'Avg Time', 'Sec / Word', 'Win Streak']);
-    expect(labels('HUB', 'rank', 1)).toEqual(['Days Played', 'Hubbub+', 'Pandemonium', 'Best Rank', 'Avg % Max', 'Pangrams', 'Longest Word', 'Win Streak']);
-    expect(labels('CROSSWORD', 'checks', 1)).toEqual(['Wins', 'Losses', 'Win Rate', 'Clean', 'No-hint Wins', 'Fastest', 'Avg Time', 'Win Streak']);
+    expect(labels('LADDER', 'overPar', 1)).toEqual(['Wins', 'Win Rate', 'Par Rate', 'Avg Over Par', 'Fastest Par', 'Avg Time', 'Win Streak', 'Best Streak']);
+    expect(labels('SCRAMBLE', 'checks', 5)).toEqual(['Wins', 'Win Rate', 'Clean', 'Avg Checks', 'Fastest', 'Words Solved', 'Win Streak', 'Best Streak']);
+    expect(labels('WORDSEARCH', 'misses', 10)).toEqual(['Cleared', 'Win Rate', 'Clean', 'Fastest', 'Avg Time', 'Sec / Word', 'Win Streak', 'Best Streak']);
+    expect(labels('HUB', 'rank', 1)).toEqual(['Days Played', 'Hubbub+', 'Pandemonium', 'Best Rank', 'Avg % Max', 'Pangrams', 'Longest Word', 'Hubbub+ Run']);
+    expect(labels('CROSSWORD', 'checks', 1)).toEqual(['Wins', 'Win Rate', 'Clean', 'Avg Checks', 'Fastest', 'Avg Time', 'Win Streak', 'Best Streak']);
     expect(labels('CRYPTOGRAM', 'checks', 1)).toEqual(labels('CROSSWORD', 'checks', 1));
-    expect(labels('GROUPS', 'guesses', 4)).toEqual(['Wins', 'Losses', 'Win Rate', 'Perfect', 'Avg Mistakes', 'Hardest 1st', 'Fastest', 'Win Streak']);
+    expect(labels('GROUPS', 'guesses', 4)).toEqual(['Wins', 'Win Rate', 'Perfect', 'Avg Mistakes', 'Hardest 1st', 'Fastest', 'Win Streak', 'Best Streak']);
     // Best Rank is a rank NAME, never a number; ProperNoundle keeps the word grid.
     expect(statLines('HUB', { ...t, bestScore: 4 }, 'rank', 1)[3].value).toBe('Hubbub');
     expect(statLines('PROPERNOUNDLE', t)[4].label).toBe('Best');
@@ -90,16 +94,24 @@ describe('mode-stats registry', () => {
     expect(modeAggregates('HUB', [...rows].reverse(), 1)).toEqual(modeAggregates('HUB', rows, 1));
   });
 
-  it('panels: histograms only for Kindred and Muddle among the custom games; ProperNoundle keeps its distribution but no word cards', () => {
+  it('panels: every Puzzles game draws a histogram in its own unit (founder, 2026-10-01); ProperNoundle keeps its distribution but no word cards', () => {
     expect(statPanels('GAUNTLET').guessDistribution).toBe(false);
     expect(statPanels('GAUNTLET').stageBreakdown).toBe(true);
     expect(statPanels('DUEL').topWords).toBe(true);
     expect(statPanels('PROPERNOUNDLE')).toEqual({ guessDistribution: true, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false });
-    for (const k of ['GROUPS', 'SCRAMBLE']) expect(statPanels(k, k === 'GROUPS' ? 'guesses' : 'checks').guessDistribution, k).toBe(true);
-    for (const k of ['SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CROSSWORD', 'CRYPTOGRAM']) {
-      const p = statPanels(k, 'mistakes');
-      expect(p, k).toEqual({ guessDistribution: false, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false });
+    for (const k of ['GROUPS', 'SCRAMBLE', 'SUDOKU', 'REGIONS', 'LADDER', 'WORDSEARCH', 'HUB', 'CROSSWORD', 'CRYPTOGRAM']) {
+      expect(statPanels(k, 'mistakes'), k).toEqual({ guessDistribution: true, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false });
     }
+    const labels = (k: string) => distributionSpec(k)!.buckets.map((b) => b.label);
+    expect(labels('SUDOKU')).toEqual(['0', '1', '2', '3+']);
+    expect(labels('LADDER')).toEqual(['Par', '+1', '+2', '+3', '+4', '+5+']);
+    expect(labels('CRYPTOGRAM')).toEqual(['0', '1', '2', '3', '4', '5+']);
+    expect(labels('WORDSEARCH')).toEqual(['0', '1', '2', '3', '4', '5+']);
+    expect(labels('HUB')).toEqual(['Pandemonium', 'Thunder', 'Uproar', 'Hubbub', 'Racket', 'Lower']);
+    expect(distributionSpec('HUB')!.countsAll).toBe(true);
+    expect(labels('GROUPS')).toEqual(['4', '5', '6', '7']);
+    expect(distributionSpec('DUEL')).toBeNull();
+    expect(guessNoun('rank').one).toBe('rank');
     expect(guessDistributionRange('GROUPS')).toEqual({ min: 4, max: 7 });
     expect(guessDistributionRange('SCRAMBLE')).toEqual({ min: 5, max: 13 });
     expect(guessDistributionRange('DUEL')).toBeNull();
