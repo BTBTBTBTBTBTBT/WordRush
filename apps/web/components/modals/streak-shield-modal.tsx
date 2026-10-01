@@ -55,22 +55,21 @@ export function StreakShieldModal({
     setTimeout(onClose, 1800);
   };
 
+  // Restyled to the home redesign's look (founder, 2026-10-01: the old card
+  // "looks dated"): a soft warm header with the flame and the number, an
+  // all-caps headline, no bubbles, one flat rounded button. Same actions.
+  const shieldsAfter = Math.max(shields - 1, 0);
   return (
     <>
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-overlay"
-          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+          style={{ backgroundColor: 'rgba(30,27,75,0.45)' }}
         >
           <div
             ref={focusRef}
-            className="relative w-full max-w-sm p-6 animate-modal-content"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1.5px solid #c4b5fd',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
-            }}
+            className="relative w-full max-w-sm overflow-hidden animate-modal-content"
+            style={{ background: 'var(--color-surface)', borderRadius: 22, boxShadow: '0 24px 60px rgba(76,29,149,0.25)' }}
             role="dialog"
             aria-modal="true"
             aria-label="Streak shield"
@@ -78,8 +77,8 @@ export function StreakShieldModal({
             {!saved && (
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 transition-opacity hover:opacity-80"
-                style={{ color: 'var(--color-text-muted)' }}
+                className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center transition-opacity hover:opacity-70"
+                style={{ color: '#92400e' }}
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -87,78 +86,61 @@ export function StreakShieldModal({
             )}
 
             {saved ? (
-              <div className="text-center space-y-3 py-4 animate-fade-in-scale">
-                <div className="text-[44px] leading-none">🛡</div>
-                <h2 className="text-2xl font-black" style={{ color: 'var(--color-text)' }}>Streak saved!</h2>
-                <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  Your {streak}-day streak is protected · {Math.max(shields - 1, 0)} shields left
+              <div className="animate-fade-in-scale">
+                <div className="flex flex-col items-center gap-1 px-6 pt-8 pb-6" style={{ background: 'linear-gradient(180deg, #ede9fe, #e0e7ff)' }}>
+                  <Shield className="w-14 h-14" style={{ color: '#6d28d9' }} fill="#c4b5fd" strokeWidth={1.8} />
+                  <h2 className="mt-2 font-black" style={{ fontSize: 22, letterSpacing: 0.4, color: '#4c1d95' }}>STREAK SAVED!</h2>
+                </div>
+                <p className="px-6 py-5 text-center text-[13px] font-bold" style={{ color: '#4b5563' }}>
+                  Your {streak}-day streak is safe · {shieldsAfter} {shieldsAfter === 1 ? 'shield' : 'shields'} left
                 </p>
               </div>
             ) : (
-            <div className="text-center space-y-4">
-              {/* Streak at risk */}
-              <div className="flex justify-center">
-                <div className="relative">
-                  <Flame className="w-14 h-14" style={{ color: '#f97316' }} fill="currentColor" />
-                  <div
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-fade-in-scale"
-                  >
-                    <span className="text-white text-[10px] font-black">!</span>
-                  </div>
+              <>
+                <div className="flex flex-col items-center px-6 pt-8 pb-5" style={{ background: 'linear-gradient(180deg, #fff3e0, #fde7f0)' }}>
+                  <Flame className="w-12 h-12" style={{ color: '#c2410c' }} fill="#f59e0b" strokeWidth={1.8} />
+                  <div className="mt-1 font-black leading-none" style={{ fontSize: 52, color: '#78350f' }}>{streak}</div>
+                  <div className="mt-1 text-[11px] font-black" style={{ letterSpacing: 1.2, color: '#b45309' }}>DAY STREAK</div>
                 </div>
-              </div>
 
-              <h2 className="text-xl font-black" style={{ color: 'var(--color-text)' }}>Streak at Risk!</h2>
-
-              {/* Large streak number */}
-              <div className="text-5xl font-black" style={{ color: 'var(--color-text)' }}>{streak}</div>
-              <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                day streak will be lost if you don't play today
-              </p>
-
-              {/* Shield status */}
-              <div className="flex justify-center gap-3">
-                <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
-                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid #c4b5fd', color: '#5b21b6' }}
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>{shields}</span>
-                </div>
-              </div>
-
-              {/* Actions. Shields are the only way to save a streak — coin
-                  purchase was removed with the coin economy. Players with
-                  no shields get the Pro upsell via the decline path. */}
-              <div className="space-y-2 pt-2">
-                {shields > 0 ? (
-                  <button
-                    onClick={handleShield}
-                    disabled={loading !== null}
-                    className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-                    style={{
-                      background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                      boxShadow: '0 4px 0 #4c1d95',
-                    }}
-                  >
-                    {loading === 'shield' ? 'Using Shield...' : `Use Shield (${shields} left)`}
-                  </button>
-                ) : (
-                  <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    You have no streak shields. Pro subscribers get 4 shields per billing period.
+                <div className="px-6 pt-5 pb-5 flex flex-col items-center text-center gap-3">
+                  <h2 className="font-black" style={{ fontSize: 18, letterSpacing: 0.4, color: '#4c1d95' }}>DON&apos;T LOSE YOUR STREAK!</h2>
+                  <p className="text-[13px] font-bold leading-snug" style={{ color: '#4b5563' }}>
+                    Your {streak}-day streak ends if you don&apos;t play today.
                   </p>
-                )}
 
-                <button
-                  onClick={onDecline}
-                  disabled={loading !== null}
-                  className="w-full py-2 text-xs font-bold transition-colors disabled:opacity-50"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
-                  Let Streak Reset
-                </button>
-              </div>
-            </div>
+                  <div className="flex items-center gap-1.5 text-[12px] font-black" style={{ color: '#6d28d9' }}>
+                    <Shield className="w-4 h-4" fill="#ede9fe" />
+                    {shields} {shields === 1 ? 'shield' : 'shields'}
+                  </div>
+
+                  {/* Shields are the only way to save a streak — coin purchase was
+                      removed with the coin economy. No shields: the Pro note. */}
+                  {shields > 0 ? (
+                    <button
+                      onClick={handleShield}
+                      disabled={loading !== null}
+                      className="w-full mt-1 font-black text-white transition-transform active:scale-[0.98] disabled:opacity-50"
+                      style={{ height: 48, borderRadius: 14, fontSize: 14, letterSpacing: 0.6, background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 6px 16px rgba(109,40,217,0.3)' }}
+                    >
+                      {loading === 'shield' ? 'USING A SHIELD…' : 'USE A SHIELD'}
+                    </button>
+                  ) : (
+                    <p className="text-[12px] font-bold" style={{ color: '#6b7280' }}>
+                      You&apos;re out of shields. Pro members get 4 every billing period.
+                    </p>
+                  )}
+
+                  <button
+                    onClick={onDecline}
+                    disabled={loading !== null}
+                    className="w-full py-2 text-[12px] font-bold transition-opacity hover:opacity-70 disabled:opacity-50"
+                    style={{ color: '#6b7280' }}
+                  >
+                    Let it reset
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
