@@ -3,20 +3,22 @@ import WordociousCore
 
 /// The Stats tab's landing page — "your day in one card" (Stats + Friends
 /// redesign D2, founder 2026-09-26): the eight sweep tiles with today's W/L,
-/// then More Games N of 10, VS W/L, today's field standing (the ONE formula
-/// the standing strip used), the sweep streak and a "best moment" line. Free
+/// then Puzzles N of 10, VS W/L, today's field standing (the ONE formula
+/// the standing strip used), the sweep streaks and a "best moment" line. Free
 /// tier throughout — today's facts. Sweep/Flawless days keep the banner
 /// treatment the old Today's Dailies card had (the §244 footer included).
 /// Twin of web components/stats/today-card.tsx.
 struct TodayCard: View {
     let sweepModes: [HomeMode]
-    /// The More Games dailies this viewer can see (catalog ∩ flags).
+    /// The Puzzles dailies this viewer can see (catalog ∩ flags).
     let visibleMore: [HomeMode]
     let byMode: [String: DailyCompletion]
     let vsDailyWon: Bool?
     let standing: StatsDeepService.DailyStanding?
     let sweepStreak: Int
     let flawlessStreak: Int
+    /// The Puzzles row's runs (founder, 2026-10-01 stats audit; the home banner shows them too).
+    var puzzleStreaks = GroupStreaks(sweep: 0, flawless: 0)
     /// Rail jump: a dbKey, StatsRailKey.today, or StatsRailKey.vs (All-time's VS section since 2026-10-01).
     let onJump: (String) -> Void
     /// Tap on a sweep tile — play (or reopen) that daily, exactly as the tile did.
@@ -98,9 +100,9 @@ struct TodayCard: View {
                     }
                 }
 
-                // The rest of the day: More Games, VS, where you stand.
+                // The rest of the day: Puzzles, VS, where you stand.
                 HStack(spacing: 8) {
-                    pill(label: "More Games", value: moreDaily.isEmpty ? "—" : "\(morePlayed) of \(moreDaily.count)",
+                    pill(label: "Puzzles", value: moreDaily.isEmpty ? "—" : "\(morePlayed) of \(moreDaily.count)",
                          color: Color(hex: 0x4F46E5), icon: .symbol("square.grid.2x2")) {
                         onJump(moreDaily.first?.dbKey ?? StatsRailKey.today)
                     }
@@ -111,7 +113,7 @@ struct TodayCard: View {
                 }
                 .padding(.top, 4)
 
-                // The ten More Games as tiny chips, so the day reads at a glance.
+                // The ten Puzzles as tiny chips, so the day reads at a glance.
                 if !moreDaily.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(moreDaily) { m in miniChip(m) }
@@ -127,14 +129,12 @@ struct TodayCard: View {
 
             // Streaks + the best thing that happened today.
             HStack(spacing: 8) {
-                infoCard(icon: "flame.fill", iconColor: Color(hex: 0xF97316), label: "Sweep streak") {
-                    HStack(spacing: 4) {
-                        Text("\(sweepStreak) \(sweepStreak == 1 ? "day" : "days")").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                        if flawlessStreak >= 2 {
-                            Text("· \(flawlessStreak) flawless").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xB45309))
-                        }
+                infoCard(icon: "flame.fill", iconColor: Color(hex: 0xF97316), label: "Sweep streaks") {
+                    // Wordocious, then Puzzles: the same two runs the home banner shows.
+                    VStack(alignment: .leading, spacing: 1) {
+                        streakLine("Wordocious", run: sweepStreak, flawless: flawlessStreak)
+                        streakLine("Puzzles", run: puzzleStreaks.sweep, flawless: puzzleStreaks.flawless)
                     }
-                    .lineLimit(1).minimumScaleFactor(0.7)
                 }
                 Button { if let k = moment?.key { onJump(k) } } label: {
                     infoCard(icon: moment?.text.hasPrefix("Perfect") == true ? "star.fill" : "timer",
@@ -147,7 +147,21 @@ struct TodayCard: View {
                 }
                 .buttonStyle(.plain)
             }
+            // The streak card holds two lines now: both cards take the taller height.
+            .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// "WORDOCIOUS 4 days · 3 flawless" — the flawless run shows from 2 days, as before.
+    private func streakLine(_ label: String, run: Int, flawless: Int) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(label.uppercased()).font(Brand.font(8, .black)).foregroundStyle(Theme.textMuted)
+            Text("\(run) \(run == 1 ? "day" : "days")").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+            if flawless >= 2 {
+                Text("· \(flawless) flawless").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xB45309))
+            }
+        }
+        .lineLimit(1).minimumScaleFactor(0.6)
     }
 
     private var dateLabel: String {
@@ -184,7 +198,7 @@ struct TodayCard: View {
         .buttonStyle(.plain)
     }
 
-    /// A 20pt More Games chip: solid accent + white glyph when won, red when
+    /// A 20pt Puzzles chip: solid accent + white glyph when won, red when
     /// lost, a faint tint when unplayed. Tap → that game's page.
     private func miniChip(_ m: HomeMode) -> some View {
         let r = m.dbKey.flatMap { byMode[$0] }
@@ -245,7 +259,7 @@ struct TodayCard: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }

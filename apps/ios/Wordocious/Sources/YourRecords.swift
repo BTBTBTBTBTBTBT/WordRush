@@ -276,6 +276,70 @@ struct SweepRecordsCard: View {
     }
 }
 
+/// Puzzles Sweeps (founder, 2026-10-01 stats audit): under Daily Sweeps — lifetime
+/// days the player finished every Puzzles daily (Sweeps) and won them all (Flawless),
+/// plus the best run of each. HomeBanner.dayRunTotals over ~400 days of the player's
+/// Puzzles daily_results (HomeStreaksService.puzzleRecords).
+struct PuzzleSweepsCard: View {
+    let totals: DayRunTotals
+    private let accent = Color(hex: 0xDB2777)
+
+    var body: some View {
+        RecordCardShell(bar: [accent, accent.opacity(0.53)]) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    ModeIconView(icon: .symbol("square.grid.2x2"), accent: accent, box: 32)
+                    Text("Puzzles Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                }
+                if totals.sweepDays > 0 {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                        meCell("sparkles", "\(totals.sweepDays)", "Sweeps", accent)
+                        meCell("trophy.fill", "\(totals.flawlessDays)", "Flawless", gold, dim: totals.flawlessDays == 0)
+                        meCell("flame.fill", "\(totals.bestSweep)", "Best Sweep Run", Color(hex: 0xF97316))
+                        meCell("crown.fill", "\(totals.bestFlawless)", "Best Flawless Run", gold, dim: totals.bestFlawless == 0)
+                    }
+                } else {
+                    VStack(spacing: 8) {
+                        Image(systemName: "square.grid.2x2").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                        Text("Finish every Puzzle in a day for your first sweep").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 24)
+                }
+            }
+            .padding(14)
+        }
+    }
+}
+
+/// Word of the Day record (founder, 2026-10-01 stats audit): the current word streak
+/// (days in a row answered right), the best run, and "Right N of M" with the
+/// percentage. Hidden until the player has answered once.
+struct WordOfTheDayRecordCard: View {
+    let record: HomeStreaksService.QuizRecord
+    private let accent = Color(hex: 0x7C3AED)
+
+    var body: some View {
+        if record.answered > 0 {
+            RecordCardShell(bar: [accent, accent.opacity(0.53)]) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 10) {
+                        ModeIconView(icon: .symbol("character.book.closed.fill"), accent: accent, box: 32)
+                        Text("Word of the Day").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    }
+                    let pct = Int((Double(record.right) / Double(max(1, record.answered)) * 100).rounded())
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 6) {
+                        meCell("flame.fill", "\(record.streak)", "Word Streak", Color(hex: 0xF97316), dim: record.streak == 0)
+                        meCell("chart.line.uptrend.xyaxis", "\(record.best)", "Best Run", Color(hex: 0x2563EB), dim: record.best == 0)
+                        meCell("target", "\(pct)%", "Right \(record.right) of \(record.answered)", accent)
+                    }
+                }
+                .padding(14)
+            }
+        }
+    }
+}
+
 // MARK: - Per-game records
 
 /// One game's personal bests + the all-time records you hold in it + your

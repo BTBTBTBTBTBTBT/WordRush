@@ -116,3 +116,27 @@ fun dayStreaks(days: Map<String, DayTally>, total: Int, today: String): DayStrea
     }
     return DayStreaks(sweep = run { it.played >= total }, flawless = run { it.won >= total })
 }
+
+data class DayRunTotals(val sweepDays: Int, val flawlessDays: Int, val bestSweep: Int, val bestFlawless: Int)
+
+/**
+ * Lifetime totals for a set of days (founder, 2026-10-01 stats audit): how many
+ * days were sweeps / flawless and the longest run of each. Feeds the All-time
+ * "Puzzles Sweeps" card (total = 10) and the Word of the Day record (total = 1).
+ */
+fun dayRunTotals(days: Map<String, DayTally>, total: Int): DayRunTotals {
+    if (total <= 0) return DayRunTotals(0, 0, 0, 0)
+    fun tally(ok: (DayTally) -> Boolean): Pair<Int, Int> {
+        val hits = days.filter { ok(it.value) }.keys.sorted()
+        var best = 0; var run = 0; var prev: String? = null
+        for (d in hits) {
+            run = if (prev != null && shiftDay(prev, 1) == d) run + 1 else 1
+            if (run > best) best = run
+            prev = d
+        }
+        return hits.size to best
+    }
+    val sweep = tally { it.played >= total }
+    val flawless = tally { it.won >= total }
+    return DayRunTotals(sweepDays = sweep.first, flawlessDays = flawless.first, bestSweep = sweep.second, bestFlawless = flawless.second)
+}

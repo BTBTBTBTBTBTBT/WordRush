@@ -137,16 +137,32 @@ object MatchStatsService {
     /** Guess-distribution buckets min..modeMax over the user's wins, scoped to the
      *  play-type toggle (GAUNTLET/All clamp into "N+"). Kindred (4–7 submissions)
      *  and Muddle (5–13 checks) start at the perfect count — a "1 guess" bar
-     *  would be impossible there (ModeStats.guessDistributionRange, web parity). */
+     *  would be impossible there (ModeStats.guessDistributionRange, web parity).
+     *  Every Puzzles game has its own buckets and labels (founder, 2026-10-01 stats
+     *  audit: ModeStats.distributionSpec — mistakes, checks, misses, Par…+5+, Hubbub's
+     *  rank); Hubbub counts the rank EVERY game reached, the rest count wins. */
     suspend fun guessDistribution(userId: String, mode: String? = null, playType: String = "solo"): List<GuessBucket> = runCatching {
         if (playType == "vs_cpu") return emptyList()
+        val spec = mode?.let { ModeStats.distributionSpec(it) }
+        val countsAll = spec?.countsAll == true
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_score,game_mode,winner_id")) {
-                filter { eq("player1_id", userId); eq("winner_id", userId); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
+                filter {
+                    eq("player1_id", userId)
+                    if (!countsAll) eq("winner_id", userId)
+                    scopeToPlayType(playType); mode?.let { eq("game_mode", it) }
+                }
                 order("created_at", Order.DESCENDING) // recent-first sampling (web parity)
                 limit(2000)
             }
             .decodeList<ScoreRow>()
+        if (spec != null) {
+            val counts = HashMap<Int, Int>()
+            rows.forEach { r ->
+                ModeStats.distributionBucket(spec, r.player1Score ?: 0)?.let { b -> counts[b] = (counts[b] ?: 0) + 1 }
+            }
+            return spec.buckets.map { GuessBucket(it.bucket, counts[it.bucket] ?: 0, label = it.label) }
+        }
         val range = mode?.let { ModeStats.guessDistributionRange(it) }
         val minBucket = range?.min ?: 1
         val maxBucket = range?.max ?: mode?.let { DIST_MAX[it] ?: 6 } ?: 6
@@ -265,12 +281,17 @@ object MatchStatsService {
     }.getOrElse { emptyList() }
 
     // ── Solve times ──────────────────────────────────────────────────────────────
-    /** Recent wins' solve times (play-type scoped), oldest→newest (solve-time line chart). */
-    suspend fun solveTimes(userId: String, mode: String? = null, limit: Int = 30, playType: String = "solo"): List<SolvePoint> = runCatching {
+    /** Recent wins' solve times (play-type scoped), oldest→newest (solve-time line chart).
+     *  `modes` narrows a mode-less (All-time) fetch to a set of games: the eight
+     *  Wordocious games (founder, 2026-10-01 stats audit — Puzzles times are on another scale). */
+    suspend fun solveTimes(userId: String, mode: String? = null, limit: Int = 30, playType: String = "solo", modes: List<String>? = null): List<SolvePoint> = runCatching {
         if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_time,game_mode,created_at")) {
-                filter { eq("player1_id", userId); eq("winner_id", userId); gt("player1_time", 0); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
+                filter {
+                    eq("player1_id", userId); eq("winner_id", userId); gt("player1_time", 0); scopeToPlayType(playType)
+                    if (mode != null) eq("game_mode", mode) else if (modes != null) isIn("game_mode", modes)
+                }
                 order("created_at", Order.DESCENDING)
                 limit(limit.toLong())
             }
@@ -551,7 +572,23 @@ object MatchStatsService {
         val hasData: Boolean get() = sweepCount > 0 || flawlessCount > 0
     }
 
-    data class DailyPointsPoint(val day: String, val totalPoints: Int, val swept: Boolean, val flawless: Boolean)
+    /**
+     * One day of the Daily Points chart. Founder, 2026-10-01 stats audit: two
+     * lines, Wordocious (the sweep games; `swept` / `flawless` from daily_bonuses)
+     * and Puzzles (the visible More Games dailies; swept = every one played,
+     * flawless = every one won that day). One total jumped at the Puzzles launch
+     * and read as a big improvement.
+     */
+    data class DailyPointsPoint(
+        val day: String,
+        val totalPoints: Int,
+        val swept: Boolean,
+        val flawless: Boolean,
+        val wordPoints: Int = totalPoints,
+        val puzzlePoints: Int = 0,
+        val puzzleSwept: Boolean = false,
+        val puzzleFlawless: Boolean = false,
+    )
 
     @Serializable
     private data class BonusRow(
@@ -582,7 +619,12 @@ object MatchStatsService {
     private fun requiredDailyModeCount(day: String): Int = com.wordocious.app.ModeGen.requiredSweepCount(day)
 
     @Serializable
-    private data class DayScoreRow(val day: String, @SerialName("composite_score") val compositeScore: Double = 0.0)
+    private data class DayScoreRow(
+        val day: String,
+        @SerialName("game_mode") val gameMode: String = "",
+        @SerialName("composite_score") val compositeScore: Double = 0.0,
+        val completed: Boolean = false,
+    )
 
     /** Add/subtract days from a YYYY-MM-DD local-day string. */
     /** §244: day-stamped cache of the last computed flawless streak — the
@@ -682,11 +724,12 @@ object MatchStatsService {
         )
     }.getOrElse { DailySweepStats() }
 
-    suspend fun dailyPointsOverTime(days: Int = 30): List<DailyPointsPoint> = runCatching {
+    /** `puzzleKeys`: the visible Puzzles dailies (the Puzzles line and its sweep/flawless marks). */
+    suspend fun dailyPointsOverTime(days: Int = 30, puzzleKeys: List<String> = emptyList()): List<DailyPointsPoint> = runCatching {
         val userId = AuthService.userId ?: return emptyList()
         val cutoff = dayShift(com.wordocious.app.todayLocalDate(), -(days - 1))
         val rows = client.postgrest["daily_results"]
-            .select(Columns.raw("day,composite_score")) {
+            .select(Columns.raw("day,game_mode,composite_score,completed")) {
                 filter { eq("user_id", userId); eq("play_type", "solo"); gte("day", cutoff) }
             }
             .decodeList<DayScoreRow>()
@@ -700,10 +743,33 @@ object MatchStatsService {
         val sweptSet = bonuses.filter { it.sweepAwarded }.map { it.day }.toSet()
         val flawlessSet = bonuses.filter { it.flawlessAwarded }.map { it.day }.toSet()
 
-        val perDay = HashMap<String, Int>()
-        rows.forEach { perDay[it.day] = (perDay[it.day] ?: 0) + it.compositeScore.roundToInt() }
+        // Puzzles first (ProperNoundle was a sweep game in eras 1–2 but is a Puzzle now),
+        // then the current sweep set — web stats-service.ts parity.
+        val puzzleSet = puzzleKeys.toSet()
+        val sweepSet = com.wordocious.app.ModeGen.sweep.mapNotNull { it.dbKey }.toSet()
+        class Day(var word: Int = 0, var puzzle: Int = 0, val played: MutableSet<String> = mutableSetOf(), val won: MutableSet<String> = mutableSetOf())
+        val perDay = HashMap<String, Day>()
+        rows.forEach { r ->
+            val d = perDay.getOrPut(r.day) { Day() }
+            val pts = r.compositeScore.roundToInt()
+            if (r.gameMode in puzzleSet) {
+                d.puzzle += pts
+                d.played.add(r.gameMode)
+                if (r.completed) d.won.add(r.gameMode)
+            } else if (r.gameMode in sweepSet) {
+                d.word += pts
+            }
+        }
         perDay.entries
-            .map { DailyPointsPoint(it.key, it.value, sweptSet.contains(it.key), flawlessSet.contains(it.key)) }
+            .map { (day, d) ->
+                DailyPointsPoint(
+                    day = day, totalPoints = d.word + d.puzzle,
+                    swept = sweptSet.contains(day), flawless = flawlessSet.contains(day),
+                    wordPoints = d.word, puzzlePoints = d.puzzle,
+                    puzzleSwept = puzzleSet.isNotEmpty() && d.played.size >= puzzleSet.size,
+                    puzzleFlawless = puzzleSet.isNotEmpty() && d.won.size >= puzzleSet.size,
+                )
+            }
             .sortedBy { it.day }
     }.getOrElse { emptyList() }
 }

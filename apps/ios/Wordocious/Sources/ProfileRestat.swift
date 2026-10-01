@@ -253,56 +253,87 @@ struct WeekdayFormCard: View {
 
 // MARK: - Daily points trend
 
-/// Points-per-day line (sweep/flawless days marked) — split out of the old
+/// Points-per-day lines (sweep/flawless days marked) — split out of the old
 /// sweep-counts card; the counts moved to Records → You (single home).
+/// Founder, 2026-10-01 stats audit: two series — Wordocious (the sweep games) in
+/// violet, Puzzles in pink — each marking its own sweep (its color) and flawless
+/// (gold) days. Web PointsChart parity.
 struct DailyPointsChartCard: View {
+    /// The visible Puzzles dailies (catalog ∩ flags) — a Puzzles sweep needs every one.
+    let puzzleKeys: [String]
     @State private var points: [MatchStatsService.DailyPointsPoint]
     @State private var loaded: Bool
 
+    static let wordColor = Color(hex: 0x7C3AED)
+    static let puzzleColor = Color(hex: 0xDB2777)
+
     /// Memo in the first frame (founder, 2026-09-29).
-    init() {
+    init(puzzleKeys: [String]) {
+        self.puzzleKeys = puzzleKeys
         let cached: [MatchStatsService.DailyPointsPoint]? = StatsMemo.shared.get(Self.memoKey)
         _points = State(initialValue: cached ?? [])
         _loaded = State(initialValue: cached != nil)
     }
     private static var memoKey: String { "dailyPoints:\(StatsMemo.uid)" }
 
+    private func color(_ series: String) -> Color { series == "Puzzles" ? Self.puzzleColor : Self.wordColor }
+
     var body: some View {
+        // Every day either series has, in order — the shared x domain (a Puzzles-only
+        // day must not land after the Wordocious days).
+        let days = Array(Set(points.map(\.day))).sorted()
         Group {
             if !loaded {
                 StatsCardPlaceholder(title: "Daily Points", accent: Color(hex: 0xEC4899), height: 150)
-            } else if points.count < 2, loaded {
+            } else if days.count < 2, loaded {
                 StatsEmptyCard(title: "Daily Points", accent: Color(hex: 0xEC4899),
                                hint: "Finish dailies on a few different days to chart your points.")
-            } else if points.count >= 2 {
+            } else if days.count >= 2 {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Daily Points", accent: Color(hex: 0xEC4899))
                     ChartCard(title: "Points per day", hint: "Last 30 days · ● sweep · ● flawless") {
                         Chart {
                             ForEach(points) { p in
-                                LineMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
-                                    .foregroundStyle(Color(hex: 0x7C3AED)).interpolationMethod(.catmullRom)
-                                AreaMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
-                                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA).opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
-                                    .interpolationMethod(.catmullRom)
+                                LineMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints),
+                                         series: .value("Series", p.series))
+                                    .foregroundStyle(color(p.series)).interpolationMethod(.catmullRom)
+                                if p.series != "Puzzles" {
+                                    AreaMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
+                                        .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA).opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
+                                        .interpolationMethod(.catmullRom)
+                                }
                                 if p.swept || p.flawless {
                                     PointMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
-                                        .foregroundStyle(p.flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xEC4899))
+                                        .foregroundStyle(p.flawless ? Color(hex: 0xF59E0B) : color(p.series))
                                 }
                             }
                         }
+                        .chartXScale(domain: days)
                         .chartXAxis(.hidden)
                         .frame(height: 110)
+                        HStack(spacing: 12) {
+                            ForEach(points.contains { $0.series == "Puzzles" } ? ["Wordocious", "Puzzles"] : ["Wordocious"], id: \.self) { s in
+                                HStack(spacing: 4) {
+                                    RoundedRectangle(cornerRadius: 1).fill(color(s)).frame(width: 12, height: 3)
+                                    Text(s).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                                }
+                            }
+                            HStack(spacing: 4) {
+                                Circle().fill(Color(hex: 0xF59E0B)).frame(width: 7, height: 7)
+                                Text("flawless").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             } else {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        .task {
+        .task(id: puzzleKeys.joined(separator: ",")) {
             let key = Self.memoKey
             if let cached: [MatchStatsService.DailyPointsPoint] = StatsMemo.shared.get(key) { points = cached; loaded = true }
-            let fresh = await MatchStatsService.dailyPointsOverTime(days: 30)
+            let fresh = await MatchStatsService.dailyPointsOverTime(days: 30, puzzleKeys: puzzleKeys)
             points = fresh
             loaded = true
             StatsMemo.shared.set(key, fresh)

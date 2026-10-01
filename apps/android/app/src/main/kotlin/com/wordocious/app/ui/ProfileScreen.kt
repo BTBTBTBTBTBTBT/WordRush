@@ -115,11 +115,19 @@ private data class ProfileMainMemo(
     val todayDailies: Map<String, DailyCompletionsService.Completion>,
     val unlocked: Set<String>,
     val activityCal: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
-    val sweepPoints: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
     /** D2: today's daily VS outcome (null = not played), today's standing, the sweep streaks. */
     val vsDailyWon: Boolean? = null,
     val standing: com.wordocious.app.data.StatsDeepService.DailyStanding? = null,
     val sweepStats: MatchStatsService.DailySweepStats = MatchStatsService.DailySweepStats(),
+)
+
+/** The Puzzles-scoped fetches (founder, 2026-10-01 stats audit): they need the visible
+ *  Puzzles list, so they run beside the main bundle, keyed on it. */
+private data class ProfilePuzzlesMemo(
+    val keys: List<String>,
+    val records: com.wordocious.app.data.HomeStreaksService.PuzzleRecords?,
+    val quiz: com.wordocious.app.data.HomeStreaksService.QuizRecord?,
+    val sweepPoints: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
 )
 
 private data class ProfileChartsMemo(
@@ -151,9 +159,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var todayDailies by remember { mutableStateOf(mainSeed?.todayDailies ?: DailyCompletionsService.readCache()) }
     var unlockedAchievements by remember { mutableStateOf(mainSeed?.unlocked ?: emptySet()) }
     var activityCal by remember { mutableStateOf(mainSeed?.activityCal ?: emptyList()) }
-    // Sweep COUNTS live in the All-time page's Daily Sweeps card (SweepRecordsCard,
-    // fed by sweepStats below); this series is the Daily Points trend only.
-    var sweepPoints by remember { mutableStateOf(mainSeed?.sweepPoints ?: emptyList()) }
     // D2: today's daily VS outcome, today's field standing, the sweep streaks.
     var vsDailyWon by remember { mutableStateOf(mainSeed?.vsDailyWon) }
     var standing by remember { mutableStateOf(mainSeed?.standing) }
@@ -207,7 +212,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 todayDailies = saved.todayDailies
                 unlockedAchievements = saved.unlocked
                 activityCal = saved.activityCal
-                sweepPoints = saved.sweepPoints
                 vsDailyWon = saved.vsDailyWon
                 standing = saved.standing
                 sweepStats = saved.sweepStats
@@ -222,7 +226,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 val todayD = async { DailyCompletionsService.fetchTodayCompletions() }
                 val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
                 val calD = async { com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90) }
-                val pointsD = async { com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30) }
                 // D2: today's VS result (the rail's VS dot + the Today pill), today's
                 // standing (the ONE leaderboard formula) and the sweep streaks.
                 val vsTodayD = async { runCatching { com.wordocious.app.data.DailyResultsService.dailyVsResult() }.getOrNull() }
@@ -240,7 +243,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 todayDailies = todayD.await()
                 unlockedAchievements = unlockedD.await()
                 activityCal = calD.await()
-                sweepPoints = pointsD.await()
                 vsDailyWon = vsTodayD.await()
                 standing = standingD.await()
                 sweepStats = sweepD.await()
@@ -248,7 +250,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             com.wordocious.app.data.StatsMemo.set(memoKey, ProfileMainMemo(
                 stats = stats, recentMatches = recentMatches, opponentNames = opponentNames,
                 medals = medals, todayDailies = todayDailies, unlocked = unlockedAchievements,
-                activityCal = activityCal, sweepPoints = sweepPoints,
+                activityCal = activityCal,
                 vsDailyWon = vsDailyWon, standing = standing, sweepStats = sweepStats,
             ))
         }
@@ -316,12 +318,39 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         }
     }
 
-    // ── The rail: Today · All-time · sweep games · the More Games titles this viewer
+    // ── The rail: Today · All-time · sweep games · the Puzzles titles this viewer
     // can see (catalog ∩ remote flags, the HomeScreen filter). No VS chip (2026-10-01). ──
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
     val visibleMore = remember(flagTable, flagsLoaded) {
         MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+    }
+    // ── Puzzles-scoped data (founder, 2026-10-01 stats audit): the Today card's Puzzles
+    //    streak (the home banner's fetch), All-time's Puzzles Sweeps card, the Daily Points
+    //    chart's two lines and the Word of the Day record. Keyed on the visible Puzzles. ──
+    val puzzleKeys = remember(visibleMore) { visibleMore.mapNotNull { it.dbKey } }
+    val puzzlesSeed = remember { profile?.id?.let { com.wordocious.app.data.StatsMemo.get<ProfilePuzzlesMemo>("profilePuzzles:$it") } }
+    // Sweep COUNTS live in the All-time page's Daily Sweeps card (SweepRecordsCard,
+    // fed by sweepStats above); this series is the Daily Points trend only.
+    var sweepPoints by remember { mutableStateOf(puzzlesSeed?.sweepPoints ?: emptyList()) }
+    var puzzleRecords by remember { mutableStateOf(puzzlesSeed?.records) }
+    var quizRecord by remember { mutableStateOf(puzzlesSeed?.quiz) }
+    // The banner's day-stamped row cache paints the Puzzles streak before the fetch lands.
+    val cachedRows = remember { com.wordocious.app.data.HomeStreaksService.cachedRowStreaks() }
+    val puzzleStreaks = puzzleRecords?.streaks
+        ?: com.wordocious.core.DayStreaks(cachedRows?.puzzlesSweep ?: 0, cachedRows?.puzzlesFlawless ?: 0)
+    LaunchedEffect(userId, tick, puzzleKeys) {
+        val uid = userId ?: return@LaunchedEffect
+        val memoKey = "profilePuzzles:$uid"
+        kotlinx.coroutines.coroutineScope {
+            val recordsD = async { com.wordocious.app.data.HomeStreaksService.puzzleRecords(puzzleKeys) }
+            val quizD = async { com.wordocious.app.data.HomeStreaksService.quizRecord() }
+            val pointsD = async { com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30, puzzleKeys = puzzleKeys) }
+            recordsD.await()?.let { puzzleRecords = it }
+            quizD.await()?.let { quizRecord = it }
+            sweepPoints = pointsD.await()
+        }
+        com.wordocious.app.data.StatsMemo.set(memoKey, ProfilePuzzlesMemo(puzzleKeys, puzzleRecords, quizRecord, sweepPoints))
     }
     val sweepCards = remember { DAILY_MODES.mapNotNull { modeCardForKey(it) } }
     val railItems = remember(visibleMore, todayDailies) { buildRailItems(sweepCards, visibleMore, todayDailies) }
@@ -439,6 +468,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             standing = standing,
                             sweepStreak = sweepStats.currentSweepStreak,
                             flawlessStreak = sweepStats.currentFlawlessStreak,
+                            puzzleStreaks = puzzleStreaks,
                             flawlessFooter = { FlawlessBannerFooter(DAILY_MODES.size, seed = sweepStats) },
                             onPlayDaily = onPlayDaily,
                             onJump = { go(it) },
@@ -478,6 +508,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             SectionHeader("Your Records", accent = Color(0xFFD97706))
                             NextUpCard(dailyStreak = profile?.dailyLoginStreak ?: 0, chases = yours.chases)
                             SweepRecordsCard(sweep = sweepStats, sweepRankToday = yours.sweepRankToday, sweepRankAllTime = yours.sweepRankAllTime)
+                            // Founder, 2026-10-01 stats audit: the Puzzles' own sweep records, then the
+                            // Word of the Day record (hidden until the first answer).
+                            PuzzleSweepsCard(puzzleRecords)
+                            quizRecord?.takeIf { it.answered > 0 }?.let { WordOfTheDayRecordCard(it) }
                             // §294 (D3.3): settled weekly-race finishes, hidden until the first week settles.
                             userId?.let { WeeklyFinishesCard(it) }
                             RecordsHeldRow(recordsHeld = yours.recordsHeld, onOpenRecords = onOpenRecords)
@@ -491,8 +525,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             // The distribution counts the word games only (the custom
                             // engines score in their own units).
                             GuessDistributionCard(guessDist, hint = "word games")
-                            SolveTimeCard(solveTimes)
-                            // Daily points trend (sweep/flawless days marked).
+                            // The eight Wordocious games only (founder, 2026-10-01 stats audit).
+                            SolveTimeCard(solveTimes, hint = "Wordocious games")
+                            // Daily points trend: Wordocious and Puzzles lines, sweep/flawless days marked.
                             DailyPointsChartCard(sweepPoints)
                             if (topWords.isNotEmpty()) TopWordsCard(topWords)
                             else if (chartsLoaded) {
@@ -624,7 +659,8 @@ private suspend fun loadProfileCharts(uid: String, m: String?, activeTab: String
             if (m == null) emptyList()
             else com.wordocious.app.data.MatchStatsService.activity(uid, days = 90, mode = m)
         }
-        val stD = async { com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab) }
+        // All-time's trend is the eight Wordocious games only (founder, 2026-10-01 stats audit).
+        val stD = async { com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab, modes = if (m == null) DAILY_MODES else null) }
         val todD = async { com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab) }
         val twD = async { com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab) }
         val piD = async {
@@ -780,15 +816,26 @@ private fun ModeStatsBody(
     // unplayed mode reads 0/0/0 instead of swapping in a placeholder box (iOS
     // modeStats renders unconditionally).
     ModeStatsGrid(mode, tabStats, modeStreaks[mode], modeAgg)
+    val modeMeta = com.wordocious.app.ModeGen.byDbKey(mode)
+    // Hints line (founder, 2026-10-01 stats audit): every Puzzles game has hints — how
+    // often the player leans on them, and how many wins needed none.
+    if (modeMeta?.group == "more" && modeAgg.games > 0) {
+        val accent = runCatching { modeAccent(GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
+        HintsLine(modeAgg, accent)
+    }
     // The cards below the grid come from the mode's stats profile
     // (ModeStats.statPanels, More Games §18): Gauntlet's 50 guesses across 21
     // boards make a histogram meaningless; the custom engines have no word rows,
-    // so the word-only cards stay off; Kindred and Muddle draw a histogram in
-    // their own unit.
-    val modeMeta = com.wordocious.app.ModeGen.byDbKey(mode)
+    // so the word-only cards stay off; every Puzzles game draws a histogram in
+    // its own unit (ModeStats.distributionSpec; Hubbub counts every game's rank).
     val modeSemantics = modeMeta?.guessSemantics ?: "guesses"
     val panels = com.wordocious.app.data.ModeStats.statPanels(mode, modeSemantics)
-    if (panels.guessDistribution) GuessDistributionCard(guessDist, com.wordocious.app.data.ModeStats.guessNoun(modeSemantics))
+    if (panels.guessDistribution) {
+        GuessDistributionCard(
+            guessDist, com.wordocious.app.data.ModeStats.guessNoun(modeSemantics),
+            countsGames = com.wordocious.app.data.ModeStats.distributionSpec(mode)?.countsAll == true,
+        )
+    }
     // Per-mode 90-day heatmap (iOS ActivityCalendarView(mode:)).
     if (modeCal.any { it.played > 0 }) DailyCalendarCard(modeCal)
     if (panels.solveTime) SolveTimeCard(solveTimes)
@@ -819,6 +866,22 @@ private fun ModeStatsBody(
             fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** "HINTS · 0.4 per game · 23 no-hint wins" — the line under a Puzzles game's grid. */
+@Composable
+private fun HintsLine(agg: com.wordocious.app.data.ModeStats.ModeAggregates, accent: Color) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("HINTS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = accent, letterSpacing = 0.6.sp)
+        Text(
+            "${com.wordocious.app.data.ModeStats.avg1(agg.hintsTotal, agg.games)} per game · ${agg.noHintWins} no-hint ${if (agg.noHintWins == 1) "win" else "wins"}",
+            fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1,
         )
     }
 }
@@ -1163,9 +1226,11 @@ private fun profileInsights(
     todayDailies: Map<String, DailyCompletionsService.Completion>,
 ): List<String> {
     val out = ArrayList<String>()
-    // Strongest mode by win rate among modes with ≥3 games (all play types,
-    // matching the web which uses the unfiltered stats).
-    val qualifying = stats.filter { it.totalGames >= 3 }
+    // Strongest mode by win rate (all play types, matching the web which uses the
+    // unfiltered stats). Founder, 2026-10-01 stats audit: only modes with ≥ 5 games
+    // and a win rate ≤ 95% — a near-certain win isn't a strength worth naming. None
+    // qualifying = no strongest-mode line.
+    val qualifying = stats.filter { it.totalGames >= 5 && it.wins * 100 <= it.totalGames * 95 }
     qualifying.maxByOrNull { it.wins.toDouble() / maxOf(1, it.totalGames) }?.let { strongest ->
         val rate = Math.round(strongest.wins * 100.0 / strongest.totalGames)
         out.add("Your strongest mode is ${modeLabel(strongest.gameMode)} at $rate% win rate.")
@@ -1307,16 +1372,24 @@ private fun SectionLabel(text: String) {
 // ── Dashboard charts ──────────────────────────────────────────────────────────
 /** Guess-distribution horizontal bars (1..6, or the mode's own range), bar
  *  width ∝ count. `noun` is the unit the histogram counts (ModeStats.guessNoun):
- *  "guess" for the word modes, "check" for Muddle. */
+ *  "guess" for the word modes, "mistake" / "check" / "miss" / "par" / "rank" for the
+ *  Puzzles (founder, 2026-10-01 stats audit). `countsGames`: Hubbub's chart counts
+ *  every game, not just wins — its copy says "games". */
 @Composable
 private fun GuessDistributionCard(
     buckets: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
     noun: com.wordocious.app.data.ModeStats.Noun = com.wordocious.app.data.ModeStats.Noun("guess", "guesses"),
     /** A right-aligned scope note ("word games" on the All-time page). */
     hint: String? = null,
+    countsGames: Boolean = false,
 ) {
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
     val totalWins = buckets.sumOf { it.count }
+    val unitOne = if (countsGames) "game" else "win"
+    val unitMany = if (countsGames) "games" else "wins"
+    // Word labels (Par, +5+, Hubbub's ranks) get a wider label column than "1".."13".
+    val longestLabel = buckets.maxOfOrNull { it.label.length } ?: 1
+    val labelWidth = if (longestLabel > 2) (longestLabel * 8 + 4).coerceAtMost(96).dp else 24.dp
     // The color ramp reads from the FIRST bucket (fast wins purple → mid amber →
     // slow gray) so a histogram that starts at 5 (Muddle) still opens in purple.
     val firstBucket = buckets.firstOrNull()?.guesses ?: 1
@@ -1335,7 +1408,7 @@ private fun GuessDistributionCard(
             if (buckets.none { it.count > 0 }) {
                 // Web parity: chart-specific empty copy (guess-distribution.tsx).
                 Text(
-                    "Win a game to see your ${noun.one} distribution", fontSize = 12.sp,
+                    "${if (countsGames) "Play" else "Win"} a game to see your ${noun.one} distribution", fontSize = 12.sp,
                     fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1350,7 +1423,11 @@ private fun GuessDistributionCard(
                         selected = if (selected == b.label || b.count == 0) null else b.label
                     },
                 ) {
-                    Text(b.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(24.dp))
+                    Text(
+                        b.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary,
+                        maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.width(labelWidth),
+                    )
                     Box(Modifier.weight(1f).height(20.dp), contentAlignment = Alignment.CenterStart) {
                         val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
                         // Bucket color ramp: fast wins purple → mid amber → slow gray (iOS).
@@ -1373,14 +1450,18 @@ private fun GuessDistributionCard(
             val selBucket = selected?.let { sel -> buckets.firstOrNull { it.label == sel && it.count > 0 } }
             if (selBucket != null) {
                 val pct = (selBucket.count * 100f / totalWins.coerceAtLeast(1)).toInt()
+                // A number reads "2 mistakes"; a word label (Par, +2, Pandemonium) stands alone.
+                val head = if (Regex("^\\d+\\+?$").matches(selBucket.label)) {
+                    "${selBucket.label} ${if (selBucket.label == "1") noun.one else noun.many}"
+                } else selBucket.label
                 Text(
-                    "${selBucket.label} ${if (selBucket.label == "1") noun.one else noun.many} · ${selBucket.count} win${if (selBucket.count == 1) "" else "s"} · $pct% of wins",
+                    "$head · ${selBucket.count} ${if (selBucket.count == 1) unitOne else unitMany} · $pct% of $unitMany",
                     fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
                     modifier = Modifier.padding(top = 2.dp),
                 )
             } else {
                 Text(
-                    "$totalWins win${if (totalWins == 1) "" else "s"}",
+                    "$totalWins ${if (totalWins == 1) unitOne else unitMany} total",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -1712,14 +1793,21 @@ private fun VsRecordCard(stats: List<ProfileService.UserStat>, vsDailyWon: Boole
 
 // ── Solve-time line chart ────────────────────────────────────────────────────────
 @Composable
-private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService.SolvePoint>) {
+private fun SolveTimeCard(
+    points: List<com.wordocious.app.data.MatchStatsService.SolvePoint>,
+    /** A right-aligned scope note ("Wordocious games" on the All-time page). */
+    hint: String? = null,
+) {
     val secs = points.map { it.seconds }
     val avg = if (secs.isEmpty()) 0 else secs.sum() / secs.size
     val maxV = (secs.maxOrNull() ?: 1).coerceAtLeast(1)
     // Tap the chart -> nearest win's detail: "Win #12 · Classic · 1:24" (iOS parity).
     var selected by remember(points) { mutableStateOf<Int?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionLabel("SOLVE TIME — LAST ${points.size} WINS")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            SectionLabel("SOLVE TIME — LAST ${points.size} WINS")
+            if (hint != null) Text(hint, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),

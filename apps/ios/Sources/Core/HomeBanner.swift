@@ -39,6 +39,17 @@ public struct GroupStreaks: Codable, Equatable {
     public init(sweep: Int, flawless: Int) { self.sweep = sweep; self.flawless = flawless }
 }
 
+/// Lifetime totals for a set of days: how many were sweeps / flawless and the longest run of each.
+public struct DayRunTotals: Codable, Equatable {
+    public var sweepDays: Int
+    public var flawlessDays: Int
+    public var bestSweep: Int
+    public var bestFlawless: Int
+    public init(sweepDays: Int, flawlessDays: Int, bestSweep: Int, bestFlawless: Int) {
+        self.sweepDays = sweepDays; self.flawlessDays = flawlessDays; self.bestSweep = bestSweep; self.bestFlawless = bestFlawless
+    }
+}
+
 public enum HomeBanner {
     /// A row glows once every game in it is finished; gold only when every one is won.
     public static func groupTier(_ g: GroupProgress) -> BannerTier {
@@ -150,5 +161,26 @@ public enum HomeBanner {
             return n
         }
         return GroupStreaks(sweep: run { $0.played >= total }, flawless: run { $0.won >= total })
+    }
+
+    /// Lifetime totals for a set of days (founder, 2026-10-01 stats audit): how many
+    /// days were sweeps / flawless and the longest run of each. Feeds the All-time
+    /// "Puzzles Sweeps" card (total = 10) and the Word of the Day record (total = 1).
+    public static func dayRunTotals(_ days: [String: DayCount], total: Int) -> DayRunTotals {
+        if total <= 0 { return DayRunTotals(sweepDays: 0, flawlessDays: 0, bestSweep: 0, bestFlawless: 0) }
+        func tally(_ ok: (DayCount) -> Bool) -> (count: Int, best: Int) {
+            let hits = days.filter { ok($0.value) }.keys.sorted()
+            var best = 0, run = 0
+            var prev: String?
+            for d in hits {
+                run = prev.map { shiftDay($0, 1) == d } == true ? run + 1 : 1
+                if run > best { best = run }
+                prev = d
+            }
+            return (hits.count, best)
+        }
+        let sweep = tally { $0.played >= total }
+        let flawless = tally { $0.won >= total }
+        return DayRunTotals(sweepDays: sweep.count, flawlessDays: flawless.count, bestSweep: sweep.best, bestFlawless: flawless.best)
     }
 }

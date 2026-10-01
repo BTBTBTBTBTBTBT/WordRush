@@ -209,8 +209,8 @@ export function PuzzleSweepRecordsCard({ rec }: { rec: PuzzleRecords | null }) {
         <div className="px-4 pb-3 grid grid-cols-2 gap-1">
           <MyStatCell icon={Sparkles} value={`${rec.sweepDays}`} label="Puzzles Sweeps" color={color} />
           <MyStatCell icon={Trophy} value={`${rec.flawlessDays}`} label="Puzzles Flawless" color="#d97706" />
-          <MyStatCell icon={Flame} value={`${rec.sweep}`} label="Current Run" color="#f97316" />
-          <MyStatCell icon={TrendingUp} value={`${rec.bestSweep}`} label={rec.bestFlawless > 0 ? `Best Run · ${rec.bestFlawless} flawless` : 'Best Run'} color="#2563eb" />
+          <MyStatCell icon={TrendingUp} value={`${rec.bestSweep}`} label="Best Sweep Run" color="#2563eb" />
+          <MyStatCell icon={Flame} value={`${rec.bestFlawless}`} label="Best Flawless Run" color="#f97316" />
         </div>
       ) : (
         <div className="py-5 text-center">

@@ -127,6 +127,8 @@ public struct ModeAggregates: Equatable, Codable {
     public var pangrams: Int = 0
     /// Hubbub: the longest word the player entered ("" = none).
     public var longestWord: String = ""
+    /// Hints used across every game (the per-game Hints line, founder 2026-10-01).
+    public var hintsTotal: Int = 0
 
     public init() {}
     public static let empty = ModeAggregates()
@@ -149,6 +151,11 @@ public enum ModeStats {
 
     private static func pct(_ n: Int, _ d: Int) -> String {
         "\(d > 0 ? Int((Double(n) / Double(d) * 100).rounded()) : 0)%"
+    }
+
+    /// Average winning time ("2m 14s"), "-" with no timed wins.
+    private static func avgTime(_ a: ModeAggregates) -> String {
+        statTime(a.timedWins > 0 ? Int((Double(a.winTimeTotal) / Double(a.timedWins)).rounded()) : 0)
     }
 
     /// One-decimal average with integer maths: (total − sub·n) / n rounded to
@@ -225,6 +232,7 @@ public enum ModeStats {
             let hints = max(0, row.hintsUsed)
             let ev = row.player1Guesses
             a.games += 1
+            a.hintsTotal += hints
             if won {
                 a.wins += 1
                 a.winGuessTotal += g
@@ -286,59 +294,58 @@ public enum ModeStats {
         ]
     }
 
-    /// Sudoku, Starsweep: Wins · Losses · Win Rate · Clean · Avg Mistakes · Fastest · No-hint Wins · Streak.
+    /// Sudocious, Starsweep: Wins · Win Rate · Clean · Avg Mistakes · Fastest · Avg Time · Streak · Best Streak.
     private static let mistakesLines: Lines = { t, _, base, a in [
         StatLine(label: "Wins", value: String(t.wins)),
-        StatLine(label: "Losses", value: String(t.losses)),
         StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
         StatLine(label: "Clean", value: String(a.cleanWins)),
         StatLine(label: "Avg Mistakes", value: avg1(a.winGuessTotal, a.wins, base)),
         StatLine(label: "Fastest", value: statTime(t.fastestTime)),
-        StatLine(label: "No-hint Wins", value: String(a.noHintWins)),
-        StatLine(label: "Win Streak", value: String(t.streak)),
-    ] }
-
-    /// Letter Ladder: Wins · Losses · Par Rate · Avg Over Par · Fastest Par · No-hint Wins · Streak · Best Streak.
-    private static let ladderLines: Lines = { t, _, base, a in [
-        StatLine(label: "Wins", value: String(t.wins)),
-        StatLine(label: "Losses", value: String(t.losses)),
-        StatLine(label: "Par Rate", value: pct(a.perfectWins, a.wins)),
-        StatLine(label: "Avg Over Par", value: avg1(a.winGuessTotal, a.wins, base)),
-        StatLine(label: "Fastest Par", value: statTime(a.fastestPerfect)),
-        StatLine(label: "No-hint Wins", value: String(a.noHintWins)),
+        StatLine(label: "Avg Time", value: avgTime(a)),
         StatLine(label: "Win Streak", value: String(t.streak)),
         StatLine(label: "Best Streak", value: String(t.bestStreak)),
     ] }
 
-    /// Muddle: Wins · Losses · Win Rate · Clean · Avg Checks · Fastest · Words Solved · Streak.
+    /// Letter Ladder: Wins · Win Rate · Par Rate · Avg Over Par · Fastest Par · Avg Time · Streak · Best Streak.
+    private static let ladderLines: Lines = { t, _, base, a in [
+        StatLine(label: "Wins", value: String(t.wins)),
+        StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
+        StatLine(label: "Par Rate", value: pct(a.perfectWins, a.wins)),
+        StatLine(label: "Avg Over Par", value: avg1(a.winGuessTotal, a.wins, base)),
+        StatLine(label: "Fastest Par", value: statTime(a.fastestPerfect)),
+        StatLine(label: "Avg Time", value: avgTime(a)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
+        StatLine(label: "Best Streak", value: String(t.bestStreak)),
+    ] }
+
+    /// Muddle: Wins · Win Rate · Clean · Avg Checks · Fastest · Words Solved · Streak · Best Streak.
     private static let scrambleLines: Lines = { t, _, _, a in [
         StatLine(label: "Wins", value: String(t.wins)),
-        StatLine(label: "Losses", value: String(t.losses)),
         StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
         StatLine(label: "Clean", value: String(a.cleanWins)),
         StatLine(label: "Avg Checks", value: avg1(a.winGuessTotal, a.wins)),
         StatLine(label: "Fastest", value: statTime(t.fastestTime)),
         StatLine(label: "Words Solved", value: String(a.boardsSolved)),
         StatLine(label: "Win Streak", value: String(t.streak)),
+        StatLine(label: "Best Streak", value: String(t.bestStreak)),
     ] }
 
-    /// Spyglass: Cleared · Losses · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak.
+    /// Spyglass: Cleared · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak · Best Streak.
     private static let wordsearchLines: Lines = { t, _, _, a in
         let tenths = a.timedWins > 0 ? Int((Double(a.winTimeTotal * 10) / Double(a.timedWins * wordsearchWords)).rounded()) : 0
-        let avgTime = a.timedWins > 0 ? Int((Double(a.winTimeTotal) / Double(a.timedWins)).rounded()) : 0
         return [
             StatLine(label: "Cleared", value: String(t.wins)),
-            StatLine(label: "Losses", value: String(t.losses)),
             StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
             StatLine(label: "Clean", value: String(a.perfectWins)),
             StatLine(label: "Fastest", value: statTime(t.fastestTime)),
-            StatLine(label: "Avg Time", value: statTime(avgTime)),
+            StatLine(label: "Avg Time", value: avgTime(a)),
             StatLine(label: "Sec / Word", value: tenths > 0 ? "\(tenths / 10).\(tenths % 10)s" : "-"),
             StatLine(label: "Win Streak", value: String(t.streak)),
+            StatLine(label: "Best Streak", value: String(t.bestStreak)),
         ]
     }
 
-    /// Hubbub: Days Played · Hubbub+ · Pandemonium · Best Rank · Avg % Max · Pangrams · Longest Word · Streak.
+    /// Hubbub: Days Played · Hubbub+ · Pandemonium · Best Rank · Avg % Max · Pangrams · Longest Word · Hubbub+ Run.
     private static let hubLines: Lines = { t, _, base, a in [
         StatLine(label: "Days Played", value: String(t.totalGames)),
         StatLine(label: "Hubbub+", value: String(t.wins)),
@@ -347,40 +354,38 @@ public enum ModeStats {
         StatLine(label: "Avg % Max", value: pct(a.boardsSolved, a.boardsTotal)),
         StatLine(label: "Pangrams", value: String(a.pangrams)),
         StatLine(label: "Longest Word", value: a.longestWord.isEmpty ? "-" : a.longestWord),
-        StatLine(label: "Win Streak", value: String(t.streak)),
+        // A Hubbub "win" is reaching Hubbub+ (founder, 2026-10-01: "Win Streak" was unclear here).
+        StatLine(label: "Hubbub+ Run", value: String(t.streak)),
     ] }
 
-    /// Crosswordocious, Codebreaker: Wins · Losses · Win Rate · Clean · No-hint Wins · Fastest · Avg Time · Streak.
-    private static let checksLines: Lines = { t, _, _, a in
-        let avgTime = a.timedWins > 0 ? Int((Double(a.winTimeTotal) / Double(a.timedWins)).rounded()) : 0
-        return [
-            StatLine(label: "Wins", value: String(t.wins)),
-            StatLine(label: "Losses", value: String(t.losses)),
-            StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
-            StatLine(label: "Clean", value: String(a.cleanWins)),
-            StatLine(label: "No-hint Wins", value: String(a.noHintWins)),
-            StatLine(label: "Fastest", value: statTime(t.fastestTime)),
-            StatLine(label: "Avg Time", value: statTime(avgTime)),
-            StatLine(label: "Win Streak", value: String(t.streak)),
-        ]
-    }
+    /// Crosswordocious, Codebreaker: Wins · Win Rate · Clean · Avg Checks · Fastest · Avg Time · Streak · Best Streak.
+    private static let checksLines: Lines = { t, _, base, a in [
+        StatLine(label: "Wins", value: String(t.wins)),
+        StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
+        StatLine(label: "Clean", value: String(a.cleanWins)),
+        StatLine(label: "Avg Checks", value: avg1(a.winGuessTotal, a.wins, base)),
+        StatLine(label: "Fastest", value: statTime(t.fastestTime)),
+        StatLine(label: "Avg Time", value: avgTime(a)),
+        StatLine(label: "Win Streak", value: String(t.streak)),
+        StatLine(label: "Best Streak", value: String(t.bestStreak)),
+    ] }
 
-    /// Kindred: Wins · Losses · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak.
+    /// Kindred: Wins · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak · Best Streak.
     private static let groupsLines: Lines = { t, _, base, a in [
         StatLine(label: "Wins", value: String(t.wins)),
-        StatLine(label: "Losses", value: String(t.losses)),
         StatLine(label: "Win Rate", value: pct(t.wins, t.totalGames)),
         StatLine(label: "Perfect", value: String(a.cleanWins)),
         StatLine(label: "Avg Mistakes", value: avg1(a.winGuessTotal, a.wins, base)),
         StatLine(label: "Hardest 1st", value: String(a.hardestFirst)),
         StatLine(label: "Fastest", value: statTime(t.fastestTime)),
         StatLine(label: "Win Streak", value: String(t.streak)),
+        StatLine(label: "Best Streak", value: String(t.bestStreak)),
     ] }
 
     private static let wordPanels = StatPanels(guessDistribution: true, solveTime: true, topWords: true, openerYield: true, positionAccuracy: true, stageBreakdown: false)
     /// Custom engines: solve-time trend only — no word rows, so no word-only cards.
     private static let customPanels = StatPanels(guessDistribution: false, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false)
-    /// Kindred (4–7 submissions) and Muddle (5–13 checks) have a histogram worth drawing.
+    /// Every Puzzles game draws a histogram in its own unit (founder, 2026-10-01 stats audit).
     private static let customDistPanels = StatPanels(guessDistribution: true, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false)
 
     private struct StatProfile {
@@ -395,14 +400,14 @@ public enum ModeStats {
         // ProperNoundle guesses names, not words: the word grid + distribution apply,
         // but "Top words" / opener yield / position accuracy would be noise.
         "PROPERNOUNDLE": StatProfile(lines: defaultLines, panels: customDistPanels),
-        "SUDOKU": StatProfile(lines: mistakesLines, panels: customPanels),
-        "REGIONS": StatProfile(lines: mistakesLines, panels: customPanels),
-        "LADDER": StatProfile(lines: ladderLines, panels: customPanels),
+        "SUDOKU": StatProfile(lines: mistakesLines, panels: customDistPanels),
+        "REGIONS": StatProfile(lines: mistakesLines, panels: customDistPanels),
+        "LADDER": StatProfile(lines: ladderLines, panels: customDistPanels),
         "SCRAMBLE": StatProfile(lines: scrambleLines, panels: customDistPanels),
-        "WORDSEARCH": StatProfile(lines: wordsearchLines, panels: customPanels),
-        "HUB": StatProfile(lines: hubLines, panels: customPanels),
-        "CROSSWORD": StatProfile(lines: checksLines, panels: customPanels),
-        "CRYPTOGRAM": StatProfile(lines: checksLines, panels: customPanels),
+        "WORDSEARCH": StatProfile(lines: wordsearchLines, panels: customDistPanels),
+        "HUB": StatProfile(lines: hubLines, panels: customDistPanels),
+        "CROSSWORD": StatProfile(lines: checksLines, panels: customDistPanels),
+        "CRYPTOGRAM": StatProfile(lines: checksLines, panels: customDistPanels),
         "GROUPS": StatProfile(lines: groupsLines, panels: customDistPanels),
     ]
 
@@ -429,12 +434,68 @@ public enum ModeStats {
         return nil
     }
 
-    /// The unit the histogram counts, singular and plural: guess / check / mistake / miss.
+    public struct DistributionBucket: Equatable, Codable {
+        /// The guess_count (matches.player1_score) this bar counts; the last bar also takes everything above it when `clamped`.
+        public let bucket: Int
+        public let label: String
+        public init(bucket: Int, label: String) { self.bucket = bucket; self.label = label }
+    }
+
+    public struct DistributionSpec: Equatable, Codable {
+        public let buckets: [DistributionBucket]
+        /// The last bucket collects everything past it ("3+").
+        public let clamped: Bool
+        /// Hubbub counts every game's rank; the rest count wins only.
+        public let countsAll: Bool
+        public init(buckets: [DistributionBucket], clamped: Bool, countsAll: Bool) {
+            self.buckets = buckets; self.clamped = clamped; self.countsAll = countsAll
+        }
+
+        /// The bar a guess_count lands in (clamped into the range when `clamped`); nil = off the chart.
+        public func bucketIndex(_ guessCount: Int) -> Int? {
+            guard let lo = buckets.first?.bucket, let hi = buckets.last?.bucket else { return nil }
+            let g = clamped ? min(max(guessCount, lo), hi) : guessCount
+            return buckets.firstIndex { $0.bucket == g }
+        }
+    }
+
+    private static let hubTopRanks = ["Pandemonium", "Thunder", "Uproar", "Hubbub", "Racket"]
+
+    /// The Puzzles games' histograms (founder, 2026-10-01 stats audit): each in its
+    /// own unit. Sudocious/Starsweep mistakes 0–3+, Letter Ladder Par…+5+,
+    /// Codebreaker/Crosswordocious checks 0–5+, Spyglass misses 0–5+, Hubbub the
+    /// rank every game reached (top five, then "Lower"). Kindred and Muddle keep
+    /// their exact ranges. Nil = a word mode (its own guess table).
+    public static func distributionSpec(_ dbKey: String) -> DistributionSpec? {
+        func nums(_ lo: Int, _ hi: Int, _ clamped: Bool, _ label: (Int) -> String) -> DistributionSpec {
+            DistributionSpec(buckets: (lo...hi).map { b in
+                DistributionBucket(bucket: b, label: label(b) + (clamped && b == hi ? "+" : ""))
+            }, clamped: clamped, countsAll: false)
+        }
+        switch dbKey {
+        case "GROUPS": return nums(4, 7, false) { String($0) }
+        case "SCRAMBLE": return nums(5, 13, false) { String($0) }
+        case "SUDOKU", "REGIONS": return nums(1, 4, true) { String($0 - 1) }
+        case "CROSSWORD", "CRYPTOGRAM": return nums(1, 6, true) { String($0 - 1) }
+        case "WORDSEARCH": return nums(10, 15, true) { String($0 - 10) }
+        case "LADDER": return nums(1, 6, true) { $0 == 1 ? "Par" : "+\($0 - 1)" }
+        case "HUB":
+            return DistributionSpec(
+                buckets: hubTopRanks.enumerated().map { DistributionBucket(bucket: $0.offset + 1, label: $0.element) }
+                    + [DistributionBucket(bucket: 6, label: "Lower")],
+                clamped: true, countsAll: true)
+        default: return nil
+        }
+    }
+
+    /// The unit the histogram counts, singular and plural: guess / check / mistake / miss / rank / par.
     public static func guessNoun(_ semantics: String) -> (one: String, many: String) {
         switch semantics {
         case "checks": return ("check", "checks")
         case "mistakes": return ("mistake", "mistakes")
         case "misses": return ("miss", "misses")
+        case "rank": return ("rank", "ranks")
+        case "overPar": return ("par", "par")
         default: return ("guess", "guesses")
         }
     }

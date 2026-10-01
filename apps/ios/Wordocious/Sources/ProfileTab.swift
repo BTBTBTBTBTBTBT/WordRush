@@ -89,6 +89,11 @@ struct ProfileTab: View {
     /// ranks, record chases) — the per-game Your Records cards and the
     /// All-time page's YOUR RECORDS section read it.
     @State private var yours = YourRecordsData()
+    /// Founder, 2026-10-01 stats audit: the Puzzles row's current runs (Today card), its
+    /// lifetime sweep totals (All-time "Puzzles Sweeps") and the Word of the Day record.
+    @State private var puzzleStreaks = HomeStreaksService.cachedStreaks(.puzzles)
+    @State private var puzzleTotals = DayRunTotals(sweepDays: 0, flawlessDays: 0, bestSweep: 0, bestFlawless: 0)
+    @State private var quizRecord = HomeStreaksService.QuizRecord(streak: 0, best: 0, right: 0, answered: 0)
 
     // Every daily mode this viewer can see — the sweep modes plus the More Games
     // titles (ProperNoundle lives there since Stage 9; its HomeMode has `mode:
@@ -239,6 +244,11 @@ struct ProfileTab: View {
                     // D2 step 3: the all-time record table + sweep ranks; the
                     // chases fold the user_stats rows in once they land.
                     async let yoursF = YourRecordsData.fetch(userId: uid)
+                    // The Puzzles runs + lifetime totals (one daily_results fetch, the home
+                    // banner's) and the Word of the Day record.
+                    let puzzleKeys = visibleMore.compactMap(\.dbKey)
+                    async let puzzlesF = HomeStreaksService.puzzleRecords(dbKeys: puzzleKeys)
+                    async let quizF = HomeStreaksService.quizRecord()
                     // Smoothness (founder, 2026-09-29: "not really fluid, seems kind of glitchy
                     // in the loading and scrolling"): gather every result first, then assign
                     // them together without animation so the page re-lays out ONCE instead of
@@ -254,6 +264,7 @@ struct ProfileTab: View {
                     let fSeven = week.filter { cutoff == nil || $0.day >= cutoff! }.reduce(0) { $0 + $1.played }
                     let fVs = await vsTodayF, fSweep = await sweepF, fStanding = await standingF
                     let fYours = await yoursF.resolved(userId: uid, stats: fStats)
+                    let fPuzzles = await puzzlesF, fQuiz = await quizF
                     guard !Task.isCancelled else { return }
                     var t = Transaction(); t.disablesAnimations = true
                     withTransaction(t) {
@@ -261,7 +272,9 @@ struct ProfileTab: View {
                         opponentNames = fNames; setRecent(fMatches)
                         gamesThisWeek = fWeekTotal; sevenDayTotal = fSeven
                         vsDailyWon = fVs; sweepStats = fSweep; standing = fStanding; yours = fYours
+                        puzzleStreaks = fPuzzles.streaks; puzzleTotals = fPuzzles.totals; quizRecord = fQuiz
                     }
+                    HomeStreaksService.storeStreaks(puzzleStreaks, .puzzles)
                     // Store the fresh results back into the session memo.
                     memo.set("yourRecords:\(uid)", yours)
                     memo.set("sweepStats:\(uid)", sweepStats)
@@ -275,6 +288,8 @@ struct ProfileTab: View {
                     memo.set("opponentNames:\(uid)", opponentNames)
                     memo.set("gamesThisWeek:\(uid)", gamesThisWeek)
                     memo.set("sevenDayTotal:\(uid)", sevenDayTotal)
+                    memo.set("puzzleTotals:\(uid)", puzzleTotals)
+                    memo.set("quizRecord:\(uid)", quizRecord)
                 }
                 _ = await (completionsLoad, catalogLoad)
             }
@@ -304,6 +319,8 @@ struct ProfileTab: View {
             if let v: Bool? = memo.get("vsDailyWon:\(uid)") { vsDailyWon = v }
             if let v: StatsDeepService.DailyStanding? = memo.get("standing:\(uid)") { standing = v }
             if let v: YourRecordsData = memo.get("yourRecords:\(uid)") { yours = v }
+            if let v: DayRunTotals = memo.get("puzzleTotals:\(uid)") { puzzleTotals = v }
+            if let v: HomeStreaksService.QuizRecord = memo.get("quizRecord:\(uid)") { quizRecord = v }
         }
     }
 
@@ -377,8 +394,8 @@ struct ProfileTab: View {
 
     // MARK: Pages
 
-    /// Today — the landing page: the eight sweep tiles, the More Games / VS /
-    /// Standing pills, the ten More Games chips, sweep streak + best moment,
+    /// Today — the landing page: the eight sweep tiles, the Puzzles / VS /
+    /// Standing pills, the ten Puzzles chips, sweep streaks + best moment,
     /// then the five newest games (founder, 2026-09-26: "the most recent games
     /// — daily AND unlimited — right on Today"; the full history stays on All-time).
     @ViewBuilder private var todayPage: some View {
@@ -386,6 +403,7 @@ struct ProfileTab: View {
             sweepModes: dailyTiles, visibleMore: visibleMore, byMode: completions.byMode,
             vsDailyWon: vsDailyWon, standing: standing,
             sweepStreak: sweepStats.currentSweepStreak, flawlessStreak: sweepStats.currentFlawlessStreak,
+            puzzleStreaks: puzzleStreaks,
             onJump: { key in Haptics.tap(); select(key) },
             onOpenDaily: openDaily)
         if let p = auth.profile {
@@ -415,8 +433,30 @@ struct ProfileTab: View {
         }
         modeDetailHeader(gm, tab: tab)
         modeStats(p, mode: gm, tab: tab)
+        hintsLine(mode: gm, tab: tab, accent: m.accent)
         ProfileDashboard(mode: gm, playType: tab)
         ProDeepModeCard(gameMode: gm.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(gm), playType: tab)
+    }
+
+    /// Hints line under the grid (founder, 2026-10-01 stats audit): every Puzzles game
+    /// (ProperNoundle included) has hints — how often the player leans on them, and how
+    /// many wins needed none. "HINTS · 0.4 per game · 23 no-hint wins"; hidden with no games.
+    /// Reads the same per-mode aggregate the grid does (web mode-detail-panel parity).
+    @ViewBuilder private func hintsLine(mode: GameMode, tab: String, accent: Color) -> some View {
+        let key = modeCellsKey(mode, tab)
+        if ModeGen.byDbKey(mode.rawValue)?.group == "more",
+           let agg = (modeCells[key] ?? StatsMemo.shared.get(key))?.aggregates, agg.games > 0 {
+            HStack(spacing: 8) {
+                Text("HINTS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(accent)
+                Text("\(WordociousCore.ModeStats.avg1(agg.hintsTotal, agg.games)) per game · \(agg.noHintWins) no-hint \(agg.noHintWins == 1 ? "win" : "wins")")
+                    .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        }
     }
 
     /// "Won · 4 guesses · 1m 12s · 1,940 pts  Open →" or "Not played yet — play
@@ -524,6 +564,9 @@ struct ProfileTab: View {
         SectionHeader("Your Records", accent: Color(hex: 0xD97706))
         NextUpCard(dailyStreak: p.dailyLoginStreak, chases: yours.chases)
         SweepRecordsCard(sweep: sweepStats, sweepRankToday: yours.sweepRankToday, sweepRankAllTime: yours.sweepRankAllTime)
+        // Founder, 2026-10-01 stats audit: the Puzzles' own sweep record, then the Word of the Day.
+        PuzzleSweepsCard(totals: puzzleTotals)
+        WordOfTheDayRecordCard(record: quizRecord)
         // D3.3 (§294): the settled weekly race finishes, under Daily Sweeps.
         WeeklyFinishesCard(userId: p.id)
         RecordsHeldRow(recordsHeld: yours.recordsHeld)
@@ -642,9 +685,11 @@ struct ProfileTab: View {
     /// Capped at 2, matching `.slice(0, 2)`.
     private func allViewInsights(_ p: Profile) -> [String] {
         var out: [String] = []
-        // Strongest mode by win rate among modes with ≥3 games (all play types,
-        // matching the web which uses the unfiltered `stats`).
-        let qualifying = statRows.filter { $0.totalGames >= 3 }
+        // Strongest mode by win rate (all play types, matching the web which uses the
+        // unfiltered `stats`). Founder, 2026-10-01 stats audit: only modes with ≥ 5 games
+        // and a win rate ≤ 95% — a 100% rate over a few easy games isn't a strength; if
+        // none qualify, no strongest-mode line.
+        let qualifying = statRows.filter { $0.totalGames >= 5 && $0.wins * 100 <= $0.totalGames * 95 }
         if let strongest = qualifying.max(by: {
             (Double($0.wins) / Double(max($0.totalGames, 1))) < (Double($1.wins) / Double(max($1.totalGames, 1)))
         }) {

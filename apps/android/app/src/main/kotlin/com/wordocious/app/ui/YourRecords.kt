@@ -19,7 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Share
@@ -314,6 +316,71 @@ fun SweepRecordsCard(
                 Spacer(Modifier.height(8.dp))
                 Text("No sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
+        }
+    }
+}
+
+/** The Puzzles row's accent (the Daily Points Puzzles line, the home banner's second row). */
+private val PUZZLES_ACCENT = Color(0xFFDB2777)
+
+/**
+ * Puzzles Sweeps (founder, 2026-10-01 stats audit), under Daily Sweeps: days every
+ * visible Puzzles daily was finished (Sweeps) and won (Flawless), and the best run
+ * of each — dayRunTotals over the player's Puzzles daily_results (~400 days).
+ */
+@Composable
+fun PuzzleSweepsCard(records: com.wordocious.app.data.HomeStreaksService.PuzzleRecords?) {
+    val t = records?.totals
+    CardShell(Brush.horizontalGradient(listOf(PUZZLES_ACCENT, PUZZLES_ACCENT.copy(alpha = 0.53f)))) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(PUZZLES_ACCENT.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.GridView, null, tint = PUZZLES_ACCENT, modifier = Modifier.size(16.dp)) }
+            Text("Puzzles Sweeps", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        }
+        Spacer(Modifier.height(2.dp))
+        if (t != null && records.hasData) {
+            Row(Modifier.fillMaxWidth()) {
+                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.AutoAwesome, "${t.sweepDays}", "Sweeps", PUZZLES_ACCENT) }
+                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, "${t.flawlessDays}", "Flawless", GOLD) }
+            }
+            Row(Modifier.fillMaxWidth()) {
+                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.LocalFireDepartment, "${t.bestSweep}", "Best Sweep Run", Color(0xFFF97316)) }
+                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Star, "${t.bestFlawless}", "Best Flawless Run", GOLD, dim = t.bestFlawless == 0) }
+            }
+        } else {
+            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Filled.GridView, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(8.dp))
+                Text("No Puzzles sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
+        }
+    }
+}
+
+/**
+ * The Word of the Day record (founder, 2026-10-01 stats audit): the current word
+ * streak, the best run and "Right N of M" — from the player's word_quiz_answers.
+ * The caller hides it until there's an answer.
+ */
+@Composable
+fun WordOfTheDayRecordCard(record: com.wordocious.app.data.HomeStreaksService.QuizRecord) {
+    val accent = Color(0xFF7C3AED)
+    val pct = if (record.answered > 0) Math.round(record.right * 100.0 / record.answered).toInt() else 0
+    CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp)) }
+            Text("Word of the Day", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        }
+        Spacer(Modifier.height(2.dp))
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.LocalFireDepartment, "${record.streak}", "Word Streak", Color(0xFFF97316), dim = record.streak == 0) }
+            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, "${record.best}", "Best Run", GOLD) }
+            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.TrackChanges, "${record.right} of ${record.answered}", "Right · $pct%", accent) }
         }
     }
 }

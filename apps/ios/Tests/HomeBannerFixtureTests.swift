@@ -33,11 +33,20 @@ final class HomeBannerFixtureTests: XCTestCase {
         let sweep: Int
         let flawless: Int
     }
+    private struct Totals: Decodable {
+        let days: [String: DayCount]
+        let total: Int
+        let sweepDays: Int
+        let flawlessDays: Int
+        let bestSweep: Int
+        let bestFlawless: Int
+    }
     private struct Fixtures: Decodable {
         let headlines: [Headline]
         let clocks: [Clock]
         let groups: [Group]
         let streaks: [Streak]
+        let totals: [Totals]
     }
 
     private func load() throws -> Fixtures {
@@ -80,6 +89,18 @@ final class HomeBannerFixtureTests: XCTestCase {
             XCTAssertEqual(got.sweep, c.sweep, "sweep #\(i)")
             XCTAssertEqual(got.flawless, c.flawless, "flawless #\(i)")
         }
+    }
+
+    func testDayRunTotalsMatchSharedFixtures() throws {
+        let f = try load()
+        XCTAssertFalse(f.totals.isEmpty)
+        for (i, c) in f.totals.enumerated() {
+            XCTAssertEqual(HomeBanner.dayRunTotals(c.days, total: c.total),
+                           DayRunTotals(sweepDays: c.sweepDays, flawlessDays: c.flawlessDays, bestSweep: c.bestSweep, bestFlawless: c.bestFlawless),
+                           "totals #\(i)")
+        }
+        XCTAssertEqual(HomeBanner.dayRunTotals(["2026-10-01": DayCount(played: 1, won: 1)], total: 0),
+                       DayRunTotals(sweepDays: 0, flawlessDays: 0, bestSweep: 0, bestFlawless: 0))
     }
 
     func testShiftDayCrossesMonthsAndYears() {

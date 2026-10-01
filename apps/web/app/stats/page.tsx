@@ -791,7 +791,7 @@ export default function StatsPage() {
               {sweepPoints.length >= 2 && (
                 <>
                   <SectionHeader label="Daily Points" accent="#ec4899" />
-                  <ChartCard title="Points per day" hint="Last 30 days · dots mark sweeps">
+                  <ChartCard title="Points per day" hint="Last 30 days · ● sweep · ● flawless">
                     <PointsChart points={sweepPoints} />
                   </ChartCard>
                 </>

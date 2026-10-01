@@ -29,7 +29,9 @@ struct ProfileDashboard: View {
                 SevenDayActivityCard()
                 GuessDistributionChart(mode: nil, playType: playType)
                 SolveTimeChart(mode: nil, playType: playType)
-                DailyPointsChartCard()
+                DailyPointsChartCard(puzzleKeys: moreModes
+                    .filter { $0.dailyEligible && FlagsService.shared.isOn($0.flagKey) }
+                    .compactMap(\.dbKey))
                 TopWordsCard(mode: nil, playType: playType)
                 OpenerLabCard(playType: playType)
                 WeekdayFormCard(playType: playType)
@@ -37,9 +39,9 @@ struct ProfileDashboard: View {
             } else {
                 // The cards below the grid follow the mode's stats profile
                 // (ModeStats.statPanels, More Games §18; web mode-detail-panel
-                // parity): a histogram only where the count has a real range
-                // (word modes, Kindred submissions, Muddle checks — never
-                // Gauntlet), and no word-only cards for a custom engine.
+                // parity): a histogram for the word modes and every Puzzles game
+                // in its own unit (distributionSpec; founder, 2026-10-01) — never
+                // Gauntlet — and no word-only cards for a custom engine.
                 let meta = ModeGen.byDbKey(mode!.rawValue)
                 let panels = WordociousCore.ModeStats.statPanels(dbKey: mode!.rawValue, semantics: meta?.guessSemantics ?? "guesses")
                 if panels.guessDistribution { GuessDistributionChart(mode: mode, playType: playType) }
@@ -116,14 +118,34 @@ private struct GuessDistributionChart: View {
     private func color(_ g: Int) -> Color {
         g <= 2 ? Color(hex: 0x7C3AED) : g <= 4 ? Color(hex: 0xF59E0B) : Color(hex: 0x9CA3AF)
     }
+    /// The Puzzles games' bars (founder, 2026-10-01 stats audit) — ModeStats.distributionSpec.
+    private var spec: WordociousCore.ModeStats.DistributionSpec? {
+        mode.flatMap { WordociousCore.ModeStats.distributionSpec($0.rawValue) }
+    }
+    /// A clamped spec's buckets start anywhere (Spyglass at 10): color by position,
+    /// so the best bar is always violet. Kindred / Muddle / word modes keep the count.
+    private func barColor(_ b: MatchStatsService.GuessBucket) -> Color {
+        if let spec, spec.clamped, let i = spec.buckets.firstIndex(where: { $0.bucket == b.guesses }) { return color(i + 1) }
+        return color(b.guesses)
+    }
     private var totalWins: Int { data.reduce(0) { $0 + $1.count } }
     private func barLabel(_ b: MatchStatsService.GuessBucket) -> String {
         b.label.isEmpty ? "\(b.guesses)" : b.label
     }
     /// The unit the histogram counts — "guess" for the word modes (card
-    /// unchanged), "check" for Muddle (ModeStats.guessNoun).
+    /// unchanged), "check" for Muddle, "rank" for Hubbub (ModeStats.guessNoun).
     private var noun: (one: String, many: String) {
         WordociousCore.ModeStats.guessNoun(mode.flatMap { ModeGen.byDbKey($0.rawValue) }?.guessSemantics ?? "guesses")
+    }
+    /// Hubbub counts every game's rank; the rest count wins.
+    private var unit: (one: String, many: String) { spec?.countsAll == true ? ("game", "games") : ("win", "wins") }
+    /// Word labels (Par, +2, Hubbub's ranks) need a wider label column than "1".."13".
+    private var wideLabels: Bool { data.contains { barLabel($0).count > 2 } }
+    /// "2 mistakes · 3 wins · 25% of wins"; a word label stands alone ("Par · …", "Thunder · …").
+    private func tappedLine(_ label: String, _ n: Int) -> String {
+        let numeric = !label.isEmpty && label.allSatisfy { $0.isNumber || $0 == "+" } && label.first?.isNumber == true
+        let head = numeric ? "\(label) \(label == "1" ? noun.one : noun.many)" : label
+        return "\(head) · \(n) \(n == 1 ? unit.one : unit.many) · \(Int((Double(n) / Double(max(1, totalWins)) * 100).rounded()))% of \(unit.many)"
     }
 
     var body: some View {
@@ -136,25 +158,31 @@ private struct GuessDistributionChart: View {
             if !loaded {
                 SkeletonBlock(height: 130, cornerRadius: 10)
             } else if totalWins == 0 {
-                EmptyChart(copy: "Win a game to see your \(noun.one) distribution")
+                EmptyChart(copy: "\(spec?.countsAll == true ? "Play" : "Win") a game to see your \(noun.one) distribution")
             } else {
-                Chart(data) { b in
-                    BarMark(x: .value("Guesses", barLabel(b)), y: .value("Wins", b.count))
-                        .foregroundStyle(color(b.guesses))
-                        .opacity(selected == nil || selected == barLabel(b) ? 1 : 0.35)
-                        .annotation(position: .top) {
-                            if b.count > 0 { Text("\(b.count)").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
-                        }
+                if wideLabels {
+                    // Founder, 2026-10-01 stats audit: word labels (Par, +5+, Pandemonium) read
+                    // as rows with a label column instead of squeezing under vertical bars.
+                    wideBars
+                } else {
+                    Chart(data) { b in
+                        BarMark(x: .value("Guesses", barLabel(b)), y: .value("Wins", b.count))
+                            .foregroundStyle(barColor(b))
+                            .opacity(selected == nil || selected == barLabel(b) ? 1 : 0.35)
+                            .annotation(position: .top) {
+                                if b.count > 0 { Text("\(b.count)").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
+                            }
+                    }
+                    .chartYAxis(.hidden)
+                    .frame(height: 130)
+                    .chartTapSelection(bars: data.map(barLabel), selection: $selected)
                 }
-                .chartYAxis(.hidden)
-                .frame(height: 130)
-                .chartTapSelection(bars: data.map(barLabel), selection: $selected)
                 // Footer: tapped-bar detail (wins share) or the plain total.
                 if let sel = selected, let b = data.first(where: { barLabel($0) == sel }), b.count > 0 {
-                    Text("\(sel) \(sel == "1" ? noun.one : noun.many) · \(b.count) win\(b.count == 1 ? "" : "s") · \(Int((Double(b.count) / Double(max(1, totalWins)) * 100).rounded()))% of wins")
+                    Text(tappedLine(sel, b.count))
                         .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
                 } else {
-                    Text("\(totalWins) win\(totalWins == 1 ? "" : "s")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                    Text("\(totalWins) \(totalWins == 1 ? unit.one : unit.many) total").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                 }
             }
         }
@@ -168,6 +196,36 @@ private struct GuessDistributionChart: View {
             loaded = true
             StatsMemo.shared.set(key, fresh)
         }
+        }
+    }
+
+    /// Horizontal rows for word labels: label column · bar · count. Tap a row to select it.
+    private var wideBars: some View {
+        let maxCount = max(1, data.map(\.count).max() ?? 1)
+        return VStack(spacing: 6) {
+            ForEach(data) { b in
+                let label = barLabel(b)
+                Button {
+                    selected = selected == label ? nil : label
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(label).font(Brand.font(11, .black)).foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(width: 92, alignment: .trailing)
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 4).fill(barColor(b))
+                                .frame(width: b.count > 0 ? max(6, geo.size.width * CGFloat(b.count) / CGFloat(maxCount)) : 3)
+                                .frame(maxHeight: .infinity, alignment: .leading)
+                        }
+                        .frame(height: 16)
+                        Text("\(b.count)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .frame(minWidth: 18, alignment: .trailing)
+                    }
+                    .opacity(selected == nil || selected == label ? 1 : 0.35)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 }
@@ -496,7 +554,8 @@ private struct SolveTimeChart: View {
     }()
 
     var body: some View {
-        LegacyChartCard(title: "SOLVE TIME — LAST \(data.count) WINS") {
+        // All-time: the eight Wordocious games only (founder, 2026-10-01 stats audit).
+        LegacyChartCard(title: "SOLVE TIME — LAST \(data.count) WINS", hint: mode == nil ? "Wordocious games" : nil) {
             if !loaded {
                 SkeletonBlock(height: 140, cornerRadius: 10)
             } else if data.count < 2 {

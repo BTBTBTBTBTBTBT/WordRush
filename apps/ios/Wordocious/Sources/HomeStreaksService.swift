@@ -21,10 +21,24 @@ enum HomeStreaksService {
     }
 
     /// The Puzzles row's sweep and flawless runs: days in a row the player finished
-    /// (and won) every one of the More Games dailies. `dbKeys` are the VISIBLE More
-    /// Games daily modes; a day needs all of them.
+    /// (and won) every one of the Puzzles dailies. `dbKeys` are the VISIBLE Puzzles
+    /// daily modes; a day needs all of them.
     static func puzzleStreaks(dbKeys: [String]) async -> GroupStreaks {
-        guard !dbKeys.isEmpty, let uid = await userId() else { return GroupStreaks(sweep: 0, flawless: 0) }
+        HomeBanner.dayStreaks(await puzzleDays(dbKeys: dbKeys), total: dbKeys.count, today: LeaderboardService.todayLocal())
+    }
+
+    /// The All-time "Puzzles Sweeps" card (founder, 2026-10-01 stats audit): lifetime
+    /// sweep and flawless days for the Puzzles and their best runs, plus the current
+    /// runs (the Today card's Puzzles streak line) from the same single fetch.
+    static func puzzleRecords(dbKeys: [String]) async -> (totals: DayRunTotals, streaks: GroupStreaks) {
+        let days = await puzzleDays(dbKeys: dbKeys)
+        return (HomeBanner.dayRunTotals(days, total: dbKeys.count),
+                HomeBanner.dayStreaks(days, total: dbKeys.count, today: LeaderboardService.todayLocal()))
+    }
+
+    /// Each day's distinct Puzzles finished and won, from the player's solo daily_results.
+    private static func puzzleDays(dbKeys: [String]) async -> [String: DayCount] {
+        guard !dbKeys.isEmpty, let uid = await userId() else { return [:] }
         struct Row: Decodable { let day: String; let game_mode: String; let completed: Bool }
         let rows: [Row] = (try? await AuthService.shared.client.from("daily_results")
             .select("day, game_mode, completed")
@@ -41,7 +55,7 @@ enum HomeStreaksService {
         }
         var days: [String: DayCount] = [:]
         for (day, set) in played { days[day] = DayCount(played: set.count, won: won[day]?.count ?? 0) }
-        return HomeBanner.dayStreaks(days, total: dbKeys.count, today: LeaderboardService.todayLocal())
+        return days
     }
 
     /// Unlimited mode's "N PLAYED TODAY": the player's finished non-daily solo games
@@ -136,5 +150,31 @@ enum HomeStreaksService {
         _ = try? await AuthService.shared.client.from("word_quiz_answers")
             .insert(Insert(user_id: uid, day: day, word: word, picked: answer.picked, correct: answer.correct))
             .execute()
+    }
+
+    /// The All-time Word of the Day record (founder, 2026-10-01 stats audit): the
+    /// current word streak, the best run, and how many answers were right out of
+    /// how many answered. Signed-in only (guests keep no history).
+    struct QuizRecord: Equatable {
+        let streak: Int
+        let best: Int
+        let right: Int
+        let answered: Int
+    }
+
+    static func quizRecord() async -> QuizRecord {
+        guard let uid = await userId() else { return QuizRecord(streak: 0, best: 0, right: 0, answered: 0) }
+        struct Row: Decodable { let day: String; let correct: Bool }
+        let rows: [Row] = (try? await AuthService.shared.client.from("word_quiz_answers")
+            .select("day, correct")
+            .eq("user_id", value: uid)
+            .gte("day", value: sinceDay())
+            .limit(lookbackDays)
+            .execute().value) ?? []
+        var days: [String: DayCount] = [:]
+        for r in rows { days[r.day] = DayCount(played: 1, won: r.correct ? 1 : 0) }
+        let totals = HomeBanner.dayRunTotals(days, total: 1)
+        return QuizRecord(streak: HomeBanner.dayStreaks(days, total: 1, today: LeaderboardService.todayLocal()).flawless,
+                          best: totals.bestFlawless, right: totals.flawlessDays, answered: totals.sweepDays)
     }
 }

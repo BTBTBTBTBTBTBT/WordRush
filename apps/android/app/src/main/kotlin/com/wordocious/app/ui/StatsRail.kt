@@ -49,7 +49,7 @@ import com.wordocious.app.ui.theme.WTheme
  * The Stats tab's game rail (Stats + Friends redesign D2, founder 2026-09-26:
  * "I don't want to swipe right through 19 different games … flow like
  * butter"). One horizontal row of chips: Today · All-time · the eight sweep games ·
- * the More Games titles. No VS chip (founder, 2026-10-01): VS stats live at the
+ * the Puzzles titles. No VS chip (founder, 2026-10-01): VS stats live at the
  * bottom of All-time, so the twenty chips make an even 4 × 5 grid. Tap jumps
  * straight to that page; a swipe on the page below moves one chip (ProfileScreen
  * owns that gesture); HOLD the Today chip (or tap the grid button) for the whole

@@ -262,38 +262,67 @@ fun WeekdayFormCard(playType: String = "solo") {
 
 // ── Daily points trend ────────────────────────────────────────────────────────
 
-/** Points-per-day line (sweep/flawless days marked) — split out of the old
- *  sweep-counts card; the counts moved to Records → You (single home). */
+/** Points-per-day lines (sweep/flawless days marked) — split out of the old
+ *  sweep-counts card; the counts moved to Records → You (single home).
+ *  Founder, 2026-10-01 stats audit: two lines, Wordocious in violet and Puzzles
+ *  in pink, each dot marking that row's own sweep (its color) or flawless (gold)
+ *  day — one total jumped at the Puzzles launch and read as a big improvement. */
 @Composable
 fun DailyPointsChartCard(points: List<MatchStatsService.DailyPointsPoint>) {
     if (points.size < 2) return
+    val wordColor = Color(0xFF7C3AED)
+    val puzzleColor = Color(0xFFDB2777)
+    val gold = Color(0xFFF59E0B)
+    val hasPuzzles = points.any { it.puzzlePoints > 0 }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Daily Points", accent = Color(0xFFEC4899))
         ChartCard(title = "Points per day", hint = "Last 30 days · ● sweep · ● flawless") {
-            val maxV = maxOf(1, points.maxOf { it.totalPoints })
+            val maxV = maxOf(1, points.maxOf { maxOf(it.wordPoints, it.puzzlePoints) })
             Canvas(Modifier.fillMaxWidth().height(110.dp)) {
                 val w = size.width; val h = size.height
                 fun x(i: Int) = w * i / (points.size - 1)
                 fun y(v: Int) = h - (h * v / maxV)
+                fun line(v: (MatchStatsService.DailyPointsPoint) -> Int) = androidx.compose.ui.graphics.Path().apply {
+                    points.forEachIndexed { i, p -> if (i == 0) moveTo(x(i), y(v(p))) else lineTo(x(i), y(v(p))) }
+                }
                 val areaPath = androidx.compose.ui.graphics.Path().apply {
                     moveTo(0f, h)
-                    points.forEachIndexed { i, p -> lineTo(x(i), y(p.totalPoints)) }
+                    points.forEachIndexed { i, p -> lineTo(x(i), y(p.wordPoints)) }
                     lineTo(w, h); close()
                 }
                 drawPath(areaPath, brush = Brush.verticalGradient(listOf(Color(0xFFA78BFA).copy(alpha = 0.3f), Color.Transparent)))
-                val linePath = androidx.compose.ui.graphics.Path().apply {
-                    points.forEachIndexed { i, p -> if (i == 0) moveTo(x(i), y(p.totalPoints)) else lineTo(x(i), y(p.totalPoints)) }
+                drawPath(line { it.wordPoints }, wordColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
+                if (hasPuzzles) drawPath(line { it.puzzlePoints }, puzzleColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
+                fun dot(i: Int, v: Int, color: Color) {
+                    val c = androidx.compose.ui.geometry.Offset(x(i), y(v))
+                    drawCircle(Color.White, radius = 6.5f, center = c)
+                    drawCircle(color, radius = 5f, center = c)
                 }
-                drawPath(linePath, Color(0xFF7C3AED), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
                 points.forEachIndexed { i, p ->
-                    if (p.swept || p.flawless) {
-                        drawCircle(
-                            if (p.flawless) Color(0xFFF59E0B) else Color(0xFFEC4899),
-                            radius = 5f, center = androidx.compose.ui.geometry.Offset(x(i), y(p.totalPoints)),
-                        )
-                    }
+                    if (p.swept || p.flawless) dot(i, p.wordPoints, if (p.flawless) gold else wordColor)
+                    if (hasPuzzles && (p.puzzleSwept || p.puzzleFlawless)) dot(i, p.puzzlePoints, if (p.puzzleFlawless) gold else puzzleColor)
                 }
             }
+            Spacer(Modifier.height(6.dp))
+            Row(
+                Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            ) {
+                PointsLegend("Wordocious", wordColor, line = true)
+                if (hasPuzzles) PointsLegend("Puzzles", puzzleColor, line = true)
+                PointsLegend("flawless", gold, line = false)
+            }
         }
+    }
+}
+
+@Composable
+private fun PointsLegend(label: String, color: Color, line: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            Modifier.size(width = if (line) 10.dp else 8.dp, height = if (line) 2.dp else 8.dp)
+                .clip(RoundedCornerShape(50)).background(color),
+        )
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }

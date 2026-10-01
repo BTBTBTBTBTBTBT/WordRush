@@ -18,6 +18,9 @@ class ModeStatsFixtureTest {
     @Serializable private data class Totals(val wins: Int, val losses: Int, val totalGames: Int, val bestScore: Int, val fastestTime: Int, val streak: Int, val bestStreak: Int)
     @Serializable private data class Line(val label: String, val value: String)
     @Serializable private data class Panels(val guessDistribution: Boolean, val solveTime: Boolean, val topWords: Boolean, val openerYield: Boolean, val positionAccuracy: Boolean, val stageBreakdown: Boolean)
+    @Serializable private data class Bucket(val bucket: Int, val label: String)
+    @Serializable private data class Distribution(val buckets: List<Bucket>, val clamped: Boolean, val countsAll: Boolean)
+    @Serializable private data class Noun(val one: String, val many: String)
     @Serializable private data class Case(
         val dbKey: String,
         val semantics: String,
@@ -27,6 +30,8 @@ class ModeStatsFixtureTest {
         val aggregates: ModeStats.ModeAggregates? = null,
         val lines: List<Line>,
         val panels: Panels,
+        val distribution: Distribution? = null,
+        val noun: Noun? = null,
     )
 
     private fun load(): List<Case> {
@@ -48,7 +53,35 @@ class ModeStatsFixtureTest {
             assertEquals("panels(${c.dbKey})",
                 listOf(c.panels.guessDistribution, c.panels.solveTime, c.panels.topWords, c.panels.openerYield, c.panels.positionAccuracy, c.panels.stageBreakdown),
                 listOf(p.guessDistribution, p.solveTime, p.topWords, p.openerYield, p.positionAccuracy, p.stageBreakdown))
+            val spec = ModeStats.distributionSpec(c.dbKey)
+            val want = c.distribution?.let { d ->
+                ModeStats.DistributionSpec(d.buckets.map { ModeStats.DistributionBucket(it.bucket, it.label) }, d.clamped, d.countsAll)
+            }
+            assertEquals("distribution(${c.dbKey})", want, spec)
+            c.noun?.let { assertEquals("noun(${c.semantics})", ModeStats.Noun(it.one, it.many), ModeStats.guessNoun(c.semantics)) }
         }
+    }
+
+    @Test
+    fun fixtures_carry_the_audit_fields() {
+        val cases = load()
+        assertTrue("hintsTotal pinned", cases.any { (it.aggregates?.hintsTotal ?: 0) > 0 })
+        assertTrue("distribution pinned", cases.any { it.distribution != null })
+        assertTrue("noun pinned", cases.all { it.noun != null })
+    }
+
+    @Test
+    fun distribution_buckets_clamp_into_range() {
+        val sudoku = ModeStats.distributionSpec("SUDOKU")!!
+        assertEquals(1, ModeStats.distributionBucket(sudoku, 1))
+        assertEquals(4, ModeStats.distributionBucket(sudoku, 9))
+        val kindred = ModeStats.distributionSpec("GROUPS")!!
+        assertEquals(4, ModeStats.distributionBucket(kindred, 4))
+        assertNull(ModeStats.distributionBucket(kindred, 0))
+        assertEquals(6, ModeStats.distributionBucket(ModeStats.distributionSpec("HUB")!!, 8))
+        assertNull(ModeStats.distributionSpec("DUEL"))
+        assertEquals(ModeStats.Noun("rank", "ranks"), ModeStats.guessNoun("rank"))
+        assertEquals(ModeStats.Noun("par", "par"), ModeStats.guessNoun("overPar"))
     }
 
     @Test

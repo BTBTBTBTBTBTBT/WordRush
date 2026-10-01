@@ -16,7 +16,10 @@ final class ModeStatsFixtureTests: XCTestCase {
         let aggregates: ModeAggregates?
         let lines: [StatLine]
         let panels: StatPanels
+        let distribution: ModeStats.DistributionSpec?
+        let noun: Noun
     }
+    private struct Noun: Decodable { let one: String; let many: String }
 
     private func loadCases() throws -> [Case] {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "mode-stats-fixtures", withExtension: "json", subdirectory: "Fixtures"))
@@ -41,6 +44,9 @@ final class ModeStatsFixtureTests: XCTestCase {
             XCTAssertEqual(got.map { $0.label }, c.lines.map { $0.label }, "labels(\(tag))")
             XCTAssertEqual(got.map { $0.value }, c.lines.map { $0.value }, "values(\(tag))")
             XCTAssertEqual(ModeStats.statPanels(dbKey: c.dbKey, semantics: c.semantics), c.panels, "panels(\(tag))")
+            XCTAssertEqual(ModeStats.distributionSpec(c.dbKey), c.distribution, "distribution(\(tag))")
+            let noun = ModeStats.guessNoun(c.semantics)
+            XCTAssertEqual([noun.one, noun.many], [c.noun.one, c.noun.many], "noun(\(tag))")
         }
     }
 
@@ -120,10 +126,24 @@ final class ModeStatsFixtureTests: XCTestCase {
                        StatPanels(guessDistribution: true, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false))
         XCTAssertTrue(ModeStats.statPanels(dbKey: "GROUPS", semantics: "guesses").guessDistribution)
         XCTAssertTrue(ModeStats.statPanels(dbKey: "SCRAMBLE", semantics: "checks").guessDistribution)
+        // Founder, 2026-10-01: every Puzzles game draws its own histogram.
         for k in ["SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CROSSWORD", "CRYPTOGRAM"] {
             XCTAssertEqual(ModeStats.statPanels(dbKey: k, semantics: "mistakes"),
-                           StatPanels(guessDistribution: false, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false), k)
+                           StatPanels(guessDistribution: true, solveTime: true, topWords: false, openerYield: false, positionAccuracy: false, stageBreakdown: false), k)
+            XCTAssertNotNil(ModeStats.distributionSpec(k), k)
         }
+        XCTAssertNil(ModeStats.distributionSpec("DUEL"))
+        // Clamped specs fold everything past the last bar into it; unclamped ones drop it.
+        let sudoku = try! XCTUnwrap(ModeStats.distributionSpec("SUDOKU"))
+        XCTAssertEqual(sudoku.bucketIndex(1), 0)
+        XCTAssertEqual(sudoku.bucketIndex(9), 3)
+        XCTAssertEqual(sudoku.bucketIndex(0), 0)
+        let groups = try! XCTUnwrap(ModeStats.distributionSpec("GROUPS"))
+        XCTAssertNil(groups.bucketIndex(9))
+        XCTAssertEqual(groups.bucketIndex(5), 1)
+        XCTAssertTrue(ModeStats.distributionSpec("HUB")!.countsAll)
+        XCTAssertEqual(ModeStats.guessNoun("rank").one, "rank")
+        XCTAssertEqual(ModeStats.guessNoun("overPar").many, "par")
         // An unregistered custom-semantics mode gets the custom panels; a word one the word panels.
         XCTAssertFalse(ModeStats.statPanels(dbKey: "SOMETHING_NEW", semantics: "checks").topWords)
         XCTAssertTrue(ModeStats.statPanels(dbKey: "SOMETHING_NEW", semantics: "guesses").topWords)

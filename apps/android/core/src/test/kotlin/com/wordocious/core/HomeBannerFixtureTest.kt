@@ -23,7 +23,8 @@ class HomeBannerFixtureTest {
     private data class Group(val group: G, val tier: String, val status: String)
     private data class D(val played: Int, val won: Int)
     private data class Streak(val days: Map<String, D>, val total: Int, val today: String, val sweep: Int, val flawless: Int)
-    private data class Fixtures(val headlines: List<Headline>, val clocks: List<Clock>, val groups: List<Group>, val streaks: List<Streak>)
+    private data class Totals(val days: Map<String, D>, val total: Int, val sweepDays: Int, val flawlessDays: Int, val bestSweep: Int, val bestFlawless: Int)
+    private data class Fixtures(val headlines: List<Headline>, val clocks: List<Clock>, val groups: List<Group>, val streaks: List<Streak>, val totals: List<Totals>)
 
     private val f: Fixtures by lazy { Gson().fromJson(loadFixture("home-banner-fixtures.json"), Fixtures::class.java) }
 
@@ -62,6 +63,15 @@ class HomeBannerFixtureTest {
             assertEquals("flawless ${c.today} ${c.total}", c.flawless, s.flawless)
             assertEquals(c.flawless, groupStreak(BannerTier.FLAWLESS, s))
             assertEquals(c.sweep, groupStreak(BannerTier.SWEEP, s))
+        }
+    }
+
+    @Test
+    fun day_run_totals_match_shared_fixtures() {
+        assertTrue(f.totals.isNotEmpty())
+        for (c in f.totals) {
+            val days = c.days.mapValues { DayTally(it.value.played, it.value.won) }
+            assertEquals("totals ${c.total} ${c.days.keys}", DayRunTotals(c.sweepDays, c.flawlessDays, c.bestSweep, c.bestFlawless), dayRunTotals(days, c.total))
         }
     }
 

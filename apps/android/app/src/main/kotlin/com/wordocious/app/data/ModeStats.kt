@@ -92,6 +92,8 @@ object ModeStats {
         val pangrams: Int = 0,
         /** Hubbub: the longest word the player entered ("" = none). */
         val longestWord: String = "",
+        /** Hints used across every game (the per-game Hints line, founder 2026-10-01). */
+        val hintsTotal: Int = 0,
     )
 
     val EMPTY_AGGREGATES = ModeAggregates()
@@ -177,6 +179,7 @@ object ModeStats {
         var winGuessTotal = 0; var winTimeTotal = 0; var timedWins = 0; var fastestPerfect = 0
         var boardsSolved = 0; var boardsTotal = 0; var hardestFirst = 0; var pangrams = 0
         var longestWord = ""
+        var hintsTotal = 0
         for (row in matches) {
             val won = row.completed
             val g = max(0, row.guess_count)
@@ -184,6 +187,7 @@ object ModeStats {
             val hints = max(0, row.hints_used)
             val ev = row.player1_guesses
             games++
+            hintsTotal += hints
             if (won) {
                 wins++
                 winGuessTotal += g
@@ -221,7 +225,7 @@ object ModeStats {
             games = games, wins = wins, cleanWins = cleanWins, perfectWins = perfectWins, noHintWins = noHintWins,
             winGuessTotal = winGuessTotal, winTimeTotal = winTimeTotal, timedWins = timedWins, fastestPerfect = fastestPerfect,
             boardsSolved = boardsSolved, boardsTotal = boardsTotal, hardestFirst = hardestFirst, pangrams = pangrams,
-            longestWord = longestWord,
+            longestWord = longestWord, hintsTotal = hintsTotal,
         )
     }
 
@@ -254,64 +258,67 @@ object ModeStats {
         )
     }
 
-    /** Sudoku, Starsweep: Wins · Losses · Win Rate · Clean · Avg Mistakes · Fastest · No-hint Wins · Streak. */
+    // Founder, 2026-10-01 stats audit: every Puzzles grid carries Best Streak;
+    // Losses and No-hint Wins left the grids (no-hint wins moved to the Hints line).
+
+    /** Sudocious, Starsweep: Wins · Win Rate · Clean · Avg Mistakes · Fastest · Avg Time · Streak · Best Streak. */
     private val mistakesLines = Lines { t, _, base, a ->
         listOf(
             Line("Wins", t.wins.toString()),
-            Line("Losses", t.losses.toString()),
             Line("Win Rate", pct(t.wins, t.totalGames)),
             Line("Clean", a.cleanWins.toString()),
             Line("Avg Mistakes", avg1(a.winGuessTotal, a.wins, base)),
             Line("Fastest", statTime(t.fastestTime)),
-            Line("No-hint Wins", a.noHintWins.toString()),
-            Line("Win Streak", t.streak.toString()),
-        )
-    }
-
-    /** Letter Ladder: Wins · Losses · Par Rate · Avg Over Par · Fastest Par · No-hint Wins · Streak · Best Streak. */
-    private val ladderLines = Lines { t, _, base, a ->
-        listOf(
-            Line("Wins", t.wins.toString()),
-            Line("Losses", t.losses.toString()),
-            Line("Par Rate", pct(a.perfectWins, a.wins)),
-            Line("Avg Over Par", avg1(a.winGuessTotal, a.wins, base)),
-            Line("Fastest Par", statTime(a.fastestPerfect)),
-            Line("No-hint Wins", a.noHintWins.toString()),
+            Line("Avg Time", avgTime(a)),
             Line("Win Streak", t.streak.toString()),
             Line("Best Streak", t.bestStreak.toString()),
         )
     }
 
-    /** Muddle: Wins · Losses · Win Rate · Clean · Avg Checks · Fastest · Words Solved · Streak. */
+    /** Letter Ladder: Wins · Win Rate · Par Rate · Avg Over Par · Fastest Par · Avg Time · Streak · Best Streak. */
+    private val ladderLines = Lines { t, _, base, a ->
+        listOf(
+            Line("Wins", t.wins.toString()),
+            Line("Win Rate", pct(t.wins, t.totalGames)),
+            Line("Par Rate", pct(a.perfectWins, a.wins)),
+            Line("Avg Over Par", avg1(a.winGuessTotal, a.wins, base)),
+            Line("Fastest Par", statTime(a.fastestPerfect)),
+            Line("Avg Time", avgTime(a)),
+            Line("Win Streak", t.streak.toString()),
+            Line("Best Streak", t.bestStreak.toString()),
+        )
+    }
+
+    /** Muddle: Wins · Win Rate · Clean · Avg Checks · Fastest · Words Solved · Streak · Best Streak. */
     private val scrambleLines = Lines { t, _, _, a ->
         listOf(
             Line("Wins", t.wins.toString()),
-            Line("Losses", t.losses.toString()),
             Line("Win Rate", pct(t.wins, t.totalGames)),
             Line("Clean", a.cleanWins.toString()),
             Line("Avg Checks", avg1(a.winGuessTotal, a.wins)),
             Line("Fastest", statTime(t.fastestTime)),
             Line("Words Solved", a.boardsSolved.toString()),
             Line("Win Streak", t.streak.toString()),
+            Line("Best Streak", t.bestStreak.toString()),
         )
     }
 
-    /** Spyglass: Cleared · Losses · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak. */
+    /** Spyglass: Cleared · Win Rate · Clean · Fastest · Avg Time · Sec / Word · Streak · Best Streak. */
     private val wordsearchLines = Lines { t, _, _, a ->
         val tenths = if (a.timedWins > 0) Math.round(a.winTimeTotal * 10.0 / (a.timedWins * WORDSEARCH_WORDS)) else 0L
         listOf(
             Line("Cleared", t.wins.toString()),
-            Line("Losses", t.losses.toString()),
             Line("Win Rate", pct(t.wins, t.totalGames)),
             Line("Clean", a.perfectWins.toString()),
             Line("Fastest", statTime(t.fastestTime)),
             Line("Avg Time", avgTime(a)),
             Line("Sec / Word", if (tenths > 0) "${tenths / 10}.${tenths % 10}s" else "-"),
             Line("Win Streak", t.streak.toString()),
+            Line("Best Streak", t.bestStreak.toString()),
         )
     }
 
-    /** Hubbub: Days Played · Hubbub+ · Pandemonium · Best Rank · Avg % Max · Pangrams · Longest Word · Streak. */
+    /** Hubbub: Days Played · Hubbub+ · Pandemonium · Best Rank · Avg % Max · Pangrams · Longest Word · Hubbub+ Run. */
     private val hubLines = Lines { t, _, base, a ->
         listOf(
             Line("Days Played", t.totalGames.toString()),
@@ -321,42 +328,43 @@ object ModeStats {
             Line("Avg % Max", pct(a.boardsSolved, a.boardsTotal)),
             Line("Pangrams", a.pangrams.toString()),
             Line("Longest Word", a.longestWord.ifEmpty { "-" }),
-            Line("Win Streak", t.streak.toString()),
+            // A Hubbub "win" is reaching Hubbub+ (founder, 2026-10-01: "Win Streak" was unclear here).
+            Line("Hubbub+ Run", t.streak.toString()),
         )
     }
 
-    /** Crosswordocious, Codebreaker: Wins · Losses · Win Rate · Clean · No-hint Wins · Fastest · Avg Time · Streak. */
-    private val checksLines = Lines { t, _, _, a ->
+    /** Crosswordocious, Codebreaker: Wins · Win Rate · Clean · Avg Checks · Fastest · Avg Time · Streak · Best Streak. */
+    private val checksLines = Lines { t, _, base, a ->
         listOf(
             Line("Wins", t.wins.toString()),
-            Line("Losses", t.losses.toString()),
             Line("Win Rate", pct(t.wins, t.totalGames)),
             Line("Clean", a.cleanWins.toString()),
-            Line("No-hint Wins", a.noHintWins.toString()),
+            Line("Avg Checks", avg1(a.winGuessTotal, a.wins, base)),
             Line("Fastest", statTime(t.fastestTime)),
             Line("Avg Time", avgTime(a)),
             Line("Win Streak", t.streak.toString()),
+            Line("Best Streak", t.bestStreak.toString()),
         )
     }
 
-    /** Kindred: Wins · Losses · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak. */
+    /** Kindred: Wins · Win Rate · Perfect · Avg Mistakes · Hardest 1st · Fastest · Streak · Best Streak. */
     private val groupsLines = Lines { t, _, base, a ->
         listOf(
             Line("Wins", t.wins.toString()),
-            Line("Losses", t.losses.toString()),
             Line("Win Rate", pct(t.wins, t.totalGames)),
             Line("Perfect", a.cleanWins.toString()),
             Line("Avg Mistakes", avg1(a.winGuessTotal, a.wins, base)),
             Line("Hardest 1st", a.hardestFirst.toString()),
             Line("Fastest", statTime(t.fastestTime)),
             Line("Win Streak", t.streak.toString()),
+            Line("Best Streak", t.bestStreak.toString()),
         )
     }
 
     private val WORD_PANELS = Panels(guessDistribution = true, solveTime = true, topWords = true, openerYield = true, positionAccuracy = true, stageBreakdown = false)
     /** Custom engines: solve-time trend only — no word rows, so no word-only cards. */
     private val CUSTOM_PANELS = Panels(guessDistribution = false, solveTime = true, topWords = false, openerYield = false, positionAccuracy = false, stageBreakdown = false)
-    /** Kindred (4–7 submissions) and Muddle (5–13 checks) have a histogram worth drawing. */
+    /** Every Puzzles game draws a histogram in its own unit (founder, 2026-10-01 stats audit). */
     private val CUSTOM_DIST_PANELS = CUSTOM_PANELS.copy(guessDistribution = true)
 
     private class Profile(val lines: Lines, val panels: Panels)
@@ -370,14 +378,14 @@ object ModeStats {
         // ProperNoundle guesses names, not words: the word grid + distribution apply,
         // but "Top words" / opener yield / position accuracy would be noise.
         "PROPERNOUNDLE" to Profile(defaultLines, CUSTOM_PANELS.copy(guessDistribution = true)),
-        "SUDOKU" to Profile(mistakesLines, CUSTOM_PANELS),
-        "REGIONS" to Profile(mistakesLines, CUSTOM_PANELS),
-        "LADDER" to Profile(ladderLines, CUSTOM_PANELS),
+        "SUDOKU" to Profile(mistakesLines, CUSTOM_DIST_PANELS),
+        "REGIONS" to Profile(mistakesLines, CUSTOM_DIST_PANELS),
+        "LADDER" to Profile(ladderLines, CUSTOM_DIST_PANELS),
         "SCRAMBLE" to Profile(scrambleLines, CUSTOM_DIST_PANELS),
-        "WORDSEARCH" to Profile(wordsearchLines, CUSTOM_PANELS),
-        "HUB" to Profile(hubLines, CUSTOM_PANELS),
-        "CROSSWORD" to Profile(checksLines, CUSTOM_PANELS),
-        "CRYPTOGRAM" to Profile(checksLines, CUSTOM_PANELS),
+        "WORDSEARCH" to Profile(wordsearchLines, CUSTOM_DIST_PANELS),
+        "HUB" to Profile(hubLines, CUSTOM_DIST_PANELS),
+        "CROSSWORD" to Profile(checksLines, CUSTOM_DIST_PANELS),
+        "CRYPTOGRAM" to Profile(checksLines, CUSTOM_DIST_PANELS),
         "GROUPS" to Profile(groupsLines, CUSTOM_DIST_PANELS),
     )
 
@@ -409,14 +417,68 @@ object ModeStats {
         else -> null
     }
 
+    /** One histogram bar: the guess_count (matches.player1_score) it counts and its label. */
+    data class DistributionBucket(val bucket: Int, val label: String)
+
+    /**
+     * A Puzzles game's histogram. `clamped`: the last bucket also takes every
+     * guess_count past it ("3+"). `countsAll`: Hubbub counts every game's rank;
+     * the rest count wins only.
+     */
+    data class DistributionSpec(val buckets: List<DistributionBucket>, val clamped: Boolean, val countsAll: Boolean)
+
+    private val HUB_TOP_RANKS = listOf("Pandemonium", "Thunder", "Uproar", "Hubbub", "Racket")
+
+    /**
+     * The Puzzles games' histograms (founder, 2026-10-01 stats audit): each in its
+     * own unit. Sudocious/Starsweep mistakes 0–3+, Letter Ladder Par…+5+,
+     * Codebreaker/Crosswordocious checks 0–5+, Spyglass misses 0–5+, Hubbub the
+     * rank every game reached (top five, then "Lower"). Kindred and Muddle keep
+     * their exact ranges. Null = a word mode (its own guess table).
+     */
+    fun distributionSpec(dbKey: String): DistributionSpec? {
+        fun nums(min: Int, max: Int, clamped: Boolean, label: (Int) -> String) = DistributionSpec(
+            buckets = (min..max).map { b -> DistributionBucket(b, label(b) + if (clamped && b == max) "+" else "") },
+            clamped = clamped,
+            countsAll = false,
+        )
+        return when (dbKey) {
+            "GROUPS" -> nums(4, 7, false) { it.toString() }
+            "SCRAMBLE" -> nums(5, 13, false) { it.toString() }
+            "SUDOKU", "REGIONS" -> nums(1, 4, true) { (it - 1).toString() }
+            "CROSSWORD", "CRYPTOGRAM" -> nums(1, 6, true) { (it - 1).toString() }
+            "WORDSEARCH" -> nums(10, 15, true) { (it - 10).toString() }
+            "LADDER" -> nums(1, 6, true) { if (it == 1) "Par" else "+${it - 1}" }
+            "HUB" -> DistributionSpec(
+                buckets = HUB_TOP_RANKS.mapIndexed { i, label -> DistributionBucket(i + 1, label) } + DistributionBucket(6, "Lower"),
+                clamped = true,
+                countsAll = true,
+            )
+            else -> null
+        }
+    }
+
+    /**
+     * The bar a guess_count (matches.player1_score) lands in under [spec], clamped
+     * into the range (web fetchModeDetail: Kindred's and Muddle's exact ranges
+     * never overflow; the rest collect "3+" / "5+" / "Lower" in the last bar).
+     * Null for a row with no score.
+     */
+    fun distributionBucket(spec: DistributionSpec, guessCount: Int): Int? {
+        if (guessCount <= 0) return null
+        return guessCount.coerceIn(spec.buckets.first().bucket, spec.buckets.last().bucket)
+    }
+
     /** The unit the histogram counts, singular and plural. */
     data class Noun(val one: String, val many: String)
 
-    /** guess / check / mistake / miss, from the catalog semantics. */
+    /** guess / check / mistake / miss / rank / par, from the catalog semantics. */
     fun guessNoun(semantics: String): Noun = when (semantics) {
         "checks" -> Noun("check", "checks")
         "mistakes" -> Noun("mistake", "mistakes")
         "misses" -> Noun("miss", "misses")
+        "rank" -> Noun("rank", "ranks")
+        "overPar" -> Noun("par", "par")
         else -> Noun("guess", "guesses")
     }
 

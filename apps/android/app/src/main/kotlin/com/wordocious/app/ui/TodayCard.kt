@@ -44,9 +44,9 @@ import com.wordocious.core.GameMode
 /**
  * The Stats tab's landing page — "your day in one card" (Stats + Friends
  * redesign D2, founder 2026-09-26): the eight sweep tiles with today's W/L,
- * then More Games N of 10, VS W/L, today's field standing (the leaderboard's
+ * then Puzzles N of 10, VS W/L, today's field standing (the leaderboard's
  * (better+1)/total — the ONE formula, via StatsDeepService.todayDailyStanding),
- * the sweep streak and a "best moment" line. Free tier throughout — today's
+ * the sweep streaks (Wordocious and Puzzles) and a "best moment" line. Free tier throughout — today's
  * facts. Sweep/Flawless days keep the banner treatment the old Today's Dailies
  * card had (the §244 footer is passed in). Twin of web
  * components/stats/today-card.tsx and iOS TodayCard.
@@ -96,6 +96,8 @@ fun TodayCard(
     standing: StatsDeepService.DailyStanding?,
     sweepStreak: Int,
     flawlessStreak: Int,
+    /** The Puzzles row's runs (founder, 2026-10-01 stats audit; the home banner shows them too). */
+    puzzleStreaks: com.wordocious.core.DayStreaks = com.wordocious.core.DayStreaks(0, 0),
     /** Rendered under the tiles on a Flawless day (the §244 streak + share footer). */
     flawlessFooter: @Composable () -> Unit,
     onPlayDaily: (GameMode) -> Unit,
@@ -168,10 +170,10 @@ fun TodayCard(
                 }
             }
 
-            // The rest of the day: More Games, VS, where you stand.
+            // The rest of the day: Puzzles, VS, where you stand ("Puzzles", founder 2026-10-01).
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TodayPill(
-                    label = "More Games", value = if (moreDaily.isNotEmpty()) "$morePlayed of ${moreDaily.size}" else "—",
+                    label = "Puzzles", value = if (moreDaily.isNotEmpty()) "$morePlayed of ${moreDaily.size}" else "—",
                     color = Color(0xFF4F46E5), modifier = Modifier.weight(1f),
                     icon = { Icon(Icons.Filled.GridView, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(11.dp)) },
                     onClick = { onJump(moreDaily.firstOrNull()?.dbKey ?: RAIL_TODAY) },
@@ -190,7 +192,7 @@ fun TodayCard(
                 )
             }
 
-            // The ten More Games as tiny chips, so the day reads at a glance.
+            // The ten Puzzles as tiny chips, so the day reads at a glance.
             if (moreDaily.isNotEmpty()) {
                 Row(
                     Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
@@ -223,14 +225,22 @@ fun TodayCard(
             ) {
                 Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(16.dp))
                 Column {
-                    Text("SWEEP STREAK", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.6.sp)
-                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            "$sweepStreak ${if (sweepStreak == 1) "day" else "days"}",
-                            fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1,
-                        )
-                        if (flawlessStreak >= 2) {
-                            Text("· $flawlessStreak flawless", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309), maxLines = 1)
+                    Text("SWEEP STREAKS", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.6.sp)
+                    // Wordocious, then Puzzles: the same two runs the home banner shows
+                    // (founder, 2026-10-01 stats audit).
+                    listOf(
+                        Triple("WORDOCIOUS", sweepStreak, flawlessStreak),
+                        Triple("PUZZLES", puzzleStreaks.sweep, puzzleStreaks.flawless),
+                    ).forEach { (label, run, flaw) ->
+                        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(label, fontSize = 8.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, maxLines = 1, softWrap = false)
+                            Text(
+                                "$run ${if (run == 1) "day" else "days"}",
+                                fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1, softWrap = false,
+                            )
+                            if (flaw >= 2) {
+                                Text("· $flaw flawless", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309), maxLines = 1, softWrap = false)
+                            }
                         }
                     }
                 }

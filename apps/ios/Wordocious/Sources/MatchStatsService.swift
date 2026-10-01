@@ -65,13 +65,17 @@ enum MatchStatsService {
     static func guessDistribution(mode: GameMode? = nil, playType: String = "solo") async -> [GuessBucket] {
         if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
+        // Every Puzzles game has its own buckets and labels (founder, 2026-10-01 stats audit:
+        // mistakes, checks, misses, strokes over par, Hubbub's rank); the word modes keep their table.
+        let spec = mode.flatMap { WordociousCore.ModeStats.distributionSpec($0.rawValue) }
         // player1_id ONLY: the chart reads player1_* columns, so rows where the
         // user is player2 would chart the OPPONENT's guesses (topWords had the
         // same bug and was fixed the same way).
         var q = AuthService.shared.client.from("matches")
             .select("player1_score,game_mode,winner_id")
             .eq("player1_id", value: uid)
-            .eq("winner_id", value: uid)
+        // Hubbub draws the rank EVERY game reached; everything else draws wins.
+        if spec?.countsAll != true { q = q.eq("winner_id", value: uid) }
         q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [ScoreRow] = (try? await q.execute().value) ?? []
@@ -85,17 +89,18 @@ enum MatchStatsService {
         // at the perfect count — a "1 guess" bar would be impossible there
         // (ModeStats.guessDistributionRange, web fetchModeDetail parity).
         let range = mode.flatMap { WordociousCore.ModeStats.guessDistributionRange($0.rawValue) }
-        let minBucket = range?.min ?? 1
-        let maxBucket = range?.max ?? mode.map { distMax[$0.rawValue] ?? 6 } ?? 6
+        let minBucket = spec?.buckets.first?.bucket ?? range?.min ?? 1
+        let maxBucket = spec?.buckets.last?.bucket ?? range?.max ?? mode.map { distMax[$0.rawValue] ?? 6 } ?? 6
         let clampable = mode == nil || mode == .gauntlet
         var counts = [Int: Int]()
         for r in rows {
             guard let s = r.player1_score, s > 0 else { continue }
             counts[max(minBucket, min(s, maxBucket)), default: 0] += 1
         }
-        return (minBucket...maxBucket).map {
-            GuessBucket(guesses: $0, count: counts[$0] ?? 0,
-                        label: "\($0)" + (clampable && $0 == maxBucket ? "+" : ""))
+        return (minBucket...maxBucket).map { g in
+            GuessBucket(guesses: g, count: counts[g] ?? 0,
+                        label: spec?.buckets.first { $0.bucket == g }?.label
+                            ?? "\(g)" + (clampable && g == maxBucket ? "+" : ""))
         }
     }
 
@@ -140,6 +145,9 @@ enum MatchStatsService {
             .gt("player1_time", value: 0)
         q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
+        // All-time: the eight Wordocious (sweep) games only (founder, 2026-10-01 stats audit) —
+        // a Spyglass minute and a Classic minute don't belong on one trend line.
+        else { q = q.in("game_mode", values: ModeGen.sweep.compactMap(\.dbKey)) }
         let rows: [TimeRow] = (try? await q.order("created_at", ascending: false).limit(limit).execute().value) ?? []
         // Reverse to chronological order, then index for the X axis.
         return rows.reversed().enumerated().compactMap { i, r in
@@ -492,11 +500,13 @@ enum MatchStatsService {
     }
 
     struct DailyPointsPoint: Identifiable {
+        /// "Wordocious" (the sweep games) or "Puzzles" (founder, 2026-10-01 stats audit: two series).
+        let series: String
         let day: String
         let totalPoints: Int
         let swept: Bool
         let flawless: Bool
-        var id: String { day }
+        var id: String { "\(series)-\(day)" }
     }
 
     /// Add/subtract days from a YYYY-MM-DD local-day string.
@@ -608,14 +618,18 @@ enum MatchStatsService {
             bestFlawlessStreak: bestFlawless)
     }
 
-    static func dailyPointsOverTime(days: Int = 30) async -> [DailyPointsPoint] {
+    /// Points per day over the last `days`, as two series (founder, 2026-10-01 stats audit):
+    /// Wordocious = that day's sweep-mode daily_results, marked sweep / flawless from
+    /// daily_bonuses; Puzzles = the visible Puzzles dailies (`puzzleKeys`), marked sweep
+    /// when every one was played that day and flawless when every one was won.
+    static func dailyPointsOverTime(days: Int = 30, puzzleKeys: [String]) async -> [DailyPointsPoint] {
         guard let uid = await userId() else { return [] }
-        struct ScoreRow: Decodable { let day: String; let composite_score: Double? }
+        struct ScoreRow: Decodable { let day: String; let game_mode: String?; let composite_score: Double?; let completed: Bool? }
         struct BonusRow: Decodable { let day: String; let sweep_awarded: Bool?; let flawless_awarded: Bool? }
         let cutoff = dayShift(LeaderboardService.todayLocal(), -(days - 1))
 
         let rows: [ScoreRow] = (try? await AuthService.shared.client.from("daily_results")
-            .select("day, composite_score")
+            .select("day, game_mode, composite_score, completed")
             .eq("user_id", value: uid)
             .eq("play_type", value: "solo")
             .gte("day", value: cutoff)
@@ -630,13 +644,31 @@ enum MatchStatsService {
         let sweptSet = Set(bonuses.filter { $0.sweep_awarded == true }.map { $0.day })
         let flawlessSet = Set(bonuses.filter { $0.flawless_awarded == true }.map { $0.day })
 
-        var perDay: [String: Int] = [:]
+        let puzzles = Set(puzzleKeys)
+        var wordPerDay: [String: Int] = [:]
+        var puzzlePerDay: [String: Int] = [:]
+        var puzzlePlayed: [String: Set<String>] = [:]
+        var puzzleWon: [String: Set<String>] = [:]
         // .rounded() is CORRECT here (not the formatScore truncate contract):
         // the web daily-points chart rounds per row (stats-service.ts
         // fetchDailyPointsSeries uses Math.round) — keep them matched.
-        for r in rows { perDay[r.day, default: 0] += Int((r.composite_score ?? 0).rounded()) }
-        return perDay.map { DailyPointsPoint(day: $0.key, totalPoints: $0.value,
+        for r in rows {
+            guard let mode = r.game_mode else { continue }
+            let pts = Int((r.composite_score ?? 0).rounded())
+            if ModeGen.sweepModes(for: r.day).contains(mode) {
+                wordPerDay[r.day, default: 0] += pts
+            } else if puzzles.contains(mode) {
+                puzzlePerDay[r.day, default: 0] += pts
+                puzzlePlayed[r.day, default: []].insert(mode)
+                if r.completed == true { puzzleWon[r.day, default: []].insert(mode) }
+            }
+        }
+        let word = wordPerDay.map { DailyPointsPoint(series: "Wordocious", day: $0.key, totalPoints: $0.value,
             swept: sweptSet.contains($0.key), flawless: flawlessSet.contains($0.key)) }
-            .sorted { $0.day < $1.day }
+        let total = puzzles.count
+        let puzzle = puzzlePerDay.map { DailyPointsPoint(series: "Puzzles", day: $0.key, totalPoints: $0.value,
+            swept: total > 0 && (puzzlePlayed[$0.key]?.count ?? 0) >= total,
+            flawless: total > 0 && (puzzleWon[$0.key]?.count ?? 0) >= total) }
+        return (word.sorted { $0.day < $1.day }) + (puzzle.sorted { $0.day < $1.day })
     }
 }

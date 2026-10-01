@@ -1,8 +1,10 @@
 package com.wordocious.app.data
 
 import com.wordocious.app.todayLocalDate
+import com.wordocious.core.DayRunTotals
 import com.wordocious.core.DayStreaks
 import com.wordocious.core.DayTally
+import com.wordocious.core.dayRunTotals
 import com.wordocious.core.dayStreaks
 import com.wordocious.core.isDailySeed
 import com.wordocious.core.shiftDay
@@ -44,8 +46,31 @@ object HomeStreaksService {
      * visible More Games daily modes; a day needs all of them.
      */
     suspend fun puzzleStreaks(dbKeys: List<String>): DayStreaks {
-        val userId = AuthService.userId ?: return DayStreaks(0, 0)
         if (dbKeys.isEmpty()) return DayStreaks(0, 0)
+        val days = puzzleDays(dbKeys) ?: return DayStreaks(0, 0)
+        return dayStreaks(days, dbKeys.size, todayLocalDate())
+    }
+
+    /** The All-time "Puzzles Sweeps" card: lifetime totals and best runs, plus the current runs. */
+    data class PuzzleRecords(val totals: DayRunTotals, val streaks: DayStreaks) {
+        val hasData: Boolean get() = totals.sweepDays > 0 || totals.flawlessDays > 0
+    }
+
+    /**
+     * Founder, 2026-10-01 stats audit: sweep and flawless days for the Puzzles
+     * (days every visible Puzzles daily was finished / won), their best runs and
+     * the current runs, over the same ~400-day window the banner walks. Null on a
+     * failed fetch (the card keeps what it had).
+     */
+    suspend fun puzzleRecords(dbKeys: List<String>): PuzzleRecords? {
+        if (dbKeys.isEmpty()) return PuzzleRecords(DayRunTotals(0, 0, 0, 0), DayStreaks(0, 0))
+        val days = puzzleDays(dbKeys) ?: return null
+        return PuzzleRecords(dayRunTotals(days, dbKeys.size), dayStreaks(days, dbKeys.size, todayLocalDate()))
+    }
+
+    /** Each day's distinct Puzzles finished and won, from the player's solo daily_results. Null = signed out / failed. */
+    private suspend fun puzzleDays(dbKeys: List<String>): Map<String, DayTally>? {
+        val userId = AuthService.userId ?: return null
         return runCatching {
             val rows = client.postgrest["daily_results"]
                 .select(Columns.raw("day,game_mode,completed")) {
@@ -62,9 +87,8 @@ object HomeStreaksService {
                 played.getOrPut(r.day) { mutableSetOf() }.add(r.gameMode)
                 if (r.completed) won.getOrPut(r.day) { mutableSetOf() }.add(r.gameMode)
             }
-            val days = played.mapValues { (day, set) -> DayTally(set.size, won[day]?.size ?: 0) }
-            dayStreaks(days, dbKeys.size, todayLocalDate())
-        }.getOrElse { DayStreaks(0, 0) }
+            played.mapValues { (day, set) -> DayTally(set.size, won[day]?.size ?: 0) }
+        }.getOrNull()
     }
 
     @Serializable
@@ -210,6 +234,35 @@ object HomeStreaksService {
             if (r.day == day) today = QuizAnswer(r.picked, r.correct)
         }
         return QuizState(today, dayStreaks(days, 1, day).flawless)
+    }
+
+    /** The All-time Word of the Day record: current word streak, best run, right answers of all answered. */
+    data class QuizRecord(val streak: Int, val best: Int, val right: Int, val answered: Int)
+
+    /**
+     * Founder, 2026-10-01 stats audit: the player's word_quiz_answers as a record —
+     * the current streak (dayStreaks(days, 1).flawless), the best run
+     * (dayRunTotals(days, 1).bestFlawless) and "Right N of M". Null signed out or
+     * on a failed fetch; `answered == 0` hides the card.
+     */
+    suspend fun quizRecord(): QuizRecord? {
+        val userId = AuthService.userId ?: return null
+        return runCatching {
+            val rows = client.postgrest["word_quiz_answers"]
+                .select(Columns.raw("day,picked,correct")) {
+                    filter { eq("user_id", userId); gte("day", sinceDay()) }
+                    limit(LOOKBACK_DAYS.toLong())
+                }
+                .decodeList<QuizRow>()
+            val days = rows.associate { it.day to DayTally(1, if (it.correct) 1 else 0) }
+            val totals = dayRunTotals(days, 1)
+            QuizRecord(
+                streak = dayStreaks(days, 1, todayLocalDate()).flawless,
+                best = totals.bestFlawless,
+                right = totals.flawlessDays,
+                answered = totals.sweepDays,
+            )
+        }.getOrNull()
     }
 
     /** Saves the answer once; a second save for the same day is refused by the primary key (first answer stands). */
