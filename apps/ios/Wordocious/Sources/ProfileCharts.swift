@@ -741,6 +741,12 @@ private struct ProInsightsCard: View {
     /// "Best vs Par" / "Best Rank" with a matching value (More Games §11).
     private var meta: GenMode? { ModeGen.byDbKey(mode.rawValue) }
     private var fewestLabel: String { WordociousCore.ModeStats.fewestRecordLabel(meta?.guessSemantics ?? "guesses") }
+    /// Avg guesses / first-try rate / lucky word / nemesis are word-game facts (web parity:
+    /// panels.topWords). Founder, 2026-10-01: Sudocious and Starsweep showed a board of digits
+    /// as their "Lucky Word".
+    private var wordFacts: Bool {
+        WordociousCore.ModeStats.statPanels(dbKey: mode.rawValue, semantics: meta?.guessSemantics ?? "guesses").topWords
+    }
     private func fewestValue(_ v: Int) -> String {
         guard let meta, meta.guessSemantics != "guesses" else { return "\(v)" }
         return formatGuessStat(semantics: meta.guessSemantics, guessBase: meta.guessBase, guessCount: v)
@@ -760,12 +766,12 @@ private struct ProInsightsCard: View {
                     statCell("Perfect Games", "\(s.perfectGames)", "star.fill", gold)
                     statCell("Consistency", s.consistencySample >= 3 ? "\(s.consistency)" : "—", "waveform.path.ecg", gold)
                     if s.currentStreak > 0 { statCell("Win Streak", "\(s.currentStreak)", "flame.fill", gold) }
-                    if s.avgGuesses > 0 { statCell("Avg Guesses", String(format: "%g", s.avgGuesses), "number", gold) }
-                    if s.firstTryRate > 0 { statCell("First Try Rate", "\(s.firstTryRate)%", "1.circle.fill", gold) }
+                    if wordFacts, s.avgGuesses > 0 { statCell("Avg Guesses", String(format: "%g", s.avgGuesses), "number", gold) }
+                    if wordFacts, s.firstTryRate > 0 { statCell("First Try Rate", "\(s.firstTryRate)%", "1.circle.fill", gold) }
                     if let h = s.peakHour { statCell("Peak Hour", hourLabel(h), "clock.fill", gold) }
-                    if let w = s.luckyWord { statCell("Lucky Word", w, "sparkles", gold) }
+                    if wordFacts, let w = s.luckyWord { statCell("Lucky Word", w, "sparkles", gold) }
                 }
-                if let nem = s.nemesisWord, s.nemesisLosses >= 2 {
+                if wordFacts, let nem = s.nemesisWord, s.nemesisLosses >= 2 {
                     HStack(spacing: 8) {
                         Image(systemName: "skull.fill").font(.system(size: 13)).foregroundStyle(gold)
                         Text("Nemesis: ").font(Brand.font(12, .bold)).foregroundColor(Theme.textSecondary)

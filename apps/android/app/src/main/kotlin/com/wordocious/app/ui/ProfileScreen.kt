@@ -1842,6 +1842,10 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
     val semantics = meta?.guessSemantics ?: "guesses"
     val fewestLabel = com.wordocious.app.data.ModeStats.fewestRecordLabel(semantics)
     fun fewestValue(v: Int): String = if (semantics == "guesses") "$v" else formatGuessStat(semantics, meta?.guessBase ?: 1, v)
+    // Avg guesses / first-try rate / lucky word / nemesis are word-game facts (web parity:
+    // panels.topWords). Founder, 2026-10-01: Sudocious and Starsweep showed a board of digits
+    // as their "Lucky Word".
+    val wordFacts = gameMode == null || com.wordocious.app.data.ModeStats.statPanels(gameMode, semantics).topWords
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("PRO INSIGHTS")
         Column(
@@ -1860,10 +1864,10 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                     add(Triple("Perfect Games", "${s.perfectGames}", Icons.Filled.Star))
                     add(Triple("Consistency", if (s.consistencySample >= 3) "${s.consistency}" else "—", Icons.Filled.TrackChanges))
                     if (s.currentStreak > 0) add(Triple("Win Streak", "${s.currentStreak}", Icons.Filled.LocalFireDepartment))
-                    if (s.avgGuesses > 0) add(Triple("Avg Guesses", fmtG(s.avgGuesses), Icons.Filled.TrackChanges))
-                    if (s.firstTryRate > 0) add(Triple("First Try Rate", "${s.firstTryRate}%", Icons.Filled.Star))
+                    if (wordFacts && s.avgGuesses > 0) add(Triple("Avg Guesses", fmtG(s.avgGuesses), Icons.Filled.TrackChanges))
+                    if (wordFacts && s.firstTryRate > 0) add(Triple("First Try Rate", "${s.firstTryRate}%", Icons.Filled.Star))
                     s.peakHour?.let { add(Triple("Peak Hour", hourLabelUpper(it), Icons.Filled.Bolt)) }
-                    s.luckyWord?.let { add(Triple("Lucky Word", it, Icons.Filled.Star)) }
+                    if (wordFacts) s.luckyWord?.let { add(Triple("Lucky Word", it, Icons.Filled.Star)) }
                 }
                 cells.chunked(2).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1871,7 +1875,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                         if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
-                if (s.nemesisWord != null && s.nemesisLosses >= 2) {
+                if (wordFacts && s.nemesisWord != null && s.nemesisLosses >= 2) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_skull), null, tint = gold, modifier = Modifier.size(15.dp))
                         Text("Nemesis: ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
