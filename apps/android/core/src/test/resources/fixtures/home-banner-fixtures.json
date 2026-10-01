@@ -1,0 +1,1986 @@
+{
+  "headlines": [
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "GOOD MORNING, BMT!"
+    },
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "GOOD MORNING, BMT!"
+    },
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "GOOD AFTERNOON, DOUG!"
+    },
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "GOOD AFTERNOON!"
+    },
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "GOOD EVENING, BMT!"
+    },
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "GOOD EVENING, BMT!"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WARMING UP · 3 DOWN"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WARMING UP · 3 DOWN"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "WARMING UP · 3 DOWN"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "WARMING UP · 3 DOWN"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WARMING UP · 3 DOWN"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WARMING UP · 3 DOWN"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 7 OF 18"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 7 OF 18"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "ON A ROLL · 7 OF 18"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "ON A ROLL · 7 OF 18"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 7 OF 18"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 7 OF 18"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 11 OF 18"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 11 OF 18"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "ON A ROLL · 11 OF 18"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "ON A ROLL · 11 OF 18"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 11 OF 18"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "ON A ROLL · 11 OF 18"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "HOME STRETCH · 4 LEFT"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "HOME STRETCH · 4 LEFT"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "HOME STRETCH · 4 LEFT"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "HOME STRETCH · 4 LEFT"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "HOME STRETCH · 4 LEFT"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "HOME STRETCH · 4 LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES SWEPT! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES SWEPT! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "PUZZLES SWEPT! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "PUZZLES SWEPT! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES SWEPT! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES SWEPT! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "FLAWLESS + SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "FLAWLESS + SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "FLAWLESS + SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "FLAWLESS + SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "FLAWLESS + SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "FLAWLESS + SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "SWEEP + FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "SWEEP + FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "SWEEP + FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "SWEEP + FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "SWEEP + FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "SWEEP + FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "DOUBLE SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "DOUBLE SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE SWEEP!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "DOUBLE FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "DOUBLE FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "DOUBLE FLAWLESS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 0,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 11,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 12,
+      "name": "doug",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 16,
+      "name": "",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 17,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "hour": 23,
+      "name": "BMT",
+      "unlimited": false,
+      "headline": "WORDOCIOUS FLAWLESS! 1 PUZZLE LEFT"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "hour": 10,
+      "name": "BMT",
+      "unlimited": true,
+      "headline": "UNLIMITED PLAY"
+    }
+  ],
+  "clocks": [
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "18 FRESH PUZZLES · RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 2,
+        "won": 2,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 1,
+        "won": 1,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 4,
+        "won": 4,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 5,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 6,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 6,
+        "won": 5,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 8,
+        "won": 8,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 6,
+        "won": 5,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 7,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 9,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 4,
+        "won": 4,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "NEW PUZZLES IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "NEW PUZZLES IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "NEW PUZZLES IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "NEW PUZZLES IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 9,
+        "won": 9,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": false,
+      "line": "RESETS IN 07:12:40"
+    },
+    {
+      "word": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "clock": "07:12:40",
+      "unlimited": true,
+      "line": "FRESH PUZZLE EVERY TAP · ALL STATS COUNT"
+    }
+  ],
+  "groups": [
+    {
+      "group": {
+        "played": 0,
+        "won": 0,
+        "total": 8
+      },
+      "tier": "none",
+      "status": "0/8"
+    },
+    {
+      "group": {
+        "played": 3,
+        "won": 2,
+        "total": 8
+      },
+      "tier": "none",
+      "status": "3/8"
+    },
+    {
+      "group": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "tier": "sweep",
+      "status": "SWEEP · 7/8 WON"
+    },
+    {
+      "group": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "tier": "flawless",
+      "status": "FLAWLESS · 8/8 WON"
+    },
+    {
+      "group": {
+        "played": 10,
+        "won": 8,
+        "total": 10
+      },
+      "tier": "sweep",
+      "status": "SWEEP · 8/10 WON"
+    },
+    {
+      "group": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "tier": "flawless",
+      "status": "FLAWLESS · 10/10 WON"
+    },
+    {
+      "group": {
+        "played": 0,
+        "won": 0,
+        "total": 0
+      },
+      "tier": "none",
+      "status": "0/0"
+    }
+  ],
+  "streaks": [
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-10-01",
+      "sweep": 3,
+      "flawless": 1
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-10-02",
+      "sweep": 0,
+      "flawless": 0
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-10-03",
+      "sweep": 0,
+      "flawless": 0
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-03-01",
+      "sweep": 2,
+      "flawless": 2
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-03-02",
+      "sweep": 2,
+      "flawless": 2
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-01-01",
+      "sweep": 2,
+      "flawless": 1
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 4,
+          "won": 4
+        },
+        "2026-09-30": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-29": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-09-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-09-26": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-03-01": {
+          "played": 10,
+          "won": 10
+        },
+        "2026-02-28": {
+          "played": 10,
+          "won": 10
+        },
+        "2025-12-31": {
+          "played": 10,
+          "won": 8
+        },
+        "2026-01-01": {
+          "played": 10,
+          "won": 10
+        }
+      },
+      "total": 10,
+      "today": "2026-01-02",
+      "sweep": 2,
+      "flawless": 1
+    },
+    {
+      "days": {
+        "2026-10-01": {
+          "played": 1,
+          "won": 1
+        },
+        "2026-09-30": {
+          "played": 1,
+          "won": 1
+        },
+        "2026-09-29": {
+          "played": 1,
+          "won": 0
+        }
+      },
+      "total": 1,
+      "today": "2026-10-01",
+      "sweep": 3,
+      "flawless": 2
+    }
+  ]
+}

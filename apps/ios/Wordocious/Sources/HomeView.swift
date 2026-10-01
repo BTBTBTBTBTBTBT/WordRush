@@ -91,19 +91,9 @@ struct HomeView: View {
         var id: String { seed }
     }
     @State private var pnGame: PNGame?
-    /// Today's ProperNoundle daily launched from the More Games sheet (the grid
-    /// card uses a NavigationLink; the sheet hands its pick back programmatically).
+    /// Today's ProperNoundle daily (its PUZZLES card and banner tile launch it as a cover).
     @State private var pnDaily = false
-    /// More Games sheet (Stage 5) + the pick it hands back on dismiss.
-    @State private var showMoreGames = false
-    /// The More Games band's frame (global) — where the menu panel grows from.
-    @State private var moreBandFrame: CGRect?
-    @State private var pendingMorePick: HomeMode?
-    /// Founder + JP (2026-09-26): a game launched FROM the sheet returns to the sheet on
-    /// every exit (Home, results Home, swipe-back). Set in openFromMoreGames, consumed in
-    /// onGameCoverDismissed once no game cover is up.
-    @State private var returnToMore = false
-    /// More Games Sweep / Flawless celebration (visual only — never a bonus or score).
+    /// Puzzles (More Games) Sweep / Flawless celebration (visual only — never a bonus or score).
     @State private var moreCeleb: SweepCeleb?
     @AppStorage("more-sweep-celebrated") private var moreSweepCelebratedDay = ""
     /// A Sudoku run (own view, not GameScreen): nil seed = today's daily.
@@ -160,6 +150,93 @@ struct HomeView: View {
     /// Free users are forced to Daily (toggle is Pro-only).
     private var effectiveMode: PlayMode { auth.isProActive ? playMode : .daily }
 
+    // MARK: Home redesign (founder-approved, 2026-10-01; docs/HOME_REDESIGN_SPEC.md)
+
+    /// The banner's row streaks: Wordocious from the Daily Sweep stats
+    /// (daily_bonuses), Puzzles from the More Games dailies' daily_results. Seeded
+    /// from the last value so the flames don't pop in on every launch.
+    @State private var wordStreaks = HomeStreaksService.cachedStreaks(.word)
+    @State private var puzzleStreaks = HomeStreaksService.cachedStreaks(.puzzles)
+    /// Unlimited mode's per-game_mode count of today's finished unlimited games.
+    @State private var unlimitedCounts: [String: Int] = [:]
+    private static let puzzlesAnchor = "home-puzzles"
+
+    /// WORDOCIOUS DAILIES: the eight sweep cards (grid order).
+    private var wordModes: [HomeMode] { visibleHomeModes.filter { !$0.homeWide } }
+    /// PUZZLES: the More Games dailies, catalog order, each behind its remote flag.
+    /// The old More tile's flag (menu.more) still switches the whole group off.
+    private var puzzleModes: [HomeMode] {
+        visibleHomeModes.contains { $0.id == "more" } ? moreDailyModes(visibleMoreModes) : []
+    }
+
+    private func progress(_ modes: [HomeMode]) -> GroupProgress {
+        let keys = modes.compactMap(\.dbKey)
+        let rows = keys.compactMap { completions.byMode[$0] }
+        return GroupProgress(played: rows.count, won: rows.filter(\.completed).count, total: keys.count)
+    }
+
+    private func unlimitedPlayed(_ modes: [HomeMode]) -> Int {
+        modes.compactMap(\.dbKey).reduce(0) { $0 + (unlimitedCounts[$1] ?? 0) }
+    }
+
+    private var bannerName: String { auth.isAuthenticated ? (auth.profile?.username ?? "") : "" }
+
+    private var homeBanner: some View {
+        let w = wordModes, p = puzzleModes
+        return HomeBannerView(
+            word: .init(modes: w, progress: progress(w), streaks: wordStreaks, unlimitedPlayed: unlimitedPlayed(w)),
+            puzzles: .init(modes: p, progress: progress(p), streaks: puzzleStreaks, unlimitedPlayed: unlimitedPlayed(p)),
+            byMode: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive,
+            onModeChange: { m in withAnimation(Theme.animation(.easeInOut(duration: 0.15))) { playMode = m } },
+            name: bannerName,
+            onOpen: { open($0) },
+            onShare: {
+                let headline = HomeBanner.bannerHeadline(progress(w), progress(p), hour: Calendar.current.component(.hour, from: Date()),
+                                                         name: bannerName)
+                ShareEvents.log(kind: "image", gameMode: "", surface: "home_banner")
+                ShareService.shareTodayProgress(byMode: completions.byMode, headline: headline)
+            })
+    }
+
+    /// Row streaks (signed in only). Wordocious: the Daily Sweep stats' current
+    /// sweep / flawless runs; Puzzles: dayStreaks over the visible More Games dailies.
+    private func loadStreaks(word: Bool = true, puzzles: Bool = true) async {
+        guard auth.isAuthenticated else {
+            wordStreaks = GroupStreaks(sweep: 0, flawless: 0); puzzleStreaks = GroupStreaks(sweep: 0, flawless: 0); return
+        }
+        if word {
+            let sweep = await MatchStatsService.dailySweepStats()
+            wordStreaks = GroupStreaks(sweep: sweep.currentSweepStreak, flawless: sweep.currentFlawlessStreak)
+            HomeStreaksService.storeStreaks(wordStreaks, .word)
+        }
+        if puzzles {
+            puzzleStreaks = await HomeStreaksService.puzzleStreaks(dbKeys: puzzleModes.compactMap(\.dbKey))
+            HomeStreaksService.storeStreaks(puzzleStreaks, .puzzles)
+        }
+        // The widget shows the row streaks too (read from that cache).
+        WidgetBridge.update(completions: completions.byMode)
+    }
+
+    /// A row's streak can only move today once that row is swept, so a recorded
+    /// daily refreshes just the rows that are. The Wordocious run reads the sweep
+    /// bonus row, which the server awards right AFTER the result lands — hence the
+    /// short wait (the cover-dismiss refresh catches a slow award).
+    private func refreshSweptRowStreaks(afterAward: Bool) {
+        let w = HomeBanner.groupTier(progress(wordModes)) != .none
+        let p = HomeBanner.groupTier(progress(puzzleModes)) != .none
+        guard w || p else { return }
+        Task {
+            if afterAward && w { try? await Task.sleep(nanoseconds: 3_000_000_000) }
+            await loadStreaks(word: w, puzzles: p)
+        }
+    }
+
+    /// Unlimited's "N PLAYED TODAY" (Pro in Unlimited only — nobody else sees it).
+    private func loadUnlimitedCounts() async {
+        guard auth.isAuthenticated, effectiveMode == .unlimited else { return }
+        unlimitedCounts = await HomeStreaksService.unlimitedCountsToday()
+    }
+
     private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
 
     var body: some View {
@@ -170,35 +247,27 @@ struct HomeView: View {
 
                 VStack(spacing: 0) {
                     AppHeaderView()
+                    ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 8) {
                             AnnouncementsBanner()
                             pendingInvitesBanner
-                            if auth.isProActive { PlayModeToggle(value: $playMode) }
-                            // Always fill the hero slot so toggling Daily⇄Unlimited
-                            // (or completing all dailies) never shifts the grid.
-                            if effectiveMode == .unlimited {
-                                UnlimitedHero()
-                            } else if completions.allDone {
-                                banner          // Daily Sweep / Flawless Victory
-                            } else {
-                                DailyChallengeHero()
-                            }
-                            WordOfTheDayView()
+                            // The banner replaces the old Pro pill, the Daily Challenge /
+                            // Unlimited / Sweep heroes and the top Word of the Day card.
+                            homeBanner
                             if showFirstGameCard { firstGameCard }
-                            sectionHeader
+                            sectionHeader("WORDOCIOUS DAILIES")
                             LazyVGrid(columns: columns, spacing: 8) {
-                                ForEach(visibleHomeModes.filter { !$0.homeWide }) { mode in
-                                    card(mode)
+                                ForEach(wordModes) { mode in card(mode) }
+                            }
+                            // The More Games dailies as plain cards (the band and its sheet are gone).
+                            if !puzzleModes.isEmpty {
+                                sectionHeader("PUZZLES").id(Self.puzzlesAnchor)
+                                LazyVGrid(columns: columns, spacing: 8) {
+                                    ForEach(puzzleModes) { mode in card(mode) }
                                 }
                             }
-                            // Founder + JP (2026-09-26): More Games as a full-width band directly under
-                            // the grid, then VS Battle merged with the LIVE bar at the very bottom.
-                            if let more = visibleHomeModes.first(where: { $0.id == "more" }) {
-                                MoreGamesBand(mode: more, modes: visibleMoreModes, playMode: effectiveMode, byMode: completions.byMode,
-                                              onOpen: { showMoreGames = true },
-                                              onShare: { ShareEvents.log(kind: "image", gameMode: "", surface: "more_sweep"); ShareService.shareMoreSweep(byMode: completions.byMode) })
-                            }
+                            WordOfTheDayView()
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
                                 VSLiveTile(mode: vs, vsDailyWon: vsDailyWon, playMode: effectiveMode,
                                            isPro: auth.isProActive, onInvite: { showInvite = true }) {
@@ -217,6 +286,17 @@ struct HomeView: View {
                         // tappable, regardless of safe-area-inset propagation.
                         // Adds the ad banner height too when it's mounted (free).
                         .padding(.bottom, 72)
+                    }
+                    // Anything that used to open the More Games sheet scrolls here instead.
+                    .onReceive(DeepLink.shared.$puzzlesRequest) { req in
+                        guard req != nil else { return }
+                        DeepLink.shared.puzzlesRequest = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            withAnimation(Theme.animation(.easeInOut(duration: 0.35))) {
+                                proxy.scrollTo(Self.puzzlesAnchor, anchor: .top)
+                            }
+                        }
+                    }
                     }
                 }
 
@@ -335,22 +415,6 @@ struct HomeView: View {
                         .id(g.id)
                 }
             }
-            // More Games grows out of its band (founder, 2026-09-26) instead of a sheet
-            // fanning up: MoreGamesMorph animates the panel from the band's frame; once
-            // it has collapsed back, any pick made inside is routed exactly as before.
-            .onPreferenceChange(MoreBandFrameKey.self) { moreBandFrame = $0 }
-            .overlay {
-                if showMoreGames {
-                    MoreGamesMorph(origin: moreBandFrame, onDismissed: {
-                        showMoreGames = false
-                        if let m = pendingMorePick { pendingMorePick = nil; openFromMoreGames(m) }
-                    }) { close in
-                        MoreGamesSheet(modes: visibleMoreModes, completions: completions.byMode, playMode: effectiveMode,
-                                       isPro: auth.isProActive, onSelect: { pendingMorePick = $0 }, onClose: close)
-                    }
-                    .zIndex(50)
-                }
-            }
             .fullScreenCover(item: $solvedMode, onDismiss: { onGameCoverDismissed() }) { m in
                 NavigationStack {
                     // Word engines only: reconstruct the solved board from the matches
@@ -384,18 +448,19 @@ struct HomeView: View {
                 _ = await invites
                 vsDailyWon = await won
                 checkStreakAtRisk()
+                await loadStreaks()
                 // Deliberately NO checkSweepCelebration() here: launch/appear
                 // must never celebrate (see checkSweepCelebration's doc).
             }
-            // Widget deep link (wordocious://daily/<MODE>): launch today's
-            // daily exactly as tapping its home tile would. PN's daily is a
-            // NavigationLink with no state hook, so the widget doesn't link it
-            // — its dot just opens the app to Home.
+            // Widget deep link (wordocious://daily/<MODE>): open TODAY'S daily
+            // exactly as tapping its card would in Daily mode — any of the eight
+            // Wordocious dailies or the ten Puzzles (home redesign, 2026-10-01:
+            // every Puzzles chip links too, ProperNoundle included).
             .onReceive(DeepLink.shared.$dailyMode) { m in
-                guard let m, m != .propernoundle else { return }
+                guard let m else { return }
                 DeepLink.shared.dailyMode = nil
-                let title = ModeGen.daily.first { $0.dbKey == m.rawValue }?.title ?? m.rawValue
-                pendingGame = ActiveGame(seed: DailySeed.today(mode: m), mode: m, title: title)
+                guard let hm = (wordModes + puzzleModes).first(where: { $0.dbKey == m.rawValue }) else { return }
+                open(hm, forceDaily: true)
             }
             // Refresh today's daily completions whenever Home reappears (returning
             // from a daily push like ProperNoundle) so a just-finished game shows
@@ -418,9 +483,14 @@ struct HomeView: View {
                 pendingGame = nil
                 pnGame = nil
                 pendingSweepCeleb = nil   // an unshown sweep belongs to yesterday
-                returnToMore = false
                 moreCeleb = nil
+                unlimitedCounts = [:]
+                Task { await loadStreaks() }
             }
+            // Unlimited's per-row "N PLAYED TODAY": fetched when the switch flips to Unlimited.
+            .task(id: effectiveMode) { await loadUnlimitedCounts() }
+            // The row streaks once today's result has LANDED, so a sweep's flame ticks up right away.
+            .onDailyRecorded { refreshSweptRowStreaks(afterAward: true) }
             // Deferred sweep celebration: present once the game cover that
             // earned it has fully left the screen (its hidesBottomNav
             // onDisappear fires at dismissal end), with a breath so the
@@ -475,68 +545,6 @@ struct HomeView: View {
             }
 
         }
-    }
-
-    // MARK: - Banner
-
-    private var banner: some View {
-        let flawless = completions.flawless
-        // Per web: distinct Sweep (purple) vs Flawless (amber) designs; gradient
-        // title text flanked by icons; no emoji.
-        let bg: [Color] = flawless ? [Color(hex: 0xFEF3C7), Color(hex: 0xFDE68A)] : [Color(hex: 0xF5F3FF), Color(hex: 0xFCE7F3)]
-        let borderC = flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD)
-        let titleGradient: [Color] = flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]
-        let subtitleC = flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9)
-        let totals = completions.totals
-        let totalTime = "\(Int(totals.totalTimeSeconds) / 60):\(String(format: "%02d", Int(totals.totalTimeSeconds) % 60))"
-        let score = formatScore(totals.totalScore)  // grouped, like web toLocaleString()
-        return Button {
-            ShareEvents.log(kind: "image", gameMode: "", surface: "daily_sweep")
-            ShareService.shareDailySweep(byMode: completions.byMode)
-        } label: {
-            VStack(spacing: 3) {
-                HStack(spacing: 8) {
-                    Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                        .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
-                    Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
-                        .font(Brand.font(flawless ? 18 : 16, .black))
-                        .foregroundStyle(LinearGradient(colors: titleGradient, startPoint: .topLeading, endPoint: .bottomTrailing))
-                    Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                        .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
-                }
-                // §248 (founder: the main page must "clearly show that I am
-                // on a 4 day win streak" — same footprint, the Daily/Unlimited
-                // toggle depends on it): a live streak replaces the redundant
-                // "All 9 won" (the FLAWLESS headline already says it) — text
-                // swap only, heroHeight untouched.
-                let homeStreak = flawless ? MatchStatsService.cachedFlawlessStreak() : 0
-                Text(flawless
-                        ? (homeStreak >= 2
-                            ? "🏆 \(homeStreak)-day streak · \(totalTime) · \(score) pts"
-                            : "All \(totals.total) won · \(totalTime) · \(score) pts")
-                        : "All \(totals.total) done · \(totalTime) · \(score) pts")
-                    .font(Brand.font(11, .heavy)).foregroundStyle(subtitleC)
-                TimelineView(.periodic(from: .now, by: 1)) { _ in
-                    Text("Tap to share · Next in \(countdown())").font(Brand.font(10, .bold))
-                        .foregroundStyle(subtitleC.opacity(0.75))
-                }
-            }
-            // Fixed height so swapping hero ⇄ banner ⇄ unlimited on the Daily/Unlimited
-            // toggle never shifts the cards below (all three heroes share this height).
-            .frame(maxWidth: .infinity).frame(height: heroHeight)
-            .background(
-                RoundedRectangle(cornerRadius: 14).fill(
-                    LinearGradient(colors: bg, startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .overlay(BannerShimmer().clipShape(RoundedRectangle(cornerRadius: 14)))
-            )
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderC, lineWidth: 1.5))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func countdown() -> String {
-        let s = secondsUntilLocalMidnight()
-        return String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
     }
 
     // MARK: - First-game suggestion card (new accounts)
@@ -602,9 +610,9 @@ struct HomeView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    private var sectionHeader: some View {
+    private func sectionHeader(_ title: String) -> some View {
         HStack {
-            Text("GAME MODES").font(Brand.font(13, .heavy)).tracking(1).foregroundStyle(Theme.textMuted)
+            Text(title).font(Brand.font(13, .heavy)).tracking(1).foregroundStyle(Theme.textMuted)
             Spacer()
         }
         .padding(.top, 2)
@@ -780,81 +788,52 @@ struct HomeView: View {
         return completions.byMode[key] != nil
     }
 
-    @ViewBuilder
+    /// One card in WORDOCIOUS DAILIES or PUZZLES. VS is reachable ONLY from the
+    /// dedicated VS Battle tile (the per-card swords shortcut was removed as
+    /// redundant, all platforms). Every tap routes through `open`, the same path
+    /// the banner tiles and the widget's deep links take.
     private func card(_ mode: HomeMode) -> some View {
-        // VS is reachable ONLY from the dedicated "VS Battle" card — the per-card
-        // swords shortcut was removed as redundant (user request, all platforms).
-        cardLink(mode)
+        Button { open(mode) } label: { cardBody(mode, locked: isLocked(mode)) }
+            .buttonStyle(.plain)
     }
 
     /// A daily this user has already finished (in Daily mode). Revisiting it
     /// should show the solved review, not silently start a replay.
-    private func isCompletedDaily(_ mode: HomeMode) -> Bool {
-        guard effectiveMode == .daily, mode.id != "vs", let key = mode.dbKey else { return false }
+    private func isCompletedDaily(_ mode: HomeMode, daily: Bool) -> Bool {
+        guard daily, mode.id != "vs", let key = mode.dbKey else { return false }
         return completions.byMode[key] != nil
     }
 
-    @ViewBuilder
-    private func cardLink(_ mode: HomeMode) -> some View {
-        let locked = isLocked(mode)
-        if locked {
-            // Free user, completed daily → upsell + "View Solved Puzzle".
-            Button { limitModal = mode } label: { cardBody(mode, locked: true) }
-                .buttonStyle(.plain)
-        } else if isCompletedDaily(mode) {
-            // Pro user revisiting a finished daily → open the solved-puzzle review
-            // (matches the web), instead of replaying the same daily seed.
-            Button { solvedMode = mode } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
-        } else if let gameMode = mode.mode {
-            if effectiveMode == .unlimited {
-                // Unlimited: resolve the seed at TAP time so an in-progress
-                // puzzle resumes (persists until finished) and only a
-                // finished/none case starts a fresh one — matching the web's
-                // non-daily session behavior. (Resolving in the destination
-                // builder would churn the seed on every render.)
-                Button {
-                    pendingGame = ActiveGame(seed: resolvedUnlimitedSeed(gameMode), mode: gameMode, title: mode.title)
-                } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
-            } else {
-                Button {
-                    pendingGame = ActiveGame(seed: DailySeed.today(mode: gameMode), mode: gameMode, title: mode.title)
-                } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
-            }
-        } else if mode.id == "propernoundle" {
-            if effectiveMode == .unlimited {
-                // Unlimited PN: fresh random puzzle per tap (was wrongly
-                // reopening the daily puzzle).
-                Button { pnGame = PNGame(seed: freshPNSeed()) } label: { cardBody(mode, locked: false) }
-                    .buttonStyle(.plain)
-            } else {
-                NavigationLink { ProperNoundleView() } label: { cardBody(mode, locked: false) }
-                    .buttonStyle(.plain)
-            }
-        } else if mode.id == "more" {
-            // The More Games tile: opens the sectioned sheet (Stage 5). Never
-            // locks, never routes anywhere itself.
-            Button { showMoreGames = true } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
-        } else if mode.id == "vs" {
-            if effectiveMode == .unlimited {
-                // Unlimited VS (Pro): the mode-picker lobby — any-mode battles
-                // + private matches.
-                NavigationLink { VSLobbyView() } label: { cardBody(mode, locked: false) }
-                    .buttonStyle(.plain)
-            } else {
-                // Daily VS: the shared once-a-day Classic match. Launch the VS
-                // game directly — it shows the matchmaking queue, or the
-                // already-played finished screen if today's daily VS is done
-                // (Pro included). No more dropping into the lobby. (web parity)
-                NavigationLink { VSGameView(mode: .duel, isDaily: true) } label: { cardBody(mode, locked: false) }
-                    .buttonStyle(.plain)
-            }
-        } else {
-            Button { comingSoon = mode.title } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
+    /// Open a game exactly as its card would: a free player's finished daily →
+    /// the Played Today modal; a Pro's finished daily → the solved review; else
+    /// today's daily, or in Unlimited a fresh (or resumed) puzzle. `forceDaily`:
+    /// the widget's chips always mean today's daily, whatever the switch says.
+    private func open(_ mode: HomeMode, forceDaily: Bool = false) {
+        let unlimited = !forceDaily && effectiveMode == .unlimited
+        if isLocked(mode) { limitModal = mode; return }
+        if isCompletedDaily(mode, daily: !unlimited) { solvedMode = mode; return }
+        if let gameMode = mode.mode {
+            // Unlimited: resolve the seed at TAP time so an in-progress puzzle
+            // resumes (persists until finished) and only a finished/none case
+            // starts a fresh one — matching the web's non-daily session behavior.
+            pendingGame = ActiveGame(
+                seed: unlimited ? resolvedUnlimitedSeed(gameMode) : DailySeed.today(mode: gameMode),
+                mode: gameMode, title: mode.title)
+            return
+        }
+        switch mode.id {
+        // Unlimited PN: a fresh random puzzle per tap.
+        case "propernoundle": if unlimited { pnGame = PNGame(seed: freshPNSeed()) } else { pnDaily = true }
+        case "sudoku": sudokuGame = SudokuGame(seed: unlimited ? freshSudokuSeed(.medium) : nil)
+        case "regions": regionsGame = RegionsGame(seed: unlimited ? freshRegionsSeed(8) : nil)
+        case "ladder": ladderGame = LadderGame(seed: unlimited ? freshLadderSeed() : nil)
+        case "wordsearch": spyglassGame = SpyglassGame(seed: unlimited ? freshSpyglassSeed() : nil)
+        case "hub": hubGame = HubGame(seed: unlimited ? freshHubSeed() : nil)
+        case "cryptogram": codebreakerGame = CodebreakerGame(seed: unlimited ? freshCodebreakerSeed() : nil)
+        case "groups": kindredGame = KindredGame(seed: unlimited ? freshKindredSeed() : nil)
+        case "crossword": crosswordGame = CrosswordGame(seed: unlimited ? freshCrosswordSeed() : nil)
+        case "scramble": muddleGame = MuddleGame(seed: unlimited ? freshMuddleSeed() : nil)
+        default: comingSoon = mode.title
         }
     }
 
@@ -876,76 +855,25 @@ struct HomeView: View {
         return fresh
     }
 
-    /// The card itself lives in ModeCardView (More Games Stage 5) so the More
-    /// Games sheet renders the same card. Daily completion (W/L badge, "4
+    /// The card itself lives in ModeCardView. Daily completion (W/L badge, "4
     /// guesses · 27s", accent tint) is a DAILY-only concept: in Unlimited the
-    /// cards show the static description with no badge/tint (Pro parity #91).
+    /// cards show the static description, no badge or tint, and a small infinity
+    /// mark (Pro parity #91; home redesign 2026-10-01).
     private func cardBody(_ mode: HomeMode, locked: Bool) -> some View {
-        let isVs = mode.id == "vs"
-        let isMore = mode.id == "more"
-        let done = (!isVs && !isMore && effectiveMode == .daily) ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
-        let vsWon: Bool? = (isVs && effectiveMode == .daily) ? vsDailyWon : nil
-        // The More Games tile: "N of M played" over the More Games dailies in
-        // Daily mode, its description in Unlimited. Never locks, never tints.
-        let subtitle: String? = isMore
-            ? (effectiveMode == .daily ? morePlayedText(completedKeys: Set(completions.byMode.keys), modes: visibleMoreModes) : mode.desc)
-            : nil
-        return ModeCardView(mode: mode, done: done, vsWon: vsWon, locked: locked, subtitleOverride: subtitle)
+        let daily = effectiveMode == .daily
+        let done = daily ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
+        return ModeCardView(mode: mode, done: done, locked: locked, unlimited: !daily)
     }
 
-    /// Route a More Games selection exactly as the grid would have — called from
-    /// the sheet's onDismiss so no cover is presented over a dismissing sheet.
-    private func openFromMoreGames(_ mode: HomeMode) {
-        if isLocked(mode) { limitModal = mode; return }
-        returnToMore = true
-        if isCompletedDaily(mode) { solvedMode = mode; return }
-        if let gameMode = mode.mode {
-            pendingGame = ActiveGame(
-                seed: effectiveMode == .unlimited ? resolvedUnlimitedSeed(gameMode) : DailySeed.today(mode: gameMode),
-                mode: gameMode, title: mode.title)
-        } else if mode.id == "propernoundle" {
-            if effectiveMode == .unlimited { pnGame = PNGame(seed: freshPNSeed()) } else { pnDaily = true }
-        } else if mode.id == "sudoku" {
-            sudokuGame = SudokuGame(seed: effectiveMode == .unlimited ? freshSudokuSeed(.medium) : nil)
-        } else if mode.id == "regions" {
-            regionsGame = RegionsGame(seed: effectiveMode == .unlimited ? freshRegionsSeed(8) : nil)
-        } else if mode.id == "ladder" {
-            ladderGame = LadderGame(seed: effectiveMode == .unlimited ? freshLadderSeed() : nil)
-        } else if mode.id == "wordsearch" {
-            spyglassGame = SpyglassGame(seed: effectiveMode == .unlimited ? freshSpyglassSeed() : nil)
-        } else if mode.id == "hub" {
-            hubGame = HubGame(seed: effectiveMode == .unlimited ? freshHubSeed() : nil)
-        } else if mode.id == "cryptogram" {
-            codebreakerGame = CodebreakerGame(seed: effectiveMode == .unlimited ? freshCodebreakerSeed() : nil)
-        } else if mode.id == "groups" {
-            kindredGame = KindredGame(seed: effectiveMode == .unlimited ? freshKindredSeed() : nil)
-        } else if mode.id == "crossword" {
-            crosswordGame = CrosswordGame(seed: effectiveMode == .unlimited ? freshCrosswordSeed() : nil)
-        } else if mode.id == "scramble" {
-            muddleGame = MuddleGame(seed: effectiveMode == .unlimited ? freshMuddleSeed() : nil)
-        } else {
-            returnToMore = false
-            comingSoon = mode.title
-        }
-    }
-
-    /// Runs when any game cover (or the solved-puzzle cover) has dismissed: refresh the
-    /// day, then — if the game came from the More Games sheet and no other cover took its
-    /// place (Play Again / Keep playing swap the item) — re-present the sheet.
+    /// Runs when any game cover (or the solved-puzzle cover) has dismissed:
+    /// refresh the day, and Unlimited's played-today counts.
     private func onGameCoverDismissed() {
         reloadDaily()
-        guard returnToMore else { return }
-        let anyCoverUp = pnGame != nil || pnDaily || sudokuGame != nil || regionsGame != nil || ladderGame != nil
-            || spyglassGame != nil || hubGame != nil || codebreakerGame != nil || kindredGame != nil
-            || crosswordGame != nil || muddleGame != nil || solvedMode != nil || pendingGame != nil
-        guard !anyCoverUp else { return }
-        returnToMore = false
-        // Never over a pending Daily Sweep celebration; the sheet can wait a beat.
-        guard pendingSweepCeleb == nil, sweepCeleb == nil, moreCeleb == nil else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { showMoreGames = true }
+        Task { await loadUnlimitedCounts() }
+        refreshSweptRowStreaks(afterAward: false)
     }
 
-    /// More Games Sweep / Flawless (founder, 2026-09-26): once per local day per tier, after
+    /// Puzzles (More Games) Sweep / Flawless (founder, 2026-09-26): once per local day per tier, after
     /// the Daily Sweep celebration if both land together. Visual only — no bonus, XP or board.
     private func checkMoreSweepCelebration() {
         guard auth.isAuthenticated, completions.dataDay == LeaderboardService.todayLocal() else { return }

@@ -1,8 +1,8 @@
 import SwiftUI
 import WordociousCore
 
-/// The home-grid mode card, extracted verbatim from HomeView.cardBody (More
-/// Games Stage 5) so the More Games sheet renders the SAME card point for
+/// The home mode card, shared by the WORDOCIOUS DAILIES and PUZZLES sections
+/// (home redesign, 2026-10-01) so every game renders the SAME card point for
 /// point. Daily completion (W/L badge, "4 guesses · 27s", accent tint) is a
 /// DAILY-only concept: callers pass `done`/`vsWon` only in Daily mode.
 struct ModeCardView: View {
@@ -12,8 +12,9 @@ struct ModeCardView: View {
     /// Today's daily-VS outcome for the VS card (Daily mode only).
     var vsWon: Bool? = nil
     var locked: Bool = false
-    /// The More Games tile's "N of M played" line — replaces the description.
-    var subtitleOverride: String? = nil
+    /// Pro's Unlimited mode (home redesign, founder 2026-10-01): no badges, a small
+    /// infinity mark top-right in the accent instead.
+    var unlimited: Bool = false
 
     var body: some View {
         let isVs = mode.id == "vs"
@@ -29,13 +30,18 @@ struct ModeCardView: View {
                 HStack(alignment: .top) {
                     ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
                     Spacer()
-                    if let done { winBadge(won: done.completed) }
+                    if unlimited {
+                        if !locked {
+                            Image(systemName: "infinity").font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(mode.accent).accessibilityLabel("Unlimited")
+                        }
+                    } else if let done { winBadge(won: done.completed) }
                     else if let vsWon { winBadge(won: vsWon) }
                 }
                 // One line, scaled down before it wraps: "Crosswordocious" at a large Dynamic Type size.
                 Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
                     .padding(.top, 8)
-                Text(subtitleOverride ?? (isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText))
+                Text(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
                     .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     .padding(.top, 1)
             }

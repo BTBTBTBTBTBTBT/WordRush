@@ -1,15 +1,29 @@
 import SwiftUI
 import WordociousCore
 
-/// "Word of the Day" card — ports the web WordOfTheDay component: picks a
-/// deterministic daily word from the bundled solutions list and fetches its
-/// definition from the free dictionaryapi.dev (no key), trying up to 20
-/// words from today's index until one has a definition.
+/// "Word of the Day" card — ports the web WordOfTheDay component. Since the home
+/// redesign (founder-approved, 2026-10-01; spec §4) it is a three-choice quiz:
+/// /api/wotd returns the day's word plus three definitions (one real, the same
+/// two decoys for everyone). Before answering the definition stays hidden; a tap
+/// shows a ~2.2 s right/wrong beat, then the card settles into the ordinary card
+/// with ONLY the real definition, plus a small flame and the word streak after a
+/// right answer. The wrong choices never come back that day. No quiz that day
+/// (choices null) or no network → the plain card, as before.
 struct WordOfTheDayView: View {
+    @EnvironmentObject private var auth: AuthService
     @State private var info: WordInfo?
     @State private var fetchedDay: Int?
     @State private var showWords = false
+    /// Today's saved quiz answer (signed in: word_quiz_answers; guest: this device).
+    @State private var answer: HomeStreaksService.QuizAnswer?
+    @State private var answerLoaded = false
+    @State private var streak = 0
+    /// The ~2.2 s right/wrong beat right after a pick.
+    @State private var revealing = false
     @Environment(\.scenePhase) private var scenePhase
+
+    private static let letters = ["A", "B", "C"]
+    private static let revealNanos: UInt64 = 2_200_000_000
 
     /// Day index of the LOCAL calendar date (not Date()/86400, which rolls at
     /// UTC midnight — 7 PM Central — and flipped the home card to tomorrow's
@@ -33,6 +47,18 @@ struct WordOfTheDayView: View {
         var phonetic: String? = nil
         var partOfSpeech: String? = nil
         var definition: String? = nil
+        /// The quiz (from /api/wotd): three definitions, the real one at `answer`.
+        var choices: [String]? = nil
+        var answer: Int? = nil
+        /// The sense the quiz asks about (can differ from the card's part of speech).
+        var quizPartOfSpeech: String? = nil
+    }
+
+    private struct Quiz { let choices: [String]; let answer: Int }
+
+    private func quiz(_ info: WordInfo) -> Quiz? {
+        guard let c = info.choices, c.count == 3, let a = info.answer, (0..<3).contains(a) else { return nil }
+        return Quiz(choices: c, answer: a)
     }
 
     var body: some View {
@@ -79,15 +105,50 @@ struct WordOfTheDayView: View {
                 }
             }
         }
+        // Today's answer + word streak: per player and per day (sign-in/out reloads).
+        .task(id: "\(LeaderboardService.todayLocal())-\(auth.profile?.id ?? "guest")") {
+            answerLoaded = false
+            let state = await HomeStreaksService.quizState(day: LeaderboardService.todayLocal())
+            if !revealing { answer = state.today; streak = state.streak }
+            answerLoaded = true
+        }
         // Tappable → the full Word of the Day archive (web parity: the card links
-        // to /words). presentationDetents large so the list has room.
+        // to /words). While the quiz is asking, only "Past words" opens it, so a
+        // near-miss on a choice never jumps to the archive.
         .contentShape(Rectangle())
-        .onTapGesture { showWords = true }
+        .onTapGesture { if !isAsking { showWords = true } }
         .sheet(isPresented: $showWords) { WordsView(navTitle: "Word of the Day").presentationDetents([.large]) }
     }
 
+    private var isAsking: Bool {
+        guard let info, quiz(info) != nil else { return false }
+        return answerLoaded && answer == nil
+    }
+
+    private func pick(_ i: Int, _ info: WordInfo, _ q: Quiz) {
+        guard answer == nil else { return }
+        let result = HomeStreaksService.QuizAnswer(picked: i, correct: i == q.answer)
+        Haptics.tap()
+        answer = result
+        streak = result.correct ? streak + 1 : 0
+        revealing = true
+        Task {
+            try? await Task.sleep(nanoseconds: Self.revealNanos)
+            withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { revealing = false }
+        }
+        let day = LeaderboardService.todayLocal()
+        Task { await HomeStreaksService.saveQuizAnswer(day: day, word: info.word, answer: result) }
+    }
+
     private func content(_ info: WordInfo) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        let q = quiz(info)
+        let asking = q != nil && answerLoaded && answer == nil
+        // With a quiz, the definition stays hidden until we know the player has answered (never flash it).
+        let settled = q == nil || (answerLoaded && answer != nil)
+        let definition = q.map { $0.choices[$0.answer] } ?? info.definition
+        let pos = q != nil ? (info.quizPartOfSpeech ?? info.partOfSpeech) : info.partOfSpeech
+        let showFlame = q != nil && (answer?.correct ?? false) && !revealing && streak > 0
+        return VStack(alignment: .leading, spacing: 2) {
             HStack {
                 HStack(spacing: 6) {
                     Image("book-open").renderingMode(.template).resizable().scaledToFit()
@@ -96,10 +157,13 @@ struct WordOfTheDayView: View {
                         .foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
-                HStack(spacing: 2) {
-                    Text("Past words").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xC4B5FD))
-                    Image(systemName: "chevron.right").font(.system(size: 8, weight: .black)).foregroundStyle(Color(hex: 0xC4B5FD))
+                Button { showWords = true } label: {
+                    HStack(spacing: 2) {
+                        Text("Past words").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xC4B5FD))
+                        Image(systemName: "chevron.right").font(.system(size: 8, weight: .black)).foregroundStyle(Color(hex: 0xC4B5FD))
+                    }
                 }
+                .buttonStyle(.plain)
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(info.word.prefix(1).uppercased() + info.word.dropFirst().lowercased())
@@ -107,11 +171,35 @@ struct WordOfTheDayView: View {
                 if let p = info.phonetic, !p.isEmpty {
                     Text(p).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 }
-                if let pos = info.partOfSpeech, !pos.isEmpty {
+                if let pos, !pos.isEmpty {
                     Text(pos).font(Brand.font(10, .heavy)).italic().foregroundStyle(Theme.primary)
                 }
+                if showFlame {
+                    Spacer(minLength: 4)
+                    HStack(spacing: 2) {
+                        FlameMark(size: 13)
+                        Text("\(streak)").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(streak)-day word streak")
+                }
             }
-            if let def = info.definition, !def.isEmpty {
+            if asking, let q {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Which one is it?").font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x4B5563))
+                    ForEach(0..<3, id: \.self) { i in
+                        Button { pick(i, info, q) } label: { choiceRow(i, q.choices[i]) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 6)
+            }
+            if revealing, let q, let a = answer {
+                resultPanel(a, q)
+                    .padding(.top, 6)
+                    .transition(.opacity)
+            }
+            if settled && !revealing, let def = definition, !def.isEmpty {
                 Text(def).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x4B5563))
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 2)
@@ -121,6 +209,45 @@ struct WordOfTheDayView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    private func choiceRow(_ i: Int, _ text: String) -> some View {
+        HStack(spacing: 8) {
+            Text(Self.letters[i]).font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x5B21B6))
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(Color(hex: 0xEDE9FE)))
+            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: 0xDDD6FE), lineWidth: 1.5))
+        .contentShape(Rectangle())
+        .accessibilityLabel("Choice \(Self.letters[i]): \(text)")
+    }
+
+    private func resultPanel(_ a: HomeStreaksService.QuizAnswer, _ q: Quiz) -> some View {
+        let ink = a.correct ? Color(hex: 0x15803D) : Color(hex: 0xB91C1C)
+        return HStack(spacing: 8) {
+            Image(systemName: "sparkles").font(.system(size: 18, weight: .bold)).foregroundStyle(ink)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(a.correct ? "Nice! You knew it." : "Not this time.")
+                    .font(Brand.font(14, .black)).foregroundStyle(ink)
+                Text(a.correct
+                        ? "Word streak: \(streak)"
+                        : "You picked \(Self.letters[a.picked]). It's \(Self.letters[q.answer]): \(q.choices[q.answer])")
+                    .font(Brand.font(11, .heavy)).foregroundStyle(ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(a.correct ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+        .accessibilityElement(children: .combine)
     }
 
     private var placeholderCard: some View {
@@ -137,9 +264,10 @@ struct WordOfTheDayView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    // MARK: - Day-keyed UserDefaults cache (one dictionary fetch per day)
+    // MARK: - Day-keyed UserDefaults cache (one fetch per day)
 
-    private static let cacheKey = "wotdCache.v1"
+    /// v2: entries carry the quiz (choices/answer); v1 entries (definition only) are ignored.
+    private static let cacheKey = "wotdCache.v2"
 
     /// Returns today's cached word info plus whether the definition lookup had
     /// actually succeeded (`resolved`). Entries from a previous day are ignored.
@@ -151,7 +279,10 @@ struct WordOfTheDayView: View {
             word: word,
             phonetic: dict["phonetic"] as? String,
             partOfSpeech: dict["partOfSpeech"] as? String,
-            definition: dict["definition"] as? String
+            definition: dict["definition"] as? String,
+            choices: dict["choices"] as? [String],
+            answer: dict["answer"] as? Int,
+            quizPartOfSpeech: dict["quizPartOfSpeech"] as? String
         )
         return (info, dict["resolved"] as? Bool ?? false)
     }
@@ -161,6 +292,9 @@ struct WordOfTheDayView: View {
         if let p = info.phonetic { dict["phonetic"] = p }
         if let pos = info.partOfSpeech { dict["partOfSpeech"] = pos }
         if let d = info.definition { dict["definition"] = d }
+        if let c = info.choices { dict["choices"] = c }
+        if let a = info.answer { dict["answer"] = a }
+        if let qp = info.quizPartOfSpeech { dict["quizPartOfSpeech"] = qp }
         UserDefaults.standard.set(dict, forKey: cacheKey)
     }
 
@@ -200,6 +334,10 @@ struct WordOfTheDayView: View {
         // checked its committed word-definitions.json — different dictionary,
         // different skip pattern, and the founder's phone featured SHIRE while
         // Past Words said OTTER for the same day.)
+        // Home redesign (founder, 2026-10-01): /api/wotd first — the same entry
+        // as the archive plus the day's quiz. The /api/words walk and the local
+        // walk below stay as fallbacks (the plain card, no quiz).
+        if let quizDay = await Self.serverQuizToday() { return quizDay }
         if let server = await Self.serverToday() { return server }
         // Pool for THIS displayed local date — pre-cutover dates keep the legacy
         // word (matches the archive), curated after.
@@ -230,6 +368,36 @@ struct WordOfTheDayView: View {
             let definition: String
         }
         let words: [Entry]
+    }
+
+    private struct WotdPayload: Decodable {
+        let word: String
+        let phonetic: String?
+        let partOfSpeech: String?
+        let definition: String?
+        let choices: [String]?
+        let answer: Int?
+        let quizPartOfSpeech: String?
+    }
+
+    /// Today's word + quiz from /api/wotd for the LOCAL date (the server's clock is UTC).
+    private static func serverQuizToday() async -> WordInfo? {
+        var comps = URLComponents(string: "https://wordocious.com/api/wotd")
+        comps?.queryItems = [URLQueryItem(name: "date", value: LeaderboardService.todayLocal())]
+        guard let url = comps?.url else { return nil }
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.timeoutInterval = 8
+        guard let (data, resp) = try? await Net.api.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let p = try? JSONDecoder().decode(WotdPayload.self, from: data),
+              !p.word.isEmpty, let def = p.definition, !def.isEmpty else { return nil }
+        func nonEmpty(_ s: String?) -> String? { (s ?? "").isEmpty ? nil : s }
+        let quizOK = (p.choices?.count == 3) && p.answer.map { (0..<3).contains($0) } == true
+        return WordInfo(word: p.word, phonetic: nonEmpty(p.phonetic), partOfSpeech: nonEmpty(p.partOfSpeech),
+                        definition: def,
+                        choices: quizOK ? p.choices : nil, answer: quizOK ? p.answer : nil,
+                        quizPartOfSpeech: quizOK ? nonEmpty(p.quizPartOfSpeech) : nil)
     }
 
     /// Today's entry from the server archive, matched by LOCAL date key.

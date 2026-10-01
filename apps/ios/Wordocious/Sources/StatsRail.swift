@@ -37,8 +37,9 @@ func buildStatsRailItems(sweep: [HomeMode], more: [HomeMode],
     return [StatsRailItem(key: StatsRailKey.today, label: "Today", icon: .symbol("calendar"), accent: Color(hex: 0x7C3AED), dot: nil),
             StatsRailItem(key: StatsRailKey.all, label: "All-time", icon: .symbol("trophy.fill"), accent: Color(hex: 0xD97706), dot: nil)]
         + sweep.map(game)
-        + [StatsRailItem(key: StatsRailKey.vs, label: "VS", icon: .asset("swords"), accent: Color(hex: 0xEC4899), dot: vsDailyWon)]
         + more.map(game)
+        // VS is the last chip (founder, 2026-10-01: rarely played, so it sits after Starsweep, not between the games).
+        + [StatsRailItem(key: StatsRailKey.vs, label: "VS", icon: .asset("swords"), accent: Color(hex: 0xEC4899), dot: vsDailyWon)]
 }
 
 struct StatsRail: View {

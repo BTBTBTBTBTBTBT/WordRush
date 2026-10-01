@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "Daily Puzzles" home-screen widget (medium/4x2 — the iOS systemMedium
-     twin). updatePeriodMillis 30min is only the fallback tick; real updates
-     come from WidgetBridge on every completion change plus the AlarmManager
-     flips at 20-23h/midnight. previewLayout (API 31+) shows the real layout
-     in the widget picker; older launchers fall back to the app icon. -->
+<!-- "Daily Puzzles" home-screen widget (medium/4x2 by default — the iOS
+     systemMedium twin; resizable down to the 2x2 small layout, home redesign
+     2026-10-01). updatePeriodMillis 30min is only the fallback tick; real
+     updates come from WidgetBridge on every completion change plus the
+     AlarmManager flips at 12h/17h/midnight (the headline's greeting and the new
+     day's board). previewLayout (API 31+) shows the real layout in the widget
+     picker; older launchers fall back to the app icon. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
     android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"

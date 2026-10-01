@@ -44,6 +44,16 @@ object WidgetBridge {
         val points: Int? = null,
         val seconds: Int? = null,
         val shields: Int? = null,
+        // Home redesign (founder, 2026-10-01): the widget mirrors the home banner, so the
+        // snapshot also carries the ten Puzzles dailies, the username (headline greeting)
+        // and both rows' runs. All optional: an older snapshot still decodes.
+        val puzzles: List<ModeEntry>? = null,
+        val puzzlePoints: Int? = null,
+        val username: String? = null,
+        val wordSweepStreak: Int? = null,
+        val wordFlawlessStreak: Int? = null,
+        val puzzlesSweepStreak: Int? = null,
+        val puzzlesFlawlessStreak: Int? = null,
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -62,7 +72,34 @@ object WidgetBridge {
         "seven" -> Triple("hand", "seven-hand", "7")
         "gauntlet" -> Triple("asset", "skull", null)
         "propernoundle" -> Triple("asset", "crown", null)
+        // The Puzzles row (the More Games dailies): their home-card icons.
+        "sudoku" -> Triple("asset", "grid-3x3", null)
+        "scramble" -> Triple("asset", "shuffle", null)
+        "hub" -> Triple("asset", "hexagon", null)
+        "crossword" -> Triple("asset", "quote", null)
+        "groups" -> Triple("asset", "group", null)
+        "ladder" -> Triple("asset", "ladder", null)
+        "cryptogram" -> Triple("asset", "key-round", null)
+        "wordsearch" -> Triple("asset", "text-search", null)
+        "regions" -> Triple("asset", "star", null)
         else -> Triple(null, null, null)
+    }
+
+    /** The More Games dailies, catalog order (the Puzzles row). Remote flags are
+     *  not read here (the widget renders off the main process' state), so a
+     *  flagged-off title still shows; FlagsService gates are the home page's job. */
+    private fun puzzleModes(): List<com.wordocious.app.GenMode> =
+        ModeGen.more.filter { it.dailyEligible && it.dbKey != null }
+
+    private fun entry(m: com.wordocious.app.GenMode, c: DailyCompletionsService.Completion?): ModeEntry {
+        val (kind, asset, text) = iconSpec(m.id)
+        return ModeEntry(
+            key = m.dbKey ?: m.id, title = m.shortTitle,
+            glyph = m.romanNumeral ?: m.glyph ?: m.title.take(1),
+            colorHex = m.accentHex,
+            played = c != null, won = c?.completed ?: false,
+            iconKind = kind, iconAsset = asset, iconText = text,
+        )
     }
 
     /** Called wherever today's completions change (record, refetch, sign-out) —
@@ -74,24 +111,21 @@ object WidgetBridge {
             // Same source as the header pill (daily streak, NOT the win streak —
             // that mismatch was iOS's 🔥1-vs-🔥19 bug; don't re-import it here).
             val streak = AuthService.headerStreak ?: 0
-            val modes = ModeGen.sweep.map { m ->
-                val c = m.dbKey?.let { byMode[it] }
-                val (kind, asset, text) = iconSpec(m.id)
-                ModeEntry(
-                    key = m.dbKey ?: m.id, title = m.shortTitle,
-                    glyph = m.romanNumeral ?: m.glyph ?: m.title.take(1),
-                    colorHex = m.accentHex,
-                    played = c != null, won = c?.completed ?: false,
-                    iconKind = kind, iconAsset = asset, iconText = text,
-                )
-            }
+            val modes = ModeGen.sweep.map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
+            val puzzles = puzzleModes().map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
             // Same totals helper as the banner/celebration/share card, so the
             // widget's time · points can never disagree with the home banner.
             val totals = DailyCompletionsService.totals(byMode)
+            val rows = com.wordocious.app.data.HomeStreaksService.cachedRowStreaks()
             val snap = Snapshot(
                 day = todayLocalDate(), streak = streak, modes = modes,
                 points = totals.totalScore, seconds = totals.totalTimeSeconds,
                 shields = AuthService.headerShields,
+                puzzles = puzzles,
+                puzzlePoints = com.wordocious.app.ui.moreTotals(byMode).totalScore,
+                username = AuthService.profile.value?.username,
+                wordSweepStreak = rows?.wordSweep, wordFlawlessStreak = rows?.wordFlawless,
+                puzzlesSweepStreak = rows?.puzzlesSweep, puzzlesFlawlessStreak = rows?.puzzlesFlawless,
             )
             ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putString(SNAPSHOT_KEY, json.encodeToString(Snapshot.serializer(), snap))
@@ -112,15 +146,8 @@ object WidgetBridge {
      *  install / not signed in) — real mode grid from ModeGen, all unplayed. */
     fun emptySnapshot(): Snapshot = Snapshot(
         day = todayLocalDate(), streak = 0,
-        modes = ModeGen.sweep.map { m ->
-            val (kind, asset, text) = iconSpec(m.id)
-            ModeEntry(
-                key = m.dbKey ?: m.id, title = m.shortTitle,
-                glyph = m.romanNumeral ?: m.glyph ?: m.title.take(1),
-                colorHex = m.accentHex, played = false, won = false,
-                iconKind = kind, iconAsset = asset, iconText = text,
-            )
-        },
+        modes = ModeGen.sweep.map { entry(it, null) },
+        puzzles = puzzleModes().map { entry(it, null) },
     )
 
     /** Read the app-written snapshot; a snapshot from a previous day keeps the
@@ -131,11 +158,15 @@ object WidgetBridge {
             .getString(SNAPSHOT_KEY, null) ?: return emptySnapshot()
         val snap = runCatching { json.decodeFromString(Snapshot.serializer(), raw) }
             .getOrElse { return emptySnapshot() }
-        if (snap.day == todayLocalDate()) return snap
-        return Snapshot(
-            day = todayLocalDate(), streak = snap.streak,
-            modes = snap.modes.map { it.copy(played = false, won = false) },
-            points = 0, seconds = 0, shields = snap.shields,
+        // A snapshot written before the Puzzles row existed has no `puzzles`: fill the
+        // roster (all unplayed) so the widget's second row never renders empty.
+        val withPuzzles = if (snap.puzzles.isNullOrEmpty()) snap.copy(puzzles = puzzleModes().map { entry(it, null) }) else snap
+        if (withPuzzles.day == todayLocalDate()) return withPuzzles
+        return withPuzzles.copy(
+            day = todayLocalDate(),
+            modes = withPuzzles.modes.map { it.copy(played = false, won = false) },
+            puzzles = withPuzzles.puzzles?.map { it.copy(played = false, won = false) },
+            points = 0, seconds = 0, puzzlePoints = 0,
         )
     }
 }

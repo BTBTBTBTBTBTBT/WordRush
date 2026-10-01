@@ -306,6 +306,8 @@ struct RootTabView: View {
             leaderboardPath = []
             tab = .home
         }
+        // A More Games / Puzzles link lands on Home, which scrolls to PUZZLES.
+        .onReceive(deepLink.$puzzlesRequest) { req in if req != nil { tab = .home } }
         // Universal-link VS invite → straight into the private match, exactly
         // like accepting a pending-invite banner (VSGameView handles the rest).
         .fullScreenCover(item: $deepLink.vsInvite) { inv in

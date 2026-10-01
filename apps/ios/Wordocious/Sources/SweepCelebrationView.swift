@@ -190,27 +190,6 @@ private struct SweepParticleBurst: View {
     }
 }
 
-/// Subtle diagonal shimmer for the home Sweep/Flawless banner.
-struct BannerShimmer: View {
-    @State private var phase: CGFloat = -1
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            LinearGradient(colors: [.clear, .white.opacity(0.45), .clear],
-                           startPoint: .leading, endPoint: .trailing)
-                .frame(width: w * 0.4)
-                .rotationEffect(.degrees(-18))
-                .offset(x: phase * w * 1.6)
-                .onAppear {
-                    withAnimation(Theme.animation(.easeInOut(duration: 2.4).repeatForever(autoreverses: false))) {
-                        phase = 1.2
-                    }
-                }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
 /// Diagonal foil shimmer sweeping across the card surface.
 private struct FoilShimmer: View {
     let strong: Bool

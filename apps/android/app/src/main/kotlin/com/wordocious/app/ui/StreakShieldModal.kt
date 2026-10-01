@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -32,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -39,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,10 +51,11 @@ import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.launch
 
 /**
- * Streak-at-risk modal — ports web modals/streak-shield-modal.tsx: flame with
- * a red "!" badge, the big streak number, the shield-count pill, "Use Shield"
- * (purple gradient) when shields remain or the no-shields Pro copy, and a
- * muted "Let Streak Reset" decline.
+ * Streak-at-risk modal — ports web modals/streak-shield-modal.tsx. Restyled to
+ * the home redesign's look (founder, 2026-10-01: the old card "looks dated"): a
+ * soft warm header with the flame and the number, an all-caps headline, no
+ * bubbles, one flat rounded button. Same actions: "USE A SHIELD" when shields
+ * remain (or the no-shields Pro note) and a muted "Let it reset" decline.
  */
 @Composable
 fun StreakShieldModal(
@@ -78,111 +83,143 @@ fun StreakShieldModal(
                         else spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
         label = "shieldAppear",
     )
+    val shieldsAfter = (shields - 1).coerceAtLeast(0)
+    val cardShape = RoundedCornerShape(22.dp)
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)).clickableNoRipple { if (!busy && !saved) onClose() },
+        Modifier.fillMaxSize().background(Color(0x731E1B4B)).clickableNoRipple { if (!busy && !saved) onClose() },
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            Modifier.padding(24.dp).widthIn(max = 340.dp).fillMaxWidth()
+        Box(
+            Modifier.padding(16.dp).widthIn(max = 384.dp).fillMaxWidth()
                 .graphicsLayer { scaleX = 0.9f + 0.1f * appear; scaleY = 0.9f + 0.1f * appear; alpha = appear }
-                .shadow(20.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x1F000000), spotColor = Color(0x1F000000))
-                .clip(RoundedCornerShape(20.dp))
-                .background(WTheme.surface)
-                .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
-                .clickableNoRipple { }
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .shadow(24.dp, cardShape, ambientColor = Color(0x404C1D95), spotColor = Color(0x404C1D95))
+                .clip(cardShape)
+                .background(Color.White)
+                .clickableNoRipple { },
         ) {
             if (saved) {
-                Text("\uD83D\uDEE1", fontSize = 44.sp)
-                Text("Streak saved!", fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                Text(
-                    "Your $streak-day streak is protected \u00B7 ${(shields - 1).coerceAtLeast(0)} shields left",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
-                )
-                return@Column
-            }
-            Box(Modifier.fillMaxWidth()) {
-                Icon(
-                    Icons.Filled.Close, "Close", tint = WTheme.textMuted,
-                    modifier = Modifier.align(Alignment.TopEnd).size(20.dp)
-                        .clickableNoRipple { if (!busy) onClose() },
-                )
-            }
-            // Flame + "!" badge
-            Box {
-                Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(56.dp))
-                Box(
-                    Modifier.align(Alignment.TopEnd).size(20.dp).clip(CircleShape).background(Color(0xFFEF4444)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("!", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
-                }
-            }
-            Text("Streak at Risk!", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text("$streak", fontSize = 48.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(
-                "day streak will be lost if you don't play today",
-                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
-            )
-            Row(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(WTheme.surfaceHover)
-                    .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(Icons.Filled.Shield, null, tint = Color(0xFF5B21B6), modifier = Modifier.size(14.dp))
-                Text("$shields", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF5B21B6))
-            }
-            if (shields > 0) {
-                // iOS gives this the signature 3D purple (solid #4C1D95 offset shadow).
-                Button3D(
-                    onClick = {
-                        if (!busy) {
-                            busy = true
-                            scope.launch {
-                                onUseShield()
-                                busy = false
-                                saved = true
-                                kotlinx.coroutines.delay(1_800)
-                                onClose()
-                            }
+                Column(Modifier.fillMaxWidth()) {
+                    Column(
+                        Modifier.fillMaxWidth()
+                            .background(Brush.verticalGradient(listOf(Color(0xFFEDE9FE), Color(0xFFE0E7FF))))
+                            .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Shield, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(56.dp))
+                            Icon(painterResource(com.wordocious.app.R.drawable.ic_shield), null, tint = Color(0xFF6D28D9), modifier = Modifier.size(56.dp))
                         }
-                    },
-                    face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
-                    shadow = Color(0xFF4C1D95),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !busy,
-                ) {
+                        Text(
+                            "STREAK SAVED!", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+                            color = Color(0xFF4C1D95), modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                     Text(
-                        if (busy) "Using Shield..." else "Use Shield ($shields left)",
-                        fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                        "Your $streak-day streak is safe \u00B7 $shieldsAfter ${if (shieldsAfter == 1) "shield" else "shields"} left",
+                        fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
                     )
                 }
-            } else {
-                Text(
-                    "You have no streak shields. Pro subscribers get 4 shields per billing period.",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
-                )
+                return@Box
             }
-            Text(
-                "Let Streak Reset",
-                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                textAlign = TextAlign.Center,
-                // iOS spans the full card width so the whole row is the tap target.
-                modifier = Modifier.fillMaxWidth().clickableNoRipple {
-                    if (!busy) {
-                        busy = true
-                        scope.launch { onDecline(); busy = false }
+            Column(Modifier.fillMaxWidth()) {
+                // Warm header: flame, the number, DAY STREAK.
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color(0xFFFFF3E0), Color(0xFFFDE7F0))))
+                        .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Image(painterResource(com.wordocious.app.R.drawable.ic_flame_gold), null, modifier = Modifier.size(48.dp))
+                    Text(
+                        "$streak", fontSize = 52.sp, lineHeight = 52.sp, fontWeight = FontWeight.Black,
+                        color = Color(0xFF78350F), modifier = Modifier.padding(top = 4.dp),
+                    )
+                    Text(
+                        "DAY STREAK", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+                        color = Color(0xFFB45309), modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        "DON'T LOSE YOUR STREAK!", fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+                        color = Color(0xFF4C1D95), textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        "Your $streak-day streak ends if you don't play today.",
+                        fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), textAlign = TextAlign.Center,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Shield, null, tint = Color(0xFFEDE9FE), modifier = Modifier.size(16.dp))
+                            Icon(painterResource(com.wordocious.app.R.drawable.ic_shield), null, tint = Color(0xFF6D28D9), modifier = Modifier.size(16.dp))
+                        }
+                        Text(
+                            "$shields ${if (shields == 1) "shield" else "shields"}",
+                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9),
+                        )
                     }
-                }.padding(vertical = 6.dp),
-            )
+                    // Shields are the only way to save a streak. No shields: the Pro note.
+                    if (shields > 0) {
+                        val btnShape = RoundedCornerShape(14.dp)
+                        Box(
+                            Modifier.padding(top = 4.dp).fillMaxWidth().height(48.dp)
+                                .shadow(8.dp, btnShape, ambientColor = Color(0x4D6D28D9), spotColor = Color(0x4D6D28D9))
+                                .clip(btnShape)
+                                .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
+                                .alpha(if (busy) 0.5f else 1f)
+                                .clickableNoRipple {
+                                    if (!busy) {
+                                        busy = true
+                                        scope.launch {
+                                            onUseShield()
+                                            busy = false
+                                            saved = true
+                                            kotlinx.coroutines.delay(1_800)
+                                            onClose()
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                if (busy) "USING A SHIELD\u2026" else "USE A SHIELD",
+                                fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White,
+                            )
+                        }
+                    } else {
+                        Text(
+                            "You're out of shields. Pro members get 4 every billing period.",
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), textAlign = TextAlign.Center,
+                        )
+                    }
+                    Text(
+                        "Let it reset",
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280),
+                        textAlign = TextAlign.Center,
+                        // iOS spans the full card width so the whole row is the tap target.
+                        modifier = Modifier.fillMaxWidth().alpha(if (busy) 0.5f else 1f).clickableNoRipple {
+                            if (!busy) {
+                                busy = true
+                                scope.launch { onDecline(); busy = false }
+                            }
+                        }.padding(vertical = 8.dp),
+                    )
+                }
+            }
+            // Close X (36dp target), hidden on the saved beat.
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp).size(36.dp)
+                    .clickableNoRipple { if (!busy) onClose() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Close, "Close", tint = Color(0xFF92400E), modifier = Modifier.size(20.dp))
+            }
         }
     }
 }

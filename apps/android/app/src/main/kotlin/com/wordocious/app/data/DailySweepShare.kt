@@ -111,7 +111,11 @@ object DailySweepShare {
         val titleColors = if (flawless) intArrayOf(0xFFFBBF24.toInt(), 0xFFB45309.toInt())
                           else intArrayOf(0xFFA78BFA.toInt(), 0xFFEC4899.toInt())
         p.shader = LinearGradient(cx - 260f, 0f, cx + 260f, 0f, titleColors, null, Shader.TileMode.CLAMP)
-        c.drawText(title ?: (if (flawless) "FLAWLESS VICTORY" else "DAILY SWEEP"), cx, 156f, p)
+        val titleText = title ?: (if (flawless) "FLAWLESS VICTORY" else "DAILY SWEEP")
+        // A banner headline can run long ("WORDOCIOUS FLAWLESS! 10 PUZZLES LEFT"): shrink to fit.
+        val maxTitleW = W - 120f
+        if (p.measureText(titleText) > maxTitleW) p.textSize *= maxTitleW / p.measureText(titleText)
+        c.drawText(titleText, cx, 156f, p)
         p.shader = null
 
         // Stats line
@@ -205,27 +209,40 @@ object DailySweepShare {
         return bmp
     }
 
-    /** Build + share the all-dailies card. */
     /**
-     * More Games Sweep / Flawless share (founder, 2026-09-26): the same card over the
-     * ten More Games dailies, headed "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES". Image
-     * only — there is no More Games sweep board to link, and nothing here scores.
+     * The Puzzles card title (founder, 2026-10-01: the ten More Games titles are
+     * "Puzzles" now): "PUZZLES FLAWLESS" / "PUZZLES SWEEP" once every one is done,
+     * "PUZZLES · N/10" for a partly played day. Web daily-share.ts buildMoreSweepInput.
+     */
+    fun moreCardTitle(byMode: Map<String, DailyCompletionsService.Completion>): String {
+        val t = com.wordocious.app.ui.moreTotals(byMode)
+        return when (com.wordocious.app.ui.moreSweepTier(byMode)) {
+            com.wordocious.app.ui.MoreSweepTier.FLAWLESS -> "PUZZLES FLAWLESS"
+            com.wordocious.app.ui.MoreSweepTier.SWEEP -> "PUZZLES SWEEP"
+            null -> "PUZZLES · ${t.completed}/${t.total}"
+        }
+    }
+
+    private fun moreTotalsAsTotals(byMode: Map<String, DailyCompletionsService.Completion>): DailyCompletionsService.Totals {
+        val t = com.wordocious.app.ui.moreTotals(byMode)
+        return DailyCompletionsService.Totals(t.completed, t.won, t.total, 0, t.totalTimeSeconds, t.totalScore)
+    }
+
+    /**
+     * Puzzles Sweep / Flawless share (founder, 2026-09-26; renamed from "More Games"
+     * 2026-10-01): the same card over the ten More Games dailies, headed
+     * "PUZZLES SWEEP" / "PUZZLES FLAWLESS". Image only — there is no Puzzles
+     * sweep board to link, and nothing here scores.
      */
     fun shareMore(context: Context, byMode: Map<String, DailyCompletionsService.Completion>) {
         val rows = rows(byMode, more = true)
         if (rows.isEmpty()) return
-        val t = com.wordocious.app.ui.moreTotals(byMode)
+        val totals = moreTotalsAsTotals(byMode)
         val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
-        val totals = DailyCompletionsService.Totals(t.completed, t.won, t.total, 0, t.totalTimeSeconds, t.totalScore)
-        val bitmap = render(context, rows, totals, flawless, title = if (flawless) "FLAWLESS MORE GAMES" else "MORE GAMES SWEEP")
-        val text = if (flawless) "Flawless More Games on Wordocious! All ${t.total} More Games puzzles won."
-                   else "More Games Sweep on Wordocious! All ${t.total} More Games puzzles done."
-        val uri = runCatching {
-            val dir = File(context.cacheDir, "share").apply { mkdirs() }
-            val file = File(dir, "wordocious-moregames.png")
-            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        }.getOrNull()
+        val bitmap = render(context, rows, totals, flawless, title = moreCardTitle(byMode))
+        val text = if (flawless) "Puzzles Flawless on Wordocious! All ${totals.total} puzzles won."
+                   else "Puzzles Sweep on Wordocious! All ${totals.total} puzzles done."
+        val uri = writePng(context, bitmap, "wordocious-moregames.png")
         ShareEvents.log(if (uri != null) "image" else "text", "", "more_sweep")
         if (uri == null) { ShareHelper.share(context, "$text\nhttps://wordocious.com/?more=1"); return }
         // Same OG page as the Daily Sweep (m=MoreSweep) so a pasted link unfurls the card, not the home page.
@@ -240,12 +257,60 @@ object DailySweepShare {
                         putExtra(Intent.EXTRA_TEXT, finalText)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share your More Games").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                    context.startActivity(Intent.createChooser(intent, "Share your Puzzles").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
                 }.onFailure { ShareHelper.share(context, finalText) }
             }
         }
     }
 
+    private fun writePng(context: Context, bitmap: Bitmap, name: String): android.net.Uri? = runCatching {
+        val dir = File(context.cacheDir, "share").apply { mkdirs() }
+        val file = File(dir, name)
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }.getOrNull()
+
+    /**
+     * The home banner's share button (home redesign, founder 2026-10-01): today's
+     * progress so far, mid-day or done. The Wordocious card (titled with the banner
+     * headline) plus, when any Puzzles were played, the Puzzles card — both in one
+     * ACTION_SEND_MULTIPLE (one 18-row card would be too cramped to read). With
+     * only Puzzles played, that card alone carries the headline. Web
+     * daily-share.ts shareTodayProgress.
+     */
+    fun shareTodayProgress(context: Context, byMode: Map<String, DailyCompletionsService.Completion>, headline: String) {
+        val wordRows = rows(byMode)
+        val moreRows = rows(byMode, more = true)
+        if (wordRows.isEmpty() && moreRows.isEmpty()) return
+        val totals = DailyCompletionsService.totals(byMode)
+        val uris = ArrayList<android.net.Uri>()
+        if (wordRows.isNotEmpty()) {
+            writePng(context, render(context, wordRows, totals, totals.flawless, title = headline), "wordocious-today.png")?.let(uris::add)
+        }
+        if (moreRows.isNotEmpty()) {
+            val moreTotals = moreTotalsAsTotals(byMode)
+            val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
+            val title = if (wordRows.isEmpty()) headline else moreCardTitle(byMode)
+            writePng(context, render(context, moreRows, moreTotals, flawless, title = title), "wordocious-puzzles.png")?.let(uris::add)
+        }
+        val text = "$headline\nwordocious.com"
+        ShareEvents.log(if (uris.isNotEmpty()) "image" else "text", "", "home_banner")
+        if (uris.isEmpty()) { ShareHelper.share(context, text); return }
+        runCatching {
+            val intent = if (uris.size == 1) {
+                Intent(Intent.ACTION_SEND).apply { putExtra(Intent.EXTRA_STREAM, uris[0]) }
+            } else {
+                Intent(Intent.ACTION_SEND_MULTIPLE).apply { putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris) }
+            }.apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_TEXT, text)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, "Share today's progress").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        }.onFailure { ShareHelper.share(context, text) }
+    }
+
+    /** Build + share the all-dailies card. */
     fun share(context: Context, byMode: Map<String, DailyCompletionsService.Completion>) {
         val rows = rows(byMode)
         if (rows.isEmpty()) return

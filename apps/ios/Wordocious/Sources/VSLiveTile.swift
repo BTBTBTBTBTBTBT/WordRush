@@ -54,12 +54,18 @@ struct VSLiveTile<Destination: View>: View {
             .accessibilityLabel("VS Battle, \(countText)")
 
             if isPro {
+                // A soft pill in the tile's own teal, not the old hot-pink 3D button
+                // (founder, 2026-10-01: home redesign).
                 Button(action: onInvite) {
-                    Text("Invite").font(Brand.font(10, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(
-                            LinearGradient(colors: [Color(hex: 0xEC4899), Color(hex: 0xDB2777)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                        .shadow(color: Color(hex: 0x9F1239), radius: 0, x: 0, y: 2)
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .bold))
+                        Text("Invite").font(Brand.font(11, .black))
+                    }
+                    .foregroundStyle(Color(hex: 0x0F766E))
+                    .padding(.horizontal, 12).frame(height: 32)
+                    .background(Capsule().fill(Color(hex: 0x0D9488).opacity(0.08)))
+                    .overlay(Capsule().stroke(Color(hex: 0x0D9488).opacity(0.33), lineWidth: 1.5))
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }

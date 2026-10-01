@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -116,15 +118,19 @@ fun VSLiveTile(
                 }
             }
             if (isPro) {
-                Box {
-                    Box(Modifier.matchParentSize().offset(y = 2.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF9F1239)))
-                    Text(
-                        "Invite", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp))
-                            .background(Brush.linearGradient(listOf(Color(0xFFEC4899), Color(0xFFDB2777))))
-                            .clickable { onInvite() }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
+                // Soft pill in the tile's own teal (founder, 2026-10-01: the hot-pink 3D
+                // button shouted over the tile). Same tap: the Invite modal.
+                Row(
+                    Modifier.height(32.dp).clip(CircleShape)
+                        .background(accent.copy(alpha = 0.08f))
+                        .border(1.5.dp, accent.copy(alpha = 0.33f), CircleShape)
+                        .clickable { onInvite() }
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.Filled.PersonAdd, null, tint = Color(0xFF0F766E), modifier = Modifier.size(14.dp))
+                    Text("Invite", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F766E))
                 }
             }
         }

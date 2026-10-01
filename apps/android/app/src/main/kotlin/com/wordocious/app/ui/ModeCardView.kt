@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +44,9 @@ internal fun ModeCardView(
     modifier: Modifier,
     vsWon: Boolean? = null,
     subtitleOverride: String? = null,
+    /** Pro's Unlimited mode (home redesign, founder 2026-10-01): no badges (callers pass no
+     *  completion), a small infinity mark top-right in the card's accent instead. */
+    unlimited: Boolean = false,
     onVs: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -95,6 +99,14 @@ internal fun ModeCardView(
                     "${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}"
                 } else if (vsDone) "Played today" else card.desc,
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
+        }
+
+        if (unlimited && !isLocked) {
+            Icon(
+                androidx.compose.material.icons.Icons.Filled.AllInclusive, contentDescription = null,
+                tint = card.accent,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 10.dp).size(16.dp),
             )
         }
 

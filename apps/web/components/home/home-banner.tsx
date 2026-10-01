@@ -177,7 +177,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             {unlimited && <InfinityIcon className="w-5 h-5 shrink-0" style={{ color: '#7c3aed' }} />}
             <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
           </div>
-          {!unlimited && (
+          {/* Nothing to share before the first finished game (iOS/Android parity). */}
+          {!unlimited && word.progress.played + puzzles.progress.played > 0 && (
             <button
               type="button"
               onClick={onShare}

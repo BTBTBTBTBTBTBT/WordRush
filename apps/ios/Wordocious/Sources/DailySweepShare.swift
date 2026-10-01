@@ -91,6 +91,10 @@ struct DailySweepCardView: View {
                 Text(title ?? (flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP"))
                     .font(Brand.font(52, .black))
                     .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
+                    // The home share titles the card with the banner headline
+                    // ("WORDOCIOUS SWEPT! 10 PUZZLES LEFT"): two lines, then shrink.
+                    .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.5)
+                    .padding(.horizontal, 48)
                     .padding(.top, 12)
                 Text("\(won)/\(total) won · \(fmt(totalTimeSeconds)) · \(totalScore) pts · \(dateStr)")
                     .font(Brand.font(26, .bold)).foregroundStyle(textMuted)
@@ -164,34 +168,79 @@ struct DailySweepCardView: View {
 }
 
 extension ShareService {
-    /// More Games Sweep / Flawless share (founder, 2026-09-26): the same card over
-    /// the ten More Games dailies, headed "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES".
-    /// Uploads the card and links its /s OG page (m=MoreSweep) exactly like the
-    /// Daily Sweep — a bare wordocious.com link made Messages unfurl the generic
-    /// home page image instead of the card (founder, 2026-09-26).
+    /// The Puzzles card's title: the tier copy once all ten are done, "PUZZLES · N/10"
+    /// for a partly played day. The ten More Games dailies are "Puzzles" in share
+    /// copy (founder, 2026-10-01: home redesign).
+    static func puzzlesCardTitle(byMode: [String: DailyCompletion]) -> String {
+        switch moreSweepTier(byMode: byMode) {
+        case .flawless: return "PUZZLES FLAWLESS"
+        case .sweep: return "PUZZLES SWEEP"
+        case nil:
+            let t = moreTotals(byMode: byMode)
+            return "PUZZLES · \(t.completed)/\(t.total)"
+        }
+    }
+
+    #if canImport(UIKit)
     @MainActor
-    static func shareMoreSweep(byMode: [String: DailyCompletion]) {
-        #if canImport(UIKit)
-        let rows = DailySweepCatalog.rows(from: byMode, over: DailySweepCatalog.moreModes)
-        guard !rows.isEmpty else { return }
-        let t = moreTotals(byMode: byMode)
-        let flawless = moreSweepTier(byMode: byMode) == .flawless
-        let f = DateFormatter(); f.dateFormat = "MMM d"; f.locale = Locale(identifier: "en_US")
-        let card = DailySweepCardView(
-            rows: rows, won: t.won, total: t.total,
-            totalTimeSeconds: Int(t.totalTimeSeconds.rounded()),
-            totalScore: Int(t.totalScore.rounded()), flawless: flawless,
-            dateStr: f.string(from: Date()), title: flawless ? "FLAWLESS MORE GAMES" : "MORE GAMES SWEEP")
+    private static func render(_ card: DailySweepCardView) -> (image: UIImage, png: Data)? {
         let renderer = ImageRenderer(content: card)
         renderer.proposedSize = .init(card.size)
         renderer.scale = 1
-        guard let image = renderer.uiImage, let png = image.pngData() else { return }
+        guard let image = renderer.uiImage, let png = image.pngData() else { return nil }
+        return (image, png)
+    }
+
+    private static func cardDate() -> String {
+        let f = DateFormatter(); f.dateFormat = "MMM d"; f.locale = Locale(identifier: "en_US")
+        return f.string(from: Date())
+    }
+
+    /// The Puzzles (More Games) card over whatever was played today.
+    @MainActor
+    private static func moreCard(byMode: [String: DailyCompletion], title: String?) -> DailySweepCardView? {
+        let rows = DailySweepCatalog.rows(from: byMode, over: DailySweepCatalog.moreModes)
+        guard !rows.isEmpty else { return nil }
+        let t = moreTotals(byMode: byMode)
+        return DailySweepCardView(
+            rows: rows, won: t.won, total: t.total,
+            totalTimeSeconds: Int(t.totalTimeSeconds.rounded()),
+            totalScore: Int(t.totalScore.rounded()), flawless: moreSweepTier(byMode: byMode) == .flawless,
+            dateStr: cardDate(), title: title ?? puzzlesCardTitle(byMode: byMode))
+    }
+
+    /// The all-dailies (Wordocious) card over whatever was played today.
+    @MainActor
+    private static func wordCard(byMode: [String: DailyCompletion], title: String?) -> DailySweepCardView? {
+        let rows = DailySweepCatalog.rows(from: byMode)
+        guard !rows.isEmpty else { return nil }
+        let totals = DailyTotals(byMode)
+        return DailySweepCardView(
+            rows: rows, won: totals.won, total: totals.total,
+            totalTimeSeconds: Int(totals.totalTimeSeconds.rounded()),
+            totalScore: Int(totals.totalScore.rounded()), flawless: totals.flawless,
+            dateStr: cardDate(), title: title)
+    }
+    #endif
+
+    /// Puzzles Sweep / Flawless share (founder, 2026-09-26): the same card over
+    /// the ten More Games dailies, headed "PUZZLES SWEEP" / "PUZZLES FLAWLESS"
+    /// ("PUZZLES · N/10" mid-day). Uploads the card and links its /s OG page
+    /// (m=MoreSweep) exactly like the Daily Sweep — a bare wordocious.com link
+    /// made Messages unfurl the generic home page image instead of the card
+    /// (founder, 2026-09-26). `title` overrides the headline (the home share).
+    @MainActor
+    static func shareMoreSweep(byMode: [String: DailyCompletion], title: String? = nil) {
+        #if canImport(UIKit)
+        guard let card = moreCard(byMode: byMode, title: title), let r = render(card) else { return }
+        let t = moreTotals(byMode: byMode)
+        let flawless = moreSweepTier(byMode: byMode) == .flawless
         Task {
             let url = await uploadSweepURL(
-                png: png, shareMode: "MoreSweep", flawless: flawless, won: t.won, total: t.total,
+                png: r.png, shareMode: "MoreSweep", flawless: flawless, won: t.won, total: t.total,
                 totalTime: Int(t.totalTimeSeconds.rounded()), totalScore: Int(t.totalScore.rounded()))
             await MainActor.run {
-                var items: [Any] = [image]
+                var items: [Any] = [r.image]
                 if let url { items.append(url) }
                 present(items: items)
             }
@@ -201,31 +250,41 @@ extension ShareService {
 
     /// Render + share the all-dailies card. Uploads to share-images and links
     /// the /s OG page with m=DailySweep params (web app/s/[...key] parity).
+    /// `title` overrides the headline (the home share uses the banner headline).
     @MainActor
-    static func shareDailySweep(byMode: [String: DailyCompletion]) {
+    static func shareDailySweep(byMode: [String: DailyCompletion], title: String? = nil) {
         #if canImport(UIKit)
-        let rows = DailySweepCatalog.rows(from: byMode)
-        guard !rows.isEmpty else { return }
+        guard let card = wordCard(byMode: byMode, title: title), let r = render(card) else { return }
         let totals = DailyTotals(byMode)
-        let f = DateFormatter(); f.dateFormat = "MMM d"; f.locale = Locale(identifier: "en_US")
-        let card = DailySweepCardView(
-            rows: rows, won: totals.won, total: totals.total,
-            totalTimeSeconds: Int(totals.totalTimeSeconds.rounded()),
-            totalScore: Int(totals.totalScore.rounded()), flawless: totals.flawless,
-            dateStr: f.string(from: Date()))
-        let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(card.size)
-        renderer.scale = 1
-        guard let image = renderer.uiImage, let png = image.pngData() else { return }
-
         Task {
-            let url = await uploadDailySweepURL(png: png, totals: totals)
+            let url = await uploadDailySweepURL(png: r.png, totals: totals)
             await MainActor.run {
-                var items: [Any] = [image]
+                var items: [Any] = [r.image]
                 if let url { items.append(url) }
                 present(items: items)
             }
         }
+        #endif
+    }
+
+    /// The home banner's share button (redesign, founder 2026-10-01; mirrors web
+    /// daily-share.ts shareTodayProgress): today's progress so far, mid-day or
+    /// done. The Wordocious card titled with the banner headline, plus the Puzzles
+    /// card when any Puzzles were played — both images in ONE share sheet (a single
+    /// 18-row card is too cramped to read). Only one group played → that card alone,
+    /// titled with the headline, through its usual upload + OG link.
+    @MainActor
+    static func shareTodayProgress(byMode: [String: DailyCompletion], headline: String) {
+        #if canImport(UIKit)
+        let hasWord = !DailySweepCatalog.rows(from: byMode).isEmpty
+        let hasMore = !DailySweepCatalog.rows(from: byMode, over: DailySweepCatalog.moreModes).isEmpty
+        if !hasMore { shareDailySweep(byMode: byMode, title: headline); return }
+        if !hasWord { shareMoreSweep(byMode: byMode, title: headline); return }
+        guard let a = wordCard(byMode: byMode, title: headline).flatMap(render),
+              let b = moreCard(byMode: byMode, title: nil).flatMap(render) else {
+            shareDailySweep(byMode: byMode, title: headline); return
+        }
+        present(items: [a.image, b.image])
         #endif
     }
 

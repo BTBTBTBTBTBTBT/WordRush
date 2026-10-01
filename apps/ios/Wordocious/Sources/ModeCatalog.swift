@@ -90,7 +90,7 @@ private func homeMode(_ g: GenMode) -> HomeMode {
 
 /// The home grid — every enabled core tile, catalog order.
 let homeModes: [HomeMode] = ModeGen.core.map(homeMode)
-/// The More Games sheet — every enabled More Games title, catalog order.
+/// The More Games titles (Home's PUZZLES section) — every enabled one, catalog order.
 let moreModes: [HomeMode] = ModeGen.more.map(homeMode)
 
 /// The sheet's sections (catalog moreCategories order, non-empty only); an
@@ -105,13 +105,6 @@ func moreSections(_ modes: [HomeMode] = moreModes) -> [MoreSection] {
     return sections.filter { !$0.modes.isEmpty }
 }
 
-/// "N of M played" over the More Games dailies — the More tile's Daily subtitle.
-func morePlayedText(completedKeys: Set<String>, modes: [HomeMode] = moreModes) -> String {
-    let daily = modes.filter { $0.dailyEligible && $0.dbKey != nil }
-    let played = daily.filter { completedKeys.contains($0.dbKey!) }.count
-    return "\(played) of \(daily.count) played"
-}
-
 /// The More Games dailies — what "N of M played" and the More Games Sweep count over.
 func moreDailyModes(_ modes: [HomeMode] = moreModes) -> [HomeMode] {
     modes.filter { $0.dailyEligible && $0.dbKey != nil }
@@ -122,8 +115,9 @@ func moreDailyModes(_ modes: [HomeMode] = moreModes) -> [HomeMode] {
 /// .flawless. It never touches the Daily Sweep (no bonus, XP, leaderboard, dots).
 /// Mirrors apps/web/lib/more-games.ts moreSweepTier().
 enum MoreSweepTier { case sweep, flawless
-    var title: String { self == .flawless ? "FLAWLESS MORE GAMES!" : "MORE GAMES SWEEP!" }
-    var short: String { self == .flawless ? "Flawless More Games" : "More Games Sweep" }
+    // The ten games are "Puzzles" in celebration and share copy (founder, 2026-10-01: home redesign).
+    var title: String { self == .flawless ? "PUZZLES FLAWLESS!" : "PUZZLES SWEEP!" }
+    var short: String { self == .flawless ? "Puzzles Flawless" : "Puzzles Sweep" }
 }
 func moreSweepTier(byMode: [String: DailyCompletion], modes: [HomeMode] = moreModes) -> MoreSweepTier? {
     let daily = moreDailyModes(modes)

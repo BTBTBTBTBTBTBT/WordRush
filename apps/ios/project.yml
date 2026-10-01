@@ -113,8 +113,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
-        MARKETING_VERSION: "2.5.1"
-        CURRENT_PROJECT_VERSION: "215"
+        MARKETING_VERSION: "2.6"
+        CURRENT_PROJECT_VERSION: "216"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -140,6 +140,10 @@ targets:
     platform: iOS
     sources:
       - path: WordociousWidget/Sources
+      # The shared home-banner rules (headline, tiers), compiled in directly so the
+      # widget's words match the app's banner (home redesign, 2026-10-01). Pure
+      # Foundation; the extension links no WordociousCore package.
+      - path: Sources/Core/HomeBanner.swift
       # The app's asset catalog, so mode chips draw the SAME icons as the
       # home menu (skull, shield, hands…). 652K total — cheap to duplicate,
       # and it keeps the icons single-sourced instead of a copied catalog.
@@ -160,8 +164,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
-        MARKETING_VERSION: "2.5.1"
-        CURRENT_PROJECT_VERSION: "215"
+        MARKETING_VERSION: "2.6"
+        CURRENT_PROJECT_VERSION: "216"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES

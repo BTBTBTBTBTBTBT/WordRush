@@ -226,20 +226,10 @@ fun MainScreen() {
     // Explicit seed for the active game — non-null only for Pro Unlimited (a fresh
     // non-daily seed); null falls back to today's daily seed.
     var activeSeed by remember { mutableStateOf<String?>(null) }
-    // Founder + JP (2026-09-26): the More Games sheet's open state lives HERE, not in
-    // HomeScreen — HomeScreen used to leave the composition while a game was up, so a
-    // flag inside it could never survive the round trip (it stays composed since
-    // 2026-09-29, but the flag stays here). A game launched from the sheet returns to
-    // Home WITH the sheet open on every exit.
-    var showMoreSheet by remember { mutableStateOf(false) }
-    var launchedFromMore by remember { mutableStateOf(false) }
-    val exitGame: () -> Unit = {
-        // Read the flag BEFORE clearing it — the old order cleared it first, so the
-        // sheet never re-opened and Home/back landed on the main menu (Doug, 2026-09-27).
-        val backToMore = launchedFromMore
-        activeGame = null; activeSeed = null; launchedFromMore = false
-        if (backToMore) showMoreSheet = true
-    }
+    // Home redesign (founder, 2026-10-01): the More Games sheet is gone (its games are
+    // Home's PUZZLES section). Home stays composed under a game (2026-09-29), so leaving
+    // a Puzzles game lands back at the same scroll position, where the sheet used to reopen.
+    val exitGame: () -> Unit = { activeGame = null; activeSeed = null }
     var showSettings by remember { mutableStateOf(false) }
     var showSignIn by remember { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
@@ -432,21 +422,18 @@ fun MainScreen() {
                                                 if (unlimited) vsLobby = true
                                                 else vsActive = com.wordocious.core.GameMode.DUEL to true
                                             } else {
-                                                launchedFromMore = MORE_CARDS.any { it.id == card.id }
                                                 activeGame = card
                                                 activeSeed = if (unlimited && card.engineMode != null)
                                                     resolvedUnlimitedSeed(card.engineMode) else null
                                             }
                                         },
-                                        showMore = showMoreSheet && selectedTab == 0,
-                                        onShowMoreChange = { showMoreSheet = it },
                                         onGoPro = { infoRoute = "pro" },
                                         onVs = { card -> card.engineMode?.let { vsActive = it to false } },
                                         onNavigate = { infoRoute = it },
                                     )
                                     1 -> LeaderboardScreen(
                                         onOpenProfile = { publicProfileId = it },
-                                        onPlay = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
+                                        onPlay = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                                         // Empty Friends board CTA → the Friends tab (§207 Tier 2).
                                         onOpenFriends = { selectedTab = 3 },
                                         // "All-time →" in the header → the global Records screen (D2 step 3).
@@ -457,7 +444,7 @@ fun MainScreen() {
                                         onEditProfile = { infoRoute = "edit" },
                                         // Today's Dailies badge → open that mode's daily game (completed
                                         // puzzle if played, fresh if not) — web parity.
-                                        onPlayDaily = { mode -> modeCardFor(mode)?.let { launchedFromMore = false; activeGame = it; activeSeed = null } },
+                                        onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                                         // Friends card rows → push the friend's profile in-tab.
                                         onOpenProfile = { publicProfileId = it },
                                         // Compact FRIENDS row → the Friends tab (§207 Tier 3).
@@ -581,7 +568,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -599,7 +586,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -616,7 +603,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -633,7 +620,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -650,7 +637,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -667,7 +654,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -684,7 +671,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -701,7 +688,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -718,7 +705,7 @@ fun MainScreen() {
                         onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
-                            activeGame = null; activeSeed = null; launchedFromMore = false
+                            activeGame = null; activeSeed = null
                             publicProfileId = null
                             LeaderboardDeepLink.pendingMode.value = m.name
                             selectedTab = 1
@@ -768,7 +755,7 @@ fun MainScreen() {
                 // §214 (Lindsay): "View Leaderboard" from a daily result — close
                 // the game and land on the Leaderboard tab with the mode selected.
                 onOpenLeaderboard = { m ->
-                    activeGame = null; activeSeed = null; launchedFromMore = false
+                    activeGame = null; activeSeed = null
                     publicProfileId = null
                     LeaderboardDeepLink.pendingMode.value = m.name
                     selectedTab = 1

@@ -16,119 +16,136 @@ struct StreakShieldModal: View {
     /// tap, modal gone, nothing acknowledged the save.
     @State private var saved = false
 
-    private let lilac = Color(hex: 0xC4B5FD)
+    private var shieldsAfter: Int { max(shields - 1, 0) }
+    private func shieldWord(_ n: Int) -> String { n == 1 ? "shield" : "shields" }
 
     var body: some View {
+        // Restyled to the home redesign's look (founder, 2026-10-01: the old card
+        // "looks dated"; web streak-shield-modal.tsx): a soft warm header with the
+        // flame and the number, an all-caps headline, no bubbles, one flat rounded
+        // button. Same actions and timing.
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         ZStack {
-            Color.black.opacity(0.4).ignoresSafeArea()
+            Color(hex: 0x1E1B4B).opacity(0.45).ignoresSafeArea()
                 .onTapGesture { if !saved { onClose() } }
 
-            if saved {
-                VStack(spacing: 10) {
-                    Text("🛡").font(.system(size: 44))
-                    Text("Streak saved!").font(Brand.title(22)).foregroundStyle(Theme.textPrimary)
-                    Text("Your \(streak)-day streak is protected · \(max(shields - 1, 0)) shields left")
-                        .font(Brand.font(13, .bold)).foregroundStyle(Theme.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(28)
-                .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 20).stroke(lilac, lineWidth: 1.5))
-                .padding(.horizontal, 40)
-                .transition(.scale(scale: 0.9).combined(with: .opacity))
-                .zIndex(2)
+            VStack(spacing: 0) {
+                if saved { savedBeat.transition(.opacity) } else { askCard }
             }
-
-            VStack(spacing: 16) {
-                // Flame with "!" badge
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 52))
-                        .foregroundStyle(Color(hex: 0xF97316))
-                    Text("!")
-                        .font(Brand.font(11, .black)).foregroundStyle(.white)
-                        .frame(width: 20, height: 20)
-                        .background(Circle().fill(Color(hex: 0xEF4444)))
-                        .offset(x: 6, y: -6)
-                }
-                .padding(.top, 8)
-
-                Text("Streak at Risk!")
-                    .font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
-
-                Text("\(streak)")
-                    .font(Brand.font(48, .black)).foregroundStyle(Theme.textPrimary)
-                Text("day streak will be lost if you don't play today")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    .multilineTextAlignment(.center)
-
-                // Shield count pill
-                HStack(spacing: 6) {
-                    Image(systemName: "shield.fill").font(.system(size: 13))
-                    Text("\(shields)").font(Brand.font(12, .heavy))
-                }
-                .foregroundStyle(Color(hex: 0x5B21B6))
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(Capsule().fill(Theme.surfaceHover))
-                .overlay(Capsule().stroke(lilac, lineWidth: 1.5))
-
-                // Actions
-                VStack(spacing: 8) {
-                    if shields > 0 {
-                        Button {
-                            loading = "shield"
-                            Task {
-                                await onUseShield()
-                                loading = nil
-                                withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { saved = true }
-                                try? await Task.sleep(nanoseconds: 1_800_000_000)
-                                onClose()
-                            }
-                        } label: {
-                            Text(loading == "shield" ? "Using Shield..." : "Use Shield (\(shields) left)")
-                                .font(Brand.font(14, .black)).foregroundStyle(.white)
-                                .frame(maxWidth: .infinity).padding(.vertical, 13)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(
-                                    LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
-                                                   startPoint: .topLeading, endPoint: .bottomTrailing)))
-                                .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4)
-                        }
-                        .buttonStyle(.plain).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
-                    } else {
-                        Text("You have no streak shields. Pro subscribers get 4 shields per billing period.")
-                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                            .multilineTextAlignment(.center)
-                    }
-
-                    Button {
-                        loading = "decline"
-                        Task { await onDecline(); loading = nil }
-                    } label: {
-                        Text("Let Streak Reset")
-                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity).padding(.vertical, 6)
-                    }
-                    .buttonStyle(.plain).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
-                }
-                .padding(.top, 4)
-            }
-            .padding(24)
-            .frame(maxWidth: 340)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(lilac, lineWidth: 1.5))
+            .frame(maxWidth: 360)
+            .background(Color.white)
+            .clipShape(shape)
             .overlay(alignment: .topTrailing) {
-                Button { onClose() } label: {
-                    Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Theme.textMuted).padding(16)
-                }.buttonStyle(.plain)
+                if !saved {
+                    Button { onClose() } label: {
+                        Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color(hex: 0x92400E))
+                            .frame(width: 36, height: 36).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 12).padding(.trailing, 12)
+                    .accessibilityLabel("Close")
+                }
             }
-            .shadow(color: .black.opacity(0.12), radius: 30, x: 0, y: 20)
-            .padding(.horizontal, 24)
+            .shadow(color: Color(hex: 0x4C1D95).opacity(0.25), radius: 30, x: 0, y: 24)
+            .padding(.horizontal, 16)
             .scaleEffect(shown ? 1 : 0.9).opacity(shown ? 1 : 0)
         }
         .onAppear {
             Haptics.warning()
             withAnimation(Theme.animation(.spring(response: 0.35, dampingFraction: 0.8))) { shown = true }
+        }
+    }
+
+    private var askCard: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 4) {
+                ZStack {
+                    Image(systemName: "flame.fill").font(.system(size: 48)).foregroundStyle(Color(hex: 0xF59E0B))
+                    Image(systemName: "flame").font(.system(size: 48)).foregroundStyle(Color(hex: 0xC2410C))
+                }
+                .accessibilityHidden(true)
+                Text("\(streak)").font(Brand.font(52, .black)).foregroundStyle(Color(hex: 0x78350F))
+                Text("DAY STREAK").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xB45309))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 32).padding(.bottom, 20).padding(.horizontal, 24)
+            .background(LinearGradient(colors: [Color(hex: 0xFFF3E0), Color(hex: 0xFDE7F0)], startPoint: .top, endPoint: .bottom))
+
+            VStack(spacing: 12) {
+                Text("DON'T LOSE YOUR STREAK!").font(Brand.font(18, .black)).tracking(0.4)
+                    .foregroundStyle(Color(hex: 0x4C1D95))
+                    .multilineTextAlignment(.center)
+                Text("Your \(streak)-day streak ends if you don't play today.")
+                    .font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x4B5563))
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    Image(systemName: "shield.fill").font(.system(size: 13, weight: .bold))
+                    Text("\(shields) \(shieldWord(shields))").font(Brand.font(12, .black))
+                }
+                .foregroundStyle(Color(hex: 0x6D28D9))
+
+                // Shields are the only way to save a streak. No shields: the Pro note.
+                if shields > 0 {
+                    Button {
+                        loading = "shield"
+                        Task {
+                            await onUseShield()
+                            loading = nil
+                            withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { saved = true }
+                            try? await Task.sleep(nanoseconds: 1_800_000_000)
+                            onClose()
+                        }
+                    } label: {
+                        Text(loading == "shield" ? "USING A SHIELD…" : "USE A SHIELD")
+                            .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
+                            .frame(maxWidth: .infinity).frame(height: 48)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(
+                                LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)))
+                            .shadow(color: Color(hex: 0x6D28D9).opacity(0.3), radius: 8, x: 0, y: 6)
+                    }
+                    .buttonStyle(.plain).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
+                    .padding(.top, 4)
+                } else {
+                    Text("You're out of shields. Pro members get 4 every billing period.")
+                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x6B7280))
+                        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    loading = "decline"
+                    Task { await onDecline(); loading = nil }
+                } label: {
+                    Text("Let it reset")
+                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x6B7280))
+                        .frame(maxWidth: .infinity).padding(.vertical, 8)
+                }
+                .buttonStyle(.plain).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
+            }
+            .padding(.vertical, 20).padding(.horizontal, 24)
+        }
+    }
+
+    /// Post-use confirmation beat — the shield's work was invisible before:
+    /// tap, modal gone, nothing acknowledged the save.
+    private var savedBeat: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Image(systemName: "shield.fill").font(.system(size: 56)).foregroundStyle(Color(hex: 0xC4B5FD))
+                    Image(systemName: "shield").font(.system(size: 56)).foregroundStyle(Color(hex: 0x6D28D9))
+                }
+                .accessibilityHidden(true)
+                Text("STREAK SAVED!").font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(Color(hex: 0x4C1D95))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 32).padding(.bottom, 24).padding(.horizontal, 24)
+            .background(LinearGradient(colors: [Color(hex: 0xEDE9FE), Color(hex: 0xE0E7FF)], startPoint: .top, endPoint: .bottom))
+            Text("Your \(streak)-day streak is safe · \(shieldsAfter) \(shieldWord(shieldsAfter)) left")
+                .font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x4B5563))
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 20).padding(.horizontal, 24)
         }
     }
 }

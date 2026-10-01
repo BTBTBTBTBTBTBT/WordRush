@@ -1,17 +1,21 @@
 import WidgetKit
 import SwiftUI
 
-// Home-screen widget: today's daily-puzzle progress (9 mode chips) + play
-// streak. Renders purely from the JSON snapshot the app writes into the
-// app-group container (WidgetBridge) — no app code is linked, so the mode
-// catalog stays single-sourced in the app. The app's Assets.xcassets is
-// compiled into this target too (project.yml), so the chips can draw the
-// SAME icons as the home menu (skull, shield, hands…), not text stand-ins.
+// Home-screen widget: today's dailies — the eight Wordocious games and the ten
+// Puzzles — plus the play streak. Renders purely from the JSON snapshot the app
+// writes into the app-group container (WidgetBridge) — no app code is linked,
+// so the mode catalog stays single-sourced in the app. The app's Assets.xcassets
+// is compiled into this target too (project.yml), so the chips draw the SAME
+// icons as the home menu (skull, shield, hands…), not text stand-ins.
 //
-// v2 (founder-approved mock, widget-footer-mock.html): a footer strip
-// (wordmark · stats · live countdown) plus a four-state theme —
-// swept/flawless, mid-day, streak-at-risk (evening, nothing played), and
-// fresh-puzzles (post-midnight, nothing played).
+// v3 (home redesign, founder-approved 2026-10-01; spec §5, mock board V): the
+// widget mirrors the home banner. One window, two colors: the background blends
+// the Wordocious row's tier color (top) into the Puzzles row's (bottom), with
+// the banner's headline in a frosted strip. Double Flawless turns the frame
+// gold. HomeBanner.swift (the shared banner rules) is compiled into this target
+// too (project.yml), so the widget's words can never drift from the app's. The
+// old fresh / at-risk / sweep / flawless themes are gone; after 8 pm the headline
+// simply stays the evening greeting. No animation: widgets can't run the shimmer.
 
 private let appGroup = "group.com.wordocious.app"
 private let snapshotKey = "widget-snapshot"
@@ -38,35 +42,47 @@ struct WSnapshot: Codable {
     let points: Int?
     let seconds: Int?
     let shields: Int?
+    // v3 (home redesign): the Puzzles row, the username for the greeting, the row
+    // streaks. Optional so an older app's snapshot still decodes (no Puzzles row).
+    var puzzles: [Mode]? = nil
+    var username: String? = nil
+    var wordStreaks: GroupStreaks? = nil
+    var puzzleStreaks: GroupStreaks? = nil
 }
 
-/// Which of the widget's five looks applies right now. Flawless/sweep mirror
-/// the home banner; at-risk and fresh are time-dependent, which is why the
-/// timeline pre-schedules entries at 20:00 and midnight — the look flips on
-/// time without the app ever waking up.
-enum WidgetTheme {
-    case flawless, sweep, midday, atRisk, fresh
+extension WSnapshot {
+    var puzzleModes: [Mode] { puzzles ?? [] }
+    var word: GroupProgress {
+        GroupProgress(played: modes.filter(\.played).count, won: modes.filter(\.won).count, total: modes.count)
+    }
+    var puzzleProgress: GroupProgress {
+        GroupProgress(played: puzzleModes.filter(\.played).count, won: puzzleModes.filter(\.won).count, total: puzzleModes.count)
+    }
+    var done: Int { word.played + puzzleProgress.played }
+    var total: Int { modes.count + puzzleModes.count }
 
-    static func from(_ snap: WSnapshot, at date: Date) -> WidgetTheme {
-        let played = snap.modes.filter(\.played).count
-        if !snap.modes.isEmpty, played >= snap.modes.count {
-            return snap.modes.allSatisfy(\.won) ? .flawless : .sweep
+    /// The home banner's headline for this moment (HomeBanner, shared with the app).
+    func headline(at date: Date) -> String {
+        HomeBanner.bannerHeadline(word, puzzleProgress, hour: Calendar.current.component(.hour, from: date),
+                                  name: username ?? "")
+    }
+
+    /// Reset every chip (and the day's stats) for a new local day; streaks and names stay.
+    func freshDay(_ day: String) -> WSnapshot {
+        func reset(_ m: Mode) -> Mode {
+            Mode(key: m.key, title: m.title, glyph: m.glyph, colorHex: m.colorHex, played: false, won: false,
+                 iconKind: m.iconKind, iconAsset: m.iconAsset, iconText: m.iconText)
         }
-        if played == 0 {
-            // Evening with a live streak and zero plays → nag. A zero streak
-            // has nothing to lose, so it stays on the invitation look.
-            let hour = Calendar.current.component(.hour, from: date)
-            return (hour >= 20 && snap.streak > 0) ? .atRisk : .fresh
-        }
-        return .midday
+        return WSnapshot(day: day, streak: streak, modes: modes.map(reset), points: 0, seconds: 0, shields: shields,
+                         puzzles: puzzles?.map(reset), username: username,
+                         wordStreaks: wordStreaks, puzzleStreaks: puzzleStreaks)
     }
 }
 
-/// Fallback roster so the widget shows the real mode grid before the app has
-/// ever written a snapshot (fresh install / not signed in). The eight Daily
-/// Sweep modes (ModeGen.sweep) — the extension can't import the catalog, so
-/// this literal mirrors it; icon specs match ModeCatalog.swift's homeModes.
-/// ProperNoundle lives under More Games and is not in the sweep (Stage 9).
+/// Fallback roster so the widget shows the real chips before the app has ever
+/// written a snapshot (fresh install / not signed in). The extension can't import
+/// the catalog, so these literals mirror ModeGen.sweep and the More Games dailies
+/// (catalog order); icon specs match ModeCatalog.swift.
 private let placeholderModes: [(title: String, glyph: String, hex: String, kind: String, asset: String?, text: String?)] = [
     ("Classic", "C", "#7c3aed", "original", "wordle-grid", nil),
     ("Quad", "IV", "#ec4899", "roman", nil, "IV"),
@@ -77,33 +93,46 @@ private let placeholderModes: [(title: String, glyph: String, hex: String, kind:
     ("Seven", "7", "#84cc16", "hand", "seven-hand", "7"),
     ("Gauntlet", "G", "#d97706", "asset", "skull", nil),
 ]
+private let placeholderPuzzles: [(key: String, title: String, glyph: String, hex: String, kind: String, asset: String)] = [
+    ("PROPERNOUNDLE", "Proper", "P", "#dc2626", "asset", "crown"),
+    ("SUDOKU", "Sudocious", "9", "#1e40af", "symbol", "grid"),
+    ("SCRAMBLE", "Muddle", "M", "#f97316", "symbol", "shuffle"),
+    ("HUB", "Hubbub", "H", "#c026d3", "symbol", "hexagon"),
+    ("CROSSWORD", "Crossword", "X", "#475569", "symbol", "quote.opening"),
+    ("GROUPS", "Kindred", "K", "#9f1239", "symbol", "rectangle.3.group"),
+    ("LADDER", "Ladder", "L", "#0284c7", "symbol", "stairs"),
+    ("CRYPTOGRAM", "Code", "?", "#92400e", "symbol", "key"),
+    ("WORDSEARCH", "Spyglass", "W", "#4d7c0f", "symbol", "text.magnifyingglass"),
+    ("REGIONS", "Stars", "*", "#ca8a04", "symbol", "star"),
+]
 
 private func emptySnapshot() -> WSnapshot {
     WSnapshot(day: localDay(), streak: 0,
               modes: placeholderModes.map { .init(key: $0.glyph, title: $0.title, glyph: $0.glyph, colorHex: $0.hex,
                                                   played: false, won: false,
                                                   iconKind: $0.kind, iconAsset: $0.asset, iconText: $0.text) },
-              points: nil, seconds: nil, shields: nil)
+              points: nil, seconds: nil, shields: nil,
+              puzzles: placeholderPuzzles.map { .init(key: $0.key, title: $0.title, glyph: $0.glyph, colorHex: $0.hex,
+                                                     played: false, won: false,
+                                                     iconKind: $0.kind, iconAsset: $0.asset, iconText: nil) })
 }
 
 private func localDay(_ date: Date = Date()) -> String {
     let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.calendar = Calendar(identifier: .gregorian)
     f.dateFormat = "yyyy-MM-dd"
     return f.string(from: date)
 }
 
 /// Read the app-written snapshot; a snapshot from a previous day keeps the
-/// streak and shields but resets every mode (and the day's stats) to zero —
+/// streak, name and shields but resets every chip (and the day's stats) —
 /// new puzzles dropped at midnight.
 private func loadSnapshot(for date: Date = Date()) -> WSnapshot {
     guard let data = UserDefaults(suiteName: appGroup)?.data(forKey: snapshotKey),
           let snap = try? JSONDecoder().decode(WSnapshot.self, from: data) else { return emptySnapshot() }
     if snap.day == localDay(date) { return snap }
-    return WSnapshot(day: localDay(date), streak: snap.streak,
-                     modes: snap.modes.map { .init(key: $0.key, title: $0.title, glyph: $0.glyph, colorHex: $0.colorHex,
-                                                   played: false, won: false,
-                                                   iconKind: $0.iconKind, iconAsset: $0.iconAsset, iconText: $0.iconText) },
-                     points: 0, seconds: 0, shields: snap.shields)
+    return snap.freshDay(localDay(date))
 }
 
 private func nextLocalMidnight(after date: Date = Date()) -> Date {
@@ -126,15 +155,14 @@ struct DailyProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<DailyEntry>) -> Void) {
-        // Entries at every point today where the LOOK can change without new
-        // data: now, 20:00 (at-risk kicks in), each following hour (the
-        // "2H LEFT" pill), and midnight (grid resets to fresh). The app pushes
-        // reloads on every completion, so no data polling is needed.
+        // Entries where the LOOK can change without new data: now, noon and 5 pm
+        // (the greeting turns afternoon / evening), and midnight (every chip resets).
+        // The app pushes reloads on every completion, so no data polling is needed.
         let now = Date()
         let snap = loadSnapshot()
         var dates: [Date] = [now]
         let cal = Calendar.current
-        for hour in 20...23 {
+        for hour in [12, 17] {
             if let d = cal.date(bySettingHour: hour, minute: 0, second: 0, of: now), d > now {
                 dates.append(d)
             }
@@ -162,24 +190,43 @@ extension Color {
 
 private let brandGradient = LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")],
                                            startPoint: .leading, endPoint: .trailing)
-// Home banner palettes (HomeView.banner): Sweep purple/pink, Flawless amber.
-private let sweepTitleGradient = LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing)
-private let flawlessTitleGradient = LinearGradient(colors: [Color(widgetHex: "#d97706"), Color(widgetHex: "#b45309")],
-                                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-private let riskTitleGradient = LinearGradient(colors: [Color(widgetHex: "#f59e0b"), Color(widgetHex: "#ef4444")],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing)
-private let freshTitleGradient = LinearGradient(colors: [Color(widgetHex: "#10b981"), Color(widgetHex: "#3b82f6")],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing)
+private let lostGray = Color(widgetHex: "#9ca3af")
+
+/// The banner's tier palette (spec §2), with the widget's lighter "none" tints
+/// from the approved widget mock (board V).
+private func tierColor(_ t: BannerTier, none: String) -> Color {
+    switch t {
+    case .none: return Color(widgetHex: none)
+    case .sweep: return Color(widgetHex: "#ebd6fd")
+    case .flawless: return Color(widgetHex: "#fde68a")
+    }
+}
+
+private func tierInk(_ t: BannerTier) -> Color {
+    switch t {
+    case .none: return Color(widgetHex: "#6d28d9")
+    case .sweep: return Color(widgetHex: "#7e22ce")
+    case .flawless: return Color(widgetHex: "#92400e")
+    }
+}
+
+/// A row's tag at the end of its chips: "3/8" mid-day, then SWEEP or FLAWLESS.
+private func rowTag(_ g: GroupProgress) -> String {
+    switch HomeBanner.groupTier(g) {
+    case .none: return "\(g.played)/\(g.total)"
+    case .sweep: return "SWEEP"
+    case .flawless: return "FLAWLESS"
+    }
+}
+
+private func isDoubleFlawless(_ snap: WSnapshot) -> Bool {
+    HomeBanner.groupTier(snap.word) == .flawless && HomeBanner.groupTier(snap.puzzleProgress) == .flawless
+}
 
 private func groupedPoints(_ n: Int) -> String {
     let f = NumberFormatter()
     f.numberStyle = .decimal
     return f.string(from: NSNumber(value: n)) ?? "\(n)"
-}
-
-private func mmss(_ seconds: Int) -> String {
-    "\(seconds / 60):" + String(format: "%02d", seconds % 60)
 }
 
 private struct StreakBadge: View {
@@ -192,6 +239,18 @@ private struct StreakBadge: View {
                 .foregroundStyle(.primary)
         }
         .accessibilityLabel("\(streak) day streak")
+    }
+}
+
+/// The frosted strip across the top (white 50% over the blend), edge to edge.
+private struct FrostedStrip<Content: View>: View {
+    var top: CGFloat = 10
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        HStack(spacing: 6, content: content)
+            .padding(.horizontal, 12).padding(.top, top).padding(.bottom, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.5))
     }
 }
 
@@ -228,6 +287,11 @@ private struct ModeGlyph: View {
                         .offset(y: box * 0.12)
                 }
             } else { textGlyph(mode.glyph) }
+        case "symbol":
+            // An SF Symbol (the Puzzles titles), tinted like the home menu's.
+            if let name = mode.iconAsset {
+                Image(systemName: name).font(.system(size: box * 0.45, weight: .bold)).foregroundStyle(accent)
+            } else { textGlyph(mode.glyph) }
         default:
             textGlyph(mode.glyph)
         }
@@ -241,61 +305,43 @@ private struct ModeGlyph: View {
     }
 }
 
-/// One mode chip. Played: solid accent + check (gray + xmark when lost).
+/// One mode chip. Won: solid accent + white check; lost: gray + white X.
 /// Unplayed: a "door" — white tile, dashed accent border, the mode's own
 /// home-menu icon — signalling it's a tap target that opens that puzzle.
 private struct ModeCell: View {
     let mode: WSnapshot.Mode
-    var size: CGFloat = 30
+    var size: CGFloat = 28
 
     var body: some View {
         let accent = Color(widgetHex: mode.colorHex)
+        let shape = RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
         ZStack {
             if mode.played {
-                RoundedRectangle(cornerRadius: size * 0.27)
-                    .fill(mode.won ? accent : Color.gray.opacity(0.55))
+                shape.fill(mode.won ? accent : lostGray)
                 Image(systemName: mode.won ? "checkmark" : "xmark")
                     .font(.system(size: size * 0.42, weight: .black))
                     .foregroundStyle(.white)
             } else {
-                RoundedRectangle(cornerRadius: size * 0.27)
-                    .fill(Color.white.opacity(0.72))
-                RoundedRectangle(cornerRadius: size * 0.27)
-                    .strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                shape.fill(Color.white.opacity(0.72))
+                shape.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
                 ModeGlyph(mode: mode, accent: accent, box: size)
             }
         }
         .frame(width: size, height: size)
-        .accessibilityLabel("\(mode.title), \(mode.played ? (mode.won ? "solved" : "played") : "not played — tap to play")")
+        .accessibilityLabel("\(mode.title), \(mode.played ? (mode.won ? "solved" : "played") : "not played, tap to play")")
     }
 }
 
-/// The footer strip from the approved mock: wordmark · stats · live countdown.
-/// The countdown is WidgetKit timer text — it ticks every second natively,
-/// costing none of the widget's refresh budget.
+/// The footer strip: wordmark · "N/18 · points" · live countdown. The countdown
+/// is WidgetKit timer text — it ticks every second natively, costing none of the
+/// widget's refresh budget.
 private struct FooterStrip: View {
     let snap: WSnapshot
-    let theme: WidgetTheme
     let date: Date
 
-    private var done: Int { snap.modes.filter(\.played).count }
-
-    private var statText: String {
-        switch theme {
-        case .flawless, .sweep:
-            let time = mmss(snap.seconds ?? 0)
-            return "\(time) · \(groupedPoints(snap.points ?? 0)) pts"
-        case .midday:
-            return "\(done)/\(snap.modes.count) · \(groupedPoints(snap.points ?? 0)) pts"
-        case .atRisk:
-            return "Play 1 to keep the streak"
-        case .fresh:
-            return "A brand-new board awaits"
-        }
-    }
+    private var statText: String { "\(snap.done)/\(snap.total) · \(groupedPoints(snap.points ?? 0)) pts" }
 
     var body: some View {
-        let countdownTint = theme == .atRisk ? Color(widgetHex: "#d97706") : Color(widgetHex: "#7c3aed")
         HStack(spacing: 6) {
             Text("WORDOCIOUS").font(.system(size: 9, weight: .black, design: .rounded))
                 .tracking(1.1).foregroundStyle(brandGradient)
@@ -304,284 +350,166 @@ private struct FooterStrip: View {
             Text(statText)
                 .font(.system(size: 10.5, weight: .black, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(.primary.opacity(0.8))
+                .foregroundStyle(Color(widgetHex: "#374151"))
                 .lineLimit(1).minimumScaleFactor(0.7)
             Spacer(minLength: 4)
-            HStack(spacing: 2) {
-                Image(systemName: "hourglass").font(.system(size: 8.5, weight: .bold))
-                // WidgetKit's live timer text GREEDILY claims all flexible
-                // width (found on device: it shoved the hourglass to the bar's
-                // center and squeezed the stat text out entirely). Cap it to
-                // exactly what "12:41:40" needs; trailing-aligned as it shrinks
-                // through h:mm:ss → mm:ss overnight.
-                Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
-                    .font(.system(size: 10.5, weight: .black, design: .rounded))
-                    .monospacedDigit()
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: 58, alignment: .trailing)
-            }
-            .foregroundStyle(countdownTint)
-            .layoutPriority(1)
+            // WidgetKit's live timer text GREEDILY claims all flexible width (found
+            // on device: it shoved the stat text out entirely). Cap it to exactly
+            // what "12:41:40" needs; trailing-aligned as it shrinks overnight.
+            Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
+                .font(.system(size: 10.5, weight: .black, design: .rounded))
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 58, alignment: .trailing)
+                .foregroundStyle(Color(widgetHex: "#7c3aed"))
+                .layoutPriority(1)
         }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 9)
-                .fill(Color.white.opacity(0.55))
-                .overlay(RoundedRectangle(cornerRadius: 9)
-                    .strokeBorder(Color(widgetHex: "#a78bfa").opacity(0.35), lineWidth: 1))
-        )
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.55)))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Wordocious. \(statText). New puzzles at midnight.")
     }
 }
 
-// MARK: - Small: streak + big X/N + countdown/points + dot strip
+private func dailyURL(_ m: WSnapshot.Mode) -> URL? { URL(string: "wordocious://daily/\(m.key)") }
+
+// MARK: - Small: frosted header, big N/18, headline, two dot rows, countdown
 
 struct SmallView: View {
     let snap: WSnapshot
-    let theme: WidgetTheme
     let date: Date
-    private var done: Int { snap.modes.filter(\.played).count }
 
     /// The one tap a small widget is allowed, spent well: straight into the
-    /// first unplayed daily. ProperNoundle has no programmatic daily launch
-    /// (same carve-out as the medium chips); swept/PN-only → plain app open.
+    /// first unplayed daily (Wordocious first, then Puzzles); all done → plain app open.
     private var nextPlayableURL: URL? {
-        guard let m = snap.modes.first(where: { !$0.played && $0.key != "PROPERNOUNDLE" })
-        else { return nil }
-        return URL(string: "wordocious://daily/\(m.key)")
+        (snap.modes + snap.puzzleModes).first(where: { !$0.played }).flatMap(dailyURL)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
+        let headInk = isDoubleFlawless(snap) ? Color(widgetHex: "#78350f") : Color(widgetHex: "#4c1d95")
+        VStack(alignment: .leading, spacing: 0) {
+            FrostedStrip {
                 Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
                     .tracking(1).foregroundStyle(brandGradient)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                Spacer()
+                Spacer(minLength: 2)
                 StreakBadge(streak: snap.streak)
             }
-            Spacer(minLength: 0)
-            HStack(alignment: .lastTextBaseline, spacing: 2) {
-                Text("\(done)").font(.system(size: 38, weight: .black, design: .rounded))
-                    .foregroundStyle(.primary)
-                Text("/\(snap.modes.count)").font(.system(size: 17, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                if let pts = snap.points, pts > 0 {
-                    Text("\(groupedPoints(pts)) pts")
-                        .font(.system(size: 10, weight: .black, design: .rounded))
-                        .monospacedDigit().foregroundStyle(.secondary)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .lastTextBaseline, spacing: 2) {
+                    Text("\(snap.done)").font(.system(size: 30, weight: .black, design: .rounded))
+                        .foregroundStyle(Color(widgetHex: "#1a1a2e"))
+                    Text("/\(snap.total)").font(.system(size: 15, weight: .black, design: .rounded))
+                        .foregroundStyle(Color(widgetHex: "#6b7280"))
                 }
-            }
-            switch theme {
-            case .flawless:
-                statusLine("FLAWLESS VICTORY!", icon: "trophy.fill",
-                           iconColor: Color(widgetHex: "#b45309"), gradient: flawlessTitleGradient)
-            case .sweep:
-                statusLine("DAILY SWEEP!", icon: "sparkles",
-                           iconColor: Color(widgetHex: "#7c3aed"), gradient: sweepTitleGradient)
-            case .atRisk:
-                statusLine("STREAK AT RISK", icon: "exclamationmark.triangle.fill",
-                           iconColor: Color(widgetHex: "#f59e0b"), gradient: riskTitleGradient)
-            case .fresh:
-                statusLine("FRESH PUZZLES!", icon: "sparkles",
-                           iconColor: Color(widgetHex: "#10b981"), gradient: freshTitleGradient)
-            case .midday:
-                Text("puzzles played today")
-                    .font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
-                    .minimumScaleFactor(0.7).lineLimit(1)
-            }
-            // Countdown to the next drop — same live system timer as the medium
-            // footer, same greedy-width cap (58pt fits "12:41:40").
-            HStack(spacing: 2) {
-                Image(systemName: "hourglass").font(.system(size: 8, weight: .bold))
+                Text(snap.headline(at: date))
+                    .font(.system(size: 10, weight: .black, design: .rounded)).tracking(0.3)
+                    .foregroundStyle(headInk)
+                    .lineLimit(2).minimumScaleFactor(0.7)
+                Spacer(minLength: 0)
+                dots(snap.modes)
+                if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
                 Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
                     .font(.system(size: 10.5, weight: .black, design: .rounded))
                     .monospacedDigit()
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: 58, alignment: .leading)
-                Spacer(minLength: 0)
+                    .foregroundStyle(Color(widgetHex: "#7c3aed"))
             }
-            .foregroundStyle(theme == .atRisk ? Color(widgetHex: "#d97706") : Color(widgetHex: "#7c3aed"))
-            Spacer(minLength: 0)
-            HStack(spacing: 4) {
-                ForEach(snap.modes, id: \.key) { m in
-                    Circle()
-                        .fill(m.played ? (m.won ? Color(widgetHex: m.colorHex) : Color.gray.opacity(0.55))
-                                       : Color(widgetHex: m.colorHex).opacity(0.18))
-                        .frame(height: 9)
-                }
-            }
+            .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 10)
         }
         .widgetURL(nextPlayableURL)
     }
 
-    private func statusLine(_ title: String, icon: String, iconColor: Color, gradient: LinearGradient) -> some View {
+    private func dots(_ list: [WSnapshot.Mode]) -> some View {
         HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 10, weight: .bold)).foregroundStyle(iconColor)
-            Text(title).font(.system(size: 11, weight: .black, design: .rounded))
-                .foregroundStyle(gradient)
-                .minimumScaleFactor(0.7).lineLimit(1)
+            ForEach(list, id: \.key) { m in
+                Capsule()
+                    .fill(m.played ? (m.won ? Color(widgetHex: m.colorHex) : lostGray)
+                                   : Color(widgetHex: m.colorHex).opacity(0.18))
+                    .frame(height: 8)
+            }
         }
     }
 }
 
-// MARK: - Medium: themed header + mode-chip grid + footer strip
+// MARK: - Medium: frosted headline strip, two chip rows, footer strip
 
 struct MediumView: View {
     let snap: WSnapshot
-    let theme: WidgetTheme
     let date: Date
-    private var done: Int { snap.modes.filter(\.played).count }
-    private let cols = [GridItem](repeating: GridItem(.flexible(), spacing: 6), count: 5)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            header
+        let headInk = isDoubleFlawless(snap) ? Color(widgetHex: "#78350f") : Color(widgetHex: "#4c1d95")
+        VStack(alignment: .leading, spacing: 0) {
+            FrostedStrip(top: 9) {
+                Text(snap.headline(at: date))
+                    .font(.system(size: 13, weight: .black, design: .rounded)).tracking(0.3)
+                    .foregroundStyle(headInk)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                Spacer(minLength: 4)
+                StreakBadge(streak: snap.streak)
+            }
+            chipRow(snap.modes, progress: snap.word, size: 28, gap: 5)
+                .padding(.horizontal, 12).padding(.top, 8)
+            if !snap.puzzleModes.isEmpty {
+                chipRow(snap.puzzleModes, progress: snap.puzzleProgress, size: 25, gap: 3)
+                    .padding(.horizontal, 12).padding(.top, 7)
+            }
             Spacer(minLength: 0)
-            LazyVGrid(columns: cols, spacing: 6) {
-                ForEach(snap.modes, id: \.key) { m in
-                    // Deep link: tap a chip, land in that daily (DeepLink.swift
-                    // handles wordocious://daily/<key>). ProperNoundle's daily
-                    // has no programmatic launch path, so its chip just opens
-                    // the app (no Link).
-                    let cell = VStack(spacing: 2) {
-                        ModeCell(mode: m, size: 34)
-                        Text(m.title).font(.system(size: 9, weight: .bold, design: .rounded))
-                            .foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
-                    }
-                    if m.key != "PROPERNOUNDLE", let url = URL(string: "wordocious://daily/\(m.key)") {
-                        Link(destination: url) { cell }
+            FooterStrip(snap: snap, date: date)
+                .padding(.horizontal, 10).padding(.bottom, 8)
+        }
+    }
+
+    /// A row of chips + its tag. Narrow widgets shrink the chips a little rather
+    /// than squeeze the tag out (the mock's sizes are the ceiling).
+    private func chipRow(_ list: [WSnapshot.Mode], progress: GroupProgress, size: CGFloat, gap: CGFloat) -> some View {
+        let tier = HomeBanner.groupTier(progress)
+        return GeometryReader { geo in
+            let n = CGFloat(max(list.count, 1))
+            let fit = (geo.size.width - 44 - gap * (n - 1)) / n
+            let chip = max(18, min(size, fit))
+            HStack(spacing: gap) {
+                ForEach(list, id: \.key) { m in
+                    // Deep link: tap a chip, land in that daily as today
+                    // (DeepLink.swift handles wordocious://daily/<key>).
+                    if let url = dailyURL(m) {
+                        Link(destination: url) { ModeCell(mode: m, size: chip) }
                     } else {
-                        cell
+                        ModeCell(mode: m, size: chip)
                     }
                 }
-                tenthCell
+                Spacer(minLength: 4)
+                Text(rowTag(progress))
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .foregroundStyle(tierInk(tier))
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
-            Spacer(minLength: 0)
-            FooterStrip(snap: snap, theme: theme, date: date)
+            .frame(height: geo.size.height)
         }
-    }
-
-    /// 10th grid slot, by theme: celebration when swept, remaining count
-    /// mid-day, the shield stash when the streak's on the line, sparkle at dawn.
-    @ViewBuilder
-    private var tenthCell: some View {
-        switch theme {
-        case .flawless, .sweep:
-            extraCell(icon: "party.popper.fill", tint: Color(widgetHex: "#7c3aed"), label: "Done!")
-        case .midday:
-            extraCell(icon: "hourglass", tint: Color(widgetHex: "#7c3aed"),
-                      label: "\(snap.modes.count - done) left")
-        case .atRisk:
-            extraCell(icon: "shield.fill", tint: Color(widgetHex: "#d97706"),
-                      label: (snap.shields ?? 0) > 0 ? "\(snap.shields ?? 0) shields" : "No shields")
-        case .fresh:
-            extraCell(icon: "sparkles", tint: Color(widgetHex: "#10b981"),
-                      label: "\(snap.modes.count) to play")
-        }
-    }
-
-    private func extraCell(icon: String, tint: Color, label: String) -> some View {
-        VStack(spacing: 2) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 9).fill(tint.opacity(0.12))
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(tint)
-            }
-            .frame(width: 34, height: 34)
-            Text(label)
-                .font(.system(size: 9, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.6)
-        }
-    }
-
-    @ViewBuilder
-    private var header: some View {
-        switch theme {
-        case .flawless:
-            banner(title: "FLAWLESS VICTORY!", gradient: flawlessTitleGradient,
-                   icon: "trophy.fill", iconColor: Color(widgetHex: "#b45309"))
-        case .sweep:
-            banner(title: "DAILY SWEEP!", gradient: sweepTitleGradient,
-                   icon: "sparkles", iconColor: Color(widgetHex: "#7c3aed"))
-        case .fresh:
-            banner(title: "FRESH PUZZLES!", gradient: freshTitleGradient,
-                   icon: "sparkles", iconColor: Color(widgetHex: "#10b981"))
-        case .midday:
-            banner(title: "DAILY PUZZLES", gradient: sweepTitleGradient,
-                   icon: "sparkles", iconColor: Color(widgetHex: "#c4a9fb"))
-        case .atRisk:
-            HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Color(widgetHex: "#f59e0b"))
-                Text("STREAK AT RISK").font(.system(size: 14, weight: .black, design: .rounded))
-                    .foregroundStyle(riskTitleGradient)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                Spacer()
-                StreakBadge(streak: snap.streak)
-                Text(hoursLeftLabel)
-                    .font(.system(size: 9, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 7).padding(.vertical, 2.5)
-                    .background(Capsule().fill(riskTitleGradient))
-            }
-        }
-    }
-
-    /// "3H LEFT" for the at-risk pill; the hourly 20–23h timeline entries keep
-    /// it honest without any widget refresh budget.
-    private var hoursLeftLabel: String {
-        let s = max(0, Int(nextLocalMidnight(after: date).timeIntervalSince(date)))
-        let h = Int((Double(s) / 3600).rounded(.up))
-        return h <= 1 ? "LAST HOUR" : "\(h)H LEFT"
-    }
-
-    /// Header-row banner in the home celebration's language: flanking icons +
-    /// gradient title (HomeView.banner), streak kept at the trailing edge.
-    private func banner(title: String, gradient: LinearGradient, icon: String, iconColor: Color) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 13, weight: .bold)).foregroundStyle(iconColor)
-            Text(title).font(.system(size: 14, weight: .black, design: .rounded))
-                .foregroundStyle(gradient)
-                .lineLimit(1).minimumScaleFactor(0.6)
-            Image(systemName: icon).font(.system(size: 13, weight: .bold)).foregroundStyle(iconColor)
-            Spacer()
-            StreakBadge(streak: snap.streak)
-        }
+        .frame(height: size)
     }
 }
 
-// MARK: - Lock screen (accessoryRectangular): count + streak at a glance
+// MARK: - Lock screen (accessoryRectangular): the headline + both rows at a glance
 
 struct AccessoryRectangularView: View {
     let snap: WSnapshot
-    let theme: WidgetTheme
-    private var done: Int { snap.modes.filter(\.played).count }
+    let date: Date
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
                 .widgetAccentable()
-            switch theme {
-            case .flawless: Text("Flawless victory! \(done)/\(snap.modes.count) won")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-            case .sweep: Text("Daily sweep! \(done)/\(snap.modes.count) played")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-            case .atRisk: Text("Streak at risk — play 1")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-            case .fresh: Text("\(snap.modes.count) fresh puzzles")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-            case .midday: Text("\(done)/\(snap.modes.count) dailies played")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-            }
-            if snap.streak > 0 {
-                Label("\(snap.streak) day streak", systemImage: "flame.fill")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-            }
+            Text(snap.headline(at: date))
+                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Text(snap.puzzleModes.isEmpty
+                    ? "Word \(snap.word.played)/\(snap.word.total)"
+                    : "Word \(snap.word.played)/\(snap.word.total) · Puzzles \(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -593,11 +521,13 @@ struct WordociousDailyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "WordociousDaily", provider: DailyProvider()) { entry in
             WidgetRootView(entry: entry)
-                .containerBackgroundCompatAuto(theme: WidgetTheme.from(entry.snap, at: entry.date))
+                .containerBackgroundCompatAuto(snap: entry.snap)
         }
         .configurationDisplayName("Daily Puzzles")
-        .description("Today's daily progress and your streak.")
+        .description("Today's Wordocious dailies and Puzzles, and your streak.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        // The frosted strip runs edge to edge; the views pad themselves.
+        .contentMarginsDisabled()
     }
 }
 
@@ -606,87 +536,73 @@ struct WidgetRootView: View {
     let entry: DailyEntry
 
     var body: some View {
-        let theme = WidgetTheme.from(entry.snap, at: entry.date)
         switch family {
-        case .systemMedium: MediumView(snap: entry.snap, theme: theme, date: entry.date)
-        case .accessoryRectangular: AccessoryRectangularView(snap: entry.snap, theme: theme)
-        default: SmallView(snap: entry.snap, theme: theme, date: entry.date)
+        case .systemMedium: MediumView(snap: entry.snap, date: entry.date)
+        case .accessoryRectangular: AccessoryRectangularView(snap: entry.snap, date: entry.date)
+        default: SmallView(snap: entry.snap, date: entry.date)
         }
     }
 }
 
 private struct BGAuto: ViewModifier {
     @Environment(\.widgetFamily) private var family
-    let theme: WidgetTheme
+    let snap: WSnapshot
     func body(content: Content) -> some View {
-        content.containerBackgroundCompat(accessory: family == .accessoryRectangular, theme: theme)
+        content.containerBackgroundCompat(accessory: family == .accessoryRectangular,
+                                          medium: family == .systemMedium, snap: snap)
     }
 }
 extension View {
-    func containerBackgroundCompatAuto(theme: WidgetTheme = .midday) -> some View {
-        modifier(BGAuto(theme: theme))
+    func containerBackgroundCompatAuto(snap: WSnapshot) -> some View {
+        modifier(BGAuto(snap: snap))
     }
 
-    /// iOS 17 requires containerBackground; iOS 16 uses plain padding.
-    /// Each theme tints the whole widget: sweep purple/pink, flawless amber,
-    /// at-risk warm amber, fresh mint — with a matching gradient frame.
-    /// (containerBackground's builder wants a VIEW — LinearGradient/Color both
-    /// are; AnyShapeStyle is not, which is why this isn't a ShapeStyle.)
+    /// iOS 17 requires containerBackground; iOS 16 draws the same background.
+    /// One window, two colors: the Wordocious tier color (top) blends into the
+    /// Puzzles tier color (bottom) under a white sheen, inside the brand gradient
+    /// frame — gold frame + gold halo on a Double Flawless. (containerBackground's
+    /// builder wants a VIEW, which is why this isn't a ShapeStyle.)
     @ViewBuilder
-    func containerBackgroundCompat(accessory: Bool = false, theme: WidgetTheme = .midday) -> some View {
-        let bg: AnyView = {
-            switch theme {
-            case .flawless:
-                return AnyView(LinearGradient(colors: [Color(widgetHex: "#fef3c7"), Color(widgetHex: "#fde68a")],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing))
-            case .sweep:
-                return AnyView(LinearGradient(colors: [Color(widgetHex: "#f5f3ff"), Color(widgetHex: "#fce7f3")],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing))
-            case .atRisk:
-                return AnyView(LinearGradient(colors: [Color(widgetHex: "#fef6ec"), Color(widgetHex: "#fbf0f3")],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing))
-            case .fresh:
-                return AnyView(LinearGradient(colors: [Color(widgetHex: "#f2fbf6"), Color(widgetHex: "#f0f5fe")],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing))
-            case .midday:
-                return AnyView(Color(widgetHex: "#f8f7ff"))
-            }
-        }()
-        let frame: LinearGradient = {
-            switch theme {
-            case .atRisk:
-                return LinearGradient(colors: [Color(widgetHex: "#f7c77e"), Color(widgetHex: "#f397c8")],
-                                      startPoint: .topLeading, endPoint: .bottomTrailing)
-            case .fresh:
-                return LinearGradient(colors: [Color(widgetHex: "#7ee0b8"), Color(widgetHex: "#8fb8f7")],
-                                      startPoint: .topLeading, endPoint: .bottomTrailing)
-            default:
-                return LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")],
-                                      startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
-        }()
-        let halo: Color = {
-            switch theme {
-            case .atRisk: return Color(widgetHex: "#f59e0b").opacity(0.10)
-            case .fresh: return Color(widgetHex: "#10b981").opacity(0.10)
-            default: return Color(widgetHex: "#8B5CF6").opacity(0.10)
-            }
-        }()
+    func containerBackgroundCompat(accessory: Bool, medium: Bool, snap: WSnapshot) -> some View {
+        let top = tierColor(HomeBanner.groupTier(snap.word), none: "#f3f1ff")
+        let bottom = tierColor(snap.puzzleModes.isEmpty ? HomeBanner.groupTier(snap.word) : HomeBanner.groupTier(snap.puzzleProgress),
+                               none: snap.puzzleModes.isEmpty ? "#f3f1ff" : "#eef0ff")
+        // Where the blend sits: under the Wordocious row → into the Puzzles row.
+        let from: CGFloat = medium ? 0.40 : 0.50
+        let to: CGFloat = medium ? 0.58 : 0.75
+        let double = isDoubleFlawless(snap)
+        let bg = ZStack {
+            LinearGradient(stops: [.init(color: top, location: 0), .init(color: top, location: from),
+                                   .init(color: bottom, location: to), .init(color: bottom, location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+            LinearGradient(stops: [.init(color: .white.opacity(0.3), location: 0), .init(color: .white.opacity(0), location: 0.55)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+        let frame = double
+            ? LinearGradient(colors: [Color(widgetHex: "#fbbf24"), Color(widgetHex: "#f59e0b")], startPoint: .topLeading, endPoint: .bottomTrailing)
+            : LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        // A widget can't glow past its own edge, so the gold glow is an inner halo.
+        let halo = double ? Color(widgetHex: "#f59e0b").opacity(0.45) : Color(widgetHex: "#8B5CF6").opacity(0.10)
         if #available(iOS 17.0, *) {
-            // Lock-screen accessories tint themselves; a solid brand background
-            // would render as an opaque slab there. Home-screen widgets get the
-            // brand frame: a soft inner halo + a crisp gradient stroke on the
-            // widget's own corner shape — drawn in the background (not an
-            // overlay) so it reaches the true edge past content margins.
+            // Lock-screen accessories tint themselves; a solid background would
+            // render as an opaque slab there. Home-screen widgets get the frame:
+            // a soft inner halo + a crisp gradient stroke on the widget's own
+            // corner shape — drawn in the background so it reaches the true edge.
             containerBackground(for: .widget) {
                 if accessory { AnyView(Color.clear) } else { AnyView(ZStack {
                     bg
-                    ContainerRelativeShape().strokeBorder(halo, lineWidth: 7)
+                    ContainerRelativeShape().strokeBorder(halo, lineWidth: double ? 9 : 7)
                     ContainerRelativeShape().strokeBorder(frame, lineWidth: 2.5)
                 }) }
             }
         } else {
-            if accessory { self } else { padding(12).background(bg) }
+            if accessory { self } else {
+                background(ZStack {
+                    bg
+                    ContainerRelativeShape().strokeBorder(halo, lineWidth: double ? 9 : 7)
+                    ContainerRelativeShape().strokeBorder(frame, lineWidth: 2.5)
+                })
+            }
         }
     }
 }

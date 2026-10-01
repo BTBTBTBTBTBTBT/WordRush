@@ -49,8 +49,8 @@ import com.wordocious.app.ui.theme.WTheme
 /**
  * The Stats tab's game rail (Stats + Friends redesign D2, founder 2026-09-26:
  * "I don't want to swipe right through 19 different games … flow like
- * butter"). One horizontal row of chips: Today · the eight sweep games · VS ·
- * the More Games titles · All-time. Tap jumps straight to that page; a swipe on
+ * butter"). One horizontal row of chips: Today · All-time · the eight sweep games ·
+ * the More Games titles · VS (last, founder 2026-10-01). Tap jumps straight to that page; a swipe on
  * the page below moves one chip (ProfileScreen owns that gesture); HOLD the
  * Today chip (or tap the grid button) for the whole set as a 5-wide grid so any
  * game is one tap away. Each game chip wears today's W/L dot. Twin of web
@@ -97,8 +97,9 @@ fun buildRailItems(
         add(RailItem(RAIL_TODAY, "Today", icon = Icons.Filled.CalendarToday, accent = Color(0xFF7C3AED)))
         add(RailItem(RAIL_ALL, "All-time", icon = Icons.Filled.EmojiEvents, accent = Color(0xFFD97706)))
         sweepCards.forEach { add(game(it)) }
-        add(RailItem(RAIL_VS, "VS", accent = Color(0xFFEC4899), dot = vsDailyWon))
         moreCards.forEach { add(game(it)) }
+        // VS is the last chip (founder, 2026-10-01: rarely played, so it sits after Starsweep, not between the games).
+        add(RailItem(RAIL_VS, "VS", accent = Color(0xFFEC4899), dot = vsDailyWon))
     }
 }
 

@@ -92,10 +92,6 @@ fun HomeScreen(
     onVs: (ModeCard) -> Unit = {},
     onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit = { _, _ -> },
     onNavigate: (String) -> Unit = {},
-    /** More Games sheet open state — hoisted to MainScreen so a game launched from the
-     *  sheet can return to it (founder + JP, 2026-09-26). */
-    showMore: Boolean = false,
-    onShowMoreChange: (Boolean) -> Unit = {},
 ) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     // Seed from the day-keyed cache so cold launches don't flash unbadged
@@ -131,8 +127,6 @@ fun HomeScreen(
     // users get a Daily/Unlimited toggle and replay unlimited (fresh seeds).
     val isPro = com.wordocious.app.data.AuthService.isProActive
     var limitModal by remember { mutableStateOf<ModeCard?>(null) }
-    // The More Games band's bounds (root coords) — where the More Games panel grows from.
-    var moreBandBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     // Contextual Pro prompt (web pro-prompt-modal.tsx): streak >= 7, not Pro,
     // not previously dismissed (local pref for instant gating + server
     // profiles.pro_prompt_shown for cross-device honor).
@@ -252,19 +246,82 @@ fun HomeScreen(
             // a CompositionLocalProvider adds no layout node, so the Column's
             // spacedBy(8.dp) still applies to each child individually.
             ProvideTextStyle(homeTightTextStyle()) {
-            // Pro-only Daily/Unlimited toggle; Unlimited swaps the daily hero.
-            // Daily hero shows Daily Sweep! / Flawless Victory! once all 9 are done.
             // Admin-authored announcements (web/iOS AnnouncementsBanner parity).
             AnnouncementsBanner()
             // Pending VS invites banner (web pending-invites-banner.tsx).
             PendingInvitesBanner(onJoinInvite = onJoinInvite)
-            if (isPro) PlayModeToggle(playMode) {
-                playMode = it
-                com.wordocious.app.data.SettingsPref.set("pref-play-mode", it.name.lowercase())
+
+            // Home redesign (founder, 2026-10-01; docs/HOME_REDESIGN_SPEC.md): ONE banner
+            // replaces the Pro Daily/Unlimited pill, the Daily Challenge / Unlimited /
+            // Sweep heroes and the top Word of the Day card. Its rows are the two
+            // sections below: the eight Wordocious dailies and the ten Puzzles (the
+            // More Games dailies, remote flags honored).
+            val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+            val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+            val visibleCards = MODE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+            val visibleMore = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+            val wordCards = visibleCards.filter { !it.homeWide }
+            val puzzleCards = moreDailyModes(visibleMore)
+            val wordKeys = wordCards.mapNotNull { it.dbKey }
+            val puzzleKeys = puzzleCards.mapNotNull { it.dbKey }
+            fun progress(keys: List<String>) = com.wordocious.core.GroupProgress(
+                played = keys.count { it in completions }, won = keys.count { completions[it]?.completed == true }, total = keys.size,
+            )
+            // Row runs: the Wordocious row reads the existing Daily Sweep stats (the
+            // Stats tab's daily_bonuses walk); the Puzzles row walks the player's solo
+            // daily_results for the visible Puzzles (shared dayStreaks). Seeded from the
+            // day-stamped cache so the flames paint at once; both refetch the moment a
+            // daily's row is on the server.
+            val recordedTick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
+            val authUserId = authProfile?.id
+            val cachedRows = remember { com.wordocious.app.data.HomeStreaksService.cachedRowStreaks() }
+            val wordStreaks by produceState(
+                initialValue = com.wordocious.core.DayStreaks(cachedRows?.wordSweep ?: 0, cachedRows?.wordFlawless ?: 0),
+                recordedTick, authUserId,
+            ) {
+                if (authUserId == null) { value = com.wordocious.core.DayStreaks(0, 0); return@produceState }
+                val s = com.wordocious.app.data.MatchStatsService.dailySweepStats()
+                value = com.wordocious.core.DayStreaks(s.currentSweepStreak, s.currentFlawlessStreak)
             }
-            if (unlimitedMode) UnlimitedHero()
-            else DailyHero(completions) { com.wordocious.app.data.DailySweepShare.share(context, completions) }
-            WordOfTheDayCard(onClick = { onNavigate("pastwords") })
+            val puzzleStreaks by produceState(
+                initialValue = com.wordocious.core.DayStreaks(cachedRows?.puzzlesSweep ?: 0, cachedRows?.puzzlesFlawless ?: 0),
+                recordedTick, authUserId, puzzleKeys,
+            ) {
+                value = if (authUserId == null) com.wordocious.core.DayStreaks(0, 0)
+                        else com.wordocious.app.data.HomeStreaksService.puzzleStreaks(puzzleKeys)
+            }
+            // Keep the widget's row runs in step with the banner's.
+            androidx.compose.runtime.LaunchedEffect(wordStreaks, puzzleStreaks, authUserId) {
+                if (authUserId != null) com.wordocious.app.data.HomeStreaksService.cacheRowStreaks(wordStreaks, puzzleStreaks)
+            }
+            // Unlimited's "N PLAYED TODAY": refetched whenever Unlimited is on and Home comes
+            // back on screen (a finished unlimited game records on the way out).
+            var unlimitedCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+            androidx.compose.runtime.LaunchedEffect(unlimitedMode, homeHidden, authUserId) {
+                if (unlimitedMode && !homeHidden) unlimitedCounts = com.wordocious.app.data.HomeStreaksService.unlimitedCountsToday()
+            }
+            val secs by rememberMidnightCountdown()
+            // Free-user lock: one daily per mode; a played card opens ModeLimitModal (web parity).
+            val openCard: (ModeCard) -> Unit = { card ->
+                val played = card.dbKey?.let { it in completions } == true
+                if (!isPro && !unlimitedMode && played) limitModal = card
+                else onSelectMode(card, unlimitedMode && card.engineMode != null)
+            }
+            HomeBannerView(
+                word = BannerRow(wordCards, progress(wordKeys), wordStreaks, wordKeys.sumOf { unlimitedCounts[it] ?: 0 }),
+                puzzles = BannerRow(puzzleCards, progress(puzzleKeys), puzzleStreaks, puzzleKeys.sumOf { unlimitedCounts[it] ?: 0 }),
+                completions = completions,
+                unlimited = unlimitedMode,
+                isPro = isPro,
+                onModeChange = {
+                    playMode = it
+                    com.wordocious.app.data.SettingsPref.set("pref-play-mode", it.name.lowercase())
+                },
+                name = authProfile?.username.orEmpty(),
+                clock = formatCountdown(secs),
+                onOpen = openCard,
+                onShare = { headline -> com.wordocious.app.data.DailySweepShare.shareTodayProgress(context, completions, headline) },
+            )
 
             // U2: first-game suggestion for brand-new accounts — signed in with
             // ZERO recorded games (total_wins + total_losses == 0; the profiles
@@ -289,81 +346,23 @@ fun HomeScreen(
                 )
             }
 
-            Text(
-                "GAME MODES",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = WTheme.textMuted,
-                letterSpacing = 1.sp,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+            // Two sections of the SAME mode card, two across: the Wordocious dailies,
+            // then the Puzzles (the old More Games sheet's cards, catalog order, same
+            // lock/badge rules). The More Games band and sheet are gone.
+            HomeSectionHeader("WORDOCIOUS DAILIES")
+            ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
+            HomeSectionHeader("PUZZLES")
+            ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = openCard)
 
-            // 2-column grid (web grid-cols-2 gap-2)
-            // Remote flags (Stage 7): the More tile and every More Games title
-            // are shown only when their app_flags row says so for this viewer.
-            val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
-            val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
-            val visibleCards = MODE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
-            val visibleMore = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
-            // Founder + JP (2026-09-26): the grid is exactly the eight sweep games; VS Battle and
-            // More Games are `homeWide` in the catalog and render as full-width tiles below.
-            visibleCards.filter { !it.homeWide }.chunked(2).forEach { rowCards ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    rowCards.forEach { card ->
-                        val isVsCard = card.id == "vs"
-                        val completion = card.engineMode?.let { completions[it.name] }
-                        // Unlimited mode: these aren't the daily puzzle — never show the
-                        // daily W/L result or lock; every tap starts a fresh puzzle (web parity).
-                        val shownCompletion = if (unlimitedMode) null else completion
-                        // VS card (daily only): reflect today's daily-VS W/L (no solo row).
-                        val vsWon = if (!unlimitedMode && isVsCard) vsDailyWon else null
-                        // Free user who used today's daily VS → locked like other modes.
-                        // iOS locks the VS card on VSPlayLimit.hasPlayedToday()
-                        // (HomeView.swift:532) — the play is consumed at match
-                        // START. Keying off a finished result left the card bright
-                        // after an abandoned daily VS, so tapping it dropped the
-                        // player into a match that then refused to play.
-                        val vsUsed = isVsCard &&
-                            (com.wordocious.app.data.VSPlayLimit.hasPlayedToday() || vsDailyWon != null)
-                        // The More Games tile: "N of M played" over the More Games
-                        // dailies in Daily mode, its description in Unlimited. Never
-                        // locks, never tints — it opens the sheet.
-                        val isMore = card.id == "more"
-                        val moreSubtitle = if (isMore) {
-                            if (unlimitedMode) card.desc else morePlayedText(completions.keys, visibleMore)
-                        } else null
-                        val isLocked = !isPro && !isMore && (completion != null || vsUsed)
-                        // Per-card VS swords shortcut removed (redundant) — VS is
-                        // reachable only from the dedicated VS Battle card.
-                        val showVs = false
-                        // The VS card needs the unlimited flag too (no engineMode) so the
-                        // handler can choose lobby (unlimited) vs daily match.
-                        val unlimited = unlimitedMode && (card.engineMode != null || isVsCard)
-                        ModeCardView(card, shownCompletion, isLocked, showVs, Modifier.weight(1f), vsWon = vsWon, subtitleOverride = moreSubtitle, onVs = { onVs(card) }) {
-                            if (isMore) onShowMoreChange(true)
-                            else if (isLocked) limitModal = card
-                            else onSelectMode(card, unlimited)
-                        }
-                    }
-                    if (rowCards.size == 1) Spacer(Modifier.weight(1f))
-                }
-            }
+            WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
 
-            // More Games band directly under the grid — the ten icons and "N of M played"; in a
-            // More Games Sweep / Flawless it is the celebration surface (visual only).
-            visibleCards.firstOrNull { it.id == "more" }?.let { more ->
-                MoreGamesBand(
-                    card = more, modes = visibleMore, unlimitedMode = unlimitedMode, completions = completions,
-                    onOpen = { onShowMoreChange(true) },
-                    onShare = { com.wordocious.app.data.DailySweepShare.shareMore(context, completions) },
-                    onPositioned = { moreBandBounds = it },
-                )
-            }
-            // VS Battle merged with the old LIVE bar, at the very bottom of the game area.
+            // VS Battle merged with the old LIVE bar, last in the game area.
             visibleCards.firstOrNull { it.id == "vs" }?.let { vs ->
                 VSLiveTile(
                     card = vs, vsDailyWon = vsDailyWon, unlimitedMode = unlimitedMode, isPro = isPro,
                     onOpen = {
+                        // iOS locks the VS card on VSPlayLimit.hasPlayedToday() — the play is
+                        // consumed at match START, so an abandoned daily VS still counts.
                         val vsUsed = com.wordocious.app.data.VSPlayLimit.hasPlayedToday() || vsDailyWon != null
                         if (!isPro && vsUsed && !unlimitedMode) limitModal = vs else onSelectMode(vs, unlimitedMode)
                     },
@@ -405,30 +404,6 @@ fun HomeScreen(
                 onGoPro = onGoPro,
                 onViewPuzzle = viewPuzzle,
             )
-        }
-
-        // More Games (Stage 5): the same cards, sectioned; a pick routes through
-        // onSelectMode exactly like a grid tap; a locked card opens the same
-        // ModeLimitModal above. The panel GROWS OUT OF the band (founder, 2026-09-26)
-        // rather than fanning up as a bottom sheet — MoreGamesMorphPanel.
-        run {
-            val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
-            val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
-            // Opening the sheet warms every bank off-main (idempotent) so the tapped game's
-            // session finds its puzzles decoded (Prewarm).
-            androidx.compose.runtime.LaunchedEffect(showMore) { if (showMore) com.wordocious.app.data.Prewarm.banks() }
-            MoreGamesMorphPanel(visible = showMore, origin = moreBandBounds, onRequestClose = { onShowMoreChange(false) }) {
-                MoreGamesSheetContent(
-                    modifier = Modifier.fillMaxSize(),
-                    modes = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) },
-                    completions = completions,
-                    unlimitedMode = unlimitedMode,
-                    isPro = isPro,
-                    onSelect = { card, unlimited -> onShowMoreChange(false); onSelectMode(card, unlimited) },
-                    onLocked = { card -> onShowMoreChange(false); limitModal = card },
-                    onDismiss = { onShowMoreChange(false) },
-                )
-            }
         }
 
         // Pro-prompt banner pinned to the bottom (web: fixed bottom-16 card).
@@ -573,10 +548,6 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
     }
 }
 
-/** Shared fixed height for ALL home heroes (Daily / Sweep / Flawless / Unlimited)
- *  so toggling Daily<->Unlimited never shifts the game-cards grid (web parity). */
-internal val HERO_HEIGHT = 78.dp
-
 /**
  * Home text discipline (iOS density parity). Every Text here inherits Material3
  * bodyLarge, whose DEFAULT lineHeight is a flat 24sp — so a 10sp caption rides
@@ -611,79 +582,6 @@ internal fun CappedFontScale(max: Float = 1.3f, content: @Composable () -> Unit)
     )
 }
 
-@Composable
-private fun DailyHero(
-    completions: Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>,
-    onShare: () -> Unit = {},
-) {
-    val secs by rememberMidnightCountdown()
-    val sweep = com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions)
-    val total = com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
-    val completed = sweep.size
-    val wins = sweep.values.count { it.completed }
-    val allDone = completed >= total
-    val flawless = allDone && wins >= total
-    val totals = remember(completions) { com.wordocious.app.data.DailyCompletionsService.totals(completions) }
-    val totalTime = "%d:%02d".format(totals.totalTimeSeconds / 60, totals.totalTimeSeconds % 60)
-    // Sweep/Flawless variants replace the daily challenge once all 9 are done (web parity).
-    val grad = when {
-        flawless -> listOf(Color(0xFFFEF3C7), Color(0xFFFDE68A))
-        allDone -> listOf(Color(0xFFF5F3FF), Color(0xFFFCE7F3))
-        else -> listOf(Color(0xFFEDE9FE), Color(0xFFDDD6FE))
-    }
-    val border = when { flawless -> Color(0xFFF59E0B); allDone -> Color(0xFFC4B5FD); else -> Color(0xFFA78BFA) }
-    // Fixed 78dp chrome: capped fontScale so large system text can't overflow it.
-    CappedFontScale {
-    Column(
-        modifier = Modifier.fillMaxWidth().height(HERO_HEIGHT)
-            .clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(grad))
-            .then(if (allDone) Modifier.heroShimmer() else Modifier)
-            .then(if (allDone) Modifier.clickableNoRipple { onShare() } else Modifier)
-            .border(1.5.dp, border, RoundedCornerShape(14.dp)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        if (allDone) {
-            val titleGrad = if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309)) else listOf(Color(0xFFA78BFA), Color(0xFFEC4899))
-            val subColor = if (flawless) Color(0xFFB45309) else Color(0xFF6D28D9)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (flawless) {
-                    Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
-                    Text("FLAWLESS VICTORY!", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad), fontFamily = Nunito))
-                    Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
-                } else {
-                    Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
-                    Text("DAILY SWEEP!", fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad), fontFamily = Nunito))
-                    Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFFEC4899), modifier = Modifier.size(16.dp))
-                }
-            }
-            // §248 (founder: the main page must "clearly show that I am on a
-            // 4 day win streak" — same footprint, the Daily/Unlimited toggle
-            // depends on it): a live streak replaces the redundant "All 9 won"
-            // — text swap only, HERO_HEIGHT untouched.
-            val homeStreak = if (flawless) com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak() else 0
-            Text(
-                when {
-                    flawless && homeStreak >= 2 -> "🏆 $homeStreak-day streak · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts"
-                    flawless -> "All $total won · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts"
-                    else -> "All $total done · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts"
-                },
-                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = subColor, modifier = Modifier.padding(top = 2.dp),
-            )
-            Text("Tap to share · Next in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(17.dp))
-                Text("Daily Challenge", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))), fontFamily = Nunito))
-                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(17.dp))
-            }
-            Text("${com.wordocious.app.ModeGen.sweep.size} puzzles · Leaderboards & medals", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
-            Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9).copy(alpha = 0.9f), modifier = Modifier.padding(top = 2.dp))
-        }
-    }
-    }
-}
-
 /** Today's Word of the Day plus the dictionary entry that qualified it. */
 private data class WordOfTheDay(
     val word: String,
@@ -704,8 +602,13 @@ private fun WordsService.Entry.toWotd() = WordOfTheDay(
     if (definition.isNotEmpty()) com.wordocious.app.data.DefinitionService.WordDefinition(phonetic, partOfSpeech, definition) else null,
 )
 
+/**
+ * Today's plain Word of the Day card (word, phonetic, part of speech, definition).
+ * Since the home redesign (2026-10-01) it is the quiz card's fallback: shown when
+ * /api/wotd has no quiz for the day or the request fails (WordOfTheDayQuiz.kt).
+ */
 @Composable
-private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
+internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
     // Nothing here may block the UI thread (founder, 2026-09-29): the card used to call
     // DictionaryLoader.ensureLoaded() on main during cold start. It now paints from the
     // last-persisted /api/words copy first (memory, then disk decoded off-main), and the
@@ -993,7 +896,7 @@ private fun FooterLinks(onNavigate: (String) -> Unit = {}) {
 }
 
 @Composable
-private fun rememberMidnightCountdown(): androidx.compose.runtime.State<Long> {
+internal fun rememberMidnightCountdown(): androidx.compose.runtime.State<Long> {
   val hidden = LocalTabHidden.current
   return produceState(initialValue = secondsUntilLocalMidnight()) {
     while (true) {
@@ -1019,31 +922,52 @@ private fun secondsUntilLocalMidnight(): Long {
     return ((cal.timeInMillis - System.currentTimeMillis()) / 1000L).coerceAtLeast(0)
 }
 
-private fun formatCountdown(secs: Long): String {
+internal fun formatCountdown(secs: Long): String {
     val h = secs / 3600
     val m = (secs % 3600) / 60
     val s = secs % 60
     return "%02d:%02d:%02d".format(h, m, s)
 }
 
-/** Subtle diagonal foil shimmer sweeping across the Sweep/Flawless banner. */
-private fun Modifier.heroShimmer(): Modifier = composed {
-    val transition = rememberInfiniteTransition(label = "heroShimmer")
-    val x by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
-        label = "x",
+/** Home section header ("WORDOCIOUS DAILIES", "PUZZLES"): the old GAME MODES label style. */
+@Composable
+private fun HomeSectionHeader(title: String) {
+    Text(
+        title,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color = WTheme.textMuted,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(top = 2.dp),
     )
-    drawWithContent {
-        drawContent()
-        val w = size.width
-        val bandW = w * 0.4f
-        val start = -bandW + x * (w + bandW * 2f)
-        drawRect(
-            brush = Brush.horizontalGradient(
-                colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.4f), Color.Transparent),
-                startX = start, endX = start + bandW,
-            ),
-        )
+}
+
+/**
+ * A home section's 2-column grid (web grid-cols-2 gap-2) of the shared mode card.
+ * Daily: today's W/L badge + tint, and a free player's played card locks (dimmed;
+ * tap → ModeLimitModal). Unlimited (Pro): no badges, no lock, an infinity mark,
+ * and every tap starts a fresh puzzle.
+ */
+@Composable
+private fun ModeCardGrid(
+    cards: List<ModeCard>,
+    completions: Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>,
+    unlimitedMode: Boolean,
+    isPro: Boolean,
+    onOpen: (ModeCard) -> Unit,
+) {
+    cards.chunked(2).forEach { rowCards ->
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            rowCards.forEach { card ->
+                val completion = card.dbKey?.let { completions[it] }
+                val shownCompletion = if (unlimitedMode) null else completion
+                val isLocked = !isPro && !unlimitedMode && completion != null
+                ModeCardView(
+                    card, shownCompletion, isLocked, showVs = false, Modifier.weight(1f),
+                    unlimited = unlimitedMode, onVs = {},
+                ) { onOpen(card) }
+            }
+            if (rowCards.size == 1) Spacer(Modifier.weight(1f))
+        }
     }
 }
