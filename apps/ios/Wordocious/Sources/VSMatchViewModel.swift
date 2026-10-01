@@ -220,6 +220,9 @@ final class VSMatchViewModel: ObservableObject {
     @Published var searchStartedAt: Date?
     /// KEEP WAITING was tapped: no automatic step-in (PLAY NOW stays).
     @Published var keepWaiting = false
+    /// The line under the step-in card's buttons after KEEP WAITING pinged
+    /// the opted-in players (§13); nil keeps "We’ll keep looking".
+    @Published var lookingNote: String?
     private var stepInTask: Task<Void, Never>?
     private var humanMatchFound = false
     private var dailySeedValue: String?
@@ -241,6 +244,9 @@ final class VSMatchViewModel: ObservableObject {
         if case .live = intent { return inviteCode == nil }
         return false
     }
+    /// "Ping me when someone's looking" (§13): Pro, live random queue only — not
+    /// the Daily Battle, not a private invite.
+    var canPingLooking: Bool { canStepIn && isPro && !dailyVsActive }
     /// The bot that steps in: Lexi for the Daily Battle, else the ladder's next bot.
     var stepInKind: CpuKind { VsLobbyKit.stepInKind(isDaily: dailyVsActive) }
 
@@ -412,9 +418,16 @@ final class VSMatchViewModel: ObservableObject {
     }
 
     /// KEEP WAITING: stay in the human queue; PLAY NOW stays available.
+    /// Pro on the live random queue also pings the players who opted in (§13).
     func keepWaitingTapped() {
         keepWaiting = true
         stepInTask?.cancel()
+        guard canPingLooking else { return }
+        let m = mode
+        Task { [weak self] in
+            guard let p = await VsLookingService.ping(gameMode: m) else { return }
+            self?.lookingNote = VsLookingService.line(p)
+        }
     }
 
     /// PLAY <BOT> NOW, or the automatic step-in at 0:15. A person who matched
@@ -548,27 +561,16 @@ final class VSMatchViewModel: ObservableObject {
         challengeOutcome = VSChallengeOutcome(mine: mine, theirs: c.run, outcome: outcome, opponentName: c.challenger.username)
         screen = .challengeResult
         guard AuthService.shared.profile != nil else { return }
-        let theMode = mode, theSeed = seed, code = c.code, oppId = c.challenger.id
-        let secs = Int((Double(mine.timeMs) / 1000).rounded())
+        let pending = VsPendingRaces.make(code: c.code, mode: mode, seed: seed, run: mine)
+        let oppId = c.challenger.id
         Task { [weak self] in
-            switch await VsChallengeService.postResult(code: code, run: mine) {
-            case .success(let posted):
-                if posted.alreadyRecorded == true {
-                    self?.challengeNote = "You already raced this run — your first result stands."
-                } else {
-                    // A draw is NOT a loss: isDraw counts the game only (web parity).
-                    self?.xpResult = await GameResultsService.record(
-                        gameMode: theMode, playType: "vs", won: outcome == .win, guessCount: mine.guesses,
-                        timeSeconds: secs, boardsSolved: mine.boardsSolved, totalBoards: mine.totalBoards,
-                        seed: theSeed, isDraw: outcome == .draw)
-                    if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
-                        await AchievementService.checkAchievements(
-                            userId: uid, gameMode: theMode.rawValue, playType: "vs", won: outcome == .win,
-                            guessCount: mine.guesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
-                    }
-                }
-            case .failure(let e):
-                self?.challengeNote = e.message
+            // Accepted → our side (+ XP) is recorded; offline / 5xx → kept in the
+            // pending list and retried from the lobby (§14).
+            switch await VsPendingRaces.submit(pending) {
+            case .recorded(let xp): self?.xpResult = xp
+            case .alreadyRecorded: self?.challengeNote = "You already raced this run — your first result stands."
+            case .saved: self?.challengeNote = VsPendingRaces.savedNote
+            case .failed(let message): self?.challengeNote = message
             }
             // The server wrote the shared matches row — refresh the head-to-head.
             if let myId = AuthService.shared.profile?.id {
@@ -580,7 +582,8 @@ final class VSMatchViewModel: ObservableObject {
     /// Leaving now would actually forfeit (a recorded loss): only while still
     /// MID-GAME. Once finished (waiting screen) — or once the match is over /
     /// gone — leaving records nothing.
-    var leaveWouldForfeit: Bool { screen == .match && myStatus == nil && !isLocalOpponent && !resultRecorded }
+    /// A race quit counts too (§14): the run posts as not solved, a loss.
+    var leaveWouldForfeit: Bool { screen == .match && myStatus == nil && (!isLocalOpponent || isRace) && !resultRecorded }
     /// A bot, a challenge ghost or no opponent at all — nothing on a server to forfeit.
     var isLocalOpponent: Bool { isCpu || isRace || isSend }
 
@@ -600,6 +603,23 @@ final class VSMatchViewModel: ObservableObject {
         // nothing (parity with the clean-end CPU path, which only writes the
         // separate vs_cpu bucket — and with the web, where a CPU abandon is a
         // pure teardown).
+        // A friend's race quit mid-game is the same on every platform (§14): the
+        // run posts as NOT solved and the racer's side records as a loss (kept
+        // in the pending list when offline). Quitting a challenge send sends
+        // nothing; quitting a bot game records nothing.
+        if screen == .match, myStatus == nil, !resultRecorded, let c = raceChallenge {
+            resultRecorded = true
+            if AuthService.shared.profile != nil {
+                let elapsed = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs)) : 0
+                let rows = game?.rowsUsed ?? proper?.guesses.count ?? myGuessLog.count
+                let run = VsChallengeRun(solved: false, boardsSolved: 0, totalBoards: totalBoards, guesses: rows,
+                                         timeMs: elapsed, guessLog: myGuessLog.map(\.guess),
+                                         solutions: BotEngine.matchSolutions(seed: seed, mode: mode))
+                let pending = VsPendingRaces.make(code: c.code, mode: mode, seed: seed, run: run, quit: true)
+                // Outlives this screen (it dismisses right away).
+                Task { _ = await VsPendingRaces.submit(pending) }
+            }
+        }
         if screen == .match, myStatus == nil, !resultRecorded, !isLocalOpponent {
             resultRecorded = true
             let secs = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs) / 1000) : 0

@@ -163,3 +163,19 @@ private fun NotificationPrefsDialog(profile: Profile, onDismiss: () -> Unit) {
         },
     )
 }
+
+/**
+ * Write one opt-in into profiles.notification_prefs, merged into the existing
+ * object exactly like the dialog's toggles do, then refresh the profile. Used
+ * by the live search's "Ping me when someone's looking" switch (VS overhaul
+ * §13; `vsLooking` — a missing key there means OFF).
+ */
+suspend fun saveNotificationPref(profile: Profile, key: String, value: Boolean) {
+    val next = (profile.notificationPrefs ?: emptyMap()) + (key to value)
+    runCatching {
+        SupabaseConfig.client.postgrest["profiles"].update({
+            set("notification_prefs", buildJsonObject { next.forEach { (k, v) -> put(k, JsonPrimitive(v)) } })
+        }) { filter { eq("id", profile.id) } }
+    }
+    AuthService.refreshProfile()
+}

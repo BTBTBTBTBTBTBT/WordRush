@@ -70,6 +70,8 @@ interface ResultProps {
   solutions: string[];
   h2h: HeadToHeadRecord | null;
   xp: number | null;
+  /** A line under the window (§14: the result was saved to send when back online). */
+  note?: string | null;
   onClose: () => void;
   onChallengeBack: () => void;
   onHome: () => void;
@@ -77,7 +79,7 @@ interface ResultProps {
 }
 
 /** The race result (§5). */
-export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, onClose, onChallengeBack, onHome, onShare }: ResultProps) {
+export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, note, onClose, onChallengeBack, onHome, onShare }: ResultProps) {
   const youWon = outcome === 'win';
   const theyWon = outcome === 'loss';
   const left = outcome === 'draw' ? '#ece8ff' : youWon ? '#ebd6fd' : '#e2e6ff';
@@ -127,6 +129,10 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, o
             {column(`@${them.name}`, them, theyWon)}
           </div>
         </div>
+
+        {note && (
+          <p className="text-center text-[12px] font-bold" style={{ color: '#6d28d9' }}>{note}</p>
+        )}
 
         {(h2hText || xp) && (
           <div className="flex items-center gap-3 p-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: '0 2px 10px rgba(76,29,149,0.07)' }}>

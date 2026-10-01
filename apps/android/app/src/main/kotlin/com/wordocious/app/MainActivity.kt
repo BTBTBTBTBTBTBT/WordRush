@@ -67,6 +67,8 @@ class MainActivity : ComponentActivity() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             kotlinx.coroutines.delay(3_000) // let auth restore the session first
             com.wordocious.app.data.PendingRecords.drain()
+            // VS races whose result POST failed offline (§14) — the lobby retries too.
+            com.wordocious.app.data.VsPendingRaces.retry()
             // Finished-save sweep AFTER the queue drain: records any LOCAL
             // finished daily whose record flow never even started (crash on the
             // finish frame / stale positional `recorded` flag / no session at

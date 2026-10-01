@@ -249,5 +249,40 @@ the art in a circle; keep the names and banter.
 
 ## 12. Not in this build
 
-The "ping me when someone's looking" switch (needs server work), server-synced
-progression, and per-bot win–loss lines on the ladder.
+Server-synced progression, and per-bot win–loss lines on the ladder.
+
+## 13. "Ping me when someone's looking" (founder, 2026-10-01 follow-up)
+
+- Opt-in preference `profiles.notification_prefs.vsLooking` — a MISSING key means
+  **OFF** (unlike the friends categories). Clients write it the same way the
+  notification-prefs toggles write `notification_prefs` (merge into the existing object).
+- Live search screen (§6), Pro only, live random queue only (not the Daily Battle): a row
+  under the step-in card — bell icon, `Ping me when someone's looking for <Mode>`, a
+  switch (on = solid `#0f766e`) bound to `vsLooking`.
+- KEEP WAITING (Pro, live random queue) also calls `POST /api/vs/looking {gameMode}`
+  → `{pinged, throttled}`. The card line under the buttons then reads
+  `We pinged N players who play live.` (N = 1: `We pinged 1 player who plays live.`),
+  `Nobody has pings on yet. We'll keep looking.` when 0, and stays `We'll keep looking`
+  when throttled.
+- The push (`Someone's looking for a <Mode> match`) carries `url: /vs/live/<MODE>`:
+  web redirects into that mode's live queue; natives route it to the live search for
+  that mode (same as tapping LIVE in the lobby with that mode selected).
+- Server: `app/api/vs/looking/route.ts`, table `vs_looking_pings` (sender ≤ 1 per 10 min,
+  recipient ≤ 1 per 30 min, ≤ 50 recipients, Pro senders and recipients only).
+
+## 14. Race results never get lost (founder, 2026-10-01 follow-up)
+
+- Racing a friend's run, the racer's own side (+ XP) is recorded only after the server
+  accepts the result (`alreadyRecorded: false`), as built. NEW: when the result POST fails
+  with a network error or a 5xx, save it to a local pending list
+  `wordocious-vs-pending-races` = `[{code, gameMode, seed, run, savedAt}]` (one per code)
+  and show the result screen from the locally computed outcome with the line
+  `Saved. We'll send your result when you're back online.`
+- Every time the VS lobby loads (and on app start where convenient), retry each pending
+  item: success with `alreadyRecorded: false` → record the racer's side (+ XP) then drop
+  it; success with `alreadyRecorded: true` → drop; a 4xx (400/403/404/410) → drop;
+  network/5xx → keep; drop anything older than 3 days.
+- Quitting a race mid-game is the SAME on all three platforms: post the run as unsolved
+  (a loss, like a live forfeit) and record the racer's side as a loss (through the same
+  pending path if offline). Leaving a challenge-send game mid-game sends nothing. Leaving
+  a bot game records nothing.

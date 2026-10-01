@@ -307,6 +307,29 @@ fun MainScreen() {
             }
         }
     }
+    // "Someone's looking" pushes (/vs/live/<MODE>, §13) open that mode's live
+    // search — the lobby's LIVE tile with that mode selected (LIVE is Pro; a
+    // lapsed Pro lands in the lobby instead).
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        com.wordocious.app.data.DeepLinkRouter.vsLive.collect { m ->
+            if (m != null) {
+                com.wordocious.app.data.DeepLinkRouter.vsLive.value = null
+                // A cold start from the push: give the profile a moment to land so Pro reads true.
+                kotlinx.coroutines.withTimeoutOrNull(5_000) {
+                    com.wordocious.app.data.AuthService.profile.first { it != null }
+                }
+                activeGame = null; activeSeed = null
+                vsInvite = null; vsChallengeCode = null
+                com.wordocious.app.data.VsLobbyStore.setSelectedMode(m)
+                vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main
+                if (com.wordocious.app.data.AuthService.isProActive) {
+                    vsActive = com.wordocious.app.ui.vs.VsRoute(m, false, com.wordocious.app.ui.vs.VsLaunch.Live)
+                } else {
+                    vsActive = null; vsLobby = true
+                }
+            }
+        }
+    }
     // Widget chip taps (wordocious://daily/KEY via DeepLinkRouter) open that
     // mode's daily — same launch state as the home grid / leaderboard Play CTA
     // (null seed = today's daily). One-shot: consume and clear.

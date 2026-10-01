@@ -86,14 +86,29 @@ export interface RaceResultResponse {
 }
 
 /** Post the racer's run. The server scores it, writes the shared matches row and the challenger's side. */
-export async function postRaceResult(code: string, run: ChallengeRun): Promise<RaceResultResponse | { error: string; status: number }> {
+export async function postRaceResult(code: string, run: ChallengeRun, quit = false): Promise<RaceResultResponse | { error: string; status: number }> {
   try {
-    const res = await fetch(`/api/vs/challenges/${encodeURIComponent(code)}/result`, { method: 'POST', headers: await headers(true), body: JSON.stringify({ run }) });
+    const res = await fetch(`/api/vs/challenges/${encodeURIComponent(code)}/result`, { method: 'POST', headers: await headers(true), body: JSON.stringify(quit ? { run, quit: true } : { run }) });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { error: json.error ?? 'Could not record the race', status: res.status };
     return json as RaceResultResponse;
   } catch {
     return { error: 'Network error', status: 0 };
+  }
+}
+
+/**
+ * KEEP WAITING in the live queue (Pro, §13): ping the Pro players who switched
+ * on "someone's looking". Null on any failure (the card keeps its own line).
+ */
+export async function pingVsLooking(gameMode: string): Promise<{ pinged: number; throttled: boolean } | null> {
+  try {
+    const res = await fetch('/api/vs/looking', { method: 'POST', headers: await headers(true), body: JSON.stringify({ gameMode }) });
+    if (!res.ok) return null;
+    const json = await res.json().catch(() => ({}));
+    return { pinged: Number(json.pinged) || 0, throttled: !!json.throttled };
+  } catch {
+    return null;
   }
 }
 

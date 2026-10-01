@@ -135,7 +135,13 @@ struct VSLobbyView: View {
             if let l = launch { VSGameView(mode: l.mode, isDaily: l.isDaily, intent: l.intent) }
         }
         // Back from a game (or any page): fresh results, ladder and challenges.
-        .onAppear { if auth.isAuthenticated { Task { await model.refresh(isPro: isPro) } } }
+        .onAppear {
+            guard auth.isAuthenticated else { return }
+            Task { await model.refresh(isPro: isPro) }
+            // Race results that couldn't be sent (offline / 5xx) go out now (§14);
+            // a recorded one changes the banner's record, so refresh again.
+            Task { if await VsPendingRaces.retryAll() { await model.refresh(isPro: isPro) } }
+        }
         .onChange(of: auth.profile?.id) { _ in Task { await model.refresh(isPro: isPro) } }
         .task { await model.pollCounts() }
         .onChange(of: mode) { VsLobbyKit.selectedMode = $0 }

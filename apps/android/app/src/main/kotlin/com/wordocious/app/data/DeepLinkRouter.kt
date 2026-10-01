@@ -23,6 +23,9 @@ object DeepLinkRouter {
     /** An async challenge code to race (/vs/challenge/<code>, VS overhaul §4);
      *  MainScreen opens the race flow and clears it. */
     val vsChallenge = MutableStateFlow<String?>(null)
+    /** The "someone's looking" push (/vs/live/<MODE>, VS overhaul §13): MainScreen
+     *  opens that mode's live search (same as LIVE in the lobby) and clears it. */
+    val vsLive = MutableStateFlow<GameMode?>(null)
     /** A recovery link established a session — show the native new-password dialog. */
     val showNewPassword = MutableStateFlow(false)
     /** Cross-device auth link (PKCE verifier on another client) — finish in the browser. */
@@ -51,6 +54,14 @@ object DeepLinkRouter {
 
         if (parts.size == 3 && parts[0] == "vs" && parts[1] == "challenge") {
             vsChallenge.value = parts[2].uppercase()
+            return true
+        }
+
+        // Push only (the manifest doesn't claim /vs/live): a VS mode's live queue.
+        if (parts.size == 3 && parts[0] == "vs" && parts[1] == "live") {
+            val key = parts[2].uppercase()
+            if (key !in com.wordocious.core.VsLobby.VS_MODE_ORDER) return false
+            vsLive.value = runCatching { GameMode.valueOf(key) }.getOrNull() ?: return false
             return true
         }
 
@@ -91,7 +102,7 @@ object DeepLinkRouter {
     /**
      * A tapped push: the system-drawn FCM notification hands the launcher the
      * message's data as intent extras, so the server's `url` arrives here
-     * (e.g. "/vs/challenge/ABCD2345"). Only the VS routes are handled; any
+     * (e.g. "/vs/challenge/ABCD2345", "/vs/live/DUEL"). Only the VS routes are handled; any
      * other url just opens the app.
      */
     fun handlePushUrl(url: String?): Boolean {

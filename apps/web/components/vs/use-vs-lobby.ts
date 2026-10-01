@@ -7,9 +7,11 @@ import { loadCpuProgression, emptyCpuProgression, botOfDayToday, type CpuProgres
 import { BOT_ROSTER, BOT_OF_DAY_ID } from '@/lib/bot/bot-personas';
 import { readBotDaily, sumRecord, todaysBattle, utcCountdown, utcDay, type SentChallenge } from '@/lib/vs-lobby';
 import {
-  fetchDailyBattleOpponent, fetchDailyBattleRow, fetchVsChallenges, fetchVsStatRows,
+  fetchDailyBattleOpponent, fetchDailyBattleRow, fetchVsChallenges, fetchVsStatRows, postRaceResult,
   type ChallengeView,
 } from '@/lib/vs-challenges-client';
+import { retryPendingRaces } from '@/lib/vs-pending-races';
+import { recordGameResult } from '@/lib/stats-service';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
 
@@ -18,6 +20,7 @@ const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'
  * Bots records (user_stats sums, exactly the Stats page's), today's Daily
  * Battle (the daily_results 'vs' row, else the local bot fallback), the Bot
  * of the Day and ladder from the progression store, and the challenges lists.
+ * Each load first retries the race results waiting offline (§14).
  */
 export function useVsLobbyData(userId: string | null) {
   const [people, setPeople] = useState<WinLoss>({ wins: 0, losses: 0 });
@@ -32,6 +35,15 @@ export function useVsLobbyData(userId: string | null) {
   const refresh = useCallback(async () => {
     setProgression(loadCpuProgression());
     if (!userId) { setLoaded(true); return; }
+    // §14: send any race result saved while offline before reading the
+    // records, so an accepted one shows up in People right away.
+    await retryPendingRaces({
+      post: postRaceResult,
+      record: (item, outcome) => recordGameResult(
+        userId, item.gameMode, 'vs', outcome === 'win', item.run.guesses, item.run.timeMs, item.seed,
+        undefined, undefined, 0, undefined, undefined, outcome === 'draw',
+      ),
+    }).catch(() => {});
     const day = utcDay();
     const [rows, row, challenges] = await Promise.all([
       fetchVsStatRows(userId),

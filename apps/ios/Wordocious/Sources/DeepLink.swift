@@ -33,6 +33,14 @@ final class DeepLink: ObservableObject {
         let code: String
     }
     @Published var vsChallenge: VSChallengeLink?
+
+    /// "Someone's looking for a <Mode> match" (/vs/live/<MODE>, spec §13 push):
+    /// straight into that mode's live search, like LIVE in the lobby.
+    struct VSLiveLink: Identifiable {
+        let id = UUID()
+        let mode: GameMode
+    }
+    @Published var vsLive: VSLiveLink?
     /// A widget tap: open TODAY'S daily for this mode (wordocious://daily/<MODE>).
     @Published var dailyMode: GameMode?
     /// "Show me the More Games" (wordocious://puzzles, legacy wordocious://more):
@@ -85,6 +93,12 @@ final class DeepLink: ObservableObject {
             return true
         }
 
+        // VS live ping: wordocious.com/vs/live/<MODE> → that mode's live search.
+        if parts.count == 3, parts[0] == "vs", parts[1] == "live" {
+            if let mode = GameMode(rawValue: parts[2].uppercased()) { vsLive = VSLiveLink(mode: mode) }
+            return true
+        }
+
         // Auth links: /auth/reset (password recovery) and /auth/confirm
         // (email confirmation). session(from:) exchanges the one-time code —
         // this works when THIS device requested the email (PKCE verifier is
@@ -107,7 +121,7 @@ final class DeepLink: ObservableObject {
         return false
     }
 
-    /// A push's `url` payload ("/vs/challenge/AB12CD34") routed like a universal link.
+    /// A push's `url` payload ("/vs/challenge/AB12CD34", "/vs/live/DUEL") routed like a universal link.
     @discardableResult
     func handle(pushPath path: String) -> Bool {
         let full = path.hasPrefix("/") ? "https://wordocious.com\(path)" : path

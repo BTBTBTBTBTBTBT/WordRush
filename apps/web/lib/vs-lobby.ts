@@ -242,6 +242,28 @@ export function challengeShareText(gameMode: string, code: string): string {
   return `Race my Wordocious ${modeTitle(gameMode)} run — code ${code}`;
 }
 
+// ── "Ping me when someone's looking" (§13) ──────────────────────────────────
+
+/** The live search row's label. */
+export function lookingRowLabel(gameMode: string): string {
+  return `Ping me when someone’s looking for ${modeTitle(gameMode)}`;
+}
+
+/** The opt-in reads ON only when vsLooking is exactly true (a missing key is OFF). */
+export function vsLookingOn(prefs: Record<string, unknown> | null | undefined): boolean {
+  return prefs?.vsLooking === true;
+}
+
+/**
+ * The step-in card line under the buttons after KEEP WAITING pinged (§13).
+ * Null (throttled, failed, or not pinged) leaves the card's `We'll keep looking`.
+ */
+export function keepWaitingPingLine(ping: { pinged: number; throttled: boolean } | null): string | null {
+  if (!ping || ping.throttled) return null;
+  if (ping.pinged <= 0) return 'Nobody has pings on yet. We’ll keep looking.';
+  return ping.pinged === 1 ? 'We pinged 1 player who plays live.' : `We pinged ${ping.pinged} players who play live.`;
+}
+
 // ── Rivals (head-to-head from the shared `matches` rows) ────────────────────
 
 export interface RivalRow { opponentId: string; wins: number; losses: number; draws: number; total: number; lastMode: string | null }

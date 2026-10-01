@@ -200,11 +200,11 @@ enum VsChallengeService {
 
     /// POST /<code>/result — the racer finished; the server scores it, writes the
     /// shared matches row and the challenger's side, and pushes them.
-    static func postResult(code: String, run: VsChallengeRun) async -> Result<Posted, APIError> {
+    static func postResult(code: String, run: VsChallengeRun, quit: Bool = false) async -> Result<Posted, APIError> {
         guard let enc = code.uppercased().addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             return .failure(APIError(message: "Challenge not found", status: 404))
         }
-        guard let (status, data) = await send("/\(enc)/result", method: "POST", body: ["run": runBody(run)]) else {
+        guard let (status, data) = await send("/\(enc)/result", method: "POST", body: quit ? ["run": runBody(run), "quit": true] : ["run": runBody(run)]) else {
             return .failure(APIError(message: "Network error", status: 0))
         }
         guard status == 200, let p = try? JSONDecoder().decode(Posted.self, from: data) else {
@@ -222,5 +222,165 @@ enum VsChallengeService {
     static func shareURL(_ code: String) -> URL { URL(string: "https://wordocious.com/vs/challenge/\(code)")! }
     static func shareText(mode: GameMode, code: String) -> String {
         "Race my Wordocious \(VsLobbyKit.modeName(mode)) run — code \(code)"
+    }
+}
+
+/// "Ping me when someone's looking" (spec §13). KEEP WAITING on a Pro live
+/// random search calls POST https://wordocious.com/api/vs/looking {gameMode}
+/// → {pinged, throttled}; the server pushes the Pro players who opted in
+/// (`profiles.notification_prefs.vsLooking`, a missing key = OFF).
+enum VsLookingService {
+    /// The opt-in key in profiles.notification_prefs.
+    static let prefKey = "vsLooking"
+
+    struct Pinged: Decodable {
+        let pinged: Int
+        let throttled: Bool
+    }
+
+    /// Opted in only when the key is explicitly true (missing = OFF, unlike the friends categories).
+    static func isOn(_ prefs: [String: Bool]?) -> Bool { prefs?[prefKey] == true }
+
+    /// nil on any failure (the card simply keeps "We’ll keep looking").
+    static func ping(gameMode: GameMode) async -> Pinged? {
+        guard let url = URL(string: "https://wordocious.com/api/vs/looking") else { return nil }
+        var req = await PublicProfileService.authedRequest(url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["gameMode": gameMode.rawValue])
+        guard let (data, resp) = try? await Net.api.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return try? JSONDecoder().decode(Pinged.self, from: data)
+    }
+
+    /// The card line under the buttons after KEEP WAITING; nil when throttled
+    /// (the card stays "We’ll keep looking").
+    static func line(_ p: Pinged) -> String? {
+        if p.throttled { return nil }
+        if p.pinged <= 0 { return "Nobody has pings on yet. We’ll keep looking." }
+        return p.pinged == 1 ? "We pinged 1 player who plays live." : "We pinged \(p.pinged) players who play live."
+    }
+}
+
+/// A race result the server hasn't accepted yet (spec §14).
+struct VsPendingRace: Codable, Equatable {
+    let code: String
+    let gameMode: String
+    let seed: String
+    let run: VsChallengeRun
+    /// ms since epoch.
+    let savedAt: Double
+    /// The signed-in racer it belongs to (retried only under that account).
+    var userId: String?
+    /// Quit mid-race: the racer's side records as a loss whatever the server scores.
+    var quit: Bool?
+}
+
+/// Race results never get lost (spec §14). A race's result POST that fails with
+/// a network error or a 5xx is kept in UserDefaults `wordocious-vs-pending-races`
+/// (one per code) and retried each time the VS lobby loads and on app start:
+/// accepted (`alreadyRecorded: false`) → record the racer's side (+ XP), drop;
+/// `alreadyRecorded: true` → drop; a 4xx → drop (401 keeps); network / 5xx → keep; anything
+/// older than 3 days → drop.
+@MainActor
+enum VsPendingRaces {
+    static let key = "wordocious-vs-pending-races"
+    private static let maxAgeMs: Double = 3 * 24 * 60 * 60 * 1000
+    private static var retrying = false
+
+    static let savedNote = "Saved. We’ll send your result when you’re back online."
+
+    enum Submitted {
+        /// Accepted: the racer's side was recorded (XP when signed in).
+        case recorded(GameResultsService.XpResult?)
+        /// The server already had this racer's result — the first one stands.
+        case alreadyRecorded
+        /// Offline / server error: kept for a later retry.
+        case saved
+        /// Refused for good (4xx) — dropped.
+        case failed(String)
+    }
+
+    static func load() -> [VsPendingRace] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let list = try? JSONDecoder().decode([VsPendingRace].self, from: data) else { return [] }
+        return list
+    }
+
+    private static func store(_ list: [VsPendingRace]) {
+        if list.isEmpty { UserDefaults.standard.removeObject(forKey: key); return }
+        if let data = try? JSONEncoder().encode(list) { UserDefaults.standard.set(data, forKey: key) }
+    }
+
+    /// One per code: a newer save replaces the old one.
+    private static func save(_ race: VsPendingRace) {
+        store(load().filter { $0.code != race.code } + [race])
+    }
+
+    private static func remove(code: String) {
+        store(load().filter { $0.code != code })
+    }
+
+    /// Network error (status 0), a 5xx, or a 401 (no session yet) keeps the
+    /// result for later; the 3-day cap still clears it.
+    static func isRetryable(_ e: VsChallengeService.APIError) -> Bool { e.status == 0 || e.status == 401 || e.status >= 500 }
+
+    /// A fresh pending item for the signed-in racer.
+    static func make(code: String, mode: GameMode, seed: String, run: VsChallengeRun, quit: Bool = false) -> VsPendingRace {
+        VsPendingRace(code: code, gameMode: mode.rawValue, seed: seed, run: run,
+                      savedAt: Date().timeIntervalSince1970 * 1000,
+                      userId: AuthService.shared.profile?.id, quit: quit ? true : nil)
+    }
+
+    /// POST the result; on acceptance record the racer's side through the normal
+    /// live-VS path (XP, achievements) — never a client matches row, never vs_cpu.
+    static func submit(_ race: VsPendingRace) async -> Submitted {
+        switch await VsChallengeService.postResult(code: race.code, run: race.run, quit: race.quit == true) {
+        case .success(let posted):
+            remove(code: race.code)
+            if posted.alreadyRecorded == true { return .alreadyRecorded }
+            let outcome: VsOutcome = race.quit == true ? .loss : (VsOutcome(rawValue: posted.outcome) ?? .loss)
+            return .recorded(await recordSide(race, outcome: outcome))
+        case .failure(let e):
+            if isRetryable(e) { save(race); return .saved }
+            remove(code: race.code)
+            return .failed(e.message)
+        }
+    }
+
+    /// The racer's own side, with XP. A draw is NOT a loss: isDraw counts the game only.
+    private static func recordSide(_ race: VsPendingRace, outcome: VsOutcome) async -> GameResultsService.XpResult? {
+        guard AuthService.shared.profile != nil, let mode = GameMode(rawValue: race.gameMode) else { return nil }
+        let r = race.run
+        let secs = Int((Double(r.timeMs) / 1000).rounded())
+        let xp = await GameResultsService.record(
+            gameMode: mode, playType: "vs", won: outcome == .win, guessCount: r.guesses,
+            timeSeconds: secs, boardsSolved: r.boardsSolved, totalBoards: r.totalBoards,
+            seed: race.seed, isDraw: outcome == .draw)
+        if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
+            await AchievementService.checkAchievements(
+                userId: uid, gameMode: mode.rawValue, playType: "vs", won: outcome == .win,
+                guessCount: r.guesses, timeSeconds: secs, seed: race.seed, hintsUsed: 0)
+        }
+        return xp
+    }
+
+    /// Retry every pending race (VS lobby load, app start). Returns true when a
+    /// result was recorded, so the caller can refresh what it shows.
+    @discardableResult
+    static func retryAll() async -> Bool {
+        guard !retrying, let me = AuthService.shared.profile?.id else { return false }
+        let now = Date().timeIntervalSince1970 * 1000
+        let all = load()
+        let fresh = all.filter { now - $0.savedAt <= maxAgeMs }
+        if fresh.count != all.count { store(fresh) }
+        guard !fresh.isEmpty else { return false }
+        retrying = true
+        defer { retrying = false }
+        var recorded = false
+        for race in fresh where race.userId == nil || race.userId == me {
+            if case .recorded = await submit(race) { recorded = true }
+        }
+        return recorded
     }
 }

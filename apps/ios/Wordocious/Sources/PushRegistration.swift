@@ -11,7 +11,8 @@ import UserNotifications
 final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // Route push taps (VS challenges carry `url: /vs/challenge/<code>`).
+        // Route push taps (VS challenges carry `url: /vs/challenge/<code>`, the
+        // "someone's looking" ping `url: /vs/live/<MODE>`).
         UNUserNotificationCenter.current().delegate = self
         return true
     }

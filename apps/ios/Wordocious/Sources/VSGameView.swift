@@ -259,6 +259,7 @@ struct VSGameView: View {
                         }
                         if vm.canStepIn && vm.countdown == nil && !vm.showIntro {
                             stepInCard(elapsed: elapsed)
+                            if vm.canPingLooking { VSLookingPingRow(mode: mode) }
                         }
                     }
                 }
@@ -319,6 +320,11 @@ struct VSGameView: View {
                             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.soft))
                     }.buttonStyle(PressableStyle())
                 }
+            }
+            // KEEP WAITING pinged the opted-in players (§13).
+            if vm.keepWaiting, let note = vm.lookingNote {
+                Text(note).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(16).frame(maxWidth: 380)
@@ -1443,5 +1449,37 @@ private struct DailyVsAlreadyPlayed: View {
 
     private func cd(_ s: Int) -> String {
         String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+    }
+}
+
+/// "Ping me when someone's looking for <Mode>" (spec §13): the row under the
+/// live search's step-in card (Pro, live random queue). The switch is bound to
+/// profiles.notification_prefs.vsLooking — a missing key is OFF — and writes
+/// it the way the notification-prefs toggles do (merge, then refresh the profile).
+private struct VSLookingPingRow: View {
+    let mode: GameMode
+    @ObservedObject private var auth = AuthService.shared
+    @State private var saving = false
+
+    var body: some View {
+        let on = VsLookingService.isOn(auth.profile?.notificationPrefs)
+        HStack(spacing: 10) {
+            Image(systemName: on ? "bell.fill" : "bell")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(on ? Color(hex: 0x0F766E) : VsLobbyKit.sub)
+                .frame(width: 22)
+            Text("Ping me when someone’s looking for \(VsLobbyKit.modeName(mode))")
+                .font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.deep)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Toggle("", isOn: Binding(get: { on }, set: { NotificationPrefsWriter.set(VsLookingService.prefKey, $0, saving: $saving) }))
+                .labelsHidden()
+                .tint(Color(hex: 0x0F766E))
+                .disabled(saving || auth.profile == nil)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(maxWidth: 380)
+        .vsCard()
+        .opacity(saving ? 0.6 : 1)
     }
 }

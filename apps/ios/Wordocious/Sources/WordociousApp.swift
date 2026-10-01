@@ -69,6 +69,8 @@ struct WordociousApp: App {
                     // Re-fire any solo results whose record calls were cut off
                     // (killed mid-flight / offline finish) — idempotent, solo-only.
                     await PendingRecords.drain()
+                    // VS race results that never reached the server (§14).
+                    await VsPendingRaces.retryAll()
                     // Finished-save sweep AFTER the queue drain: records any
                     // LOCAL finished daily whose record flow never even started
                     // (crash on the finish frame) — those never reach the

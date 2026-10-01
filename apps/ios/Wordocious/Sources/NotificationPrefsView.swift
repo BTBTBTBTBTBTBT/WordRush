@@ -97,3 +97,26 @@ struct NotificationPrefsSheet: View {
         }
     }
 }
+
+/// One explicit notification_prefs key written the same way the sheet's toggles
+/// write (merge into the existing object, then refresh the profile) — the live
+/// search's "Ping me when someone's looking" switch (VS spec §13).
+@MainActor
+enum NotificationPrefsWriter {
+    private struct PrefsUpdate: Encodable { let notification_prefs: [String: Bool] }
+
+    static func set(_ key: String, _ on: Bool, saving: Binding<Bool>) {
+        let auth = AuthService.shared
+        guard !saving.wrappedValue, let uid = auth.profile?.id else { return }
+        saving.wrappedValue = true
+        var next = auth.profile?.notificationPrefs ?? [:]
+        next[key] = on
+        Task {
+            _ = try? await auth.client.from("profiles")
+                .update(PrefsUpdate(notification_prefs: next))
+                .eq("id", value: uid).execute()
+            await auth.refreshProfile()
+            saving.wrappedValue = false
+        }
+    }
+}

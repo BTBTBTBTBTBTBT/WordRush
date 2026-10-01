@@ -178,6 +178,9 @@ private fun LobbyMain(
             people = stats.filter { it.playType == "vs" }.let { s -> WinLoss(s.sumOf { it.wins }, s.sumOf { it.losses }) }
             bots = stats.filter { it.playType == "vs_cpu" }.let { s -> WinLoss(s.sumOf { it.wins }, s.sumOf { it.losses }) }
         }
+        // §14: race results that couldn't be sent go out now (they land in the
+        // record above on the next lobby load).
+        launch { com.wordocious.app.data.VsPendingRaces.retry() }
         launch { listing = VsChallengeService.list() }
         if (isPro) launch { rivals = StatsDeepService.rivalries(uid, 3) }
     }

@@ -19,13 +19,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,14 +48,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.CpuOpponent
 import com.wordocious.app.data.VSCountsService
+import com.wordocious.app.data.VsChallengeService
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.saveNotificationPref
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.vsClock
+import kotlinx.coroutines.launch
 
 /** The bot steps in after this long with nobody found (§6). */
 private const val STEP_IN_MS = 15_000L
+
+/** The opt-in key for "Ping me when someone's looking" (§13) — a missing key is OFF. */
+private const val VS_LOOKING_KEY = "vsLooking"
+
+/** The step-in card's line after KEEP WAITING pinged (§13); null (throttled or
+ *  failed) leaves the card's `We'll keep looking` (web keepWaitingPingLine). */
+internal fun keepWaitingPingLine(ping: VsChallengeService.Looking?): String? = when {
+    ping == null || ping.throttled -> null
+    ping.pinged <= 0 -> "Nobody has pings on yet. We’ll keep looking."
+    ping.pinged == 1 -> "We pinged 1 player who plays live."
+    else -> "We pinged ${ping.pinged} players who play live."
+}
 
 /**
  * The live search (VS overhaul §6, founder 2026-10-01) — never a dead end.
@@ -65,6 +89,15 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     val kind = remember { vm.stepInKind }
     val bot = remember(kind) { CpuOpponent.identity(CpuOpponent.opponentId(kind)) }
     val modeName = vsModeName(vm.mode)
+    // §13: Pro, live random queue only (not the Daily Battle, not a private invite).
+    val scope = rememberCoroutineScope()
+    val profile by AuthService.profile.collectAsState()
+    val lookingEligible = vm.isPro && vm.isLiveRandomQueue && profile != null
+    var pingLine by remember { mutableStateOf<String?>(null) }
+    // Optimistic copy of profiles.notification_prefs.vsLooking (missing = OFF);
+    // the profile refresh confirms it.
+    var lookingOn by remember(profile?.notificationPrefs) { mutableStateOf(profile?.notificationPrefs?.get(VS_LOOKING_KEY) == true) }
+    var lookingSaving by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -123,11 +156,46 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
                     VsTealButton("PLAY ${bot.name.uppercase()} NOW", Modifier.weight(1f)) { vm.stepIn() }
                     if (!keepWaiting) {
                         Box(
-                            Modifier.weight(1f).clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(VsTeal.soft)
-                                .clickableNoRipple { keepWaiting = true }.padding(vertical = 12.dp),
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(VsTeal.soft)
+                                .clickableNoRipple {
+                                    keepWaiting = true
+                                    // §13: KEEP WAITING also pings the players who opted in.
+                                    if (lookingEligible) scope.launch { pingLine = keepWaitingPingLine(VsChallengeService.looking(vm.mode.name)) }
+                                }.padding(vertical = 12.dp),
                             Alignment.Center,
                         ) { Text("KEEP WAITING", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink) }
                     }
+                }
+                if (keepWaiting) pingLine?.let {
+                    Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.deep, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                }
+            }
+            // §13: "Ping me when someone's looking for <Mode>" (Pro, live random queue).
+            val p = profile
+            if (lookingEligible && p != null) {
+                fun toggle() {
+                    if (lookingSaving) return
+                    val next = !lookingOn
+                    lookingOn = next
+                    lookingSaving = true
+                    scope.launch {
+                        try { saveNotificationPref(p, VS_LOOKING_KEY, next) } finally { lookingSaving = false }
+                    }
+                }
+                Row(
+                    Modifier.widthIn(max = 380.dp).fillMaxWidth().vsCard()
+                        .clickableNoRipple { toggle() }.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Filled.Notifications, null, tint = VsTeal.ink, modifier = Modifier.size(18.dp))
+                    Text(
+                        "Ping me when someone’s looking for $modeName",
+                        fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = lookingOn, onCheckedChange = { toggle() }, enabled = !lookingSaving,
+                        colors = SwitchDefaults.colors(checkedTrackColor = VsTeal.ink, checkedThumbColor = Color.White),
+                    )
                 }
             }
             Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onCancel))

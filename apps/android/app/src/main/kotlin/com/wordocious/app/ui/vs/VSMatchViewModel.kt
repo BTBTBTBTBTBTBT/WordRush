@@ -233,6 +233,9 @@ class VSMatchViewModel(
     /** My run, as raced or as sent. */
     var myRun by mutableStateOf<VsChallengeService.Run?>(null)
     var sendState by mutableStateOf<SendState?>(null)
+    /** §14: the race result couldn't be sent (network / 5xx) and waits in
+     *  VsPendingRaces — the result screen says so. */
+    var raceSavedOffline by mutableStateOf(false)
     /** The 3-2-1 overlay's title when it isn't a found match ("YOUR RUN"). */
     var countdownTitle by mutableStateOf<String?>(null)
     /** Client-side transports (bot, ghost, solo run): leaving records nothing. */
@@ -309,6 +312,9 @@ class VSMatchViewModel(
         dailyVsActive || !isPro -> CpuKind.MEDIUM
         else -> CpuKind.forLadder(CpuProgressionStore.nextLadderBot())
     }
+
+    /** The live random queue (§13): not a private invite, not the Daily Battle. */
+    val isLiveRandomQueue: Boolean get() = launch == VsLaunch.Live && inviteCode == null && !dailyVsActive
 
     /** Leave the human queue for the step-in bot (automatic at 0:15, or PLAY NOW). */
     fun stepIn() {
@@ -506,16 +512,20 @@ class VSMatchViewModel(
             val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
             val run = buildRun(GameStatus.LOST, myGuessCount, secs * 1000).copy(solved = false)
             val m = mode
-            val theSeed = seed
+            val theSeed = seed.ifEmpty { raced.seed }
             // Not viewModelScope: the screen is leaving and would cancel it.
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                val res = VsChallengeService.postResult(raced.code, run)
-                if (res != null && !res.alreadyRecorded) {
-                    GameResultsService.record(
-                        gameMode = m, playType = "vs", won = false, guessCount = run.guesses,
-                        timeSeconds = secs, boardsSolved = run.boardsSolved, totalBoards = run.totalBoards, seed = theSeed,
-                        solutions = run.solutions, guesses = run.guessLog,
-                    )
+                when (val res = VsChallengeService.postResult(raced.code, run, quit = true)) {
+                    is VsChallengeService.PostOutcome.Accepted -> if (!res.response.alreadyRecorded) {
+                        GameResultsService.record(
+                            gameMode = m, playType = "vs", won = false, guessCount = run.guesses,
+                            timeSeconds = secs, boardsSolved = run.boardsSolved, totalBoards = run.totalBoards, seed = theSeed,
+                            solutions = run.solutions, guesses = run.guessLog,
+                        )
+                    }
+                    // §14: offline / 5xx → the pending store sends it (and books the loss) later.
+                    VsChallengeService.PostOutcome.Retry -> com.wordocious.app.data.VsPendingRaces.save(raced.code, m, theSeed, run, quit = true)
+                    is VsChallengeService.PostOutcome.Rejected -> {}
                 }
             }
         }
@@ -1035,13 +1045,22 @@ class VSMatchViewModel(
         val won = outcome == com.wordocious.core.VsOutcome.WIN
         val draw = outcome == com.wordocious.core.VsOutcome.DRAW
         val secs = (run.timeMs / 1000.0).roundToInt()
-        val theSeed = seed
+        val theSeed = seed.ifEmpty { c.seed }
+        val m = mode
         viewModelScope.launch {
             // Web parity: the racer's own side records once, only after the
             // server accepted the entry (a repeat post is alreadyRecorded).
             val res = VsChallengeService.postResult(c.code, run)
-            if (res == null) message = "Couldn’t post your result — check your connection."
-            if (res != null && !res.alreadyRecorded && !draw) {
+            when (res) {
+                // §14: offline / 5xx → keep it; the lobby sends it (and records my side) later.
+                VsChallengeService.PostOutcome.Retry -> {
+                    com.wordocious.app.data.VsPendingRaces.save(c.code, m, theSeed, run)
+                    raceSavedOffline = true
+                }
+                is VsChallengeService.PostOutcome.Rejected -> message = "Couldn’t post your result."
+                is VsChallengeService.PostOutcome.Accepted -> {}
+            }
+            if (res is VsChallengeService.PostOutcome.Accepted && !res.response.alreadyRecorded && !draw) {
                 xpResult = GameResultsService.record(
                     gameMode = mode, playType = "vs", won = won, guessCount = run.guesses,
                     timeSeconds = secs, boardsSolved = run.boardsSolved, totalBoards = run.totalBoards, seed = theSeed,

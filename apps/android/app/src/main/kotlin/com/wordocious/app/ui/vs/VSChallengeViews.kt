@@ -194,6 +194,8 @@ fun ChallengeResultView(
     onClose: () -> Unit,
     onChallengeBack: () -> Unit,
     onShare: (headline: String) -> Unit,
+    /** A line under the window (§14: the result is saved to send later). */
+    note: String? = null,
 ) {
     val won = outcome == VsOutcome.WIN
     val lost = outcome == VsOutcome.LOSS
@@ -245,6 +247,9 @@ fun ChallengeResultView(
                     ResultColumn("YOU", won, mine, mode, solutions, Modifier.weight(1f))
                     ResultColumn("@${theirName.uppercase()}", lost, theirs, mode, solutions, Modifier.weight(1f))
                 }
+            }
+            note?.let {
+                Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             }
             // Head-to-head with the XP chip.
             Row(
@@ -310,6 +315,7 @@ fun RaceResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -> Un
                 context, "${headline.lowercase().replaceFirstChar { it.uppercaseChar() }} ${vsModeName(vm.mode)} on Wordocious\nhttps://wordocious.com/vs/challenge/${c.code}",
             )
         },
+        note = if (vm.raceSavedOffline) "Saved. We’ll send your result when you’re back online." else null,
     )
 }
 

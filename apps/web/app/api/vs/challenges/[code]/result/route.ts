@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic';
  *   - adds the challenger's side to their user_stats 'vs' row (the racer's
  *     client records its own side, with XP, through the normal VS path),
  *   - pushes the challenger the result.
+ * `quit: true` (left mid-race) is a forfeit: always a loss for the racer.
  * Returns { outcome, margin, challengerRun } from the racer's side. A repeat
  * post returns the first result unchanged (alreadyRecorded: true).
  */
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   const me = auth.user.id;
   const { code } = params;
 
-  let body: { run?: RunBody };
+  let body: { run?: RunBody; quit?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid body' }, { status: 400 }); }
   const run = parseRun(body.run);
   if (!run) return NextResponse.json({ error: 'run required' }, { status: 400 });
@@ -51,7 +52,9 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     return NextResponse.json({ error: 'This challenge has expired' }, { status: 410 });
   }
 
-  const outcome = vsOutcome(run, theirs);
+  // A quit mid-race is a forfeit: a loss for the racer even when both runs
+  // failed (otherwise two unsolved runs would score a draw).
+  const outcome = body.quit === true ? 'loss' : vsOutcome(run, theirs);
   const { error: entryErr } = await admin.from('vs_challenge_entries').insert({
     challenge_id: row.id,
     user_id: me,

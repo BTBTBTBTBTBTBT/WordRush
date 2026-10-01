@@ -115,7 +115,7 @@ object VsChallengeService {
     )
 
     @Serializable
-    private data class ResultBody(val run: Run)
+    private data class ResultBody(val run: Run, val quit: Boolean? = null)
 
     sealed class CreateOutcome {
         data class Sent(val code: String, val invitees: Int) : CreateOutcome()
@@ -161,11 +161,41 @@ object VsChallengeService {
             .getOrElse { LookupOutcome.Failed("Could not open the challenge") }
     }
 
+    /** How a race result POST went (§14): accepted, refused for good, or worth a retry. */
+    sealed class PostOutcome {
+        data class Accepted(val response: ResultResponse) : PostOutcome()
+        /** A 4xx (400/403/404/410): the server will never take this run — drop it. */
+        data class Rejected(val status: Int) : PostOutcome()
+        /** A network error, a 5xx or a 401 (no session yet): keep it and send it again later. */
+        object Retry : PostOutcome()
+    }
+
     /** POST /api/vs/challenges/<code>/result — the server scores, stores and pushes. */
-    suspend fun postResult(code: String, run: Run): ResultResponse? {
-        val resp = api("POST", "/api/vs/challenges/${code.uppercase()}/result", json.encodeToString(ResultBody(run))) ?: return null
+    suspend fun postResult(code: String, run: Run, quit: Boolean = false): PostOutcome {
+        val resp = api("POST", "/api/vs/challenges/${code.uppercase()}/result", json.encodeToString(ResultBody(run, if (quit) true else null)))
+            ?: return PostOutcome.Retry
+        // 401 = no session yet: keep it (the 3-day cap still clears it).
+        if (resp.first in 400..499 && resp.first != 401) return PostOutcome.Rejected(resp.first)
+        if (resp.first != 200) return PostOutcome.Retry
+        val parsed = runCatching { json.decodeFromString<ResultResponse>(resp.second) }.getOrNull()
+        return if (parsed != null) PostOutcome.Accepted(parsed) else PostOutcome.Retry
+    }
+
+    @Serializable
+    private data class LookingBody(val gameMode: String)
+
+    /** The answer to KEEP WAITING's ping (§13): how many players were pinged, or throttled. */
+    data class Looking(val pinged: Int, val throttled: Boolean)
+
+    /** POST /api/vs/looking — ping the Pro players who switched "someone's looking" on (§13). */
+    suspend fun looking(gameMode: String): Looking? {
+        val resp = api("POST", "/api/vs/looking", json.encodeToString(LookingBody(gameMode))) ?: return null
         if (resp.first != 200) return null
-        return runCatching { json.decodeFromString<ResultResponse>(resp.second) }.getOrNull()
+        val obj = runCatching { Json.parseToJsonElement(resp.second) as? JsonObject }.getOrNull() ?: return null
+        return Looking(
+            pinged = obj["pinged"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+            throttled = obj["throttled"]?.jsonPrimitive?.content == "true",
+        )
     }
 
     /** Whole hours left until `expiresAt` (minimum 1), for "17h left" / "17H". */

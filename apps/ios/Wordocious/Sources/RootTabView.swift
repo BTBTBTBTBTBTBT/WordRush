@@ -318,6 +318,11 @@ struct RootTabView: View {
         .fullScreenCover(item: $deepLink.vsChallenge) { link in
             NavigationStack { VSChallengeRaceView(code: link.code) }
         }
+        // "Someone's looking" push (/vs/live/<MODE>) → that mode's live search,
+        // same as LIVE in the lobby (Pro); without Pro, the Pro page.
+        .fullScreenCover(item: $deepLink.vsLive) { link in
+            VSLiveLaunch(mode: link.mode)
+        }
         // Password-recovery universal link → native set-new-password sheet
         // (session already established by DeepLink's code exchange).
         .sheet(isPresented: $deepLink.showNewPasswordSheet) { NewPasswordSheet() }
@@ -420,5 +425,20 @@ private struct BottomNav: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// The /vs/live/<MODE> push target: a Pro player lands in that mode's live
+/// search (LIVE in the lobby); anyone else gets the Pro page (it has Close).
+private struct VSLiveLaunch: View {
+    let mode: GameMode
+    @ObservedObject private var auth = AuthService.shared
+
+    var body: some View {
+        if auth.isProActive {
+            NavigationStack { VSGameView(mode: mode, intent: .live) }
+        } else {
+            ProView()
+        }
     }
 }

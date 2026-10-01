@@ -17,8 +17,10 @@ import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuId
 import { VsSoloHudContext } from './opponent-hud';
 import { BOT_PERSONAS, botArt, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
 import { recordCpuGame, recordBotOfDay, recordBotOfDayResult, recordLadderGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
-import { ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily } from '@/lib/vs-lobby';
-import { postRaceResult, sendChallenge, type ChallengeRun, type ChallengeView } from '@/lib/vs-challenges-client';
+import { ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily, lookingRowLabel, vsLookingOn } from '@/lib/vs-lobby';
+import { pingVsLooking, postRaceResult, sendChallenge, type ChallengeRun, type ChallengeView } from '@/lib/vs-challenges-client';
+import { PENDING_RACE_SAVED_LINE, isRetryableFailure, savePendingRace } from '@/lib/vs-pending-races';
+import { supabase } from '@/lib/supabase-client';
 import { ChallengeResult, ChallengeSent } from './challenge-result';
 import { VsQueueScreen, VsStartingScreen } from './vs-queue';
 import { BotAvatar } from './vs-ui';
@@ -282,7 +284,7 @@ export function VsGame(props: VsGameProps) {
 
 function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
-  const { profile, session, isProActive, isGuest, exitGuest } = useAuth();
+  const { profile, session, isProActive, isGuest, exitGuest, refreshProfile } = useAuth();
   const isPro = isProActive;
   // Live ref so the once-wired socket handlers (rematch offer) read the
   // CURRENT Pro status, not the value captured at mount.
@@ -416,6 +418,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const [challengeRun, setChallengeRun] = useState<ChallengeRun | null>(null);
   const [sendResult, setSendResult] = useState<{ code: string | null; error: string | null } | null>(null);
   const [raceOutcome, setRaceOutcome] = useState<'win' | 'loss' | 'draw' | null>(null);
+  // §14: the race result POST failed offline / 5xx and waits in the pending list.
+  const [raceSavedOffline, setRaceSavedOffline] = useState(false);
   // Fun layer: photo-finish flourish, streak milestone, cosmetic unlock, and a
   // per-session run-it-back tally — all CPU-only.
   const [photoFinish, setPhotoFinish] = useState<PhotoFinishKind | null>(null);
@@ -1131,7 +1135,15 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     const outcome = vsOutcome(run, r.run);
     setRaceOutcome(outcome);
     const res = await postRaceResult(r.code, run);
-    if ('error' in res) { setMessage(res.error); return; }
+    if ('error' in res) {
+      // §14: offline or a 5xx keeps the run for the next lobby load; the
+      // result screen shows the locally computed outcome.
+      if (isRetryableFailure(res.status)) {
+        savePendingRace({ code: r.code, gameMode: mode, seed: seedRef.current || r.seed, run, savedAt: Date.now() });
+        setRaceSavedOffline(true);
+      } else setMessage(res.error);
+      return;
+    }
     if (!res.alreadyRecorded) {
       const xp = await recordGameResult(me.id, mode, 'vs', outcome === 'win', run.guesses, run.timeMs, seedRef.current, undefined, undefined, 0, undefined, undefined, outcome === 'draw');
       if (xp) setXpResult(xp);
@@ -1189,6 +1201,25 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const liveSearch = screen === 'queue' && !isCpu && !flow && !cpuParam;
   const vsCounts = useVsCounts(liveSearch);
 
+  // "Ping me when someone's looking" (§13): Pro, live random queue only (not
+  // the Daily Battle, not a private match). Bound to
+  // profiles.notification_prefs.vsLooking (missing = OFF), merged like the
+  // Friends notification toggles.
+  const [lookingSaving, setLookingSaving] = useState(false);
+  const notificationPrefs = (profile as { notification_prefs?: Record<string, unknown> } | null)?.notification_prefs ?? {};
+  const lookingOn = vsLookingOn(notificationPrefs);
+  const toggleLooking = useCallback(async () => {
+    if (lookingSaving || !profile) return;
+    setLookingSaving(true);
+    try {
+      await (supabase as any).from('profiles').update({ notification_prefs: { ...notificationPrefs, vsLooking: !lookingOn } }).eq('id', profile.id);
+      await refreshProfile();
+    } finally {
+      setLookingSaving(false);
+    }
+  }, [lookingSaving, profile, notificationPrefs, lookingOn, refreshProfile]);
+  const lookingApplies = isPro && !dailyVsActive && !inviteCode;
+
   const handleCancel = useCallback(() => {
     matchService.leaveQueue();
     matchService.disconnect();
@@ -1240,9 +1271,12 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       resultRecordedRef.current = true;
       const run = { ...buildRun(null), solved: false };
       try {
-        const res = await postRaceResult(race.code, run);
+        const res = await postRaceResult(race.code, run, true);
         if (!('error' in res) && !res.alreadyRecorded) {
           await recordGameResult(me.id, mode, 'vs', false, run.guesses, run.timeMs, seedRef.current);
+        } else if ('error' in res && isRetryableFailure(res.status)) {
+          // §14: offline — the pending list posts it (and records the loss) later.
+          savePendingRace({ code: race.code, gameMode: mode, seed: seedRef.current || race.seed, run, savedAt: Date.now(), quit: true });
         }
       } catch { /* best effort — leaving anyway */ }
     }
@@ -1550,6 +1584,13 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             searching={!showIntro && !showCountdown && !opponentUserId}
             onPlayBot={stepInBot}
             onCancel={handleCancel}
+            looking={lookingApplies ? {
+              label: lookingRowLabel(mode),
+              on: lookingOn,
+              saving: lookingSaving,
+              onToggle: () => { void toggleLooking(); },
+              ping: () => pingVsLooking(mode),
+            } : undefined}
           >
             {inviteCode && !isCpu && (
               <div className="w-full max-w-xs mx-auto rounded-2xl border p-4 space-y-2"
@@ -1651,6 +1692,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           solutions={race.run.solutions.length ? race.run.solutions : challengeRun.solutions}
           h2h={headToHead}
           xp={xpResult?.xpGain ?? null}
+          note={raceSavedOffline ? PENDING_RACE_SAVED_LINE : null}
           onClose={() => { matchService.disconnect(); router.push('/vs'); }}
           onHome={() => { matchService.disconnect(); router.push('/vs'); }}
           onChallengeBack={() => { matchService.disconnect(); router.push(isPro ? `/vs/friend?mode=${mode}&friend=${race.challenger.id}` : '/pro'); }}

@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, X } from 'lucide-react';
-import { VS } from '@/lib/vs-lobby';
+import { Bell, Loader2, X } from 'lucide-react';
+import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
 import { BotAvatar } from './vs-ui';
 
 // Live search (VS overhaul §6) — never a dead end. A ring timer counts up
@@ -24,11 +24,23 @@ interface Props {
   onCancel: () => void;
   /** Extra content under the headline (the private-match share card). */
   children?: React.ReactNode;
+  /**
+   * "Ping me when someone's looking" (§13) — Pro, live random queue only: the
+   * switch row under the step-in card, and KEEP WAITING pings the opted-in.
+   */
+  looking?: {
+    label: string;
+    on: boolean;
+    saving: boolean;
+    onToggle: () => void;
+    ping: () => Promise<{ pinged: number; throttled: boolean } | null>;
+  };
 }
 
-export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPlayBot, onCancel, children }: Props) {
+export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPlayBot, onCancel, children, looking }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [keepWaiting, setKeepWaiting] = useState(false);
+  const [pingLine, setPingLine] = useState<string | null>(null);
   const firedRef = useRef(false);
 
   useEffect(() => {
@@ -108,7 +120,10 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
             {!keepWaiting && (
               <button
                 type="button"
-                onClick={() => setKeepWaiting(true)}
+                onClick={() => {
+                  setKeepWaiting(true);
+                  looking?.ping().then((r) => setPingLine(keepWaitingPingLine(r))).catch(() => {});
+                }}
                 className="flex-1 py-2.5 text-[12px] font-black"
                 style={{ background: VS.soft, color: VS.ink, borderRadius: 11, letterSpacing: 0.5 }}
               >
@@ -116,7 +131,32 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
               </button>
             )}
           </div>
+          {keepWaiting && pingLine && (
+            <div className="text-[11.5px] font-bold text-center" style={{ color: VS.deep }}>{pingLine}</div>
+          )}
         </div>
+      )}
+
+      {looking && searching && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={looking.on}
+          onClick={looking.onToggle}
+          disabled={looking.saving}
+          className="w-full flex items-center gap-3 px-4 py-3 text-left"
+          style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow, opacity: looking.saving ? 0.6 : 1 }}
+        >
+          <Bell className="w-4 h-4 shrink-0" style={{ color: VS.ink }} />
+          <span className="flex-1 min-w-0 text-[12.5px] font-extrabold" style={{ color: VS.deep }}>{looking.label}</span>
+          <span
+            className="relative shrink-0 rounded-full transition-colors"
+            style={{ width: 36, height: 20, background: looking.on ? VS.ink : '#d1d5db' }}
+            aria-hidden="true"
+          >
+            <span className="absolute rounded-full bg-white transition-all" style={{ top: 2, width: 16, height: 16, left: looking.on ? 18 : 2 }} />
+          </span>
+        </button>
       )}
 
       <button
