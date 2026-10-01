@@ -1,27 +1,84 @@
 import SwiftUI
 import WordociousCore
 
-/// VS Battle lobby — entry point from the Home "VS Battle" card.
-/// Free users get one daily Classic VS; Pro unlocks all modes, private-match
-/// invites (create + join by code), and rematches. Mirrors the web's freemium
-/// VS gating (vs-game.tsx dailyVsActive + Pro-only modes/invites).
+/// Everything the VS lobby reads, refreshed on appear and polled for the live
+/// counts. The RECORD row sums user_stats exactly like the Stats page's VS
+/// section (People = 'vs', Bots = 'vs_cpu'), so the two always agree.
+@MainActor
+final class VSLobbyModel: ObservableObject {
+    @Published var battle: VsDayResult = .open
+    @Published var battleOpponent: String?
+    @Published var progression = CpuProgressionStore.load()
+    @Published var people = WinLoss(wins: 0, losses: 0)
+    @Published var bots = WinLoss(wins: 0, losses: 0)
+    @Published var incoming: [VsChallenge] = []
+    @Published var sent: [VsSentChallenge] = []
+    @Published var counts: VsLobbyKit.Counts?
+    @Published var online: Int?
+    @Published var rivals: [StatsDeepService.Rivalry] = []
+    /// Free: today's Daily Battle is spent (this device, or a person row).
+    @Published var dailyUsed = false
+
+    var botOfDay: VsDayResult { progression.botOfDay(todayUtc: LeaderboardService.todayUTC()) }
+
+    func refresh(isPro: Bool) async {
+        progression = CpuProgressionStore.load()
+        guard let uid = AuthService.shared.profile?.id else { return }
+        async let rows = UserStatsService.fetch(userId: uid)
+        async let lists = VsChallengeService.list()
+        async let day = VsLobbyKit.dailyBattle()
+        async let rivalRows: [StatsDeepService.Rivalry] = isPro ? StatsDeepService.rivalries(limit: 3) : []
+        let r = await rows
+        let vs = UserStatsService.vsRecord(r), cpu = UserStatsService.cpuRecord(r)
+        people = WinLoss(wins: vs.wins, losses: vs.losses)
+        bots = WinLoss(wins: cpu.wins, losses: cpu.losses)
+        if let l = await lists {
+            incoming = l.incoming.sorted { ($0.createdDate ?? .distantPast) > ($1.createdDate ?? .distantPast) }
+            sent = l.sent
+        }
+        let d = await day
+        battle = d.result
+        battleOpponent = d.opponent
+        dailyUsed = VSPlayLimit.hasPlayedToday() || battle != .open
+        rivals = await rivalRows
+    }
+
+    /// The nav's honest count, every 5 s while the lobby is on screen.
+    func pollCounts() async {
+        while !Task.isCancelled {
+            if let c = await VsLobbyKit.fetchCounts() { counts = c }
+            if (counts?.totalWaiting ?? 0) == 0, let n = await VsLobbyKit.fetchOnline() { online = n }
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+        }
+    }
+}
+
+/// The VS lobby (VS overhaul, founder 2026-10-01; spec docs/VS_REDESIGN_SPEC.md
+/// §2): the VS banner, incoming challenges, PLAY (mode strip + LIVE / FRIEND /
+/// BOTS), RIVALS, YOUR CHALLENGES and the code field. Every tap ends in a game:
+/// a live search hands off to a bot at 0:15, friends race your run any time in
+/// 24 h. Free players get the Daily Battle, the Bot of the Day and answering
+/// challenges; guests keep the sign-in card.
 struct VSLobbyView: View {
     @ObservedObject private var auth = AuthService.shared
+    @StateObject private var model = VSLobbyModel()
+    @Environment(\.dismiss) private var dismiss
+
     struct PendingInvite: Identifiable { let id = UUID(); let mode: GameMode; let code: String }
 
+    @State private var mode: GameMode = VsLobbyKit.selectedMode
     @State private var joinCode = ""
     @State private var lookupError: String?
+    @State private var joining = false
     @State private var pendingInvite: PendingInvite?
-    @State private var creatingInvite: GameMode?
-    @State private var dailyVSUsed = false
+    @State private var raceCode: String?
+    @State private var launch: Launch?
     @State private var showVSLimit = false
     @State private var showAuth = false
+    @State private var showPro = false
 
-    /// Live per-mode activity (waiting in queue + in an active match), polled
-    /// from the server's /vs/counts, so each mode row shows how busy it is.
-    struct VSCount { let waiting: Int; let playing: Int }
-    private struct VSCountsResponse: Codable { let waiting: [String: Int]?; let playing: [String: Int]? }
-    @State private var counts: [String: VSCount] = [:]
+    /// A game started from the banner's tiles.
+    struct Launch: Identifiable { let id = UUID(); let mode: GameMode; let isDaily: Bool; let intent: VSIntent }
 
     /// RootTabView ignores the keyboard safe area for the whole tab shell (the
     /// bottom nav must never ride a keyboard inset — real or latched by a
@@ -30,23 +87,29 @@ struct VSLobbyView: View {
     /// inset the scroll content by the keyboard's height while it's up.
     @State private var kbInset: CGFloat = 0
 
-    /// All VS-capable modes (matches the web VS mode list). Gauntlet runs through
-    /// the shared board engine; ProperNoundle uses its own VS flow.
-    private let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue, .gauntlet, .propernoundle]
-
     private var isPro: Bool { auth.isProActive }
+    private var free: Bool { !isPro }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                header
-                if !auth.isAuthenticated { guestPrompt }
-                else if isPro { proContent } else { freeContent }
+        VStack(spacing: 0) {
+            nav
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if !auth.isAuthenticated {
+                        guestPrompt
+                    } else {
+                        banner
+                        if !model.incoming.isEmpty { incomingSection }
+                        playSection
+                        if isPro { rivalsSection } else { proCard }
+                        yourChallenges
+                        codeSection
+                    }
+                }
+                // Generous bottom inset so the code row clears the tab bar (the
+                // lobby is pushed inside the Home tab's nav stack) and the ad banner.
+                .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 100)
             }
-            // Generous bottom inset so the last create-match row clears the
-            // tab bar (the lobby is pushed inside the Home tab's nav stack).
-            // Adds the ad banner height too when it's mounted (free accounts).
-            .padding(.horizontal, 16).padding(.bottom, 100)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: kbInset) }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
@@ -56,46 +119,358 @@ struct VSLobbyView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             withAnimation(.easeOut(duration: 0.25)) { kbInset = 0 }
         }
+        .background(VsLobbyKit.page.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
+        .swipeToGoBack { dismiss() }
         .sheet(isPresented: $showAuth) { AuthView() }
-        .background(LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
-        .navigationTitle("VS Battle")
-        .navigationBarTitleDisplayMode(.inline)
-        // Launch a private match once an invite is created or a code resolves.
+        .sheet(isPresented: $showPro) { ProView() }
+        // Launch a private match once a live code resolves.
         .fullScreenCover(item: $pendingInvite) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
-        .task(id: auth.profile?.id) { if !isPro { dailyVSUsed = await DailyResultsService.hasPlayedDailyVS() } }
-        .task { await pollCounts() }
+        .navigationDestination(isPresented: Binding(get: { raceCode != nil }, set: { if !$0 { raceCode = nil } })) {
+            if let code = raceCode { VSChallengeRaceView(code: code) }
+        }
+        .navigationDestination(isPresented: Binding(get: { launch != nil }, set: { if !$0 { launch = nil } })) {
+            if let l = launch { VSGameView(mode: l.mode, isDaily: l.isDaily, intent: l.intent) }
+        }
+        // Back from a game (or any page): fresh results, ladder and challenges.
+        .onAppear { if auth.isAuthenticated { Task { await model.refresh(isPro: isPro) } } }
+        .onChange(of: auth.profile?.id) { _ in Task { await model.refresh(isPro: isPro) } }
+        .task { await model.pollCounts() }
+        .onChange(of: mode) { VsLobbyKit.selectedMode = $0 }
         .overlay { if showVSLimit { VSLimitModal { showVSLimit = false } } }
     }
 
-    /// Poll live per-mode counts every 5s while the lobby is on screen.
-    private func pollCounts() async {
-        guard let url = VSConfig.serverURL?.appendingPathComponent("vs/counts") else { return }
-        while !Task.isCancelled {
-            if let (data, _) = try? await Net.api.data(from: url),
-               let obj = try? JSONDecoder().decode(VSCountsResponse.self, from: data) {
-                let keys = Set((obj.waiting ?? [:]).keys).union((obj.playing ?? [:]).keys)
-                counts = Dictionary(uniqueKeysWithValues: keys.map {
-                    ($0, VSCount(waiting: obj.waiting?[$0] ?? 0, playing: obj.playing?[$0] ?? 0))
-                })
+    // MARK: - Nav (back, VS BATTLE, the honest count)
+
+    private var nav: some View {
+        VSNavBar(title: "VS BATTLE", onBack: { dismiss() }) {
+            let looking = model.counts?.totalWaiting ?? 0
+            if looking > 0 || model.online != nil {
+                HStack(spacing: 5) {
+                    Circle().fill(looking > 0 ? Color(hex: 0x22C55E) : Color(hex: 0x9CA3AF)).frame(width: 7, height: 7)
+                    Text(looking > 0 ? "\(looking) looking" : "\(model.online ?? 0) online")
+                        .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.sub).monospacedDigit()
+                }
+                .padding(.trailing, 8)
             }
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
         }
     }
 
-    private var header: some View {
-        VStack(spacing: 6) {
-            Image("swords").renderingMode(.template).resizable().scaledToFit()
-                .frame(width: 40, height: 40).foregroundStyle(Color(hex: 0x0D9488))
-            // Uppercase + teal gradient to match the colored menu-title aesthetic
-            // of the mode rows below (user request).
-            Text("VS BATTLE").font(Brand.title(30))
-                .foregroundStyle(LinearGradient(colors: [Color(hex: 0x14B8A6), Color(hex: 0x0D9488)],
-                                                startPoint: .leading, endPoint: .trailing))
-            Text("Race a live opponent on the same puzzle").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+    // MARK: - Banner (§1)
+
+    private var banner: some View {
+        VSBannerView(
+            name: auth.profile?.username ?? "",
+            battle: model.battle, battleOpponent: model.battleOpponent,
+            botOfDay: model.botOfDay, incoming: model.incoming.first,
+            streak: model.progression.streak, people: model.people, bots: model.bots,
+            ladder: free ? nil : model.progression.ladderCleared, free: free,
+            onBattle: startDailyBattle, onBotOfDay: startBotOfDay)
+    }
+
+    private func startDailyBattle() {
+        guard model.battle == .open else { return }
+        if free && model.dailyUsed { showVSLimit = true; return }
+        launch = Launch(mode: .duel, isDaily: true, intent: .live)
+    }
+
+    /// Free: once per UTC day, Classic. Pro: the selected mode.
+    private func startBotOfDay() {
+        guard model.botOfDay == .open else { return }
+        launch = Launch(mode: free ? .duel : mode, isDaily: false, intent: .bot(.daily))
+    }
+
+    // MARK: - Incoming challenges
+
+    private var incomingSection: some View {
+        VStack(spacing: 8) {
+            ForEach(model.incoming.prefix(3)) { c in
+                NavigationLink { VSChallengeRaceView(code: c.code) } label: { incomingCard(c) }
+                    .buttonStyle(PressableStyle())
+            }
         }
-        .padding(.top, 8).padding(.bottom, 4)
+    }
+
+    private func incomingCard(_ c: VsChallenge) -> some View {
+        let line = c.run.solved
+            ? "\(VsLobbyKit.modeName(c.mode)) · solved in \(c.run.guesses) · \(VsLobby.vsClock(c.run.timeMs)) · \(c.hoursLeft)h left"
+            : "\(VsLobbyKit.modeName(c.mode)) · not solved · \(c.hoursLeft)h left"
+        return HStack(spacing: 12) {
+            VSInitialAvatar(name: c.challenger.username, size: 38)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("CHALLENGE FROM @\(c.challenger.username.uppercased())")
+                    .font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.ink).lineLimit(1)
+                Text(line).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            Spacer(minLength: 4)
+            Text("RACE").font(Brand.font(11, .black)).tracking(0.6).foregroundStyle(.white)
+                .padding(.horizontal, 14).frame(height: 30)
+                .background(Capsule().fill(VsLobbyKit.ink))
+        }
+        .padding(12).vsCard()
+    }
+
+    // MARK: - PLAY
+
+    private var playSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VSSectionLabel(text: "PLAY")
+                Spacer()
+                Text(VsLobbyKit.modeName(mode).uppercased()).font(Brand.font(11, .black)).tracking(0.8)
+                    .foregroundStyle(VsLobbyKit.accent(mode))
+            }
+            modeStrip
+            HStack(alignment: .top, spacing: 8) {
+                if isPro { liveTile } else { dailyTile }
+                friendTile
+                botsTile
+            }
+        }
+    }
+
+    /// The nine VS modes. Free: every icon shows, only Classic is selectable.
+    private var modeStrip: some View {
+        HStack(spacing: 0) {
+            ForEach(VsLobbyKit.modes, id: \.self) { m in
+                let locked = free && m != .duel
+                Button {
+                    if locked { showPro = true } else { Haptics.tap(); mode = m }
+                } label: {
+                    VSModeGlyphTile(mode: m, selected: (free ? .duel : mode) == m, size: 34)
+                        .opacity(locked ? 0.35 : 1)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(VsLobbyKit.modeName(m) + (locked ? ", Pro" : ""))
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func playTile(icon: some View, title: String, sub: String, locked: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top) {
+                icon
+                    .frame(width: 30, height: 30)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(VsLobbyKit.soft))
+                Spacer(minLength: 0)
+                if locked { VSLockBadge() }
+            }
+            Text(title).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+            Text(sub).font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.sub)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+        .vsCard()
+    }
+
+    private var liveTile: some View {
+        let waiting = model.counts?.waiting[mode.rawValue] ?? 0
+        let sub = waiting > 0
+            ? "\(waiting) waiting now in \(VsLobbyKit.modeName(mode))."
+            : "0 waiting now. A bot steps in at 0:15."
+        return NavigationLink { VSGameView(mode: mode, intent: .live) } label: {
+            playTile(icon: Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 13, weight: .bold)).foregroundStyle(VsLobbyKit.ink),
+                     title: "LIVE", sub: sub)
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    /// Free: today's Daily Battle (a bot steps in if nobody is on).
+    private var dailyTile: some View {
+        Button {
+            if model.dailyUsed { showVSLimit = true } else { launch = Launch(mode: .duel, isDaily: true, intent: .live) }
+        } label: {
+            playTile(icon: Image("swords").renderingMode(.template).resizable().scaledToFit()
+                        .frame(width: 14, height: 14).foregroundStyle(VsLobbyKit.ink),
+                     title: "DAILY",
+                     sub: model.dailyUsed ? "Played today. Pro plays live any time." : "Today’s battle. A bot steps in if nobody is on.")
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    private var friendTile: some View {
+        NavigationLink {
+            if isPro { VSFriendPage(mode: mode) } else { ProView() }
+        } label: {
+            playTile(icon: Image(systemName: "person.2.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(VsLobbyKit.ink),
+                     title: "FRIEND",
+                     sub: isPro ? "You play first. They race your run." : "Send with Pro. Answering is free.",
+                     locked: free)
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    private var botsTile: some View {
+        let cleared = model.progression.ladderCleared
+        let sub: String = free
+            ? "Bot of the Day is free. Ladder is Pro."
+            : (cleared >= VsLobby.ladderBots.count
+               ? "Ladder cleared!"
+               : "Ladder \(cleared) of \(VsLobby.ladderBots.count). \(VsLobby.botName(model.progression.nextLadderBot)) is next.")
+        return NavigationLink { VSBotsView(mode: free ? .duel : mode) } label: {
+            playTile(icon: BotArtCircle(art: BotPersonas.art(model.progression.nextLadderBot), size: 26, background: .clear),
+                     title: "BOTS", sub: sub)
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    // MARK: - RIVALS (Pro) / Go Pro (free)
+
+    @ViewBuilder private var rivalsSection: some View {
+        if !model.rivals.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    VSSectionLabel(text: "RIVALS")
+                    Spacer()
+                    Button {
+                        StatsJump.requestVS()
+                    } label: {
+                        Text("See all").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.ink)
+                    }
+                    .buttonStyle(.plain)
+                }
+                VStack(spacing: 0) {
+                    ForEach(Array(model.rivals.prefix(3).enumerated()), id: \.element.id) { i, r in
+                        if i > 0 { Divider().padding(.leading, 56) }
+                        rivalRow(r)
+                    }
+                }
+                .vsCard()
+            }
+        }
+    }
+
+    private func rivalRow(_ r: StatsDeepService.Rivalry) -> some View {
+        HStack(spacing: 12) {
+            VSInitialAvatar(name: r.username, size: 34)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep).lineLimit(1)
+                Text(VsLobbyKit.rivalLine(wins: r.wins, losses: r.losses, lastMode: r.lastMode))
+                    .font(Brand.font(11, .bold))
+                    .foregroundStyle(r.wins == r.losses ? VsLobbyKit.label : VsLobbyKit.ink)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+            }
+            Spacer(minLength: 4)
+            NavigationLink { VSFriendPage(mode: mode, preselected: [r.opponentId]) } label: {
+                VSSoftPill(title: "Challenge")
+            }
+            .buttonStyle(PressableStyle())
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+    }
+
+    private var proCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("GO PRO FOR ALL OF VS").font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+            Text("All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.")
+                .font(Brand.font(11.5, .bold)).foregroundStyle(VsLobbyKit.sub)
+                .fixedSize(horizontal: false, vertical: true)
+            NavigationLink { ProView() } label: {
+                Text("SEE PRO").font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(.white)
+                    .padding(.horizontal, 18).frame(height: 34)
+                    .background(Capsule().fill(VsLobbyKit.purple))
+            }
+            .buttonStyle(PressableStyle())
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(LinearGradient(colors: [Color(hex: 0xEDE9FE), Color(hex: 0xCCFBF1)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+    }
+
+    // MARK: - YOUR CHALLENGES (sent in the last 24 h)
+
+    @ViewBuilder private var yourChallenges: some View {
+        let recent = model.sent.filter { ($0.createdDate ?? .distantPast) > Date().addingTimeInterval(-24 * 3600) }
+        if !recent.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                VSSectionLabel(text: "YOUR CHALLENGES")
+                VStack(spacing: 0) {
+                    ForEach(Array(recent.prefix(3).enumerated()), id: \.element.id) { i, c in
+                        if i > 0 { Divider().padding(.leading, 48) }
+                        NavigationLink { VSChallengeRaceView(code: c.code) } label: { sentRow(c) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .vsCard()
+            }
+        }
+    }
+
+    private func sentRow(_ c: VsSentChallenge) -> some View {
+        let status: String = {
+            guard let r = c.results.last else { return "waiting" }
+            switch r.outcome {
+            case "loss": return "@\(r.username) beat it"
+            case "win": return "@\(r.username) lost"
+            default: return "@\(r.username) tied"
+            }
+        }()
+        let sentTo = c.invitees > 0 ? "sent to \(c.invitees)" : "link"
+        return HStack(spacing: 10) {
+            VSModeGlyphTile(mode: c.mode, selected: false, size: 26)
+            Text("\(VsLobbyKit.modeName(c.mode)) · \(sentTo)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.deep)
+            Spacer(minLength: 4)
+            Text(status).font(Brand.font(11, .heavy))
+                .foregroundStyle(status == "waiting" ? VsLobbyKit.label : VsLobbyKit.ink).lineLimit(1)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - HAVE A CODE?
+
+    private var codeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            VSSectionLabel(text: "HAVE A CODE?")
+            HStack(spacing: 8) {
+                TextField("CODE", text: $joinCode)
+                    .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                    .font(Brand.font(15, .heavy)).tracking(3)
+                    .onChange(of: joinCode) { v in
+                        let clean = String(v.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(8))
+                        if clean != v { joinCode = clean }
+                    }
+                    .padding(.horizontal, 12).frame(height: 40)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(VsLobbyKit.page))
+                Button { joinWithCode() } label: {
+                    HStack(spacing: 4) {
+                        if joining { ProgressView().controlSize(.small).tint(VsLobbyKit.ink) }
+                        Text("JOIN")
+                    }
+                    .font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.ink)
+                    .padding(.horizontal, 18).frame(height: 40)
+                    .background(Capsule().fill(VsLobbyKit.soft))
+                }
+                .buttonStyle(PressableStyle())
+                .disabled(joinCode.count < 4 || joining)
+            }
+            .padding(10).vsCard()
+            if let e = lookupError { Text(e).font(Brand.body(12)).foregroundStyle(Color(hex: 0xDC2626)) }
+        }
+    }
+
+    /// A challenge code first (GET /api/vs/challenges/<code>); otherwise a live
+    /// private-match code (the existing join path).
+    private func joinWithCode() {
+        let code = joinCode.trimmingCharacters(in: .whitespaces).uppercased()
+        lookupError = nil
+        joining = true
+        Task {
+            defer { joining = false }
+            if case .success = await VsChallengeService.get(code: code) {
+                raceCode = code
+            } else if let mode = await InviteService.lookupMode(code: code) {
+                pendingInvite = PendingInvite(mode: mode, code: code)
+            } else {
+                lookupError = "No match or challenge found for that code."
+            }
+        }
     }
 
     // VS is account-based (live opponents, recorded results) — guests sign in first.
@@ -115,46 +490,7 @@ struct VSLobbyView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    // MARK: - Free
-
-    private var freeContent: some View {
-        VStack(spacing: 12) {
-            if dailyVSUsed {
-                // Free daily VS already used today → show the limit modal instead
-                // of starting another (matches the web vs-limit-modal gate).
-                Button { showVSLimit = true } label: {
-                    ctaLabel(title: "Play Daily VS", subtitle: "Used today · tap for details", gradient: [Color(hex: 0x94A3B8), Color(hex: 0x64748B)])
-                }.buttonStyle(.plain)
-            } else {
-                NavigationLink {
-                    VSGameView(mode: .duel, isDaily: true)
-                } label: {
-                    ctaLabel(title: "Play Daily VS", subtitle: "One free Classic match a day", gradient: [Color(hex: 0x14B8A6), Color(hex: 0x0D9488)])
-                }.buttonStyle(.plain)
-            }
-
-            proUpsell
-        }
-    }
-
-    private var proUpsell: some View {
-        VStack(spacing: 8) {
-            Text("Unlock with Pro").font(Brand.font(12, .heavy)).tracking(0.6).foregroundStyle(Theme.textMuted)
-            VStack(alignment: .leading, spacing: 6) {
-                upsellRow("All modes in VS — unlimited matches")
-                upsellRow("Private matches: invite friends by code")
-                upsellRow("Rematches")
-            }
-            NavigationLink { ProView() } label: {
-                Label("Go Pro", systemImage: "crown.fill").font(Brand.font(14, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }.buttonStyle(.plain)
-        }
-        .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .padding(.top, 12)
     }
 
     // MARK: - Daily VS limit modal (ports vs-limit-modal.tsx)
@@ -200,130 +536,23 @@ struct VSLobbyView: View {
             .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
         }
     }
+}
 
-    private func upsellRow(_ t: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0xD97706))
-            Text(t).font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
-            Spacer(minLength: 0)
-        }
+/// "See all" on the lobby's Rivals: land on Stats, scrolled to All-time's VS
+/// section. The flag survives a Stats tab that isn't built yet (read on appear).
+enum StatsJump {
+    static let openVS = Notification.Name("wordocious.open-stats-vs")
+    private(set) static var pendingVS = false
+
+    static func requestVS() {
+        pendingVS = true
+        NotificationCenter.default.post(name: .openStats, object: nil)
+        NotificationCenter.default.post(name: openVS, object: nil)
     }
 
-    // MARK: - Pro
-
-    private var proContent: some View {
-        VStack(spacing: 14) {
-            section("QUICK MATCH")
-            ForEach(modes, id: \.self) { m in
-                NavigationLink { VSGameView(mode: m) } label: { modeRow(m) }.buttonStyle(.plain)
-            }
-
-            section("PRIVATE MATCH")
-            joinByCode
-            createInvite
-        }
-    }
-
-    private var joinByCode: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Join with a code").font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary)
-            HStack(spacing: 8) {
-                TextField("CODE", text: $joinCode)
-                    .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                    .font(Brand.font(15, .heavy)).tracking(2)
-                    .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
-                Button("Join") { joinWithCode() }
-                    .font(Brand.font(14, .black)).foregroundStyle(.white)
-                    .padding(.horizontal, 18).padding(.vertical, 11)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.primary))
-                    .disabled(joinCode.trimmingCharacters(in: .whitespaces).count < 4)
-            }
-            if let e = lookupError { Text(e).font(Brand.body(12)).foregroundStyle(Color(hex: 0xDC2626)) }
-        }
-        .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    private var createInvite: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Create a private match").font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary)
-            Text("Pick a mode — we'll generate a code to share. Your friend joins with it.")
-                .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                ForEach(modes, id: \.self) { m in
-                    Button { createInvite(for: m) } label: {
-                        HStack(spacing: 6) {
-                            if creatingInvite == m { ProgressView().controlSize(.small) }
-                            Text(ModeStyle.title(m)).font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
-                    }.buttonStyle(.plain).disabled(creatingInvite != nil)
-                }
-            }
-        }
-        .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    // MARK: - Actions
-
-    private func joinWithCode() {
-        let code = joinCode.trimmingCharacters(in: .whitespaces).uppercased()
-        lookupError = nil
-        Task {
-            if let mode = await InviteService.lookupMode(code: code) {
-                pendingInvite = PendingInvite(mode: mode, code: code)
-            } else {
-                lookupError = "No match found for that code."
-            }
-        }
-    }
-
-    private func createInvite(for mode: GameMode) {
-        creatingInvite = mode
-        Task {
-            let code = await InviteService.createInvite(gameMode: mode)
-            creatingInvite = nil
-            if let code { pendingInvite = PendingInvite(mode: mode, code: code) }
-            else { lookupError = "Couldn't create an invite. Try again." }
-        }
-    }
-
-    // MARK: - Bits
-
-    private func section(_ t: String) -> some View {
-        Text(t).font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
-            .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
-    }
-
-    private func modeRow(_ m: GameMode) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(ModeStyle.title(m)).font(Brand.font(16, .black))
-                    .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(m), startPoint: .leading, endPoint: .trailing))
-                // Live activity for this mode (green dot when anyone's around).
-                if let c = counts[m.rawValue], c.waiting + c.playing > 0 {
-                    HStack(spacing: 5) {
-                        Circle().fill(Color(hex: 0x22C55E)).frame(width: 6, height: 6)
-                        Text("\(c.playing) playing · \(c.waiting) waiting")
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                }
-            }
-            Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
-        }
-        .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    private func ctaLabel(title: String, subtitle: String, gradient: [Color]) -> some View {
-        VStack(spacing: 4) {
-            Text(title).font(Brand.font(18, .black)).foregroundStyle(.white)
-            Text(subtitle).font(Brand.font(12, .bold)).foregroundStyle(.white.opacity(0.85))
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 18)
-        .background(RoundedRectangle(cornerRadius: 16).fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)))
+    /// The Stats tab handled it.
+    static func consumeVS() -> Bool {
+        defer { pendingVS = false }
+        return pendingVS
     }
 }

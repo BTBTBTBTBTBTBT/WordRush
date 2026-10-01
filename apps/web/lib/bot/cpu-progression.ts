@@ -7,6 +7,7 @@
  * boss-ladder rung, unlocked cosmetics, and the Bot-of-the-Day streak. (Can be
  * promoted to a profiles.cpu_meta jsonb later for cross-device sync.)
  */
+import { ladderAfterGame } from '@wordle-duel/core';
 import type { BotTier } from './bot-personas';
 
 const KEY = 'wd_cpu_progression_v1';
@@ -23,6 +24,13 @@ export interface CpuProgression {
   /** Bot-of-the-Day: current day-streak + the last day it was beaten (UTC yyyy-mm-dd). */
   botOfDayStreak: number;
   botOfDayLastDay: string | null;
+  /** The bot ladder (VS overhaul §7, core ladderAfterGame): rungs cleared 0–4. */
+  ladderCleared: number;
+  /** Wins in a row against the next ladder bot. */
+  ladderRun: number;
+  /** UTC day the Bot of the Day was last played, and how it went. */
+  botOfDayPlayedDay: string | null;
+  botOfDayResult: 'won' | 'lost' | 'draw' | null;
 }
 
 const DEFAULT: CpuProgression = {
@@ -32,7 +40,16 @@ const DEFAULT: CpuProgression = {
   unlocked: [],
   botOfDayStreak: 0,
   botOfDayLastDay: null,
+  ladderCleared: 0,
+  ladderRun: 0,
+  botOfDayPlayedDay: null,
+  botOfDayResult: null,
 };
+
+/** A fresh progression (what a new device starts with). */
+export function emptyCpuProgression(): CpuProgression {
+  return { ...DEFAULT, unlocked: [] };
+}
 
 export function loadCpuProgression(): CpuProgression {
   if (typeof window === 'undefined') return { ...DEFAULT };
@@ -111,6 +128,34 @@ export function recordBotOfDay(won: boolean, todayUtc: string): CpuProgression {
     save(p);
   }
   return p;
+}
+
+/**
+ * Fold one finished bot game into the ladder (core ladderAfterGame — only games
+ * against the NEXT bot count). `botId` comes from botIdForKind; a challenge
+ * race is not a bot game and never reaches here.
+ */
+export function foldLadder(p: CpuProgression, botId: string, won: boolean): CpuProgression {
+  const next = ladderAfterGame({ cleared: p.ladderCleared, run: p.ladderRun }, botId, won);
+  return { ...p, ladderCleared: next.cleared, ladderRun: next.run };
+}
+
+export function recordLadderGame(botId: string, won: boolean): CpuProgression {
+  const p = foldLadder(loadCpuProgression(), botId, won);
+  save(p);
+  return p;
+}
+
+/** Mark today's (UTC) Bot of the Day as played, win, loss or draw (the day-streak is recordBotOfDay's). */
+export function recordBotOfDayResult(result: 'won' | 'lost' | 'draw', todayUtc: string): CpuProgression {
+  const p = { ...loadCpuProgression(), botOfDayPlayedDay: todayUtc, botOfDayResult: result };
+  save(p);
+  return p;
+}
+
+/** Today's Bot of the Day state for the VS banner: 'open' until it is played this UTC day. */
+export function botOfDayToday(p: CpuProgression, todayUtc: string): 'open' | 'won' | 'lost' | 'draw' {
+  return p.botOfDayPlayedDay === todayUtc && p.botOfDayResult ? p.botOfDayResult : 'open';
 }
 
 const RUNG_NAMES = ['Unranked', 'Easy', 'Medium', 'Hard', 'Champion'];

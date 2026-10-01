@@ -5,6 +5,7 @@
         "appIDs": ["Q32F6GRDYG.com.wordocious.app"],
         "components": [
           { "/": "/vs/join/*", "comment": "VS invite links open the app when installed" },
+          { "/": "/vs/challenge/*", "comment": "Race-my-run challenge links open the race in the app" },
           { "/": "/auth/reset*", "comment": "Password recovery completes natively (NewPasswordSheet)" },
           { "/": "/auth/confirm*", "comment": "Email confirmation exchanges the code in-app" }
         ]

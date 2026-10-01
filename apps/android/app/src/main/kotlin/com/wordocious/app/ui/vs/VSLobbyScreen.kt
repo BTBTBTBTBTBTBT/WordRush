@@ -1,32 +1,40 @@
 package com.wordocious.app.ui.vs
 
-import com.wordocious.app.ui.theme.Nunito
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -34,134 +42,436 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.CpuKind
+import com.wordocious.app.data.CpuProgression
+import com.wordocious.app.data.CpuProgressionStore
+import com.wordocious.app.data.DailyResultsService
 import com.wordocious.app.data.InviteService
+import com.wordocious.app.data.ProfileService
+import com.wordocious.app.data.StatsDeepService
+import com.wordocious.app.data.VSCountsService
 import com.wordocious.app.data.VSPlayLimit
-import kotlinx.coroutines.launch
+import com.wordocious.app.data.VsChallengeService
+import com.wordocious.app.data.VsLobbyStore
 import com.wordocious.app.ui.clickableNoRipple
-import com.wordocious.app.ui.modeTitle
-import com.wordocious.app.ui.modeTitleGradient
+import com.wordocious.app.ui.modeAccent
+import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
+import com.wordocious.core.VsBannerInput
+import com.wordocious.core.VsDayResult
+import com.wordocious.core.VsLobby
+import com.wordocious.core.WinLoss
+import com.wordocious.core.vsClock
+import com.wordocious.core.vsRecordLine
+import kotlinx.coroutines.launch
+
+/** One VS game to open: the mode, the daily flag, and what it starts. */
+data class VsRoute(val mode: GameMode, val isDaily: Boolean = false, val launch: VsLaunch = VsLaunch.Live)
+
+/** The lobby's pages: the lobby itself, the Bots page (§8), the Friend page (§3). */
+sealed class VsLobbyPage {
+    object Main : VsLobbyPage()
+    object Bots : VsLobbyPage()
+    data class Friend(val preselect: String? = null) : VsLobbyPage()
+}
+
+private val VS_MODES: List<GameMode> = VsLobby.VS_MODE_ORDER.mapNotNull { runCatching { GameMode.valueOf(it) }.getOrNull() }
+
+/** HH:MM:SS to the next UTC midnight (Daily Battle + Bot of the Day are UTC-seeded). */
+private fun utcClock(): String {
+    val now = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
+    val secs = java.time.Duration.between(now, now.toLocalDate().plusDays(1).atStartOfDay(java.time.ZoneOffset.UTC)).seconds.coerceAtLeast(0)
+    return "%02d:%02d:%02d".format(secs / 3600, (secs % 3600) / 60, secs % 60)
+}
 
 /**
- * VS Battle lobby — entry from the Home "VS Battle" card. Free users get one
- * daily Classic VS; Pro unlocks all modes (unlimited) incl. Gauntlet +
- * ProperNoundle, plus private-match invites (create a code / join by code).
- * Ports iOS VSLobbyView.
+ * VS Battle lobby (VS overhaul §2, founder-approved 2026-10-01; spec
+ * docs/VS_REDESIGN_SPEC.md). Almost nobody is ever waiting live, so every tap
+ * ends in a game: the VS banner (today's Daily Battle + Bot of the Day, the
+ * record), incoming challenges, PLAY (mode strip + LIVE / FRIEND / BOTS),
+ * Rivals, your sent challenges and the code row. Free players get the free
+ * banner, Classic only and the DAILY tile; guests keep the sign-in card.
+ * Hosts the Friend and Bots pages as sub-pages.
  */
-private val VS_MODES = listOf(
-    GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7,
-    GameMode.QUORDLE, GameMode.OCTORDLE, GameMode.SEQUENCE, GameMode.RESCUE,
-    GameMode.GAUNTLET, GameMode.PROPERNOUNDLE,
-)
-
 @Composable
-fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode, String) -> Unit, onGoPro: () -> Unit, onClose: () -> Unit) {
-    val profile by AuthService.profile.collectAsState()
+fun VSLobbyScreen(
+    initialPage: VsLobbyPage = VsLobbyPage.Main,
+    onPlay: (VsRoute) -> Unit,
+    onEnterInvite: (GameMode, String) -> Unit,
+    onOpenChallenge: (String) -> Unit,
+    onSeeRivals: () -> Unit,
+    onGoPro: () -> Unit,
+    onClose: () -> Unit,
+) {
+    var page by remember { mutableStateOf(initialPage) }
+    var mode by remember { mutableStateOf(VsLobbyStore.selectedMode()) }
     val isPro = AuthService.isProActive
-
-    // Live per-mode activity, polled from the server every 5s while the lobby is
-    // open, so each mode row shows how busy it is.
-    var counts by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(emptyMap<String, com.wordocious.app.data.VSCountsService.Count>()) }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        while (true) {
-            counts = com.wordocious.app.data.VSCountsService.fetch()
-            kotlinx.coroutines.delay(5000)
+    when (val p = page) {
+        VsLobbyPage.Bots -> {
+            androidx.activity.compose.BackHandler { page = VsLobbyPage.Main }
+            VsBotsPage(mode, isPro, onBack = { page = VsLobbyPage.Main }, onPlay = { m, l -> onPlay(VsRoute(m, false, l)) }, onGoPro = onGoPro)
         }
+        is VsLobbyPage.Friend -> {
+            androidx.activity.compose.BackHandler { page = VsLobbyPage.Main }
+            VsFriendPage(mode, p.preselect, onBack = { page = VsLobbyPage.Main }) { ids, link ->
+                onPlay(VsRoute(mode, false, VsLaunch.Send(ids, link)))
+            }
+        }
+        VsLobbyPage.Main -> LobbyMain(
+            mode = mode, isPro = isPro,
+            onMode = { mode = it; VsLobbyStore.setSelectedMode(it) },
+            onPage = { page = it }, onPlay = onPlay, onEnterInvite = onEnterInvite,
+            onOpenChallenge = onOpenChallenge, onSeeRivals = onSeeRivals, onGoPro = onGoPro, onClose = onClose,
+        )
+    }
+}
+
+@Composable
+private fun LobbyMain(
+    mode: GameMode,
+    isPro: Boolean,
+    onMode: (GameMode) -> Unit,
+    onPage: (VsLobbyPage) -> Unit,
+    onPlay: (VsRoute) -> Unit,
+    onEnterInvite: (GameMode, String) -> Unit,
+    onOpenChallenge: (String) -> Unit,
+    onSeeRivals: () -> Unit,
+    onGoPro: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val profile by AuthService.profile.collectAsState()
+    val today = remember { CpuProgressionStore.todayUtc() }
+    val prog: CpuProgression = remember { CpuProgressionStore.load() }
+
+    // Live per-mode queue counts (/vs/counts) every 5 s and /presence every 10 s.
+    var counts by remember { mutableStateOf(emptyMap<String, VSCountsService.Count>()) }
+    LaunchedEffect(Unit) { while (true) { counts = VSCountsService.fetch(); kotlinx.coroutines.delay(5000) } }
+    val online by produceState<Int?>(null) { while (true) { fetchOnline()?.let { value = it }; kotlinx.coroutines.delay(10_000) } }
+    val clock by produceState(utcClock()) { while (true) { value = utcClock(); kotlinx.coroutines.delay(1000) } }
+
+    var battle by remember { mutableStateOf(VsLobbyStore.Battle(VsLobbyStore.dailyBotResult()?.first ?: VsDayResult.OPEN, VsLobbyStore.dailyBotResult()?.second)) }
+    var dailyUsed by remember { mutableStateOf(VSPlayLimit.hasPlayedToday()) }
+    var people by remember { mutableStateOf(WinLoss(0, 0)) }
+    var bots by remember { mutableStateOf(WinLoss(0, 0)) }
+    var listing by remember { mutableStateOf<VsChallengeService.Listing?>(null) }
+    var rivals by remember { mutableStateOf<List<StatsDeepService.Rivalry>>(emptyList()) }
+    var showLimit by remember { mutableStateOf(false) }
+    LaunchedEffect(profile?.id) {
+        val uid = profile?.id ?: return@LaunchedEffect
+        launch { battle = VsLobbyStore.todayBattle(); if (battle.result != VsDayResult.OPEN) dailyUsed = true }
+        launch { if (DailyResultsService.hasPlayedDailyVsToday()) dailyUsed = true }
+        launch {
+            // The same sums the Stats page's VS section shows (§10).
+            val stats = ProfileService.fetchUserStats(uid)
+            people = stats.filter { it.playType == "vs" }.let { s -> WinLoss(s.sumOf { it.wins }, s.sumOf { it.losses }) }
+            bots = stats.filter { it.playType == "vs_cpu" }.let { s -> WinLoss(s.sumOf { it.wins }, s.sumOf { it.losses }) }
+        }
+        launch { listing = VsChallengeService.list() }
+        if (isPro) launch { rivals = StatsDeepService.rivalries(uid, 3) }
     }
 
-    // Free daily VS already used → tapping the grayed card explains + upsells
-    // instead of doing nothing (iOS VSLobbyView showVSLimit overlay).
-    var showVSLimit by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-
-    Box(Modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Back", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onClose))
-        }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            // Header
-            Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(painterResource(R.drawable.ic_swords), null, tint = Color(0xFF0D9488), modifier = Modifier.size(40.dp))
-                // Uppercase + teal gradient to match the colored menu-title
-                // aesthetic of the mode rows below (user request).
-                Text(
-                    "VS BATTLE", fontSize = 30.sp, fontWeight = FontWeight.Black,
-                    style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFF14B8A6), Color(0xFF0D9488))), fontFamily = Nunito),
+    Box(Modifier.fillMaxSize().background(VsTeal.page)) {
+        Column(Modifier.fillMaxSize()) {
+            VsNavBar("VS BATTLE", onBack = onClose) {
+                val looking = counts.values.sumOf { it.waiting }
+                if (looking > 0 || online != null) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(if (looking > 0) Color(0xFF22C55E) else VsTeal.grey))
+                    Text(
+                        if (looking > 0) "$looking looking" else "${online ?: 0} online",
+                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub,
+                    )
+                }
+            }
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (profile == null) {
+                    GuestPrompt { AuthService.exitGuest() }
+                    Spacer(Modifier.height(24.dp))
+                    return@Column
+                }
+                val free = !isPro
+                val incoming = listing?.incoming.orEmpty()
+                val newest = incoming.firstOrNull()
+                val botOfDay = prog.botOfDayToday(today)
+                val input = VsBannerInput(
+                    name = profile?.username ?: "", battle = battle.result, botOfDay = botOfDay,
+                    incomingFrom = newest?.challenger?.username, streak = prog.streak,
                 )
-                Text("Race a live opponent on the same puzzle", fontSize = 13.sp, color = WTheme.textMuted)
-            }
+                VsBannerView(
+                    input = input, free = free, clock = clock,
+                    challengeLeft = newest?.let { "${VsChallengeService.hoursLeft(it.expiresAt)}H" },
+                    battle = VsTodayTile(battle.result, battleLine(battle, free)),
+                    botOfDay = VsTodayTile(botOfDay, botLine(botOfDay, free)),
+                    recordLine = vsRecordLine(people, bots, if (free) null else prog.ladderCleared),
+                    botStreak = prog.streak,
+                    onBattle = { if (dailyUsed && free) showLimit = true else onPlay(VsRoute(GameMode.DUEL, isDaily = true)) },
+                    onBotOfDay = { onPlay(VsRoute(if (free) GameMode.DUEL else mode, false, VsLaunch.Bot(CpuKind.DAILY))) },
+                )
 
-            if (profile == null) {
-                // Guest — VS is account-based (live opponents + recorded results).
-                GuestPrompt { AuthService.exitGuest() }
-            } else if (isPro) {
-                SectionLabel("QUICK MATCH")
-                VS_MODES.forEach { m -> ModeRow(m, counts[m.name]) { onPlay(m, false) } }
-                PrivateMatchSection(onEnterInvite)
-            } else {
-                // Local flag OR server row — the SharedPreferences flag alone
-                // was evadable by clearing app data / using a second device.
-                var serverUsed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-                androidx.compose.runtime.LaunchedEffect(Unit) {
-                    serverUsed = com.wordocious.app.data.DailyResultsService.hasPlayedDailyVsToday()
+                // Incoming challenges: up to 3, newest first.
+                incoming.take(3).forEach { c -> IncomingCard(c) { onOpenChallenge(c.code) } }
+
+                // PLAY
+                val shownMode = if (free) GameMode.DUEL else mode
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    VsSectionLabel("PLAY", Modifier.weight(1f))
+                    Text(vsModeName(shownMode).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = modeAccent(shownMode))
                 }
-                val used = VSPlayLimit.hasPlayedToday() || serverUsed
-                CtaCard(
-                    title = "Play Daily VS",
-                    subtitle = if (used) "Used today · tap for details" else "One free Classic match a day",
-                    gradient = if (used) listOf(Color(0xFF94A3B8), Color(0xFF64748B)) else listOf(Color(0xFF14B8A6), Color(0xFF0D9488)),
-                ) { if (used) showVSLimit = true else onPlay(GameMode.DUEL, true) }
-                ProUpsell(onGoPro)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    VS_MODES.forEach { m ->
+                        val locked = free && m != GameMode.DUEL
+                        VsModeTile(
+                            m, 34.dp, selected = m == shownMode,
+                            modifier = Modifier.alpha(if (locked) 0.35f else 1f)
+                                .clickableNoRipple { if (locked) onGoPro() else onMode(m) },
+                        )
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (free) {
+                        PlayTile(
+                            "DAILY", if (dailyUsed) "Played today. Pro plays live any time." else "Today’s battle. A bot steps in if nobody is on.",
+                            Modifier.weight(1f), icon = { Icon(painterResource(R.drawable.ic_swords), null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                        ) { if (dailyUsed) showLimit = true else onPlay(VsRoute(GameMode.DUEL, isDaily = true)) }
+                        PlayTile(
+                            "FRIEND", "Send with Pro. Answering is free.", Modifier.weight(1f), locked = true,
+                            icon = { Icon(Icons.Filled.Groups, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                        ) { onGoPro() }
+                        PlayTile(
+                            "BOTS", "Bot of the Day is free. Ladder is Pro.", Modifier.weight(1f),
+                            icon = { Icon(Icons.Filled.SmartToy, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                        ) { onPage(VsLobbyPage.Bots) }
+                    } else {
+                        val w = counts[mode.name]?.waiting ?: 0
+                        PlayTile(
+                            "LIVE", if (w > 0) "$w waiting now in ${vsModeName(mode)}." else "0 waiting now. A bot steps in at 0:15.",
+                            Modifier.weight(1f), icon = { Icon(Icons.Filled.Sensors, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                        ) { onPlay(VsRoute(mode, false, VsLaunch.Live)) }
+                        PlayTile(
+                            "FRIEND", "You play first. They race your run.", Modifier.weight(1f),
+                            icon = { Icon(Icons.Filled.Groups, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                        ) { onPage(VsLobbyPage.Friend()) }
+                        val cleared = prog.ladderCleared
+                        PlayTile(
+                            "BOTS",
+                            if (cleared >= VsLobby.LADDER_BOTS.size) "Ladder cleared!"
+                            else "Ladder $cleared of ${VsLobby.LADDER_BOTS.size}. ${com.wordocious.app.data.BotPersonas.name(CpuProgressionStore.nextLadderBot(prog))} is next.",
+                            Modifier.weight(1f), icon = { Icon(Icons.Filled.SmartToy, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                        ) { onPage(VsLobbyPage.Bots) }
+                    }
+                }
+
+                // RIVALS (Pro) / the Pro card (free).
+                if (free) {
+                    GoProCard(onGoPro)
+                } else if (rivals.isNotEmpty()) {
+                    Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        VsSectionLabel("RIVALS", Modifier.weight(1f))
+                        Text("See all", fontSize = 11.sp, fontWeight = FontWeight.Black, color = VsTeal.ink, modifier = Modifier.clickableNoRipple(onSeeRivals))
+                    }
+                    VsCard {
+                        rivals.take(3).forEach { r ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                VsAvatar(r.username, null, size = 32.dp, borderColor = Color.Transparent)
+                                Column(Modifier.weight(1f)) {
+                                    Text("@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1)
+                                    Text(
+                                        vsRivalLine(r.wins, r.losses, r.lastMode), fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                        color = if (r.wins > r.losses) VsTeal.ink else VsTeal.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                VsSoftPill("Challenge") { onPage(VsLobbyPage.Friend(r.opponentId)) }
+                            }
+                        }
+                    }
+                }
+
+                // YOUR CHALLENGES (sent in the last 24 h).
+                val sent = listing?.sent.orEmpty().filter { VsChallengeService.isRecent(it.createdAt) }.take(3)
+                if (sent.isNotEmpty()) {
+                    VsSectionLabel("YOUR CHALLENGES", Modifier.padding(top = 4.dp))
+                    VsCard {
+                        sent.forEach { s ->
+                            val m = runCatching { GameMode.valueOf(s.gameMode) }.getOrDefault(GameMode.DUEL)
+                            Row(
+                                Modifier.fillMaxWidth().clickableNoRipple { onOpenChallenge(s.code) },
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                VsModeTile(m, 26.dp)
+                                Text(
+                                    "${vsModeName(m)} · " + if (s.invitees > 0) "sent to ${s.invitees}" else "link",
+                                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, modifier = Modifier.weight(1f), maxLines = 1,
+                                )
+                                val r = s.results.firstOrNull()
+                                val more = if (s.results.size > 1) " +${s.results.size - 1}" else ""
+                                Text(
+                                    when {
+                                        r == null -> "waiting"
+                                        r.outcome == "loss" -> "@${r.username} beat it$more"
+                                        r.outcome == "win" -> "@${r.username} lost$more"
+                                        else -> "@${r.username} tied$more"
+                                    },
+                                    fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (r == null) VsTeal.label else VsTeal.ink, maxLines = 1,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                CodeRow(onOpenChallenge, onEnterInvite)
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(24.dp))
         }
-    }
-        if (showVSLimit) VSDailyLimitModal(onGoPro = onGoPro, onClose = { showVSLimit = false })
+        if (showLimit) VSDailyLimitModal(onGoPro = onGoPro, onClose = { showLimit = false })
     }
 }
 
-@Composable
-private fun SectionLabel(text: String) {
-    Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+private fun battleLine(b: VsLobbyStore.Battle, free: Boolean): String {
+    val who = b.opponent
+    return when (b.result) {
+        VsDayResult.OPEN -> if (free) "Classic · free" else "Classic · open"
+        VsDayResult.WON -> who?.let { "Beat $it" } ?: "Won"
+        VsDayResult.LOST -> who?.let { "Lost to $it" } ?: "Lost"
+        VsDayResult.DRAW -> who?.let { "Draw with $it" } ?: "Draw"
+    }
+}
+
+private fun botLine(r: VsDayResult, free: Boolean): String = when (r) {
+    VsDayResult.OPEN -> if (free) "Lexi · free" else "Lexi · open"
+    VsDayResult.WON -> "Beat Lexi"
+    VsDayResult.LOST -> "Lost to Lexi"
+    VsDayResult.DRAW -> "Draw with Lexi"
+}
+
+/** /presence `online`, or null (best-effort). */
+private suspend fun fetchOnline(): Int? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    runCatching {
+        val conn = java.net.URL(com.wordocious.app.data.VSConfig.SERVER_URL + "/presence").openConnection() as java.net.HttpURLConnection
+        conn.connectTimeout = 8000; conn.readTimeout = 8000
+        val body = conn.inputStream.bufferedReader().readText()
+        conn.disconnect()
+        org.json.JSONObject(body).optInt("online", -1).takeIf { it >= 0 }
+    }.getOrNull()
 }
 
 @Composable
-private fun ModeRow(mode: GameMode, count: com.wordocious.app.data.VSCountsService.Count? = null, onClick: () -> Unit) {
+private fun IncomingCard(c: VsChallengeService.ChallengeView, onRace: () -> Unit) {
+    val m = runCatching { GameMode.valueOf(c.gameMode) }.getOrDefault(GameMode.DUEL)
+    val left = "${VsChallengeService.hoursLeft(c.expiresAt)}h left"
+    val line = if (c.run.solved) "${vsModeName(m)} · solved in ${c.run.guesses} · ${vsClock(c.run.timeMs)} · $left"
+    else "${vsModeName(m)} · not solved · $left"
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).clickableNoRipple(onClick).padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().vsCard().clickableNoRipple(onRace).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(modeTitle(mode), fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito))
-            // Live activity for this mode (green dot when anyone's around).
-            if (count != null && count.waiting + count.playing > 0) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Box(Modifier.size(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF22C55E)))
-                    Text("${count.playing} playing · ${count.waiting} waiting", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-            }
+        VsAvatar(c.challenger.username, null, size = 36.dp, borderColor = Color.Transparent)
+        Column(Modifier.weight(1f)) {
+            Text("CHALLENGE FROM @${c.challenger.username.uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Spacer(Modifier.weight(1f))
-        Text("›", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        Box(Modifier.clip(RoundedCornerShape(50)).background(VsTeal.ink).padding(horizontal = 14.dp, vertical = 7.dp)) {
+            Text("RACE", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White)
+        }
     }
 }
 
-/** Guest sign-in prompt — a surface card with its own primary button, not the
- *  teal play CTA (iOS VSLobbyView.guestPrompt). */
+@Composable
+private fun PlayTile(title: String, sub: String, modifier: Modifier, locked: Boolean = false, icon: @Composable () -> Unit, onClick: () -> Unit) {
+    Column(
+        modifier.heightIn(min = 104.dp).vsCard().clickableNoRipple(onClick).padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            VsIconSquare(icon)
+            Spacer(Modifier.weight(1f))
+            if (locked) VsLock()
+        }
+        Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.deep)
+        Text(sub, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, lineHeight = 13.sp)
+    }
+}
+
+@Composable
+private fun GoProCard(onGoPro: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().vsCard().background(Brush.linearGradient(listOf(Color(0xFFEDE9FE), Color(0xFFCCFBF1)))).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("GO PRO FOR ALL OF VS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep)
+        Text(
+            "All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub,
+        )
+        Box(
+            Modifier.clip(RoundedCornerShape(50)).background(VsPurple.ink).clickableNoRipple(onGoPro).padding(horizontal = 18.dp, vertical = 8.dp),
+        ) { Text("SEE PRO", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White) }
+    }
+}
+
+/** HAVE A CODE? — a challenge code opens the race; otherwise it's a live private-match code. */
+@Composable
+private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode, String) -> Unit) {
+    val scope = rememberCoroutineScope()
+    var code by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val canJoin = code.trim().length >= 4 && !busy
+    VsSectionLabel("HAVE A CODE?", Modifier.padding(top = 4.dp))
+    Row(
+        Modifier.fillMaxWidth().vsCard().padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        BasicTextField(
+            value = code, onValueChange = { code = it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8); error = null },
+            singleLine = true,
+            textStyle = TextStyle(fontFamily = Nunito, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = VsTeal.deep),
+            cursorBrush = SolidColor(VsTeal.ink),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false),
+            modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(VsTeal.page)
+                .border(1.5.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp)).padding(10.dp),
+            decorationBox = { inner ->
+                if (code.isEmpty()) Text("CODE", fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = VsTeal.grey)
+                inner()
+            },
+        )
+        VsSoftPill("JOIN", Modifier.alpha(if (canJoin) 1f else 0.5f)) {
+            val c = code.trim()
+            if (c.length < 4 || busy) return@VsSoftPill
+            busy = true; error = null
+            scope.launch {
+                when (VsChallengeService.lookup(c)) {
+                    is VsChallengeService.LookupOutcome.Found -> { busy = false; onOpenChallenge(c) }
+                    else -> {
+                        val gm = InviteService.lookupMode(c)?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
+                        busy = false
+                        if (gm != null) onEnterInvite(gm, c) else error = "No challenge or match found for that code."
+                    }
+                }
+            }
+        }
+    }
+    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
+}
+
+/** Guest sign-in prompt — VS is account-based (iOS VSLobbyView.guestPrompt). */
 @Composable
 private fun GuestPrompt(onSignIn: () -> Unit) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(20.dp),
+        Modifier.fillMaxWidth().vsCard(16.dp).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text("Sign in to play VS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -173,132 +483,5 @@ private fun GuestPrompt(onSignIn: () -> Unit) {
             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary).clickableNoRipple(onSignIn).padding(vertical = 13.dp),
             Alignment.Center,
         ) { Text("Sign in", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White) }
-    }
-}
-
-@Composable
-private fun CtaCard(title: String, subtitle: String, gradient: List<Color>, onClick: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Brush.linearGradient(gradient)).clickableNoRipple(onClick).padding(vertical = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
-        Text(subtitle, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.85f))
-    }
-}
-
-@Composable
-private fun PrivateMatchSection(onEnterInvite: (GameMode, String) -> Unit) {
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    // Which mode's invite is being created, so that tile can show a spinner and
-    // the rest of the grid dims (iOS creatingInvite).
-    var creatingMode by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<GameMode?>(null) }
-    var error by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
-    var joinCode by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
-    val canJoin = joinCode.trim().length >= 4
-
-    Spacer(Modifier.height(4.dp))
-    SectionLabel("PRIVATE MATCH")
-    // Join — enter a friend's code (iOS puts this card above the create grid).
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text("Join with a code", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = joinCode, onValueChange = { joinCode = it.uppercase().take(8) },
-                singleLine = true,
-                textStyle = TextStyle(fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.text),
-                cursorBrush = SolidColor(WTheme.primary),
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false),
-                modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp)).padding(10.dp),
-                decorationBox = { inner ->
-                    if (joinCode.isEmpty()) {
-                        Text("CODE", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
-                    }
-                    inner()
-                },
-            )
-            Box(
-                Modifier.clip(RoundedCornerShape(10.dp)).background(WTheme.primary).alpha(if (canJoin) 1f else 0.5f)
-                    .clickableNoRipple {
-                        val code = joinCode.trim()
-                        if (code.length < 4 || busy) return@clickableNoRipple
-                        busy = true; error = null
-                        scope.launch {
-                            val modeStr = InviteService.lookupMode(code)
-                            busy = false
-                            val gm = modeStr?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
-                            if (gm != null) onEnterInvite(gm, code) else error = "No match found for that code."
-                        }
-                    }.padding(horizontal = 18.dp, vertical = 11.dp),
-                Alignment.Center,
-            ) { Text("Join", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
-        }
-        error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
-    }
-    // Create — pick a mode; we generate a shareable code and drop you into the
-    // waiting lobby (2-column grid, matching iOS createInvite).
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text("Create a private match", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
-        Text(
-            "Pick a mode — we'll generate a code to share. Your friend joins with it.",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        )
-        VS_MODES.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                pair.forEach { m ->
-                    Row(
-                        Modifier.weight(1f).alpha(if (creatingMode == null) 1f else 0.5f).clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
-                            .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
-                            .clickableNoRipple {
-                                if (creatingMode != null) return@clickableNoRipple
-                                creatingMode = m; error = null
-                                scope.launch {
-                                    val res = InviteService.createInvite(m.name, null)
-                                    creatingMode = null
-                                    if (res.code != null) onEnterInvite(m, res.code) else error = res.error ?: "Couldn't create an invite. Try again."
-                                }
-                            }.padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (creatingMode == m) {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), color = WTheme.text, strokeWidth = 2.dp)
-                            Spacer(Modifier.size(6.dp))
-                        }
-                        Text(modeTitle(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                    }
-                }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProUpsell(onGoPro: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text("Unlock with Pro", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = WTheme.textMuted)
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("All modes in VS — unlimited matches", "Private matches: invite friends by code", "Rematches").forEach { t ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                    Text(t, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
-                }
-            }
-        }
-        Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706)))).clickableNoRipple(onGoPro).padding(vertical = 12.dp),
-            Alignment.Center,
-        ) { Text("Go Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
     }
 }

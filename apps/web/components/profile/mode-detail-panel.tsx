@@ -151,7 +151,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             style={{ background: `${accentColor}15`, color: accentColor }}
           >
             {tab === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
-            {tab === 'solo' ? 'Solo' : tab === 'vs' ? 'VS' : 'VS CPU'}
+            {tab === 'solo' ? 'Solo' : tab === 'vs' ? 'VS People' : 'VS Bots'}
           </span>
         </div>
       </div>
@@ -265,7 +265,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
               no data to draw from, so say so instead of showing blanks. */}
           {playType === 'vs_cpu' && (
             <p className="text-[11px] font-bold text-center py-2" style={{ color: 'var(--color-text-muted)' }}>
-              CPU practice records totals only — per-game charts track Solo and VS matches.
+              Bot games record totals only — per-game charts track Solo and People matches.
             </p>
           )}
         </>
@@ -277,7 +277,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
           style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
         >
           <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            No {tab === 'solo' ? 'solo' : tab === 'vs' ? 'VS' : 'VS CPU'} games played in this mode yet
+            No {tab === 'solo' ? 'solo' : tab === 'vs' ? 'VS People' : 'VS Bots'} games played in this mode yet
           </p>
         </div>
       )}

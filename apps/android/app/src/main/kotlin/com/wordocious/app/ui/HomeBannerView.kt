@@ -297,7 +297,7 @@ private fun BannerTile(
 }
 
 /** 1.5dp dashed rounded border (Compose's border() can't dash). */
-private fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp): Modifier = drawWithContent {
+internal fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp): Modifier = drawWithContent {
     drawContent()
     val w = width.toPx()
     drawRoundRect(
@@ -336,7 +336,7 @@ private fun Modifier.bannerGlow(double: Boolean): Modifier = drawBehind {
  * stops ticking while Home is hidden under a game or another tab.
  */
 @Composable
-private fun Modifier.bannerShimmer(): Modifier {
+internal fun Modifier.bannerShimmer(): Modifier {
     val hidden by LocalTabHidden.current
     if (hidden) return this
     val transition = rememberInfiniteTransition(label = "bannerShimmer")

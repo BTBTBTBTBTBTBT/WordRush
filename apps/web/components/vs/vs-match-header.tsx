@@ -8,6 +8,8 @@ interface HeaderPlayer {
   guesses: number;
   /** Normalized 0..1 lead metric — see computeVsProgress in vs-game. */
   progress: number;
+  /** Replaces the "N guesses" line (a bot, a friend's run, the challenge-send game). */
+  subtitle?: string;
 }
 
 interface VsMatchHeaderProps {
@@ -73,8 +75,8 @@ export function VsMatchHeader({ me, opponent, opponentTyping }: VsMatchHeaderPro
                 {theyLead && <Crown className="w-3 h-3 flex-shrink-0" style={{ color: '#f59e0b' }} fill="currentColor" />}
                 <span className="text-[11px] font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{opponent.username}</span>
               </div>
-              <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                {opponent.guesses} {opponent.guesses === 1 ? 'guess' : 'guesses'}
+              <div className="text-[9px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
+                {opponent.subtitle ?? `${opponent.guesses} ${opponent.guesses === 1 ? 'guess' : 'guesses'}`}
               </div>
             </div>
             <HeaderAvatar username={opponent.username} avatarUrl={opponent.avatarUrl} />

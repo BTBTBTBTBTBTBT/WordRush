@@ -313,6 +313,11 @@ struct RootTabView: View {
         .fullScreenCover(item: $deepLink.vsInvite) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
+        // A challenge link or push (/vs/challenge/<code>) → the race flow; its
+        // VS HOME closes the cover.
+        .fullScreenCover(item: $deepLink.vsChallenge) { link in
+            NavigationStack { VSChallengeRaceView(code: link.code) }
+        }
         // Password-recovery universal link → native set-new-password sheet
         // (session already established by DeepLink's code exchange).
         .sheet(isPresented: $deepLink.showNewPasswordSheet) { NewPasswordSheet() }

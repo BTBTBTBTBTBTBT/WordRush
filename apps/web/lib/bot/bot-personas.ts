@@ -1,8 +1,9 @@
 /**
  * CPU opponent personas + banter for VS-vs-CPU (Pro-only practice).
  *
- * Personas are cosmetic identities for the bot: a name, a robot avatar emoji,
- * an accent color, and a difficulty. Banter is light, friendly, event-driven
+ * Personas are cosmetic identities for the bot: a name, its art (the
+ * founder-picked GPT designs, VS overhaul §9 — never an emoji), an accent
+ * color, and a difficulty. Banter is light, friendly, event-driven
  * flavor surfaced through the existing VS callout channel — always kind, never
  * mean. Copy lives here so it's trivial to tune without touching game logic.
  */
@@ -15,7 +16,7 @@ export type BotTier = 'easy' | 'medium' | 'hard';
 export interface BotPersona {
   id: string;
   name: string;
-  /** Robot avatar emoji, rendered in the CPU chip / intro where a human avatar would be. */
+  /** The bot's art (/vs/bots/<id>.png), rendered in a circle where a human avatar would be. */
   avatar: string;
   /** Accent color for the persona chip. */
   color: string;
@@ -25,10 +26,34 @@ export interface BotPersona {
 }
 
 export const BOT_PERSONAS: Record<BotTier, BotPersona> = {
-  easy: { id: 'rook', name: 'Rook', avatar: '🤖', color: '#22c55e', tier: 'easy', tagline: 'Relaxed — still learning the ropes' },
-  medium: { id: 'lexi', name: 'Lexi', avatar: '🧠', color: '#f59e0b', tier: 'medium', tagline: 'Balanced — a fair fight' },
-  hard: { id: 'nova', name: 'Nova', avatar: '⚡', color: '#ef4444', tier: 'hard', tagline: 'Ruthless — solves fast, rarely slips' },
+  easy: { id: 'rook', name: 'Rook', avatar: botArt('rook'), color: '#22c55e', tier: 'easy', tagline: 'Relaxed — still learning the ropes' },
+  medium: { id: 'lexi', name: 'Lexi', avatar: botArt('lexi'), color: '#f59e0b', tier: 'medium', tagline: 'Balanced — a fair fight' },
+  hard: { id: 'nova', name: 'Nova', avatar: botArt('nova'), color: '#ef4444', tier: 'hard', tagline: 'Ruthless — solves fast, rarely slips' },
 };
+
+/** The art for a bot id (rook, lexi, nova, adapt, ghost). Unknown ids fall back to Lexi. */
+export function botArt(id: string): string {
+  const known = ['rook', 'lexi', 'nova', 'adapt', 'ghost'];
+  return `/vs/bots/${known.includes(id) ? id : 'lexi'}.png`;
+}
+
+/**
+ * The Bots page roster (VS overhaul §8): name, tier and the "solves in" line,
+ * which mirrors the engine's per-tier guess range (bot-engine PARAMS).
+ */
+export const BOT_ROSTER: Record<string, { id: string; name: string; tier: string; line: string }> = {
+  rook: { id: 'rook', name: 'Rook', tier: 'Easy', line: 'Easy · solves in 5–6' },
+  lexi: { id: 'lexi', name: 'Lexi', tier: 'Medium', line: 'Medium · solves in 4–5' },
+  nova: { id: 'nova', name: 'Nova', tier: 'Hard', line: 'Hard · solves in 2–4' },
+  adapt: { id: 'adapt', name: 'Adapt', tier: 'Adaptive', line: 'Adaptive · matches your form' },
+  ghost: { id: 'ghost', name: 'Your Ghost', tier: 'Ghost', line: 'Your best run, replayed' },
+};
+
+/**
+ * The Bot of the Day is always Lexi on the day's shared puzzle (canvas Round 7:
+ * "BOT OF THE DAY · LEXI"), so every platform names the same bot.
+ */
+export const BOT_OF_DAY_ID = 'lexi';
 
 /** Difficulty label shown on the CPU chip, e.g. "CPU · Hard". */
 export function tierLabel(tier: BotTier): string {

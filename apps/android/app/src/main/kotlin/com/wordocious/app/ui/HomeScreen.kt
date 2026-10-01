@@ -360,12 +360,9 @@ fun HomeScreen(
             visibleCards.firstOrNull { it.id == "vs" }?.let { vs ->
                 VSLiveTile(
                     card = vs, vsDailyWon = vsDailyWon, unlimitedMode = unlimitedMode, isPro = isPro,
-                    onOpen = {
-                        // iOS locks the VS card on VSPlayLimit.hasPlayedToday() — the play is
-                        // consumed at match START, so an abandoned daily VS still counts.
-                        val vsUsed = com.wordocious.app.data.VSPlayLimit.hasPlayedToday() || vsDailyWon != null
-                        if (!isPro && vsUsed && !unlimitedMode) limitModal = vs else onSelectMode(vs, unlimitedMode)
-                    },
+                    // VS overhaul (2026-10-01): the tile always opens the VS lobby; a used
+                    // free Daily Battle reads "Played today" there instead of a lock here.
+                    onOpen = { onSelectMode(vs, unlimitedMode) },
                     onInvite = { inviteOpen = true },
                 )
             }

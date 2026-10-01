@@ -450,23 +450,28 @@ enum StatsDeepService {
         let losses: Int
         let draws: Int
         let total: Int
+        /// The mode of the newest match against them (the VS lobby's "last: QuadWord").
+        var lastMode: String? = nil
         var id: String { opponentId }
     }
 
     /// Most-faced human opponents with the head-to-head record.
     static func rivalries(limit: Int = 5) async -> [Rivalry] {
         guard let uid = await userId() else { return [] }
-        struct Row: Decodable { let player1_id: String; let player2_id: String?; let winner_id: String? }
+        struct Row: Decodable { let player1_id: String; let player2_id: String?; let winner_id: String?; let game_mode: String? }
         let rows: [Row] = (try? await client.from("matches")
-            .select("player1_id, player2_id, winner_id")
+            .select("player1_id, player2_id, winner_id, game_mode")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .not("player2_id", operator: .is, value: "null")
             .order("created_at", ascending: false)
             .limit(1000).execute().value) ?? []
         var map: [String: (wins: Int, losses: Int, draws: Int)] = [:]
+        var lastMode: [String: String] = [:]
         for m in rows {
             let opp = m.player1_id == uid ? (m.player2_id ?? "") : m.player1_id
             guard !opp.isEmpty, opp != uid else { continue }
+            // Rows come newest first, so the first one seen is the last meeting.
+            if lastMode[opp] == nil, let gm = m.game_mode { lastMode[opp] = gm }
             var e = map[opp] ?? (0, 0, 0)
             if m.winner_id == uid { e.wins += 1 }
             else if m.winner_id != nil { e.losses += 1 }
@@ -479,6 +484,7 @@ enum StatsDeepService {
         guard !top.isEmpty else { return [] }
         let names = await PublicProfileService.usernames(ids: top.map(\.id))
         return top.map { Rivalry(opponentId: $0.id, username: names[$0.id] ?? "Unknown",
-                                 wins: $0.r.wins, losses: $0.r.losses, draws: $0.r.draws, total: $0.total) }
+                                 wins: $0.r.wins, losses: $0.r.losses, draws: $0.r.draws, total: $0.total,
+                                 lastMode: lastMode[$0.id]) }
     }
 }

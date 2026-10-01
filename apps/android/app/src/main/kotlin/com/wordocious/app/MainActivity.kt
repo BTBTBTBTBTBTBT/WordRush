@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
         // starts arrive via onNewIntent below. Before this, the intent-filter
         // matched but the path was silently discarded.
         com.wordocious.app.data.DeepLinkRouter.handle(intent?.data)
+        // A tapped push carries its route in the `url` extra (VS challenges).
+        com.wordocious.app.data.DeepLinkRouter.handlePushUrl(intent?.getStringExtra("url"))
         // Return leg of the browser Google sign-in fallback: parses the session
         // out of wordocious://auth-callback and hands it to the Auth plugin.
         // No-op for every other intent, so it is safe to call unconditionally.
@@ -254,6 +256,7 @@ class MainActivity : ComponentActivity() {
         // getIntent() (and a config change) sees the link, not the launch intent.
         setIntent(intent)
         com.wordocious.app.data.DeepLinkRouter.handle(intent.data)
+        com.wordocious.app.data.DeepLinkRouter.handlePushUrl(intent.getStringExtra("url"))
         // The browser fallback almost always lands HERE rather than onCreate —
         // the app is still alive behind the Custom Tab.
         com.wordocious.app.data.AuthService.completeBrowserSignIn(intent)

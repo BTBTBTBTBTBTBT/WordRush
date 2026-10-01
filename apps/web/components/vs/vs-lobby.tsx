@@ -1,0 +1,341 @@
+'use client';
+
+/**
+ * The VS lobby (founder-approved VS overhaul, 2026-10-01; spec
+ * docs/VS_REDESIGN_SPEC.md §2). Almost nobody is ever waiting live, so every
+ * tap ends in a game: the VS banner (today's Daily Battle + Bot of the Day,
+ * the record), incoming friend challenges, PLAY (mode strip + LIVE / FRIEND /
+ * BOTS), Rivals, your recent challenges and HAVE A CODE?. Free players get the
+ * one daily battle, answer challenges and codes for free, and see the Pro card
+ * instead of Rivals; guests keep the sign-in card.
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Bot, Loader2, Lock, Radio, Swords, Users } from 'lucide-react';
+import { VS_MODE_ORDER } from '@wordle-duel/core';
+import { useAuth } from '@/lib/auth-context';
+import { lookupInviteByCode, vsHrefForMode } from '@/lib/invite-service';
+import { hasPlayedModeToday } from '@/lib/play-limit-service';
+import { useLivePlayerCount } from '@/hooks/use-live-player-count';
+import {
+  VS, botsTileSub, h2hLine, hoursLeft, incomingLine, liveTileSub, loadVsMode, lobbyCount, modeColor,
+  modeTitle, recentSent, saveVsMode, sentLabel, sentStatus,
+} from '@/lib/vs-lobby';
+import { fetchChallenge, fetchVsRivals, type Rival } from '@/lib/vs-challenges-client';
+import { BottomNav } from '@/components/ui/bottom-nav';
+import { VsBanner } from './vs-banner';
+import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
+import { InitialAvatar, SectionLabel, SoftPill, VsModeIcon, VsNav, vsCardStyle } from './vs-ui';
+
+const MODES = VS_MODE_ORDER as readonly string[];
+
+export function VsLobby() {
+  const router = useRouter();
+  const { profile, isProActive, isGuest, exitGuest, loading: authLoading } = useAuth();
+  const isPro = isProActive;
+  const free = !isPro;
+  const data = useVsLobbyData(profile?.id ?? null);
+  const clock = useUtcClock();
+  const counts = useVsCounts();
+  const online = useLivePlayerCount();
+  const [mode, setMode] = useState('DUEL');
+  const [rivals, setRivals] = useState<Rival[]>([]);
+  const [code, setCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  // Read after mount: the play-limit cache is localStorage.
+  const [playedLocal, setPlayedLocal] = useState(false);
+
+  useEffect(() => { setMode(loadVsMode(isPro, MODES)); }, [isPro]);
+  useEffect(() => { setPlayedLocal(hasPlayedModeToday('vs')); }, []);
+  useEffect(() => {
+    if (!isPro || !profile?.id) { setRivals([]); return; }
+    fetchVsRivals(profile.id, 3).then(setRivals).catch(() => {});
+  }, [isPro, profile?.id]);
+
+  const waitingTotal = useMemo(() => Object.values(counts ?? {}).reduce((s, n) => s + (n || 0), 0), [counts]);
+  const count = lobbyCount(waitingTotal, online);
+  const waitingInMode = counts?.[mode] ?? 0;
+  const ladder = data.progression.ladderCleared;
+  const dailyPlayed = data.battle.result !== 'open' || playedLocal;
+  const latest = data.incoming[0] ?? null;
+
+  const pickMode = (m: string) => {
+    if (free && m !== 'DUEL') { router.push('/pro'); return; }
+    setMode(m);
+    saveVsMode(m);
+  };
+
+  const playBotOfDay = () => router.push(`${vsHrefForMode(free ? 'DUEL' : mode)}?cpu=daily`);
+  const playBattle = () => router.push('/practice/vs?daily=true');
+
+  const handleJoin = useCallback(async () => {
+    const c = code.trim().toUpperCase();
+    if (c.length < 4 || joining) return;
+    setCodeError(null);
+    setJoining(true);
+    // A challenge code first (race flow), then a live private-match code.
+    const ch = await fetchChallenge(c);
+    if (ch.ok) { router.push(`/vs/challenge/${c}`); return; }
+    const invite = await lookupInviteByCode(c);
+    setJoining(false);
+    if (!invite || invite.status !== 'pending' || new Date(invite.expires_at).getTime() < Date.now()) {
+      setCodeError(ch.status === 403 ? ch.error : 'No match found for that code.');
+      return;
+    }
+    router.push(`${vsHrefForMode(invite.game_mode)}?inviteCode=${invite.invite_code}`);
+  }, [code, joining, router]);
+
+  const signedOut = isGuest && !profile;
+
+  return (
+    <div className="min-h-screen pb-24" style={{ backgroundColor: VS.page }}>
+      <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
+        <VsNav
+          title="VS BATTLE"
+          onBack={() => router.push('/')}
+          right={count && !signedOut ? (
+            <span className="flex items-center gap-1.5 text-[11px] font-extrabold" style={{ color: count.live ? VS.ink : VS.label }}>
+              <span className={`w-2 h-2 rounded-full ${count.live ? 'animate-pulse' : ''}`} style={{ background: count.live ? '#22c55e' : '#9ca3af' }} />
+              {count.text}
+            </span>
+          ) : null}
+        />
+
+        {authLoading ? (
+          // Entitlement unknown: show neither the Pro nor the free lobby until we know.
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: VS.ink }} />
+          </div>
+        ) : signedOut ? (
+          <div className="p-4" style={vsCardStyle}>
+            <div className="text-center space-y-3 py-2">
+              <div className="text-base font-black" style={{ color: VS.deep }}>Sign in to play VS</div>
+              <p className="text-[13px] font-semibold" style={{ color: '#4b5563' }}>
+                VS Battle pits you against live opponents, bots and your friends&apos; runs, and records your results. It needs an account.
+              </p>
+              <button onClick={exitGuest} className="w-full py-3 text-[15px] font-black text-white" style={{ background: VS.ink, borderRadius: 12 }}>
+                SIGN IN
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <VsBanner
+              name={profile?.username ?? ''}
+              battle={data.battle}
+              botOfDay={data.botOfDay}
+              incoming={latest ? { from: latest.challenger.username, hoursLeft: hoursLeft(latest.expiresAt) } : null}
+              streak={data.progression.streak}
+              people={data.people}
+              bots={data.bots}
+              ladder={free ? null : ladder}
+              free={free}
+              clock={clock}
+              onBattle={playBattle}
+              onBotOfDay={playBotOfDay}
+            />
+
+            {/* Incoming challenges, newest first. */}
+            {data.incoming.slice(0, 3).map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => router.push(`/vs/challenge/${c.code}`)}
+                className="w-full flex items-center gap-3 p-3 text-left transition-transform active:scale-[0.99]"
+                style={vsCardStyle}
+              >
+                <InitialAvatar name={c.challenger.username} url={c.challenger.avatarUrl} size={36} />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[11px] font-black uppercase truncate" style={{ color: VS.ink, letterSpacing: 0.5 }}>
+                    Challenge from @{c.challenger.username}
+                  </span>
+                  <span className="block text-[11.5px] font-bold truncate" style={{ color: '#4b5563' }}>
+                    {incomingLine(c.gameMode, c.run, c.expiresAt)}
+                  </span>
+                </span>
+                <span className="shrink-0 px-3 flex items-center text-[11px] font-black text-white rounded-full" style={{ height: 28, background: VS.ink }}>RACE</span>
+              </button>
+            ))}
+
+            {/* PLAY */}
+            <SectionLabel right={<span className="text-[11px] font-black uppercase" style={{ color: modeColor(mode), letterSpacing: 0.8 }}>{modeTitle(mode)}</span>}>
+              Play
+            </SectionLabel>
+            <div className="flex justify-between">
+              {MODES.map((m) => {
+                const on = m === mode;
+                const locked = free && m !== 'DUEL';
+                const color = modeColor(m);
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => pickMode(m)}
+                    aria-label={`${modeTitle(m)}${locked ? ' (Pro)' : ''}`}
+                    aria-pressed={on}
+                    className="flex items-center justify-center transition-transform active:scale-90"
+                    style={{
+                      width: 34, height: 34, borderRadius: 9,
+                      background: on ? color : '#ffffff',
+                      boxShadow: on ? `0 0 10px ${color}99` : VS.cardShadow,
+                      opacity: locked ? 0.35 : 1,
+                    }}
+                  >
+                    <VsModeIcon mode={m} size={16} color={on ? '#ffffff' : color} />
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {isPro ? (
+                <PlayTile icon={Radio} title="LIVE" sub={liveTileSub(waitingInMode, mode)} onClick={() => router.push(`${vsHrefForMode(mode)}?live=1`)} />
+              ) : (
+                <PlayTile
+                  icon={Swords}
+                  title="DAILY"
+                  sub={dailyPlayed ? 'Played today. Pro plays live any time.' : 'Today’s battle. A bot steps in if nobody is on.'}
+                  onClick={playBattle}
+                />
+              )}
+              <PlayTile
+                icon={Users}
+                title="FRIEND"
+                locked={free}
+                sub={free ? 'Send with Pro. Answering is free.' : 'You play first. They race your run.'}
+                onClick={() => router.push(free ? '/pro' : `/vs/friend?mode=${mode}`)}
+              />
+              <PlayTile
+                icon={Bot}
+                title="BOTS"
+                sub={free ? 'Bot of the Day is free. Ladder is Pro.' : botsTileSub(ladder)}
+                onClick={() => router.push('/vs/bots')}
+              />
+            </div>
+
+            {/* RIVALS (Pro) / the Pro card (free). */}
+            {isPro ? (
+              rivals.length > 0 && (
+                <>
+                  <SectionLabel right={
+                    <button type="button" onClick={() => router.push('/stats#vs-section')} className="text-[11px] font-black" style={{ color: VS.ink }}>See all</button>
+                  }>Rivals</SectionLabel>
+                  <div style={vsCardStyle}>
+                    {rivals.map((r, i) => {
+                      const line = h2hLine(r.wins, r.losses, r.lastMode);
+                      return (
+                        <div key={r.opponentId} className="flex items-center gap-3 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}>
+                          <InitialAvatar name={r.username} url={r.avatarUrl} size={34} />
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{r.username}</span>
+                            <span className="block text-[11px] font-bold truncate" style={{ color: line.ahead ? VS.ink : VS.label }}>{line.text}</span>
+                          </span>
+                          <SoftPill onClick={() => router.push(`/vs/friend?mode=${mode}&friend=${r.opponentId}`)}>Challenge</SoftPill>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )
+            ) : (
+              <div className="p-4" style={{ ...vsCardStyle, background: 'linear-gradient(135deg, #ede9fe, #ccfbf1)' }}>
+                <div className="text-[15px] font-black" style={{ color: '#4c1d95' }}>GO PRO FOR ALL OF VS</div>
+                <p className="text-[12px] font-bold mt-1" style={{ color: '#4b5563' }}>
+                  {/* The VS mode count comes from the catalog, never a literal (sweep-copy guard). */}
+                  All {MODES.length} modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/pro')}
+                  className="mt-3 px-4 text-[12px] font-black text-white rounded-full"
+                  style={{ height: 32, background: '#7c3aed' }}
+                >
+                  SEE PRO
+                </button>
+              </div>
+            )}
+
+            {/* YOUR CHALLENGES (sent in the last 24 h). */}
+            {recentSent(data.sent).length > 0 && (
+              <>
+                <SectionLabel>Your challenges</SectionLabel>
+                <div style={vsCardStyle}>
+                  {recentSent(data.sent).slice(0, 3).map((s, i) => {
+                    const status = sentStatus(s);
+                    return (
+                      <button
+                        key={s.code}
+                        type="button"
+                        onClick={() => router.push(`/vs/challenge/${s.code}`)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
+                        style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}
+                      >
+                        <span className="flex items-center justify-center shrink-0" style={{ width: 26, height: 26, borderRadius: 7, background: `${modeColor(s.gameMode)}1f` }}>
+                          <VsModeIcon mode={s.gameMode} size={14} />
+                        </span>
+                        <span className="flex-1 min-w-0 text-[12.5px] font-extrabold truncate" style={{ color: '#1f2937' }}>{sentLabel(s)}</span>
+                        <span className="shrink-0 text-[11.5px] font-black" style={{ color: status === 'waiting' ? VS.label : VS.ink }}>{status}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* HAVE A CODE? — a challenge code first, then a live private-match code. */}
+            <SectionLabel>Have a code?</SectionLabel>
+            <div className="p-3" style={vsCardStyle}>
+              <div className="flex gap-2">
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleJoin(); }}
+                  placeholder="CODE"
+                  aria-label="Challenge or match code"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={8}
+                  className="flex-1 min-w-0 px-3 py-2 text-[15px] font-black outline-none"
+                  style={{ letterSpacing: 3, background: '#f8fafc', borderRadius: 10, color: VS.deep }}
+                />
+                <button
+                  type="button"
+                  onClick={handleJoin}
+                  disabled={code.trim().length < 4 || joining}
+                  className="px-4 text-[12px] font-black rounded-full disabled:opacity-40"
+                  style={{ background: VS.soft, color: VS.ink }}
+                >
+                  {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'JOIN'}
+                </button>
+              </div>
+              {codeError && <p className="text-xs font-bold mt-2" style={{ color: '#dc2626' }}>{codeError}</p>}
+            </div>
+          </>
+        )}
+      </div>
+      <BottomNav />
+    </div>
+  );
+}
+
+function PlayTile({ icon: Icon, title, sub, locked, onClick }: {
+  icon: typeof Radio; title: string; sub: string; locked?: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative flex flex-col items-start gap-1.5 p-2.5 text-left transition-transform active:scale-[0.97]"
+      style={{ ...vsCardStyle, minHeight: 104 }}
+    >
+      {locked && <Lock className="absolute top-2.5 right-2.5 w-3 h-3" style={{ color: VS.label }} />}
+      <span className="flex items-center justify-center" style={{ width: 30, height: 30, borderRadius: 8, background: VS.soft }}>
+        <Icon style={{ width: 16, height: 16, color: VS.ink }} />
+      </span>
+      <span className="text-[12px] font-black" style={{ color: VS.deep, letterSpacing: 0.5 }}>{title}</span>
+      <span className="font-bold" style={{ fontSize: 10.5, lineHeight: 1.3, color: '#4b5563' }}>{sub}</span>
+    </button>
+  );
+}

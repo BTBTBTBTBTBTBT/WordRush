@@ -60,6 +60,67 @@ enum VSModeInfo {
     }
 }
 
+/// What a VS game screen was opened to do (VS overhaul, 2026-10-01): a live
+/// search (with a bot stepping in at 0:15), a bot straight away, a "race my run"
+/// challenge to send, or a friend's challenge to race.
+enum VSIntent {
+    struct SendTarget {
+        let friendIds: [String]
+        let link: Bool
+    }
+    struct GhostRun {
+        let guesses: Int
+        let timeMs: Double
+    }
+    case live
+    case bot(CpuKind, ghost: GhostRun? = nil)
+    case sendChallenge(SendTarget)
+    case race(VsChallenge)
+}
+
+/// A finished challenge race (or a stored one), from the racer's side.
+struct VSChallengeOutcome {
+    let mine: VsChallengeRun
+    let theirs: VsChallengeRun
+    let outcome: VsOutcome
+    let opponentName: String
+}
+
+/// The "race my run" transport: no opponent at all. The match simply ends when
+/// the player finishes (VSMatchViewModel posts the run), so every call is a no-op.
+final class SoloRunTransport: VSTransport {
+    var onConnect: (() -> Void)?
+    var onDisconnect: (() -> Void)?
+    var onQueueStatus: ((VSQueueStatus) -> Void)?
+    var onMatchFound: ((VSMatchFound) -> Void)?
+    var onMatchStart: ((VSMatchStart) -> Void)?
+    var onGuessResult: ((VSGuessResult) -> Void)?
+    var onOpponentProgress: ((VSOpponentProgress) -> Void)?
+    var onMatchEnded: ((VSMatchEnded) -> Void)?
+    var onOpponentStageCompleted: ((VSStageEvent) -> Void)?
+    var onRematchOffered: (() -> Void)?
+    var onRematchDeclined: (() -> Void)?
+    var onRematchStart: ((VSRematchStart) -> Void)?
+    var onOpponentLeft: (() -> Void)?
+    var onOpponentDisconnected: ((VSOpponentDisconnected) -> Void)?
+    var onOpponentReconnected: (() -> Void)?
+    var onOpponentTyping: (() -> Void)?
+    var onServerError: ((VSServerError) -> Void)?
+    var isConfigured: Bool { true }
+    func connect(presenceId: String?, token: String?) {}
+    func disconnect() {}
+    func joinQueue(mode: String, dailySeed: String?, inviteCode: String?) {}
+    func leaveQueue() {}
+    func submitGuess(_ guess: String, boardIndex: Int) {}
+    func boardSolved(boardIndex: Int) {}
+    func playerCompleted(status: String, totalGuesses: Int, timeMs: Int) {}
+    func stageCompleted(stageIndex: Int) {}
+    func emitTyping() {}
+    func abandonMatch() {}
+    func offerRematch() {}
+    func declineRematch() {}
+}
+
 /// Drives a live VS match — the native equivalent of the state machine in
 /// apps/web/components/vs/vs-game.tsx. Owns the socket service + a child
 /// GameViewModel (the player's own board, engine-driven from the match seed),
@@ -67,7 +128,8 @@ enum VSModeInfo {
 /// from server events.
 @MainActor
 final class VSMatchViewModel: ObservableObject {
-    enum Screen { case entry, queue, match, waiting, result, opponentLeft, matchGone, alreadyPlayedDaily, notConfigured }
+    enum Screen { case queue, match, waiting, result, opponentLeft, matchGone, alreadyPlayedDaily, notConfigured, challengeSent, challengeResult }
+    enum SendState: Equatable { case sending, sent(code: String), failed(String) }
     enum RematchState { case idle, offered, received, declined }
 
     struct OpponentProgress {
@@ -85,6 +147,7 @@ final class VSMatchViewModel: ObservableObject {
     let mode: GameMode
     let isDaily: Bool          // freemium daily-VS flow (free + DUEL only)
     let inviteCode: String?
+    let intent: VSIntent
 
     /// One opponent-milestone toast (greens / board solved / last guess).
     struct Callout: Equatable { let id: Double; let text: String }
@@ -93,7 +156,8 @@ final class VSMatchViewModel: ObservableObject {
     @Published var queuePosition = 0
     @Published var queueSize = 0           // total players waiting (queue_status.queueSize)
     @Published var countdown: Int?         // non-nil → show "Match Found" overlay
-    @Published var countdownIsRematch = false  // relabels the overlay for a rematch
+    /// The countdown overlay's label: a found match, a rematch, or your own run.
+    @Published var countdownLabel = "MATCH FOUND"
     private var pendingCountdownSecs = 3        // held until the intro finishes
     @Published var game: GameViewModel?    // built on match_start (board modes)
     @Published var proper: ProperNoundleVM?  // built on match_start (ProperNoundle VS)
@@ -151,6 +215,35 @@ final class VSMatchViewModel: ObservableObject {
     /// My reported totals once I complete (web playerStats).
     @Published var myFinalGuesses: Int?
 
+    // ── Live search step-in (§6): a bot takes over at 0:15 unless KEEP WAITING ──
+    /// When the human search started (drives the ring timer and the step-in bar).
+    @Published var searchStartedAt: Date?
+    /// KEEP WAITING was tapped: no automatic step-in (PLAY NOW stays).
+    @Published var keepWaiting = false
+    private var stepInTask: Task<Void, Never>?
+    private var humanMatchFound = false
+    private var dailySeedValue: String?
+
+    // ── Async challenges (§3–§5) ──
+    /// The run being sent and the POST's progress (challenge-send game).
+    @Published var sentRun: VsChallengeRun?
+    @Published var sendState: SendState = .sending
+    /// The finished race (challenge race game) and any note from saving it.
+    @Published var challengeOutcome: VSChallengeOutcome?
+    @Published var challengeNote: String?
+
+    var raceChallenge: VsChallenge? { if case .race(let c) = intent { return c }; return nil }
+    var sendTarget: VSIntent.SendTarget? { if case .sendChallenge(let t) = intent { return t }; return nil }
+    var isRace: Bool { raceChallenge != nil }
+    var isSend: Bool { sendTarget != nil }
+    /// A live search that can hand off to a bot: not a private invite, not a bot / challenge game.
+    var canStepIn: Bool {
+        if case .live = intent { return inviteCode == nil }
+        return false
+    }
+    /// The bot that steps in: Lexi for the Daily Battle, else the ladder's next bot.
+    var stepInKind: CpuKind { VsLobbyKit.stepInKind(isDaily: dailyVsActive) }
+
     var opponentName: String { opponentInfo?.username ?? "Opponent" }
     var totalBoards: Int { VSModeInfo.totalBoards(mode) }
     var modeMaxGuesses: Int { VSModeInfo.maxGuesses(mode) }
@@ -195,6 +288,8 @@ final class VSMatchViewModel: ObservableObject {
     @Published var photoFinish: String?
     @Published var cpuMilestone: Int?
     @Published var cpuUnlock: String?
+    /// The ladder rung this bot game cleared (a bot id), if any.
+    @Published var cpuClearedRung: String?
     @Published var cpuStreak = 0
     @Published var cpuSessionWins = 0
     @Published var cpuSessionLosses = 0
@@ -216,20 +311,24 @@ final class VSMatchViewModel: ObservableObject {
     // dailyVsActive dropped the !isPro guard — Pro plays the same daily VS, then
     // gets the already-played screen with a "Play Unlimited VS" prompt).
     private var dailyVsActive: Bool { isDaily && mode == .duel }
-    // Specific intents skip the entry chooser and join the human queue directly:
-    // the daily VS flow and accepting a private invite link. Everything else
-    // opens the entry chooser (Quick Match / Bot Match / Invite a Friend).
-    private var autoJoin: Bool { dailyVsActive || inviteCode != nil }
-
-    init(mode: GameMode, isDaily: Bool = false, inviteCode: String? = nil) {
+    init(mode: GameMode, isDaily: Bool = false, inviteCode: String? = nil, intent: VSIntent = .live) {
         self.mode = mode
         self.isDaily = isDaily
         self.inviteCode = inviteCode
+        self.intent = intent
     }
 
     // MARK: - Lifecycle
 
-    func start() { Task { await startAsync() } }
+    /// Once per screen: the view's onAppear fires again when a page pushed from
+    /// the result (CHALLENGE BACK, Pro) pops back, and that must not start a
+    /// second game.
+    private var started = false
+    func start() {
+        guard !started else { return }
+        started = true
+        Task { await startAsync() }
+    }
 
     private func startAsync() async {
         guard service.isConfigured else { screen = .notConfigured; return }
@@ -252,20 +351,30 @@ final class VSMatchViewModel: ObservableObject {
             }
         }
 
-        // Standard flow: show the entry chooser first (Quick Match / Bot Match /
-        // Invite). Daily VS and invite-link intents auto-join the human queue.
-        if autoJoin {
+        // The lobby already chose (VS overhaul): a live search, a bot, or a challenge.
+        dailySeedValue = dailySeed
+        switch intent {
+        case .live:
             joinHumanQueue(dailySeed: dailySeed)
-        } else {
-            screen = .entry
+        case .bot(let kind, let ghost):
+            let fixed: String? = kind == .daily
+                ? generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "\(mode.rawValue)_CPU")
+                : nil
+            startCpu(kind, ghost: ghost.map { (guesses: $0.guesses, timeMs: $0.timeMs) }, fixedSeed: fixed)
+        case .sendChallenge:
+            startChallengeSend()
+        case .race(let c):
+            startRace(c)
         }
     }
 
-    /// Join the live human matchmaking queue. Called on mount for daily/invite
-    /// intents, or from the entry chooser's Quick Match button.
+    /// Join the live human matchmaking queue (the lobby's LIVE / DAILY tiles and
+    /// invite links). A plain search starts the 15 s step-in clock.
     func joinHumanQueue(dailySeed: String? = nil) {
         let seed = dailySeed ?? (dailyVsActive ? generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "DUEL_VS") : nil)
         screen = .queue
+        humanMatchFound = false
+        if canStepIn { beginStepInClock() }
         wireHandlers()
         let presenceId = AuthService.shared.profile.map { "u:\($0.id)" }
         // Emit join_queue ONLY once the socket is actually connected. Emitting it
@@ -289,7 +398,37 @@ final class VSMatchViewModel: ObservableObject {
     /// at their completion — so this just skips the wait.
     func finishCpuNow() { guard isCpu else { return }; service.resolveNow() }
 
+    // MARK: - Step-in (§6)
+
+    private func beginStepInClock() {
+        stepInTask?.cancel()
+        searchStartedAt = Date()
+        keepWaiting = false
+        stepInTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard let self, !Task.isCancelled, !self.keepWaiting else { return }
+            self.stepInNow()
+        }
+    }
+
+    /// KEEP WAITING: stay in the human queue; PLAY NOW stays available.
+    func keepWaitingTapped() {
+        keepWaiting = true
+        stepInTask?.cancel()
+    }
+
+    /// PLAY <BOT> NOW, or the automatic step-in at 0:15. A person who matched
+    /// first wins: nothing happens once a match was found. The Daily Battle's
+    /// bot plays today's shared daily puzzle (the play is consumed at start).
+    func stepInNow() {
+        guard canStepIn, screen == .queue, !isCpu, !humanMatchFound, countdown == nil, !showIntro else { return }
+        stepInTask?.cancel()
+        service.leaveQueue()
+        startCpu(stepInKind, fixedSeed: dailyVsActive ? dailySeedValue : nil)
+    }
+
     func leave() {
+        stepInTask?.cancel()
         countdownTimer?.invalidate()
         typingHideTask?.cancel()
         calloutTask?.cancel()
@@ -301,6 +440,7 @@ final class VSMatchViewModel: ObservableObject {
     /// Pro-gated in the UI. `ghost` supplies (guessCount, timeMs) for Beat Your
     /// Best; `fixedSeed` is the Bot-of-the-Day daily seed.
     func startCpu(_ kind: CpuKind, ghost: (guesses: Int, timeMs: Double)? = nil, fixedSeed: String? = nil) {
+        stepInTask?.cancel()
         let oppId = CpuOpponent.opponentId(kind)
         let id = CpuOpponent.identity(oppId)
         cpuKind = kind
@@ -330,10 +470,119 @@ final class VSMatchViewModel: ObservableObject {
         service.connect(presenceId: nil, token: nil)
     }
 
+    /// Race a friend's run (§4): the local bot service replays a ghost of it —
+    /// the challenge's seed, its guess count and solve time, solving only if the
+    /// run did. The opponent is the challenger (their profile + head-to-head),
+    /// never a bot label; the outcome is VsLobby.vsOutcome, not the bot's own.
+    func startRace(_ c: VsChallenge) {
+        countdownTimer?.invalidate()
+        service.disconnect()
+        var config = BotConfig(fixedSeed: c.seed, opponentId: c.challenger.id)
+        config.ghostGuesses = max(1, c.run.guesses)
+        config.ghostTimeMs = Double(max(1000, c.run.timeMs))
+        config.ghostSolves = c.run.solved
+        service = LocalBotMatchService(difficulty: .medium, config: config)
+        screen = .queue
+        resultRecorded = false
+        matchCompletionHandled = false
+        wireHandlers()
+        service.onConnect = { [weak self] in
+            guard let self, self.screen == .queue else { return }
+            self.service.joinQueue(mode: self.mode.rawValue, dailySeed: nil, inviteCode: nil)
+        }
+        service.connect(presenceId: nil, token: nil)
+    }
+
+    /// Play first, then send (§3): a fresh seed, no opponent, a 3-2-1 and go.
+    /// Nothing is recorded to the challenger's stats now — each friend's race
+    /// adds the game to both players later (server side).
+    private func startChallengeSend() {
+        service = SoloRunTransport()
+        screen = .queue
+        countdownLabel = "YOUR RUN STARTS IN"
+        countdownThenBegin(seed: generateMatchSeed())
+    }
+
+    /// The finished run as the challenge API stores it (guesses = the VS score unit).
+    private func buildMyRun(guesses: Int, timeMs: Int, solutions: [String]?) -> VsChallengeRun {
+        let solved = myStatus == .won
+        let total = totalBoards
+        let boards = solved ? total : min(total, max(myBoardsSolved, game?.boardsSolvedCount ?? 0))
+        let sols = (solutions?.isEmpty == false) ? (solutions ?? []) : BotEngine.matchSolutions(seed: seed, mode: mode)
+        return VsChallengeRun(solved: solved, boardsSolved: boards, totalBoards: total, guesses: guesses,
+                              timeMs: timeMs, guessLog: myGuessLog.map(\.guess), solutions: sols)
+    }
+
+    private func finishChallengeSend(guesses: Int, timeMs: Int) {
+        guard isSend else { return }
+        // Snapshot like a match end, so nothing resets under the sent screen.
+        myFinalBoards = game?.state.boards
+        sentRun = buildMyRun(guesses: guesses, timeMs: timeMs, solutions: nil)
+        screen = .challengeSent
+        sendChallenge()
+    }
+
+    /// POST the run (also the sent screen's retry).
+    func sendChallenge() {
+        guard let target = sendTarget, let run = sentRun else { return }
+        sendState = .sending
+        let m = mode, s = seed
+        Task { [weak self] in
+            let r = await VsChallengeService.create(gameMode: m, seed: s, run: run, friendIds: target.friendIds, link: target.link)
+            switch r {
+            case .success(let c): self?.sendState = .sent(code: c.code)
+            case .failure(let e): self?.sendState = .failed(e.message)
+            }
+        }
+    }
+
+    /// The race is over the moment the player finishes: score it with the live
+    /// rule, post it (the server writes the shared matches row and the
+    /// challenger's side), then record OUR side through the normal live-VS path
+    /// (XP, achievements) — never a client matches row, never vs_cpu.
+    private func finishRace(_ data: VSMatchEnded) {
+        guard let c = raceChallenge, !resultRecorded else { return }
+        resultRecorded = true
+        let mine = buildMyRun(guesses: data.playerGuesses, timeMs: Int(data.playerTime.rounded()), solutions: data.solutions)
+        let outcome = VsLobby.vsOutcome(mine.vsRun, c.run.vsRun)
+        challengeOutcome = VSChallengeOutcome(mine: mine, theirs: c.run, outcome: outcome, opponentName: c.challenger.username)
+        screen = .challengeResult
+        guard AuthService.shared.profile != nil else { return }
+        let theMode = mode, theSeed = seed, code = c.code, oppId = c.challenger.id
+        let secs = Int((Double(mine.timeMs) / 1000).rounded())
+        Task { [weak self] in
+            switch await VsChallengeService.postResult(code: code, run: mine) {
+            case .success(let posted):
+                if posted.alreadyRecorded == true {
+                    self?.challengeNote = "You already raced this run — your first result stands."
+                } else {
+                    // A draw is NOT a loss: isDraw counts the game only (web parity).
+                    self?.xpResult = await GameResultsService.record(
+                        gameMode: theMode, playType: "vs", won: outcome == .win, guessCount: mine.guesses,
+                        timeSeconds: secs, boardsSolved: mine.boardsSolved, totalBoards: mine.totalBoards,
+                        seed: theSeed, isDraw: outcome == .draw)
+                    if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
+                        await AchievementService.checkAchievements(
+                            userId: uid, gameMode: theMode.rawValue, playType: "vs", won: outcome == .win,
+                            guessCount: mine.guesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
+                    }
+                }
+            case .failure(let e):
+                self?.challengeNote = e.message
+            }
+            // The server wrote the shared matches row — refresh the head-to-head.
+            if let myId = AuthService.shared.profile?.id {
+                self?.headToHead = await HeadToHeadService.fetchHeadToHead(myId: myId, opponentId: oppId)
+            }
+        }
+    }
+
     /// Leaving now would actually forfeit (a recorded loss): only while still
     /// MID-GAME. Once finished (waiting screen) — or once the match is over /
     /// gone — leaving records nothing.
-    var leaveWouldForfeit: Bool { screen == .match && myStatus == nil && !isCpu && !resultRecorded }
+    var leaveWouldForfeit: Bool { screen == .match && myStatus == nil && !isLocalOpponent && !resultRecorded }
+    /// A bot, a challenge ghost or no opponent at all — nothing on a server to forfeit.
+    var isLocalOpponent: Bool { isCpu || isRace || isSend }
 
     func forfeit() {
         // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
@@ -351,7 +600,7 @@ final class VSMatchViewModel: ObservableObject {
         // nothing (parity with the clean-end CPU path, which only writes the
         // separate vs_cpu bucket — and with the web, where a CPU abandon is a
         // pure teardown).
-        if screen == .match, myStatus == nil, !resultRecorded, !isCpu {
+        if screen == .match, myStatus == nil, !resultRecorded, !isLocalOpponent {
             resultRecorded = true
             let secs = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs) / 1000) : 0
             let gc = game?.rowsUsed ?? 0
@@ -374,7 +623,7 @@ final class VSMatchViewModel: ObservableObject {
         // a forfeit win for the opponent — disconnect and let the server
         // resolve the match (opponent finishes on merit, or its reconnect-grace
         // timeout). A gone match (.matchGone) has nothing to abandon.
-        if isCpu || (myStatus == nil && screen != .matchGone) { service.abandonMatch() }
+        if isLocalOpponent || (myStatus == nil && screen != .matchGone) { service.abandonMatch() }
         service.disconnect()
     }
 
@@ -389,7 +638,7 @@ final class VSMatchViewModel: ObservableObject {
     /// scenePhase → .background while playing a HUMAN match: the socket will
     /// drop and the server holds our slot for its 60s reconnect grace.
     func appDidEnterBackground() {
-        guard !isCpu, screen == .match || screen == .waiting else { return }
+        guard !isLocalOpponent, screen == .match || screen == .waiting else { return }
         backgroundedAtMs = Date().timeIntervalSince1970 * 1000
     }
 
@@ -402,7 +651,7 @@ final class VSMatchViewModel: ObservableObject {
     func appDidBecomeActive() {
         guard let bg = backgroundedAtMs else { return }
         backgroundedAtMs = nil
-        guard !isCpu, screen == .match || screen == .waiting else { return }
+        guard !isLocalOpponent, screen == .match || screen == .waiting else { return }
         if Date().timeIntervalSince1970 * 1000 - bg > Self.serverGraceMs {
             markMatchGone()
         }
@@ -503,10 +752,20 @@ final class VSMatchViewModel: ObservableObject {
         headToHead = nil
         opponentInfo = nil
         opponentUserId = data.opponentUserId
+        if !isCpu && !isRace { humanMatchFound = true; stepInTask?.cancel() }
         if let oppId = data.opponentUserId, CpuOpponent.isCpu(oppId) {
-            // CPU opponent: use the persona identity locally — no profile / H2H fetch.
+            // Bot opponent: the persona identity and art locally — no profile / H2H fetch.
             let id = CpuOpponent.identity(oppId)
-            opponentInfo = VsProfile(username: "\(id.name) 🤖", avatarUrl: nil, level: 0)
+            // Labelled a bot by name ("Lexi · Bot"), drawn with its art.
+            opponentInfo = VsProfile(username: "\(id.name) · Bot", avatarUrl: nil, level: 0, botArt: id.art)
+        } else if let c = raceChallenge {
+            // Challenge ghost: the challenger themself (never a bot label) + head-to-head.
+            opponentInfo = VsProfile(username: c.challenger.username, avatarUrl: c.challenger.avatarUrl, level: 0)
+            if let myId = AuthService.shared.profile?.id {
+                Task { [weak self] in
+                    self?.headToHead = await HeadToHeadService.fetchHeadToHead(myId: myId, opponentId: c.challenger.id)
+                }
+            }
         } else if let oppId = data.opponentUserId {
             Task { [weak self] in
                 if let p = await HeadToHeadService.fetchVsProfile(userId: oppId) {
@@ -568,7 +827,12 @@ final class VSMatchViewModel: ObservableObject {
     private func beginRematch(seed: String, solutions: [String]? = nil) {
         rematch = .idle
         showIntro = false
-        countdownIsRematch = true
+        countdownLabel = "REMATCH STARTING IN"
+        countdownThenBegin(seed: seed, solutions: solutions)
+    }
+
+    /// A 3-2-1 overlay, then the board (rematches and your own challenge run).
+    private func countdownThenBegin(seed: String, solutions: [String]? = nil) {
         let start = Date().timeIntervalSince1970 * 1000 + 3000
         countdown = 3
         countdownTimer?.invalidate()
@@ -584,7 +848,6 @@ final class VSMatchViewModel: ObservableObject {
     private func beginMatch(seed: String, startMs: Double?, solutions: [String]? = nil) {
         self.seed = seed
         matchStartMs = startMs ?? (Date().timeIntervalSince1970 * 1000)
-        countdownIsRematch = false
         opponent = OpponentProgress()
         result = nil
         rematch = .idle
@@ -597,7 +860,8 @@ final class VSMatchViewModel: ObservableObject {
         // daily board is revealed, backgrounding/killing the app mid-match must
         // not hand back a fresh attempt at the same (now known) puzzle. The
         // end-of-match/forfeit markings stay as idempotent backstops.
-        if dailyVsActive && !isCpu { VSPlayLimit.markPlayedToday() }
+        // A bot that stepped into the Daily Battle consumes it too (§6).
+        if dailyVsActive { VSPlayLimit.markPlayedToday() }
         // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
         // first ~0.6s instead of cutting straight from "1" into the game. The
         // tick timer is stopped HERE so a late tick can never re-show "GO!".
@@ -643,6 +907,7 @@ final class VSMatchViewModel: ObservableObject {
                 self.screen = .waiting
                 self.service.playerCompleted(status: status == .won ? "won" : "lost",
                                              totalGuesses: guesses, timeMs: timeMs)
+                self.afterPlayerCompleted(guesses: guesses, timeMs: timeMs)
             }
             // Throttled typing relay while letters are in the current row.
             pvm.$input.dropFirst()
@@ -684,6 +949,7 @@ final class VSMatchViewModel: ObservableObject {
             self.screen = .waiting
             self.service.playerCompleted(status: status == .won ? "won" : "lost",
                                          totalGuesses: guesses, timeMs: timeMs)
+            self.afterPlayerCompleted(guesses: guesses, timeMs: timeMs)
         }
         // Throttled typing relay while letters are in the current row.
         vm.$currentInput.dropFirst()
@@ -692,6 +958,14 @@ final class VSMatchViewModel: ObservableObject {
         vm.resumeTimer()
         game = vm
         screen = .match
+    }
+
+    /// A challenge game ends with the player: a race resolves now (the outcome
+    /// is the live rule against the stored run, not the ghost's finish), and a
+    /// send posts the run.
+    private func afterPlayerCompleted(guesses: Int, timeMs: Int) {
+        if isRace { service.resolveNow() }
+        else if isSend { finishChallengeSend(guesses: guesses, timeMs: timeMs) }
     }
 
     /// Emit at most one typing ping per 1.5s while the local row has letters
@@ -788,10 +1062,11 @@ final class VSMatchViewModel: ObservableObject {
         myFinalBoards = game?.state.boards
         myFinalPNRows = proper.map { p in p.guesses.map { VSPNRecapRow(word: $0.word, tiles: $0.tiles) } }
         opponentDisconnectDeadline = nil
+        if isRace { finishRace(data); return }
         result = data
         screen = .result
         recordResult(data)
-        if dailyVsActive && !isCpu { VSPlayLimit.markPlayedToday() }
+        if dailyVsActive { VSPlayLimit.markPlayedToday() }
 
         // Refresh the head-to-head line so the result screen shows the UPDATED
         // record including this match. Small delay gives the single-writer
@@ -823,11 +1098,18 @@ final class VSMatchViewModel: ObservableObject {
             // Fun layer: progression (streak / ladder / cosmetics / milestone),
             // session tally, photo-finish on a close / last-guess win.
             let tier = cpuPersona?.tier ?? .medium
-            let outcome = CpuProgressionStore.recordGame(won: won, tier: tier, personaId: BotPersonas.persona(tier).id)
-            if cpuKind == .daily { CpuProgressionStore.recordBotOfDay(won: won, todayUtc: LeaderboardService.todayUTC()) }
+            let dayResult: VsDayResult = data.winner == "draw" ? .draw : (won ? .won : .lost)
+            let outcome = CpuProgressionStore.recordGame(won: won, tier: tier, personaId: BotPersonas.persona(tier).id,
+                                                         botId: cpuPersona?.botId ?? "lexi")
+            if cpuKind == .daily { CpuProgressionStore.recordBotOfDay(result: dayResult, todayUtc: LeaderboardService.todayUTC()) }
+            // A bot that stepped into the Daily Battle (§6): its result shows on the
+            // VS banner from a local key — never a daily_results 'vs' row (the People
+            // record and the VS leaderboard stay people-only).
+            if dailyVsActive { VsLobbyKit.recordDailyBot(result: dayResult, opponent: cpuPersona?.name ?? "Lexi") }
             cpuStreak = outcome.progression.streak
             cpuMilestone = outcome.milestone
             cpuUnlock = outcome.unlockedPersona
+            cpuClearedRung = outcome.clearedRung
             if won { cpuSessionWins += 1 } else { cpuSessionLosses += 1 }
             if won {
                 let margin = abs(data.playerTime - data.opponentTime)

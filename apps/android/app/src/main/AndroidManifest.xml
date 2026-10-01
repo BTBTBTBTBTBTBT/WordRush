@@ -39,7 +39,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- App links: ONLY /vs/join/* opens in the app (handled by
+            <!-- App links: ONLY /vs/join/* and /vs/challenge/* open in the app (handled by
                  DeepLinkRouter). The old host-wide filter claimed every
                  wordocious.com link and then discarded the path — referral
                  /join/*, share /s/*, and content pages belong in the browser.
@@ -50,6 +50,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/vs/join/" />
+                <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/vs/challenge/" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/auth/reset" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/auth/confirm" />
             </intent-filter>

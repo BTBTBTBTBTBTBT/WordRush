@@ -11,9 +11,9 @@ struct VSGameView: View {
 
     let mode: GameMode
 
-    init(mode: GameMode, isDaily: Bool = false, inviteCode: String? = nil) {
+    init(mode: GameMode, isDaily: Bool = false, inviteCode: String? = nil, intent: VSIntent = .live) {
         self.mode = mode
-        _vm = StateObject(wrappedValue: VSMatchViewModel(mode: mode, isDaily: isDaily, inviteCode: inviteCode))
+        _vm = StateObject(wrappedValue: VSMatchViewModel(mode: mode, isDaily: isDaily, inviteCode: inviteCode, intent: intent))
     }
 
     private var gradient: [Color] { ModeStyle.titleGradient(mode) }
@@ -24,11 +24,8 @@ struct VSGameView: View {
 
     // Non-Pro Rematch tap shows the Pro upsell modal (web parity — VsLimitModal).
     @State private var showRematchUpsell = false
-    @State private var showCpuChooser = false
-    @State private var cpuAutoOffer = false
-    @State private var showCpuPro = false
-    @State private var showInvite = false
-    @State private var ghostRun: (guesses: Int, timeMs: Double)?
+    /// Live search: people waiting in this mode's queue (from /vs/counts, minus you).
+    @State private var waitingInMode: Int?
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
 
@@ -39,7 +36,6 @@ struct VSGameView: View {
 
             switch vm.screen {
             case .notConfigured:     notConfigured
-            case .entry:             entryScreen
             case .queue:             queueScreen
             case .match:             matchScreen
             case .waiting:           waitingScreen
@@ -47,6 +43,13 @@ struct VSGameView: View {
             case .opponentLeft:      opponentLeftScreen
             case .matchGone:         matchGoneScreen
             case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, gradient: gradient, isPro: AuthService.shared.isProActive, won: vm.dailyWon, onHome: goHome)
+            case .challengeSent:     VSChallengeSentView(vm: vm, onHome: goHome)
+            case .challengeResult:
+                if let o = vm.challengeOutcome, let c = vm.raceChallenge {
+                    VSChallengeResultView(mode: mode, code: c.code, outcome: o, opponentId: c.challenger.id,
+                                          headToHead: vm.headToHead, xpGain: vm.xpResult?.xpGain,
+                                          note: vm.challengeNote, onHome: goHome)
+                }
             }
 
             // Don't stack the countdown UNDER the intro splash — it ticked behind
@@ -70,7 +73,10 @@ struct VSGameView: View {
                               level: AuthService.shared.profile?.level),
                     opponent: vm.opponentUserId != nil ? .init(username: vm.opponentInfo?.username ?? "…",
                                                                avatarUrl: vm.opponentInfo?.avatarUrl,
-                                                               level: vm.opponentInfo?.level) : nil,
+                                                               level: vm.isCpu || vm.isRace ? nil : vm.opponentInfo?.level,
+                                                               botArt: vm.opponentInfo?.botArt,
+                                                               // A challenge ghost is the challenger's run (bots carry "· Bot" in the name).
+                                                               subtitle: vm.raceChallenge.map { "@\($0.challenger.username)’s run" }) : nil,
                     headToHead: vm.headToHead,
                     onDone: { vm.showIntro = false; vm.startCountdownTick() })
             }
@@ -200,36 +206,61 @@ struct VSGameView: View {
             .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
     }
 
-    // MARK: - Queue / searching
+    // MARK: - Queue / live search (§6 — never a dead end)
 
-    private var queueScreen: some View {
-        VStack(spacing: 22) {
-            // CPU: no human matchmaking queue — show a brief branded warmup while
-            // the bot spins up (the intro splash covers it a beat later).
-            if vm.isCpu {
+    @ViewBuilder private var queueScreen: some View {
+        if vm.isCpu {
+            // A bot: a brief branded warmup while it spins up (the intro splash
+            // covers it a beat later).
+            VStack(spacing: 18) {
                 vsTitle(36)
-                ProgressView().controlSize(.large).tint(Theme.primary)
-                Text(vm.cpuPersona.map { "Matching you with \($0.name) \($0.avatar)…" } ?? "Setting up your match…")
+                if let p = vm.cpuPersona { BotArtCircle(art: p.art, size: 96) }
+                Text(vm.cpuPersona.map { "Matching you with \($0.name)…" } ?? "Setting up your match…")
                     .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textMuted)
                     .multilineTextAlignment(.center)
-            } else {
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if vm.isRace || vm.isSend {
+            VStack(spacing: 18) {
                 vsTitle(36)
+                ProgressView().controlSize(.large).tint(VsLobbyKit.ink)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            liveSearch
+        }
+    }
+
+    private var liveSearch: some View {
+        let modeName = VsLobbyKit.modeName(mode)
+        let waitingLine: String = {
+            guard let n = waitingInMode else { return "Checking who’s around in \(modeName)…" }
+            return n > 0 ? "\(n) waiting in \(modeName)" : "Nobody else is waiting in \(modeName) right now"
+        }()
+        return ScrollView {
+            VStack(spacing: 18) {
                 // Private match: surface the shareable code/link so the host can
                 // actually invite a friend (the matchmaker buckets both by code).
-                if let code = vm.inviteCode { invitePanel(code) }
-                ProgressView().controlSize(.large).tint(Theme.primary)
-                VStack(spacing: 6) {
-                    CyclingStatus()
-                    Text("Position in queue: \(vm.queuePosition + 1)")
-                        .font(Brand.body(13)).foregroundStyle(Theme.textMuted)
-                    if vm.queueSize > 1 {
-                        Text("\(vm.queueSize) players waiting")
-                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                if let code = vm.inviteCode { invitePanel(code).padding(.top, 12) }
+                TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
+                    let elapsed = vm.searchStartedAt.map { max(0, ctx.date.timeIntervalSince($0)) } ?? 0
+                    VStack(spacing: 18) {
+                        SearchRing(elapsed: elapsed)
+                            .padding(.top, vm.inviteCode == nil ? 36 : 4)
+                        VStack(spacing: 6) {
+                            Text("SEARCHING").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.ink)
+                            Text(vm.inviteCode == nil ? "LOOKING FOR A RIVAL" : "WAITING FOR YOUR FRIEND")
+                                .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.deep)
+                                .multilineTextAlignment(.center)
+                            if vm.inviteCode == nil {
+                                Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        if vm.canStepIn && vm.countdown == nil && !vm.showIntro {
+                            stepInCard(elapsed: elapsed)
+                        }
                     }
-                }
-                // Auto-offer the CPU once the human queue sits quiet.
-                if vm.countdown == nil && !vm.showIntro {
-                    cpuChooserPanel
                 }
                 Button(action: goHome) {
                     Label("Cancel", systemImage: "xmark")
@@ -239,170 +270,59 @@ struct VSGameView: View {
                 }.buttonStyle(.plain)
                 if let m = vm.message { errorPill(m) }
             }
+            .padding(.horizontal, 20).padding(.bottom, 24)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $showCpuPro) { ProView() }
+        .background(VsLobbyKit.page.ignoresSafeArea())
         .task {
-            // Auto-offer the CPU after the queue sits empty for a bit.
-            try? await Task.sleep(nanoseconds: 15_000_000_000)
-            if vm.screen == .queue && !vm.isCpu { cpuAutoOffer = true }
-        }
-        .task {
-            // Best recorded run for this mode → enables the "Beat Your Best" ghost.
-            if vm.isPro, let uid = AuthService.shared.profile?.id {
-                ghostRun = await MatchStatsService.ghostBestRun(uid: uid, mode: vm.mode)
+            // This mode's queue, minus yourself, every 5 s while searching.
+            while !Task.isCancelled && vm.screen == .queue {
+                if let c = await VsLobbyKit.fetchCounts() {
+                    waitingInMode = max(0, (c.waiting[mode.rawValue] ?? 0) - 1)
+                }
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
             }
         }
     }
 
-    // Difficulty/opponent grid — shared by the entry chooser's Bot Match and the
-    // queue-screen auto-offer. Pro-gated (non-Pro sees an unlock CTA).
-    @ViewBuilder private var cpuChooserBody: some View {
-        if vm.isPro {
-            HStack(spacing: 8) {
-                ForEach([BotTier.easy, .medium, .hard], id: \.rawValue) { tier in
-                    let p = BotPersonas.persona(tier)
-                    Button { vm.startCpu(CpuKind(rawValue: tier.rawValue) ?? .medium) } label: {
-                        VStack(spacing: 2) {
-                            Text(p.avatar).font(.system(size: 20))
-                            Text(BotPersonas.tierLabel(tier)).font(Brand.font(11, .black)).foregroundStyle(Color(hex: UInt(p.color)))
-                            Text(p.name).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: UInt(p.color)), lineWidth: 1.5))
-                    }.buttonStyle(.plain)
-                }
-            }
-            cpuSpecialButton("⚖️ Adaptive — matched to your form", 0x7C3AED) { vm.startCpu(.adaptive) }
-            HStack(spacing: 8) {
-                cpuSpecialButton(ghostRun == nil ? "👻 Beat Your Best (win first)" : "👻 Beat Your Best", 0x64748B) {
-                    if let g = ghostRun { vm.startCpu(.ghost, ghost: g) }
-                }
-                .opacity(ghostRun == nil ? 0.45 : 1)
-                .disabled(ghostRun == nil)
-                cpuSpecialButton("📅 Bot of the Day", 0xF59E0B) {
-                    vm.startCpu(.daily, fixedSeed: generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "\(vm.mode.rawValue)_CPU"))
-                }
-            }
-            Text("Practice only — doesn’t affect your ranked stats")
-                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-        } else {
-            Button { showCpuPro = true } label: {
-                Label("Unlock with Pro", systemImage: "lock.fill")
-                    .font(Brand.font(13, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing)))
-            }.buttonStyle(.plain)
-        }
-    }
-
-    // Queue-screen auto-offer once the human queue sits quiet (the explicit Bot
-    // Match choice now lives on the entry chooser).
-    @ViewBuilder private var cpuChooserPanel: some View {
-        if cpuAutoOffer {
-            VStack(spacing: 10) {
-                Label("No players right now — play the CPU?", systemImage: "cpu")
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
-                cpuChooserBody
-            }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-            .frame(maxWidth: 320)
-        }
-    }
-
-    // MARK: - Entry chooser (Quick Match / Bot Match / Invite a Friend)
-
-    private var entryScreen: some View {
-        VStack(spacing: 20) {
-            vsTitle(36)
-            if showCpuChooser {
-                VStack(spacing: 10) {
-                    HStack(spacing: 8) {
-                        Button { showCpuChooser = false } label: {
-                            Image(systemName: "chevron.left").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.textMuted)
-                        }.buttonStyle(.plain)
-                        Label("Choose your opponent", systemImage: "cpu")
-                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
-                        Spacer()
-                    }
-                    cpuChooserBody
-                }
-                .padding(14)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                .frame(maxWidth: 340)
-            } else {
-                VStack(spacing: 12) {
-                    entryOption(icon: "bolt.fill", iconBg: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                                title: "Quick Match", subtitle: "Get matched with a live opponent") {
-                        vm.joinHumanQueue()
-                    }
-                    entryOption(icon: "cpu", iconBg: [Color(hex: 0x64748B), Color(hex: 0x64748B)],
-                                title: "Bot Match", subtitle: "Practice vs the CPU — pick a difficulty", locked: !vm.isPro) {
-                        if vm.isPro { showCpuChooser = true } else { showCpuPro = true }
-                    }
-                    entryOption(icon: "person.2.fill", iconBg: [Color(hex: 0x7C3AED), Color(hex: 0x7C3AED)],
-                                title: "Invite a Friend", subtitle: "Send a private match link or @username") {
-                        showInvite = true
-                    }
-                }
-                .frame(maxWidth: 360)
-                Button { dismiss() } label: {
-                    Label("Cancel", systemImage: "xmark")
-                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
-                }.buttonStyle(.plain).padding(.top, 4)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 24)
-        .sheet(isPresented: $showCpuPro) { ProView() }
-        .sheet(isPresented: $showInvite) { InviteSheet() }
-        .task {
-            // Preload the best run so Beat Your Best is enabled in the chooser.
-            if vm.isPro, let uid = AuthService.shared.profile?.id {
-                ghostRun = await MatchStatsService.ghostBestRun(uid: uid, mode: vm.mode)
-            }
-        }
-    }
-
-    private func entryOption(icon: String, iconBg: [Color], title: String, subtitle: String, locked: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(iconBg.count > 1 && iconBg[0] != iconBg[1]
-                              ? AnyShapeStyle(LinearGradient(colors: iconBg, startPoint: .topLeading, endPoint: .bottomTrailing))
-                              : AnyShapeStyle((iconBg.first ?? Theme.primary).opacity(0.12)))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: icon).font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(iconBg.count > 1 && iconBg[0] != iconBg[1] ? .white : (iconBg.first ?? Theme.primary))
-                }
+    /// The step-in card: the bot that takes over at 0:15, a progress bar to it,
+    /// PLAY NOW and KEEP WAITING (which turns the card into "We'll keep looking").
+    private func stepInCard(elapsed: TimeInterval) -> some View {
+        let bot = CpuOpponent.identity(vm.stepInKind)
+        let progress = min(1, elapsed / 15)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                BotArtCircle(art: bot.art, size: 48)
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(title).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
-                        if locked { Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.textMuted) }
-                    }
-                    Text(subtitle).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(vm.keepWaiting ? "We’ll keep looking" : "\(bot.name) steps in at 0:15")
+                        .font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.deep)
+                    Text(vm.keepWaiting ? "\(bot.name) is ready whenever you are." : "If a person joins first, you get them.")
+                        .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
                 }
-                Spacer()
+                Spacer(minLength: 0)
             }
-            .padding(16).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
-    }
-
-    private func cpuSpecialButton(_ title: String, _ color: UInt, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title).font(Brand.font(11, .black)).foregroundStyle(Color(hex: color))
-                .frame(maxWidth: .infinity).padding(.vertical, 9)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: color), lineWidth: 1.5))
-        }.buttonStyle(.plain)
+            if !vm.keepWaiting {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(VsLobbyKit.soft)
+                        Capsule().fill(VsLobbyKit.ink).frame(width: geo.size.width * progress)
+                    }
+                }
+                .frame(height: 6)
+            }
+            HStack(spacing: 10) {
+                VSPrimaryButton(title: "PLAY \(bot.name.uppercased()) NOW") { Haptics.tap(); vm.stepInNow() }
+                if !vm.keepWaiting {
+                    Button { Haptics.tap(); vm.keepWaitingTapped() } label: {
+                        Text("KEEP WAITING").font(Brand.font(12, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.ink)
+                            .padding(.horizontal, 14).frame(height: 46)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.soft))
+                    }.buttonStyle(PressableStyle())
+                }
+            }
+        }
+        .padding(16).frame(maxWidth: 380)
+        .vsCard()
     }
 
     /// Private-match invite panel shown on the queue screen — the code + a
@@ -444,7 +364,7 @@ struct VSGameView: View {
                 .ignoresSafeArea()
             VSOverlayWordmark()
             VStack(spacing: 16) {
-                Text(vm.countdownIsRematch ? "REMATCH STARTING IN" : "MATCH FOUND")
+                Text(vm.countdownLabel)
                     .font(Brand.font(15, .heavy)).tracking(3).foregroundStyle(.white.opacity(0.7))
                 vsTitle(30)
                 ZStack {
@@ -476,10 +396,14 @@ struct VSGameView: View {
         if mode == .propernoundle, let pvm = vm.proper {
             VStack(spacing: 0) {
                 matchHeader
-                tugOfWarHeader
-                    .padding(.horizontal, 10).padding(.top, 6)
-                OpponentStrip(opponent: vm.opponent, gradient: gradient, totalBoards: vm.totalBoards)
-                    .padding(.horizontal, 10).padding(.top, 6)
+                if vm.isSend {
+                    yourRunPanel.padding(.horizontal, 10).padding(.top, 6)
+                } else {
+                    tugOfWarHeader
+                        .padding(.horizontal, 10).padding(.top, 6)
+                    OpponentStrip(opponent: vm.opponent, gradient: gradient, totalBoards: vm.totalBoards)
+                        .padding(.horizontal, 10).padding(.top, 6)
+                }
                 ProperNoundleVSBoard(vm: pvm)   // bespoke ProperNoundle board+keyboard
             }
             if let t = pvm.toast { toastView(t) }
@@ -491,6 +415,9 @@ struct VSGameView: View {
                 if mode == .gauntlet {
                     GauntletStepperBar(game: game).padding(.top, 6)
                 }
+                if vm.isSend {
+                    yourRunPanel.padding(.horizontal, 10).padding(.top, 6)
+                } else {
                 tugOfWarHeader
                     .padding(.horizontal, 10).padding(.top, 6)
                 // Always the FULL empty frame (all maxGuesses rows) from match
@@ -504,6 +431,7 @@ struct VSGameView: View {
                               stageName: mode == .gauntlet ? game.gauntletStageName(at: vm.opponent.stagesCleared) : nil,
                               stageGradient: mode == .gauntlet ? GameScreen.gauntletStageGradient(game.gauntletStageName(at: vm.opponent.stagesCleared)) : [])
                     .padding(.horizontal, 10).padding(.top, 6)
+                }
 
                 // Board fills the slack BETWEEN header and keyboard. The keyboard
                 // gets layout priority so the VStack always reserves its full
@@ -606,6 +534,24 @@ struct VSGameView: View {
         .padding(.horizontal, 10).padding(.top, 6)
     }
 
+    /// Challenge-send game: no opponent — the panel says who will race this run.
+    private var yourRunPanel: some View {
+        let n = vm.sendTarget?.friendIds.count ?? 0
+        let who = n > 0 ? "\(n) \(n == 1 ? "friend" : "friends") will race it" : "Anyone with the link"
+        return HStack(spacing: 10) {
+            AvatarView(url: AuthService.shared.profile?.avatarUrl, username: AuthService.shared.profile?.username ?? "You", size: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("YOUR RUN").font(Brand.font(11, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
+                Text(who).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
+            }
+            Spacer()
+            Image(systemName: "paperplane.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+    }
+
     /// Persistent VS header: you vs opponent + tug-of-war lead bar + typing
     /// indicator (ports vs-match-header.tsx, fed like vs-game.tsx does).
     private var tugOfWarHeader: some View {
@@ -617,7 +563,8 @@ struct VSGameView: View {
             opponent: .init(username: vm.opponentName,
                             avatarUrl: vm.opponentInfo?.avatarUrl,
                             guesses: vm.opponent.attempts,
-                            progress: vm.theirProgress),
+                            progress: vm.theirProgress,
+                            botArt: vm.opponentInfo?.botArt),
             opponentTyping: vm.opponentTyping)
     }
 
@@ -651,7 +598,8 @@ struct VSGameView: View {
 
                 // Opponent identity + live counters
                 HStack(spacing: 12) {
-                    LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: oppName, accent: gradient.first ?? Theme.primary)
+                    LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: oppName, accent: gradient.first ?? Theme.primary,
+                                    botArt: vm.opponentInfo?.botArt)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(oppName).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
                         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -841,20 +789,25 @@ struct VSGameView: View {
                             if let pf = vm.photoFinish {
                                 PhotoFinishStamp(clutch: pf == "clutch")
                             }
+                            if let p = vm.cpuPersona { BotArtCircle(art: p.art, size: 56).padding(.bottom, 2) }
+                            if let rung = vm.cpuClearedRung {
+                                Text("\(VsLobby.botName(rung).uppercased()) CLEARED ON THE LADDER!")
+                                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.ink)
+                            }
                             if let m = vm.cpuMilestone {
-                                Text("🔥 \(m)-win CPU streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xF97316))
+                                Text("🔥 \(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xF97316))
                             } else if vm.cpuStreak > 0 {
-                                Text("CPU win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+                                Text("Bot win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
                             }
                             if vm.cpuUnlock != nil {
                                 Text("🏅 Unlocked \(BotPersonas.persona(vm.cpuPersona?.tier ?? .hard).name)’s badge!")
                                     .font(Brand.font(12, .black)).foregroundStyle(Color(hex: UInt(vm.cpuPersona?.color ?? 0xEF4444)))
                             }
                             if vm.cpuSessionWins + vm.cpuSessionLosses > 0 {
-                                Text("This session — You \(vm.cpuSessionWins) · CPU \(vm.cpuSessionLosses)")
+                                Text("This session — You \(vm.cpuSessionWins) · Bots \(vm.cpuSessionLosses)")
                                     .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted)
                             }
-                            Text("Practice — not counted in ranked stats").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                            Text("Bot game — counts in your Bots record, not People").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
                         }
                     }
 
@@ -1358,6 +1311,7 @@ private struct LivePulseAvatar: View {
     let url: String?
     let name: String
     let accent: Color
+    var botArt: String? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
 
@@ -1365,7 +1319,7 @@ private struct LivePulseAvatar: View {
         ZStack {
             Circle().stroke(accent, lineWidth: 2.5).frame(width: 56, height: 56)
                 .scaleEffect(pulse ? 1.45 : 0.95).opacity(pulse ? 0 : 0.7)
-            AvatarView(url: url, username: name, size: 52)
+            VSPlayerAvatar(url: url, username: name, botArt: botArt, size: 52)
                 .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
         }
         .onAppear {
@@ -1456,9 +1410,10 @@ private struct DailyVsAlreadyPlayed: View {
                 .font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 16)
             if isPro {
-                // Pro: route to the VS lobby for unlimited (any-mode) battles
+                // Pro: back to the VS lobby (where the Daily Battle launched from,
+                // VS overhaul 2026-10-01) for unlimited any-mode battles
                 // (web parity — DailyVsAlreadyPlayed's "Play Unlimited VS").
-                NavigationLink { VSLobbyView() } label: {
+                Button(action: onHome) {
                     HStack(spacing: 8) {
                         Image("swords").renderingMode(.template).resizable().scaledToFit().frame(width: 16, height: 16)
                         Text("Play Unlimited VS")

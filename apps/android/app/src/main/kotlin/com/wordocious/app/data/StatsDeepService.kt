@@ -431,6 +431,8 @@ object StatsDeepService {
     data class Rivalry(
         val opponentId: String, val username: String,
         val wins: Int, val losses: Int, val draws: Int, val total: Int,
+        /** game_mode of the newest meeting — the VS lobby's "· last: QuadWord" (VS overhaul §2). */
+        val lastMode: String? = null,
     )
 
     @Serializable
@@ -438,12 +440,13 @@ object StatsDeepService {
         @SerialName("player1_id") val player1Id: String,
         @SerialName("player2_id") val player2Id: String? = null,
         @SerialName("winner_id") val winnerId: String? = null,
+        @SerialName("game_mode") val gameMode: String? = null,
     )
 
     /** Most-faced human opponents with the head-to-head record. */
     suspend fun rivalries(userId: String, limit: Int = 5): List<Rivalry> = runCatching {
         val rows = client.postgrest["matches"]
-            .select(Columns.raw("player1_id,player2_id,winner_id")) {
+            .select(Columns.raw("player1_id,player2_id,winner_id,game_mode")) {
                 filter {
                     or { eq("player1_id", userId); eq("player2_id", userId) }
                     filterNot("player2_id", FilterOperator.IS, null)
@@ -453,9 +456,11 @@ object StatsDeepService {
             }
             .decodeList<RivalryRow>()
         val map = HashMap<String, IntArray>()  // opp -> [wins, losses, draws]
+        val lastMode = HashMap<String, String>()  // rows are newest first
         rows.forEach { m ->
             val opp = if (m.player1Id == userId) (m.player2Id ?: "") else m.player1Id
             if (opp.isEmpty() || opp == userId) return@forEach
+            if (opp !in lastMode && m.gameMode != null) lastMode[opp] = m.gameMode
             val e = map.getOrPut(opp) { intArrayOf(0, 0, 0) }
             when {
                 m.winnerId == userId -> e[0]++
@@ -469,7 +474,7 @@ object StatsDeepService {
         if (top.isEmpty()) return@runCatching emptyList()
         val names = ProfileService.fetchUsernames(top.map { it.first })
         top.map { (id, r, total) ->
-            Rivalry(id, names[id] ?: "Unknown", r[0], r[1], r[2], total)
+            Rivalry(id, names[id] ?: "Unknown", r[0], r[1], r[2], total, lastMode[id])
         }
     }.getOrElse { emptyList() }
 }

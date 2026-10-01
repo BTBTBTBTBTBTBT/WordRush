@@ -20,6 +20,10 @@ struct InviteSheet: View {
 
     @State private var mode: GameMode = .duel
     @State private var modeOpen = false
+
+    init(mode: GameMode = .duel) {
+        _mode = State(initialValue: mode)
+    }
     @State private var tab: Tab = .link
     @State private var username = ""
     @State private var busy = false

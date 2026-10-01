@@ -16,6 +16,8 @@ import com.wordocious.app.data.CpuIdentity
 import com.wordocious.app.data.CpuKind
 import com.wordocious.app.data.CpuOpponent
 import com.wordocious.app.data.CpuProgressionStore
+import com.wordocious.app.data.BotArt
+import com.wordocious.app.data.VsChallengeService
 import com.wordocious.app.data.LocalBotMatchService
 import com.wordocious.app.data.VSTransport
 import com.wordocious.app.data.DailyResultsService
@@ -54,7 +56,37 @@ import kotlin.math.roundToInt
  * and achievement writes (checkAchievements via GameResultsService.record) are
  * wired too. Nothing VS is deferred on Android now.
  */
-enum class VSScreen { ENTRY, QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, MATCH_GONE, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
+enum class VSScreen { QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, MATCH_GONE, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
+
+/**
+ * What a VS screen entry starts (VS overhaul, 2026-10-01). The lobby's tiles
+ * replace the old entry chooser, so each entry names its game up front:
+ *  - [Live]: the live search (§6) — the human queue with a bot stepping in at 0:15.
+ *  - [Bot]: a bot game straight away (ladder rung, Bot of the Day, Beat your best).
+ *  - [Race]: race a friend's challenge — a ghost of their run on their seed (§4).
+ *  - [Send]: play a fresh seed with no opponent, then send the run (§3).
+ */
+sealed class VsLaunch {
+    object Live : VsLaunch()
+    data class Bot(val kind: CpuKind, val ghostGuesses: Int? = null, val ghostTimeMs: Double? = null) : VsLaunch()
+    data class Race(val challenge: VsChallengeService.ChallengeView) : VsLaunch()
+    data class Send(val friendIds: List<String>, val link: Boolean) : VsLaunch()
+
+    /** A stable key for the screen-local ViewModel. */
+    val key: String get() = when (this) {
+        Live -> "live"
+        is Bot -> "bot-${kind.key}"
+        is Race -> "race-${challenge.code}"
+        is Send -> "send-${friendIds.joinToString(",")}-$link"
+    }
+}
+
+/** Where a sent challenge is after the player finishes (§3). */
+sealed class SendState {
+    object Sending : SendState()
+    data class Sent(val code: String, val invitees: Int) : SendState()
+    data class Failed(val message: String) : SendState()
+}
 enum class RematchState { IDLE, OFFERED, RECEIVED, DECLINED }
 
 class OpponentProgressState {
@@ -70,6 +102,7 @@ class VSMatchViewModel(
     val mode: GameMode,
     val isDaily: Boolean = false,
     val inviteCode: String? = null,
+    val launch: VsLaunch = VsLaunch.Live,
 ) : ViewModel() {
 
     var screen by mutableStateOf(VSScreen.QUEUE)
@@ -184,6 +217,26 @@ class VSMatchViewModel(
     var isCpu by mutableStateOf(false)
     var cpuPersona by mutableStateOf<CpuIdentity?>(null)
     private var cpuKind: CpuKind? = null
+    /** A bot stepped in for today's Daily Battle (§6): the game records as a bot
+     *  game and writes the local `wordocious-vs-daily-<UTC day>` result. */
+    private var cpuDailyBattle = false
+    /** The socket paired us with a person (match_found) — the step-in bot stands down. */
+    private var humanFound = false
+
+    // ── Async challenges (§3–§5) ──
+    /** The challenge being raced; the opponent is a ghost of its run. */
+    val race: VsChallengeService.ChallengeView? = (launch as? VsLaunch.Race)?.challenge
+    /** The challenge being played to send (no opponent at all). */
+    val sendLaunch: VsLaunch.Send? = launch as? VsLaunch.Send
+    /** The race outcome from MY side (core vsOutcome), set at match end. */
+    var raceOutcome by mutableStateOf<com.wordocious.core.VsOutcome?>(null)
+    /** My run, as raced or as sent. */
+    var myRun by mutableStateOf<VsChallengeService.Run?>(null)
+    var sendState by mutableStateOf<SendState?>(null)
+    /** The 3-2-1 overlay's title when it isn't a found match ("YOUR RUN"). */
+    var countdownTitle by mutableStateOf<String?>(null)
+    /** Client-side transports (bot, ghost, solo run): leaving records nothing. */
+    val isLocalGame: Boolean get() = isCpu || race != null || sendLaunch != null
     var photoFinish by mutableStateOf<String?>(null)     // "photo" | "clutch"
     var cpuMilestone by mutableStateOf<Int?>(null)
     var cpuUnlock by mutableStateOf<String?>(null)
@@ -237,9 +290,127 @@ class VSMatchViewModel(
             }
             return
         }
-        // Standard flow: show the entry chooser (Quick Match / Bot Match / Invite)
-        // first. Accepting a private invite link auto-joins the human queue.
-        if (inviteCode != null) connectAndQueue(dailySeed) else screen = VSScreen.ENTRY
+        // The lobby names the game up front (VS overhaul): a bot, a race, a
+        // solo run to send, or the live search (a private invite joins its queue).
+        when (val l = launch) {
+            is VsLaunch.Bot -> startCpu(
+                l.kind, ghostGuesses = l.ghostGuesses, ghostTimeMs = l.ghostTimeMs,
+                fixedSeed = if (l.kind == CpuKind.DAILY) generateDailySeed(CpuProgressionStore.todayUtc(), "${mode.name}_CPU") else null,
+            )
+            is VsLaunch.Race -> startRace(l.challenge)
+            is VsLaunch.Send -> startSend()
+            VsLaunch.Live -> if (inviteCode != null) connectAndQueue(dailySeed) else joinHumanQueue()
+        }
+    }
+
+    /** The bot that steps in at 0:15 (§6): the Daily Battle gets Lexi; a Pro's
+     *  live search gets the ladder's next bot (Adapt once cleared). */
+    val stepInKind: CpuKind get() = when {
+        dailyVsActive || !isPro -> CpuKind.MEDIUM
+        else -> CpuKind.forLadder(CpuProgressionStore.nextLadderBot())
+    }
+
+    /** Leave the human queue for the step-in bot (automatic at 0:15, or PLAY NOW). */
+    fun stepIn() {
+        // A person who matched first keeps the match (§6): never swap a found
+        // match (intro / countdown still playing) for the bot.
+        if (isCpu || screen != VSScreen.QUEUE || inviteCode != null || humanFound) return
+        val daily = dailyVsActive
+        startCpu(
+            stepInKind,
+            fixedSeed = if (daily) generateDailySeed(todayUTCDate(), "DUEL_VS") else null,
+            dailyBattle = daily,
+        )
+    }
+
+    /** §4: race the challenger's run — the bot service replays a ghost of it on
+     *  the challenge seed (target guesses + time; solves only if they did). */
+    private fun startRace(c: VsChallengeService.ChallengeView) {
+        isCpu = false
+        countdownJob?.cancel()
+        service.disconnect()
+        service = LocalBotMatchService(
+            BotDifficulty.MEDIUM,
+            BotConfig(
+                ghostGuesses = c.run.guesses.coerceAtLeast(1),
+                ghostTimeMs = c.run.timeMs.toDouble().coerceAtLeast(1000.0),
+                fixedSeed = c.seed,
+                opponentId = c.challenger.id,
+                solve = c.run.solved,
+            ),
+        )
+        screen = VSScreen.QUEUE
+        resultRecorded = false
+        wireHandlers()
+        service.onConnect = { if (screen == VSScreen.QUEUE) service.joinQueue(mode.name, null, null) }
+        service.connect(null, null)
+    }
+
+    /** §3: a solo run on a fresh seed with no opponent, then the run is sent.
+     *  The idle bot transport stands in for the socket (it is never queued, so
+     *  every relay is a no-op). */
+    private fun startSend() {
+        service.disconnect()
+        service = LocalBotMatchService(BotDifficulty.MEDIUM)
+        isCpu = false
+        resultRecorded = false
+        countdownTitle = "YOUR RUN"
+        val newSeed = com.wordocious.core.generateMatchSeed()
+        val start = System.currentTimeMillis().toDouble() + 3000
+        countdown = 3
+        countdownJob?.cancel()
+        countdownJob = viewModelScope.launch {
+            var c = 3
+            while (c > 1) { delay(1000); c -= 1; countdown = c }
+            delay(1000)
+            beginMatch(newSeed, start)
+        }
+    }
+
+    /** The finished run in the challenge shape (§3): guesses = the VS score unit. */
+    private fun buildRun(status: GameStatus, guesses: Int, timeMs: Int): VsChallengeService.Run {
+        val solutions = if (mode == GameMode.GAUNTLET)
+            generateSolutionsFromSeed(seed, com.wordocious.core.gauntletTotalSolutions).map { it.uppercase() }
+        else game?.state?.value?.boards?.map { it.solution.uppercase() } ?: emptyList()
+        val solved = status == GameStatus.WON
+        return VsChallengeService.Run(
+            solved = solved,
+            boardsSolved = if (solved) totalBoards else myBoardsSolved.coerceAtMost(totalBoards),
+            totalBoards = totalBoards,
+            guesses = guesses.coerceIn(0, 200),
+            timeMs = timeMs.toLong().coerceIn(0L, 60L * 60 * 1000),
+            guessLog = myGuessLog.take(64),
+            solutions = solutions,
+        )
+    }
+
+    /** Send-game finish: POST the run, nothing recorded to stats now (each
+     *  friend's race adds a game to both players later, server side). */
+    private fun finishSend(status: GameStatus, guesses: Int, timeMs: Int) {
+        val s = sendLaunch ?: return
+        if (resultRecorded) return
+        resultRecorded = true
+        myFinalBoards = game?.state?.value?.boards
+        val run = buildRun(status, guesses, timeMs)
+        myRun = run
+        sendState = SendState.Sending
+        screen = VSScreen.RESULT
+        viewModelScope.launch { postSend(s, run) }
+    }
+
+    private suspend fun postSend(s: VsLaunch.Send, run: VsChallengeService.Run) {
+        sendState = when (val r = VsChallengeService.create(mode.name, seed, run, s.friendIds, s.link)) {
+            is VsChallengeService.CreateOutcome.Sent -> SendState.Sent(r.code, r.invitees)
+            is VsChallengeService.CreateOutcome.Failed -> SendState.Failed(r.message)
+        }
+    }
+
+    /** Retry a failed send with the same run. */
+    fun retrySend() {
+        val s = sendLaunch ?: return
+        val run = myRun ?: return
+        sendState = SendState.Sending
+        viewModelScope.launch { postSend(s, run) }
     }
 
     /** Quick Match — join the live human queue (deferred from mount so the entry
@@ -269,13 +440,15 @@ class VSMatchViewModel(
     /** Swap the socket transport for a client-side CPU bot and start a match.
      *  Pro-gated in the UI. `ghost` supplies Beat-Your-Best pace; `fixedSeed` is
      *  the Bot-of-the-Day daily seed. */
-    fun startCpu(kind: CpuKind, ghostGuesses: Int? = null, ghostTimeMs: Double? = null, fixedSeed: String? = null) {
+    fun startCpu(kind: CpuKind, ghostGuesses: Int? = null, ghostTimeMs: Double? = null, fixedSeed: String? = null, dailyBattle: Boolean = false) {
         val oppId = CpuOpponent.opponentId(kind)
         val id = CpuOpponent.identity(oppId)
         cpuKind = kind
         cpuPersona = id
+        cpuDailyBattle = dailyBattle
         isCpu = true
         countdownJob?.cancel()
+        service.leaveQueue()
         service.disconnect()
         var config = BotConfig(opponentId = oppId, ghostGuesses = ghostGuesses, ghostTimeMs = ghostTimeMs, fixedSeed = fixedSeed)
         if (kind == CpuKind.ADAPTIVE) {
@@ -301,14 +474,14 @@ class VSMatchViewModel(
     /** CPU spectator: end the match now (bot's outcome is already fixed by its
      *  plan; the player's time was captured at completion) instead of watching
      *  the bot grind out its boards. */
-    fun finishCpuNow() { if (isCpu) service.resolveNow() }
+    fun finishCpuNow() { if (isCpu || race != null) service.resolveNow() }
 
     /** Leaving now would actually forfeit (a recorded loss): only while still
      *  MID-GAME. Once finished (waiting screen) — or once the match is over /
      *  gone, or it's CPU practice — leaving records nothing, so the scary
      *  "counts as a loss" confirm would be lying (iOS leaveWouldForfeit). */
     val leaveWouldForfeit: Boolean
-        get() = screen == VSScreen.MATCH && myStatus == null && !isCpu && !matchGone && !resultRecorded
+        get() = screen == VSScreen.MATCH && myStatus == null && !isCpu && sendLaunch == null && !matchGone && !resultRecorded
 
     fun forfeit() {
         // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
@@ -324,8 +497,31 @@ class VSMatchViewModel(
         //    recorded via match_ended if it arrives (recording guard unchanged).
         //  - matchGone — the server already dropped the match while we were
         //    backgrounded; there is nothing left to forfeit.
+        // Leaving a friend's race mid-game posts it as an unsolved run — a loss
+        // on both sides, like a live forfeit (web parity). A send run left
+        // mid-game sends nothing.
+        val raced = race
+        if (raced != null && screen == VSScreen.MATCH && myStatus == null && !resultRecorded && AuthService.profile.value != null) {
+            resultRecorded = true
+            val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
+            val run = buildRun(GameStatus.LOST, myGuessCount, secs * 1000).copy(solved = false)
+            val m = mode
+            val theSeed = seed
+            // Not viewModelScope: the screen is leaving and would cancel it.
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                val res = VsChallengeService.postResult(raced.code, run)
+                if (res != null && !res.alreadyRecorded) {
+                    GameResultsService.record(
+                        gameMode = m, playType = "vs", won = false, guessCount = run.guesses,
+                        timeSeconds = secs, boardsSolved = run.boardsSolved, totalBoards = run.totalBoards, seed = theSeed,
+                        solutions = run.solutions, guesses = run.guessLog,
+                    )
+                }
+            }
+        }
+        // Bot and send games left mid-game record nothing.
         if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) &&
-            myStatus == null && !matchGone && !resultRecorded && !isCpu
+            myStatus == null && !matchGone && !resultRecorded && !isLocalGame
         ) {
             resultRecorded = true
             val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
@@ -353,7 +549,7 @@ class VSMatchViewModel(
         // player emitting abandon_match would turn their already-submitted
         // result into a forfeit win for the opponent — disconnect instead and
         // let the server resolve on merit. A gone match has nothing to abandon.
-        if (isCpu || (myStatus == null && !matchGone)) service.abandonMatch()
+        if (isLocalGame || (myStatus == null && !matchGone)) service.abandonMatch()
         service.disconnect()
         game?.stopTimer()
     }
@@ -479,6 +675,7 @@ class VSMatchViewModel(
     }
 
     private fun handleMatchFound(data: VSMatchFound) {
+        if (!isLocalGame) humanFound = true
         // Private match: flip the invite to accepted now that the server paired us
         // (parity with iOS handleMatchFound → InviteService.markAccepted).
         inviteCode?.let { code ->
@@ -492,10 +689,19 @@ class VSMatchViewModel(
         opponentInfo = null
         headToHead = null
         opponentUserId = data.opponentUserId
-        if (CpuOpponent.isCpu(data.opponentUserId)) {
-            // CPU opponent: use the persona identity locally — no profile / H2H fetch.
+        val raced = race
+        if (raced != null) {
+            // Race: the opponent is the CHALLENGER (their name + avatar, not a
+            // bot label); the intro shows your real head-to-head with them.
+            opponentInfo = HeadToHeadService.VsProfile(username = raced.challenger.username, avatarUrl = raced.challenger.avatarUrl)
+            AuthService.userId?.let { myId ->
+                viewModelScope.launch { headToHead = HeadToHeadService.fetchHeadToHead(myId, raced.challenger.id) }
+            }
+        } else if (CpuOpponent.isCpu(data.opponentUserId)) {
+            // CPU opponent: use the persona identity locally — no profile / H2H
+            // fetch. Labelled a bot; the art rides the avatar slot (§9).
             val id = CpuOpponent.identity(data.opponentUserId!!)
-            opponentInfo = HeadToHeadService.VsProfile(username = "${id.name} 🤖", avatarUrl = null, level = 0)
+            opponentInfo = HeadToHeadService.VsProfile(username = "${id.name} · Bot", avatarUrl = BotArt.avatarUrl(id.artId), level = 0)
         } else data.opponentUserId?.let { oppId ->
             viewModelScope.launch {
                 HeadToHeadService.fetchVsProfile(oppId)?.let { opponentInfo = it }
@@ -566,7 +772,8 @@ class VSMatchViewModel(
         // backing out mid-match, killing the app, or losing the connection can't
         // mint a second daily attempt. The end-of-match marking stays as an
         // idempotent backstop (same local-day key).
-        if (dailyVsActive && !isCpu) VSPlayLimit.markPlayedToday()
+        // A bot that stepped in for the Daily Battle consumes it too (§6).
+        if (dailyVsActive) VSPlayLimit.markPlayedToday()
         // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
         // first ~0.6s instead of cutting straight from "1" into the game.
         if (countdown != null) {
@@ -616,8 +823,13 @@ class VSMatchViewModel(
             // .WAITING BEFORE playerCompleted: a fast CPU can end the match
             // synchronously here (screen=RESULT); setting WAITING after would
             // clobber it and strand the match on the spectator screen.
-            screen = VSScreen.WAITING
-            service.playerCompleted(if (status == GameStatus.WON) "won" else "lost", guesses, timeMs)
+            // A send run ends with the player: no opponent to wait for (§3).
+            if (sendLaunch != null) {
+                finishSend(status, guesses, timeMs)
+            } else {
+                screen = VSScreen.WAITING
+                service.playerCompleted(if (status == GameStatus.WON) "won" else "lost", guesses, timeMs)
+            }
         }
         game = vm
         screen = VSScreen.MATCH
@@ -715,8 +927,9 @@ class VSMatchViewModel(
                 headToHead = HeadToHeadService.fetchHeadToHead(myId, oppId)
             }
         }
-        // The freemium one-per-day lock stays gated on the daily flow (never CPU).
-        if (dailyVsActive && !isCpu) {
+        // The freemium one-per-day lock stays gated on the daily flow (a bot
+        // that stepped in for it included).
+        if (dailyVsActive) {
             VSPlayLimit.markPlayedToday()
         }
     }
@@ -724,6 +937,7 @@ class VSMatchViewModel(
     private fun recordResult(data: VSMatchEnded) {
         if (resultRecorded || AuthService.profile.value == null) return
         resultRecorded = true
+        if (race != null) { recordRace(data); return }
         val won = data.winner == "player"
         // A draw is neither a win nor a loss (winner == "draw" previously fell
         // into the loss branch): no win/loss/streak/XP mutation anywhere — only
@@ -731,10 +945,18 @@ class VSMatchViewModel(
         val draw = data.winner == "draw"
 
         if (isCpu) {
-            // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
+            // VS overhaul §7: every bot game folds into the ladder (only the next
+            // rung's bot moves it), the Bot of the Day keeps today's result, and
+            // a bot that stepped in for the Daily Battle writes the local daily
+            // result (§6) — never a daily_results 'vs' row.
+            val dayResult = when { draw -> com.wordocious.core.VsDayResult.DRAW; won -> com.wordocious.core.VsDayResult.WON; else -> com.wordocious.core.VsDayResult.LOST }
+            cpuKind?.let { CpuProgressionStore.recordLadder(it.botId, won) }
+            if (cpuKind == CpuKind.DAILY) CpuProgressionStore.recordBotOfDayResult(dayResult.raw, CpuProgressionStore.todayUtc())
+            if (cpuDailyBattle) com.wordocious.app.data.VsLobbyStore.recordDailyBotResult(dayResult, cpuPersona?.name ?: "Lexi")
+            // Bot games record ONLY the separate vs_cpu bucket — no XP, no
             // matches row, no head-to-head, no achievements, no daily lock.
-            // A drawn practice match records nothing (vs_cpu has no draw column;
-            // counting it as a loss skewed the practice record + streak).
+            // A drawn bot match records no stats (vs_cpu has no draw column;
+            // counting it as a loss skewed the record + streak).
             if (draw) return
             val secs = (data.playerTime / 1000).roundToInt()
             viewModelScope.launch { GameResultsService.recordCpuResult(mode, won, data.playerGuesses, secs) }
@@ -791,6 +1013,44 @@ class VSMatchViewModel(
                     forfeit = data.forfeit == true,
                 )
             }
+        }
+    }
+
+    /**
+     * §4: a finished race. The outcome is core vsOutcome(my run, their run) —
+     * never the bot service's own winner. POST the run (the server stores the
+     * entry, writes the one shared matches row and the challenger's side), and
+     * record MY side through the normal live-VS record (user_stats 'vs' with
+     * XP — web recordGameResult parity; a draw books nothing, as live). No
+     * client matches row, no vs_cpu, no daily VS row.
+     */
+    private fun recordRace(data: VSMatchEnded) {
+        val c = race ?: return
+        val status = myStatus ?: GameStatus.LOST
+        val run = buildRun(status, data.playerGuesses, data.playerTime.toInt())
+        myRun = run
+        val outcome = com.wordocious.core.vsOutcome(run.core(), c.run.core())
+        raceOutcome = outcome
+        if (AuthService.profile.value == null) return
+        val won = outcome == com.wordocious.core.VsOutcome.WIN
+        val draw = outcome == com.wordocious.core.VsOutcome.DRAW
+        val secs = (run.timeMs / 1000.0).roundToInt()
+        val theSeed = seed
+        viewModelScope.launch {
+            // Web parity: the racer's own side records once, only after the
+            // server accepted the entry (a repeat post is alreadyRecorded).
+            val res = VsChallengeService.postResult(c.code, run)
+            if (res == null) message = "Couldn’t post your result — check your connection."
+            if (res != null && !res.alreadyRecorded && !draw) {
+                xpResult = GameResultsService.record(
+                    gameMode = mode, playType = "vs", won = won, guessCount = run.guesses,
+                    timeSeconds = secs, boardsSolved = run.boardsSolved, totalBoards = run.totalBoards, seed = theSeed,
+                    solutions = run.solutions,
+                    guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(),
+                )
+            }
+            // The H2H card reads the UPDATED record (the server wrote the matches row).
+            AuthService.userId?.let { myId -> headToHead = HeadToHeadService.fetchHeadToHead(myId, c.challenger.id) }
         }
     }
 }

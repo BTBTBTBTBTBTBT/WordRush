@@ -309,7 +309,7 @@ struct BannerGlyph: View {
 /// The banner's single diagonal light band: 38% of the width, white 0 → 55% → 0,
 /// skewed about -18°, one left-to-right pass in ~2.2 s, then a rest, every 4 s.
 /// The caller leaves it out entirely under Reduce Motion.
-private struct BannerSweep: View {
+struct BannerSweep: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {

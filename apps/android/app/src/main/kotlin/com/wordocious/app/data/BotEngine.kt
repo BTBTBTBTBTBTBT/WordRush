@@ -42,6 +42,8 @@ object BotEngine {
         val targetGuesses: Int? = null,
         val targetSolveMs: Double? = null,
         val forceSolve: Boolean = false,
+        /** Never solve (a challenge ghost replaying an unsolved run). Wins over forceSolve. */
+        val forceFail: Boolean = false,
         val adaptive: AdaptiveHint? = null,
     )
 
@@ -189,7 +191,7 @@ object BotEngine {
             }
             else -> state.boards.map { it.solution.uppercase() }
         }
-        val willSolveAll = if (opts.forceSolve) true else Random.nextDouble() > p.failChance
+        val willSolveAll = if (opts.forceFail) false else if (opts.forceSolve) true else Random.nextDouble() > p.failChance
 
         // The bot must play by the REAL rules: shared-guess modes (Quad/Octo/
         // Deliverance, and multi-board Gauntlet stages) get ONE submission

@@ -340,7 +340,9 @@ export default function HomePage() {
         {(() => {
           const vs = visibleCards.find((c) => c.id === 'vs');
           if (!vs) return null;
-          const href = playMode === 'unlimited' ? '/vs' : vs.href;
+          // The tile always opens the VS lobby (VS overhaul, 2026-10-01): the
+          // Daily Battle and Bot of the Day now live in its banner.
+          const href = '/vs';
           return (
             <VSLiveTile
               card={vs}

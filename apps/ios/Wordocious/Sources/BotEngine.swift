@@ -17,6 +17,8 @@ enum BotEngine {
         /// Pin the bot's total solve time (ms) — ghost races replay a pace.
         var targetSolveMs: Double? = nil
         var forceSolve: Bool = false
+        /// Never solve (a replayed run that failed — challenge ghosts).
+        var forceFail: Bool = false
         var adaptive: AdaptiveHint? = nil
     }
 
@@ -176,28 +178,37 @@ enum BotEngine {
         evaluateGuess(solution: solution, guess: guess).tiles.map { $0.state.rawValue }
     }
 
-    static func buildPlan(seed: String, mode: GameMode, difficulty: BotDifficulty, opts: BuildOpts = BuildOpts()) -> Plan {
-        let state = createInitialState(seed: seed, mode: mode)
-        let totalBoards = VSModeInfo.totalBoards(mode)
-        let p = resolveParams(difficulty, opts.adaptive)
+    /// Every answer a VS match on `seed` deals, upper case, in board order —
+    /// what the bot plays against and what an async challenge run stores.
+    static func matchSolutions(seed: String, mode: GameMode) -> [String] {
+        matchSolutions(seed: seed, mode: mode, state: createInitialState(seed: seed, mode: mode))
+    }
+
+    private static func matchSolutions(seed: String, mode: GameMode, state: GameState) -> [String] {
         // Gauntlet's createInitialState boards hold only the current stage; the
         // full 21-board run comes from the seed directly (reducer parity).
-        let solutions: [String]
         if mode == .gauntlet {
-            solutions = generateSolutionsFromSeed(seed, count: gauntletTotalSolutions).map { $0.uppercased() }
-        } else if mode == .propernoundle {
+            return generateSolutionsFromSeed(seed, count: gauntletTotalSolutions).map { $0.uppercased() }
+        }
+        if mode == .propernoundle {
             // ProperNoundle's answer comes from its OWN puzzle set, not the
             // shared engine (which seeds PN with a dictionary word) — the bot
             // was literally playing a different answer than the player, so the
             // result screen showed the wrong solution and marked the real
             // winner "Not solved".
             let pn = ProperNoundle.puzzle(forSeed: seed)
-            solutions = [pn.map { ProperNoundle.normalize($0.answer).uppercased() }
-                         ?? (state.boards.first?.solution.uppercased() ?? "")]
-        } else {
-            solutions = state.boards.map { $0.solution.uppercased() }
+            return [pn.map { ProperNoundle.normalize($0.answer).uppercased() }
+                    ?? (state.boards.first?.solution.uppercased() ?? "")]
         }
-        let willSolveAll = opts.forceSolve ? true : Double.random(in: 0..<1) > p.failChance
+        return state.boards.map { $0.solution.uppercased() }
+    }
+
+    static func buildPlan(seed: String, mode: GameMode, difficulty: BotDifficulty, opts: BuildOpts = BuildOpts()) -> Plan {
+        let state = createInitialState(seed: seed, mode: mode)
+        let totalBoards = VSModeInfo.totalBoards(mode)
+        let p = resolveParams(difficulty, opts.adaptive)
+        let solutions = matchSolutions(seed: seed, mode: mode, state: state)
+        let willSolveAll = opts.forceSolve ? true : opts.forceFail ? false : Double.random(in: 0..<1) > p.failChance
 
         // The bot must play by the REAL rules: shared-guess modes (Quad/Octo/
         // Deliverance, and multi-board Gauntlet stages) get ONE submission

@@ -9,7 +9,7 @@ import WordociousCore
 ///   daily mode (Solo | VS toggle where a live VS board exists, today's line,
 ///   the §18 registry stats) · All-time (snapshot hero, Your Records, every
 ///   chart, Signature, Standing trend, Progression, VS — record + rivalries +
-///   CPU + a word-game board — then Recent Matches).
+///   Bots + a word-game board — then Recent Matches).
 /// A horizontal swipe on the page moves one rail chip; hold Today (or the grid
 /// button) for every game at once. Zero new fetches beyond the old page except
 /// today's VS result, the sweep streak and today's standing.
@@ -52,9 +52,9 @@ struct ProfileTab: View {
     // Solo | VS toggle drives it; the All-time charts read it like the web.
     // (Never vs_cpu any more — All-time's VS section keeps its own vsSectionTab.)
     @State private var activeTab = "solo"
-    /// All-time's VS section Live | CPU ("vs" | "vs_cpu") — its OWN state, never activeTab
-    /// (founder, 2026-10-01): picking CPU there must not rebuild the All-time page, re-scope
-    /// its charts or show the CPU note up top. Web `vsTab`.
+    /// All-time's VS section People | Bots ("vs" | "vs_cpu") — its OWN state, never activeTab
+    /// (founder, 2026-10-01): picking Bots there must not rebuild the All-time page, re-scope
+    /// its charts or show the Bots note up top. Web `vsTab`.
     @State private var vsSectionTab = "vs"
     @State private var unlockedAchievements: Set<String> = []
     @StateObject private var achievementCatalog = AchievementCatalog.shared
@@ -149,13 +149,13 @@ struct ProfileTab: View {
         }
     }
 
-    /// Solo | VS and Live | CPU — the same un-animated swap as the rail.
+    /// Solo | VS and People | Bots — the same un-animated swap as the rail.
     private func setActiveTab(_ t: String) {
         var tx = Transaction(); tx.disablesAnimations = true
         withTransaction(tx) { activeTab = t }
     }
 
-    /// All-time's VS Live | CPU — the same un-animated swap, scoped to the VS section only.
+    /// All-time's VS People | Bots — the same un-animated swap, scoped to the VS section only.
     private func setVsSectionTab(_ t: String) {
         var tx = Transaction(); tx.disablesAnimations = true
         withTransaction(tx) { vsSectionTab = t }
@@ -193,6 +193,11 @@ struct ProfileTab: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            // The VS lobby's Rivals "See all" → All-time's VS section.
+            .onReceive(NotificationCenter.default.publisher(for: StatsJump.openVS)) { _ in
+                if StatsJump.consumeVS() { select(StatsRailKey.vs) }
+            }
+            .onAppear { if StatsJump.consumeVS() { select(StatsRailKey.vs) } }
             .fullScreenCover(item: $badgeGame) { g in
                 NavigationStack {
                     if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
@@ -493,7 +498,9 @@ struct ProfileTab: View {
 
     /// VS (founder, 2026-10-01: VS left the rail — rarely played, and the grid now comes out
     /// even; its page moved here, the bottom of All-time): the record (with today's result),
-    /// Rivalries, the CPU practice card, then one word game's VS board: a picker + Live | CPU
+    /// Rivalries, the Bots card, then one word game's VS board: a picker + People | Bots
+    /// (VS overhaul §10, 2026-10-01: was Live | CPU; People = user_stats 'vs', Bots = 'vs_cpu',
+    /// the same sums the VS banner's RECORD row shows)
     /// over the per-mode view.
     @ViewBuilder private func vsSection(_ p: Profile) -> some View {
         let tab = vsSectionTab
@@ -524,7 +531,7 @@ struct ProfileTab: View {
                 ForEach(["vs", "vs_cpu"], id: \.self) { t in
                     let active = tab == t
                     Button { setVsSectionTab(t) } label: {
-                        Text(t == "vs" ? "Live" : "CPU").font(Brand.font(10, .heavy))
+                        Text(t == "vs" ? "People" : "Bots").font(Brand.font(10, .heavy))
                             .foregroundStyle(active ? Theme.primary : Theme.textMuted)
                             .padding(.horizontal, 10).padding(.vertical, 5)
                             .background(RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary.opacity(0.08) : Theme.surface))
@@ -543,12 +550,12 @@ struct ProfileTab: View {
             ProfileDashboard(mode: vsMode, playType: tab)
             ProDeepModeCard(gameMode: vsMode.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(vsMode), playType: tab)
         }
-        // + the Live | CPU pick, so a toggle builds fresh cards too (the page id no longer carries it).
+        // + the People | Bots pick, so a toggle builds fresh cards too (the page id no longer carries it).
         .id("\(vsMode.rawValue)-\(tab)")
-        // CPU practice writes aggregate totals only — per-game charts
+        // Bot games write aggregate totals only — per-game charts
         // have no data to draw from, so say so instead of blanks.
         if tab == "vs_cpu" {
-            Text("CPU practice records totals only — per-game charts track Solo and VS matches.")
+            Text("Bot games record totals only — per-game charts track Solo and People matches.")
                 .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                 .frame(maxWidth: .infinity).multilineTextAlignment(.center)
                 .padding(.vertical, 8)
@@ -1083,7 +1090,7 @@ struct ProfileTab: View {
 
     /// Solo | VS toggle on a game page — only where the game has a live VS
     /// board (word engines + ProperNoundle). The old page-level Solo/VS/VS-CPU
-    /// toggle is gone; All-time's VS section's Live | CPU pair covers practice.
+    /// toggle is gone; All-time's VS section's People | Bots pair covers bot games.
     private func soloVsToggle(accent: Color) -> some View {
         HStack(spacing: 8) {
             ForEach(["solo", "vs"], id: \.self) { t in
@@ -1110,8 +1117,9 @@ struct ProfileTab: View {
     }
 
     /// "VS RECORD" summary card (All-time VS section): aggregate W–L, win rate, total.
-    /// Practice record vs the CPU — its own dashed box in All-time's VS section, clearly
-    /// unranked. Best CPU streak comes from the client-side progression store.
+    /// The record against bots — its own dashed box in All-time's VS section, clearly
+    /// unranked. Best streak comes from the client-side progression store (the same
+    /// one the VS banner's flame reads).
     @ViewBuilder private var cpuRecordCard: some View {
         let rec = UserStatsService.cpuRecord(statRows)
         let bestStreak = CpuProgressionStore.load().bestStreak
@@ -1120,10 +1128,10 @@ struct ProfileTab: View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0x64748B).opacity(0.10)).frame(width: 40, height: 40)
-                Image(systemName: "cpu").font(.system(size: 18)).foregroundStyle(Color(hex: 0x64748B))
+                BotArtCircle(art: BotPersonas.art("lexi"), size: 32, background: .clear)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text("VS CPU").font(Brand.font(10, .heavy)).tracking(0.8).foregroundStyle(Color(hex: 0x64748B))
+                Text("VS BOTS").font(Brand.font(10, .heavy)).tracking(0.8).foregroundStyle(Color(hex: 0x64748B))
                 Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
                 if rec.total == 0 {
                     Text("Beat a bot to start your record").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)
@@ -1179,7 +1187,7 @@ struct ProfileTab: View {
     /// Mode-detail header — ports the mode-detail-panel.tsx header row: mode
     /// icon tile + title in the mode accent, and a read-only play-type chip that
     /// reflects the page's scope (a game page's Solo | VS toggle, or the VS
-    /// page's Live | CPU pair — the panel has no toggle of its own).
+    /// page's People | Bots pair — the panel has no toggle of its own).
     private func modeDetailHeader(_ mode: GameMode, tab: String) -> some View {
         let m = dailyModes.first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
@@ -1196,9 +1204,9 @@ struct ProfileTab: View {
                     Image("swords").renderingMode(.template).resizable().scaledToFit()
                         .frame(width: 12, height: 12)
                 } else {
-                    Image(systemName: "cpu").font(.system(size: 10, weight: .bold))
+                    BotArtCircle(art: BotPersonas.art("lexi"), size: 14, background: .clear)
                 }
-                Text(tab == "solo" ? "Solo" : tab == "vs" ? "VS" : "VS CPU")
+                Text(tab == "solo" ? "Solo" : tab == "vs" ? "VS" : "VS Bots")
                     .font(Brand.font(10, .heavy))
             }
             .foregroundStyle(accent)

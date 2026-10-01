@@ -13,23 +13,66 @@ enum class BotTier { EASY, MEDIUM, HARD }
 data class BotPersona(
     val id: String,
     val name: String,
-    val avatar: String,   // robot emoji
     val color: Long,      // 0xFFRRGGBB
     val tier: BotTier,
     val tagline: String,
 )
 
+/**
+ * The founder-picked bot art (VS overhaul §9, 2026-10-01): one 256 px
+ * transparent PNG per bot in res/drawable-nodpi, shown in a circle everywhere a
+ * bot appears instead of the old persona emoji. Ids: rook, lexi, nova, adapt,
+ * ghost (the Bot of the Day is Lexi's art).
+ */
+object BotArt {
+    fun res(id: String): Int = when (id) {
+        "rook" -> com.wordocious.app.R.drawable.bot_rook
+        "nova" -> com.wordocious.app.R.drawable.bot_nova
+        "adapt", "adaptive" -> com.wordocious.app.R.drawable.bot_adapt
+        "ghost" -> com.wordocious.app.R.drawable.bot_ghost
+        else -> com.wordocious.app.R.drawable.bot_lexi
+    }
+
+    /** The avatar-url form VsAvatar understands ("bot:<id>"), so the match
+     *  header, intro and strips draw the art through the one avatar path. */
+    fun avatarUrl(id: String): String = "bot:$id"
+}
+
 object BotPersonas {
     val byTier: Map<BotTier, BotPersona> = mapOf(
-        BotTier.EASY to BotPersona("rook", "Rook", "🤖", 0xFF22C55E, BotTier.EASY, "Relaxed — still learning the ropes"),
-        BotTier.MEDIUM to BotPersona("lexi", "Lexi", "🧠", 0xFFF59E0B, BotTier.MEDIUM, "Balanced — a fair fight"),
-        BotTier.HARD to BotPersona("nova", "Nova", "⚡", 0xFFEF4444, BotTier.HARD, "Ruthless — solves fast, rarely slips"),
+        BotTier.EASY to BotPersona("rook", "Rook", 0xFF22C55E, BotTier.EASY, "Relaxed — still learning the ropes"),
+        BotTier.MEDIUM to BotPersona("lexi", "Lexi", 0xFFF59E0B, BotTier.MEDIUM, "Balanced — a fair fight"),
+        BotTier.HARD to BotPersona("nova", "Nova", 0xFFEF4444, BotTier.HARD, "Ruthless — solves fast, rarely slips"),
     )
 
     fun persona(tier: BotTier): BotPersona = byTier.getValue(tier)
 
     fun tierLabel(tier: BotTier): String = when (tier) {
         BotTier.EASY -> "Easy"; BotTier.MEDIUM -> "Medium"; BotTier.HARD -> "Hard"
+    }
+
+    /** Display name for a ladder / bot id ("rook" → "Rook"). */
+    fun name(id: String): String = when (id) {
+        "adapt", "adaptive" -> "Adapt"
+        "ghost" -> "Your Ghost"
+        else -> id.replaceFirstChar { it.uppercaseChar() }
+    }
+
+    /** The tier word for a ladder id: "Easy" / "Medium" / "Hard" / "Adaptive". */
+    fun tierWord(id: String): String = when (id) {
+        "rook" -> "Easy"; "lexi" -> "Medium"; "nova" -> "Hard"; else -> "Adaptive"
+    }
+
+    /**
+     * The persona's tier line on the Bots page ("Medium · solves in 4–5"),
+     * read off BotEngine's per-tier guess ranges so the copy can't drift from
+     * how the bot actually plays.
+     */
+    fun tierLine(id: String): String = when (id) {
+        "rook" -> "Easy · solves in 5–6"
+        "lexi" -> "Medium · solves in 4–5"
+        "nova" -> "Hard · solves in 2–4"
+        else -> "Adaptive · matches your form"
     }
 
     enum class BotEvent { MATCH_START, BOT_SOLVED_BOARD, PLAYER_OVERTAKES, PLAYER_NEAR_MISS, BOT_WIN, BOT_LOSS }

@@ -5,7 +5,8 @@ import WordociousCore
 /// Universal-link router (applinks:wordocious.com — see Wordocious.entitlements
 /// and apps/web/public/.well-known/apple-app-site-association).
 ///
-/// v1 claims ONLY /vs/join/<code>: a VS invite's recipient usually has the app,
+/// v1 claims /vs/join/<code> and (VS overhaul, 2026-10-01) /vs/challenge/<code>:
+/// a VS invite's or challenge's recipient usually has the app,
 /// so opening it natively beats Safari. Referral links (/join/<code>) are
 /// deliberately NOT claimed — their audience is brand-new users without the
 /// app, and redemption is a web flow; claiming them would strand invitees on
@@ -25,6 +26,13 @@ final class DeepLink: ObservableObject {
     }
 
     @Published var vsInvite: VSInviteLink?
+
+    /// An async "race my run" challenge (/vs/challenge/<code>, from a link or a push).
+    struct VSChallengeLink: Identifiable {
+        let id = UUID()
+        let code: String
+    }
+    @Published var vsChallenge: VSChallengeLink?
     /// A widget tap: open TODAY'S daily for this mode (wordocious://daily/<MODE>).
     @Published var dailyMode: GameMode?
     /// "Show me the More Games" (wordocious://puzzles, legacy wordocious://more):
@@ -71,6 +79,12 @@ final class DeepLink: ObservableObject {
             return true
         }
 
+        // VS challenge: wordocious.com/vs/challenge/<code> → the race flow.
+        if parts.count == 3, parts[0] == "vs", parts[1] == "challenge" {
+            vsChallenge = VSChallengeLink(code: parts[2].uppercased())
+            return true
+        }
+
         // Auth links: /auth/reset (password recovery) and /auth/confirm
         // (email confirmation). session(from:) exchanges the one-time code —
         // this works when THIS device requested the email (PKCE verifier is
@@ -91,5 +105,13 @@ final class DeepLink: ObservableObject {
         }
 
         return false
+    }
+
+    /// A push's `url` payload ("/vs/challenge/AB12CD34") routed like a universal link.
+    @discardableResult
+    func handle(pushPath path: String) -> Bool {
+        let full = path.hasPrefix("/") ? "https://wordocious.com\(path)" : path
+        guard let url = URL(string: full) else { return false }
+        return handle(url: url)
     }
 }

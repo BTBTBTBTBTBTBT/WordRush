@@ -4,16 +4,25 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   GameMode,
   generateDailySeed,
+  generateMatchSeed,
   generateSolutionsFromSeed,
   generateSolutionsFromSeedForLength,
   evaluateGuess,
+  vsOutcome,
 } from '@wordle-duel/core';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { SocketIOMatchService, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
-import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, type CpuKind } from '@/lib/adapters/bot-match-service';
-import { BOT_PERSONAS, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
-import { recordCpuGame, recordBotOfDay, loadCpuProgression } from '@/lib/bot/cpu-progression';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { SocketIOMatchService, type MatchEndedData, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
+import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, botIdForKind, type CpuKind } from '@/lib/adapters/bot-match-service';
+import { VsSoloHudContext } from './opponent-hud';
+import { BOT_PERSONAS, botArt, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import { recordCpuGame, recordBotOfDay, recordBotOfDayResult, recordLadderGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
+import { ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily } from '@/lib/vs-lobby';
+import { postRaceResult, sendChallenge, type ChallengeRun, type ChallengeView } from '@/lib/vs-challenges-client';
+import { ChallengeResult, ChallengeSent } from './challenge-result';
+import { VsQueueScreen, VsStartingScreen } from './vs-queue';
+import { BotAvatar } from './vs-ui';
+import { useVsCounts } from './use-vs-lobby';
 import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
 import { PhotoFinish, type PhotoFinishKind } from '@/components/effects/photo-finish';
 import { usePresenceId } from '@/lib/presence-id';
@@ -119,7 +128,17 @@ interface VsGameProps {
    * matches and rematches as before.
    */
   isDaily?: boolean;
+  /**
+   * Race a friend's challenge run (VS overhaul §4): a ghost of their run on
+   * their seed, scored with core vsOutcome, recorded as a People game.
+   */
+  race?: ChallengeView;
 }
+
+/** Opponent ids for the async-challenge games (never a real socket opponent). */
+const SOLO_OPPONENT_ID = 'solo:run';
+const RACE_OPPONENT_PREFIX = 'race:';
+const CPU_KINDS: CpuKind[] = ['easy', 'medium', 'hard', 'adaptive', 'ghost', 'daily'];
 
 type VsScreen = 'entry' | 'queue' | 'warmup' | 'match' | 'waiting' | 'result';
 
@@ -261,7 +280,7 @@ export function VsGame(props: VsGameProps) {
   return dict && pn ? <VsGameInner {...props} /> : <GameLoading />;
 }
 
-function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
+function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
   const { profile, session, isProActive, isGuest, exitGuest } = useAuth();
   const isPro = isProActive;
@@ -319,9 +338,12 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
   useEffect(() => {
     if (!dailyVsActive) return;
     const me = profile;
+    // A bot that stepped in (§6) leaves only the local result key.
+    const botWon = () => { const b = readBotDaily(getTodayUTC()); return b && b.result !== 'draw' ? b.result === 'won' : null; };
     if (alreadyPlayedDaily) {
       // Locally known as played — fetch the W/L for the pill.
-      if (me) fetchDailyVsResult(me.id).then(setDailyWon).catch(() => {});
+      if (me) fetchDailyVsResult(me.id).then((w) => setDailyWon(w ?? botWon())).catch(() => {});
+      else setDailyWon(botWon());
       return;
     }
     if (!me) { setDailyGate('play'); return; }
@@ -347,8 +369,28 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Match / Invite a Friend) instead of silently joining the queue. Specific
   // intents — daily VS and accepting a private invite link — skip straight to
   // matchmaking (autoJoin below).
-  const autoJoin = dailyVsActive || !!inviteCode;
-  const [screen, setScreen] = useState<VsScreen>(autoJoin ? 'queue' : 'entry');
+  // VS overhaul entry points (spec §2/§3/§8): the lobby's LIVE tile (?live=1)
+  // queues at once; the Bots page starts a bot (?cpu=<kind>); the Friend page
+  // starts the challenge-send game (?send=1&friends=<ids>&link=1). A race
+  // arrives as the `race` prop from /vs/challenge/<code>.
+  const searchParams = useSearchParams();
+  const liveParam = searchParams?.get('live') === '1';
+  const cpuParamRaw = searchParams?.get('cpu') as CpuKind | null;
+  const cpuParam = cpuParamRaw && CPU_KINDS.includes(cpuParamRaw) ? cpuParamRaw : null;
+  const sendFriendIds = useMemo(() => (searchParams?.get('friends') ?? '').split(',').filter(Boolean), [searchParams]);
+  // The challenge-send game's HUD line (VS overhaul §3): who will race this run.
+  const soloHudLine = sendFriendIds.length > 0
+    ? `${sendFriendIds.length} ${sendFriendIds.length === 1 ? 'friend' : 'friends'} will race it`
+    : 'Anyone with the link';
+  const sendLink = searchParams?.get('link') === '1';
+  // Sending a challenge is Pro (the route gate and the server check it too).
+  const flow: 'race' | 'send' | null = race ? 'race' : searchParams?.get('send') === '1' && isPro ? 'send' : null;
+  const flowRef = useRef(flow);
+  flowRef.current = flow;
+  const raceRef = useRef(race);
+  raceRef.current = race;
+  const autoJoin = dailyVsActive || !!inviteCode || liveParam;
+  const [screen, setScreen] = useState<VsScreen>(autoJoin || cpuParam || flow ? 'queue' : 'entry');
   const [showInvite, setShowInvite] = useState(false);
   // Stable facade over the transport: starts on the socket, can hot-swap to a
   // client-side CPU bot (Pro-only practice) without re-wiring any handlers.
@@ -365,9 +407,15 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const cpuPersonaRef = useRef(cpuPersona);
   cpuPersonaRef.current = cpuPersona;
   const [showCpuChooser, setShowCpuChooser] = useState(false);
-  const [cpuAutoOffer, setCpuAutoOffer] = useState(false);
   const cpuKindRef = useRef<CpuKind | null>(null);
   const [ghostRun, setGhostRun] = useState<GhostRun | null>(null);
+  const [ghostChecked, setGhostChecked] = useState(false);
+  // Async challenges: the finished run (both flows), the send result, and the race's outcome.
+  const myCompletionRef = useRef<{ status: 'won' | 'lost'; guesses: number; timeMs: number } | null>(null);
+  const boardsSolvedRef = useRef(0);
+  const [challengeRun, setChallengeRun] = useState<ChallengeRun | null>(null);
+  const [sendResult, setSendResult] = useState<{ code: string | null; error: string | null } | null>(null);
+  const [raceOutcome, setRaceOutcome] = useState<'win' | 'loss' | 'draw' | null>(null);
   // Fun layer: photo-finish flourish, streak milestone, cosmetic unlock, and a
   // per-session run-it-back tally — all CPU-only.
   const [photoFinish, setPhotoFinish] = useState<PhotoFinishKind | null>(null);
@@ -542,6 +590,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
   }, []);
 
   const resetPerMatchState = useCallback(() => {
+    boardsSolvedRef.current = 0;
+    myCompletionRef.current = null;
     setMyTiles({});
     setMyGuessLog([]);
     myGuessLogRef.current = [];
@@ -586,13 +636,23 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
     matchService.onMatchFound((data) => {
       // Park the countdown length; it starts when the intro splash finishes.
       pendingCountdownRef.current = Math.max(1, data.countdownSeconds);
+      // The challenge-send game has nobody to meet: no intro, straight to 3-2-1.
+      const solo = data.opponentUserId === SOLO_OPPONENT_ID;
 
       // Shared input-lock, anchored HERE to the full un-skipped timeline:
       // intro + countdown + the ~600ms GO beat. Tap-skipping the intro or
       // typing on a hardware keyboard (window keydown is live from
       // match_start while the overlays only cover the on-screen keys) can't
       // buy a head start.
-      beginInputLock(INTRO_DURATION_MS + pendingCountdownRef.current * 1000 + 600);
+      beginInputLock((solo ? 0 : INTRO_DURATION_MS) + pendingCountdownRef.current * 1000 + 600);
+
+      if (solo) {
+        setOpponentUserId(SOLO_OPPONENT_ID);
+        setOpponentInfo({ username: 'YOUR RUN', avatarUrl: null, level: 0 });
+        opponentNameRef.current = 'YOUR RUN';
+        startCountdown(pendingCountdownRef.current);
+        return;
+      }
 
       // Match-intro splash: resolve the opponent's public profile and the
       // all-time head-to-head record while the 2.5s intro plays.
@@ -603,11 +663,18 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
       const oppId = data.opponentUserId ?? null;
       setOpponentUserId(oppId);
       if (oppId && oppId.startsWith(CPU_OPPONENT_PREFIX)) {
-        // CPU opponent: use the persona identity locally — no profile / H2H fetch.
+        // CPU opponent: use the persona identity locally (the bot's art) — no profile / H2H fetch.
         const id = cpuIdentity(oppId);
-        setOpponentInfo({ username: id.name, avatarUrl: null, level: 0 });
+        setOpponentInfo({ username: id.name, avatarUrl: id.avatar, level: 0 });
         opponentNameRef.current = id.name;
         setHeadToHead(null);
+      } else if (oppId && oppId.startsWith(RACE_OPPONENT_PREFIX) && raceRef.current) {
+        // A friend's run: the challenger's identity, not a bot label.
+        const c = raceRef.current.challenger;
+        setOpponentInfo({ username: c.username, avatarUrl: c.avatarUrl, level: 0 });
+        opponentNameRef.current = c.username;
+        const me = profileRef.current;
+        if (me) fetchHeadToHead(me.id, c.id).then(setHeadToHead).catch(() => {});
       } else if (oppId) {
         fetchVsProfile(oppId)
           .then((p) => {
@@ -650,7 +717,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
       // the end — quitting or killing the tab mid-match no longer refunds
       // the daily. The match-end write below stays as an idempotent
       // belt-and-braces (recordModePlayed just re-sets the same flag/row).
-      if (dailyVsActive && !isCpuRef.current) recordModePlayed('vs');
+      // A bot that steps into the Daily Battle (§6) consumes it the same way.
+      if (dailyVsActive) recordModePlayed('vs');
     });
 
     matchService.onOpponentProgress((data: any) => {
@@ -712,6 +780,11 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
       const me = profileRef.current;
       if (me && !resultRecordedRef.current) {
         resultRecordedRef.current = true;
+        // Async challenges record through their own paths (§3: nothing now; §4: the race).
+        if (flowRef.current) {
+          void flowHandlersRef.current?.(data);
+          return;
+        }
         const won = data.winner === 'player';
         const isDraw = data.winner === 'draw';
         if (isCpuRef.current) {
@@ -722,8 +795,21 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
           // session tally, and the photo-finish flourish on a close/last win.
           const tier: BotTier = cpuPersonaRef.current?.tier ?? 'medium';
           const outcome = recordCpuGame(won, tier, BOT_PERSONAS[tier].id);
-          // Bot of the Day: track the personal "beat today's bot" day-streak.
-          if (cpuKindRef.current === 'daily') recordBotOfDay(won, getTodayUTC());
+          const dayResult = isDraw ? 'draw' : won ? 'won' : 'lost';
+          // The ladder (§7): only games against the next bot count (core ladderAfterGame).
+          const kind = cpuKindRef.current;
+          recordLadderGame(kind ? botIdForKind(kind) : BOT_PERSONAS[tier].id, won);
+          // Bot of the Day: track the personal "beat today's bot" day-streak + today's result.
+          if (kind === 'daily') {
+            recordBotOfDay(won, getTodayUTC());
+            recordBotOfDayResult(dayResult, getTodayUTC());
+          }
+          // A bot stepped into the Daily Battle (§6): the local result key, never a
+          // daily_results 'vs' row (People record and the VS leaderboard stay people-only).
+          if (dailyVsActive) {
+            writeBotDaily(getTodayUTC(), { result: dayResult, opponent: cpuPersonaRef.current?.name ?? 'Lexi' });
+            recordModePlayed('vs');
+          }
           setCpuStreak(outcome.progression.streak);
           setCpuMilestone(outcome.milestone);
           setCpuUnlock(outcome.unlockedPersona);
@@ -907,12 +993,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   const handleBoardSolved = useCallback((boardIndex: number) => {
     matchService.reportBoardSolved(boardIndex);
+    boardsSolvedRef.current += 1;
     setMyBoardsSolved((n) => n + 1);
   }, [matchService]);
 
   const handleCompleted = useCallback((status: 'won' | 'lost', totalGuesses: number, timeMs: number) => {
     setPlayerStats({ guesses: totalGuesses, timeMs });
     setMyStatus(status);
+    myCompletionRef.current = { status, guesses: totalGuesses, timeMs };
     // 'waiting' BEFORE reportCompletion: for a CPU, reportCompletion can end the
     // match synchronously (onMatchEnded → setScreen('result')); with both setState
     // calls batched, whichever runs LAST wins — so 'waiting' must come first or it
@@ -984,7 +1072,6 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const engineDifficulty: BotDifficulty = kind === 'adaptive' ? 'adaptive' : id.tier;
     setCpuDifficulty(engineDifficulty);
     setShowCpuChooser(false);
-    setCpuAutoOffer(false);
     setMessage('');
     // The intro splash + countdown only render on the queue screen. The
     // entry-screen Bot Match chooser used to leave `screen` on 'entry', so
@@ -1004,19 +1091,103 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Best recorded run for this mode → enables the "Beat Your Best" ghost.
   useEffect(() => {
     const me = profileRef.current;
-    if (!isPro || !me) return;
-    fetchBestGhostRun(me.id, mode).then(setGhostRun).catch(() => {});
+    if (!isPro || !me) { setGhostChecked(true); return; }
+    fetchBestGhostRun(me.id, mode).then(setGhostRun).catch(() => {}).finally(() => setGhostChecked(true));
   }, [isPro, mode]);
 
-  // Auto-offer the CPU after the queue sits empty for a bit (fallback path).
-  useEffect(() => {
-    if (screen !== 'queue' || isCpu || showIntro || !cpuSupported) {
-      setCpuAutoOffer(false);
+  // The run just played, in the shape the challenge API stores (§3/§4).
+  const buildRun = useCallback((data: MatchEndedData | null): ChallengeRun => {
+    const done = myCompletionRef.current;
+    const solved = done?.status === 'won';
+    const solutions = (data?.solutions?.length ? data.solutions : mySolutionsRef.current).map((w) => w.toUpperCase());
+    return {
+      solved,
+      boardsSolved: solved ? totalBoards : Math.min(totalBoards, boardsSolvedRef.current),
+      totalBoards,
+      guesses: data?.playerGuesses ?? done?.guesses ?? myGuessLogRef.current.length,
+      timeMs: Math.round(data?.playerTime ?? done?.timeMs ?? (startTime > 0 ? Date.now() - startTime : 0)),
+      guessLog: myGuessLogRef.current.map((g) => g.guess),
+      solutions,
+    };
+  }, [totalBoards, startTime]);
+
+  // Finishing an async-challenge game. Send (§3): store the run and push the
+  // friends — nothing is recorded to the challenger now. Race (§4): outcome =
+  // core vsOutcome against the stored run (never the ghost's own winner), post
+  // it (the server writes the shared matches row + the challenger's side),
+  // then record OUR side through the normal live-VS path, with XP.
+  const flowHandlersRef = useRef<((data: MatchEndedData) => Promise<void>) | null>(null);
+  flowHandlersRef.current = async (data: MatchEndedData) => {
+    const me = profileRef.current;
+    const run = buildRun(data);
+    setChallengeRun(run);
+    if (flowRef.current === 'send') {
+      const res = await sendChallenge({ gameMode: mode, seed: seedRef.current, run, friendIds: sendFriendIds, link: sendLink || sendFriendIds.length === 0 });
+      setSendResult('code' in res ? { code: res.code, error: null } : { code: null, error: res.error });
       return;
     }
-    const t = setTimeout(() => setCpuAutoOffer(true), 15000);
-    return () => clearTimeout(t);
-  }, [screen, isCpu, showIntro]);
+    const r = raceRef.current;
+    if (!r || !me) return;
+    const outcome = vsOutcome(run, r.run);
+    setRaceOutcome(outcome);
+    const res = await postRaceResult(r.code, run);
+    if ('error' in res) { setMessage(res.error); return; }
+    if (!res.alreadyRecorded) {
+      const xp = await recordGameResult(me.id, mode, 'vs', outcome === 'win', run.guesses, run.timeMs, seedRef.current, undefined, undefined, 0, undefined, undefined, outcome === 'draw');
+      if (xp) setXpResult(xp);
+    }
+    fetchHeadToHead(me.id, r.challenger.id).then(setHeadToHead).catch(() => {});
+  };
+
+  // Entry points that start a game on arrival (no chooser): a bot from the
+  // Bots page, the challenge-send game, or a friend's run to race.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (authGated || autoStartedRef.current) return;
+    if (flow === 'race' && race) {
+      autoStartedRef.current = true;
+      setScreen('queue');
+      matchService.swap(new LocalBotMatchService('medium', {
+        fixedSeed: race.seed,
+        opponentId: `${RACE_OPPONENT_PREFIX}${race.challenger.id}`,
+        pace: { guesses: race.run.guesses, timeMs: race.run.timeMs, solved: race.run.solved },
+      }), { mode });
+      return;
+    }
+    if (flow === 'send') {
+      autoStartedRef.current = true;
+      setScreen('queue');
+      matchService.swap(new LocalBotMatchService('medium', { fixedSeed: generateMatchSeed(), opponentId: SOLO_OPPONENT_ID, solo: true }), { mode });
+      return;
+    }
+    if (!cpuParam) return;
+    if (cpuParam === 'ghost') {
+      if (!ghostChecked) return;
+      autoStartedRef.current = true;
+      if (ghostRun) startCpu('ghost', { ghost: ghostRun });
+      else setScreen('entry'); // no best run to race yet
+      return;
+    }
+    autoStartedRef.current = true;
+    if (cpuParam === 'daily') startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) });
+    else startCpu(cpuParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authGated, ghostChecked, ghostRun]);
+
+  // Live search step-in (§6): the Daily Battle gets Lexi on the day's puzzle;
+  // otherwise the ladder's next bot (Adapt once cleared). Private matches wait
+  // for the friend, so no bot steps in there.
+  const stepInKind: CpuKind | null = useMemo(
+    () => (inviteCode ? null : dailyVsActive ? 'medium' : ladderNextKind(loadCpuProgression().ladderCleared)),
+    [inviteCode, dailyVsActive],
+  );
+  const stepInBot = useCallback(() => {
+    if (!stepInKind) return;
+    if (dailyVsActive) startCpu('medium', { fixedSeed: generateDailySeed(getTodayUTC(), 'DUEL_VS') });
+    else startCpu(stepInKind);
+  }, [stepInKind, dailyVsActive, startCpu]);
+  const liveSearch = screen === 'queue' && !isCpu && !flow && !cpuParam;
+  const vsCounts = useVsCounts(liveSearch);
 
   const handleCancel = useCallback(() => {
     matchService.leaveQueue();
@@ -1059,8 +1230,23 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // before navigation it stays the single writer (no double record). CPU
     // practice records nothing (bot abandon is a pure teardown). Awaited so
     // the hard navigation below can't kill the in-flight writes.
+    // A finished racer leaving the spectator screen: settle the race now (the
+    // ghost's plan is fixed) so the result still posts, then show it.
+    if (flow === 'race' && screen === 'waiting') { matchService.resolveNow(); return; }
     const me = profileRef.current;
-    if (screen === 'match' && !resultRecordedRef.current && !isCpuRef.current && me) {
+    // Leaving a friend's race mid-game posts it as an unsolved run (a loss on
+    // both sides, like a live forfeit); leaving the challenge-send game sends nothing.
+    if (screen === 'match' && !resultRecordedRef.current && flow === 'race' && race && me) {
+      resultRecordedRef.current = true;
+      const run = { ...buildRun(null), solved: false };
+      try {
+        const res = await postRaceResult(race.code, run);
+        if (!('error' in res) && !res.alreadyRecorded) {
+          await recordGameResult(me.id, mode, 'vs', false, run.guesses, run.timeMs, seedRef.current);
+        }
+      } catch { /* best effort — leaving anyway */ }
+    }
+    if (screen === 'match' && !resultRecordedRef.current && !isCpuRef.current && !flow && me) {
       resultRecordedRef.current = true;
       if (dailyVsActive) recordModePlayed('vs');
       const timeMs = startTime > 0 ? Math.max(0, Date.now() - startTime) : 0;
@@ -1070,8 +1256,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
     }
     matchService.abandonMatch();
     matchService.disconnect();
-    window.location.href = '/';
-  }, [matchService, screen, dailyVsActive, mode, startTime]);
+    window.location.href = flow ? '/vs' : '/';
+  }, [matchService, screen, dailyVsActive, mode, startTime, flow, race, buildRun]);
 
   // Sign-in gate — mirrors the /vs lobby's guest gate. VS is account-based
   // (live opponents, recorded results); deep links (/classic/vs, invite
@@ -1190,7 +1376,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 className="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 transition-transform hover:-translate-y-0.5"
                 style={{ borderColor: p.color, background: 'var(--color-surface-hover)' }}
               >
-                <span className="text-xl">{p.avatar}</span>
+                <BotAvatar src={p.avatar} name={p.name} size={36} />
                 <span className="text-xs font-black" style={{ color: p.color }}>{tierLabel(tier)}</span>
                 <span className="text-[10px] font-bold text-gray-400">{p.name}</span>
               </button>
@@ -1202,7 +1388,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
           className="w-full rounded-xl border px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5"
           style={{ borderColor: '#7c3aed', background: 'var(--color-surface-hover)', color: '#7c3aed' }}
         >
-          ⚖️ Adaptive — matched to your form
+          <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('adapt')} name="Adapt" size={20} />Adaptive — matched to your form</span>
         </button>
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -1212,14 +1398,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
             style={{ borderColor: '#64748b', background: 'var(--color-surface-hover)', color: '#475569' }}
             title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
           >
-            👻 Beat Your Best
+            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('ghost')} name="Your Ghost" size={20} />Beat Your Best</span>
           </button>
           <button
             onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
             className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform hover:-translate-y-0.5"
             style={{ borderColor: '#f59e0b', background: 'var(--color-surface-hover)', color: '#b45309' }}
           >
-            📅 Bot of the Day
+            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('lexi')} name="Lexi" size={20} />Bot of the Day</span>
           </button>
         </div>
         <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
@@ -1227,7 +1413,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
     ) : (
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-1 text-xs font-bold text-gray-400">
-          <Lock className="w-3.5 h-3.5" /> Practice vs CPU is a Pro feature
+          <Lock className="w-3.5 h-3.5" /> Bot matches are a Pro feature
         </div>
         <button
           onClick={() => router.push('/pro')}
@@ -1284,7 +1470,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
                   <div className="flex items-center gap-1.5 text-base font-black" style={{ color: 'var(--color-text)' }}>
                     Bot Match {!isPro && <Lock className="w-3.5 h-3.5 text-gray-400" />}
                   </div>
-                  <div className="text-xs font-bold text-gray-400">Practice vs the CPU — pick a difficulty</div>
+                  <div className="text-xs font-bold text-gray-400">Practice vs a bot — pick a difficulty</div>
                 </div>
               </button>
 
@@ -1334,7 +1520,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   if (screen === 'queue') {
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Match-intro splash — sits above the countdown for 2.5s (or until tapped). */}
         {showIntro && (
@@ -1347,7 +1533,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
             opponent={opponentUserId ? {
               username: isCpu ? `${opponentInfo?.username ?? 'CPU'} · ${cpuPersona ? tierLabel(cpuPersona.tier) : 'CPU'}` : (opponentInfo?.username ?? '…'),
               avatarUrl: opponentInfo?.avatarUrl ?? null,
-              level: isCpu ? null : (opponentInfo?.level ?? null),
+              level: isCpu || flow ? null : (opponentInfo?.level ?? null),
             } : null}
             headToHead={headToHead}
             onDone={() => { setShowIntro(false); startCountdown(pendingCountdownRef.current); }}
@@ -1356,76 +1542,49 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
         {/* Countdown overlay */}
         {countdownOverlayEl}
 
-        <div className="text-center space-y-6">
-          <h1 className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-            VS {label}
-          </h1>
-
-          <div>
-            <Loader2 className="h-16 w-16 text-purple-300 mx-auto animate-spin" />
-          </div>
-
-          <div className="space-y-2">
-            <CyclingStatus />
-            <p className="text-gray-400 text-sm">Position in queue: {queuePosition + 1}</p>
-            {queueSize > 1 && (
-              <p className="text-gray-400 text-xs font-bold">{queueSize} players waiting</p>
-            )}
-          </div>
-
-          {/* Private match: surface the shareable code/link so the host can
-              actually invite someone from the queue screen (native VSGameView
-              parity — the lobby's create flow lands here with the code). */}
-          {inviteCode && !isCpu && (
-            <div className="w-full max-w-xs mx-auto rounded-2xl border p-4 space-y-2"
-                 style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
-              <div className="text-[11px] font-extrabold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)' }}>
-                Private match
-              </div>
-              <div className="text-3xl font-black tracking-[6px]" style={{ color: 'var(--color-text)' }}>{inviteCode}</div>
-              <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Share this code — the match starts when your friend joins.
-              </p>
-              <button
-                onClick={async () => {
-                  const url = `${window.location.origin}/vs/join/${inviteCode}`;
-                  const text = `Join my Wordocious VS match — code ${inviteCode}`;
-                  if ('share' in navigator) {
-                    try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch {}
-                  }
-                  try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
-                }}
-                className="w-full rounded-xl py-2.5 text-sm font-black text-white"
-                style={{ background: '#7c3aed' }}
-              >
-                Share invite
-              </button>
-            </div>
-          )}
-
-          {/* Auto-offer the CPU once the human queue has sat quiet for a bit.
-              The explicit Bot Match choice now lives on the entry chooser. */}
-          {!showIntro && !showCountdown && !isCpu && cpuSupported && cpuAutoOffer && (
-            <div className="w-full max-w-xs mx-auto">
-              <div
-                className="rounded-2xl border p-4 space-y-3"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-              >
-                <div className="flex items-center justify-center gap-2 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
-                  <Bot className="w-4 h-4" /> No players right now — play the CPU?
-                </div>
-                {cpuChooserContent()}
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleCancel}
-            className="bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-400 hover:text-white font-bold px-6 py-2 rounded-xl transition-all flex items-center gap-2 mx-auto"
+        {liveSearch ? (
+          <VsQueueScreen
+            modeName={modeTitle(mode)}
+            othersWaiting={vsCounts ? Math.max(0, (vsCounts[mode] ?? 0) - 1) : null}
+            stepIn={stepInKind ? (() => { const id = cpuIdentity(cpuOpponentIdForKind(stepInKind)); return { name: id.name, art: id.avatar }; })() : null}
+            searching={!showIntro && !showCountdown && !opponentUserId}
+            onPlayBot={stepInBot}
+            onCancel={handleCancel}
           >
-            <X className="w-4 h-4" /> Cancel
-          </button>
-        </div>
+            {inviteCode && !isCpu && (
+              <div className="w-full max-w-xs mx-auto rounded-2xl border p-4 space-y-2"
+                   style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
+                <div className="text-[11px] font-extrabold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)' }}>
+                  Private match
+                </div>
+                <div className="text-3xl font-black tracking-[6px]" style={{ color: 'var(--color-text)' }}>{inviteCode}</div>
+                <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  Share this code — the match starts when your friend joins.
+                </p>
+                <button
+                  onClick={async () => {
+                    const url = `${window.location.origin}/vs/join/${inviteCode}`;
+                    const text = `Join my Wordocious VS match — code ${inviteCode}`;
+                    if ('share' in navigator) {
+                      try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch {}
+                    }
+                    try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
+                  }}
+                  className="w-full rounded-xl py-2.5 text-sm font-black text-white"
+                  style={{ background: '#7c3aed' }}
+                >
+                  Share invite
+                </button>
+              </div>
+            )}
+
+          </VsQueueScreen>
+        ) : (
+          <VsStartingScreen
+            title={flow === 'race' ? `RACE @${(race?.challenger.username ?? '').toUpperCase()}’S RUN` : flow === 'send' ? 'YOUR RUN' : `${cpuPersona?.name ?? 'Your bot'} is ready`}
+            sub={flow === 'send' ? sendPanelLine(sendFriendIds.length, sendLink) : flow === 'race' ? 'Same puzzle. Their pace plays out beside you.' : undefined}
+          />
+        )}
 
         {message && (
           <div className="absolute bottom-8 left-0 right-0 text-center">
@@ -1433,6 +1592,76 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
           </div>
         )}
       </div>
+    );
+  }
+
+  // Async challenge results, in the home palette (§3 CHALLENGE SENT, §5 race result).
+  if (screen === 'result' && flow === 'send' && challengeRun) {
+    const shareLink = async () => {
+      if (!sendResult?.code) return;
+      const url = `https://wordocious.com/vs/challenge/${sendResult.code}`;
+      const text = challengeShareText(mode, sendResult.code);
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch { /* fall back to copy */ }
+      }
+      try { await navigator.clipboard.writeText(`${text}\n${url}`); setMessage('Link copied'); } catch { /* nothing to do */ }
+    };
+    return (
+      <>
+        {sendResult ? (
+          <ChallengeSent
+            mode={mode}
+            run={challengeRun}
+            guessLog={challengeRun.guessLog}
+            solutions={challengeRun.solutions}
+            code={sendResult.code}
+            link={sendLink || sendFriendIds.length === 0}
+            error={sendResult.error}
+            onShare={shareLink}
+            onHome={() => { matchService.disconnect(); router.push('/vs'); }}
+          />
+        ) : (
+          <div className="h-screen-stable flex items-center justify-center" style={{ backgroundColor: '#f8f7ff' }}>
+            <VsStartingScreen title="SENDING YOUR RUN" />
+          </div>
+        )}
+        {message && (
+          <div className="fixed bottom-8 left-0 right-0 text-center z-50">
+            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+  if (screen === 'result' && flow === 'race' && race && challengeRun && raceOutcome) {
+    const share = async () => {
+      const text = `${raceOutcome === 'win' ? 'I beat' : raceOutcome === 'loss' ? 'I raced' : 'I tied'} ${race.challenger.username}’s ${modeTitle(mode)} run on Wordocious ⚔️`;
+      const payload = `${text}\nhttps://wordocious.com/vs`;
+      if (typeof navigator !== 'undefined' && navigator.share) navigator.share({ text: payload }).catch(() => {});
+      else navigator.clipboard?.writeText(payload).then(() => setMessage('Copied to clipboard!')).catch(() => {});
+    };
+    return (
+      <>
+        {raceOutcome === 'win' && <Confetti />}
+        <ChallengeResult
+          mode={mode}
+          outcome={raceOutcome}
+          me={{ run: challengeRun, guessLog: challengeRun.guessLog }}
+          them={{ run: race.run, guessLog: race.run.guessLog, name: race.challenger.username, avatarUrl: race.challenger.avatarUrl }}
+          solutions={race.run.solutions.length ? race.run.solutions : challengeRun.solutions}
+          h2h={headToHead}
+          xp={xpResult?.xpGain ?? null}
+          onClose={() => { matchService.disconnect(); router.push('/vs'); }}
+          onHome={() => { matchService.disconnect(); router.push('/vs'); }}
+          onChallengeBack={() => { matchService.disconnect(); router.push(isPro ? `/vs/friend?mode=${mode}&friend=${race.challenger.id}` : '/pro'); }}
+          onShare={share}
+        />
+        {message && (
+          <div className="fixed bottom-8 left-0 right-0 text-center z-50">
+            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -1544,9 +1773,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
             {isCpu && (
               <div className="mt-2 space-y-1">
                 {cpuMilestone ? (
-                  <p className="text-sm font-black" style={{ color: '#f97316' }}>🔥 {cpuMilestone}-win CPU streak!</p>
+                  <p className="text-sm font-black" style={{ color: '#f97316' }}>🔥 {cpuMilestone}-win bot streak!</p>
                 ) : cpuStreak > 0 ? (
-                  <p className="text-xs font-extrabold text-gray-400">CPU win streak: {cpuStreak}</p>
+                  <p className="text-xs font-extrabold text-gray-400">Bot win streak: {cpuStreak}</p>
                 ) : null}
                 {cpuUnlock && (
                   <p className="text-xs font-black" style={{ color: BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].color }}>
@@ -1596,7 +1825,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
             {/* Run-it-back session tally (CPU only) */}
             {isCpu && (cpuSession.wins + cpuSession.losses) > 0 && (
               <p className="text-center text-xs font-extrabold text-gray-400">
-                This session — You {cpuSession.wins} · CPU {cpuSession.losses}
+                This session — You {cpuSession.wins} · Bots {cpuSession.losses}
               </p>
             )}
             {rematchState === 'declined' ? (
@@ -1706,7 +1935,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
     // CPU only: once the bot can no longer beat you, offer to end now instead of
     // watching its timer run down (mirrors the win-locked branch of `stakes`).
-    const cpuWinLocked = isCpu && !!playerStats && myStatus !== 'lost' && (() => {
+    const cpuWinLocked = (isCpu || flow === 'race') && !!playerStats && myStatus !== 'lost' && (() => {
       const boardsLeft = liveTotalBoards - opponentProgress.boardsSolved;
       if (liveTotalBoards > 1 && boardsLeft > 1) return false;
       const opponentTimeBehind = Date.now() - startTime > playerStats.timeMs;
@@ -1800,7 +2029,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
             </div>
           )}
 
-          {isCpu && (
+          {(isCpu || flow === 'race') && (
             cpuWinLocked ? (
               <button
                 onClick={() => matchService.resolveNow?.()}
@@ -1918,10 +2147,18 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
           progress: computeVsProgress(myBoardsSolved, totalBoards, bestRowGreens(myTiles), wordLen),
         }}
         opponent={{
-          username: isCpu ? `${opponentInfo?.username || 'CPU'} 🤖` : (opponentInfo?.username || 'Opponent'),
+          username: opponentInfo?.username || (isCpu ? 'Bot' : 'Opponent'),
           avatarUrl: opponentInfo?.avatarUrl ?? null,
           guesses: opponentProgress.attempts,
           progress: computeVsProgress(opponentProgress.boardsSolved, totalBoards, bestRowGreens(opponentTiles), wordLen),
+          // The bot is labeled a bot; a friend's run reads "@doug's run"; the send game has no opponent.
+          subtitle: flow === 'send'
+            ? sendPanelLine(sendFriendIds.length, sendLink || sendFriendIds.length === 0)
+            : flow === 'race'
+            ? `@${opponentInfo?.username ?? ''}’s run · ${opponentProgress.attempts} ${opponentProgress.attempts === 1 ? 'guess' : 'guesses'}`
+            : isCpu
+            ? `Bot · ${opponentProgress.attempts} ${opponentProgress.attempts === 1 ? 'guess' : 'guesses'}`
+            : undefined,
         }}
         opponentTyping={opponentTyping}
       />
@@ -1945,7 +2182,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode }: VsGameProps) {
           natural aspect height instead of shrinking to fit, pushing the
           keyboard below the fold. */}
       <div className="flex-1 min-h-0 flex flex-col">
-        {renderModeComponent()}
+        <VsSoloHudContext.Provider value={opponentUserId === SOLO_OPPONENT_ID ? soloHudLine : null}>
+          {renderModeComponent()}
+        </VsSoloHudContext.Provider>
       </div>
 
       {message && (

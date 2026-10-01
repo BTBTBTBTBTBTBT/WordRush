@@ -10,6 +10,11 @@ import java.time.ZoneOffset
  * per-device in SharedPreferences — CPU play is unranked. W/L totals live in
  * user_stats(vs_cpu); this tracks the streak, boss-ladder rung, cosmetic
  * unlocks, and Bot-of-the-Day streak. Kotlin port of cpu-progression.ts.
+ *
+ * VS overhaul §7 (2026-10-01) adds the bot ladder (`ladderCleared` rungs of
+ * Rook → Lexi → Nova → Adapt, `ladderRun` wins in a row against the next one,
+ * folded by core ladderAfterGame) and today's Bot of the Day result
+ * (`botOfDayPlayedDay` UTC day + `botOfDayResult` won/lost/draw).
  */
 data class CpuProgression(
     val streak: Int = 0,
@@ -18,7 +23,16 @@ data class CpuProgression(
     val unlocked: Set<String> = emptySet(),
     val botOfDayStreak: Int = 0,
     val botOfDayLastDay: String? = null,
-)
+    val ladderCleared: Int = 0,
+    val ladderRun: Int = 0,
+    val botOfDayPlayedDay: String? = null,
+    val botOfDayResult: String? = null,
+) {
+    /** Today's Bot of the Day: "open" until played this UTC day, then its result. */
+    fun botOfDayToday(todayUtc: String): com.wordocious.core.VsDayResult =
+        if (botOfDayPlayedDay == todayUtc) com.wordocious.core.VsDayResult.from(botOfDayResult)
+        else com.wordocious.core.VsDayResult.OPEN
+}
 
 object CpuProgressionStore {
     private val prefs by lazy { App.instance.getSharedPreferences("wordocious_cpu", Context.MODE_PRIVATE) }
@@ -32,6 +46,10 @@ object CpuProgressionStore {
         unlocked = prefs.getStringSet("unlocked", emptySet())?.toSet() ?: emptySet(),
         botOfDayStreak = prefs.getInt("botOfDayStreak", 0),
         botOfDayLastDay = prefs.getString("botOfDayLastDay", null),
+        ladderCleared = prefs.getInt("ladderCleared", 0),
+        ladderRun = prefs.getInt("ladderRun", 0),
+        botOfDayPlayedDay = prefs.getString("botOfDayPlayedDay", null),
+        botOfDayResult = prefs.getString("botOfDayResult", null),
     )
 
     private fun save(p: CpuProgression) {
@@ -39,6 +57,8 @@ object CpuProgressionStore {
             .putInt("streak", p.streak).putInt("bestStreak", p.bestStreak).putInt("rung", p.rung)
             .putStringSet("unlocked", p.unlocked)
             .putInt("botOfDayStreak", p.botOfDayStreak).putString("botOfDayLastDay", p.botOfDayLastDay)
+            .putInt("ladderCleared", p.ladderCleared).putInt("ladderRun", p.ladderRun)
+            .putString("botOfDayPlayedDay", p.botOfDayPlayedDay).putString("botOfDayResult", p.botOfDayResult)
             .apply()
     }
 
@@ -78,6 +98,30 @@ object CpuProgressionStore {
         }
         return p
     }
+
+    /**
+     * Fold one finished bot game into the ladder (core ladderAfterGame): only a
+     * game against the NEXT rung's bot moves it. `botId` is CpuKind.botId, so
+     * the Bot of the Day ("daily") and Beat your best ("ghost") pass through.
+     */
+    fun recordLadder(botId: String, won: Boolean): CpuProgression {
+        val p = load()
+        val s = com.wordocious.core.ladderAfterGame(com.wordocious.core.BotLadderState(p.ladderCleared, p.ladderRun), botId, won)
+        val next = p.copy(ladderCleared = s.cleared, ladderRun = s.run)
+        save(next)
+        return next
+    }
+
+    /** Mark today's Bot of the Day played with its result ("won" | "lost" | "draw"). */
+    fun recordBotOfDayResult(result: String, todayUtc: String): CpuProgression {
+        val next = load().copy(botOfDayPlayedDay = todayUtc, botOfDayResult = result)
+        save(next)
+        return next
+    }
+
+    /** The bot the ladder sends next: the first uncleared rung, Adapt once all four are cleared. */
+    fun nextLadderBot(p: CpuProgression = load()): String =
+        com.wordocious.core.VsLobby.LADDER_BOTS.getOrElse(p.ladderCleared) { "adapt" }
 
     fun todayUtc(): String = LocalDate.now(ZoneOffset.UTC).toString()
 }

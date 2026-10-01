@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Crown, Home } from 'lucide-react';
 import { GameMode } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { lookupInviteByCode } from '@/lib/invite-service';
+import { loadCpuProgression } from '@/lib/bot/cpu-progression';
+import { utcDay } from '@/lib/vs-lobby';
 
 /** Shared "this is a Pro perk" screen — one look for every route-level gate. */
 function GateCard({ title, blurb, fallbackHref, fallbackLabel }: {
@@ -120,6 +123,15 @@ export function VsProGate({ mode, isDaily = false, inviteCode, children }: {
 }) {
   const { loading, isProActive } = useAuth();
   const freeDailyVs = isDaily && mode === GameMode.DUEL;
+  // A third free door (VS overhaul §7): the Bot of the Day, Classic, once per
+  // UTC day (?cpu=daily). Read after mount — the progression is localStorage.
+  const searchParams = useSearchParams();
+  const wantsBotOfDay = searchParams?.get('cpu') === 'daily' && mode === GameMode.DUEL;
+  const [botOfDayOpen, setBotOfDayOpen] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!wantsBotOfDay) return;
+    setBotOfDayOpen(loadCpuProgression().botOfDayPlayedDay !== utcDay());
+  }, [wantsBotOfDay]);
   // null = still checking. Skipped entirely when the gate is already open.
   const [inviteValid, setInviteValid] = useState<boolean | null>(null);
   const needsInviteCheck = !!inviteCode && !loading && !isProActive && !freeDailyVs;
@@ -139,6 +151,18 @@ export function VsProGate({ mode, isDaily = false, inviteCode, children }: {
 
   if (freeDailyVs || isProActive) return <>{children}</>;
   if (loading) return <GateLoading />;
+  if (wantsBotOfDay) {
+    if (botOfDayOpen === null) return <GateLoading />;
+    if (botOfDayOpen) return <>{children}</>;
+    return (
+      <GateCard
+        title="You played today’s Bot of the Day"
+        blurb="A new bot battle opens at midnight UTC. Go Pro for the full bot ladder and live VS in every mode."
+        fallbackHref="/vs"
+        fallbackLabel="Back to VS"
+      />
+    );
+  }
   if (needsInviteCheck) {
     if (inviteValid === null) return <GateLoading />;
     if (inviteValid) return <>{children}</>;

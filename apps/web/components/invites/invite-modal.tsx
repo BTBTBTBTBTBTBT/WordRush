@@ -49,10 +49,13 @@ function ModeGlyph({ mode, size = 16 }: { mode: ModeOption; size?: number }) {
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** Preselect the mode (the VS Friend page's mode chip) and the tab. */
+  initialMode?: string;
+  initialTab?: 'link' | 'username';
 }
 
-export function InviteModal({ open, onClose }: Props) {
-  const { profile } = useAuth();
+export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
+  const { profile, isProActive } = useAuth();
   const [tab, setTab] = useState<'link' | 'username'>('link');
   const [modeId, setModeId] = useState<string>('DUEL');
   const [modeOpen, setModeOpen] = useState(false);
@@ -75,10 +78,24 @@ export function InviteModal({ open, onClose }: Props) {
     return () => document.removeEventListener('mousedown', onClick);
   }, [modeOpen]);
 
+  // Each open starts from the caller's mode/tab.
+  useEffect(() => {
+    if (!open) return;
+    if (initialMode && MODES.some((m) => m.id === initialMode)) setModeId(initialMode);
+    if (initialTab) setTab(initialTab);
+  }, [open, initialMode, initialTab]);
+
   if (!open) return null;
 
+  // Sending an invite is Pro on every platform (VS overhaul parity); answering one stays free.
+  const proOnly = () => {
+    if (isProActive) return false;
+    setError('Inviting a friend is a Pro feature. Answering an invite stays free.');
+    return true;
+  };
+
   const handleGenerateLink = async () => {
-    if (!profile) return;
+    if (!profile || proOnly()) return;
     setBusy(true); setError(''); setCopied(false);
     const { invite, error: e } = await createInvite({ inviterId: profile.id, gameMode: modeId });
     setBusy(false);
@@ -88,7 +105,7 @@ export function InviteModal({ open, onClose }: Props) {
   };
 
   const handleSendToUsername = async () => {
-    if (!profile) return;
+    if (!profile || proOnly()) return;
     const clean = username.trim().replace(/^@+/, '');
     if (!clean) { setError('Enter a username'); return; }
     setBusy(true); setError('');

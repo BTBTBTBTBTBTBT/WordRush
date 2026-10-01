@@ -65,6 +65,24 @@ enum DailyResultsService {
         return row.vsWins > 0
     }
 
+    /// Today's Daily Battle against a PERSON for the VS banner (VS overhaul §1),
+    /// from the same daily_results 'vs' row: a win → won, a loss → lost, a
+    /// played game with neither → draw. nil when it can't be read.
+    static func dailyVSOutcome() async -> VsDayResult? {
+        let client = AuthService.shared.client
+        guard let uid = try? await client.auth.session.user.id.uuidString else { return nil }
+        let rows: [VsRow]? = try? await client.from("daily_results")
+            .select("id, vs_wins, vs_losses, vs_games")
+            .eq("user_id", value: uid).eq("day", value: LeaderboardService.todayLocal())
+            .eq("game_mode", value: "DUEL").eq("play_type", value: "vs")
+            .limit(1).execute().value
+        guard let rows else { return nil }
+        guard let row = rows.first else { return .open }
+        if row.vsWins > 0 { return .won }
+        if row.vsLosses > 0 { return .lost }
+        return row.vsGames > 0 ? .draw : .open
+    }
+
     private struct VsRow: Decodable {
         let id: String; let vsWins: Int; let vsLosses: Int; let vsGames: Int
         enum CodingKeys: String, CodingKey {

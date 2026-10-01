@@ -1,7 +1,7 @@
 import { GameMode, generateMatchSeed } from '@wordle-duel/core';
 import type { IMatchService, MatchEndedData } from './match-service';
 import { buildBotPlan, type BotPlan, type AdaptiveHint } from '@/lib/bot/bot-engine';
-import { BOT_PERSONAS, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import { BOT_PERSONAS, botArt, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
 import type { GhostRun } from '@/lib/bot/ghost-service';
 import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 
@@ -13,12 +13,23 @@ export function cpuOpponentIdForKind(kind: CpuKind): string {
   return `${CPU_OPPONENT_PREFIX}${kind}`;
 }
 
-/** Display identity + underlying tier for any cpu opponent id. */
+/**
+ * The ladder/progression bot id for a kind (VS overhaul §7): easy→rook,
+ * medium→lexi, hard→nova, adaptive→adapt, Bot of the Day→daily, ghost→ghost.
+ */
+export function botIdForKind(kind: CpuKind): string {
+  if (kind === 'adaptive') return 'adapt';
+  if (kind === 'daily' || kind === 'ghost') return kind;
+  return BOT_PERSONAS[kind].id;
+}
+
+/** Display identity + underlying tier for any cpu opponent id. `avatar` is the bot's art URL. */
 export function cpuIdentity(oppId: string): { name: string; avatar: string; color: string; tier: BotTier } {
   const raw = oppId.slice(CPU_OPPONENT_PREFIX.length);
-  if (raw === 'ghost') return { name: 'Your Ghost', avatar: '👻', color: '#64748b', tier: 'hard' };
-  if (raw === 'daily') return { name: 'Daily Bot', avatar: '📅', color: '#f59e0b', tier: 'medium' };
-  if (raw === 'adaptive') return { name: 'Adapt', avatar: '⚖️', color: '#7c3aed', tier: 'medium' };
+  if (raw === 'ghost') return { name: 'Your Ghost', avatar: botArt('ghost'), color: '#64748b', tier: 'hard' };
+  // The Bot of the Day is Lexi on the day's shared puzzle (bot-personas BOT_OF_DAY_ID).
+  if (raw === 'daily') return { name: 'Lexi', avatar: botArt('lexi'), color: '#f59e0b', tier: 'medium' };
+  if (raw === 'adaptive') return { name: 'Adapt', avatar: botArt('adapt'), color: '#7c3aed', tier: 'medium' };
   const p = BOT_PERSONAS[(raw as BotTier)] ?? BOT_PERSONAS.medium;
   return { name: p.name, avatar: p.avatar, color: p.color, tier: p.tier };
 }
@@ -31,6 +42,16 @@ export interface BotConfig {
   fixedSeed?: string;
   /** Opponent id sentinel — defaults to cpu:<difficulty>. */
   opponentId?: string;
+  /**
+   * A friend's challenge run to replay (VS overhaul §4): the plan hits their
+   * guess count and time, and solves only when they did.
+   */
+  pace?: { guesses: number; timeMs: number; solved: boolean };
+  /**
+   * No opponent at all (the challenge-send game, §3): no intro splash, no bot
+   * moves, and the match ends the moment the player finishes.
+   */
+  solo?: boolean;
 }
 
 /** The on* handler names — stored so a swap can re-register them on a new transport. */
@@ -179,6 +200,10 @@ export class LocalBotMatchService implements IMatchService {
   }
 
   private planOpts() {
+    const pace = this.config.pace;
+    if (pace) {
+      return { adaptive: this.adaptive, targetGuesses: pace.guesses || undefined, targetSolveMs: pace.timeMs || undefined, forceSolve: pace.solved };
+    }
     return {
       adaptive: this.adaptive,
       targetGuesses: this.config.ghost?.guessCount,
@@ -263,7 +288,7 @@ export class LocalBotMatchService implements IMatchService {
     // countdown starts on the intro's onDone), so hold match_start until intro +
     // countdown have both elapsed — otherwise the 3s window overlaps the intro
     // and only a flash of the countdown shows.
-    const preMatchMs = INTRO_MS + MATCH_COUNTDOWN_MS;
+    const preMatchMs = (this.config.solo ? 0 : INTRO_MS) + MATCH_COUNTDOWN_MS;
     this.serverStartAt = Date.now() + preMatchMs;
     this.plan = buildBotPlan(seed, this.mode, this.difficulty, this.planOpts());
     this.botDone = false;
@@ -290,6 +315,12 @@ export class LocalBotMatchService implements IMatchService {
   private runPlan() {
     const plan = this.plan;
     if (!plan) return;
+    if (this.config.solo) {
+      // Nobody to race: the "opponent" is done from the start.
+      this.botDone = true;
+      this.botTimeMs = 0;
+      return;
+    }
     for (const ev of plan.events) {
       this.schedule(() => {
         if (this.ended) return;

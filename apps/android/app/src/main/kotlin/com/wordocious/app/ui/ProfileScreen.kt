@@ -145,7 +145,12 @@ private data class ProfileChartsMemo(
 
 @Suppress("UNUSED_PARAMETER") // onOpenFriends: Friends is its own tab since D1; kept for the MainScreen call site.
 @Composable
-fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}, onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}) {
+fun ProfileScreen(
+    onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {},
+    onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {},
+    /** Bumped by the VS lobby's Rivals "See all": open All-time at its VS section. */
+    vsJumpRequest: Int = 0,
+) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
     // The first frame paints the session memo (and today's on-device completions) instead of
@@ -167,7 +172,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var selected by remember { mutableStateOf(RAIL_TODAY) }
     // A game page's Solo | VS toggle (only where the game has a live VS board).
     var gameTab by remember { mutableStateOf("solo") }
-    // All-time's VS section: which word game's board, Live ("vs") or CPU practice ("vs_cpu").
+    // All-time's VS section: which word game's board, People ("vs") or Bots ("vs_cpu").
     var vsMode by remember { mutableStateOf("DUEL") }
     var vsTab by remember { mutableStateOf("vs") }
     // The per-mode chart fetch is scoped to the page: a game page → that mode
@@ -362,6 +367,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     fun go(key: String) {
         if (key == RAIL_VS) { selected = RAIL_ALL; vsJump++ } else selected = key
     }
+    LaunchedEffect(vsJumpRequest) { if (vsJumpRequest > 0) go(RAIL_VS) }
     LaunchedEffect(vsJump) {
         if (vsJump == 0) return@LaunchedEffect
         // Let the All-time page compose and measure first (web waits 60 ms too).
@@ -566,8 +572,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                             }
 
                             // ── VS (founder, 2026-10-01): VS left the game rail (rarely played; the grid
-                            //    now comes out even). Its record (with today's result), Rivalries, CPU
-                            //    practice and one word game's board — Live or CPU — live here. ──
+                            //    now comes out even). Its record (with today's result), Rivalries, the
+                            //    Bots record and one word game's board — People or Bots — live here. ──
                             Box(Modifier.onGloballyPositioned { vsSectionY = it.positionInParent().y.toInt() }) {
                                 SectionHeader("VS", accent = Color(0xFFEC4899))
                             }
@@ -752,7 +758,7 @@ private fun TodayLineCard(dbKey: String, completion: DailyCompletionsService.Com
 }
 
 /** All-time's VS board picker: the VS-capable word games as small chips, and
- *  Live | CPU at the right. */
+ *  People | Bots at the right (VS overhaul §10). */
 @Composable
 private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String, onMode: (String) -> Unit, onTab: (String) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -775,7 +781,8 @@ private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            listOf("vs" to "Live", "vs_cpu" to "CPU").forEach { (key, label) ->
+            // VS overhaul §10: People | Bots (was Live | CPU) on all three platforms.
+            listOf("vs" to "People", "vs_cpu" to "Bots").forEach { (key, label) ->
                 val active = tab == key
                 Text(
                     label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
@@ -862,7 +869,7 @@ private fun ModeStatsBody(
         ProDeepModeCard(gameMode = mode, isPro = isProActive, accent = accent, onGoPro = onGoPro, playType = tab)
     } else {
         Text(
-            "CPU practice records totals only — per-game charts track Solo and VS matches.",
+            "Bot games record totals only — per-game charts track Solo and VS matches.",
             fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             textAlign = TextAlign.Center,
@@ -1168,7 +1175,7 @@ private fun ModeDetailHeader(modeId: String, activeTab: String) {
                 else -> Icon(Icons.Filled.Memory, null, tint = accent, modifier = Modifier.size(12.dp))
             }
             Text(
-                if (activeTab == "solo") "Solo" else if (activeTab == "vs") "VS" else "VS CPU",
+                if (activeTab == "solo") "Solo" else if (activeTab == "vs") "VS" else "VS Bots",
                 fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = accent,
             )
         }
@@ -1709,7 +1716,7 @@ private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.a
 }
 
 // ── VS RECORD / CPU RECORD (the VS page) ──────────────────────────────────────
-/** vs CPU record — unranked practice: no leaderboard, no XP, no streak. */
+/** vs Bots record — unranked: no leaderboard, no XP, no streak. */
 @Composable
 private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
     val cpuStats = stats.filter { it.playType == "vs_cpu" }
@@ -1729,7 +1736,7 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
             Icon(Icons.Filled.Memory, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text("VS CPU", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
+            Text("VS BOTS", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
             Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             if (total == 0) Text("Beat a bot to start your record", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
             else if (bestStreak > 0) Text("🔥 Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))

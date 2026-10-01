@@ -308,7 +308,9 @@ export function buildBotPlan(
   }
 
   // Decide the overall outcome up front.
-  const willSolveAll = opts.forceSolve ? true : Math.random() > params.failChance;
+  // forceSolve true/false pins the outcome (a ghost always solves; a friend's
+  // challenge run solves only when theirs did); undefined rolls the tier's odds.
+  const willSolveAll = opts.forceSolve !== undefined ? opts.forceSolve : Math.random() > params.failChance;
 
   const events: BotProgressEvent[] = [];
   const stageEvents: { atMs: number; stageIndex: number }[] = [];

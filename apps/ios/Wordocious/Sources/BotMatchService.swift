@@ -57,9 +57,13 @@ enum CpuKind: String {
 
 struct CpuIdentity {
     let name: String
-    let avatar: String
+    /// Bot art asset (`bot-<id>`) — drawn in a circle, never an emoji (VS overhaul §9).
+    let art: String
     let color: Int
     let tier: BotTier
+    /// The ladder / progression bot id this kind plays as: easy→rook, medium→lexi,
+    /// hard→nova, adaptive→adapt, Bot of the Day→daily, ghost→ghost (spec §7).
+    let botId: String
 }
 
 enum CpuOpponent {
@@ -69,15 +73,20 @@ enum CpuOpponent {
 
     static func isCpu(_ id: String?) -> Bool { id?.hasPrefix(prefix) ?? false }
 
+    static func identity(_ kind: CpuKind) -> CpuIdentity { identity(opponentId(kind)) }
+
     static func identity(_ oppId: String) -> CpuIdentity {
         let raw = String(oppId.dropFirst(prefix.count))
         switch raw {
-        case "ghost": return CpuIdentity(name: "Your Ghost", avatar: "👻", color: 0x64748B, tier: .hard)
-        case "daily": return CpuIdentity(name: "Daily Bot", avatar: "📅", color: 0xF59E0B, tier: .medium)
-        case "adaptive": return CpuIdentity(name: "Adapt", avatar: "⚖️", color: 0x7C3AED, tier: .medium)
+        case "ghost": return CpuIdentity(name: "Your Ghost", art: BotPersonas.art("ghost"), color: 0x64748B, tier: .hard, botId: "ghost")
+        case "daily":
+            // The Bot of the Day is Lexi on the shared daily seed.
+            let p = BotPersonas.botOfDay
+            return CpuIdentity(name: p.name, art: p.art, color: p.color, tier: p.tier, botId: "daily")
+        case "adaptive": return CpuIdentity(name: "Adapt", art: BotPersonas.art("adapt"), color: 0x7C3AED, tier: .medium, botId: "adapt")
         default:
             let p = BotPersonas.persona(BotTier(rawValue: raw) ?? .medium)
-            return CpuIdentity(name: p.name, avatar: p.avatar, color: p.color, tier: p.tier)
+            return CpuIdentity(name: p.name, art: p.art, color: p.color, tier: p.tier, botId: p.id)
         }
     }
 }
@@ -86,6 +95,9 @@ struct BotConfig {
     var adaptive: BotEngine.AdaptiveHint? = nil
     var ghostGuesses: Int? = nil
     var ghostTimeMs: Double? = nil
+    /// A replayed run that did NOT solve (a challenger's failed run): the ghost
+    /// burns its guesses and fails instead of being forced to solve.
+    var ghostSolves: Bool? = nil
     var fixedSeed: String? = nil
     var opponentId: String? = nil
 }
@@ -155,7 +167,8 @@ final class LocalBotMatchService: VSTransport {
         BotEngine.BuildOpts(
             targetGuesses: config.ghostGuesses,
             targetSolveMs: config.ghostTimeMs,
-            forceSolve: config.ghostGuesses != nil,
+            forceSolve: config.ghostGuesses != nil && config.ghostSolves != false,
+            forceFail: config.ghostSolves == false,
             adaptive: config.adaptive
         )
     }

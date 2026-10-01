@@ -34,6 +34,10 @@ struct VSMatchIntroView: View {
         let username: String
         let avatarUrl: String?
         let level: Int?
+        /// A bot's art, drawn instead of a photo (VS overhaul §9).
+        var botArt: String? = nil
+        /// Replaces the level chip: "BOT", or a challenge's "@doug’s run".
+        var subtitle: String? = nil
     }
 
     let me: Player
@@ -127,7 +131,7 @@ struct VSMatchIntroView: View {
             // during the spring slam (they used to composite as separate GPU layers
             // and visibly detached mid-animation).
             ZStack {
-                AvatarView(url: p.avatarUrl, username: p.username, size: 72)
+                VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 72)
                 Circle().strokeBorder(.white.opacity(0.4), lineWidth: 2)
             }
             .frame(width: 72, height: 72)
@@ -136,7 +140,14 @@ struct VSMatchIntroView: View {
                 .font(Brand.font(14, .black)).foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            if let level = p.level {
+            if let subtitle = p.subtitle {
+                Text(subtitle)
+                    .font(Brand.font(10, .heavy)).foregroundStyle(.white)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(Capsule().fill(.white.opacity(0.15)))
+                    .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 1))
+            } else if let level = p.level {
                 Text("Lv \(level)")
                     .font(Brand.font(10, .heavy)).foregroundStyle(.white)
                     .padding(.horizontal, 8).padding(.vertical, 2)
@@ -158,6 +169,8 @@ struct VSMatchHeaderBar: View {
         let guesses: Int
         /// Normalized 0..1 lead metric — VSModeInfo.progress.
         let progress: Double
+        /// A bot's art, drawn instead of a photo.
+        var botArt: String? = nil
     }
 
     let me: PlayerBits
@@ -244,7 +257,7 @@ struct VSMatchHeaderBar: View {
     }
 
     private func headerAvatar(_ p: PlayerBits) -> some View {
-        AvatarView(url: p.avatarUrl, username: p.username, size: 28)
+        VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 28)
             .overlay(Circle().strokeBorder(Theme.border, lineWidth: 1.5))
     }
 }

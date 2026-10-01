@@ -88,10 +88,10 @@ import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameStatus
 
-private class VSVMFactory(val mode: GameMode, val isDaily: Boolean, val inviteCode: String?) : ViewModelProvider.Factory {
+private class VSVMFactory(val mode: GameMode, val isDaily: Boolean, val inviteCode: String?, val launch: VsLaunch) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        VSMatchViewModel(mode, isDaily, inviteCode) as T
+        VSMatchViewModel(mode, isDaily, inviteCode, launch) as T
 }
 
 private fun vsModeLabel(mode: GameMode): String = when (mode) {
@@ -113,7 +113,17 @@ private fun gauntletStageGradient(name: String): List<Color> = when (name) {
  * this increment.
  */
 @Composable
-fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? = null, onHome: () -> Unit, onGoPro: () -> Unit, onPlayUnlimited: () -> Unit = {}) {
+fun VSGameScreen(
+    mode: GameMode,
+    isDaily: Boolean = false,
+    inviteCode: String? = null,
+    launch: VsLaunch = VsLaunch.Live,
+    onHome: () -> Unit,
+    onGoPro: () -> Unit,
+    onPlayUnlimited: () -> Unit = {},
+    /** CHALLENGE BACK (§5): the Friend page with this friend preselected. */
+    onChallengeBack: (friendId: String) -> Unit = {},
+) {
     // Fresh VM per screen entry (iOS parity: every VSGameView push creates a new
     // @StateObject VM). The activity-scoped store kept the previous VM for the
     // same mode forever — after daily VS, "Play Unlimited VS" → lobby → Classic
@@ -125,8 +135,8 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     DisposableEffect(vmOwner) { onDispose { vmOwner.viewModelStore.clear() } }
     val vm: VSMatchViewModel = viewModel(
         viewModelStoreOwner = vmOwner,
-        key = "vs-$mode-$isDaily-${inviteCode ?: "rand"}",
-        factory = VSVMFactory(mode, isDaily, inviteCode),
+        key = "vs-$mode-$isDaily-${inviteCode ?: "rand"}-${launch.key}",
+        factory = VSVMFactory(mode, isDaily, inviteCode, launch),
     )
     // Free users watch the game-start interstitial before matchmaking begins
     // (iOS VSGameView.onAppear / solo GameScreen parity). Shown once per screen.
@@ -144,7 +154,12 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     val gradient = modeTitleGradient(mode)
     val label = "VS ${vsModeLabel(mode)}"
 
-    fun goHome() { vm.forfeit(); onHome() }
+    fun goHome() {
+        // A finished racer leaving the spectator screen settles the race now
+        // (the ghost's plan is fixed) so the result still posts, then shows it.
+        if (vm.race != null && vm.screen == VSScreen.WAITING) { vm.finishCpuNow(); return }
+        vm.forfeit(); onHome()
+    }
 
     Box(
         Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover))),
@@ -152,11 +167,15 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     ) {
         when (vm.screen) {
             VSScreen.NOT_CONFIGURED -> NotConfigured(label, gradient, ::goHome)
-            VSScreen.ENTRY -> EntryScreen(label, gradient, vm, onGoPro, ::goHome)
-            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, vm, onGoPro, ::goHome)
+            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, vm, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, label, gradient, ::goHome)
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
-            VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome, onGoPro)
+            VSScreen.RESULT -> when {
+                // Async challenges finish on the home-palette screens (§3, §5).
+                vm.race != null -> RaceResultScreen(vm, onHome = ::goHome, onGoPro = onGoPro, onChallengeBack = onChallengeBack)
+                vm.sendLaunch != null -> ChallengeSentScreen(vm, onHome = ::goHome)
+                else -> ResultScreen(vm, gradient, ::goHome, onGoPro)
+            }
             VSScreen.OPPONENT_LEFT -> OpponentLeft(::goHome)
             VSScreen.MATCH_GONE -> MatchGone(vm.message, ::goHome)
             VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, vm.isPro, vm.dailyWon, ::goHome, onGoPro, onPlayUnlimited)
@@ -188,7 +207,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
 
         // Don't stack the countdown under the dark intro splash (it ticked behind
         // it and then popped in color); show it only once the intro is gone.
-        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, label, gradient, vm.countdownIsRematch) }
+        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, label, gradient, vm.countdownIsRematch, vm.countdownTitle) }
         // Match-intro splash — sits above the countdown for 2.5s (or until tapped).
         if (vm.showIntro) {
             val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
@@ -209,7 +228,8 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
                 onDone = { vm.showIntro = false; vm.startCountdownTick() },
             )
         }
-        if (vm.screen == VSScreen.RESULT) vm.xpResult?.let { XpToast(it) { vm.xpResult = null } }
+        // The race result shows its XP in the H2H chip instead (§5).
+        if (vm.screen == VSScreen.RESULT && vm.race == null) vm.xpResult?.let { XpToast(it) { vm.xpResult = null } }
     }
 }
 
@@ -219,26 +239,30 @@ private fun VsTitle(label: String, gradient: List<Color>, size: Int) {
 }
 
 @Composable
-private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, inviteCode: String?, vm: VSMatchViewModel, onGoPro: () -> Unit, onHome: () -> Unit) {
+private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, inviteCode: String?, vm: VSMatchViewModel, onHome: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    // CPU: no human matchmaking queue — a brief branded warmup while the bot
-    // spins up (the intro splash covers it a beat later).
-    if (vm.isCpu) {
+    // CPU / race: no human matchmaking queue — a brief branded warmup while the
+    // bot spins up (the intro splash covers it a beat later).
+    if (vm.isCpu || vm.race != null || vm.sendLaunch != null) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
             VsTitle(label, gradient, 36)
-            CircularProgressIndicator(color = WTheme.primary)
+            val persona = vm.cpuPersona
+            if (persona != null) BotAvatar(persona.artId, 72.dp)
+            CircularProgressIndicator(color = VsTeal.ink)
             Text(
-                vm.cpuPersona?.let { "Matching you with ${it.name} ${it.avatar}…" } ?: "Setting up your match…",
+                vm.race?.let { "Loading @${it.challenger.username}’s run…" }
+                    ?: vm.sendLaunch?.let { "Setting up a fresh puzzle…" }
+                    ?: persona?.let { "Matching you with ${it.name}…" } ?: "Setting up your match…",
                 fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, textAlign = TextAlign.Center,
             )
         }
         return
     }
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
-        VsTitle(label, gradient, 36)
-        // Private match: surface the shareable code/link so the host can invite a
-        // friend (the matchmaker buckets both by the same code).
-        if (inviteCode != null) {
+    // Private match: surface the shareable code/link so the host can invite a
+    // friend (the matchmaker buckets both by the same code). No bot steps in.
+    if (inviteCode != null) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
+            VsTitle(label, gradient, 36)
             Column(
                 Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(16.dp))
                     .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
@@ -260,154 +284,15 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
                     Text("Share invite", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
-        }
-        CircularProgressIndicator(color = WTheme.primary)
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            CyclingStatus()
+            CircularProgressIndicator(color = WTheme.primary)
             Text("Position in queue: ${position + 1}", fontSize = 13.sp, color = WTheme.textMuted)
-            if (queueSize > 1) {
-                Text("$queueSize players waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            }
+            Pill("Cancel") { onHome() }
+            message?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 8.dp)) }
         }
-        // Play the CPU — explicit choice + auto-offer once the queue is quiet.
-        if (!vm.isCpu) {
-            CpuChooser(vm, onGoPro)
-        }
-        Pill("Cancel") { onHome() }
-        message?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 8.dp)) }
+        return
     }
-}
-
-// Difficulty/opponent grid — shared by the entry chooser's Bot Match and the
-// queue-screen auto-offer. Pro-gated (non-Pro sees an unlock CTA).
-@Composable
-private fun CpuChooserBody(vm: VSMatchViewModel, onGoPro: () -> Unit, ghostRun: Pair<Int, Double>?) {
-    if (vm.isPro) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(BotTier.EASY, BotTier.MEDIUM, BotTier.HARD).forEach { tier ->
-                val p = BotPersonas.persona(tier)
-                Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
-                        .border(1.5.dp, Color(p.color), RoundedCornerShape(12.dp))
-                        .clickableNoRipple { vm.startCpu(CpuKind.valueOf(tier.name)) }.padding(vertical = 10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp), // iOS VStack(spacing: 2)
-                ) {
-                    Text(p.avatar, fontSize = 20.sp)
-                    Text(BotPersonas.tierLabel(tier), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(p.color))
-                    Text(p.name, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-            }
-        }
-        CpuSpecial("⚖️ Adaptive — matched to your form", 0xFF7C3AED, Modifier.fillMaxWidth()) { vm.startCpu(CpuKind.ADAPTIVE) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CpuSpecial(
-                if (ghostRun == null) "👻 Beat Your Best (win first)" else "👻 Beat Your Best",
-                0xFF64748B, Modifier.weight(1f).then(if (ghostRun == null) Modifier.alpha(0.45f) else Modifier),
-            ) { ghostRun?.let { (g, t) -> vm.startCpu(CpuKind.GHOST, ghostGuesses = g, ghostTimeMs = t) } }
-            CpuSpecial("📅 Bot of the Day", 0xFFF59E0B, Modifier.weight(1f)) {
-                vm.startCpu(CpuKind.DAILY, fixedSeed = com.wordocious.core.generateDailySeed(CpuProgressionStore.todayUtc(), "${vm.mode.name}_CPU"))
-            }
-        }
-        Text("Practice only — doesn’t affect your ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-    } else {
-        Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))))
-                .clickableNoRipple { onGoPro() }.padding(vertical = 10.dp),
-            Alignment.Center,
-        ) { Text("🔒 Unlock with Pro", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
-    }
-}
-
-// Queue-screen auto-offer once the human queue sits quiet (the explicit Bot
-// Match choice now lives on the entry chooser).
-@Composable
-private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
-    var autoOffer by remember { mutableStateOf(false) }
-    var ghostRun by remember { mutableStateOf<Pair<Int, Double>?>(null) }
-    LaunchedEffect(Unit) { kotlinx.coroutines.delay(15_000); if (!vm.isCpu) autoOffer = true }
-    LaunchedEffect(vm.mode) {
-        val uid = com.wordocious.app.data.AuthService.userId
-        if (vm.isPro && uid != null) ghostRun = com.wordocious.app.data.MatchStatsService.ghostBestRun(uid, vm.mode.name)
-    }
-    if (autoOffer) {
-        Column(
-            Modifier.widthIn(max = 340.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text("No players right now — play the CPU?", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            CpuChooserBody(vm, onGoPro, ghostRun)
-        }
-    }
-}
-
-// Entry chooser — the first screen when tapping a VS mode: Quick Match (live
-// queue), Bot Match (CPU practice), or Invite a Friend (private match).
-@Composable
-private fun EntryScreen(label: String, gradient: List<Color>, vm: VSMatchViewModel, onGoPro: () -> Unit, onHome: () -> Unit) {
-    var showBot by remember { mutableStateOf(false) }
-    var showInvite by remember { mutableStateOf(false) }
-    var ghostRun by remember { mutableStateOf<Pair<Int, Double>?>(null) }
-    LaunchedEffect(vm.mode) {
-        val uid = com.wordocious.app.data.AuthService.userId
-        if (vm.isPro && uid != null) ghostRun = com.wordocious.app.data.MatchStatsService.ghostBestRun(uid, vm.mode.name)
-    }
-    if (showInvite) InviteSheet { showInvite = false }
-    Column(
-        Modifier.fillMaxSize().padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-    ) {
-        VsTitle(label, gradient, 36)
-        if (showBot) {
-            Column(
-                Modifier.widthIn(max = 360.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
-                        modifier = Modifier.clickableNoRipple { showBot = false })
-                    Text("🤖 Choose your opponent", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                }
-                CpuChooserBody(vm, onGoPro, ghostRun)
-            }
-        } else {
-            Column(Modifier.widthIn(max = 380.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                EntryOption("⚡", listOf(Color(0xFFA78BFA), Color(0xFFEC4899)), "Quick Match", "Get matched with a live opponent") { vm.joinHumanQueue() }
-                EntryOption("🤖", null, "Bot Match", "Practice vs the CPU — pick a difficulty", locked = !vm.isPro) {
-                    if (vm.isPro) showBot = true else onGoPro()
-                }
-                EntryOption("👥", null, "Invite a Friend", "Send a private match link or @username") { showInvite = true }
-            }
-            Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                modifier = Modifier.clickableNoRipple { onHome() })
-        }
-    }
-}
-
-@Composable
-private fun EntryOption(emoji: String, iconGradient: List<Color>?, title: String, subtitle: String, locked: Boolean = false, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).clickableNoRipple(onClick).padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
-                .then(if (iconGradient != null) Modifier.background(Brush.linearGradient(iconGradient)) else Modifier.background(Color(0xFF64748B).copy(alpha = 0.12f))),
-            Alignment.Center,
-        ) { Text(emoji, fontSize = 22.sp) }
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                if (locked) Text("🔒", fontSize = 11.sp)
-            }
-            Text(subtitle, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        }
-    }
+    // The live search (§6): never a dead end — a bot steps in at 0:15.
+    LiveSearchScreen(vm, queueSize, message, onHome)
 }
 
 /** Photo-finish flourish — a spring-in stamp for a CPU close/last-guess win,
@@ -439,16 +324,7 @@ private fun PhotoFinishStamp(clutch: Boolean) {
 }
 
 @Composable
-private fun CpuSpecial(title: String, color: Long, modifier: Modifier, onClick: () -> Unit) {
-    Box(
-        modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
-            .border(1.5.dp, Color(color), RoundedCornerShape(12.dp)).clickableNoRipple { onClick() }.padding(vertical = 9.dp),
-        Alignment.Center,
-    ) { Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(color)) }
-}
-
-@Composable
-private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, isRematch: Boolean = false) {
+private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, isRematch: Boolean = false, title: String? = null) {
     // Same near-opaque vignette as the match-intro splash — the queue screen's
     // "Match Found / Matching you with…" no longer bleeds through, and
     // intro -> countdown reads as one continuous scene.
@@ -459,7 +335,7 @@ private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, i
     ) {
         VSOverlayWordmark(this)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
+            Text(title ?: if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
             Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
             Box(Modifier.size(150.dp), Alignment.Center) {
                 // iOS pulses a 150pt gradient ring out from behind each tick, so the
@@ -582,6 +458,11 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.size(34.dp))
         }
+        // A run to send has no opponent: the panel says who will race it (§3).
+        val send = vm.sendLaunch
+        if (send != null) {
+            SendRunPanel(send, Modifier.padding(top = 6.dp))
+        } else {
         // Persistent VS header: you vs opponent + tug-of-war lead bar + typing.
         VsMatchHeader(
             me = HeaderPlayer(
@@ -627,7 +508,10 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             totalBoards = vm.totalBoards,
             stageName = oppStageName,
             stageGradient = oppStageName?.let { gauntletStageGradient(it) } ?: gradient,
+            // A race shows whose run the ghost is replaying (§4).
+            title = vm.race?.let { "@${it.challenger.username}’s run" } ?: "Opponent",
         )
+        }
 
         // Gauntlet VS: the 5-node stage stepper (parity with the solo header).
         if (vm.mode == GameMode.GAUNTLET) {
@@ -878,7 +762,7 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
         // CPU spectator: skip watching the bot grind out its boards — the outcome
         // is already fixed by its plan. Win-locked → 'Claim your win'; else a
         // neutral 'Skip to result' (may resolve to a win OR a loss).
-        if (vm.isCpu) {
+        if (vm.isCpu || vm.race != null) {
             item {
                 val boardsLeft = liveTotalBoards - vm.opponent.boardsSolved
                 val winLocked = vm.myStatus != GameStatus.LOST && !(liveTotalBoards > 1 && boardsLeft > 1) && run {
@@ -1061,16 +945,17 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
         if (vm.isCpu) {
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 20.dp)) {
+                    vm.cpuPersona?.let { BotAvatar(it.artId, 52.dp) }
                     vm.photoFinish?.let { pf -> PhotoFinishStamp(pf == "clutch") }
-                    vm.cpuMilestone?.let { m -> Text("🔥 $m-win CPU streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFF97316)) }
-                        ?: run { if (vm.cpuStreak > 0) Text("CPU win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
+                    vm.cpuMilestone?.let { m -> Text("🔥 $m-win bot streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFF97316)) }
+                        ?: run { if (vm.cpuStreak > 0) Text("Bot win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
                     vm.cpuUnlock?.let {
                         Text("🏅 Unlocked ${BotPersonas.persona(vm.cpuPersona?.tier ?: BotTier.HARD).name}’s badge!", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(vm.cpuPersona?.color ?: 0xFFEF4444))
                     }
                     if (vm.cpuSessionWins + vm.cpuSessionLosses > 0) {
-                        Text("This session — You ${vm.cpuSessionWins} · CPU ${vm.cpuSessionLosses}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                        Text("This session — You ${vm.cpuSessionWins} · Bots ${vm.cpuSessionLosses}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                     }
-                    Text("Practice — not counted in ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("Bot game — counted in your Bots record, not ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
             }
         }

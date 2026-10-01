@@ -359,7 +359,7 @@ export default function StatsPage() {
 
   // The VS page shows one word game's VS board at a time — the most-played by default.
   const [vsMode, setVsMode] = useState<string>('DUEL');
-  // The All-time page's VS boards keep their OWN Live | CPU choice, so picking CPU there never
+  // The All-time page's VS boards keep their OWN People | Bots choice, so picking Bots there never
   // re-scopes the rest of All-time (its charts read activeTab).
   const [vsTab, setVsTab] = useState<'vs' | 'vs_cpu'>('vs');
   const vsModes = useMemo(() => SWEEP_MODES.filter((m) => hasVs(m.dbKey as string)), []);
@@ -1019,7 +1019,8 @@ export default function StatsPage() {
               </div>
 
               {/* VS (founder, 2026-10-01): VS left the game strip (rarely played; the grid now
-                  comes out even). Its record, Rivalries, CPU practice and per-game boards live here. */}
+                  comes out even). Its record, Rivalries, Bots practice and per-game boards live here.
+                  The People and Bots sums here are the VS banner's RECORD row (VS overhaul §10). */}
               <div id="vs-section" style={{ scrollMarginTop: 12 }}><SectionHeader label="VS" accent="#ec4899" /></div>
               {/* VS RECORD summary card */}
               <div
@@ -1049,7 +1050,7 @@ export default function StatsPage() {
               {/* Rivalries — most-faced opponents with head-to-head bars (Pro). */}
               {vsRecord.total > 0 && <RivalriesCard userId={profile.id} isPro={isProActive} />}
 
-              {/* vs CPU record — unranked practice: no leaderboard, no XP, no streak. */}
+              {/* vs Bots record — unranked practice: no leaderboard, no XP, no streak. */}
               <div
                 className="p-4 flex items-center gap-4"
                 style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
@@ -1058,7 +1059,7 @@ export default function StatsPage() {
                   <Bot className="w-5 h-5" style={{ color: '#64748b' }} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs CPU</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs Bots</div>
                   <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                     {cpuRecord.wins}–{cpuRecord.losses}
                   </div>
@@ -1076,7 +1077,7 @@ export default function StatsPage() {
                 </div>
               </div>
 
-              {/* Per-game VS board: pick the word game, Live or CPU. */}
+              {/* Per-game VS board: pick the word game, People or Bots. */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                   {vsModes.map((m) => {
@@ -1109,7 +1110,7 @@ export default function StatsPage() {
                         color: vsTab === t ? '#7c3aed' : 'var(--color-text-muted)',
                       }}
                     >
-                      {t === 'vs' ? 'Live' : 'CPU'}
+                      {t === 'vs' ? 'People' : 'Bots'}
                     </button>
                   ))}
                 </div>

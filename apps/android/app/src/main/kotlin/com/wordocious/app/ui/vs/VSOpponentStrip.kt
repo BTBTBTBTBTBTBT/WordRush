@@ -56,6 +56,8 @@ fun OpponentStrip(
     // (iOS OpponentStrip stageName/stageGradient). Null for every other mode.
     stageName: String? = null,
     stageGradient: List<Color> = emptyList(),
+    /** The strip's label: "Opponent", or "@doug’s run" when racing a challenge. */
+    title: String = "Opponent",
 ) {
     val liveTotalBoards = maxOf(opponent.totalBoards, totalBoards)
     Column(
@@ -64,7 +66,7 @@ fun OpponentStrip(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Opponent", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
+            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, maxLines = 1)
             Spacer(Modifier.weight(1f))
             if (stageName != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {

@@ -1,6 +1,14 @@
 'use client';
 
+import { createContext, useContext } from 'react';
 import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
+
+/**
+ * Set by vs-game during a challenge-send game (VS overhaul §3): there is no
+ * opponent yet, so every mode's HUD reads "YOUR RUN · <who races it>" instead
+ * of an empty "Opponent · 0 guesses" strip.
+ */
+export const VsSoloHudContext = createContext<string | null>(null);
 
 interface OpponentHUDProps {
   attempts: number;
@@ -13,7 +21,18 @@ interface OpponentHUDProps {
 }
 
 export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage, opponentTiles, maxGuesses = 6, wordLength = 5 }: OpponentHUDProps) {
+  const solo = useContext(VsSoloHudContext);
   const allSolved = boardsSolved >= totalBoards && totalBoards > 0;
+
+  if (solo) {
+    return (
+      <div className="rounded-xl px-4 py-2 flex items-center gap-3 animate-fade-in-up" style={{ background: '#ccfbf1' }}>
+        <span className="text-xs font-black uppercase tracking-wider" style={{ color: '#0f766e' }}>Your run</span>
+        <div className="h-4 w-px" style={{ background: 'rgba(15, 118, 110, 0.25)' }} />
+        <span className="text-xs font-bold" style={{ color: '#134e4a' }}>{solo}</span>
+      </div>
+    );
+  }
 
   return (
     <div

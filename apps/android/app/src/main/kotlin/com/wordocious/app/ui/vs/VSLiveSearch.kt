@@ -1,0 +1,163 @@
+package com.wordocious.app.ui.vs
+
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.wordocious.app.data.CpuOpponent
+import com.wordocious.app.data.VSCountsService
+import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.vsClock
+
+/** The bot steps in after this long with nobody found (§6). */
+private const val STEP_IN_MS = 15_000L
+
+/**
+ * The live search (VS overhaul §6, founder 2026-10-01) — never a dead end.
+ * A ring timer counts up while the human queue runs; a step-in card names the
+ * bot that takes over at 0:15 unless KEEP WAITING was tapped (PLAY NOW stays
+ * either way). A person who joins first still wins the race: match_found from
+ * the socket moves the screen on before the bot does.
+ */
+@Composable
+fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onCancel: () -> Unit) {
+    val startedAt = remember { System.currentTimeMillis() }
+    var elapsed by remember { mutableLongStateOf(0L) }
+    var keepWaiting by remember { mutableStateOf(false) }
+    var waiting by remember { mutableStateOf<Int?>(null) }
+    val kind = remember { vm.stepInKind }
+    val bot = remember(kind) { CpuOpponent.identity(CpuOpponent.opponentId(kind)) }
+    val modeName = vsModeName(vm.mode)
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            elapsed = System.currentTimeMillis() - startedAt
+            if (elapsed >= STEP_IN_MS && !keepWaiting) { vm.stepIn(); break }
+            kotlinx.coroutines.delay(250)
+        }
+    }
+    // Who else is waiting in this mode (the queue includes me).
+    LaunchedEffect(vm.mode) {
+        while (true) {
+            val c = VSCountsService.fetch()[vm.mode.name]
+            waiting = c?.let { maxOf(0, it.waiting - 1) } ?: maxOf(0, queueSize - 1)
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+    // Keep the clock moving after the step-in deadline when KEEP WAITING was tapped.
+    LaunchedEffect(keepWaiting) {
+        while (keepWaiting) { elapsed = System.currentTimeMillis() - startedAt; kotlinx.coroutines.delay(500) }
+    }
+
+    Column(
+        Modifier.fillMaxSize().background(VsTeal.page),
+    ) {
+        VsNavBar("VS BATTLE", onBack = onCancel) { VsModeChip(vm.mode) }
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        ) {
+            RingTimer(elapsed)
+            Text("SEARCHING", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.label)
+            Text("LOOKING FOR A RIVAL", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, textAlign = TextAlign.Center)
+            val n = waiting ?: 0
+            Text(
+                if (n > 0) "$n waiting in $modeName" else "Nobody else is waiting in $modeName right now",
+                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center,
+            )
+            // Step-in card.
+            Column(
+                Modifier.widthIn(max = 380.dp).fillMaxWidth().vsCard().padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BotAvatar(bot.artId, 48.dp)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (keepWaiting) "We’ll keep looking" else "${bot.name} steps in at 0:15",
+                            fontSize = 15.sp, fontWeight = FontWeight.Black, color = VsTeal.deep,
+                        )
+                        Text("If a person joins first, you get them.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
+                    }
+                }
+                if (!keepWaiting) VsProgressBar(elapsed.toFloat() / STEP_IN_MS)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VsTealButton("PLAY ${bot.name.uppercase()} NOW", Modifier.weight(1f)) { vm.stepIn() }
+                    if (!keepWaiting) {
+                        Box(
+                            Modifier.weight(1f).clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(VsTeal.soft)
+                                .clickableNoRipple { keepWaiting = true }.padding(vertical = 12.dp),
+                            Alignment.Center,
+                        ) { Text("KEEP WAITING", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink) }
+                    }
+                }
+            }
+            Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onCancel))
+            message?.let {
+                Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/** Teal ring on #ccfbf1 counting up, with a soft pulse behind it. */
+@Composable
+private fun RingTimer(elapsedMs: Long) {
+    Box(Modifier.size(132.dp), Alignment.Center) {
+        if (!WTheme.reducedMotion) {
+            val t = rememberInfiniteTransition(label = "ringPulse")
+            val s by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(1400), RepeatMode.Reverse), label = "s")
+            Box(Modifier.size(120.dp).scale(s).clip(CircleShape).background(VsTeal.soft.copy(alpha = 0.6f)))
+        }
+        Canvas(Modifier.size(112.dp)) {
+            val w = 8.dp.toPx()
+            val inset = w / 2
+            val arc = Size(size.width - w, size.height - w)
+            drawArc(VsTeal.soft, 0f, 360f, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w))
+            val frac = ((elapsedMs % 60_000L).toFloat() / 60_000f)
+            drawArc(VsTeal.ink, -90f, 360f * frac, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w, cap = StrokeCap.Round))
+        }
+        Box(Modifier.size(96.dp).clip(CircleShape).background(Color.White), Alignment.Center) {
+            Text(vsClock(elapsedMs), fontSize = 24.sp, fontWeight = FontWeight.Black, color = VsTeal.deep)
+        }
+    }
+}

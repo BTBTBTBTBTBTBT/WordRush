@@ -77,6 +77,30 @@ object DailyResultsService {
         }.getOrNull()
     }
 
+    /**
+     * Today's Daily Battle against a PERSON for the VS banner (VS overhaul §1):
+     * the daily Classic VS row — vs_wins → won, vs_losses → lost, a played game
+     * with neither → draw; no row → open. Same row + day as [dailyVsResult].
+     */
+    suspend fun dailyVsDayResult(): com.wordocious.core.VsDayResult {
+        val userId = AuthService.userId ?: return com.wordocious.core.VsDayResult.OPEN
+        return runCatching {
+            val row = client.postgrest["daily_results"]
+                .select(io.github.jan.supabase.postgrest.query.Columns.raw("id, vs_wins, vs_losses, vs_games")) {
+                    filter { eq("user_id", userId); eq("day", todayLocalDate()); eq("game_mode", GameMode.DUEL.name); eq("play_type", "vs") }
+                    limit(1)
+                }
+                .decodeSingleOrNull<VsRow>()
+            when {
+                row == null -> com.wordocious.core.VsDayResult.OPEN
+                row.vsWins > 0 -> com.wordocious.core.VsDayResult.WON
+                row.vsLosses > 0 -> com.wordocious.core.VsDayResult.LOST
+                row.vsGames > 0 -> com.wordocious.core.VsDayResult.DRAW
+                else -> com.wordocious.core.VsDayResult.OPEN
+            }
+        }.getOrDefault(com.wordocious.core.VsDayResult.OPEN)
+    }
+
     suspend fun recordDailyVsResult(mode: GameMode, won: Boolean, isDraw: Boolean = false) {
         // Web daily-service parity: a DRAW counts the game (vs_games+1, day
         // completed) without touching the win/loss tallies — a drawn VS is

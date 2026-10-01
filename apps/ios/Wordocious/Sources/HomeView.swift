@@ -271,7 +271,8 @@ struct HomeView: View {
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
                                 VSLiveTile(mode: vs, vsDailyWon: vsDailyWon, playMode: effectiveMode,
                                            isPro: auth.isProActive, onInvite: { showInvite = true }) {
-                                    if effectiveMode == .unlimited { VSLobbyView() } else { VSGameView(mode: .duel, isDaily: true) }
+                                    // The VS lobby hosts today's Daily Battle (VS overhaul, 2026-10-01).
+                                    VSLobbyView()
                                 }
                             }
                             // Sign Out only when there's a real session — a guest

@@ -14,6 +14,8 @@ struct VsProfile: Equatable {
     let username: String
     let avatarUrl: String?
     let level: Int
+    /// A bot opponent's art (asset name) — drawn instead of a photo (VS overhaul §9).
+    var botArt: String? = nil
 }
 
 enum HeadToHeadService {

@@ -236,7 +236,13 @@ fun MainScreen() {
     var infoRoute by remember { mutableStateOf<String?>(null) }
     // VS flow: lobby (true) → active match (mode, isDaily).
     var vsLobby by remember { mutableStateOf(false) }
-    var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
+    // The lobby page to open on (VS overhaul: CHALLENGE BACK lands on the Friend page).
+    var vsLobbyPage by remember { mutableStateOf<com.wordocious.app.ui.vs.VsLobbyPage>(com.wordocious.app.ui.vs.VsLobbyPage.Main) }
+    var vsActive by remember { mutableStateOf<com.wordocious.app.ui.vs.VsRoute?>(null) }
+    // A challenge code to race (/vs/challenge/<code>: lobby card, code field, push, app link).
+    var vsChallengeCode by remember { mutableStateOf<String?>(null) }
+    // Bumped to open Stats → All-time → VS (the lobby's Rivals "See all").
+    var statsVsJump by remember { mutableIntStateOf(0) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
     var publicProfileId by remember { mutableStateOf<String?>(null) }
     // Records overlay (D1, 2026-09-26): Records left the tab bar; until D2 folds
@@ -291,6 +297,16 @@ fun MainScreen() {
             }
         }
     }
+    // Challenge links + pushes (/vs/challenge/<code> via DeepLinkRouter) open the race flow.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        com.wordocious.app.data.DeepLinkRouter.vsChallenge.collect { code ->
+            if (code != null) {
+                com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = null
+                vsActive = null; vsInvite = null
+                vsChallengeCode = code
+            }
+        }
+    }
     // Widget chip taps (wordocious://daily/KEY via DeepLinkRouter) open that
     // mode's daily — same launch state as the home grid / leaderboard Play CTA
     // (null seed = today's daily). One-shot: consume and clear.
@@ -299,7 +315,7 @@ fun MainScreen() {
             if (m != null) {
                 com.wordocious.app.data.DeepLinkRouter.dailyMode.value = null
                 modeCardFor(m)?.let {
-                    vsLobby = false; vsActive = null; vsInvite = null
+                    vsLobby = false; vsActive = null; vsInvite = null; vsChallengeCode = null
                     activeSeed = null; activeGame = it
                 }
             }
@@ -357,7 +373,7 @@ fun MainScreen() {
     // wins; they re-register in tree order once uncovered) and pause pollers via LocalTabHidden.
     val coveredState = remember {
         androidx.compose.runtime.derivedStateOf {
-            vsInvite != null || vsActive != null || vsLobby || activeGame?.engineMode != null ||
+            vsInvite != null || vsActive != null || vsLobby || vsChallengeCode != null || activeGame?.engineMode != null ||
                 infoRoute != null || showSignIn || showSettings
         }
     }
@@ -416,11 +432,10 @@ fun MainScreen() {
                                         onJoinInvite = { m, code -> vsInvite = m to code },
                                         onSelectMode = { card, unlimited ->
                                             if (card.id == "vs") {
-                                                // Unlimited VS (Pro): the mode-picker lobby. Daily VS:
-                                                // launch the shared daily Classic match directly (queue
-                                                // or already-played finished screen).
-                                                if (unlimited) vsLobby = true
-                                                else vsActive = com.wordocious.core.GameMode.DUEL to true
+                                                // VS overhaul (2026-10-01): every VS tap opens the lobby —
+                                                // its banner holds today's Daily Battle for free and Pro alike.
+                                                vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main
+                                                vsLobby = true
                                             } else {
                                                 activeGame = card
                                                 activeSeed = if (unlimited && card.engineMode != null)
@@ -428,7 +443,7 @@ fun MainScreen() {
                                             }
                                         },
                                         onGoPro = { infoRoute = "pro" },
-                                        onVs = { card -> card.engineMode?.let { vsActive = it to false } },
+                                        onVs = { card -> card.engineMode?.let { vsActive = com.wordocious.app.ui.vs.VsRoute(it) } },
                                         onNavigate = { infoRoute = it },
                                     )
                                     1 -> LeaderboardScreen(
@@ -451,6 +466,7 @@ fun MainScreen() {
                                         onOpenFriends = { selectedTab = 3 },
                                         // D2 step 3: the Global Records tile on the All-time page → the Hall of Fame.
                                         onOpenRecords = { showRecords = true },
+                                        vsJumpRequest = statsVsJump,
                                     )
                                     3 -> FriendsScreen(
                                         // Tab root: "Back" returns to Stats until D3 restyles the page.
@@ -531,21 +547,47 @@ fun MainScreen() {
                 onGoPro = { vsInvite = null; infoRoute = "pro" },
             )
         } else if (active != null) {
-            // VS match (fullscreen, no bottom nav)
-            val (vsMode, vsDaily) = active
+            // VS match (fullscreen, no bottom nav). VS HOME returns to the lobby.
             androidx.activity.compose.BackHandler { vsActive = null }
             com.wordocious.app.ui.vs.VSGameScreen(
-                mode = vsMode, isDaily = vsDaily,
-                onHome = { vsActive = null; vsLobby = false },
+                mode = active.mode, isDaily = active.isDaily, launch = active.launch,
+                onHome = { vsActive = null; vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main; vsLobby = true },
                 onGoPro = { vsActive = null; infoRoute = "pro" },
                 // Pro "Play Unlimited VS" from the already-played daily screen → lobby.
                 onPlayUnlimited = { vsActive = null; vsLobby = true },
+                // CHALLENGE BACK → the Friend page with that friend picked (§5).
+                onChallengeBack = { friendId ->
+                    vsActive = null
+                    vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Friend(friendId)
+                    vsLobby = true
+                },
+            )
+        } else if (vsChallengeCode != null) {
+            val code = vsChallengeCode!!
+            androidx.activity.compose.BackHandler { vsChallengeCode = null }
+            com.wordocious.app.ui.vs.ChallengeRouteScreen(
+                code = code,
+                onStart = { c ->
+                    vsChallengeCode = null
+                    val m = runCatching { com.wordocious.core.GameMode.valueOf(c.gameMode) }.getOrDefault(com.wordocious.core.GameMode.DUEL)
+                    vsActive = com.wordocious.app.ui.vs.VsRoute(m, false, com.wordocious.app.ui.vs.VsLaunch.Race(c))
+                },
+                onHome = { vsChallengeCode = null; vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main; vsLobby = true },
+                onGoPro = { vsChallengeCode = null; infoRoute = "pro" },
+                onChallengeBack = { friendId ->
+                    vsChallengeCode = null
+                    vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Friend(friendId)
+                    vsLobby = true
+                },
             )
         } else if (vsLobby) {
             androidx.activity.compose.BackHandler { vsLobby = false }
             com.wordocious.app.ui.vs.VSLobbyScreen(
-                onPlay = { m, daily -> vsActive = m to daily },
+                initialPage = vsLobbyPage,
+                onPlay = { route -> vsActive = route },
                 onEnterInvite = { m, code -> vsLobby = false; vsInvite = m to code },
+                onOpenChallenge = { code -> vsChallengeCode = code },
+                onSeeRivals = { vsLobby = false; publicProfileId = null; showRecords = false; selectedTab = 2; statsVsJump++ },
                 onGoPro = { vsLobby = false; infoRoute = "pro" },
                 onClose = { vsLobby = false },
             )

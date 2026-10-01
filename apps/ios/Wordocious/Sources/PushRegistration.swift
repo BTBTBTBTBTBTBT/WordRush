@@ -1,5 +1,6 @@
 import UIKit
 import SwiftUI
+import UserNotifications
 
 /// APNs device-token capture (groundwork for remote push / lifecycle
 /// messaging). Registration + storage only: tokens land in the
@@ -7,7 +8,25 @@ import SwiftUI
 /// deliberately deferred — it needs an APNs auth key (.p8) from the
 /// developer portal wired into the backend before anything can be sent.
 /// Local scheduled reminders (NotificationService) are unaffected.
-final class PushRegistrationDelegate: NSObject, UIApplicationDelegate {
+final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Route push taps (VS challenges carry `url: /vs/challenge/<code>`).
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    /// A tapped push with a `url` path opens it in-app like a universal link
+    /// (anything we don't route just opens the app, as before).
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        if let path = response.notification.request.content.userInfo["url"] as? String {
+            Task { @MainActor in DeepLink.shared.handle(pushPath: path) }
+        }
+        completionHandler()
+    }
+
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()

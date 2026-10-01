@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 // App-link router — Android side of iOS DeepLink.swift. The manifest claims
-// only wordocious.com/vs/join paths (a VS invite's recipient usually has the
+// only wordocious.com/vs/join + /vs/challenge paths (a VS invite's recipient usually has the
 // app); referral /join links stay in the browser on purpose, since their
 // audience is brand-new users and redemption is a web flow.
 //
@@ -20,6 +20,9 @@ import kotlinx.coroutines.launch
 object DeepLinkRouter {
     /** (mode, inviteCode) resolved from a tapped app link; consumer clears it. */
     val vsInvite = MutableStateFlow<Pair<GameMode, String>?>(null)
+    /** An async challenge code to race (/vs/challenge/<code>, VS overhaul §4);
+     *  MainScreen opens the race flow and clears it. */
+    val vsChallenge = MutableStateFlow<String?>(null)
     /** A recovery link established a session — show the native new-password dialog. */
     val showNewPassword = MutableStateFlow(false)
     /** Cross-device auth link (PKCE verifier on another client) — finish in the browser. */
@@ -45,6 +48,11 @@ object DeepLinkRouter {
 
         if (host != "wordocious.com" && host != "www.wordocious.com") return false
         val parts = uri.pathSegments
+
+        if (parts.size == 3 && parts[0] == "vs" && parts[1] == "challenge") {
+            vsChallenge.value = parts[2].uppercase()
+            return true
+        }
 
         if (parts.size == 3 && parts[0] == "vs" && parts[1] == "join") {
             val code = parts[2].uppercase()
@@ -78,5 +86,16 @@ object DeepLinkRouter {
         }
 
         return false
+    }
+
+    /**
+     * A tapped push: the system-drawn FCM notification hands the launcher the
+     * message's data as intent extras, so the server's `url` arrives here
+     * (e.g. "/vs/challenge/ABCD2345"). Only the VS routes are handled; any
+     * other url just opens the app.
+     */
+    fun handlePushUrl(url: String?): Boolean {
+        val path = url?.trim()?.takeIf { it.startsWith("/vs/") } ?: return false
+        return handle(Uri.parse("https://wordocious.com$path"))
     }
 }

@@ -55,9 +55,26 @@ interface VSTransport {
 
 enum class CpuKind { EASY, MEDIUM, HARD, ADAPTIVE, GHOST, DAILY;
     val key: String get() = name.lowercase()
+
+    /** The ladder id a finished game folds into (VS overhaul §7): easy→rook,
+     *  medium→lexi, hard→nova, adaptive→adapt; the Bot of the Day ("daily") and
+     *  Beat your best ("ghost") never move the ladder (core ladderAfterGame). */
+    val botId: String get() = when (this) {
+        EASY -> "rook"; MEDIUM -> "lexi"; HARD -> "nova"; ADAPTIVE -> "adapt"
+        GHOST -> "ghost"; DAILY -> "daily"
+    }
+
+    companion object {
+        /** The kind that plays a ladder rung ("rook" → EASY … "adapt" → ADAPTIVE). */
+        fun forLadder(id: String): CpuKind = when (id) {
+            "rook" -> EASY; "nova" -> HARD; "adapt" -> ADAPTIVE; else -> MEDIUM
+        }
+    }
 }
 
-data class CpuIdentity(val name: String, val avatar: String, val color: Long, val tier: BotTier)
+/** A bot opponent's identity. `artId` names its picture (BotArt); the Bot of
+ *  the Day is Lexi on everyone's screen (VS overhaul §8). */
+data class CpuIdentity(val name: String, val artId: String, val color: Long, val tier: BotTier)
 
 object CpuOpponent {
     const val PREFIX = "cpu:"
@@ -66,13 +83,13 @@ object CpuOpponent {
 
     fun identity(oppId: String): CpuIdentity {
         return when (val raw = oppId.removePrefix(PREFIX)) {
-            "ghost" -> CpuIdentity("Your Ghost", "👻", 0xFF64748B, BotTier.HARD)
-            "daily" -> CpuIdentity("Daily Bot", "📅", 0xFFF59E0B, BotTier.MEDIUM)
-            "adaptive" -> CpuIdentity("Adapt", "⚖️", 0xFF7C3AED, BotTier.MEDIUM)
+            "ghost" -> CpuIdentity("Your Ghost", "ghost", 0xFF64748B, BotTier.HARD)
+            "daily" -> CpuIdentity("Lexi", "lexi", 0xFFF59E0B, BotTier.MEDIUM)
+            "adaptive" -> CpuIdentity("Adapt", "adapt", 0xFF7C3AED, BotTier.MEDIUM)
             else -> {
                 val tier = runCatching { BotTier.valueOf(raw.uppercase()) }.getOrDefault(BotTier.MEDIUM)
                 val p = BotPersonas.persona(tier)
-                CpuIdentity(p.name, p.avatar, p.color, p.tier)
+                CpuIdentity(p.name, p.id, p.color, p.tier)
             }
         }
     }
@@ -84,6 +101,10 @@ data class BotConfig(
     val ghostTimeMs: Double? = null,
     val fixedSeed: String? = null,
     val opponentId: String? = null,
+    /** Force the run's outcome: true solves, false fails, null rolls the tier's
+     *  odds (a ghost with a target always solves). A challenge ghost passes the
+     *  challenger's `run.solved` so an unsolved run is replayed as unsolved. */
+    val solve: Boolean? = null,
 )
 
 /**
@@ -145,7 +166,8 @@ class LocalBotMatchService(
     private fun planOpts() = BotEngine.BuildOpts(
         targetGuesses = config.ghostGuesses,
         targetSolveMs = config.ghostTimeMs,
-        forceSolve = config.ghostGuesses != null,
+        forceSolve = config.solve ?: (config.ghostGuesses != null),
+        forceFail = config.solve == false,
         adaptive = config.adaptive,
     )
 

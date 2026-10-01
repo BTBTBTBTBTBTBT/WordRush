@@ -223,6 +223,13 @@ private fun H2HLine(text: String) {
  */
 @Composable
 fun VsAvatar(username: String, avatarUrl: String?, size: Dp, borderWidth: Dp = 1.5.dp, borderColor: Color = Color.White.copy(alpha = 0.4f)) {
+    // Bot art (VS overhaul §9): "bot:<id>" draws the picture in the circle.
+    if (avatarUrl?.startsWith("bot:") == true) {
+        Box(Modifier.size(size).border(borderWidth, borderColor, CircleShape).clip(CircleShape)) {
+            BotAvatar(avatarUrl.removePrefix("bot:"), size)
+        }
+        return
+    }
     val initials = username.ifBlank { "?" }.take(2).uppercase()
     Box(
         Modifier.size(size).clip(CircleShape)
