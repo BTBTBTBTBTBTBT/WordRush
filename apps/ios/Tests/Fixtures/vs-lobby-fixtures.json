@@ -1,0 +1,1082 @@
+{
+  "banners": [
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "READY TO RACE, BT?",
+      "clock": "DAILY BATTLE + BOT OF THE DAY · RESET IN 07:12:40",
+      "status": "0/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "DAILY BATTLE + BOT OF THE DAY · RESET IN 07:12:40",
+      "status": "0/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BOT OF THE DAY BEATEN!",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "open",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "DAILY BATTLE WON!",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "VS SWEEP!",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "SWEEP · 2/2 WON"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "VS SWEEP!",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "SWEEP · 2/2 WON"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "DAILY BATTLE WON!",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "DAILY BATTLE WON!",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "won",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BOT OF THE DAY BEATEN!",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "lost",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "RESETS IN 07:12:40",
+      "status": "1/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BOT OF THE DAY BEATEN!",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "won",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "lost",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": false,
+      "headline": "BACK FOR MORE?",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "BT",
+      "battle": "draw",
+      "botOfDay": "draw",
+      "incomingFrom": null,
+      "streak": 3,
+      "free": false,
+      "headline": "ON A ROLL · 3 WINS IN A ROW",
+      "clock": "NEW BATTLES IN 07:12:40",
+      "status": "2/2"
+    },
+    {
+      "name": "",
+      "battle": "open",
+      "botOfDay": "open",
+      "incomingFrom": null,
+      "streak": 0,
+      "free": true,
+      "headline": "READY TO RACE?",
+      "clock": "TWO FREE BATTLES A DAY · RESET IN 07:12:40",
+      "status": "0/2"
+    },
+    {
+      "name": "doug",
+      "battle": "won",
+      "botOfDay": "open",
+      "incomingFrom": "johnnyauer",
+      "streak": 5,
+      "free": true,
+      "headline": "JOHNNYAUER CHALLENGED YOU!",
+      "clock": "RACE JOHNNYAUER’S RUN · 17H LEFT",
+      "status": "1/2"
+    }
+  ],
+  "records": [
+    {
+      "people": {
+        "wins": 12,
+        "losses": 7
+      },
+      "bots": {
+        "wins": 31,
+        "losses": 9
+      },
+      "ladder": 2,
+      "line": "PEOPLE 12–7 · BOTS 31–9 · LADDER 2/4"
+    },
+    {
+      "people": {
+        "wins": 0,
+        "losses": 0
+      },
+      "bots": {
+        "wins": 4,
+        "losses": 2
+      },
+      "ladder": null,
+      "line": "PEOPLE 0–0 · BOTS 4–2"
+    },
+    {
+      "people": {
+        "wins": 1,
+        "losses": 0
+      },
+      "bots": {
+        "wins": 1,
+        "losses": 0
+      },
+      "ladder": 4,
+      "line": "PEOPLE 1–0 · BOTS 1–0 · LADDER CLEARED"
+    },
+    {
+      "people": {
+        "wins": 3,
+        "losses": 3
+      },
+      "bots": {
+        "wins": 0,
+        "losses": 1
+      },
+      "ladder": 0,
+      "line": "PEOPLE 3–3 · BOTS 0–1 · LADDER 0/4"
+    }
+  ],
+  "outcomes": [
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 3,
+        "timeMs": 100000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 4,
+        "timeMs": 112000
+      },
+      "outcome": "win",
+      "margin": "1 FEWER GUESS",
+      "headline": "YOU BEAT DOUG’S RUN!"
+    },
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 4,
+        "timeMs": 30000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 3,
+        "timeMs": 120000
+      },
+      "outcome": "win",
+      "margin": "FASTER BY 1:30",
+      "headline": "YOU BEAT DOUG’S RUN!"
+    },
+    {
+      "me": {
+        "solved": false,
+        "boardsSolved": 0,
+        "guesses": 6,
+        "timeMs": 60000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 6,
+        "timeMs": 300000
+      },
+      "outcome": "loss",
+      "margin": "ONLY ONE SOLVE",
+      "headline": "DOUG’S RUN HELD!"
+    },
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 4,
+        "timeMs": 60000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 4,
+        "timeMs": 60000
+      },
+      "outcome": "draw",
+      "margin": "DEAD EVEN",
+      "headline": "DEAD HEAT WITH DOUG!"
+    },
+    {
+      "me": {
+        "solved": false,
+        "boardsSolved": 3,
+        "guesses": 9,
+        "timeMs": 1000
+      },
+      "them": {
+        "solved": false,
+        "boardsSolved": 2,
+        "guesses": 9,
+        "timeMs": 1000
+      },
+      "outcome": "win",
+      "margin": "1 MORE BOARD",
+      "headline": "YOU BEAT DOUG’S RUN!"
+    },
+    {
+      "me": {
+        "solved": false,
+        "boardsSolved": 2,
+        "guesses": 9,
+        "timeMs": 1000
+      },
+      "them": {
+        "solved": false,
+        "boardsSolved": 2,
+        "guesses": 9,
+        "timeMs": 900000
+      },
+      "outcome": "draw",
+      "margin": "DEAD EVEN",
+      "headline": "DEAD HEAT WITH DOUG!"
+    },
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 3,
+        "timeMs": 100000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 3,
+        "timeMs": 112000
+      },
+      "outcome": "win",
+      "margin": "FASTER BY 0:12",
+      "headline": "YOU BEAT DOUG’S RUN!"
+    },
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 5,
+        "timeMs": 100000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 1,
+        "guesses": 3,
+        "timeMs": 90000
+      },
+      "outcome": "loss",
+      "margin": "2 FEWER GUESSES",
+      "headline": "DOUG’S RUN HELD!"
+    },
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 4,
+        "guesses": 7,
+        "timeMs": 200000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 4,
+        "guesses": 7,
+        "timeMs": 200400
+      },
+      "outcome": "draw",
+      "margin": "DEAD EVEN",
+      "headline": "DEAD HEAT WITH DOUG!"
+    },
+    {
+      "me": {
+        "solved": true,
+        "boardsSolved": 21,
+        "guesses": 30,
+        "timeMs": 600000
+      },
+      "them": {
+        "solved": true,
+        "boardsSolved": 21,
+        "guesses": 31,
+        "timeMs": 500000
+      },
+      "outcome": "loss",
+      "margin": "FASTER BY 1:40",
+      "headline": "DOUG’S RUN HELD!"
+    }
+  ],
+  "ladder": [
+    {
+      "bot": "rook",
+      "won": true,
+      "after": {
+        "cleared": 0,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "lexi",
+          "state": "locked",
+          "line": "Clear Rook to unlock"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "nova",
+      "won": false,
+      "after": {
+        "cleared": 0,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "lexi",
+          "state": "locked",
+          "line": "Clear Rook to unlock"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "rook",
+      "won": true,
+      "after": {
+        "cleared": 0,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "lexi",
+          "state": "locked",
+          "line": "Clear Rook to unlock"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "rook",
+      "won": true,
+      "after": {
+        "cleared": 1,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "lexi",
+      "won": true,
+      "after": {
+        "cleared": 1,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "lexi",
+      "won": false,
+      "after": {
+        "cleared": 1,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "lexi",
+      "won": true,
+      "after": {
+        "cleared": 1,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "lexi",
+      "won": true,
+      "after": {
+        "cleared": 1,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "nova",
+          "state": "locked",
+          "line": "Clear Lexi to unlock"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "lexi",
+      "won": true,
+      "after": {
+        "cleared": 2,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "nova",
+      "won": true,
+      "after": {
+        "cleared": 2,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "nova",
+      "won": true,
+      "after": {
+        "cleared": 2,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "adapt",
+          "state": "locked",
+          "line": "Clear Nova to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "nova",
+      "won": true,
+      "after": {
+        "cleared": 3,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "adapt",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        }
+      ]
+    },
+    {
+      "bot": "adapt",
+      "won": true,
+      "after": {
+        "cleared": 3,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "adapt",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        }
+      ]
+    },
+    {
+      "bot": "adapt",
+      "won": true,
+      "after": {
+        "cleared": 3,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "adapt",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        }
+      ]
+    },
+    {
+      "bot": "adapt",
+      "won": true,
+      "after": {
+        "cleared": 4,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "adapt",
+          "state": "cleared",
+          "line": "Cleared"
+        }
+      ]
+    },
+    {
+      "bot": "adapt",
+      "won": true,
+      "after": {
+        "cleared": 4,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rook",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "lexi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "nova",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "adapt",
+          "state": "cleared",
+          "line": "Cleared"
+        }
+      ]
+    }
+  ]
+}

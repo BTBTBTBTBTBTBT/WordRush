@@ -20,3 +20,4 @@ export * from './games/crossword';
 export * from './games/scramble';
 export * from './games/crossword';
 export * from './home-banner';
+export * from './vs-lobby';

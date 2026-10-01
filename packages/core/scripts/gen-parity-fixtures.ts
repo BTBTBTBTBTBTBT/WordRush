@@ -35,6 +35,7 @@ import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, recons
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
+import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -308,6 +309,40 @@ export function renderHomeBannerFixtures() {
     { days: {}, total: 10, ...dayRunTotals({}, 10) },
   ];
   return { headlines, clocks, groups, streaks, totals };
+}
+
+// VS overhaul (founder, 2026-10-01): the VS banner words, the challenge
+// outcome rule, and the bot ladder, pinned for the Swift/Kotlin ports.
+export function renderVsLobbyFixtures() {
+  const R: VsDayResult[] = ['open', 'won', 'lost', 'draw'];
+  const banners: Array<VsBannerInput & { free: boolean; headline: string; clock: string; status: string }> = [];
+  for (const battle of R) for (const botOfDay of R) for (const streak of [0, 3]) {
+    const i: VsBannerInput = { name: 'BT', battle, botOfDay, incomingFrom: null, streak };
+    banners.push({ ...i, free: false, headline: vsBannerHeadline(i), clock: vsBannerClockLine(i, '07:12:40'), status: vsTodayStatus(i) });
+  }
+  for (const i of [
+    { name: '', battle: 'open', botOfDay: 'open', incomingFrom: null, streak: 0 },
+    { name: 'doug', battle: 'won', botOfDay: 'open', incomingFrom: 'johnnyauer', streak: 5 },
+  ] as VsBannerInput[]) {
+    banners.push({ ...i, free: true, headline: vsBannerHeadline(i), clock: vsBannerClockLine(i, '07:12:40', { free: true, challengeLeft: '17H' }), status: vsTodayStatus(i) });
+  }
+  const records = [
+    [{ wins: 12, losses: 7 }, { wins: 31, losses: 9 }, 2], [{ wins: 0, losses: 0 }, { wins: 4, losses: 2 }, null],
+    [{ wins: 1, losses: 0 }, { wins: 1, losses: 0 }, 4], [{ wins: 3, losses: 3 }, { wins: 0, losses: 1 }, 0],
+  ].map(([people, bots, ladder]) => ({ people, bots, ladder, line: vsRecordLine(people as any, bots as any, ladder as number | null) }));
+  const run = (solved: boolean, boardsSolved: number, guesses: number, timeMs: number): VsRun => ({ solved, boardsSolved, guesses, timeMs });
+  const pairs: Array<[VsRun, VsRun]> = [
+    [run(true, 1, 3, 100000), run(true, 1, 4, 112000)], [run(true, 1, 4, 30000), run(true, 1, 3, 120000)],
+    [run(false, 0, 6, 60000), run(true, 1, 6, 300000)], [run(true, 1, 4, 60000), run(true, 1, 4, 60000)],
+    [run(false, 3, 9, 1000), run(false, 2, 9, 1000)], [run(false, 2, 9, 1000), run(false, 2, 9, 900000)],
+    [run(true, 1, 3, 100000), run(true, 1, 3, 112000)], [run(true, 1, 5, 100000), run(true, 1, 3, 90000)],
+    [run(true, 4, 7, 200000), run(true, 4, 7, 200400)], [run(true, 21, 30, 600000), run(true, 21, 31, 500000)],
+  ];
+  const outcomes = pairs.map(([me, them]) => ({ me, them, outcome: vsOutcome(me, them), margin: vsMargin(me, them), headline: challengeHeadline(vsOutcome(me, them), 'doug') }));
+  const games: Array<[string, boolean]> = [['rook', true], ['nova', false], ['rook', true], ['rook', true], ['lexi', true], ['lexi', false], ['lexi', true], ['lexi', true], ['lexi', true], ['nova', true], ['nova', true], ['nova', true], ['adapt', true], ['adapt', true], ['adapt', true], ['adapt', true]];
+  let s = { cleared: 0, run: 0 };
+  const ladder = games.map(([bot, won]) => { s = ladderAfterGame(s, bot, won); return { bot, won, after: s, rungs: ladderRungs(s) }; });
+  return { banners, records, outcomes, ladder };
 }
 
 const TARGET_DIRS = [
@@ -640,6 +675,7 @@ const FILES: Array<[string, unknown]> = [
   ['crossword-fixtures.json', renderCrosswordFixtures()],
   ['scramble-fixtures.json', renderScrambleFixtures()],
   ['home-banner-fixtures.json', renderHomeBannerFixtures()],
+  ['vs-lobby-fixtures.json', renderVsLobbyFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports
