@@ -1,7 +1,8 @@
 // Friends overhaul (founder, 2026-10-01; canvas Round 8, spec
 // docs/FRIENDS_REDESIGN_SPEC.md): pocket games you play with a friend — Rock
 // Paper Scissors, Tic-Tac-Tile, Call It and Pass the Puzzle — plus the Friends
-// banner words, friend streaks and the "on now" rule.
+// banner words, friend streaks and the "on now" rule. Ghost and Word Chain
+// joined the same night (founder: "I didn't see ghost and word chain").
 //
 // The server (apps/web/app/api/friends/games) is the only writer: it runs
 // applyFriendlyMove and stores the state, so a client can never cheat a coin
@@ -11,37 +12,50 @@
 import { evaluateGuess } from './evaluator';
 import { shiftDay } from './home-banner';
 
-export type FriendlyKind = 'rps' | 'ttt' | 'coin' | 'pass';
+export type FriendlyKind = 'rps' | 'ttt' | 'coin' | 'pass' | 'ghost' | 'chain';
 export type Side = 'a' | 'b';
 export type RpsPick = 'rock' | 'paper' | 'scissors';
 export type CoinFace = 'heads' | 'tails';
 export type CellMark = '' | Side;
 
-export const FRIENDLY_KINDS: readonly FriendlyKind[] = ['rps', 'ttt', 'coin', 'pass'];
+export const FRIENDLY_KINDS: readonly FriendlyKind[] = ['rps', 'ttt', 'coin', 'pass', 'ghost', 'chain'];
 export const FRIENDLY_TITLES: Record<FriendlyKind, string> = {
   rps: 'Rock Paper Scissors',
   ttt: 'Tic-Tac-Tile',
   coin: 'Call It',
   pass: 'Pass the Puzzle',
+  ghost: 'Ghost',
+  chain: 'Word Chain',
 };
-/** Wins needed: best of 3 (RPS, Tic-Tac-Tile), best of 5 (Call It). */
-export const FRIENDLY_TARGET: Record<FriendlyKind, number> = { rps: 2, ttt: 2, coin: 3, pass: 1 };
+/** Wins needed: best of 3 (RPS, Tic-Tac-Tile, Ghost), best of 5 (Call It); Word Chain is points. */
+export const FRIENDLY_TARGET: Record<FriendlyKind, number> = { rps: 2, ttt: 2, coin: 3, pass: 1, ghost: 2, chain: 30 };
 /** Call It stakes — a fixed list (no free text). */
 export const COIN_STAKES = ['Bragging rights', "Loser picks tonight's VS mode", 'Winner goes first next time'] as const;
 /** Pass the Puzzle shares one Classic board: six guesses between the two players. */
 export const PASS_MAX_GUESSES = 6;
+/** Ghost and Word Chain play on the 5- to 7-letter word lists. */
+export const WORD_MIN = 5;
+export const WORD_MAX = 7;
+/** Word Chain: a word scores its letters; first to 30 wins. */
+export const CHAIN_TARGET = 30;
 
 export interface RpsState { kind: 'rps'; picks: { a?: RpsPick; b?: RpsPick }; rounds: Array<{ a: RpsPick; b: RpsPick; winner: Side | null }>; score: { a: number; b: number } }
 export interface TttState { kind: 'ttt'; board: CellMark[]; starter: Side; turn: Side; games: Array<{ winner: Side | null }>; score: { a: number; b: number } }
 export interface CoinState { kind: 'coin'; caller: Side; rounds: Array<{ caller: Side; call: CoinFace; flip: CoinFace; winner: Side }>; score: { a: number; b: number }; stake: string }
 export interface PassState { kind: 'pass'; turn: Side; guesses: Array<{ by: Side; word: string; tiles: string[] }>; solvedBy: Side | null }
-export type FriendlyState = RpsState | TttState | CoinState | PassState;
+/** Ghost: add a letter each turn. Spell a whole word, or leave letters no word starts with, and you lose the round. */
+export interface GhostState { kind: 'ghost'; fragment: string; letters: Side[]; turn: Side; starter: Side; rounds: Array<{ fragment: string; loser: Side; reason: 'word' | 'dead' }>; score: { a: number; b: number } }
+/** Word Chain: each word starts with the last letter of the one before; a word scores its letters. */
+export interface ChainState { kind: 'chain'; words: Array<{ by: Side; word: string; points: number }>; turn: Side; score: { a: number; b: number } }
+export type FriendlyState = RpsState | TttState | CoinState | PassState | GhostState | ChainState;
 
 export type FriendlyMove =
   | { kind: 'rps'; pick: RpsPick }
   | { kind: 'ttt'; cell: number }
   | { kind: 'coin'; call: CoinFace }
-  | { kind: 'pass'; word: string };
+  | { kind: 'pass'; word: string }
+  | { kind: 'ghost'; letter: string }
+  | { kind: 'chain'; word: string };
 
 export interface MoveContext {
   /** Server randomness for the coin (0 ≤ r < 1). */
@@ -49,6 +63,12 @@ export interface MoveContext {
   /** Pass the Puzzle: the hidden answer and a word check. */
   solution?: string;
   isValidWord?: (w: string) => boolean;
+  /** Ghost / Word Chain: a 5–7 letter word on the lists (upper case in). */
+  isWord?: (w: string) => boolean;
+  /** Ghost: some 5–7 letter word starts with these letters. */
+  hasPrefix?: (fragment: string) => boolean;
+  /** Ghost / Word Chain: letters the app never shows (the blocked-term list). */
+  blocked?: (s: string) => boolean;
 }
 
 export type MoveResult =
@@ -64,6 +84,8 @@ export function newFriendlyState(kind: FriendlyKind, stake?: string): FriendlySt
     case 'ttt': return { kind, board: Array(9).fill('') as CellMark[], starter: 'a', turn: 'a', games: [], score: { a: 0, b: 0 } };
     case 'coin': return { kind, caller: 'a', rounds: [], score: { a: 0, b: 0 }, stake: stake && (COIN_STAKES as readonly string[]).includes(stake) ? stake : COIN_STAKES[0] };
     case 'pass': return { kind, turn: 'a', guesses: [], solvedBy: null };
+    case 'ghost': return { kind, fragment: '', letters: [], turn: 'a', starter: 'a', rounds: [], score: { a: 0, b: 0 } };
+    case 'chain': return { kind, words: [], turn: 'a', score: { a: 0, b: 0 } };
   }
 }
 
@@ -90,6 +112,8 @@ export function whoseTurn(s: FriendlyState): Side | 'both' | null {
     case 'ttt': return s.turn;
     case 'coin': return s.caller;
     case 'pass': return s.turn;
+    case 'ghost': return s.turn;
+    case 'chain': return s.turn;
   }
 }
 
@@ -102,8 +126,9 @@ export function friendlyWinner(s: FriendlyState): Side | 'draw' | null {
   const target = FRIENDLY_TARGET[s.kind];
   if (s.score.a >= target) return 'a';
   if (s.score.b >= target) return 'b';
-  // Tic-Tac-Tile stops after five games (draws included): the leader wins.
+  // Tic-Tac-Tile stops after five games (draws included), Ghost after five rounds: the leader wins.
   if (s.kind === 'ttt' && s.games.length >= 5) return s.score.a === s.score.b ? 'draw' : s.score.a > s.score.b ? 'a' : 'b';
+  if (s.kind === 'ghost' && s.rounds.length >= 5) return s.score.a === s.score.b ? 'draw' : s.score.a > s.score.b ? 'a' : 'b';
   return null;
 }
 
@@ -158,6 +183,37 @@ export function applyFriendlyMove(s: FriendlyState, by: Side, move: FriendlyMove
     const solved = word === ctx.solution.toUpperCase();
     return done({ ...s, turn: other(by), guesses: [...s.guesses, { by, word, tiles }], solvedBy: solved ? by : null });
   }
+
+  if (s.kind === 'ghost' && move.kind === 'ghost') {
+    const letter = (move.letter ?? '').trim().toUpperCase();
+    if (!/^[A-Z]$/.test(letter)) return { ok: false, error: 'One letter, please' };
+    const fragment = s.fragment + letter;
+    if (ctx.blocked && ctx.blocked(fragment)) return { ok: false, error: 'Try another letter' };
+    const spelled = fragment.length >= WORD_MIN && !!ctx.isWord?.(fragment);
+    const dead = !spelled && !!ctx.hasPrefix && !ctx.hasPrefix(fragment);
+    if (spelled || dead) {
+      const winner = other(by);
+      const starter = other(s.starter);
+      return done({
+        ...s, fragment: '', letters: [], starter, turn: starter,
+        rounds: [...s.rounds, { fragment, loser: by, reason: spelled ? 'word' : 'dead' }],
+        score: { ...s.score, [winner]: s.score[winner] + 1 },
+      });
+    }
+    return done({ ...s, fragment, letters: [...s.letters, by], turn: other(by) });
+  }
+
+  if (s.kind === 'chain' && move.kind === 'chain') {
+    const word = (move.word ?? '').trim().toUpperCase();
+    if (!/^[A-Z]+$/.test(word) || word.length < WORD_MIN || word.length > WORD_MAX) return { ok: false, error: `${WORD_MIN} to ${WORD_MAX} letters, please` };
+    const last = s.words[s.words.length - 1];
+    if (last && word[0] !== last.word[last.word.length - 1]) return { ok: false, error: `Start with ${last.word[last.word.length - 1]}` };
+    if (s.words.some((w) => w.word === word)) return { ok: false, error: 'Already played' };
+    if (ctx.blocked && ctx.blocked(word)) return { ok: false, error: 'Try another word' };
+    if (ctx.isWord && !ctx.isWord(word)) return { ok: false, error: 'Not in the word list' };
+    const points = word.length;
+    return done({ ...s, turn: other(by), words: [...s.words, { by, word, points }], score: { ...s.score, [by]: s.score[by] + points } });
+  }
   return { ok: false, error: 'Bad move' };
 }
 
@@ -208,6 +264,11 @@ export function friendlyCardLine(i: GameLineInput): string {
     return myTurn ? `Your guess · ${used} of ${PASS_MAX_GUESSES} used` : `${i.them}'s guess · ${used} of ${PASS_MAX_GUESSES} used`;
   }
   if (s.kind === 'coin') return myTurn ? `Your call · ${mine}–${theirs}` : `${i.them} calls next · ${mine}–${theirs}`;
+  if (s.kind === 'ghost') return myTurn ? (s.fragment ? `Your letter · ${s.fragment}` : `Your letter · start it`) : `Waiting on ${i.them} · ${mine}–${theirs}`;
+  if (s.kind === 'chain') {
+    const last = s.words[s.words.length - 1];
+    return myTurn ? (last ? `Your word · starts with ${last.word[last.word.length - 1]}` : 'Your word · any word') : `${i.them}'s word · ${mine}–${theirs}`;
+  }
   return myTurn ? `Your move · ${i.them} moved ${ago(i.minutesAgo)}` : `Waiting on ${i.them} · ${mine}–${theirs}`;
 }
 
@@ -222,6 +283,11 @@ export function friendlyHeadline(s: FriendlyState, me: Side): string {
     case 'ttt': return myTurn ? 'YOUR MOVE' : 'THEIR MOVE';
     case 'coin': return `ROUND ${s.rounds.length + 1} OF 5`;
     case 'pass': return myTurn ? `YOUR GUESS · ${s.guesses.length + 1} OF ${PASS_MAX_GUESSES}` : `THEIR GUESS · ${s.guesses.length + 1} OF ${PASS_MAX_GUESSES}`;
+    case 'ghost': return myTurn ? 'YOUR LETTER' : 'THEIR LETTER';
+    case 'chain': {
+      const last = s.words[s.words.length - 1];
+      return myTurn ? (last ? `YOUR WORD · STARTS WITH ${last.word[last.word.length - 1]}` : 'YOUR WORD') : 'THEIR WORD';
+    }
   }
 }
 

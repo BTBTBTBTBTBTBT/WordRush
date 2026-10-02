@@ -1,10 +1,10 @@
 import { randomInt } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { FRIENDLY_TITLES, applyFriendlyMove, friendlyCardLine, type FriendlyMove } from '@wordle-duel/core';
+import { FRIENDLY_TITLES, applyFriendlyMove, containsBlockedTerm, friendlyCardLine, type FriendlyMove } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
-import { gameView, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
+import { gameView, hasWordPrefix, isListWord, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,9 +13,9 @@ const WATCHING_MS = 25 * 1000;
 
 /**
  * POST /api/friends/games/<id>/move { move } → { game }. The server runs the
- * rules (core applyFriendlyMove): the coin flip is server randomness, Pass the
- * Puzzle checks the word list and the blocked-term list, and an RPS pick stays
- * hidden from the friend until both are in. The other player is pushed when
+ * rules (core applyFriendlyMove): the coin flip is server randomness; Pass the
+ * Puzzle, Ghost and Word Chain check the word lists and the blocked-term list;
+ * an RPS pick stays hidden from the friend until both are in. The other player is pushed when
  * it becomes their turn or the game ends — unless they are watching.
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -39,6 +39,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     random: () => randomInt(0, 1_000_000) / 1_000_000,
     solution: row.secret ?? undefined,
     isValidWord: passWordOk,
+    isWord: isListWord,
+    hasPrefix: hasWordPrefix,
+    blocked: containsBlockedTerm,
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
 

@@ -350,20 +350,26 @@ export function renderVsLobbyFixtures() {
 // the ports only need the WORDS (card lines, headlines), whose-turn, the
 // Tic-Tac-Tile line, presence and friend streaks, and the banner.
 export function renderFriendlyFixtures() {
-  const scripts: Array<{ kind: 'rps' | 'ttt' | 'coin' | 'pass'; moves: Array<[string, any]>; ctx?: any }> = [
+  // Ghost / Word Chain replay against this small embedded list (`words` in the
+  // fixture) so the ports can rebuild the same isWord / hasPrefix checks.
+  const WORDS = ['GHOST', 'GHOSTS', 'GHOUL', 'APPLE', 'EAGLE', 'EAGLES', 'SALAD', 'DOUGH', 'HOUSE', 'CRANE'];
+  const wordCtx = { isWord: (w: string) => WORDS.includes(w), hasPrefix: (f: string) => WORDS.some((w) => w.startsWith(f)) };
+  const scripts: Array<{ kind: 'rps' | 'ttt' | 'coin' | 'pass' | 'ghost' | 'chain'; moves: Array<[string, any]>; ctx?: any }> = [
     { kind: 'rps', moves: [['a', { kind: 'rps', pick: 'paper' }], ['b', { kind: 'rps', pick: 'rock' }], ['b', { kind: 'rps', pick: 'scissors' }], ['a', { kind: 'rps', pick: 'scissors' }], ['a', { kind: 'rps', pick: 'rock' }], ['b', { kind: 'rps', pick: 'scissors' }]] },
     { kind: 'ttt', moves: [['a', { kind: 'ttt', cell: 0 }], ['b', { kind: 'ttt', cell: 4 }], ['a', { kind: 'ttt', cell: 1 }], ['b', { kind: 'ttt', cell: 2 }], ['a', { kind: 'ttt', cell: 6 }], ['b', { kind: 'ttt', cell: 3 }], ['a', { kind: 'ttt', cell: 5 }], ['b', { kind: 'ttt', cell: 7 }], ['a', { kind: 'ttt', cell: 8 }], ['b', { kind: 'ttt', cell: 0 }], ['a', { kind: 'ttt', cell: 4 }]] },
     { kind: 'coin', moves: [['a', { kind: 'coin', call: 'heads' }], ['b', { kind: 'coin', call: 'heads' }], ['a', { kind: 'coin', call: 'tails' }], ['b', { kind: 'coin', call: 'tails' }], ['a', { kind: 'coin', call: 'heads' }]], ctx: { flips: [0.1, 0.1, 0.1, 0.7, 0.3] } },
     { kind: 'pass', moves: [['a', { kind: 'pass', word: 'CRANE' }], ['b', { kind: 'pass', word: 'ROUTS' }], ['a', { kind: 'pass', word: 'RISKY' }], ['b', { kind: 'pass', word: 'RISKS' }]], ctx: { solution: 'RISKS' } },
+    { kind: 'ghost', moves: [['a', { kind: 'ghost', letter: 'G' }], ['b', { kind: 'ghost', letter: 'H' }], ['a', { kind: 'ghost', letter: 'O' }], ['b', { kind: 'ghost', letter: 'S' }], ['a', { kind: 'ghost', letter: 'T' }], ['a', { kind: 'ghost', letter: 'Q' }], ['b', { kind: 'ghost', letter: 'Q' }], ['b', { kind: 'ghost', letter: 'E' }], ['a', { kind: 'ghost', letter: 'A' }], ['b', { kind: 'ghost', letter: 'X' }]], ctx: { words: true } },
+    { kind: 'chain', moves: [['a', { kind: 'chain', word: 'CRANE' }], ['b', { kind: 'chain', word: 'APPLE' }], ['b', { kind: 'chain', word: 'EAGLES' }], ['a', { kind: 'chain', word: 'SALAD' }], ['b', { kind: 'chain', word: 'DOUGH' }], ['a', { kind: 'chain', word: 'HOUSE' }], ['b', { kind: 'chain', word: 'EAGLE' }], ['a', { kind: 'chain', word: 'CRANE' }]], ctx: { words: true } },
   ];
   const games = scripts.map((sc) => {
     let s: FriendlyState = newFriendlyState(sc.kind);
     const flips = [...(sc.ctx?.flips ?? [])];
     const steps = sc.moves.map(([by, mv]) => {
-      const r = applyFriendlyMove(s, by as any, mv, { random: () => flips.shift() ?? 0.1, solution: sc.ctx?.solution });
+      const r = applyFriendlyMove(s, by as any, mv, { random: () => flips.shift() ?? 0.1, solution: sc.ctx?.solution, ...(sc.ctx?.words ? wordCtx : {}) });
       if (r.ok) s = r.state;
       return {
-        by, move: mv, ok: r.ok, state: s, turn: whoseTurn(s), winner: friendlyWinner(s),
+        by, move: mv, ok: r.ok, error: r.ok ? null : r.error, state: s, turn: whoseTurn(s), winner: friendlyWinner(s),
         headlineA: friendlyHeadline(s, 'a'), headlineB: friendlyHeadline(s, 'b'),
         cardA: friendlyCardLine({ kind: sc.kind, state: s, me: 'a', them: 'Doug', minutesAgo: 4 }),
         cardB: friendlyCardLine({ kind: sc.kind, state: s, me: 'b', them: 'BT', minutesAgo: 75 }),
@@ -383,7 +389,7 @@ export function renderFriendlyFixtures() {
   const banners = [base, { ...base, online: ['doug'] }, { ...base, online: [], myRank: 1, myPoints: 1380, nextPoints: 1240 }, { ...base, online: [] },
     { ...base, online: [], leaderPoints: 0, myPoints: 0 }, { ...base, friendCount: 0, online: [] }, { ...base, online: [], myRank: 11, myPoints: 0, leaderPoints: 2500 }, { ...base, online: [], myRank: 22, myPoints: 10, leaderPoints: 12000 }, { ...base, online: [], myRank: 3, myPoints: 5, leaderPoints: 9 }]
     .map((i) => ({ input: i, headline: friendsBannerHeadline(i), clock: friendsBannerClockLine(i, '04:12:08') }));
-  return { games, boards, presence, streaks, banners };
+  return { words: WORDS, games, boards, presence, streaks, banners };
 }
 
 const TARGET_DIRS = [

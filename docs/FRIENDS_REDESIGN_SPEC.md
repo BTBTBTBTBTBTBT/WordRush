@@ -153,4 +153,34 @@ links are not needed (push only).
 
 ## 8. Not in this build
 
-Ghost, Word Chain, Call the race, Send a word, Duos, live lobby.
+Call the race, Send a word, Duos, live lobby.
+
+## 9. Ghost and Word Chain (founder, 2026-10-01: "I didn't see ghost and word chain")
+
+Six pocket games now: the PLAY WITH FRIENDS grid becomes 3 columns × 2 rows (order: Rock
+Paper Scissors, Tic-Tac-Tile, Call It, Pass the Puzzle, Ghost, Word Chain) and the
+quick-play sheet shows six tiles, 3 across × 2 rows.
+
+- **Ghost** — color `#9f1239`, icon a ghost OUTLINE (white stroke 2.4, lucide "ghost":
+  rounded head, two eyes, wavy hem). Sub `Add a letter; don't finish a word`.
+  Rules (core): take turns adding one letter to a shared fragment. Spell a whole 5–7 letter
+  word, or leave letters no 5–7 letter word starts with, and you lose the round. Best of 3
+  (cap 5 rounds); the starter alternates each round.
+  Move `{kind:'ghost', letter:'A'}`; errors inline (`Try another letter`).
+  Screen: the fragment as big tiles (52 px, radius 10) in a row, each tile colored by who
+  played it (yours `#7c3aed`, theirs `#f59e0b`, white letters), an empty dashed tile at the
+  end on your turn; the full keyboard (letters only) to add one letter; line under it
+  `Spell a word and you lose the round. Leave a dead end and you lose it too.`; after a
+  round, a soft card `<WORD> — <name> spelled a word` or `<LETTERS> — no word starts with that`.
+- **Word Chain** — color `#059669`, icon a link-chain OUTLINE. Sub `Last letter starts the
+  next`. Rules (core): take turns playing a 5–7 letter word that starts with the last
+  letter of the previous word (any word to open); no repeats; a word scores its letters;
+  first to 30 wins. Move `{kind:'chain', word}`; errors inline (`Start with E`, `Already
+  played`, `Not in the word list`, `5 to 7 letters, please`). Screen: the chain as a
+  vertical list of word pills (tiles 30 px, by-player color like Ghost, `+5` points chip at
+  the right), the last letter of the newest word glowing; the score in the window; an
+  input row of tiles for your word (5–7) with the keyboard and ENTER; the needed first
+  letter pre-filled and locked.
+- Card lines and headlines come from core (`friendlyCardLine`, `friendlyHeadline`).
+- Fixtures now include `words` (a small embedded list) and two scripts (ghost, chain) plus
+  an `error` field on each step — ports rebuild `isWord`/`hasPrefix` from `words`.

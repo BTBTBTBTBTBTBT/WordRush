@@ -1,4 +1,16 @@
 {
+  "words": [
+    "GHOST",
+    "GHOSTS",
+    "GHOUL",
+    "APPLE",
+    "EAGLE",
+    "EAGLES",
+    "SALAD",
+    "DOUGH",
+    "HOUSE",
+    "CRANE"
+  ],
   "games": [
     {
       "kind": "rps",
@@ -10,6 +22,7 @@
             "pick": "paper"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "rps",
             "picks": {
@@ -35,6 +48,7 @@
             "pick": "rock"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "rps",
             "picks": {},
@@ -64,6 +78,7 @@
             "pick": "scissors"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "rps",
             "picks": {
@@ -95,6 +110,7 @@
             "pick": "scissors"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "rps",
             "picks": {},
@@ -129,6 +145,7 @@
             "pick": "rock"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "rps",
             "picks": {
@@ -165,6 +182,7 @@
             "pick": "scissors"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "rps",
             "picks": {},
@@ -209,6 +227,7 @@
             "cell": 0
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -244,6 +263,7 @@
             "cell": 4
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -279,6 +299,7 @@
             "cell": 1
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -314,6 +335,7 @@
             "cell": 2
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -349,6 +371,7 @@
             "cell": 6
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -384,6 +407,7 @@
             "cell": 3
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -419,6 +443,7 @@
             "cell": 5
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -454,6 +479,7 @@
             "cell": 7
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -489,6 +515,7 @@
             "cell": 8
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -528,6 +555,7 @@
             "cell": 0
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -567,6 +595,7 @@
             "cell": 4
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "ttt",
             "board": [
@@ -611,6 +640,7 @@
             "call": "heads"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "coin",
             "caller": "b",
@@ -642,6 +672,7 @@
             "call": "heads"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "coin",
             "caller": "a",
@@ -679,6 +710,7 @@
             "call": "tails"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "coin",
             "caller": "b",
@@ -722,6 +754,7 @@
             "call": "tails"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "coin",
             "caller": "a",
@@ -771,6 +804,7 @@
             "call": "heads"
           },
           "ok": false,
+          "error": "This game is over",
           "state": {
             "kind": "coin",
             "caller": "a",
@@ -825,6 +859,7 @@
             "word": "CRANE"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "pass",
             "turn": "b",
@@ -857,6 +892,7 @@
             "word": "ROUTS"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "pass",
             "turn": "a",
@@ -900,6 +936,7 @@
             "word": "RISKY"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "pass",
             "turn": "b",
@@ -954,6 +991,7 @@
             "word": "RISKS"
           },
           "ok": true,
+          "error": null,
           "state": {
             "kind": "pass",
             "turn": "a",
@@ -1011,6 +1049,703 @@
           "headlineB": "YOU WIN!",
           "cardA": "Doug solved it",
           "cardB": "You solved it"
+        }
+      ]
+    },
+    {
+      "kind": "ghost",
+      "steps": [
+        {
+          "by": "a",
+          "move": {
+            "kind": "ghost",
+            "letter": "G"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "G",
+            "letters": [
+              "a"
+            ],
+            "turn": "b",
+            "starter": "a",
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR LETTER",
+          "headlineB": "YOUR LETTER",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your letter · G"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ghost",
+            "letter": "H"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "GH",
+            "letters": [
+              "a",
+              "b"
+            ],
+            "turn": "a",
+            "starter": "a",
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR LETTER",
+          "headlineB": "THEIR LETTER",
+          "cardA": "Your letter · GH",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ghost",
+            "letter": "O"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "GHO",
+            "letters": [
+              "a",
+              "b",
+              "a"
+            ],
+            "turn": "b",
+            "starter": "a",
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR LETTER",
+          "headlineB": "YOUR LETTER",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your letter · GHO"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ghost",
+            "letter": "S"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "GHOS",
+            "letters": [
+              "a",
+              "b",
+              "a",
+              "b"
+            ],
+            "turn": "a",
+            "starter": "a",
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR LETTER",
+          "headlineB": "THEIR LETTER",
+          "cardA": "Your letter · GHOS",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ghost",
+            "letter": "T"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "",
+            "letters": [],
+            "turn": "b",
+            "starter": "b",
+            "rounds": [
+              {
+                "fragment": "GHOST",
+                "loser": "a",
+                "reason": "word"
+              }
+            ],
+            "score": {
+              "a": 0,
+              "b": 1
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR LETTER",
+          "headlineB": "YOUR LETTER",
+          "cardA": "Waiting on Doug · 0–1",
+          "cardB": "Your letter · start it"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ghost",
+            "letter": "Q"
+          },
+          "ok": false,
+          "error": "Not your turn",
+          "state": {
+            "kind": "ghost",
+            "fragment": "",
+            "letters": [],
+            "turn": "b",
+            "starter": "b",
+            "rounds": [
+              {
+                "fragment": "GHOST",
+                "loser": "a",
+                "reason": "word"
+              }
+            ],
+            "score": {
+              "a": 0,
+              "b": 1
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR LETTER",
+          "headlineB": "YOUR LETTER",
+          "cardA": "Waiting on Doug · 0–1",
+          "cardB": "Your letter · start it"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ghost",
+            "letter": "Q"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "",
+            "letters": [],
+            "turn": "a",
+            "starter": "a",
+            "rounds": [
+              {
+                "fragment": "GHOST",
+                "loser": "a",
+                "reason": "word"
+              },
+              {
+                "fragment": "Q",
+                "loser": "b",
+                "reason": "dead"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 1
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR LETTER",
+          "headlineB": "THEIR LETTER",
+          "cardA": "Your letter · start it",
+          "cardB": "Waiting on BT · 1–1"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ghost",
+            "letter": "E"
+          },
+          "ok": false,
+          "error": "Not your turn",
+          "state": {
+            "kind": "ghost",
+            "fragment": "",
+            "letters": [],
+            "turn": "a",
+            "starter": "a",
+            "rounds": [
+              {
+                "fragment": "GHOST",
+                "loser": "a",
+                "reason": "word"
+              },
+              {
+                "fragment": "Q",
+                "loser": "b",
+                "reason": "dead"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 1
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR LETTER",
+          "headlineB": "THEIR LETTER",
+          "cardA": "Your letter · start it",
+          "cardB": "Waiting on BT · 1–1"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ghost",
+            "letter": "A"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "A",
+            "letters": [
+              "a"
+            ],
+            "turn": "b",
+            "starter": "a",
+            "rounds": [
+              {
+                "fragment": "GHOST",
+                "loser": "a",
+                "reason": "word"
+              },
+              {
+                "fragment": "Q",
+                "loser": "b",
+                "reason": "dead"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 1
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR LETTER",
+          "headlineB": "YOUR LETTER",
+          "cardA": "Waiting on Doug · 1–1",
+          "cardB": "Your letter · A"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ghost",
+            "letter": "X"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "ghost",
+            "fragment": "",
+            "letters": [],
+            "turn": "b",
+            "starter": "b",
+            "rounds": [
+              {
+                "fragment": "GHOST",
+                "loser": "a",
+                "reason": "word"
+              },
+              {
+                "fragment": "Q",
+                "loser": "b",
+                "reason": "dead"
+              },
+              {
+                "fragment": "AX",
+                "loser": "b",
+                "reason": "dead"
+              }
+            ],
+            "score": {
+              "a": 2,
+              "b": 1
+            }
+          },
+          "turn": null,
+          "winner": "a",
+          "headlineA": "YOU WIN!",
+          "headlineB": "THEY WIN",
+          "cardA": "You won 2–1",
+          "cardB": "BT won 2–1"
+        }
+      ]
+    },
+    {
+      "kind": "chain",
+      "steps": [
+        {
+          "by": "a",
+          "move": {
+            "kind": "chain",
+            "word": "CRANE"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              }
+            ],
+            "turn": "b",
+            "score": {
+              "a": 5,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR WORD",
+          "headlineB": "YOUR WORD · STARTS WITH E",
+          "cardA": "Doug's word · 5–0",
+          "cardB": "Your word · starts with E"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "chain",
+            "word": "APPLE"
+          },
+          "ok": false,
+          "error": "Start with E",
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              }
+            ],
+            "turn": "b",
+            "score": {
+              "a": 5,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR WORD",
+          "headlineB": "YOUR WORD · STARTS WITH E",
+          "cardA": "Doug's word · 5–0",
+          "cardB": "Your word · starts with E"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "chain",
+            "word": "EAGLES"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLES",
+                "points": 6
+              }
+            ],
+            "turn": "a",
+            "score": {
+              "a": 5,
+              "b": 6
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR WORD · STARTS WITH S",
+          "headlineB": "THEIR WORD",
+          "cardA": "Your word · starts with S",
+          "cardB": "BT's word · 6–5"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "chain",
+            "word": "SALAD"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLES",
+                "points": 6
+              },
+              {
+                "by": "a",
+                "word": "SALAD",
+                "points": 5
+              }
+            ],
+            "turn": "b",
+            "score": {
+              "a": 10,
+              "b": 6
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR WORD",
+          "headlineB": "YOUR WORD · STARTS WITH D",
+          "cardA": "Doug's word · 10–6",
+          "cardB": "Your word · starts with D"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "chain",
+            "word": "DOUGH"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLES",
+                "points": 6
+              },
+              {
+                "by": "a",
+                "word": "SALAD",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "DOUGH",
+                "points": 5
+              }
+            ],
+            "turn": "a",
+            "score": {
+              "a": 10,
+              "b": 11
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR WORD · STARTS WITH H",
+          "headlineB": "THEIR WORD",
+          "cardA": "Your word · starts with H",
+          "cardB": "BT's word · 11–10"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "chain",
+            "word": "HOUSE"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLES",
+                "points": 6
+              },
+              {
+                "by": "a",
+                "word": "SALAD",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "DOUGH",
+                "points": 5
+              },
+              {
+                "by": "a",
+                "word": "HOUSE",
+                "points": 5
+              }
+            ],
+            "turn": "b",
+            "score": {
+              "a": 15,
+              "b": 11
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR WORD",
+          "headlineB": "YOUR WORD · STARTS WITH E",
+          "cardA": "Doug's word · 15–11",
+          "cardB": "Your word · starts with E"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "chain",
+            "word": "EAGLE"
+          },
+          "ok": true,
+          "error": null,
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLES",
+                "points": 6
+              },
+              {
+                "by": "a",
+                "word": "SALAD",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "DOUGH",
+                "points": 5
+              },
+              {
+                "by": "a",
+                "word": "HOUSE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLE",
+                "points": 5
+              }
+            ],
+            "turn": "a",
+            "score": {
+              "a": 15,
+              "b": 16
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR WORD · STARTS WITH E",
+          "headlineB": "THEIR WORD",
+          "cardA": "Your word · starts with E",
+          "cardB": "BT's word · 16–15"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "chain",
+            "word": "CRANE"
+          },
+          "ok": false,
+          "error": "Start with E",
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLES",
+                "points": 6
+              },
+              {
+                "by": "a",
+                "word": "SALAD",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "DOUGH",
+                "points": 5
+              },
+              {
+                "by": "a",
+                "word": "HOUSE",
+                "points": 5
+              },
+              {
+                "by": "b",
+                "word": "EAGLE",
+                "points": 5
+              }
+            ],
+            "turn": "a",
+            "score": {
+              "a": 15,
+              "b": 16
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR WORD · STARTS WITH E",
+          "headlineB": "THEIR WORD",
+          "cardA": "Your word · starts with E",
+          "cardB": "BT's word · 16–15"
         }
       ]
     }

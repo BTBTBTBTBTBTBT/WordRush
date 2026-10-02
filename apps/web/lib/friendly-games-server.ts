@@ -12,6 +12,8 @@ import {
 import allowed from '@/data/allowed.json';
 import solutions from '@/data/solutions.json';
 import legacy from '@/data/solutions-legacy.json';
+import allowed6 from '@/data/allowed-6.json';
+import allowed7 from '@/data/allowed-7.json';
 
 let dictReady = false;
 /** The 5-letter lists, loaded once per server instance (Pass the Puzzle). */
@@ -31,6 +33,35 @@ export function passAnswer(): string {
 export function passWordOk(w: string): boolean {
   ensureDictionary();
   return isValidWord(w.toLowerCase()) && !containsBlockedTerm(w);
+}
+
+// Ghost / Word Chain play on the 5-, 6- and 7-letter lists. One sorted array
+// answers "is this a word" (binary search) and "does any word start with these
+// letters" (the first entry ≥ the fragment).
+let wordArr: string[] | null = null;
+function words(): string[] {
+  if (!wordArr) {
+    wordArr = [...new Set([...(allowed as string[]), ...(allowed6 as string[]), ...(allowed7 as string[])].map((w) => w.toUpperCase()))].sort();
+  }
+  return wordArr;
+}
+function lowerBound(arr: string[], key: string): number {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid] < key) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+/** A 5–7 letter word on the lists. */
+export function isListWord(w: string): boolean {
+  const arr = words();
+  const i = lowerBound(arr, w.toUpperCase());
+  return arr[i] === w.toUpperCase();
+}
+/** Some 5–7 letter word starts with these letters. */
+export function hasWordPrefix(fragment: string): boolean {
+  const arr = words();
+  const f = fragment.toUpperCase();
+  const i = lowerBound(arr, f);
+  return i < arr.length && arr[i].startsWith(f);
 }
 
 export interface GameRow {

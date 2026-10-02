@@ -98,3 +98,38 @@ describe('presence, streaks, banner', () => {
     expect(friendsBannerClockLine({ ...b, myRank: 11, myPoints: 0, leaderPoints: 2500 }, 'x')).toBe('TODAY’S RACE ENDS IN x · YOU’RE 11TH, 2,500 BEHIND');
   });
 });
+
+describe('ghost and word chain', () => {
+  const WORDS = ['GHOST', 'GHOSTS', 'GHOUL', 'APPLE', 'EAGLE', 'EAGLES', 'SALAD', 'DOUGH', 'HOUSE', 'CRANE'];
+  const ctx = {
+    isWord: (w: string) => WORDS.includes(w),
+    hasPrefix: (f: string) => WORDS.some((w) => w.startsWith(f)),
+    blocked: (s: string) => s.includes('XXX'),
+  };
+  it('ghost: spelling a word or a dead end loses the round', () => {
+    let s = newFriendlyState('ghost');
+    s = play(s, [['a', { kind: 'ghost', letter: 'g' }], ['b', { kind: 'ghost', letter: 'h' }], ['a', { kind: 'ghost', letter: 'o' }], ['b', { kind: 'ghost', letter: 's' }]], ctx);
+    expect((s as any).fragment).toBe('GHOS');
+    expect(friendlyCardLine({ kind: 'ghost', state: s, me: 'a', them: 'Doug', minutesAgo: 1 })).toBe('Your letter · GHOS');
+    s = play(s, [['a', { kind: 'ghost', letter: 't' }]], ctx); // GHOST is a word: a loses
+    expect((s as any).score).toEqual({ a: 0, b: 1 });
+    expect((s as any).rounds[0]).toEqual({ fragment: 'GHOST', loser: 'a', reason: 'word' });
+    expect(whoseTurn(s)).toBe('b'); // b starts round 2
+    s = play(s, [['b', { kind: 'ghost', letter: 'q' }]], ctx); // nothing starts with Q
+    expect((s as any).score).toEqual({ a: 1, b: 1 });
+    expect((s as any).rounds[1].reason).toBe('dead');
+    s = play(s, [['a', { kind: 'ghost', letter: 'z' }]], ctx);
+    expect(friendlyWinner(s)).toBe('b');
+  });
+  it('word chain: last letter starts the next, letters score, first to 30', () => {
+    let s = newFriendlyState('chain');
+    expect(applyFriendlyMove(s, 'a', { kind: 'chain', word: 'zzzzz' }, ctx).ok).toBe(false);
+    s = play(s, [['a', { kind: 'chain', word: 'crane' }]], ctx);
+    expect(friendlyHeadline(s, 'b')).toBe('YOUR WORD · STARTS WITH E');
+    const bad = applyFriendlyMove(s, 'b', { kind: 'chain', word: 'apple' }, ctx);
+    expect(bad.ok ? '' : bad.error).toBe('Start with E');
+    s = play(s, [['b', { kind: 'chain', word: 'eagles' }], ['a', { kind: 'chain', word: 'salad' }], ['b', { kind: 'chain', word: 'dough' }], ['a', { kind: 'chain', word: 'house' }], ['b', { kind: 'chain', word: 'eagle' }]], ctx);
+    expect((s as any).score).toEqual({ a: 15, b: 16 });
+    expect(friendlyCardLine({ kind: 'chain', state: s, me: 'a', them: 'Doug', minutesAgo: 1 })).toBe('Your word · starts with E');
+  });
+});
