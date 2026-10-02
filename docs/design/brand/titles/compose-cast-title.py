@@ -13,100 +13,39 @@ from scipy import ndimage
 HERE = os.path.dirname(os.path.abspath(__file__))
 POSES = os.path.join(HERE, '..', 'poses')
 
-LAYOUTS = {
-    'friends': {
-        'lettering': 'friends-lettering-keyed.png',
-        'left': [('w', 'lean', True)],
-        'right': [('s', 'flex', False)],
-        'top': [('o1', 'cheer'), ('r', 'sit'), ('d', 'cheer'), ('o2', 'sit'),
-                ('c', 'cheer'), ('i', 'sit'), ('o3', 'sit'), ('u', 'spin')],
-    },
-    'stats': {
-        'lettering': 'stats-lettering-keyed.png',
-        'left': [('w', 'sit', False), ('o1', 'lean', True)],
-        'right': [('u', 'meditate', False), ('s', 'slide', False)],
-        'top': [('r', 'lean'), ('d', 'cheer'), ('o2', 'lean'), ('c', 'sit'),
-                ('i', 'cheer'), ('o3', 'handstand')],
-    },
-    'records': {
-        'lettering': 'records-lettering-keyed.png',
-        'left': [('w', 'sit', False)],
-        'right': [('s', 'flex', False)],
-        'top': [('o1', 'lean'), ('r', 'cheer'), ('d', 'sit'), ('o2', 'cheer'),
-                ('c', 'lean'), ('i', 'cheer'), ('o3', 'handstand'), ('u', 'stretch')],
-    },
-    'vs': {
-        'lettering': 'vs-lettering-keyed.png',
-        'left': [('w', 'cheer', False), ('o1', 'sit', False)],
-        'right': [('u', 'spin', False), ('s', 'slide', False)],
-        'top': [('r', 'lean'), ('d', 'cheer'), ('o2', 'cheer'), ('c', 'sit'),
-                ('i', 'lean'), ('o3', 'sneak')],
-    },
-    'puzzles': {
-        'lettering': 'puzzles-lettering-keyed.png',
-        'left': [('w', 'lean', True), ('o1', 'cheer', False)],
-        'right': [('u', 'meditate', False), ('s', 'sit', False)],
-        'top': [('r', 'sit'), ('d', 'lean'), ('o2', 'sit'), ('c', 'cheer'),
-                ('i', 'sit'), ('o3', 'sit')],
-    },
-    'wotd': {
-        'lettering': 'wotd-lettering-keyed.png',
-        'left': [('w', 'cheer', False)],
-        'right': [('s', 'flex', False)],
-        'top': [('o1', 'sit'), ('r', 'lean'), ('d', 'cheer'), ('o2', 'lean'),
-                ('c', 'sit'), ('i', 'cheer'), ('o3', 'sneak'), ('u', 'meditate')],
-    },
-    'settings': {
-        'lettering': 'settings-lettering-keyed.png',
-        'left': [('w', 'sit', False), ('o1', 'lean', True)],
-        'right': [('u', 'stretch', False), ('s', 'sit', False)],
-        'top': [('r', 'lean'), ('d', 'sit'), ('o2', 'sit'), ('c', 'lean'),
-                ('i', 'sit'), ('o3', 'sit')],
-    },
-    'howto': {
-        'lettering': 'howto-lettering-keyed.png',
-        'left': [('w', 'lean', True)],
-        'right': [('s', 'slide', False)],
-        'top': [('o1', 'cheer'), ('r', 'sit'), ('d', 'cheer'), ('o2', 'sit'),
-                ('c', 'cheer'), ('i', 'lean'), ('o3', 'handstand'), ('u', 'spin')],
-    },
-    'gopro': {
-        'lettering': 'gopro-lettering-keyed.png',
-        'left': [('w', 'cheer', False), ('o1', 'cheer', False)],
-        'right': [('u', 'stretch', False), ('s', 'flex', False)],
-        'top': [('r', 'cheer'), ('d', 'cheer'), ('o2', 'cheer'), ('c', 'cheer'),
-                ('i', 'cheer'), ('o3', 'handstand')],
-    },
-    'moregames': {
-        'lettering': 'moregames-lettering-keyed.png',
-        'left': [('w', 'sit', False)],
-        'right': [('s', 'sit', False)],
-        'top': [('o1', 'cheer'), ('r', 'lean'), ('d', 'lean'), ('o2', 'cheer'),
-                ('c', 'sit'), ('i', 'cheer'), ('o3', 'sit'), ('u', 'spin')],
-    },
-    'welcome': {
-        'lettering': 'welcome-lettering-keyed.png',
-        'left': [('w', 'cheer', False), ('o1', 'cheer', False)],
-        'right': [('u', 'stretch', False), ('s', 'flex', False)],
-        'top': [('r', 'cheer'), ('d', 'cheer'), ('o2', 'cheer'), ('c', 'cheer'),
-                ('i', 'cheer'), ('o3', 'handstand')],
-    },
-    'leaderboard': {
-        'lettering': 'leaderboard-lettering-keyed.png',
-        'left': [('w', 'lean', True)],
-        'right': [('s', 'flex', False)],
-        'top': [('o1', 'cheer'), ('r', 'sit'), ('d', 'sit'), ('o2', 'cheer'),
-                ('c', 'sit'), ('i', 'cheer'), ('o3', 'sit'), ('u', 'meditate')],
-    },
-    'dailies': {
-        'lettering': 'dailies-lettering-keyed.png',
-        'left': [('w', 'cheer', False)],
-        'right': [('s', 'slide', False)],
-        'top': [('o1', 'lean'), ('r', 'cheer'), ('d', 'lean'), ('o2', 'sit'),
-                ('c', 'cheer'), ('i', 'sit'), ('o3', 'sneak'), ('u', 'stretch')],
-    },
+# Six poses per character (founder: "differentiate a bit, don't reuse"): each page
+# title rotates through them with its own offset, so no two titles share a pose set
+# and neighbors in the app never show the same pose for the same character.
+POSES6 = {
+    'w': ['cheer', 'point', 'lean', 'proud', 'sit', 'fly'],
+    'o1': ['cheer', 'jump', 'sit', 'cartwheel', 'lean', 'hug'],
+    'r': ['sit', 'wake', 'lean', 'cocoa', 'cheer', 'sleepwalk'],
+    'd': ['cheer', 'eureka', 'lean', 'notes', 'sit', 'skeptic'],
+    'o2': ['sit', 'gasp', 'cheer', 'twirl', 'lean', 'strut'],
+    'c': ['cheer', 'telescope', 'sit', 'map', 'lean', 'backpack'],
+    'i': ['sit', 'water', 'cheer', 'giggle', 'lean', 'reach'],
+    'o3': ['sit', 'cushion', 'handstand', 'mustache', 'sneak', 'laugh'],
+    'u': ['meditate', 'lotus', 'spin', 'tea', 'stretch', 'upside'],
+    's': ['flex', 'trophy', 'slide', 'stopwatch', 'sit', 'blocks'],
 }
+PAGE_ORDER = ['welcome', 'dailies', 'puzzles', 'wotd', 'friends', 'stats', 'leaderboard', 'records',
+              'vs', 'settings', 'howto', 'gopro', 'moregames']
+LETTERING = {n: f'{n}-lettering-keyed.png' for n in PAGE_ORDER}
+WIDE = {'welcome', 'dailies', 'friends', 'leaderboard', 'records', 'vs', 'wotd', 'howto', 'moregames'}
 
+
+def layout(name):
+    k = PAGE_ORDER.index(name)
+    ids = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']
+    pick = {cid: POSES6[cid][(k + 2 * j) % 6] for j, cid in enumerate(ids)}
+    ends = 1 if name in WIDE else 2
+    left = [(cid, pick[cid], False) for cid in ids[:ends]]
+    right = [(cid, pick[cid], False) for cid in ids[-ends:]]
+    top = [(cid, pick[cid]) for cid in ids[ends:-ends]]
+    return {'lettering': LETTERING[name], 'left': left, 'right': right, 'top': top}
+
+
+LAYOUTS = {n: layout(n) for n in PAGE_ORDER}
 
 def trim(im):
     return im.crop(im.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox())
