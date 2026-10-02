@@ -26,6 +26,9 @@ done <<'LIST'
 1790927888029-wbv3fq cyan gt1
 1790928085033-9uusxk cyan gt2
 1790928282050-f4amxk cyan gt3
+1790928433041-fjqe5h magenta gt4
+1790928583049-rfyqp1 magenta gt5
+1790928742040-w9qufe magenta gt6
 LIST
 python3 split-lines.py records-vs-keyed.png records,vs >/dev/null
 python3 split-lines.py puzzles-wotd-keyed.png puzzles,wotd >/dev/null
@@ -38,4 +41,7 @@ python3 split-lines.py welcome-leaderboard-keyed.png welcome,leaderboard >/dev/n
 python3 split-lines.py gt1-keyed.png gt-practice,gt-quordle,gt-octordle >/dev/null
 python3 split-lines.py gt2-keyed.png gt-gauntlet,gt-propernoundle,gt-scramble >/dev/null
 python3 split-lines.py gt3-keyed.png gt-hub,gt-groups,gt-cryptogram >/dev/null
+python3 split-lines.py gt4-keyed.png gt-sequence,gt-rescue,gt-six >/dev/null
+python3 split-lines.py gt5-keyed.png gt-seven,gt-sudoku,gt-crossword >/dev/null
+python3 split-lines.py gt6-keyed.png gt-ladder,gt-wordsearch,gt-regions >/dev/null
 echo

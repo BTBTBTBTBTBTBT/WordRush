@@ -107,3 +107,21 @@ star coin, puzzle piece, little ghost, chain links), keyed by the core friendly-
 wherever a pocket game's icon/emoji/glyph is drawn (Friends games grid, quick-play sheet, game
 headers, invites, activity feed rows), same size rules as §3. The RPS hand art inside the game
 stays as is.
+
+## 10. Game title art (third pass)
+
+New assets `art-game-<mode id>` for the 18 games (practice, gauntlet, quordle, octordle,
+sequence, rescue, six, seven, propernoundle, sudoku, scramble, hub, crossword, groups, ladder,
+cryptogram, wordsearch, regions): the game's name lettered in its own accent color with its host
+(MASCOT_SPEC §5) standing at / perched on the end (≈900 wide).
+- Game screen header: where the game's title text + 30 pt host shows, show `art-game-<id>`
+  instead, fit to the available title width, ≈36–40 pt tall, accessibility label = game title.
+  Keep the header's buttons where they are; if a header is too tight (e.g. Muddle's compact
+  header, Gauntlet with no title), keep today's text there.
+- Guide sheet / guide page top for a game: `art-game-<id>` at ≈56 pt tall replaces the waving host
+  + title text.
+- Leaderboard / Records "Play <game>" card: the selected game's art at ≈40 pt tall in place of the
+  host + game name text.
+- Parity fixes from pass 2: the VS "already played" screen shows the `u-alldone` scene and its
+  W/L result as `youwin` / `youlose` art (≈28 pt tall) on all three platforms (Android has it; iOS
+  and web align).

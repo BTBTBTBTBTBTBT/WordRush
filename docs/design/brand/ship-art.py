@@ -6,6 +6,7 @@
 #   UI icons     icons/<name>-capture.png    → icon3d-<name>       (256 square)
 #   moments      titles/<m>-lettering-keyed  → art-moment-<m>      (width 900)
 #   scenes       scenes/<scene>.png          → art-scene-<scene>   (width 600)
+#   game titles  titles/gt-<id>-title.png    → art-game-<id>       (width 900)
 # Web:     apps/web/public/art/<name>.webp
 # Android: res/drawable-nodpi/<name with _>.webp
 # iOS:     Assets.xcassets/<name>.imageset/<name>.png
@@ -83,4 +84,8 @@ for m in MOMENTS:
     ship(f'art-moment-{m}', wide(os.path.join(HERE, 'titles', f'{m}-lettering-keyed.png'), 900)); n += 1
 for sc in SCENES:
     ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), 600)); n += 1
+for g in GAMES:
+    if g.startswith('pocket-') or g in ('vs', 'more'):
+        continue
+    ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
 print('shipped', n)
