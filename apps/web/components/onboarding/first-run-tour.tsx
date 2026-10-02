@@ -435,7 +435,8 @@ export function FirstRunTour() {
         width: on ? 22 : 9,
         height: 9,
         background: on ? CLASSIC_ACCENT : alphaHex(CLASSIC_ACCENT, 0.28),
-        transition: reduced ? 'none' : 'width 240ms ease, background-color 240ms ease',
+        // AZ: no width animation (layout per frame) — the pill swaps size, only its color eases.
+        transition: reduced ? 'none' : 'background-color 220ms cubic-bezier(0.22, 0.8, 0.3, 1)',
       }}
     />
   );
@@ -500,7 +501,7 @@ export function FirstRunTour() {
                   style={{
                     width: `${CARDS.length * 100}%`,
                     transform: `translateX(calc(${(-index * 100) / CARDS.length}% + ${drag}px))`,
-                    transition: drag !== 0 ? 'none' : 'transform 380ms cubic-bezier(0.22, 0.8, 0.3, 1)',
+                    transition: drag !== 0 ? 'none' : 'transform 380ms cubic-bezier(0.22, 0.8, 0.3, 1)', willChange: 'transform',
                   }}
                 >
                   {CARDS.map((c, i) => (

@@ -12,9 +12,9 @@ describe('calmer top headlines (FINISH_SPEC N1)', () => {
       expect((maxW * h) / w, name).toBeLessThanOrEqual(64.5);
     }
   });
-  it('caps the day title at ~58% and 150 tall', () => {
+  it('caps the day title at ~58% and 110 tall (AU2)', () => {
     expect(DAY_HEADLINE.widthPct).toBe(58);
     const [w, h] = ART_SIZE['art-day-monday'];
-    expect((headlineMaxWidth(w, h, DAY_HEADLINE) * h) / w).toBeLessThanOrEqual(150.5);
+    expect((headlineMaxWidth(w, h, DAY_HEADLINE) * h) / w).toBeLessThanOrEqual(110.5);
   });
 });

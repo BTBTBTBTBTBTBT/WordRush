@@ -12,6 +12,12 @@ import com.wordocious.core.GauntletStageConfig
  * stage rule pill and the failed stage's answers. Mirrors web lib/gauntlet-look.ts.
  */
 object GauntletLook {
+    /** AU3 the stage card's minimum time on screen before it auto-advances. Founder 10-02: VS holds
+     *  the same 5 s (the race clock keeps running; a tap / CONTINUE / Enter skips at once). */
+    const val STAGE_HOLD_MS = 5000
+    const val STAGE_HOLD_VS_MS = 5000
+    fun stageHoldMs(isVersus: Boolean): Int = if (isVersus) STAGE_HOLD_VS_MS else STAGE_HOLD_MS
+
     /** The Gauntlet catalog accent (amber, `#d97706`). */
     const val ACCENT_ARGB: Long = 0xFFD97706
 

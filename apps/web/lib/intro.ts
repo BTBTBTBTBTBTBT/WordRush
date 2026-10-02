@@ -49,6 +49,43 @@ export function glideFrame(target: { left: number; top: number; width: number },
   return { left: target.left, top: target.top, width: target.width, paddingTop };
 }
 
+/**
+ * AU5: the intro's row as a TRANSFORM from where it sits (`from`, its
+ * on-screen box with `fromPad` px top padding) onto the real row's frame
+ * (`to`, with `toPad` top padding) — translate + uniform scale about the top
+ * left, so the glide animates only transform (no left / top / width / padding
+ * layout per frame). The content top lands on to.top + toPad.
+ */
+export function glideTransform(
+  from: { left: number; top: number; width: number }, fromPad: number,
+  to: { left: number; top: number; width: number }, toPad: number,
+): { x: number; y: number; scale: number } {
+  const scale = from.width > 0 ? to.width / from.width : 1;
+  return { x: to.left - from.left, y: to.top + toPad - (from.top + fromPad * scale), scale };
+}
+
+/** AU5: the longest the intro waits for its images to decode before starting anyway (ms). */
+export const INTRO_PRELOAD_MAX_MS = 300;
+
+/** The window event the intro fires once it has landed (or was never going to play). */
+export const INTRO_DONE_EVENT = 'wordocious:intro-done';
+
+/**
+ * AU5: run heavy startup work (network, warm caches, prefetches) only after
+ * the cold-start intro has landed, so it never competes with the intro's
+ * frames. Runs at once when no intro is running. Returns a cancel.
+ */
+export function afterIntro(fn: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  if (!document.documentElement.hasAttribute(INTRO_RUNNING_ATTR)) { fn(); return () => {}; }
+  let done = false;
+  const run = () => { if (done) return; done = true; window.removeEventListener(INTRO_DONE_EVENT, run); fn(); };
+  window.addEventListener(INTRO_DONE_EVENT, run);
+  // Safety net: never wait past the longest intro.
+  const t = window.setTimeout(run, INTRO_PRELOAD_MAX_MS + INTRO.endAt + INTRO.outMs + 500);
+  return () => { done = true; window.clearTimeout(t); window.removeEventListener(INTRO_DONE_EVENT, run); };
+}
+
 /** The longest the intro can take (ms). */
 export function introTotalMs(reduced: boolean): number {
   return reduced ? INTRO.reducedHoldMs + INTRO.reducedFadeMs : INTRO.endAt + INTRO.outMs;

@@ -175,6 +175,8 @@ struct PageHostTitle: View {
 enum HeaderControl {
     /// The bare 3D icon's height.
     static let icon: CGFloat = 23
+    /// FINISH_SPEC §AX: the game pages' home / sound / help icons.
+    static let gameIcon: CGFloat = 30
     /// The tap area.
     static let tap: CGFloat = 44
     /// A plain SF Symbol control (close ✕) drawn bare in the header ink.
@@ -205,20 +207,23 @@ struct HeaderCircleButton: View {
     let glyph: Glyph
     var size: CGFloat = PageHeaderStyle.circle
     var tint: Color = PageHeaderStyle.ink
+    /// The bare 3D icon's visual size (the tap area stays `size`).
+    var iconSize: CGFloat = HeaderControl.icon
     let label: String
     let action: () -> Void
 
     init(_ glyph: Glyph, size: CGFloat = PageHeaderStyle.circle, tint: Color = PageHeaderStyle.ink,
-         label: String, action: @escaping () -> Void) {
+         iconSize: CGFloat = HeaderControl.icon, label: String, action: @escaping () -> Void) {
         self.glyph = glyph
         self.size = size
         self.tint = tint
+        self.iconSize = iconSize
         self.label = label
         self.action = action
     }
 
     var body: some View {
-        Button(action: action) { HeaderCircleLabel(glyph: glyph, size: size, tint: tint) }
+        Button(action: action) { HeaderCircleLabel(glyph: glyph, size: size, tint: tint, iconSize: iconSize) }
             .buttonStyle(.squishIcon)
             .accessibilityLabel(label)
     }
@@ -229,13 +234,14 @@ struct HeaderCircleLabel: View {
     let glyph: HeaderCircleButton.Glyph
     var size: CGFloat = PageHeaderStyle.circle
     var tint: Color = PageHeaderStyle.ink
+    var iconSize: CGFloat = HeaderControl.icon
 
     var body: some View {
         Group {
             switch glyph {
             case .symbol(let s):
                 if let icon = Icon3DName.forHeaderSymbol(s) {
-                    Icon3D(icon, size: HeaderControl.icon)
+                    Icon3D(icon, size: iconSize)
                         .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
                 } else {
                     Image(systemName: s)
@@ -244,10 +250,10 @@ struct HeaderCircleLabel: View {
                         .shadow(color: .white.opacity(0.8), radius: 0, x: 0, y: 1)
                 }
             case .icon(let i):
-                Icon3D(i, size: HeaderControl.icon)
+                Icon3D(i, size: iconSize)
                     .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
             case .mutedIcon(let i):
-                let side = HeaderControl.icon
+                let side = iconSize
                 ZStack {
                     Icon3D(i, size: side).saturation(0.4).opacity(0.5)
                     Capsule().fill(tint)
@@ -276,17 +282,24 @@ struct GameCornerButton: View {
     static let rowHeight: CGFloat = 48
 
     let kind: Kind
+    /// §AY: Home finishes the app's Home route after `action` (false = the caller
+    /// routes itself, e.g. VS confirms a forfeit first).
+    var routesHome: Bool = true
     let action: () -> Void
 
     var body: some View {
         switch kind {
+        // FINISH_SPEC §AX: ~30 pt icons (were 23) in the same 44 pt tap areas — the
+        // row's geometry is unchanged, so the title art fits exactly as before.
         case .home:
-            HeaderCircleButton(.symbol("house.fill"), size: 44, label: "Home", action: action)
+            HeaderCircleButton(.symbol("house.fill"), size: 44, iconSize: HeaderControl.gameIcon, label: "Home") {
+                if routesHome { HomeNav.press(action) } else { action() }
+            }
         case .help:
             // FINISH_SPEC §B4: the controls row's right side is sound + help.
             HStack(spacing: 0) {
                 GameSoundToggle()
-                HeaderCircleButton(.icon(.help), size: 44, label: "How to play", action: action)
+                HeaderCircleButton(.icon(.help), size: 44, iconSize: HeaderControl.gameIcon, label: "How to play", action: action)
             }
         }
     }
@@ -299,7 +312,7 @@ struct GameSoundToggle: View {
     @AppStorage("pref-sound") private var soundOn = true
 
     var body: some View {
-        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44,
+        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44, iconSize: HeaderControl.gameIcon,
                            label: soundOn ? "Sound on" : "Sound off") { soundOn.toggle() }
     }
 }

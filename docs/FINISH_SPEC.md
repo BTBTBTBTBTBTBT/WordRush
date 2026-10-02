@@ -932,3 +932,101 @@ AS7. Remove the two small streak flames on the Home banner rows (the "48" on WOR
      Put ALL streak info, cleanly laid out, in the streak-flame popup: daily streak (current + best), Wordocious
      sweep streak, Puzzles sweep streak, flawless streaks, shields (count + how they work), and the week strip —
      labeled chips with our 3D icons, soft numbers, no emoji.
+
+## AT. Founder notes on 236 (10-02 night) — before the App Store submission
+AT1. Every finished-game screen looks off-center because of the share button: the share icon sits in the same row
+     as the title/result strip and pushes the centered content sideways. Center the title + strip relative to the
+     SCREEN: put the share button in an overlay pinned to the trailing edge (or balance it with an equal-width
+     invisible spacer on the leading side) so nothing shifts. All games, Gauntlet, puzzles, the another-device view.
+AT2. Deliverance LOSS: the boards on the completed screen were different sizes. Multi-board recaps (QuadWord,
+     OctoWord, Deliverance, Succession; win AND loss) must draw every board at ONE shared tile size and the same
+     board height: compute the tile size from the largest board (max rows × cols) and pad shorter boards with empty
+     rows so all boards match; unsolved/lost boards never render bigger or smaller than solved ones. Add a test.
+
+## AU. Founder notes on 236, batch 2 (10-02 night) — then the App Store build
+AU1. Win/lose popups (R1) must be centered VERTICALLY as well as horizontally on the screen (the VICTORY card sits
+     high, top-anchored). Center the card in the safe area; if it's taller than the space, it scrolls inside.
+AU2. Leaderboard: tapping into it should cleanly show the PODIUM without scrolling (on a 390×844 phone the podium's
+     top must be visible above the tab bar on arrival). Compact the top: the day title ≤ ~110 pt tall; the game picker
+     as ONE horizontally scrolling row of smaller tiles (Wordocious + a divider + Puzzles) instead of two rows in a
+     card; the rank card collapses to ONE compact row — "#2 of 5 · 2,005 PTS · 4/6 · 48s" + the completed check —
+     with no duplicate headline/"OF 5 TODAY" repeats (keep the LiveHeadline only if it fits in that row); then
+     "Today's board" (Everyone|Friends) + podium immediately. The play/view-board row and Yesterday's winners stay
+     below the standings.
+AU3. Gauntlet stage transitions: fluid (one smooth crossfade/slide + spring-in of the pose; no flash/jump between
+     the board and the card), and the stage card stays up AT LEAST 5 s (auto-advance at 5 s), while a tap anywhere
+     / Continue / Enter still skips immediately.
+AU4. Tile flips look choppy: make the flip GPU-only — iOS rotation3DEffect with perspective on a fixed-size tile,
+     no layout changes mid-flip, colors precomputed; Android graphicsLayer { rotationX; cameraDistance } with no
+     recomposition of the whole board per tile; web transform rotateX + backface-visibility + will-change, no
+     layout-affecting properties. Sound/haptics off the main-thread hot path (pre-warmed). Target a steady 60/120 fps.
+AU5. Cold-boot intro is "VERY choppy" since the launch change: preload/decode every intro image BEFORE the first
+     intro frame (keep the plain launch color up until ready, max ~300 ms), and defer heavy startup work (network,
+     caches, mascot composition, widget refresh, art prefetch) until the intro has landed. Animate only transforms/
+     opacity. Must be smooth on the first frame.
+AU6. (art, tonight's ChatGPT session — not this build) A Gauntlet header graphic: "GAUNTLET" lettering in our style
+     built around a five-stage path (5 medallion slots / steps) that the app lights up as stages are cleared, for the
+     Gauntlet page + stage screens.
+
+## AV. Small widget refresh (founder 10-02 with a home-screen screenshot: "I don't like the borders it looks too
+stale, and could use more mascots") — iOS + Android, small AND medium for consistency
+- NO outlined chips/borders: drop every stroke/outline box. Stats float on the widget's soft wallpaper on borderless
+  soft tint blobs at most (≤10% fill, no edge line), or no fill at all — the 3D icon + soft number + small-caps
+  label carry it. Keep the labels (DAY STREAK · SOLVED · PTS · NEW IN).
+- MORE MASCOTS: the day host bigger (~40% of the widget height) leaning in from the top-right corner, overlapping
+  the edge a little; plus 2–3 small cast heads PEEKING up from the bottom edge (only the top half of each visible,
+  like over a ledge), a different trio per day (rotate through the cast by date, never the day host twice);
+  Halloween skins when the season is on.
+- Layout (small): top-left "🔥 82 DAY STREAK" as a big soft number with the flame art (no box); the tiles row
+  stays; then "✓ 7/18 SOLVED  ★ 10,779 PTS" on one line with a soft divider dot; then the countdown "🕐 5:41:43
+  NEW IN" (art icons, never emoji) with the peeking cast along the bottom edge behind it.
+- Medium: same rules — no boxes, the cast row stays, peeking cast at the bottom, stats as one clean row.
+- Keep everything legible in light + dark (StandBy/tinted modes: icons/text keep contrast); TalkBack/VoiceOver
+  phrases unchanged.
+
+## AW. Footer returns instantly after closing a game (founder 10-02: "when loading muddle open then closed, the
+footer takes a second to repopulate at the bottom")
+The tab bar must be back the instant a game (Muddle and every other full-screen game/page) is dismissed: show it as
+part of the dismissal (animate it in alongside the closing transition, or keep it mounted under the game and just
+reveal it) — never after an onDisappear / completion delay / data reload. No layout jump when it returns. Check all
+games, not just Muddle.
+
+## AX. Bigger game-page header buttons (founder 10-02: "make the home, volume and question mark buttons on each game
+page a little bigger … they're really tiny")
+On every game page header, the home, sound and "?" 3D icons go from ~23 pt to ~30 pt visual size, each with a
+≥ 44 pt tap target (they keep the squish). Re-check the header so the title art still fits (the icons sit on the
+same row as before; nothing overlaps on a 375-pt-wide phone). Same on web (≈ 30 px icons, 44 px targets).
+
+## AY. Top-left Home button must ALWAYS land on Home (founder 10-02: "sometimes I feel like the new home buttons
+open another game and I need to hit home again")
+Investigate and fix both likely causes, on every screen that has the top-left home button (games, puzzles, info
+pages, VS, Gauntlet, finished screens):
+1. Back-stack: Home must pop to the Home ROOT (same router as AJ), never just one level back — a game opened from
+   another game ("Next daily", Unlimited "New puzzle", a deep link, Gauntlet → results) must not reveal the previous
+   game. Dismiss any sheet/popup too.
+2. Tap-through: the home tap must not "fall through" onto the Home card that ends up under the finger as the game
+   dismisses (the squish fires on touch-up). After navigating Home, ignore taps on Home cards for ~400 ms, and make
+   the home action single-fire (debounce double taps).
+Add a test: open game A → Next daily to game B → tap home → assert Home root with no game presented.
+
+## AZ. Motion fluidity pass (founder 10-02: "a quick little pass for the motion fluidity in the popups too,
+completed game screens, transitions … make it run as smooth as possible")
+Quick audit + fixes, no redesign: popups (win/lose R1, streak/shield, achievement, Go Pro, Welcome to Pro, help),
+finished screens, page/tab transitions, sheets, Gauntlet stage cards, onboarding steps.
+- Animate only transform + opacity (never width/height/padding/frame/blur radius/shadow radius mid-animation).
+- One consistent spring family (e.g. response ~0.38, damping ~0.82) for every spring-in/out; matching exit
+  animations (no instant pops out); no stacked/competing animations on the same view.
+- Prepare heavy content BEFORE the animation starts (decode images, compose mascots, measure layout), so frame 1 is
+  ready; defer data loads/haptics/sounds off the first frames of a transition.
+- Rasterize decorated static layers that animate as a whole (iOS drawingGroup/compositingGroup, Android
+  graphicsLayer, web will-change/contain) and drop live blurs under moving popups (use a pre-blurred/static scrim).
+- Confetti/rays: cap particle counts, run on the render thread / Canvas, stop when off screen.
+Report the specific janky spots found and what changed.
+
+## BA. Founder decisions on the one-screen audit (10-02 night)
+BA1. Short screens (height < 700 pt/dp, e.g. iPhone SE / 360×640): the "Keep playing: Unlimited" card collapses to
+     ONE small candy button in the action row (U loop art mini icon + "Unlimited", peach, the same candy style — must
+     look clean and on-aesthetic, not a cut-down card), and the game title art caps at ~56 pt tall. Boards get the
+     freed height (QuadWord ≈ 15 pt tiles, OctoWord ≈ 10 pt). Tall screens unchanged.
+BA2. Gauntlet results fit one screen: hero card + stars + stat pills + buttons; the score breakdown and stage
+     breakdown move behind the "More" chip like the other games.

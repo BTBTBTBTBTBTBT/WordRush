@@ -1,5 +1,9 @@
 package com.wordocious.app.ui.game
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -70,8 +74,8 @@ import kotlinx.coroutines.delay
 fun StageTransitionOverlay(
     completed: GauntletStageConfig,
     next: GauntletStageConfig?,
-    /** VS shortens the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for it,
-     *  so a 2.5s flourish per stage is a real handicap over a 5-stage run. */
+    /** VS: the same 5 s hold (founder 10-02) — the race clock keeps running, and a tap /
+     *  CONTINUE / Enter skips at once. */
     isVersus: Boolean = false,
     /** Stages cleared, counting the one just finished (drives the dots and the pose). */
     cleared: Int = completed.stageIndex + 1,
@@ -79,17 +83,36 @@ fun StageTransitionOverlay(
     totalStages: Int = com.wordocious.core.gauntletStages.size,
     /** Guesses used so far — the running score (GauntletLook.guessesSoFar); null hides it. */
     guessesSoFar: Int? = null,
+    /** AU3: bumped by the screen's Enter key — skips like a tap. */
+    skipSignal: Int = 0,
     onComplete: () -> Unit,
 ) {
-    // Between stages: auto-advance after 2.5s (web StageTransition). After the
-    // FINAL stage (next == null): a longer 4s pause so the cleared run isn't
-    // rushed — but it MUST still auto-advance (was: wait forever for a tap). The
-    // win only records on advance, so leaving the screen first dropped the daily
-    // result → a real Flawless showed as an 8/9 Sweep.
-    LaunchedEffect(completed.stageIndex) {
-        delay(if (next == null) 4000L else if (isVersus) 1000L else 2500L)
-        onComplete()
+    // AU3 (founder 10-02): fluid in and out — the scrim fades and the card glides up +
+    // springs in (no flash / jump between the board and the card), and it stays up AT LEAST
+    // 5 s before auto-advancing (VS too, founder 10-02: the race clock keeps running).
+    // A tap anywhere / CONTINUE / Enter skips at once. It MUST always auto-advance — the win
+    // only records on advance (a real Flawless once showed as an 8/9 Sweep).
+    val reduced = WTheme.reducedMotion
+    val appear = remember(completed.stageIndex) { androidx.compose.animation.core.Animatable(if (reduced) 1f else 0f) }
+    var leaving by remember(completed.stageIndex) { androidx.compose.runtime.mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val latestComplete by androidx.compose.runtime.rememberUpdatedState(onComplete)
+    fun leave() {
+        if (leaving) return
+        leaving = true
+        scope.launch {
+            if (!reduced) appear.animateTo(0f, com.wordocious.app.ui.Motion.exit())
+            latestComplete()
+        }
     }
+    LaunchedEffect(completed.stageIndex) {
+        if (!reduced) appear.animateTo(1f, com.wordocious.app.ui.Motion.springIn())
+    }
+    LaunchedEffect(completed.stageIndex) {
+        delay(GauntletLook.stageHoldMs(isVersus).toLong())
+        leave()
+    }
+    LaunchedEffect(skipSignal) { if (skipSignal > 0) leave() }
     val dark = WTheme.isDark
     val accent = GAUNTLET_ACCENT
     val ink = if (dark) WTheme.text else GAUNTLET_INK
@@ -99,12 +122,20 @@ fun StageTransitionOverlay(
     val dots = GauntletLook.stageDots(totalStages, if (next != null) done else totalStages)
     val shape = RoundedCornerShape(24.dp)
     Box(
-        Modifier.fillMaxSize().background(Color(0x731E0F3C)).clickableNoRipple(onComplete)
+        Modifier.fillMaxSize()
+            .graphicsLayer { alpha = appear.value.coerceIn(0f, 1f) }
+            .background(Color(0x731E0F3C)).clickableNoRipple { leave() }
             .semantics { contentDescription = if (next != null) "Stage complete. Next: ${next.name}" else "Stage complete" },
         contentAlignment = Alignment.Center,
     ) {
         Column(
             Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).fillMaxWidth()
+                .graphicsLayer {
+                    val a = appear.value
+                    translationY = (1f - a) * 28.dp.toPx()
+                    val s = 0.94f + 0.06f * a
+                    scaleX = s; scaleY = s
+                }
                 .clip(shape).background(com.wordocious.app.ui.accentWash(accent)).border(1.5.dp, com.wordocious.app.ui.accentLine(accent), shape),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -160,7 +191,7 @@ fun StageTransitionOverlay(
                 // Final stage: invite a tap, but the 4s timer above still fires — the
                 // win only records on advance, so this must never wait forever.
                 com.wordocious.app.ui.CandyButton(
-                    "CONTINUE", onClick = onComplete,
+                    "CONTINUE", onClick = { leave() },
                     color = com.wordocious.app.ui.CandyColor.AMBER, size = com.wordocious.app.ui.CandySize.LARGE,
                     icon = com.wordocious.app.ui.CandyIcon.ARROW, fill = true,
                     contentDescription = if (next == null) "Tap to see your results" else "Tap to continue",

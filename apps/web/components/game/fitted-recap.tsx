@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { CompletedBoardsRecap, type RecapBoard } from './completed-mini-board';
-import { bestRecapLayout, recapCandidates } from '@/lib/recap-fit';
+import { bestRecapLayout, recapCandidates, recapShape } from '@/lib/recap-fit';
 
 /**
  * FINISH_SPEC R2: the finished multi-board recap sized to the room the
@@ -15,8 +15,8 @@ export function FittedBoardsRecap({ boards, maxTile }: { boards: RecapBoard[]; m
   const ref = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState<{ cols: number; tile: number } | null>(null);
   const n = boards.length;
-  const wordLength = boards[0]?.solution.length || 5;
-  const rows = boards.reduce((m, b) => Math.max(m, b.maxGuesses), 0) || 6;
+  // AT2: one tile size and one board height for every board (the largest board's shape).
+  const { rows, cols: wordLength } = recapShape(boards);
   const cap = maxTile ?? (n > 4 ? 18 : 26);
   useLayoutEffect(() => {
     const el = ref.current;

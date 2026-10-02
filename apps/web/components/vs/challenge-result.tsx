@@ -120,12 +120,14 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
               <div className="absolute" style={{ top: '-20%', left: 0, width: '38%', height: '140%', background: 'linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.55), rgba(255,255,255,0))', animation: 'banner-shimmer 2.6s ease-in-out 1 both' }} />
             </div>
           )}
-          <div className="relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
-            <div className="flex items-center gap-1.5">
-              <Swords className="w-[18px] h-[18px] shrink-0" style={{ color: '#7c3aed' }} />
+          <div className="relative flex flex-col gap-1" style={{ padding: '12px 10px 10px', background: 'rgba(255,255,255,0.5)' }}>
+            {/* AT1: the lettering is centered on the card; the swords and the share
+                icon are pinned to the edges in equal side gutters so nothing shifts it. */}
+            <div className="relative flex items-center justify-center" style={{ paddingLeft: 44, paddingRight: 44, minHeight: 44 }}>
+              <Swords className="absolute left-0 top-1/2 -translate-y-1/2 w-[18px] h-[18px]" style={{ color: '#7c3aed' }} />
               {/* YOU WIN! / YOU LOSE / DRAW lettering (docs/ART_SPEC.md §6), the race line under it. */}
               <MomentArt moment={resultMoment(outcome)} as="div" level={3} widthPct={85} className="flex-1 min-w-0" />
-              <HeaderGlyph icon="share" label="Share the result" onClick={onShare} className="shrink-0" />
+              <span className="absolute right-0 top-1/2 -translate-y-1/2"><HeaderGlyph icon="share" label="Share the result" onClick={onShare} /></span>
             </div>
             <span className="text-center font-black" style={{ fontSize: 12.5, letterSpacing: 0.4, lineHeight: 1.2, color: '#4c1d95' }}>{challengeHeadline(outcome, them.name)}</span>
             <div className="flex items-center gap-1.5">

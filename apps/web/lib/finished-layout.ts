@@ -21,3 +21,53 @@ export function unlimitedHref(dbKey: string, routes: Record<string, string>): st
 
 /** The smallest phone the finished screen must fit without scrolling (iPhone SE, CSS px). */
 export const MIN_PHONE_HEIGHT = 667;
+
+// ── One-screen audit (founder 10-02): the board room every finished screen
+// leaves on the two reference phones, from the layout's own numbers. The
+// tab bar is calibrated so the SE (Pro daily) room matches the measured
+// 351 × 237 (recap-fit.test.ts). ──
+
+export interface Phone { name: string; width: number; height: number; safeTop: number; safeBottom: number }
+export const AUDIT_PHONES: Phone[] = [
+  { name: '390x844', width: 390, height: 844, safeTop: 47, safeBottom: 34 },
+  { name: '375x667', width: 375, height: 667, safeTop: 0, safeBottom: 0 },
+];
+
+export const FINISHED_CHROME = {
+  /** The docked tab bar above the safe area. */
+  tabBar: 74,
+  /** Game header: 6 pad + 44 button row + 2 gap + 6 bottom (+ the title art). */
+  headerFixed: 58,
+  /** Title art cap: 120, or 56 under 700 tall (BA1); never under 44. */
+  artCap: 120, artCapShort: 56, artShortBelow: 700, artMin: 44, artInset: 32,
+  /** The strip: pt-1 + the chips row; the live headline (+29) only from 740 tall. */
+  strip: 30, headline: 29, headlineFrom: 740,
+  /** The daily rank badge line under the strip. */
+  sub: 26,
+  boardTop: 6,
+  /** The dock: pt-2 + candy row 40 + gap 8 + the Unlimited card (82 from 740 tall / a 48 row from 700 / BA1: a 38 px chip line under 700) + pb 6. */
+  dockFixed: 62, unlimitedTall: 82, unlimitedShort: 48, unlimitedFrom: 740, unlimitedChipBelow: 700, unlimitedChip: 38,
+  morePeek: 42,
+  sidePad: 24,
+} as const;
+
+/** The board room (px) on `phone` for a game whose title art is `artRatio` (h / w). */
+export function finishedBoardRoom(phone: Phone, { artRatio, daily = true, more = true, headline = true, compactUnlimited = false }: { artRatio: number; daily?: boolean; more?: boolean; headline?: boolean; compactUnlimited?: boolean }): { width: number; height: number } {
+  const c = FINISHED_CHROME;
+  const cap = phone.height < c.artShortBelow ? c.artCapShort : c.artCap;
+  const art = Math.max(c.artMin, Math.min(cap, (phone.width - c.artInset) * artRatio));
+  const tall = phone.height >= c.headlineFrom;
+  const used = phone.safeTop + c.tabBar + phone.safeBottom
+    + c.headerFixed + art
+    + (more ? c.morePeek : 0)
+    + c.strip + (tall && headline ? c.headline : 0)
+    + (daily ? c.sub : 0)
+    + c.boardTop
+    + c.dockFixed + (phone.height < c.unlimitedChipBelow ? c.unlimitedChip : tall && !compactUnlimited ? c.unlimitedTall : c.unlimitedShort);
+  return { width: phone.width - c.sidePad, height: Math.max(0, Math.round(phone.height - used)) };
+}
+
+/** A single board's whole-pixel tile in `room` (tiles `gap` px apart). */
+export function singleBoardTile(room: { width: number; height: number }, cols: number, rows: number, gap = 5): number {
+  return Math.max(0, Math.floor(Math.min((room.width - (cols - 1) * gap) / cols, (room.height - (rows - 1) * gap) / rows)));
+}

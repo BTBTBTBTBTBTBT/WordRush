@@ -367,7 +367,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
           {/* Backdrop — only covers the board area, not the keyboard */}
           <div
             onClick={handleCloseExpanded}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 rounded-lg animate-fade-in"
+            className="absolute inset-0 bg-black/65 z-40 rounded-lg animate-fade-in"
           />
           {/* Expanded board — uses scale transform for smooth text scaling */}
           <div

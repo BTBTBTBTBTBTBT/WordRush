@@ -346,6 +346,7 @@ struct VSFinalBoards: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing), count: cols),
                           spacing: CompletedBoardLayout.gridSpacing) {
                     ForEach(boards.indices, id: \.self) { i in
+                        // §AT2: one row count (the most guesses on any board) for every board.
                         CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: max(1, rowCount))
                     }
                 }

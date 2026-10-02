@@ -363,10 +363,9 @@ private struct StatChip<Value: View>: View {
         .lineLimit(1).minimumScaleFactor(0.6)
         .padding(.horizontal, 6).padding(.vertical, 3)
         .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .fill(dark ? c.opacity(0.22) : c.opacity(0.14)))
-        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .strokeBorder(c.opacity(dark ? 0.45 : 0.32), lineWidth: 1))
+        // FINISH_SPEC §AV: no outline, no box — at most a faint borderless tint blob.
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(c.opacity(dark ? 0.10 : 0.07)))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(phrase)
     }
@@ -386,10 +385,39 @@ extension WSnapshot {
 
 /// The day's host: the character on that weekday's Leaderboard title art
 /// (art-day-*: Mon D, Tue I, Wed U, Thu S, Fri O2, Sat O1, Sun O3).
-private func dayHostAsset(_ date: Date) -> String {
+private func dayHostId(_ date: Date) -> String {
     let hosts = ["o3", "d", "i", "u", "s", "o2", "o1"] // Calendar weekday 1 = Sunday
     let i = Calendar.current.component(.weekday, from: date) - 1
-    return "mascot-\(hosts[max(0, min(hosts.count - 1, i))])"
+    return hosts[max(0, min(hosts.count - 1, i))]
+}
+
+private func dayHostAsset(_ date: Date) -> String { castAsset(dayHostId(date), date) }
+
+/// §AV: a cast member's image for `date` — the Halloween skin in season (when it ships).
+private func castAsset(_ id: String, _ date: Date) -> String {
+    let name = WidgetCast.asset(id, day: localDay(date))
+    return UIImage(named: name) != nil ? name : "mascot-\(id)"
+}
+
+/// §AV: 2–3 cast heads peeking up over the bottom edge (only their top half shows),
+/// a different trio each day, never the day host.
+private struct PeekingCast: View {
+    let date: Date
+    var size: CGFloat = 26
+    var count: Int = 3
+
+    var body: some View {
+        let ids = WidgetCast.peekers(dayNumber: WidgetCast.dayNumber(localDay(date)), host: dayHostId(date), count: count)
+        HStack(spacing: -size * 0.12) {
+            ForEach(Array(ids.enumerated()), id: \.offset) { i, id in
+                Image(castAsset(id, date)).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: size, height: size)
+                    .rotationEffect(.degrees(i == 1 ? 0 : (i == 0 ? -8 : 8)))
+            }
+        }
+        .offset(y: size * 0.5)
+        .accessibilityHidden(true)
+    }
 }
 
 /// The banner's tier palette (spec §2), with the widget's lighter "none" tints
@@ -490,7 +518,7 @@ private struct GameTile: View {
                 accent.frame(height: bar)
             }
             .clipShape(shape)
-            shape.strokeBorder(dark ? accent.opacity(0.5) : mixHex(mode.colorHex, 0.34), lineWidth: 1.5)
+            // §AV: no outline on the tiles either (the tint + top bar carry them).
             Group {
                 if let icon = gameIconAsset(mode.key) {
                     Image(icon).resizable().interpolation(.high).scaledToFit()
@@ -574,45 +602,79 @@ struct SmallView: View {
     var body: some View {
         let stats = snap.dayStats(at: date)
         let midnight = nextLocalMidnight(after: date)
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                StatChip(icon: .flame, label: "DAY STREAK", tint: "#f97316",
-                         phrase: "\(snap.streak) day streak", stacked: true) {
-                    SoftNumber(text: "\(snap.streak)", size: 16)
+        let dark = scheme == .dark
+        // FINISH_SPEC §AV: no boxes — the stats float on the wallpaper (3D icon + soft
+        // number + small caps label); the day host leans in from the top-right; a
+        // daily trio of cast heads peeks up over the bottom edge.
+        ZStack(alignment: .topLeading) {
+            PeekingCast(date: date, size: 24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(.trailing, 8)
+            VStack(alignment: .leading, spacing: 4) {
+                // The streak, big, with the flame art (no chip).
+                HStack(alignment: .center, spacing: 4) {
+                    StatIconView(icon: .flame, size: 24)
+                    VStack(alignment: .leading, spacing: -2) {
+                        SoftNumber(text: "\(snap.streak)", size: 24)
+                        Text("DAY STREAK").font(.system(size: 8, weight: .black, design: .rounded)).tracking(0.6)
+                            .foregroundStyle(WInk.label(dark))
+                    }
                 }
-                .frame(maxWidth: 74)
-                Spacer(minLength: 2)
-                // The day's host in the corner (ART_SPEC §17).
-                Image(dayHostAsset(date)).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 28, height: 28)
-                    .accessibilityHidden(true)
-            }
-            Spacer(minLength: 0)
-            // §AL: the tile mini-grid shrinks to one row so the three stats always fit.
-            TileRow(list: snap.modes, maxSize: 17, gap: 2, linked: false)
-            if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
-            Spacer(minLength: 0)
-            // §AL addendum: two stat chips, then the full-width countdown chip.
-            HStack(spacing: 4) {
-                StatChip(icon: .check, label: "SOLVED", tint: "#7c3aed", phrase: WidgetStats.solvedPhrase(stats), stacked: true) {
-                    SoftNumber(text: WidgetStats.solvedText(stats), size: 14)
+                .padding(.trailing, 58)   // clear of the leaning host
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(snap.streak) day streak")
+                Spacer(minLength: 0)
+                // §AL: the tile mini-grid shrinks to one row so the three stats always fit.
+                TileRow(list: snap.modes, maxSize: 17, gap: 2, linked: false)
+                if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
+                Spacer(minLength: 0)
+                // Solved · points on one line with a soft divider dot.
+                HStack(spacing: 4) {
+                    floatStat(.check, WidgetStats.solvedText(stats), "SOLVED", dark)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(WidgetStats.solvedPhrase(stats))
+                    Circle().fill(WInk.label(dark).opacity(0.45)).frame(width: 3, height: 3)
+                    floatStat(.star, WidgetStats.pointsText(stats.points), "PTS", dark)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(WidgetStats.pointsPhrase(stats))
                 }
-                StatChip(icon: .star, label: "PTS", tint: "#f5a524", phrase: WidgetStats.pointsPhrase(stats), stacked: true) {
-                    SoftNumber(text: WidgetStats.pointsText(stats.points), size: 14)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                // The countdown (the peeking cast sits behind its right side).
+                HStack(spacing: 4) {
+                    StatIconView(icon: .clock, size: 14)
+                    Text(timerInterval: date...midnight, countsDown: true)
+                        .font(.system(size: 13, weight: .black, design: .rounded)).monospacedDigit()
+                        .foregroundStyle(WInk.number(dark))
+                        .frame(maxWidth: 56, alignment: .leading)
+                    Text("NEW IN").font(.system(size: 8, weight: .black, design: .rounded)).tracking(0.6)
+                        .foregroundStyle(WInk.label(dark))
                 }
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(WidgetStats.countdownPhrase(seconds: Int(midnight.timeIntervalSince(date))))
             }
-            StatChip(icon: .clock, label: "NEW IN", tint: "#2563eb",
-                     phrase: WidgetStats.countdownPhrase(seconds: Int(midnight.timeIntervalSince(date)))) {
-                Text(timerInterval: date...midnight, countsDown: true)
-                    .font(.system(size: 13, weight: .black, design: .rounded)).monospacedDigit()
-                    .foregroundStyle(WInk.number(scheme == .dark))
-                    .frame(maxWidth: 58)
-            }
+            .padding(10)
+            // The day's host, bigger (~40% of the height), leaning in from the top-right.
+            Image(dayHostAsset(date)).resizable().interpolation(.high).scaledToFit()
+                .frame(width: 64, height: 64)
+                .rotationEffect(.degrees(-10))
+                .offset(x: 8, y: -8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .accessibilityHidden(true)
         }
-        .padding(10)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(snap.headline(at: date)). \(WidgetStats.solvedPhrase(stats)). \(WidgetStats.pointsPhrase(stats)).")
         .widgetURL(nextPlayableURL)
+    }
+
+    /// §AV: a borderless stat — icon, soft number, small caps label.
+    private func floatStat(_ icon: StatIcon, _ value: String, _ label: String, _ dark: Bool) -> some View {
+        HStack(spacing: 3) {
+            StatIconView(icon: icon, size: 13)
+            SoftNumber(text: value, size: 14)
+            Text(label).font(.system(size: 8, weight: .black, design: .rounded)).tracking(0.5)
+                .foregroundStyle(WInk.label(dark))
+        }
     }
 
     /// The Puzzles row as a thin strip of accent dots (played = solid).
@@ -640,7 +702,6 @@ struct MediumView: View {
     private var next: WSnapshot.Mode? { (snap.modes + snap.puzzleModes).first(where: { !$0.played }) }
 
     var body: some View {
-        let dark = scheme == .dark
         VStack(alignment: .leading, spacing: 6) {
             // The ten cast heroes spelling WORDOCIOUS (`.wcast`).
             HStack(spacing: 2) {
@@ -682,6 +743,10 @@ struct MediumView: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
+        // §AV: the daily trio peeks up over the bottom edge, behind the stats row.
+        .background(alignment: .bottomTrailing) {
+            PeekingCast(date: date, size: 26).padding(.trailing, 14)
+        }
     }
 }
 
@@ -779,9 +844,6 @@ extension View {
             LinearGradient(stops: [.init(color: .white.opacity(0.3), location: 0), .init(color: .white.opacity(0), location: 0.55)],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
         }
-        let frame = double
-            ? LinearGradient(colors: [Color(widgetHex: "#fbbf24"), Color(widgetHex: "#f59e0b")], startPoint: .topLeading, endPoint: .bottomTrailing)
-            : LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")], startPoint: .topLeading, endPoint: .bottomTrailing)
         // A widget can't glow past its own edge, so the gold glow is an inner halo.
         let halo = double ? Color(widgetHex: "#f59e0b").opacity(0.45) : Color(widgetHex: "#8B5CF6").opacity(0.10)
         if #available(iOS 17.0, *) {
@@ -792,16 +854,15 @@ extension View {
             containerBackground(for: .widget) {
                 if accessory { AnyView(Color.clear) } else { AnyView(ZStack {
                     bg
-                    ContainerRelativeShape().strokeBorder(halo, lineWidth: double ? 9 : 7)
-                    ContainerRelativeShape().strokeBorder(frame, lineWidth: 2.5)
+                    // §AV: no border; only a Double Flawless keeps its soft gold halo.
+                    if double { ContainerRelativeShape().strokeBorder(halo, lineWidth: 9) }
                 }) }
             }
         } else {
             if accessory { self } else {
                 background(ZStack {
                     bg
-                    ContainerRelativeShape().strokeBorder(halo, lineWidth: double ? 9 : 7)
-                    ContainerRelativeShape().strokeBorder(frame, lineWidth: 2.5)
+                    if double { ContainerRelativeShape().strokeBorder(halo, lineWidth: 9) }
                 })
             }
         }

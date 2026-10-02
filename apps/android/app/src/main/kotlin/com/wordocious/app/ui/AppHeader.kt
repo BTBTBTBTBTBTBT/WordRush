@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import kotlinx.coroutines.launch
 import androidx.compose.ui.semantics.heading
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -270,13 +271,23 @@ private fun HeaderPopup(
             (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.setDimAmount(0f)
         }
         val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
-        LaunchedEffect(Unit) { appear.animateTo(1f, tween(220)) }
+        // AZ: the shared spring in, and a matching quick exit (never an instant pop out).
+        LaunchedEffect(Unit) { appear.animateTo(1f, Motion.springIn()) }
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        var closing by remember { mutableStateOf(false) }
+        val close: () -> Unit = {
+            if (!closing) {
+                closing = true
+                scope.launch { if (!WTheme.reducedMotion) appear.animateTo(0f, Motion.exit()); onDismiss() }
+            }
+        }
+        androidx.activity.compose.BackHandler { close() }
         val shape = RoundedCornerShape(24.dp)
         Box(
             Modifier.fillMaxSize()
-                .graphicsLayer { alpha = appear.value }
+                .graphicsLayer { alpha = appear.value.coerceIn(0f, 1f) }
                 .background(Color(0x661E0F3C))
-                .clickableNoRipple(onDismiss)
+                .clickableNoRipple(close)
                 .systemBarsPadding()
                 .padding(horizontal = 14.dp, vertical = 24.dp),
             contentAlignment = Alignment.Center,

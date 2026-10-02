@@ -41,12 +41,14 @@ interface GamePickerProps {
   className?: string;
   /** Accessible name of the tile group. */
   label?: string;
+  /** AU2: 'strip' = ONE horizontally scrolling row of smaller tiles (Wordocious, a divider, Puzzles). */
+  layout?: 'rows' | 'strip';
 }
 
 const BADGE_BG: Record<GamePickerBadge['kind'], string> = { won: '#7c3aed', lost: '#6b7891', done: '#7c3aed' };
 const BADGE_TEXT: Record<GamePickerBadge['kind'], string> = { won: 'W', lost: 'L', done: '✓' };
 
-function Tile({ t, on, badge, onSelect }: { t: PickerTile; on: boolean; badge?: GamePickerBadge; onSelect: (k: string) => void }) {
+function Tile({ t, on, badge, onSelect, size }: { t: PickerTile; on: boolean; badge?: GamePickerBadge; onSelect: (k: string) => void; size?: number }) {
   return (
     <button
       type="button"
@@ -54,7 +56,7 @@ function Tile({ t, on, badge, onSelect }: { t: PickerTile; on: boolean; badge?: 
       aria-pressed={on}
       onClick={() => onSelect(t.key)}
       className="relative flex items-center justify-center min-w-0"
-      style={{ ...softIconTile(t.accent, { selected: on, radius: 11 }), flex: '1 1 0', aspectRatio: '1 / 1', maxWidth: 44, padding: 0 }}
+      style={{ ...softIconTile(t.accent, { selected: on, radius: size ? 9 : 11 }), ...(size ? { flex: 'none', width: size, height: size } : { flex: '1 1 0', aspectRatio: '1 / 1', maxWidth: 44 }), padding: 0 }}
     >
       <GameArt id={t.artId} size={64} style={{ width: '74%', height: '74%', marginTop: 2 }} />
       {badge && (
@@ -71,7 +73,7 @@ function Tile({ t, on, badge, onSelect }: { t: PickerTile; on: boolean; badge?: 
 }
 
 export function GamePicker({
-  selected, onSelect, accent = '#f59e0b', header, wordociousExtra, sweep = true, badges, ink, bar = false, className = '', label = 'Pick a game',
+  selected, onSelect, accent = '#f59e0b', header, wordociousExtra, sweep = true, badges, ink, bar = false, className = '', label = 'Pick a game', layout = 'rows',
 }: GamePickerProps) {
   const { isOn } = useFlags();
   const rows = useMemo(() => pickerRows(isOn, { sweep }), [isOn, sweep]);
@@ -86,6 +88,27 @@ export function GamePicker({
       ))}
     </div>
   );
+  if (layout === 'strip') {
+    // AU2: one scrolling row — the selected tile scrolls into view on mount.
+    return (
+      <div className={`relative overflow-hidden ${className}`} style={softCard(accent, { radius: 16 })} role="group" aria-label={label}>
+        {header != null && (
+          <div style={{ padding: '6px 12px', background: alphaHex(accent, 0.08) }}>{header}</div>
+        )}
+        <div
+          className="flex items-center overflow-x-auto"
+          style={{ gap: 5, padding: '8px 10px 9px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          ref={(el) => { const on = el?.querySelector<HTMLElement>('[aria-pressed="true"]'); if (on && el && el.dataset.scrolled !== '1') { el.dataset.scrolled = '1'; el.scrollLeft = Math.max(0, on.offsetLeft - el.clientWidth / 2 + on.clientWidth / 2); } }}
+        >
+          {rows.wordocious.map((t) => <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} size={36} />)}
+          {rows.puzzles.length > 0 && (
+            <span aria-hidden="true" className="shrink-0 self-stretch" style={{ width: 2, margin: '2px 4px', borderRadius: 2, background: alphaHex(accent, 0.3) }} />
+          )}
+          {rows.puzzles.map((t) => <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} size={36} />)}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={`relative overflow-hidden ${className}`} style={softCard(accent, { radius: 20 })} role="group" aria-label={label}>
       {bar && <div aria-hidden="true" style={cardBarStyle(accent, SOFT.bar)} />}

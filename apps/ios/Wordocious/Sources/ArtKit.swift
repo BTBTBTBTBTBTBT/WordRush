@@ -390,8 +390,12 @@ struct GameTitleArtView: View {
     /// Game headers: the corner buttons' vertical center measured from the header's
     /// top. The art is pushed down (never up) so its center meets the buttons'.
     var centerY: CGFloat? = nil
+    /// BA1: the finished screen's short-screen cap.
+    @Environment(\.finishedTitleCap) private var finishedCap
 
     var body: some View {
+        let maxHeight = min(self.maxHeight, finishedCap ?? .infinity)
+        let minHeight = min(self.minHeight, maxHeight)
         WidthFitLayout(aspect: ArtAsset.aspect(asset) ?? 4, minHeight: minHeight, maxHeight: maxHeight,
                        maxWidth: maxWidth, leading: alignment == .leading, centerY: centerY) {
             Image(asset)

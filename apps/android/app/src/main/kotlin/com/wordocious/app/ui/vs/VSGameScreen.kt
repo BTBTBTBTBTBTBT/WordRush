@@ -699,10 +699,12 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     // Gauntlet VS stage-transition overlay — the same interstitial as solo, shown
     // the moment every board in the current stage is won and the run is live.
     val gauntlet = state.gauntlet
-    if (vm.mode == GameMode.GAUNTLET && gauntlet != null &&
+    val stageCardUp = vm.mode == GameMode.GAUNTLET && gauntlet != null &&
         state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
         state.boards.all { it.status == GameStatus.WON }
-    ) {
+    // Founder 10-02: this player's race clock pauses while their own stage card is up (solo parity).
+    androidx.compose.runtime.LaunchedEffect(stageCardUp) { vm.stageCardShown(stageCardUp) }
+    if (stageCardUp && gauntlet != null) {
         StageTransitionOverlay(
             isVersus = true,
             completed = gauntlet.stages[gauntlet.currentStage],

@@ -142,7 +142,10 @@ struct GauntletCompletedView: View {
         let grid = Array(repeating: GridItem(.flexible(), spacing: 4), count: cols)
         LazyVGrid(columns: grid, spacing: 4) {
             ForEach(boards.indices, id: \.self) { i in
-                CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: maxGuesses, framed: true)
+                // §AT2: every stage board pads to the largest one.
+                CompletedMiniBoardView(board: boards[i], tileSize: tile,
+                                       rowCount: n > 1 ? CompletedMiniBoardView.sharedRows(boards, floor: maxGuesses) : maxGuesses,
+                                       framed: true)
             }
         }
         .frame(maxWidth: n == 1 ? 140 : (n <= 4 ? 240 : 320))
@@ -310,13 +313,15 @@ struct GauntletResultsView: View {
     private var dock: some View {
         let nextDaily = isDaily && showNextDaily
         return VStack(spacing: 6) {
-            HStack(spacing: 8) {
-                FinishedShareButton(hasSpoilers: false, size: 30, onShare: { _ in onShare() })
+            // §AT1: the candy centered on the screen; share pinned trailing.
+            CenteredWithTrailing {
                 Button(action: onHome) {
                     CandyLabel(title: isDaily ? "Play again tomorrow" : "Home") { Icon3D(.tabHome, size: 20) }
                 }
                 .buttonStyle(CandyButtonStyle(variant: nextDaily ? .peach : .amber, size: nextDaily ? .medium : .large))
                 .accessibilityLabel(isDaily ? "Play again tomorrow. Home" : "Home")
+            } trailing: {
+                FinishedShareButton(hasSpoilers: false, size: 30, onShare: { _ in onShare() })
             }
             if nextDaily {
                 NextDailyCTA(currentMode: "GAUNTLET", compact: true)

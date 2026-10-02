@@ -50,3 +50,20 @@ export function recapCandidates(boards: number): number[] {
   if (boards <= 4) return [2, boards];
   return [4, 2];
 }
+
+/**
+ * FINISH_SPEC AT2: every board of a multi-board recap draws at ONE tile size
+ * and the SAME height, win or loss. The shared shape comes from the largest
+ * board — the most rows (its row budget or, if longer, its guesses) by the
+ * longest word — and shorter boards pad with empty rows, so an unsolved or
+ * lost board is never bigger or smaller than a solved one.
+ */
+export function recapShape(boards: ReadonlyArray<{ solution: string; guesses: readonly string[]; maxGuesses: number }>): { rows: number; cols: number } {
+  let rows = 0;
+  let cols = 0;
+  for (const b of boards) {
+    rows = Math.max(rows, b.maxGuesses, b.guesses.length);
+    cols = Math.max(cols, b.solution.length);
+  }
+  return { rows: rows || 6, cols: cols || 5 };
+}

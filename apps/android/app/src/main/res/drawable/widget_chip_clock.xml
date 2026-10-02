@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- FINISH_SPEC AL widget stat chip (countdown, teal #0D9488): the accent's soft wash (A1, never white) and a
-     1dp accent line, rounded like a pill. Light only: the widget always sits on the
+<!-- FINISH_SPEC AL widget stat chip (countdown, teal #0D9488): AV: a borderless faint tint (≤ 10%, no edge line),
+     rounded like a pill. Light only: the widget always sits on the
      Home wallpaper. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#F2E3F4F2" />
-    <stroke android:width="1dp" android:color="#A8D9D5" />
+    <solid android:color="#140D9488" />
     <corners android:radius="10dp" />
 </shape>

@@ -414,7 +414,7 @@ private fun BenefitCard(b: WelcomeBenefit, heading: Color, muted: Color, delayMs
     LaunchedEffect(still) {
         if (still) { pop.snapTo(1f); return@LaunchedEffect }
         delay(delayMs)
-        pop.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 380f))
+        pop.animateTo(1f, Motion.springIn()) // AZ: the shared spring family
     }
     TintedCard(
         b.accent,
@@ -534,7 +534,7 @@ fun Modifier.proCrownDrop(): Modifier = composed {
         if (go == 0) return@LaunchedEffect
         delay(260)
         launch { fade.animateTo(1f, tween(160)) }
-        drop.animateTo(0f, spring(dampingRatio = 0.42f, stiffness = 300f))
+        drop.animateTo(0f, Motion.springIn()) // AZ: the shared spring family
         SoundManager.fire(FeedbackEvent.HOP)
         sparkle.snapTo(0f)
         sparkle.animateTo(1f, tween(720, easing = LinearEasing))

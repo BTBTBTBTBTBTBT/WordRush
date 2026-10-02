@@ -1355,7 +1355,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     }
     matchService.abandonMatch();
     matchService.disconnect();
-    window.location.href = flow ? '/vs' : '/';
+    // AY: the Home button always lands on the Home root (a race used to land on /vs).
+    window.location.href = '/';
   }, [matchService, screen, dailyVsActive, mode, startTime, flow, race, buildRun]);
 
   // Sign-in gate — mirrors the /vs lobby's guest gate. VS is account-based
@@ -1416,8 +1417,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // No fade-in on the ROOT: the intro splash unmounts the same frame this
     // mounts (the inner elements keep their entrances).
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center ${screen === 'match' ? 'backdrop-blur-[2px]' : ''}`}
-      style={{ background: screen === 'match' ? 'rgba(248,247,255,0.86)' : VS.page }}
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      // AZ: a static scrim (no live blur under the animating countdown).
+      style={{ background: screen === 'match' ? 'rgba(248,247,255,0.92)' : VS.page }}
     >
       <div className="text-center space-y-3">
         <div className="text-[12px] font-black uppercase animate-fade-in-scale" style={{ color: VS.label, letterSpacing: 1.4 }}>

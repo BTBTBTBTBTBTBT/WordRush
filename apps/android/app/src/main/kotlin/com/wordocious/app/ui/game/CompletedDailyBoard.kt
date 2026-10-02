@@ -378,7 +378,8 @@ internal fun CompletedBoardsRecapGrid(
                 // concrete height so its rows don't collapse to ~0. Rows INCLUDE
                 // Deliverance's prefills — MiniBoardView renders them, so sizing
                 // by maxGuesses alone squashed its 9-row boards (§233).
-                val rows = (b.prefilledGuesses?.size ?: 0) + b.maxGuesses
+                // AT2: one shared height / tile size for every board (shorter boards pad).
+                val rows = RecapGeometry.sharedRows(boards)
                 // FINISH_SPEC L: every mini board its own game tray (purple solved / slate missed);
                 // the boards a touch narrower so the trays keep the 4-across / 2-across grid.
                 GameTray(
@@ -386,8 +387,8 @@ internal fun CompletedBoardsRecapGrid(
                     corner = 12.dp, padding = PaddingValues(4.dp),
                 ) {
                     Box(Modifier.width(if (boards.size > 4) 56.dp else 92.dp)
-                        .aspectRatio(b.solution.length.toFloat() / rows)) {
-                        MiniBoardView(board = b, animateLastRow = false)
+                        .aspectRatio(RecapGeometry.aspect(boards))) {
+                        MiniBoardView(board = b, animateLastRow = false, minTotalRows = rows)
                     }
                 }
                 // §233: a missed board's word never appears in its tiles — spell

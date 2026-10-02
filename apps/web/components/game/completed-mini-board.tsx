@@ -1,5 +1,6 @@
 'use client';
 
+import { recapShape } from '@/lib/recap-fit';
 import { useState } from 'react';
 import { GameStatus, TileState, type BoardState, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
 import { LetterTile, tileLook } from '@/components/game/letter-tile';
@@ -185,6 +186,8 @@ export function CompletedBoardsRecap({ boards, rowCount, tileSize, cols: colsPro
   cols?: number;
 }) {
   const totalBoards = boards.length;
+  // AT2: every board shares the largest board's height (shorter ones pad with empty rows).
+  const rows = Math.max(rowCount ?? 0, recapShape(boards).rows);
   if (tileSize) {
     const cols = colsProp ?? (totalBoards > 4 ? 4 : totalBoards === 1 ? 1 : 2);
     return (
@@ -194,7 +197,7 @@ export function CompletedBoardsRecap({ boards, rowCount, tileSize, cols: colsPro
             key={i}
             solution={board.solution}
             guesses={board.guesses}
-            maxGuesses={rowCount ?? board.maxGuesses}
+            maxGuesses={rows}
             won={board.won}
             tileSize={tileSize}
           />
@@ -212,7 +215,7 @@ export function CompletedBoardsRecap({ boards, rowCount, tileSize, cols: colsPro
           key={i}
           solution={board.solution}
           guesses={board.guesses}
-          maxGuesses={rowCount ?? board.maxGuesses}
+          maxGuesses={rows}
           won={board.won}
           tileSize={totalBoards > 4 ? 12 : 20}
         />

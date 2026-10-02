@@ -12,12 +12,13 @@ struct ShakeEffect: GeometryEffect {
     }
 }
 
-/// FINISH_SPEC §B3 reveal: the tile turns over (rotateX 0 → −90° → 0 with a 1.05
-/// swell at the edge-on midpoint) and swaps from its typed face to its color at
-/// the half. Animatable, so the face swap lands exactly at progress 0.5. A cheap
-/// 2D scale stands in for the 3D rotation (every multi-board tile can flip at once).
-private struct FlipFace: View, Animatable {
-    var progress: Double
+/// FINISH_SPEC §B3 / §AU4 reveal: the tile turns over GPU-only. Two FIXED faces
+/// (the typed face and the colored face, built once) on a fixed-size frame; the
+/// front turns 0 → 90° about X, then the back turns −90° → 0, both with
+/// `rotation3DEffect` + perspective. Only transforms animate — no view body runs per
+/// frame and nothing re-lays-out mid-flip (the old animatable face rebuilt the whole
+/// glossy tile every frame for every flipping tile).
+private struct FlipFaces: View {
     let letter: String
     let face: GlossyFace
     let width: CGFloat
@@ -25,18 +26,21 @@ private struct FlipFace: View, Animatable {
     let glow: Color
     let glowAmount: CGFloat
     let goldRing: Bool
-
-    var animatableData: Double {
-        get { progress }
-        set { progress = newValue }
-    }
+    /// Front face angle (0 → 90) and back face angle (−90 → 0).
+    let front: Double
+    let back: Double
 
     var body: some View {
-        let angle = (progress < 0.5 ? progress : 1 - progress) * 2 * 90
-        let swell = CGFloat(1 + 0.05 * sin(.pi * progress))
-        GlossyTile(face: progress < 0.5 ? .typed : face, letter: letter, width: width, height: height,
-                   glow: glow, glowAmount: glowAmount, goldRing: goldRing)
-            .scaleEffect(x: swell, y: CGFloat(cos(angle * .pi / 180)) * swell, anchor: .center)
+        ZStack {
+            GlossyTile(face: .typed, letter: letter, width: width, height: height)
+                .rotation3DEffect(.degrees(front), axis: (x: 1, y: 0, z: 0), perspective: 0.45)
+                .opacity(front >= 90 ? 0 : 1)
+            GlossyTile(face: face, letter: letter, width: width, height: height,
+                       glow: glow, glowAmount: glowAmount, goldRing: goldRing)
+                .rotation3DEffect(.degrees(back), axis: (x: 1, y: 0, z: 0), perspective: 0.45)
+                .opacity(back <= -90 ? 0 : 1)
+        }
+        .frame(width: width, height: height)
     }
 }
 
@@ -59,7 +63,8 @@ struct FlipRevealTile: View {
     /// A hint reveal: the gold glow ×2 instead of the color bloom.
     var hint: Bool = false
 
-    @State private var progress: Double = 0
+    @State private var front: Double = 0
+    @State private var back: Double = -90
     @State private var glow: CGFloat = 0
     @State private var hop: Double = 0
     @State private var sink: Double = 0
@@ -68,9 +73,9 @@ struct FlipRevealTile: View {
         let h = height ?? size
         let face = GlossyFace(revealed: state)
         let box = CGSize(width: size, height: h)
-        FlipFace(progress: progress, letter: letter, face: face, width: size, height: h,
-                 glow: hint ? Color(hex: 0xF5C542).opacity(0.7) : GlossyTile.bloom(face),
-                 glowAmount: glow, goldRing: hint)
+        FlipFaces(letter: letter, face: face, width: size, height: h,
+                  glow: hint ? Color(hex: 0xF5C542).opacity(0.7) : GlossyTile.bloom(face),
+                  glowAmount: glow, goldRing: hint, front: front, back: back)
             .modifier(KeyframeEffect(progress: hop, frames: TileMotion.hopFrames, easing: TileMotion.hopEasing, size: box))
             .modifier(KeyframeEffect(progress: sink, frames: TileMotion.sinkFrames, easing: .easeOut, size: box,
                                      desaturate: sink > 0))
@@ -81,14 +86,17 @@ struct FlipRevealTile: View {
         // §U: each tile of a reveal — flip · selection (sound plays under Reduce
         // Motion too); the winning row's landing — a light tap. Letterless tiles (the
         // VS opponent's mini board) stay quiet — its row already gets a soft thunk.
-        if progress == 0 && !letter.isEmpty {
+        let fresh = front == 0 && back == -90
+        if fresh && !letter.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { Feedback.flip() }
             if let hopAt, delay == 0 { DispatchQueue.main.asyncAfter(deadline: .now() + hopAt) { Feedback.rowLand() } }
         }
-        // Theme.reduceMotion = in-app toggle OR OS setting.
-        guard !Theme.reduceMotion else { progress = 1; return }
-        guard progress == 0 else { return }
-        withAnimation(.timingCurve(0.37, 0, 0.63, 1, duration: duration).delay(delay)) { progress = 1 }
+        // Theme.reduceMotion = in-app toggle OR OS setting: the final face, no motion.
+        guard !Theme.reduceMotion else { front = 90; back = 0; return }
+        guard fresh else { return }
+        // §AU4: two transform-only halves (ease in to edge-on, ease out to flat).
+        withAnimation(.easeIn(duration: duration / 2).delay(delay)) { front = 90 }
+        withAnimation(.easeOut(duration: duration / 2).delay(delay + duration / 2)) { back = 0 }
         let land = delay + duration
         if hint {
             for k in 0..<2 {
@@ -548,8 +556,18 @@ struct CompletedMiniBoardView: View {
     /// home grid, profiles, and VS recaps never spoil.
     var revealMissed: Bool = false
 
+    /// §AT2: the shared row count for a multi-board recap — every board pads to the
+    /// largest one (core `RecapSizing`), so all boards draw the same size.
+    static func sharedRows(_ boards: [BoardState], floor: Int = 1) -> Int {
+        RecapSizing.sharedRows(guessCounts: boards.map(\.guesses.count), budgets: boards.map(\.maxGuesses), floor: floor)
+    }
+
     var body: some View {
         let width = board.solution.count
+        // §AT2: a fixed grid size (the answer slot reserved on EVERY board when the
+        // recap reveals missed answers), so a lost board never draws bigger or smaller.
+        let size = RecapSizing.boardSize(tile: Double(tileSize), columns: max(1, width),
+                                         rows: max(1, rowCount), revealMissed: revealMissed)
         VStack(spacing: tileSize * 0.1) {
             ForEach(0..<rowCount, id: \.self) { r in
                 HStack(spacing: tileSize * 0.1) {
@@ -573,13 +591,17 @@ struct CompletedMiniBoardView: View {
                     }
                 }
             }
-            if revealMissed && board.status != .won {
-                Text(board.solution.uppercased())
+            if revealMissed {
+                Text(board.status != .won ? board.solution.uppercased() : " ")
                     .font(Brand.font(11, .black))
                     .foregroundStyle(Color(hex: 0xDC2626))
-                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .lineLimit(1).minimumScaleFactor(0.4)
+                    .frame(width: CGFloat(size.width),
+                           height: CGFloat(RecapSizing.answerSlot(tile: Double(tileSize), revealMissed: true)))
+                    .accessibilityHidden(board.status == .won)
             }
         }
+        .frame(width: CGFloat(size.width), height: CGFloat(size.height), alignment: .top)
         .modifier(SolvedBoardFrame(won: framed && board.status == .won,
                                    lost: framed && board.status != .won,
                                    active: framed, tileSize: tileSize))

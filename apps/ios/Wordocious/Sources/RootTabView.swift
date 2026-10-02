@@ -176,7 +176,9 @@ struct RootTabView: View {
             // daily-habit game; the game-start interstitial carries the free
             // tier instead. The VStack stays — the height measurement below
             // still has to report the nav's own height to pushed screens.
-            if !chrome.bottomNavHidden {
+            // §AW: hidden only under a PUSHED immersive screen; a dismissing game
+            // cover finds the nav already in place (no wait, no layout jump).
+            if !chrome.navHidden {
                 VStack(spacing: 0) {
                     BottomNav(selection: tabSelection)
                 }
@@ -209,6 +211,33 @@ struct RootTabView: View {
         // seed; the own-engine view with a nil seed for ProperNoundle and the
         // More Games titles). The CTA dismisses its own game first, then
         // posts, so this cover presents cleanly from the root.
+        // FINISH_SPEC §AY: a screen's top-left Home button — the footer's Home route.
+        .onReceive(NotificationCenter.default.publisher(for: HomeNav.goHome)) { _ in
+            let state = TabRouterState(
+                tab: Self.appTab(tab),
+                depth: [.leaderboard: leaderboardPath.count, .friends: friendsPath.count,
+                        .home: router.pushed.contains(.home) ? 1 : 0,
+                        .stats: router.pushed.contains(.stats) ? 1 : 0],
+                overlays: TabRouterModel.rootPresented ? 1 : 0)
+            for action in HomeButtonRules.route(from: state) {
+                switch action {
+                case .dismissOverlays: TabRouterModel.dismissAllOverlays(animated: true)
+                case .popToRoot(let t):
+                    switch t {
+                    case .leaderboard: leaderboardPath = []
+                    case .friends: friendsPath = []
+                    case .home, .stats: router.popToRoot(t)
+                    }
+                case .select(let t):
+                    if tab == .leaderboard && t != .leaderboard { leaderboardPath = [] }
+                    tab = Self.tab(t)
+                    router.current = t
+                case .scrollToTop(let t):
+                    NotificationCenter.default.post(name: TabRouterModel.scrollToTop, object: t.rawValue)
+                case .confirmForfeit: break
+                }
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playNextDaily)) { note in
             guard let key = note.object as? String else { return }
             presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } }
@@ -394,19 +423,44 @@ final class ChromeVisibility: ObservableObject {
     /// tab's NavigationStack don't inherit that inset (root views do), so
     /// they read this to pad their own scroll content clear of the nav.
     @Published var bottomInset: CGFloat = 0
+    /// FINISH_SPEC §AW: the immersive screens that actually HIDE the nav — only
+    /// ones pushed onto a tab's stack. A game in a full-screen cover already covers
+    /// the nav, so it never hides it: the nav is simply there, mounted and laid out,
+    /// the instant the cover slides away (it used to wait for the cover's
+    /// onDisappear at the END of the dismissal, then pop in with a layout jump).
+    @Published private var hidingIDs: Set<UUID> = []
+    /// An immersive screen is still on screen (incl. a cover mid-dismissal) — the
+    /// root-present gates and celebrations wait on this.
     var bottomNavHidden: Bool { !activeIDs.isEmpty }
-    func enter(_ id: UUID) { activeIDs.insert(id) }
-    func exit(_ id: UUID) { activeIDs.remove(id) }
+    /// Whether the docked nav is hidden (a pushed immersive screen is up).
+    var navHidden: Bool { !hidingIDs.isEmpty }
+    func enter(_ id: UUID, hidesNav: Bool = true) {
+        activeIDs.insert(id)
+        if hidesNav { hidingIDs.insert(id) }
+    }
+    func exit(_ id: UUID) {
+        activeIDs.remove(id)
+        hidingIDs.remove(id)
+    }
     /// §263: drop every registration — for the failsafes in RootTabView when a
     /// view that hid the nav has demonstrably left without reporting out.
-    func reset() { activeIDs.removeAll() }
+    func reset() { activeIDs.removeAll(); hidingIDs.removeAll() }
+
+    /// §AW: whether a modal presentation (a full-screen cover or sheet) is up — a
+    /// screen appearing inside one never needs to hide the nav underneath.
+    static func inModalPresentation() -> Bool {
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+        return windows.contains { $0.rootViewController?.presentedViewController != nil }
+    }
 }
 
 private struct ImmersiveChrome: ViewModifier {
     @State private var id = UUID()
     func body(content: Content) -> some View {
         content
-            .onAppear { ChromeVisibility.shared.enter(id) }
+            .onAppear { ChromeVisibility.shared.enter(id, hidesNav: !ChromeVisibility.inModalPresentation()) }
             .onDisappear { ChromeVisibility.shared.exit(id) }
     }
 }
@@ -450,6 +504,7 @@ private struct BottomNav: View {
         .frame(maxWidth: .infinity)
         .background(bar.ignoresSafeArea(edges: .bottom))
         .task {
+            await LaunchGate.wait()   // §AU5: after the cold-start intro lands
             await FriendsService.load()
             await FriendlyGamesService.load()
             recount()

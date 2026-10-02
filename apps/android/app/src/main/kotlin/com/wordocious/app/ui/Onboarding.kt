@@ -334,8 +334,9 @@ private fun OnboardingFlowScreen(step: OnboardingStep, signedIn: Boolean, guest:
                 } else {
                     val forward = targetState.section >= initialState.section
                     val dir = if (forward) 1 else -1
-                    (slideInHorizontally(tween(320)) { w -> dir * w / 3 } + fadeIn(tween(260))) togetherWith
-                        (slideOutHorizontally(tween(280)) { w -> -dir * w / 3 } + fadeOut(tween(200)))
+                    // AZ: the shared spring family for the slide (transform + opacity only), a quick matching exit.
+                    (slideInHorizontally(Motion.springIn()) { w -> dir * w / 3 } + fadeIn(tween(220))) togetherWith
+                        (slideOutHorizontally(Motion.exit()) { w -> -dir * w / 3 } + fadeOut(Motion.exit()))
                 }
             },
             label = "onboarding",

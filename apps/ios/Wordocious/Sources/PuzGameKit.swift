@@ -296,8 +296,10 @@ struct PuzResultLine: View {
     var points: Int? = nil
 
     var body: some View {
-        HStack(spacing: 6) {
+        // §AT1: the strip centered on the screen; share pinned to the trailing edge.
+        CenteredWithTrailing {
             FinishedResultStrip(won: won, items: items, points: points)
+        } trailing: {
             Button(action: onShare) {
                 Icon3D(.share, size: 28)
                     .shadow(color: Color(hex: 0x4C1D95).opacity(0.2), radius: 2.5, x: 0, y: 3)

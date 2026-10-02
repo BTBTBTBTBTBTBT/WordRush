@@ -23,11 +23,11 @@ import { GameArt } from '@/components/ui/game-art';
 import { GameTileGlyph } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import {
-  BoardCard, BoardRow, DisclosureHeader, LB_GOLD, ResultCard, RowBadge, SECTION_LABEL, SWEEP_BADGE_COL, SegmentedPill, SweepBadge,
+  BoardCard, BoardRow, CompactResultRow, DisclosureHeader, LB_GOLD, RowBadge, SECTION_LABEL, SWEEP_BADGE_COL, SegmentedPill, SweepBadge,
 } from '@/components/leaderboard/board-rows';
 import { boardAvatarFor } from '@/components/leaderboard/board-rows';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
-import { rowBadge, solvedLine, splitPodium } from '@/lib/leaderboard-podium';
+import { compactRankLine, rowBadge, solvedLine, splitPodium } from '@/lib/leaderboard-podium';
 import { alphaHex, cardBarStyle, softCard } from '@/lib/soft-surface';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
@@ -745,54 +745,28 @@ export default function DailyPage() {
         {/* A6 + C2: the day's title as the headline on the wallpaper, then the
             one game picker card (date · reset clock + ALL-TIME → on top, the
             WORDOCIOUS row with the Sweep broom tile, then PUZZLES). */}
-        <div className="mb-4 page-col">
+        <div className="mb-3 page-col">
           <LeaderboardBanner today={today} selectedMode={selectedMode} onSelect={setSelectedMode} />
         </div>
 
         <div className="page-grid-2">
         <div>
-        {/* AS4: the play card, compressed to one row — small art, one line, a small
-            candy button (PLAY before today's daily, VIEW BOARD after). */}
-        <div className="relative overflow-hidden mb-3" style={softCard(color, { radius: 16 })}>
-          <div aria-hidden="true" style={cardBarStyle(color)} />
-          <div className="flex items-center gap-2.5" style={{ padding: '7px 10px 8px' }}>
-            <GameArt
-              id={isSweep ? 'sweep' : mode.id}
-              size={30}
-              fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
-            />
-            <div className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
-              <span className="font-black truncate" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
-              <span aria-hidden="true">·</span>
-              <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">
-                {/* §223: the sweep board ranks by total points across all modes. */}
-                {isSweep ? `${playerCount} swept · ranked by points` : `${playerCount} today`}
-              </span>
-            </div>
-            {/* Sweep isn't a playable puzzle — no Play button. */}
-            {!isSweep && (
-              <CandyButton
-                size="sm"
-                color="purple"
-                icon={playedSelected ? 'eye' : 'play'}
-                onClick={handlePlayDaily}
-                className="shrink-0"
-              >
-                {playedSelected ? 'View board' : 'Play'}
-              </CandyButton>
-            )}
-          </div>
-        </div>
-
-        {/* C2: the ONE result card on gold — crown, "#1 of N today", how you
-            solved it, points ("Completed today" + "Your rank" merged). */}
+        {/* AU2: YOUR result as ONE compact row ("#2 of 5 · 2,005 PTS · 4 guesses · 48s"
+            + the completed check) — no repeated headline — then the board right away. */}
         {showResult && (
-          <ResultCard
-            rank={userRank?.rank ?? null}
-            ofLine={userRank ? `OF ${userRank.totalPlayers}${friendsOnly && !isSweep ? ' FRIENDS' : ''} TODAY` : null}
-            solved={mySolved}
-            points={resultPoints}
+          <CompactResultRow
+            line={compactRankLine({
+              rank: userRank?.rank ?? null,
+              total: userRank?.totalPlayers ?? null,
+              friends: friendsOnly && !isSweep,
+              points: resultPoints,
+              semantics: modeMeta?.guessSemantics,
+              guessBase: modeMeta?.guessBase,
+              guesses: myCompletion?.guesses ?? myEntry?.guess_count ?? null,
+              timeSeconds: myCompletion?.timeSeconds ?? myEntry?.time_seconds ?? null,
+              detail: isSweep ? mySolved : null,
+            })}
+            won={isSweep ? (mySweepEntry ? true : null) : myCompletion ? myCompletion.won : myEntry ? !!myEntry.completed : null}
             delta={
               userRank ? (
                 <RankDeltaBadge
@@ -902,6 +876,40 @@ export default function DailyPage() {
         </div>
 
         <div>
+        {/* AS4 + AU2: the play card as one compact row, below the standings — small art, one line, a small
+            candy button (PLAY before today's daily, VIEW BOARD after). */}
+        <div className="relative overflow-hidden mb-3" style={softCard(color, { radius: 16 })}>
+          <div aria-hidden="true" style={cardBarStyle(color)} />
+          <div className="flex items-center gap-2.5" style={{ padding: '7px 10px 8px' }}>
+            <GameArt
+              id={isSweep ? 'sweep' : mode.id}
+              size={30}
+              fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+            />
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
+              <span className="font-black truncate" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
+              <span aria-hidden="true">·</span>
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {/* §223: the sweep board ranks by total points across all modes. */}
+                {isSweep ? `${playerCount} swept · ranked by points` : `${playerCount} today`}
+              </span>
+            </div>
+            {/* Sweep isn't a playable puzzle — no Play button. */}
+            {!isSweep && (
+              <CandyButton
+                size="sm"
+                color="purple"
+                icon={playedSelected ? 'eye' : 'play'}
+                onClick={handlePlayDaily}
+                className="shrink-0"
+              >
+                {playedSelected ? 'View board' : 'Play'}
+              </CandyButton>
+            )}
+          </div>
+        </div>
+
         {/* Your finished board (§254), collapsible under the result — per-mode
             only; Sweep has no board. */}
         {!isSweep && (

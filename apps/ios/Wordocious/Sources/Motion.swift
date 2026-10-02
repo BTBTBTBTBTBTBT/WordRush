@@ -28,6 +28,10 @@ final class PowerMode: ObservableObject {
 }
 
 enum Motion {
+    /// FINISH_SPEC §AZ: the ONE spring family for every popup / card spring-in and
+    /// its matching exit (response 0.38, damping 0.82).
+    static let spring = Animation.spring(response: 0.38, dampingFraction: 0.82)
+
     /// Low Power Mode is on right now.
     static var lowPower: Bool { ProcessInfo.processInfo.isLowPowerModeEnabled }
 

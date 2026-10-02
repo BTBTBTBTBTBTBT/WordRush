@@ -157,8 +157,11 @@ struct StreakShieldModal: View {
         return VStack(spacing: 0) {
             ZStack {
                 // §G2: the art with a soft glow + confetti.
-                Circle().fill(Color(hex: 0xFDE68A).opacity(glow ? 0.65 : 0.35))
-                    .frame(width: 170, height: 170).blur(radius: 26)
+                // §AZ: a radial-gradient glow (opacity animates) — no 26-pt live blur.
+                Circle().fill(RadialGradient(colors: [Color(hex: 0xFDE68A), Color(hex: 0xFDE68A).opacity(0)],
+                                             center: .center, startRadius: 0, endRadius: 100))
+                    .frame(width: 200, height: 200)
+                    .opacity(glow ? 0.65 : 0.35)
                 guardArt(height: 140)
                 if !still { ConfettiView() }
             }

@@ -57,3 +57,42 @@ public enum WidgetStats {
         return "new puzzles in " + parts.joined(separator: " ")
     }
 }
+
+/// FINISH_SPEC §AV: the widget's cast — the day host leaning in from the top-right,
+/// plus a different trio of cast heads peeking up from the bottom edge each day
+/// (never the day host), in Halloween skins in season. Pure Foundation (compiled into
+/// the widget extension too).
+public enum WidgetCast {
+    /// The ten heroes in WORDOCIOUS order.
+    public static let cast = ["w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s"]
+
+    /// The day's peekers: `count` distinct cast ids (never `host`), rotating by day.
+    public static func peekers(dayNumber: Int, host: String, count: Int = 3) -> [String] {
+        let pool = cast.filter { $0 != host }
+        guard !pool.isEmpty else { return [] }
+        let n = min(count, pool.count)
+        let start = ((dayNumber % pool.count) * 3 + pool.count * 1000) % pool.count
+        return (0..<n).map { pool[(start + $0) % pool.count] }
+    }
+
+    /// Days since 1970 for a local "yyyy-MM-dd" (the rotation key; 0 when malformed).
+    public static func dayNumber(_ day: String) -> Int {
+        let p = day.split(separator: "-").compactMap { Int($0) }
+        guard p.count == 3 else { return 0 }
+        // Days from civil (Howard Hinnant) — no Calendar, stable everywhere.
+        let y = p[1] <= 2 ? p[0] - 1 : p[0]
+        let era = (y >= 0 ? y : y - 399) / 400
+        let yoe = y - era * 400
+        let m = p[1], d = p[2]
+        let doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1
+        let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        return era * 146097 + doe - 719468
+    }
+
+    /// The image set for a cast id on `day`: the Halloween skin Oct 24 – Nov 1.
+    public static func asset(_ id: String, day: String) -> String {
+        let p = day.split(separator: "-").compactMap { Int($0) }
+        let halloween = p.count == 3 && ((p[1] == 10 && p[2] >= 24) || (p[1] == 11 && p[2] <= 1))
+        return halloween ? "art-halloween-\(id)" : "mascot-\(id)"
+    }
+}

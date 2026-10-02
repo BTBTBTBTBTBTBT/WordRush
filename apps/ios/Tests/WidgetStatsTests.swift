@@ -33,4 +33,26 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertEqual(WidgetStats.countdownPhrase(seconds: 3600), "new puzzles in 1 hour")
         XCTAssertEqual(WidgetStats.countdownPhrase(seconds: 59), "new puzzles in 0 minutes")
     }
+
+    /// FINISH_SPEC §AV: the peeking trio — never the day host, distinct, rotating daily.
+    func testWidgetPeekers() {
+        XCTAssertEqual(WidgetCast.dayNumber("1970-01-01"), 0)
+        XCTAssertEqual(WidgetCast.dayNumber("2026-10-03") - WidgetCast.dayNumber("2026-10-02"), 1)
+        var seen = Set<[String]>()
+        for host in WidgetCast.cast {
+            for d in 0..<14 {
+                let p = WidgetCast.peekers(dayNumber: 20_000 + d, host: host)
+                XCTAssertEqual(p.count, 3)
+                XCTAssertEqual(Set(p).count, 3)
+                XCTAssertFalse(p.contains(host))
+                seen.insert(p)
+            }
+        }
+        // Consecutive days differ.
+        XCTAssertNotEqual(WidgetCast.peekers(dayNumber: 20_001, host: "d"), WidgetCast.peekers(dayNumber: 20_002, host: "d"))
+        XCTAssertGreaterThan(seen.count, 5)
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-30"), "art-halloween-w")
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-02"), "mascot-w")
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-01"), "art-halloween-w")
+    }
 }

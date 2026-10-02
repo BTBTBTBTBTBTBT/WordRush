@@ -191,6 +191,9 @@ struct GamePickerCard<Header: View>: View {
     /// Draw the Sweep tile (the Leaderboard and Stats both do).
     var showSweep: Bool = true
     var sweepResult: Bool? = nil
+    /// FINISH_SPEC §AU2: ONE horizontally scrolling row of smaller tiles
+    /// (Wordocious + Sweep, a divider, then Puzzles) instead of two labeled rows.
+    var compact: Bool = false
     let onSelect: (String) -> Void
     @ViewBuilder var header: () -> Header
 
@@ -215,6 +218,9 @@ struct GamePickerCard<Header: View>: View {
                 .padding(.horizontal, 14).padding(.vertical, 9)
                 .frame(maxWidth: .infinity)
                 .background(dark ? Color.white.opacity(0.04) : accent.wash(0.10))
+            if compact {
+                compactRow(words: words, puzzles: puzzles)
+            } else {
             VStack(alignment: .leading, spacing: 8) {
                 FinishLabel("Wordocious", color: ink)
                 PickerTileRow(gap: 6, maxSide: 44) {
@@ -229,8 +235,34 @@ struct GamePickerCard<Header: View>: View {
                 }
             }
             .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 14)
+            }
         }
         .tintedCard(accent: accent, tint: 0.07, line: 0.22)
+    }
+
+    /// §AU2: the one-row picker — fixed 38-pt tiles that scroll sideways, the selected
+    /// tile scrolled into view.
+    private func compactRow(words: [HomeMode], puzzles: [HomeMode]) -> some View {
+        let side: CGFloat = 38
+        return ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(words) { m in tile(m).frame(width: side, height: side).id(m.dbKey ?? m.id) }
+                    if showSweep { sweepTile.frame(width: side, height: side).id(GamePicker.sweep) }
+                    if !puzzles.isEmpty {
+                        Capsule().fill(ink.opacity(0.25)).frame(width: 2, height: side * 0.7)
+                            .padding(.horizontal, 3)
+                            .accessibilityHidden(true)
+                        ForEach(puzzles) { m in tile(m).frame(width: side, height: side).id(m.dbKey ?? m.id) }
+                    }
+                }
+                .padding(.horizontal, 12).padding(.top, 9).padding(.bottom, 9)
+            }
+            .onAppear { proxy.scrollTo(selection, anchor: .center) }
+            .onChange(of: selection) { key in
+                withAnimation(Theme.animation(.easeInOut(duration: 0.25))) { proxy.scrollTo(key, anchor: .center) }
+            }
+        }
     }
 
     private func tile(_ m: HomeMode) -> some View {

@@ -1,5 +1,6 @@
 'use client';
 
+import { HOME_ROOT, claimHomeTap, closeAllOverlays } from '@/lib/nav-home';
 import { usePathname, useRouter } from 'next/navigation';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { Mascot } from '@/components/ui/mascot';
@@ -42,9 +43,12 @@ export interface InfoPageHeaderProps {
 export function InfoPageHeader({ title, backHref, titleTag = 'h1', host, art, artLabel, help }: InfoPageHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  // AY: the top-left button lands on the Home root — never history-back, which
+  // could reveal a game this page was opened from.
   const close = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) router.back();
-    else router.push('/');
+    if (!claimHomeTap()) return;
+    closeAllOverlays();
+    router.push(HOME_ROOT);
   };
   const helpTarget = help === false ? null : help ?? infoHelpTarget(pathname);
   const TitleTag = titleTag;

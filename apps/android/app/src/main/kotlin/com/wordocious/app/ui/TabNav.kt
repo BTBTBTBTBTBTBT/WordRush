@@ -74,3 +74,36 @@ fun ScrollToTopOnReselect(state: LazyListState) {
         if (WTheme.reducedMotion) state.scrollToItem(0) else state.animateScrollToItem(0)
     }
 }
+
+/**
+ * AY (founder 10-02: "sometimes the new home buttons open another game and I need to hit home
+ * again"): the top-left home button ALWAYS lands on the Home root — through the same router as
+ * AJ (every layer, push and sheet cleared, Home selected), never "one level back" to whatever
+ * the game was opened from — and it can't tap through onto the Home card that ends up under the
+ * finger: the home action is single-fire, and Home's cards ignore taps for [TAP_GUARD_MS] after
+ * it. Pure (unit tested); MainScreen provides [LocalGoHome] to every game layer.
+ */
+object HomeNav {
+    const val TAP_GUARD_MS = 400L
+
+    @Volatile private var lastHomeAt = Long.MIN_VALUE / 2
+
+    /** True when a home tap at [nowMs] should act (false = a repeat inside the guard window). */
+    fun tryGoHome(nowMs: Long): Boolean {
+        if (nowMs - lastHomeAt < TAP_GUARD_MS) return false
+        lastHomeAt = nowMs
+        return true
+    }
+
+    /** May a Home card take a tap at [nowMs]? Not within [TAP_GUARD_MS] of going Home. */
+    fun cardTapAllowed(nowMs: Long): Boolean = nowMs - lastHomeAt >= TAP_GUARD_MS
+
+    /** For tests. */
+    fun reset() { lastHomeAt = Long.MIN_VALUE / 2 }
+
+    /** The home button's outcome from any [state]: the Home root (AJ's GoToRoot on Home). */
+    fun onHomeButton(state: TabNavState): TabNavState = TabNav.root(TabNav.HOME)
+}
+
+/** AY the "go to the Home root" action for a layer's top-left home button (null = the screen's own onBack). */
+val LocalGoHome = androidx.compose.runtime.staticCompositionLocalOf<(() -> Unit)?> { null }

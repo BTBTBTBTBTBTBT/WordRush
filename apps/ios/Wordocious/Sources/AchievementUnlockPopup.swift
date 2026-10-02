@@ -221,12 +221,13 @@ struct AchievementUnlockPopup: View {
                     if !calm {
                         BadgeRays(color: accent.opacity(0.14))
                             .frame(width: 230, height: 230)
-                            .rotationEffect(.degrees(raysTurn ? 360 : 0))
                             .mask(RadialGradient(colors: [.black, .clear], center: .center, startRadius: 14, endRadius: 115))
+                            .drawingGroup()   // §AZ: rasterized, then only rotated
+                            .rotationEffect(.degrees(raysTurn ? 360 : 0))
                     }
-                    Ellipse().fill(Color(hex: 0x3C1E6E).opacity(0.18))
-                        .frame(width: badgeSize * 0.62, height: badgeSize * 0.12)
-                        .blur(radius: 4)
+                    Ellipse().fill(RadialGradient(colors: [Color(hex: 0x3C1E6E).opacity(0.2), Color(hex: 0x3C1E6E).opacity(0)],
+                                                  center: .center, startRadius: 0, endRadius: badgeSize * 0.34))
+                        .frame(width: badgeSize * 0.7, height: badgeSize * 0.14)   // §AZ: no live blur
                         .offset(y: badgeSize * 0.52)
                     Image(badgeAsset)
                         .resizable().interpolation(.high).scaledToFit()

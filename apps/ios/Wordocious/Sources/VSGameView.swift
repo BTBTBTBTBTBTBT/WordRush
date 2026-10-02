@@ -123,9 +123,12 @@ struct VSGameView: View {
                 StageTransitionOverlay(completedName: game.gauntletStageName,
                                        next: game.gauntletNextStageInfo,
                                        isVersus: true,
-                                       onAdvance: { game.nextStage() })
+                                       onAdvance: { vm.stageCardDone(); game.nextStage() })
                     .transition(.opacity)
                     .zIndex(5)
+                    // Founder (VS matches solo): MY race clock pauses while MY card is up.
+                    .onAppear { vm.stageCardShown() }
+                    .onDisappear { vm.stageCardDone() }
             }
 
             // Opponent-disconnect countdown banner: their socket dropped and the
@@ -279,7 +282,7 @@ struct VSGameView: View {
         }
     }
 
-    private func goHome() { vm.forfeit(); dismiss() }
+    private func goHome() { vm.forfeit(); HomeNav.press { dismiss() } }   // §AY: all the way Home
 
     /// Home during play: confirm only when leaving would TRULY forfeit (a
     /// recorded loss) — CPU practice and resolved matches just leave.
@@ -669,7 +672,7 @@ struct VSGameView: View {
                         TypingDots(dotSize: 5).opacity(vm.opponentTyping ? 1 : 0)
                     }
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        let secs = max(0, Int((Date().timeIntervalSince1970 * 1000 - vm.startTimeMs) / 1000))
+                        let secs = max(0, Int(vm.elapsedMs() / 1000))   // card time excluded
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text("\(vm.opponent.attempts)").vsNumber(17)
                             Text(vm.opponent.attempts == 1 ? "guess" : "guesses").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
@@ -1369,7 +1372,8 @@ struct VSGameHomeButton: View {
     let action: () -> Void
     var body: some View {
         // HEADER_SPEC §4: the soft white circle with the house in the header ink.
-        GameCornerButton(kind: .home, action: action)
+        // §AY: VS confirms a forfeit first; its leave path routes Home itself.
+        GameCornerButton(kind: .home, routesHome: false, action: action)
     }
 }
 

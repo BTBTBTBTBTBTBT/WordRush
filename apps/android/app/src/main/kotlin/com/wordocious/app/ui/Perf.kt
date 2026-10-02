@@ -128,3 +128,23 @@ fun artPainter(@DrawableRes res: Int, displaySize: Dp): Painter {
     val bitmap = remember(res, bucket) { ArtBitmaps.get(context, res, bucket) }
     return if (bitmap != null) remember(bitmap) { BitmapPainter(bitmap) } else painterResource(res)
 }
+
+/**
+ * AZ (founder 10-02: "make it run as smooth as possible") the ONE spring family every popup,
+ * card and sheet springs in with (≈ response 0.38 s, damping 0.82), and the matching quick
+ * exit. Animate transforms + opacity only (graphicsLayer), never size / padding / blur.
+ */
+object Motion {
+    const val DAMPING = 0.82f
+    const val STIFFNESS = 380f
+    /** The exit: a short fade + settle (never an instant pop out). */
+    const val EXIT_MS = 170
+    /** The confetti ceiling (particles per burst). */
+    const val CONFETTI_MAX = 48
+
+    fun <T> springIn(): androidx.compose.animation.core.SpringSpec<T> =
+        androidx.compose.animation.core.spring(dampingRatio = DAMPING, stiffness = STIFFNESS)
+
+    fun <T> exit(): androidx.compose.animation.core.TweenSpec<T> =
+        androidx.compose.animation.core.tween(EXIT_MS, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+}

@@ -14,6 +14,8 @@ struct GameScreen: View {
     // Holds the in-play board on screen after a win/loss until the final row has
     // finished flipping, then the finished screen + victory overlay spring in.
     @State private var revealComplete = false
+    /// §AU3: the Gauntlet stage card is up (set one reveal after the stage clears).
+    @State private var stageCardUp = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let mode: GameMode
 
@@ -65,7 +67,8 @@ struct GameScreen: View {
                             guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
                             timeSeconds: vm.elapsedSeconds,
                             boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                            totalBoards: vm.boardCount, points: scorePoints)
+                            totalBoards: vm.boardCount, points: scorePoints,
+                            onShare: { reveal in share(reveal: reveal) })
                     }, board: { size in
                         if vm.boardCount > 1 {
                             // The compact mini grid (2×2 / 4 across), scaled to fit.
@@ -117,8 +120,12 @@ struct GameScreen: View {
                             .allowsHitTesting(vm.status == .playing)
                     }
                     // Stage-cleared shows the full-screen StageTransition overlay
-                    // (below); the keyboard just hides while it's up.
-                    if !vm.stageCleared { KeyboardView(vm: vm).padding(.bottom, 6) }
+                    // (below). §AU3: the keyboard keeps its slot (faded, inert) so the
+                    // board never jumps while the winning row lands and the card fades in.
+                    KeyboardView(vm: vm).padding(.bottom, 6)
+                        .opacity(vm.stageCleared ? 0 : 1)
+                        .allowsHitTesting(!vm.stageCleared)
+                        .accessibilityHidden(vm.stageCleared)
                 }
             }
             .padding(.horizontal, 10)
@@ -169,11 +176,20 @@ struct GameScreen: View {
                         { showVictory = false; action() }
                     },
                     game: mode,
-                    onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = false; revealComplete = true } })
+                    // §AZ: build the finished layout first (under the card), then fade the
+                    // card out on the next frame — the exit never shares a frame with the build.
+                    onDismiss: {
+                        revealComplete = true
+                        DispatchQueue.main.async {
+                            withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = false }
+                        }
+                    })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }
-            // Gauntlet stage-transition overlay (auto-advances after 2.5s, or tap).
-            if vm.stageCleared {
+            // Gauntlet stage-transition overlay. §AU3: it fades in once the winning
+            // row has landed (no flash over a half-flipped board), stays ≥ 5 s, and a
+            // tap / Continue / Enter skips at once.
+            if vm.stageCleared && stageCardUp {
                 StageTransitionOverlay(completedName: vm.gauntletStageName,
                                        next: vm.gauntletNextStageInfo,
                                        clearedIndex: vm.gauntletCurrentIndex,
@@ -204,6 +220,14 @@ struct GameScreen: View {
         // daily result (and a Flawless sweep) isn't lost.
         .onDisappear { vm.finalizeGauntletIfCleared() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
+        .animation(Theme.animation(.easeInOut(duration: 0.3)), value: stageCardUp)
+        .onChange(of: vm.stageCleared) { cleared in
+            guard cleared else { stageCardUp = false; return }
+            let wait = Theme.reduceMotion ? 0 : RevealTiming.finishHold(columns: vm.wordLength, winHop: false)
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
+                if vm.stageCleared { stageCardUp = true }
+            }
+        }
         .onChange(of: vm.status) { newValue in
             // Haptics fire instantly; the jingle waits for the overlay (below).
             if newValue == .won { Haptics.success() }
@@ -225,7 +249,7 @@ struct GameScreen: View {
                     // the confetti for frames. Web entrance: fade-in-scale
                     // 0.8 → 1.0, 300ms ease-out.
                     // §AQ1: the popup springs in faster.
-                    withAnimation(Theme.animation(.spring(response: 0.26, dampingFraction: 0.8))) {
+                    withAnimation(Theme.animation(Motion.spring)) {   // §AZ: the shared spring
                         showVictory = true
                     }
                     // High-point review ask: WIN path only (never a loss) —
@@ -452,23 +476,16 @@ struct GameScreen: View {
     /// UNLIMITED game (Pro): the KEEP PLAYING card is the primary action — NEW
     /// PUZZLE = the existing Play again, "Other games" = back Home to the picker.
     @ViewBuilder private var finishedDock: some View {
-        let shareIcon = FinishedShareButton(onShare: { reveal in self.share(reveal: reveal) })
+        // §AT1: the share icon rides the result strip (pinned trailing), so the dock's
+        // candies span and center on the full width.
         if vm.isDaily {
-            HStack(alignment: .top, spacing: 6) {
-                shareIcon
-                NextDailyCTA(currentMode: mode.rawValue, compact: true)
-            }
-            .padding(.bottom, 6)
+            NextDailyCTA(currentMode: mode.rawValue, compact: true)
+                .padding(.bottom, 6)
         } else if let again = onPlayAgain {
             // §R3: the card shows for everyone (it gates free players itself).
-            HStack(alignment: .center, spacing: 6) {
-                shareIcon
-                UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(mode.rawValue)?.title ?? ModeStyle.title(mode).capitalized,
-                                         afterUnlimited: true, action: again, onOtherGames: { dismiss() })
-            }
-            .padding(.bottom, 6)
-        } else {
-            shareIcon.frame(maxWidth: .infinity).padding(.bottom, 6)
+            UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(mode.rawValue)?.title ?? ModeStyle.title(mode).capitalized,
+                                     afterUnlimited: true, action: again, onOtherGames: { dismiss() })
+                .padding(.bottom, 6)
         }
     }
 
@@ -556,8 +573,8 @@ struct GameScreen: View {
 struct StageTransitionOverlay: View {
     let completedName: String
     let next: (name: String, boards: Int, guesses: Int, sequential: Bool, prefill: Bool)?
-    /// VS runs shorten the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for
-    /// it, so a 2.5s flourish per stage is a real handicap over a 5-stage run.
+    /// A VS run (founder: the card stays 5 s like solo and the player's race clock
+    /// pauses while it's up; a tap / Continue / Enter skips at once).
     var isVersus: Bool = false
     /// FINISH_SPEC §P (optional, the solo run passes them): the just-cleared
     /// stage's index (0-based), the run length and the score so far. Without them
@@ -569,6 +586,8 @@ struct StageTransitionOverlay: View {
 
     @State private var appeared = false
     @State private var pulse = false
+    /// §AU3: advance exactly once (tap, Continue, Enter or the timer).
+    @State private var advanced = false
     @Environment(\.accessibilityReduceMotion) private var envReduce
     private var still: Bool { envReduce || Theme.reduceMotion }
 
@@ -640,7 +659,7 @@ struct StageTransitionOverlay: View {
                     .accessibilityElement(children: .combine)
                 }
 
-                Button(action: onAdvance) {
+                Button(action: advance) {
                     CandyLabel(title: next == nil ? "See results" : "Continue", symbol: "play.fill")
                 }
                 .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
@@ -656,6 +675,10 @@ struct StageTransitionOverlay: View {
             .tintedCard(accent: Self.amber, bar: [Color(hex: 0xFFC56B), Color(hex: 0xF97316)], radius: 24, barHeight: 10,
                         tint: 0.12, line: 0.32)
             .padding(.horizontal, 22)
+            // §AU3: one smooth entrance — the card rises + settles (transform/opacity only).
+            .scaleEffect(appeared || still ? 1 : 0.94)
+            .offset(y: appeared || still ? 0 : 18)
+            .animation(still ? nil : Motion.spring, value: appeared)
         }
         .onAppear {
             appeared = true
@@ -664,17 +687,31 @@ struct StageTransitionOverlay: View {
             withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) { pulse = true }
         }
         .contentShape(Rectangle())
-        .onTapGesture { onAdvance() }
-        .task {
-            // Between stages: auto-advance after 2.5s (web StageTransition).
-            // After the FINAL stage: a longer 4s pause so the cleared run isn't
-            // rushed — but it MUST still auto-advance (was: wait forever for a
-            // tap). The win only records on advance, so leaving the screen first
-            // dropped the daily result → a real Flawless showed as an 8/9 Sweep.
-            let nanos: UInt64 = next == nil ? 4_000_000_000 : (isVersus ? 1_000_000_000 : 2_500_000_000)
-            try? await Task.sleep(nanoseconds: nanos)
-            onAdvance()
+        .onTapGesture { advance() }
+        // §AU3: Enter / Return skips too (the board's keys are off under the card).
+        .hardwareKeyboard { key in
+            guard key == .enter || key == .space else { return false }
+            advance()
+            return true
         }
+        // The screen turns the board's keys off under the card; this card's own
+        // Enter handler is the exception.
+        .environment(\.hardwareKeyboardEnabled, true)
+        .task {
+            // §AU3: the card stays up at least 5 s, then auto-advances (between
+            // stages AND after the final one — the win only records on advance, so
+            // it MUST still advance; leaving first dropped the daily result). Founder:
+            // VS Gauntlet too — 5 s like solo, with the player's race clock paused.
+            let nanos: UInt64 = 5_000_000_000
+            try? await Task.sleep(nanoseconds: nanos)
+            advance()
+        }
+    }
+
+    private func advance() {
+        guard !advanced else { return }
+        advanced = true
+        onAdvance()
     }
 
     /// §P: the run's progress dots — done stages filled amber, the upcoming one

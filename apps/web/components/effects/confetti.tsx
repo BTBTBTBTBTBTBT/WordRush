@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/motion';
+import { MOTION } from '@/lib/motion-tokens';
 
 interface ConfettiPiece {
   id: number;
@@ -43,7 +44,9 @@ export function Confetti({ colors }: { colors?: readonly string[] }) {
     if (prefersReducedMotion()) return;
     const palette = colors || DEFAULT_COLORS;
 
-    const newPieces = Array.from({ length: 50 }, (_, i) => ({
+    // AZ: capped (was 50 DOM pieces), transform-only keyframes on their own
+    // layers, and the whole burst unmounts once the last piece has fallen.
+    const newPieces = Array.from({ length: MOTION.confettiMax }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       color: palette[Math.floor(Math.random() * palette.length)],
@@ -52,14 +55,19 @@ export function Confetti({ colors }: { colors?: readonly string[] }) {
     }));
 
     setPieces(newPieces);
+    const longest = Math.max(...newPieces.map((p) => p.delay + p.duration));
+    const t = setTimeout(() => setPieces([]), Math.ceil(longest * 1000) + 100);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (pieces.length === 0) return null;
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
       {pieces.map((piece) => (
         <div
           key={piece.id}
-          className="absolute w-3 h-3 rounded-sm"
+          className="absolute w-3 h-3 rounded-sm confetti-piece"
           style={{
             left: `${piece.x}vw`,
             backgroundColor: piece.color,

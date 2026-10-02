@@ -5,7 +5,7 @@ import { flushSync } from 'react-dom';
 import { CAST } from '@/lib/mascots';
 import { activeSeason, castArt, type Season } from '@/lib/season';
 import { prefersReducedMotion } from '@/lib/motion';
-import { CAST_FLOURISH_ATTR, INTRO, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs, glideFrame, introShouldPlay } from '@/lib/intro';
+import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs, glideFrame, glideTransform, introShouldPlay } from '@/lib/intro';
 
 // The cold-start launch (docs/FINISH_SPEC.md F2). The static launch screen is
 // the inline #app-loader in app/layout.tsx (the Home wallpaper color with the
@@ -30,6 +30,28 @@ import { CAST_FLOURISH_ATTR, INTRO, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs,
 // FINISH_SPEC X: during the season the row assembles from the Halloween
 // skins (the same art + framing the header draws, lib/season.ts castArt), so
 // it lands on an identical row.
+// AU5 ("VERY choppy" cold boot): every intro image is fetched AND decoded
+// before the first intro frame (the launch look holds meanwhile, at most
+// INTRO_PRELOAD_MAX_MS), the glide animates only transform (translate +
+// scale, lib/intro.ts glideTransform) instead of left / top / width, and heavy
+// startup work waits for the landing (afterIntro, INTRO_DONE_EVENT).
+
+/** Fetch + decode an image off the main thread; never rejects. */
+function decodeImage(src: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+    if (typeof img.decode === 'function') img.decode().then(() => resolve(), () => resolve());
+    else { img.onload = () => resolve(); img.onerror = () => resolve(); }
+  });
+}
+
+/** The intro is over: the real row shows and deferred startup work may run. */
+function endRunning() {
+  html().removeAttribute(INTRO_RUNNING_ATTR);
+  try { window.dispatchEvent(new Event(INTRO_DONE_EVENT)); } catch {}
+}
 
 type Phase = 'off' | 'w' | 'row' | 'glide' | 'out';
 
@@ -56,6 +78,8 @@ export function ColdStartIntro() {
   const [phase, setPhase] = useState<Phase>('off');
   const [reduced, setReduced] = useState(false);
   const [frame, setFrame] = useState<React.CSSProperties | null>(null);
+  /** AU5: the W only starts bouncing once the images are decoded. */
+  const [started, setStarted] = useState(false);
   const [season, setSeason] = useState<Season | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -72,7 +96,7 @@ export function ColdStartIntro() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     flushSync(() => setPhase('off'));
-    html().removeAttribute(INTRO_RUNNING_ATTR);
+    endRunning();
     flourish(document.querySelector<HTMLElement>('[data-cast-row]'));
   }, []);
 
@@ -85,55 +109,71 @@ export function ColdStartIntro() {
     if (!introShouldPlay({ pathname: window.location.pathname, seenThisSession: seen, hasStaticSplash: !!loader })) return;
     try { sessionStorage.setItem(INTRO.sessionKey, '1'); } catch {}
     const rm = prefersReducedMotion();
+    const season0 = activeSeason();
     setReduced(rm);
-    setSeason(activeSeason());
+    setSeason(season0);
     setPhase('w');
     // Step 1: the real header row stays laid out but hidden while the intro runs.
     html().setAttribute(INTRO_RUNNING_ATTR, '');
+    let cancelled = false;
     const at = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
     const cleanup = () => {
+      cancelled = true;
       timers.current.forEach(clearTimeout);
-      html().removeAttribute(INTRO_RUNNING_ATTR);
+      endRunning();
     };
-    if (rm) {
-      // Reduce Motion: hold the launch look, then a 200 ms crossfade into Home
-      // (the real row is revealed under the fading backdrop), no flourish.
-      at(INTRO.reducedHoldMs, () => { html().removeAttribute(INTRO_RUNNING_ATTR); setPhase('out'); });
-      at(INTRO.reducedHoldMs + INTRO.reducedFadeMs, () => { landed.current = true; setPhase('off'); });
-      return cleanup;
-    }
-    at(INTRO.rowAt, () => setPhase('row'));
-    at(INTRO.glideAt, () => {
-      // Step 2: measure the real row and glide to EXACTLY its frame.
-      const row = rowRef.current;
-      const target = document.querySelector<HTMLElement>('[data-cast-row]');
-      const a = row?.getBoundingClientRect();
-      const b = target?.getBoundingClientRect();
-      if (!row || !target || !a || !b || a.width <= 0 || b.width <= 0) {
-        // No header row on screen: fade the intro out instead (nothing to land on).
-        html().removeAttribute(INTRO_RUNNING_ATTR);
-        setPhase('out');
-        at(INTRO.outMs, () => { landed.current = true; setPhase('off'); });
+    const run = () => {
+      if (cancelled) return;
+      setStarted(true);
+      if (rm) {
+        // Reduce Motion: hold the launch look, then a 200 ms crossfade into Home
+        // (the real row is revealed under the fading backdrop), no flourish.
+        at(INTRO.reducedHoldMs, () => { endRunning(); setPhase('out'); });
+        at(INTRO.reducedHoldMs + INTRO.reducedFadeMs, () => { landed.current = true; setPhase('off'); });
         return;
       }
-      // Pin the row where it is now (no transition), then on the next frame
-      // animate left / top / width to the real row's frame.
-      flushSync(() => {
-        setFrame({ position: 'fixed', left: a.left, top: a.top, width: a.width, transition: 'none' });
-        setPhase('glide');
-      });
-      const to = glideFrame(b, getComputedStyle(target).paddingTop);
-      requestAnimationFrame(() => {
+      at(INTRO.rowAt, () => setPhase('row'));
+      at(INTRO.glideAt, () => {
+        // Step 2: measure the real row and glide onto EXACTLY its frame — transform only.
+        const row = rowRef.current;
+        const target = document.querySelector<HTMLElement>('[data-cast-row]');
+        const a = row?.getBoundingClientRect();
+        const b = target?.getBoundingClientRect();
+        if (!row || !target || !a || !b || a.width <= 0 || b.width <= 0) {
+          // No header row on screen: fade the intro out instead (nothing to land on).
+          endRunning();
+          setPhase('out');
+          at(INTRO.outMs, () => { landed.current = true; setPhase('off'); });
+          return;
+        }
+        const fromPad = parseFloat(getComputedStyle(row).paddingTop) || 0;
+        const to = glideFrame(b, getComputedStyle(target).paddingTop);
+        const t = glideTransform(a, fromPad, to, parseFloat(to.paddingTop) || 0);
+        // Pin the row where it is now (no transition), then on the next frame
+        // animate ONLY its transform onto the real row.
+        flushSync(() => {
+          setFrame({ position: 'fixed', left: a.left, top: a.top, width: a.width, transformOrigin: '0 0', transform: 'none', transition: 'none', willChange: 'transform' });
+          setPhase('glide');
+        });
         requestAnimationFrame(() => {
-          const ease = INTRO.glideEase;
-          setFrame({
-            position: 'fixed', left: to.left, top: to.top, width: to.width, paddingTop: to.paddingTop,
-            transition: `left ${INTRO.glideMs}ms ${ease}, top ${INTRO.glideMs}ms ${ease}, width ${INTRO.glideMs}ms ${ease}, padding-top ${INTRO.glideMs}ms ${ease}`,
+          requestAnimationFrame(() => {
+            setFrame({
+              position: 'fixed', left: a.left, top: a.top, width: a.width, transformOrigin: '0 0', willChange: 'transform',
+              transform: `translate3d(${t.x}px, ${t.y}px, 0) scale(${t.scale})`,
+              transition: `transform ${INTRO.glideMs}ms ${INTRO.glideEase}`,
+            });
           });
         });
+        at(INTRO.glideMs + 30, land);
       });
-      at(INTRO.glideMs + 30, land);
-    });
+    };
+    // AU5: fetch + decode the W and every cast image before the first intro
+    // frame; the launch look (backdrop + still W) holds until then, ≤ 300 ms.
+    const srcs = [SPLASH.icon, ...CAST.map((id) => castArt(id, season0).src)];
+    Promise.race([
+      Promise.all(srcs.map(decodeImage)),
+      new Promise<void>((r) => setTimeout(r, INTRO_PRELOAD_MAX_MS)),
+    ]).then(run);
     return cleanup;
   }, [land]);
 
@@ -167,7 +207,7 @@ export function ColdStartIntro() {
         alt=""
         width={SPLASH.size}
         height={SPLASH.size}
-        className={phase === 'w' && !reduced ? 'intro-bounce' : ''}
+        className={phase === 'w' && !reduced && started ? 'intro-bounce' : ''}
         style={{
           position: 'absolute',
           width: SPLASH.size,

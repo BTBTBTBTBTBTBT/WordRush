@@ -345,10 +345,10 @@ struct LeaderboardTab: View {
         // §AS4: your rank first, the standings next, the explainer row after them.
         if let r = sweepRank {
             let mine = sweepEntries.first { $0.userId.lowercased() == auth.profile?.id.lowercased() }
-            LbResultCard(rank: r.rank, ofLine: "OF \(r.total) TODAY",
+            LbResultCard(rank: r.rank, ofLine: "of \(r.total)",
                          line: mine.map { sweepResultLine($0, day: LeaderboardService.todayLocal()) },
                          points: mySweepScore.map { sweepScoreLabels[$0] ?? formatScore($0) },
-                         headline: "YOU\u{2019}RE #\(r.rank) TODAY",
+                         compact: true,
                          delta: { rankDelta(r, friends: false) })
         }
 
@@ -672,8 +672,9 @@ struct LeaderboardTab: View {
         if userRank != nil || mine != nil || done != nil {
             let friends = friendsOnly
             let won = mine?.completed ?? done?.completed ?? false
-            let ofLine = userRank.map { r in friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY" }
-                ?? (won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
+            // §AU2: the compact one-row card — "of 5" (friends: "of 5 friends").
+            let ofLine = userRank.map { r in friends ? "of \(r.total) friends" : "of \(r.total)" }
+                ?? (won ? "Completed today" : "Attempted today")
             let line: String? = mine.map {
                 lbSolveLine(mode: mode, completed: $0.completed, guessCount: $0.guessCount, timeSeconds: $0.timeSeconds,
                             boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
@@ -683,7 +684,7 @@ struct LeaderboardTab: View {
             }
             LbResultCard(rank: userRank?.rank, ofLine: ofLine, line: line,
                          points: myModeScore.map { lbScoreLabels[$0] ?? formatScore($0) },
-                         headline: userRank.map { "YOU\u{2019}RE #\($0.rank) \(friends ? "OF FRIENDS" : "TODAY")" },
+                         compact: true,
                          delta: { if let r = userRank { rankDelta(r, friends: friends) } },
                          footer: { LbResultFooter { completedCard } })
         } else {

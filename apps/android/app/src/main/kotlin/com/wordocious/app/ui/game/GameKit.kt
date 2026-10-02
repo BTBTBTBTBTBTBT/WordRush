@@ -300,26 +300,29 @@ fun GameTileFace(
 
 /** The tile's glyph: Nunito Black, centered on the FACE (above the lip), with its soft drop shadow. */
 @Composable
-internal fun TileGlyph(text: String, color: Color, shadow: Color, sizeDp: Float, tileDp: Float, modifier: Modifier = Modifier) {
+internal fun TileGlyph(
+    text: String, color: Color, shadow: Color, sizeDp: Float, tileDp: Float, modifier: Modifier = Modifier,
+    /** AU4: a draw-phase color (a flip's face swap never recomposes the glyph). */
+    colorProducer: (() -> Color)? = null,
+) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val fontSp = with(density) { sizeDp.coerceAtLeast(4f).dp.toSp() }
     val px = density.density
     Box(modifier.fillMaxSize().padding(bottom = (tileDp * TILE_LIP).dp), contentAlignment = Alignment.Center) {
-        Text(
-            text = text,
+        val style = LocalTextStyle.current.copy(
             color = color,
             fontSize = fontSp,
-            maxLines = 1,
-            softWrap = false,
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
             letterSpacing = 0.sp,
             lineHeight = fontSp,
-            style = LocalTextStyle.current.copy(
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
-                lineHeightStyle = LineHeightStyle(alignment = LineHeightStyle.Alignment.Center, trim = LineHeightStyle.Trim.Both),
-                shadow = if (shadow.alpha > 0f) Shadow(shadow, Offset(0f, tileDp * 0.03f * px), tileDp * 0.02f * px) else null,
-            ),
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+            lineHeightStyle = LineHeightStyle(alignment = LineHeightStyle.Alignment.Center, trim = LineHeightStyle.Trim.Both),
+            shadow = if (shadow.alpha > 0f) Shadow(shadow, Offset(0f, tileDp * 0.03f * px), tileDp * 0.02f * px) else null,
+        )
+        androidx.compose.foundation.text.BasicText(
+            text = text, style = style, maxLines = 1, softWrap = false,
+            color = colorProducer?.let { p -> androidx.compose.ui.graphics.ColorProducer { p() } },
         )
     }
 }

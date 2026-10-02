@@ -281,6 +281,16 @@ final class VSMatchViewModel: ObservableObject {
     /// Unix-ms match start — drives the spectator clock.
     var startTimeMs: Double { matchStartMs }
 
+    /// The player's race clock: paused while their own Gauntlet stage card is up
+    /// (founder: VS matches solo), so every recorded time excludes the card time.
+    private var raceClock = RaceClock(startMs: 0)
+    private static var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
+    /// Race time so far (card time excluded) — the header clock and every recorded time.
+    func elapsedMs() -> Double { raceClock.elapsedMs(at: Self.nowMs) }
+    /// The stage card went up / came down (VSGameView).
+    func stageCardShown() { raceClock.pause(at: Self.nowMs) }
+    func stageCardDone() { raceClock.resume(at: Self.nowMs) }
+
     // Swappable transport: socket by default, hot-swapped to a client-side CPU
     // bot when the player picks "Play the CPU" (Pro-only practice).
     private var service: VSTransport = VSMatchService()
@@ -614,7 +624,7 @@ final class VSMatchViewModel: ObservableObject {
         if screen == .match, myStatus == nil, !resultRecorded, let c = raceChallenge {
             resultRecorded = true
             if AuthService.shared.profile != nil {
-                let elapsed = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs)) : 0
+                let elapsed = Int(elapsedMs())
                 let rows = game?.rowsUsed ?? proper?.guesses.count ?? myGuessLog.count
                 let run = VsChallengeRun(solved: false, boardsSolved: 0, totalBoards: totalBoards, guesses: rows,
                                          timeMs: elapsed, guessLog: myGuessLog.map(\.guess),
@@ -626,7 +636,7 @@ final class VSMatchViewModel: ObservableObject {
         }
         if screen == .match, myStatus == nil, !resultRecorded, !isLocalOpponent {
             resultRecorded = true
-            let secs = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs) / 1000) : 0
+            let secs = Int(elapsedMs() / 1000)
             let gc = game?.rowsUsed ?? 0
             let solved = game?.boardsSolvedCount ?? 0
             let total = game?.boardCount ?? 1
@@ -872,6 +882,7 @@ final class VSMatchViewModel: ObservableObject {
     private func beginMatch(seed: String, startMs: Double?, solutions: [String]? = nil) {
         self.seed = seed
         matchStartMs = startMs ?? (Date().timeIntervalSince1970 * 1000)
+        raceClock = RaceClock(startMs: matchStartMs)
         opponent = OpponentProgress()
         result = nil
         rematch = .idle
@@ -921,7 +932,7 @@ final class VSMatchViewModel: ObservableObject {
             }
             pvm.onCompleted = { [weak self] status, guesses in
                 guard let self else { return }
-                let timeMs = Int(max(0, Date().timeIntervalSince1970 * 1000 - self.matchStartMs))
+                let timeMs = Int(self.elapsedMs())
                 self.playerTimeMs = timeMs
                 if status == .won { self.myBoardsSolved = 1 }
                 self.myStatus = status
@@ -962,7 +973,7 @@ final class VSMatchViewModel: ObservableObject {
         vm.onStageCompleted = { [weak self] stage in self?.service.stageCompleted(stageIndex: stage) }
         vm.onCompleted = { [weak self] status, guesses in
             guard let self else { return }
-            let timeMs = Int(max(0, Date().timeIntervalSince1970 * 1000 - self.matchStartMs))
+            let timeMs = Int(self.elapsedMs())
             self.playerTimeMs = timeMs
             self.myStatus = status
             self.myFinalGuesses = guesses

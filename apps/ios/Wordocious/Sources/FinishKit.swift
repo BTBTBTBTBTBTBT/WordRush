@@ -625,8 +625,11 @@ struct GlossyTile: View {
             // never changes mid-animation.
             .background {
                 if glow != .clear {
-                    faceShape.fill(glow.opacity(Double(glowAmount)))
-                        .shadow(color: glow.opacity(Double(glowAmount)), radius: s * 0.27 * glowAmount)
+                    // §AU4: a fixed glow whose OPACITY animates (GPU-cheap) — never an
+                    // animated blur radius.
+                    faceShape.fill(glow)
+                        .shadow(color: glow, radius: s * 0.27)
+                        .opacity(Double(glowAmount))
                 }
             }
         }

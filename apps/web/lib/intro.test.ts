@@ -38,3 +38,22 @@ describe('cold-start intro', () => {
     expect(fs.existsSync(path.join(__dirname, '..', 'public', SPLASH.icon))).toBe(true);
   });
 });
+
+describe('AU5 smooth cold start', () => {
+  it('glides by transform only: the row lands exactly on the real row', async () => {
+    const { glideTransform } = await import('./intro');
+    const from = { left: 8, top: 380, width: 374 };
+    const to = { left: 20, top: 52, width: 351 };
+    const t = glideTransform(from, 4, to, 6);
+    expect(t.scale).toBeCloseTo(351 / 374, 6);
+    // Scaled about the top left: the left edge and the content top land on the target.
+    expect(from.left + t.x).toBe(to.left);
+    expect(from.top + 4 * t.scale + t.y).toBeCloseTo(to.top + 6, 6);
+    expect(from.width * t.scale).toBeCloseTo(to.width, 6);
+  });
+
+  it('waits at most 300 ms for the intro images', async () => {
+    const { INTRO_PRELOAD_MAX_MS } = await import('./intro');
+    expect(INTRO_PRELOAD_MAX_MS).toBeLessThanOrEqual(300);
+  });
+});

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { HEADER_GLYPH } from '@/components/ui/page-header';
+import { GAME_HEADER_GLYPH } from '@/components/ui/page-header';
 import { GameHelpCard } from '@/components/help/game-help-card';
 import { getGuide } from '@/lib/guide-content';
 import { setGuidePaused } from '@/hooks/use-active-play-timer';
@@ -49,7 +49,7 @@ export function GameGuideButton({
         aria-haspopup="dialog"
         className={`${positionClass} hdr-glyph w-11 h-11 flex items-center justify-center`}
       >
-        <Icon3D name="help" size={HEADER_GLYPH} priority />
+        <Icon3D name="help" size={GAME_HEADER_GLYPH} priority />
       </button>
 
       {open && <GameHelpCard slug={slug} accent={accentColor} onClose={close} />}

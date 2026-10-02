@@ -177,7 +177,7 @@ describe('game title art (§10)', () => {
 
   it('draws at the spec height caps (§14; §19.3 game headers much bigger)', () => {
     expect(GAME_TITLE_ART_HEIGHT.header).toBe(120);
-    expect(GAME_TITLE_ART_HEIGHT.headerShort).toBe(84);
+    expect(GAME_TITLE_ART_HEIGHT.headerShort).toBe(56);
     expect(GAME_TITLE_ART_HEIGHT.shortViewport).toBe(700);
     expect(GAME_TITLE_ART_HEIGHT.headerMin).toBe(44);
     expect(GAME_TITLE_ART_HEIGHT.guide).toBe(72);
@@ -186,7 +186,7 @@ describe('game title art (§10)', () => {
 });
 
 describe('big game titles below the corner row (§19.3)', () => {
-  it('sizes the header art by the full width minus 32, 44 px up to the cap var (120 / 84)', () => {
+  it('sizes the header art by the full width minus 32, 44 px up to the cap var (120 / 56)', () => {
     const [w, h] = ART_SIZE['art-game-scramble'];
     expect(GAME_HEADER.pad).toBeLessThanOrEqual(6);
     expect(GAME_HEADER.inset).toBe(32);
@@ -207,10 +207,10 @@ describe('big game titles below the corner row (§19.3)', () => {
     expect(gameToastTop(90)).toBe('calc(90px + var(--game-header-shift, 0px))');
   });
 
-  it('caps the title at 120, or 84 on viewports under 700 tall (globals.css)', () => {
+  it('caps the title at 120, or 56 on viewports under 700 tall (globals.css)', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
     expect(css).toMatch(/\.game-art-header \{\s*--game-title-cap: 120px;\s*padding-top: var\(--game-title-top, 6px\);/);
-    expect(css).toMatch(/@media \(max-height: 699\.98px\) \{\s*\.game-art-header \{ --game-title-cap: 84px; \}/);
+    expect(css).toMatch(/@media \(max-height: 699\.98px\) \{\s*\.game-art-header \{ --game-title-cap: 56px; \}/);
   });
 
   it('gives every solo game with a header title art', () => {

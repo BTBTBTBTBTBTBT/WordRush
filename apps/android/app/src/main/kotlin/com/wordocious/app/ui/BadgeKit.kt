@@ -739,7 +739,17 @@ private fun BadgePopupFrame(
     val enter = remember { Animatable(if (still) 1f else 0f) }
     LaunchedEffect(Unit) {
         com.wordocious.app.data.SoundManager.achievementUnlocked(view)
-        if (!still) enter.animateTo(1f, tween(260, easing = FastOutSlowInEasing))
+        // AZ: the shared spring in.
+        if (!still) enter.animateTo(1f, Motion.springIn())
+    }
+    // AZ: a matching exit — fade + settle out, then dismiss (single-fire).
+    val exitScope = androidx.compose.runtime.rememberCoroutineScope()
+    var leaving by remember { mutableStateOf(false) }
+    val close: () -> Unit = {
+        if (!leaving) {
+            leaving = true
+            exitScope.launch { if (!still) enter.animateTo(0f, Motion.exit()); onNice() }
+        }
     }
     val dark = WTheme.isDark
     val a = accent.copy(alpha = 1f).toArgb()
@@ -747,13 +757,13 @@ private fun BadgePopupFrame(
     val top = Color(WinPopupMath.cardWash(a, if (dark) 0.24f else 0.12f, base))
     val bottom = Color(WinPopupMath.cardWash(a, if (dark) 0.12f else 0.04f, base))
     val shape = RoundedCornerShape(28.dp)
-    PopupScrim(onNice) {
+    PopupScrim(close, Modifier.graphicsLayer { alpha = if (leaving) enter.value.coerceIn(0f, 1f) else 1f }) {
         PopupConfetti(WIN_CAST_CONFETTI)
         Column(
             Modifier.padding(horizontal = 28.dp).widthIn(max = 360.dp).fillMaxWidth()
                 .graphicsLayer {
                     val s = 0.85f + 0.15f * enter.value
-                    scaleX = s; scaleY = s; alpha = enter.value
+                    scaleX = s; scaleY = s; alpha = enter.value.coerceIn(0f, 1f)
                 }
                 .semantics { this.paneTitle = paneTitle }
                 .shadow(22.dp, shape, clip = false, ambientColor = accent.copy(alpha = 0.45f), spotColor = accent.copy(alpha = 0.6f))
@@ -771,7 +781,7 @@ private fun BadgePopupFrame(
             ) {
                 content()
                 Spacer(Modifier.height(6.dp))
-                CandyButton("Nice!", onClick = onNice, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
+                CandyButton("Nice!", onClick = close, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
                 if (waiting > 0) {
                     Text(
                         "$waiting more", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,

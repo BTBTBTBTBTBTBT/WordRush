@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
-import { HEADER_GLYPH, HEADER_INK } from '@/components/ui/page-header';
+import { GAME_HEADER_GLYPH, HEADER_INK } from '@/components/ui/page-header';
 
 interface SoundToggleProps {
   accentColor?: string;
@@ -34,13 +34,13 @@ export function SoundToggle({
       className={`${positionClass} hdr-glyph w-11 h-11 flex items-center justify-center`}
     >
       {/* The 3D speaker (docs/ART_SPEC.md §5); muted = grayed with a slash. */}
-      <span className="relative flex items-center justify-center" style={{ width: HEADER_GLYPH, height: HEADER_GLYPH }}>
-        <Icon3D name="sound" size={HEADER_GLYPH} priority style={enabled ? undefined : { filter: 'grayscale(1)', opacity: 0.5 }} />
+      <span className="relative flex items-center justify-center" style={{ width: GAME_HEADER_GLYPH, height: GAME_HEADER_GLYPH }}>
+        <Icon3D name="sound" size={GAME_HEADER_GLYPH} priority style={enabled ? undefined : { filter: 'grayscale(1)', opacity: 0.5 }} />
         {!enabled && (
           <span
             aria-hidden="true"
             className="absolute rounded-full"
-            style={{ width: 26, height: 2.5, background: HEADER_INK, transform: 'rotate(-45deg)' }}
+            style={{ width: 34, height: 3, background: HEADER_INK, transform: 'rotate(-45deg)' }}
           />
         )}
       </span>

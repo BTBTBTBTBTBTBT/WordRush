@@ -77,7 +77,10 @@ export const LetterTile = memo(function LetterTile({
     >
       <b>{letter}</b>
       {flip && look !== 'typed' && look !== 'empty' && (
-        <span className="gt-cover" aria-hidden="true"><b>{letter}</b></span>
+        <>
+          <span className="gt-glow" aria-hidden="true" />
+          <span className="gt-cover" aria-hidden="true"><b>{letter}</b></span>
+        </>
       )}
       {flip && flipSound && look !== 'typed' && look !== 'empty' && (
         <RevealFeedback index={flipIndex} landAfterTiles={hopIndex === 0 ? rowLength : undefined} />

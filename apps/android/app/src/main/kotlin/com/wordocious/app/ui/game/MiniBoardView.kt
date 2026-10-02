@@ -61,6 +61,8 @@ fun MiniBoardView(
     stateRows: List<List<TileState>>? = null,
     /** False on a static recap (a completed board): no reveal / hop replays. */
     animateLastRow: Boolean = true,
+    /** AT2: draw at least this many rows in all (prefills included), padding with empty rows — a recap's shared height. */
+    minTotalRows: Int = 0,
 ) {
     val isWon = board.status == GameStatus.WON
     val isLost = board.status == GameStatus.LOST
@@ -81,7 +83,7 @@ fun MiniBoardView(
     val guessCount = stateRows?.size ?: board.guesses.size
     // A color-only opponent can outrun the starting row budget (Gauntlet steal
     // guess); never clip a filled row.
-    val rowCount = maxOf(board.maxGuesses, guessCount)
+    val rowCount = maxOf(board.maxGuesses, guessCount, minTotalRows - prefills.size)
     val lastSubmittedRow = if (guessCount > 0) guessCount - 1 else -1
 
     // Font, corner radius and border are derived per tile now (TileView measures

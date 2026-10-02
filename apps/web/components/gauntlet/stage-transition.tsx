@@ -2,7 +2,8 @@
 
 import { LiveHeadline } from '@/components/ui/live-headline';
 import { GauntletStageConfig } from '@wordle-duel/core';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { prefersReducedMotion } from '@/lib/motion';
 import { CandyButton } from '@/components/ui/candy-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, artSrc } from '@/lib/art';
@@ -16,6 +17,17 @@ import { alphaHex, cardBarStyle, darken, softCard, softPill } from '@/lib/soft-s
 // pulsing), the stage's rule as a tinted pill, the running guess total in
 // soft numbers and a large amber candy CONTINUE. Tap anywhere, Enter or
 // Space continues, as before; it still auto-continues on its timer.
+// AU3: fluid — the card slides + springs in once, stays up STAGE_HOLD_MS
+// (5 s, solo), and on continue the next stage starts UNDER the card
+// (onAdvance) while the card fades out (STAGE_EXIT_MS), then it unmounts
+// (onComplete). Its content is frozen at mount, so nothing jumps mid-exit.
+
+/** AU3: how long the solo stage card stays up before auto-advancing. */
+export const STAGE_HOLD_MS = 5000;
+/** VS too (founder 10-02): 5 s, same as solo. The race clock keeps running; a tap / Continue / Enter skips at once. */
+export const STAGE_HOLD_VS_MS = 5000;
+/** The fade/slide out. */
+export const STAGE_EXIT_MS = 260;
 
 interface StageTransitionProps {
   completedStage: GauntletStageConfig;
@@ -26,24 +38,38 @@ interface StageTransitionProps {
   totalStages?: number;
   /** Guesses used so far, the running score. */
   guessesSoFar?: number;
-  /** VS shortens the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for it,
-   *  so a 2.5s flourish per stage is a real handicap over a 5-stage run. */
+  /** VS: same 5 s hold as solo (founder 10-02); the race clock does NOT pause, so players can skip it. */
   isVersus?: boolean;
+  /** AU3: start the next stage (runs as the card starts to leave, so the new board is already there). */
+  onAdvance?: () => void;
+  /** The card has left: unmount it. Without onAdvance it also advances (legacy). */
   onComplete: () => void;
 }
 
-export function StageTransition({ completedStage, nextStage, cleared, totalStages = 5, guessesSoFar, isVersus = false, onComplete }: StageTransitionProps) {
-  // onComplete dispatches NEXT_STAGE, so it must fire exactly once however the
+export function StageTransition(props: StageTransitionProps) {
+  const { isVersus = false, onAdvance, onComplete } = props;
+  // Frozen at mount: advancing under the card must not change what it shows.
+  const frozen = useRef(props).current;
+  const { completedStage, nextStage, cleared, totalStages = 5, guessesSoFar } = frozen;
+  const [leaving, setLeaving] = useState(false);
+  // Advancing dispatches NEXT_STAGE, so it must fire exactly once however the
   // overlay is dismissed — timer, tap, or key. A second call would skip a stage.
   const fired = useRef(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finish = useCallback(() => {
     if (fired.current) return;
     fired.current = true;
-    onComplete();
-  }, [onComplete]);
+    if (!onAdvance) { onComplete(); return; }
+    onAdvance();
+    if (prefersReducedMotion()) { onComplete(); return; }
+    setLeaving(true);
+    exitTimer.current = setTimeout(onComplete, STAGE_EXIT_MS);
+  }, [onAdvance, onComplete]);
+
+  useEffect(() => () => { if (exitTimer.current) clearTimeout(exitTimer.current); }, []);
 
   useEffect(() => {
-    const timer = setTimeout(finish, isVersus ? 1000 : 2500);
+    const timer = setTimeout(finish, isVersus ? STAGE_HOLD_VS_MS : STAGE_HOLD_MS);
     return () => clearTimeout(timer);
   }, [finish, isVersus]);
 
@@ -70,13 +96,13 @@ export function StageTransition({ completedStage, nextStage, cleared, totalStage
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-      style={{ background: 'rgba(30, 15, 60, 0.45)', backdropFilter: 'blur(3px)' }}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 st-overlay ${leaving ? 'st-leaving' : ''}`}
+      style={{ background: 'rgba(30, 15, 60, 0.45)' }}
       onClick={finish}
       role="dialog"
       aria-label={nextStage ? `Stage complete. Next: ${nextStage.name}` : 'Stage complete'}
     >
-      <div className="relative w-full max-w-sm overflow-hidden text-center" style={{ ...softCard(GAUNTLET_ACCENT, { radius: 24 }), ['--color-card-base' as string]: '#ffffff' } as React.CSSProperties}>
+      <div className="relative w-full max-w-sm overflow-hidden text-center st-card" style={{ ...softCard(GAUNTLET_ACCENT, { radius: 24 }), ['--color-card-base' as string]: '#ffffff' } as React.CSSProperties}>
         <div aria-hidden="true" style={cardBarStyle(GAUNTLET_ACCENT)} />
         <div className="flex flex-col items-center gap-2.5 px-5 pt-3 pb-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}

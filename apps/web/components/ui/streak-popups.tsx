@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useExit } from '@/hooks/use-exit';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, artSrc, poseArt, type PoseArtName } from '@/lib/art';
@@ -52,10 +53,12 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
   }, [open, onClose]);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  if (!open || !mounted) return null;
+  // AZ: a matching exit instead of vanishing in one frame.
+  const { shown, leaving } = useExit(open);
+  if (!shown || !mounted) return null;
   const [hw, hh] = ART_SIZE[host];
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" style={{ paddingTop: 'max(16px, env(safe-area-inset-top))', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+    <div className={`fixed inset-0 z-[60] flex items-center justify-center px-4 ${leaving ? 'motion-leaving' : ''}`} style={{ paddingTop: 'max(16px, env(safe-area-inset-top))', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
       {/* The whole page dims; a tap anywhere outside closes. */}
       <div className="absolute inset-0 animate-fade-in" style={{ background: 'rgba(30, 15, 60, 0.45)' }} onClick={onClose} aria-hidden="true" />
       <div

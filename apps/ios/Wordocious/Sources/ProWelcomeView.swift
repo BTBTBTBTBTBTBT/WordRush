@@ -390,11 +390,12 @@ struct ProWelcomeView: View {
                 .frame(width: 320, height: 240)
             BadgeRays(color: Self.gold.opacity(Theme.isDark ? 0.22 : 0.20))
                 .frame(width: 340, height: 340)
-                .rotationEffect(.degrees(raysTurn ? 360 : 0))
                 .mask(RadialGradient(colors: [.black, .clear], center: .center, startRadius: 20, endRadius: 170))
-            Ellipse().fill(Color(hex: 0x7A3D00).opacity(0.18))
-                .frame(width: 130, height: 18)
-                .blur(radius: 5)
+                .drawingGroup()   // §AZ: rasterized, then only rotated
+                .rotationEffect(.degrees(raysTurn ? 360 : 0))
+            Ellipse().fill(RadialGradient(colors: [Color(hex: 0x7A3D00).opacity(0.2), Color(hex: 0x7A3D00).opacity(0)],
+                                          center: .center, startRadius: 0, endRadius: 70))
+                .frame(width: 140, height: 20)   // §AZ: no live blur
                 .offset(y: 84)
             Group {
                 if ArtAsset.exists("art-scene-pro-crown") {

@@ -1,5 +1,7 @@
 'use client';
 
+import { afterIntro } from '@/lib/intro';
+import { homeCardTapBlocked } from '@/lib/nav-home';
 import { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import Link from 'next/link';
@@ -177,7 +179,8 @@ export default function HomePage() {
     // Pre-warm the 5-letter lists once the page is idle, through the central loader.
     const warm = () => { import('@/lib/init-dictionary').then((m) => m.loadDictionary([5])).catch(() => {}); };
     const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
-    if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 2000);
+    // AU5: never during the cold-start intro.
+    return afterIntro(() => { if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 2000); });
   }, []);
 
   // The More Games sheet is gone (home redesign, 2026-10-01): its old links
@@ -194,16 +197,20 @@ export default function HomePage() {
     setActivePlayUser(user?.id ?? null);
     if (user) {
       syncPlayLimits(user.id);
-      import('@/lib/stats-service')
-        .then((m) => m.drainPendingRecords(user.id))
-        .catch(() => {});
+      // AU5: the pending-record drain waits for the intro to land.
+      return afterIntro(() => {
+        import('@/lib/stats-service')
+          .then((m) => m.drainPendingRecords(user.id))
+          .catch(() => {});
+      });
     }
   }, [user]);
 
-  useEffect(() => {
+  // AU5: route prefetches wait for the intro to land.
+  useEffect(() => afterIntro(() => {
     router.prefetch('/vs');
     router.prefetch('/practice/vs?daily=true');
-  }, [router]);
+  }), [router]);
 
   useEffect(() => {
     if (!user?.id) { setVsDailyWon(null); return; }
@@ -219,15 +226,18 @@ export default function HomePage() {
   useEffect(() => {
     if (!user?.id) { setSweepStreaks({ sweep: 0, flawless: 0 }); setPuzzleStreaks({ sweep: 0, flawless: 0 }); return; }
     let cancelled = false;
-    import('@/lib/stats-service')
-      .then((m) => m.fetchDailySweepStats(user.id))
-      .then((st) => { if (!cancelled) setSweepStreaks({ sweep: st.currentSweepStreak, flawless: st.currentFlawlessStreak }); })
-      .catch(() => {});
-    import('@/lib/home-streaks')
-      .then((m) => m.fetchPuzzleStreaks(user.id, puzzleKeys ? puzzleKeys.split(',') : []))
-      .then((st) => { if (!cancelled) setPuzzleStreaks(st); })
-      .catch(() => {});
-    return () => { cancelled = true; };
+    // AU5: after the cold-start intro has landed.
+    const cancelWait = afterIntro(() => {
+      import('@/lib/stats-service')
+        .then((m) => m.fetchDailySweepStats(user.id))
+        .then((st) => { if (!cancelled) setSweepStreaks({ sweep: st.currentSweepStreak, flawless: st.currentFlawlessStreak }); })
+        .catch(() => {});
+      import('@/lib/home-streaks')
+        .then((m) => m.fetchPuzzleStreaks(user.id, puzzleKeys ? puzzleKeys.split(',') : []))
+        .then((st) => { if (!cancelled) setPuzzleStreaks(st); })
+        .catch(() => {});
+    });
+    return () => { cancelled = true; cancelWait(); };
   }, [user?.id, completionsKey, puzzleKeys]);
 
   useEffect(() => {
@@ -313,7 +323,13 @@ export default function HomePage() {
           scroller stays full width, its content centers at up to 1100 px; the
           banner keeps the 560 column; DAILIES | PUZZLES and WORD OF THE DAY |
           VS BATTLE sit side by side as two-column grids (globals.css .page-*). */}
-      <div className="px-4 page-wide-pad flex-1 min-h-0 overflow-y-auto pb-tab-clear" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* AY: right after a Home-button tap, a tap on a card here is the same finger
+          falling through — ignore it (HOME_TAP_GUARD_MS). */}
+      <div
+        className="px-4 page-wide-pad flex-1 min-h-0 overflow-y-auto pb-tab-clear"
+        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        onClickCapture={(e) => { if (homeCardTapBlocked()) { e.preventDefault(); e.stopPropagation(); } }}
+      >
         <div className="page-col flex flex-col gap-2">
         <PendingInvitesBanner userId={user?.id} />
         <FirstGameCard />

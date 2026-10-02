@@ -160,13 +160,45 @@ struct LbResultCard<Delta: View, Footer: View>: View {
     var pointsLabel: String = "POINTS"
     /// FINISH_SPEC §AR: the live headline over the card ("YOU'RE #3 TODAY").
     var headline: String? = nil
+    /// FINISH_SPEC §AU2: ONE compact row — "#2 of 5 · 2,005 PTS · Solved in 4 · 48s"
+    /// (+ the movement badge), no headline and no "OF N TODAY" repeat.
+    var compact: Bool = false
     @ViewBuilder var delta: () -> Delta
     @ViewBuilder var footer: () -> Footer
 
     var body: some View {
+        if compact { compactBody } else { fullBody }
+    }
+
+    private var compactBody: some View {
+        let ink = Theme.isDark ? Theme.textSecondary : LbStyle.goldInk
+        let rest = [points.map { "\($0) \(pointsLabel == "POINTS" ? "PTS" : pointsLabel)" }, line].compactMap { $0 }
+        return VStack(spacing: 0) {
+            HStack(spacing: 7) {
+                Icon3D(.crown, size: 20)
+                Text(rank.map { "#\($0)" } ?? "#–").softNumber(20)
+                    .lineLimit(1).fixedSize()
+                Text(([ofLine] + rest).joined(separator: " · "))
+                    .font(Brand.font(12, .black))
+                    .foregroundStyle(ink)
+                    .lineLimit(1).minimumScaleFactor(0.65)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                delta()
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel((rank.map { "Rank \($0) " } ?? "Not ranked yet ") + ([ofLine] + rest).joined(separator: ", "))
+            footer()
+                .environment(\.lbCardEmbedded, true)
+        }
+        .tintedCard(accent: Color(hex: 0xF5A524), bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)],
+                    radius: 16, barHeight: 4, tint: 0.12, line: 0.30)
+    }
+
+    private var fullBody: some View {
         let dark = Theme.isDark
         let ink = dark ? Theme.textSecondary : LbStyle.goldInk
-        VStack(spacing: 0) {
+        return VStack(spacing: 0) {
             if let headline {
                 LiveHeadline(text: headline, palette: .leaderboard, size: 20, maxLines: 1, minimumScale: 0.6)
                     .padding(.horizontal, 14).padding(.top, 10)
@@ -221,9 +253,9 @@ struct LbResultCard<Delta: View, Footer: View>: View {
 
 extension LbResultCard where Footer == EmptyView {
     init(rank: Int?, ofLine: String, line: String? = nil, points: String? = nil, pointsLabel: String = "POINTS",
-         headline: String? = nil, @ViewBuilder delta: @escaping () -> Delta) {
+         headline: String? = nil, compact: Bool = false, @ViewBuilder delta: @escaping () -> Delta) {
         self.init(rank: rank, ofLine: ofLine, line: line, points: points, pointsLabel: pointsLabel,
-                  headline: headline, delta: delta, footer: { EmptyView() })
+                  headline: headline, compact: compact, delta: delta, footer: { EmptyView() })
     }
 }
 

@@ -59,10 +59,10 @@ class ArtPassLayoutTest {
         expected.forEachIndexed { i, id -> assertEquals(id, Mascots.dayHost(LocalDate.of(2026, 10, 5).plusDays(i.toLong()))) }
     }
 
-    @Test fun bigGameTitleCapsAt120And84OnShortScreens() {
+    @Test fun bigGameTitleCapsAt120And56OnShortScreens() { // BA1: 56 on short screens (was 84)
         assertEquals(120f, gameHeaderTitleMax(800.dp).value, 0f)
         assertEquals(120f, gameHeaderTitleMax(700.dp).value, 0f)
-        assertEquals(84f, gameHeaderTitleMax(699.dp).value, 0f)
+        assertEquals(56f, gameHeaderTitleMax(699.dp).value, 0f)
         // A 411 dp phone: 411 − 20 (screen inset) − 32 = 359 dp wide; ≈900 × 280 art → ≈112 dp.
         assertEquals(111.69f, gameTitleArtHeight(359.dp, 280f / 900f, 44.dp, gameHeaderTitleMax(914.dp)).value, 0.01f)
     }

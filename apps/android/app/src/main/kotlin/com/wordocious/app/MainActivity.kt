@@ -24,6 +24,8 @@ import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.ui.theme.WordociousTheme
 import com.wordocious.core.generateDailySeed
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import androidx.lifecycle.lifecycleScope
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -81,10 +83,36 @@ class MainActivity : ComponentActivity() {
             // PublicProfileScreen retries on open.
             com.wordocious.app.data.ModerationService.loadBlockedIds()
         }
-        com.wordocious.app.data.StoreManager.start(this)
-        // LevelPlay: region gate -> privacy flags -> init -> preload the
-        // game-start interstitial. Dormant until the dashboard keys exist.
-        com.wordocious.app.data.AdsManager.start(this)
+        // AU5: billing + ads (network, caches) wait until the cold-start intro has landed so
+        // the intro's first frames stay smooth; a warm start runs them at once.
+        val introWillPlay = savedInstanceState == null && !com.wordocious.app.ui.ColdStart.played
+        if (!introWillPlay) com.wordocious.app.ui.ColdStart.landed.value = true
+        lifecycleScope.launch {
+            com.wordocious.app.ui.ColdStart.landed.first { it }
+            com.wordocious.app.data.StoreManager.start(this@MainActivity)
+            // LevelPlay: region gate -> privacy flags -> init -> preload the
+            // game-start interstitial. Dormant until the dashboard keys exist.
+            com.wordocious.app.data.AdsManager.start(this@MainActivity)
+        }
+        // AU5: decode every intro figure BEFORE the first intro frame, holding the plain
+        // launch color (the system splash / the lilac window) until ready — max ~300 ms.
+        if (introWillPlay) {
+            val ready = java.util.concurrent.atomic.AtomicBoolean(false)
+            val startedAt = android.os.SystemClock.uptimeMillis()
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+                runCatching { com.wordocious.app.ui.ColdStart.preload(applicationContext) }
+                ready.set(true)
+            }
+            // The decor view (never null; the content frame can be on some devices — see below).
+            val content: android.view.View = window.decorView
+            content.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    val go = ready.get() || android.os.SystemClock.uptimeMillis() - startedAt > 300
+                    if (go) content.viewTreeObserver.removeOnPreDrawListener(this)
+                    return go
+                }
+            })
+        }
         // FINISH_SPEC AO (was W): decide new vs existing player BEFORE this launch is recorded.
         com.wordocious.app.ui.Onboarding.prime(com.wordocious.app.data.SettingsPref.get(LAST_LAUNCHED_VERSION, -1))
         tagLaunchAfterUpdate()

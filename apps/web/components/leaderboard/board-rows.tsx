@@ -303,6 +303,24 @@ export function ResultCard({ rank, ofLine, solved, points, delta }: {
 }
 
 /**
+ * FINISH_SPEC AU2: the rank card collapsed to ONE compact row on gold — the
+ * crown, the whole result as one live-lettering line (lib/leaderboard-podium
+ * compactRankLine), the rank delta, and the completed check (W / L).
+ */
+export function CompactResultRow({ line, won, delta }: { line: string; won: boolean | null; delta?: ReactNode }) {
+  return (
+    <div className="relative overflow-hidden mb-3" style={softCard(LB_GOLD, { radius: 14 })}>
+      <div className="flex items-center gap-2" style={{ padding: '6px 10px' }}>
+        <Icon3D name="crown" size={22} className="shrink-0" />
+        <LiveHeadline text={line} palette="leaderboard" size={14} align="left" level={3} calm className="flex-1 min-w-0" />
+        {delta}
+        {won != null && <Icon3D name={won ? 'badge-check' : 'badge-l'} size={20} label={won ? 'Completed' : 'Not solved'} className="shrink-0" />}
+      </div>
+    </div>
+  );
+}
+
+/**
  * A collapsible section header (YESTERDAY'S WINNERS): a tinted tappable bar
  * with the caps label and a chevron; `right` for its share icon.
  */

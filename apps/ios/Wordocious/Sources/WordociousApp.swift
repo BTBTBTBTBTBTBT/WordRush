@@ -67,6 +67,9 @@ struct WordociousApp: App {
                 .background { AchievementUnlockHost() } // FINISH_SPEC §V2: arms the unlock popups (own window).
                 .background { ProWelcomeHost() } // FINISH_SPEC §AP: arms Welcome to Pro (own window).
                 .task {
+                    // FINISH_SPEC §AU5: nothing heavy while the cold-start intro plays —
+                    // network, caches, widget refresh and prefetch wait for its landing.
+                    await LaunchGate.wait()
                     // Utility-thread warm-up ~2 s in: Unlimited save sweep, puzzle banks, definitions.
                     AppWarmup.start()
                     GamePersistence.shared.cleanupStaleDailyGames()

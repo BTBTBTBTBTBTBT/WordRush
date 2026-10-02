@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -256,6 +257,9 @@ fun stripSentence(won: Boolean, items: List<StripItem>): String =
  * (soft numbers + a tiny label) for guesses · time · points. Scrolls sideways rather
  * than wrap on a very narrow phone. TalkBack reads it as one sentence.
  */
+/** The shortest screen (dp) that shows the strip's live headline. */
+const val STRIP_HEADLINE_MIN_SCREEN_DP = 700
+
 /** AR the strip's live headline: "SOLVED IN 4 GUESSES" (the first count chip), "SOLVED!", or "SO CLOSE". */
 fun stripHeadline(won: Boolean, items: List<StripItem>): String {
     if (!won) return "SO CLOSE"
@@ -273,7 +277,10 @@ fun ResultStrip(
     headline: String? = stripHeadline(won, items),
 ) {
     Column(modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = srText }, horizontalAlignment = Alignment.CenterHorizontally) {
-    if (headline != null) {
+    // Audit (10-02): on a short phone (< 700 dp tall, e.g. 360×640) the headline's ~38 dp goes to
+    // the board instead — the chips already carry the result.
+    val roomy = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp >= STRIP_HEADLINE_MIN_SCREEN_DP
+    if (headline != null && roomy) {
         com.wordocious.app.ui.LiveHeadline(
             headline,
             if (won) com.wordocious.app.ui.HeadlinePalette.CELEBRATION else com.wordocious.app.ui.HeadlinePalette.STATS,
@@ -429,8 +436,8 @@ fun FinishedDock(
                 )
             }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            onShare?.let { SoftControl(Icon3DName.SHARE, "Share", onClick = it, iconSize = 32.dp) }
+        // AT1: the actions center on the SCREEN; share is a trailing overlay (balanced slots).
+        CenteredWithTrailingShare(onShare) {
             val lbTitle = finishedModeTitle(mode)
             val next = nd?.next
             val nextMode = next?.engineMode
@@ -464,9 +471,44 @@ fun FinishedDock(
         // with a gold PRO pill — their tap opens the Go Pro paywall (guests sign in there
         // first) and a successful purchase starts the Unlimited game directly.
         if (isDaily && onOpenUnlimited != null) {
-            UnlimitedCard(mode, onPlay = { onOpenUnlimited(mode) }, newPuzzle = false)
+            // BA1 (founder 10-02): on a short screen (< 700 dp) the card collapses to ONE small
+            // peach candy (mini U loop + "Unlimited") so the board gets the height.
+            if (isShortScreen()) UnlimitedMiniButton(mode, onPlay = { onOpenUnlimited(mode) })
+            else UnlimitedCard(mode, onPlay = { onOpenUnlimited(mode) }, newPuzzle = false)
         }
     }
+}
+
+/**
+ * AT1 (founder 10-02: finished screens looked off-center): [content] centered on the full
+ * width with equal [ShareSlot]-wide gutters on both sides, and the 3D share icon pinned in
+ * the trailing gutter as an overlay — so share never pushes the centered content sideways.
+ */
+@Composable
+fun CenteredWithTrailingShare(
+    onShare: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 32.dp,
+    spacing: Dp = 8.dp,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val slot = ShareSlot.width(iconSize, onShare != null)
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = slot),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
+            content = content,
+        )
+        if (onShare != null) {
+            SoftControl(Icon3DName.SHARE, "Share", onClick = onShare, iconSize = iconSize, modifier = Modifier.align(Alignment.CenterEnd))
+        }
+    }
+}
+
+/** AT1 the share overlay's gutter (the same on the leading side, so the content stays centered). */
+object ShareSlot {
+    fun width(iconSize: Dp, hasShare: Boolean): Dp = if (!hasShare) 0.dp else maxOf(iconSize, com.wordocious.app.ui.SOFT_CONTROL_TAP) + 4.dp
 }
 
 /** A CTA's leading game icon (the glossy 3D game art), decorative. */
@@ -585,6 +627,35 @@ fun UnlimitedCard(
         if (actions != null) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), content = actions)
         }
+    }
+}
+
+/** BA1 the one-screen rule's short phone: under this height (dp) the finished screens compact. */
+const val SHORT_SCREEN_DP = 700
+
+@Composable
+fun isShortScreen(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < SHORT_SCREEN_DP
+
+/**
+ * BA1 the collapsed "Keep playing: Unlimited" — one small peach candy with the mini U loop art.
+ * Free players and guests see it too (a gold PRO pill; the tap opens the Go Pro paywall and a
+ * purchase plays straight through), exactly like the full card.
+ */
+@Composable
+fun UnlimitedMiniButton(mode: GameMode, onPlay: () -> Unit, modifier: Modifier = Modifier) {
+    val title = finishedModeTitle(mode)
+    val profile by AuthService.profile.collectAsState()
+    val locked = profile == null || !AuthService.isProActive
+    var paywall by remember { mutableStateOf(false) }
+    if (paywall) ProPaywallDialog(onDismiss = { paywall = false }, onPro = { paywall = false; onPlay() })
+    Box(modifier.padding(top = if (locked) 5.dp else 0.dp)) {
+        CandyButton(
+            "Unlimited", onClick = { if (locked) paywall = true else onPlay() },
+            color = CandyColor.PEACH, size = CandySize.SMALL,
+            leading = { UnlimitedLoopArt(22.dp) },
+            contentDescription = if (locked) "Keep playing: Unlimited $title, a Pro feature" else "Keep playing: Unlimited $title",
+        )
+        if (locked) ProPill(Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp))
     }
 }
 
@@ -730,6 +801,27 @@ fun FinishedSquare(maxWidth: Dp, maxHeight: Dp, maxSide: Dp = 420.dp, content: @
 }
 
 /**
+ * AT2 (founder 10-02: a Deliverance loss drew its boards at different sizes) the multi-board
+ * recap's shared geometry: every board uses the LARGEST board's rows (prefills + its row
+ * budget or played rows) × columns, so all boards share one tile size and one height;
+ * shorter boards pad with empty rows. Pure (unit tested).
+ */
+object RecapGeometry {
+    /** Rows one board draws on its own (MiniBoardView's count: prefills + max(budget, played)). */
+    fun rowsOf(b: BoardState): Int = (b.prefilledGuesses?.size ?: 0) + maxOf(b.maxGuesses, b.guesses.size)
+
+    fun sharedRows(boards: List<BoardState>): Int = boards.maxOfOrNull { rowsOf(it) }?.coerceAtLeast(1) ?: 1
+
+    fun sharedCols(boards: List<BoardState>): Int = boards.maxOfOrNull { it.solution.length }?.coerceAtLeast(1) ?: 1
+
+    /** Empty rows [b] adds to reach the shared height. */
+    fun padRows(b: BoardState, boards: List<BoardState>): Int = sharedRows(boards) - rowsOf(b)
+
+    /** Every board's width : height. */
+    fun aspect(boards: List<BoardState>): Float = sharedCols(boards).toFloat() / sharedRows(boards)
+}
+
+/**
  * R2 the multi-board recap (QuadWord / OctoWord / Deliverance / Succession): the 2×2
  * (or 4-across) mini grid sized to the slot — square tiles, every board its own
  * game tray (purple solved / slate missed); on a loss a missed board spells its word
@@ -740,8 +832,10 @@ fun FinishedBoardsGrid(boards: List<BoardState>, revealMissed: Boolean, maxWidth
     if (boards.isEmpty()) return
     val cols = FinishedSizing.miniGridCols(boards.size)
     val rows = ceil(boards.size / cols.toFloat()).toInt()
-    val tileCols = boards.maxOf { it.solution.length }.coerceAtLeast(1)
-    val tileRows = boards.maxOf { (it.prefilledGuesses?.size ?: 0) + it.maxGuesses }.coerceAtLeast(1)
+    // AT2: ONE tile size + ONE board height for every board (the largest board's rows × cols;
+    // shorter boards pad with empty rows), win or loss.
+    val tileCols = RecapGeometry.sharedCols(boards)
+    val tileRows = RecapGeometry.sharedRows(boards)
     val pad = 4f
     val gap = 6f
     val label = if (revealMissed && boards.any { it.status != GameStatus.WON }) 16f else 0f
@@ -756,13 +850,12 @@ fun FinishedBoardsGrid(boards: List<BoardState>, revealMissed: Boolean, maxWidth
             Row(horizontalArrangement = Arrangement.spacedBy(gap.dp), verticalAlignment = Alignment.Top) {
                 row.forEach { b ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        val r = (b.prefilledGuesses?.size ?: 0) + b.maxGuesses
                         GameTray(
                             purple, state = if (b.status == GameStatus.WON) TrayState.WON else TrayState.LOST,
                             corner = 12.dp, padding = PaddingValues(pad.dp),
                         ) {
-                            Box(Modifier.width((boardW - pad * 2).coerceAtLeast(0f).dp).aspectRatio(b.solution.length.coerceAtLeast(1).toFloat() / r.coerceAtLeast(1))) {
-                                MiniBoardView(board = b, animateLastRow = false)
+                            Box(Modifier.width((boardW - pad * 2).coerceAtLeast(0f).dp).aspectRatio(RecapGeometry.aspect(boards))) {
+                                MiniBoardView(board = b, animateLastRow = false, minTotalRows = tileRows)
                             }
                         }
                         if (revealMissed && b.status != GameStatus.WON) {

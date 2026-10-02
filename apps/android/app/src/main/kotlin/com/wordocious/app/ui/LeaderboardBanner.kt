@@ -56,6 +56,7 @@ internal val LB_SWEEP_GOLD = LB_GOLD
  */
 @Composable
 internal fun LeaderboardHeadline(bleed: Dp) {
+    // AU2: the day title stays ≤ 110 dp tall so the podium shows on arrival.
     val countdown = rememberMidnightCountdown()
     // Re-read the day once a minute so the title rolls over at midnight (not every tick).
     val minute by remember { derivedStateOf { countdown.value / 60 } }
@@ -66,7 +67,7 @@ internal fun LeaderboardHeadline(bleed: Dp) {
     when {
         // X: in the Halloween season, small props (pumpkin, bat) flank the day title when shipped.
         dayArt != null -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            PageHeadline(dayArt, titleCaseLabel(title), bleed = bleed)
+            PageHeadline(dayArt, titleCaseLabel(title), bleed = bleed, maxHeight = LB_TITLE_MAX) // AU2
             HalloweenPropSlot("pumpkin", 40.dp, Modifier.align(Alignment.BottomStart).padding(start = 8.dp))
             HalloweenPropSlot("bat", 34.dp, Modifier.align(Alignment.TopEnd).padding(end = 8.dp))
         }
@@ -78,7 +79,7 @@ internal fun LeaderboardHeadline(bleed: Dp) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            PageHeadline(com.wordocious.app.R.drawable.art_title_leaderboard, "Leaderboard", bleed = bleed)
+            PageHeadline(com.wordocious.app.R.drawable.art_title_leaderboard, "Leaderboard", bleed = bleed, maxHeight = LB_TITLE_MAX - 18.dp)
             Text(
                 title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.14.em,
                 color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1, textAlign = TextAlign.Center,
@@ -107,6 +108,7 @@ internal fun LeaderboardPicker(
     GamePickerCard(
         selected = selected,
         onSelect = onSelect,
+        compact = true, // AU2: one scrolling row of smaller tiles
         accent = LB_GOLD,
         labelColor = LB_LABEL,
         withSweep = true,
@@ -117,6 +119,9 @@ internal fun LeaderboardPicker(
         },
     )
 }
+
+/** AU2 the Leaderboard day title's height cap. */
+private val LB_TITLE_MAX = 110.dp
 
 /** "OCT 2 · RESETS IN 12:41:17" — reads the ticking clock in its own scope so only it recomposes. */
 @Composable

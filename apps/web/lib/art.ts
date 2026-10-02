@@ -519,7 +519,8 @@ export const GAME_TITLE_ART_HEIGHT = {
   /** Game screen header cap (§19.3): full width minus 32, ≤ 120 tall. */
   header: 120,
   /** The cap on short viewports (height < `shortViewport`). */
-  headerShort: 84,
+  /** BA1: ~56 on short phones (was 84). */
+  headerShort: 56,
   /** Viewport height (CSS px) under which the short cap applies. */
   shortViewport: 700,
   /** Game screen header floor, so short names (MUDDLE) never look tiny. */
@@ -547,7 +548,7 @@ export const GAME_TITLE_TOP = GAME_HEADER.pad + GAME_HEADER.button + GAME_HEADER
 /**
  * A header art's rendered height as CSS (§19.3): the full width minus 32 times
  * the art's aspect ratio, clamped to [headerMin, cap], where the cap is
- * `--game-title-cap` (globals.css .game-art-header: 120, or 84 when the
+ * `--game-title-cap` (globals.css .game-art-header: 120, or 56 when the
  * viewport is under 700 tall).
  */
 export function gameHeaderArtHeight(name: GameTitleArtName): string {

@@ -184,18 +184,54 @@ class DailyWidgetProvider : AppWidgetProvider() {
             return bmp
         }
 
-        /** The Home wallpaper, center-cropped to the widget's [aspect] (w / h), small and opaque. */
+        /**
+         * The Home wallpaper, center-cropped to the widget's [aspect] (w / h), small and opaque —
+         * AV: with today's cast painted in: the day host big (~40% of the height) leaning in from
+         * the top-right corner, and three cast heads peeking up over the bottom edge (Halloween
+         * skins in season). One small bitmap (the wall's 1/4 scale), cached per day.
+         */
         private fun wallBitmap(context: Context, aspect: Float): Bitmap? {
-            val key = "%.2f".format(aspect)
+            val day = com.wordocious.app.todayLocalDate()
+            val season = com.wordocious.app.ui.SeasonSkins.current()
+            val key = "%.2f|%s|%s".format(aspect, day, season ?: "")
             wallCache[key]?.let { return it }
+            if (wallCache.size > 4) wallCache.clear()
             val src = ShareFinish.decode(context, R.drawable.art_wall_home, sample = 4) ?: return null
             val targetW = src.width
             val targetH = (targetW / aspect).toInt().coerceAtMost(src.height)
             val out = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565)
             val top = ((src.height - targetH) * 0.35f).toInt()
-            Canvas(out).drawBitmap(src, android.graphics.Rect(0, top, targetW, top + targetH), RectF(0f, 0f, targetW.toFloat(), targetH.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
+            val c = Canvas(out)
+            val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            c.drawBitmap(src, android.graphics.Rect(0, top, targetW, top + targetH), RectF(0f, 0f, targetW.toFloat(), targetH.toFloat()), p)
+            runCatching { drawWidgetCast(context, c, targetW.toFloat(), targetH.toFloat(), day, season, p) }
             wallCache[key] = out
             return out
+        }
+
+        /** AV the host leaning in at the top-right + the peeking trio along the bottom edge. */
+        private fun drawWidgetCast(context: Context, c: Canvas, w: Float, h: Float, day: String, season: String?, p: Paint) {
+            val host = WidgetCast.host(day)
+            val epochDay = runCatching { java.time.LocalDate.parse(day).toEpochDay() }.getOrDefault(0L)
+            val peek = WidgetCast.peekers(com.wordocious.app.ui.Mascots.cast, host, epochDay)
+            fun art(id: com.wordocious.app.ui.MascotId) = ShareFinish.decode(context, com.wordocious.app.ui.SeasonSkins.fullRes(id, season), sample = 4)
+            // The peekers: only the top half of each head shows, like over a ledge.
+            val headSize = minOf(h * 0.30f, w * 0.20f)
+            peek.forEachIndexed { i, id ->
+                val bmp = art(id) ?: return@forEachIndexed
+                val cx = w * (0.16f + 0.17f * i)
+                c.drawBitmap(bmp, null, RectF(cx - headSize / 2f, h - headSize * 0.5f, cx + headSize / 2f, h + headSize * 0.5f), p)
+            }
+            // The day host, ~40% of the height, overlapping the top-right edges, leaning in.
+            art(host)?.let { bmp ->
+                val s = h * 0.42f
+                val cx = w - s * 0.36f
+                val cy = s * 0.36f
+                c.save()
+                c.rotate(-14f, cx, cy)
+                c.drawBitmap(bmp, null, RectF(cx - s / 2f, cy - s / 2f, cx + s / 2f, cy + s / 2f), p)
+                c.restore()
+            }
         }
 
         /** The wallpaper fill (API 31+: clipped to the corners; older launchers keep the tinted card). */

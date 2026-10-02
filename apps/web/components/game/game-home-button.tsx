@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { Icon3D } from '@/components/ui/icon3d';
-import { HEADER_GLYPH } from '@/components/ui/page-header';
+import { claimHomeTap, closeAllOverlays, homeTarget } from '@/lib/nav-home';
+import { GAME_HEADER_GLYPH } from '@/components/ui/page-header';
 
 interface GameHomeButtonProps {
   /**
@@ -35,7 +36,7 @@ interface GameHomeButtonProps {
 /**
  * Shared corner Home button used at the top-left of every in-game header.
  * Sized for easy tapping on mobile (44×44 per iOS HIG). FINISH_SPEC A3 / B4:
- * the soft 3D home icon (`tab-home`) drawn bare — no circle — 23 px, with the
+ * the soft 3D home icon (`tab-home`) drawn bare — no circle — 30 px (AX), with the
  * icon squish on press; `accentColor` is kept for callers but no longer tints it.
  */
 export function GameHomeButton({
@@ -50,24 +51,28 @@ export function GameHomeButton({
     return (
       <button
         type="button"
-        onClick={onClick}
+        // AY: single-fire; closes overlays; the handler itself lands on the root.
+        onClick={() => { if (!claimHomeTap()) return; closeAllOverlays(); onClick(); }}
         aria-label="Back to Home"
         className={className}
         style={style}
       >
-        <Icon3D name="tab-home" size={HEADER_GLYPH} priority />
+        <Icon3D name="tab-home" size={GAME_HEADER_GLYPH} priority />
       </button>
     );
   }
 
   return (
     <Link
-      href={href}
+      // AY: always the Home root (a push to "/", never history-back), overlays
+      // closed, one navigation per tap (a double tap is dropped).
+      href={homeTarget(href)}
+      onClick={(e) => { if (!claimHomeTap()) { e.preventDefault(); return; } closeAllOverlays(); }}
       aria-label="Back to Home"
       className={className}
       style={style}
     >
-      <Icon3D name="tab-home" size={HEADER_GLYPH} priority />
+      <Icon3D name="tab-home" size={GAME_HEADER_GLYPH} priority />
     </Link>
   );
 }

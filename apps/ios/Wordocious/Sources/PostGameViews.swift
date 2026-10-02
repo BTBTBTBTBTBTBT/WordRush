@@ -178,6 +178,8 @@ struct FinishedCompactHeader: View {
     let boardsSolved: Int
     let totalBoards: Int
     var points: Int? = nil
+    /// §AT1: the share icon, pinned to the strip's trailing edge (nil = none).
+    var onShare: ((Bool) -> Void)? = nil
 
     private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
 
@@ -217,8 +219,17 @@ struct FinishedCompactHeader: View {
             // FINISH_SPEC §AR: the result strip's headline in live lettering.
             LiveHeadline(text: stripHeadline, palette: .home, size: 20, maxLines: 1, minimumScale: 0.6)
                 .padding(.horizontal, 12)
-            FinishedResultStrip(won: won, items: items, points: points)
-                .padding(.horizontal, 4)
+            // §AT1: the strip centered on the screen; share pinned trailing.
+            if let onShare {
+                CenteredWithTrailing {
+                    FinishedResultStrip(won: won, items: items, points: points)
+                } trailing: {
+                    FinishedShareButton(onShare: onShare)
+                }
+            } else {
+                FinishedResultStrip(won: won, items: items, points: points)
+                    .padding(.horizontal, 4)
+            }
         }
     }
 }
@@ -238,6 +249,8 @@ struct FinishedMiniGrid: View {
         let n = boards.count
         let cols = CompletedBoardLayout.cols(n)
         let rows = Int(ceil(Double(n) / Double(max(1, cols))))
+        // §AT2: one row count (the largest board) and one tile for every board.
+        let rowCount = CompletedMiniBoardView.sharedRows(boards, floor: self.rowCount)
         let tile = Self.tile(boardCount: n, wordLen: boards.first?.solution.count ?? 5, rowCount: rowCount,
                              size: size, revealMissed: revealMissed)
         VStack(spacing: Self.gap) {
@@ -265,7 +278,8 @@ struct FinishedMiniGrid: View {
         let cellH = (size.height - CGFloat(rows - 1) * gap) / CGFloat(max(1, rows))
         let w = max(1, wordLen), h = max(1, rowCount)
         let tw = (cellW - 16) / (CGFloat(w) + CGFloat(w - 1) * 0.1)
-        let th = (cellH - 22 - (revealMissed ? 16 : 0)) / (CGFloat(h) + CGFloat(h - 1) * 0.1)
+        // §AT2: the answer slot (gap + max(12, 0.7 × tile)) is reserved on every board.
+        let th = (cellH - 22 - (revealMissed ? 12 : 0)) / (CGFloat(h) + CGFloat(h - 1) * 0.1 + (revealMissed ? 0.8 : 0))
         return max(6, min(30, tw, th))
     }
 }
@@ -522,15 +536,23 @@ struct NextDailyCTA: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    viewLeaderboard
-                    keepPlayingUnlimited
+                    if compact && FinishLayoutMetrics.isShort {
+                        // FINISH_SPEC BA1 (parity with Android at 360 wide): short screens —
+                        // the action row, then the one-button Unlimited on its own slim line
+                        // right below it (free / guest keep the PRO pill → Go Pro).
+                        viewLeaderboard
+                        keepPlayingUnlimited(mini: true)
+                    } else {
+                        viewLeaderboard
+                        keepPlayingUnlimited()
+                    }
                 }
                 .frame(maxWidth: 400)
                 .padding(.top, compact ? 0 : 4)
             } else {
                 // FINISH_SPEC §R3 (founder 10-02): guests see the Unlimited card too —
                 // it opens the Go Pro paywall, which signs them in first.
-                keepPlayingUnlimited
+                keepPlayingUnlimited(mini: compact && FinishLayoutMetrics.isShort)
                     .frame(maxWidth: 400)
             }
         }
@@ -563,14 +585,14 @@ struct NextDailyCTA: View {
     /// the SAME mode the player just finished (tester-reported dead end: after
     /// the daily — especially a completed sweep — players had no visible path to
     /// keep playing; the home Daily/Unlimited toggle went undiscovered).
-    @ViewBuilder private var keepPlayingUnlimited: some View {
+    @ViewBuilder private func keepPlayingUnlimited(mini: Bool = false) -> some View {
         // §R3 (founder 10-02): everyone sees the card — for free players it opens
         // the Pro paywall itself and starts the game after a purchase.
         if let key = currentMode,
            let mode = (homeModes + moreModes).first(where: { $0.dbKey == key }) {
             // FINISH_SPEC §R3: the peach KEEP PLAYING card with U's loop art; the
             // same post of playUnlimited.
-            UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(key)?.title ?? mode.title) {
+            UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(key)?.title ?? mode.title, mini: mini) {
                 dismiss()
                 // Same choreography as playNextDaily: let this cover's dismiss
                 // finish before the root presents the unlimited game.

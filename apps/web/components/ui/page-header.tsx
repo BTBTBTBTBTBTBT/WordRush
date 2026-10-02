@@ -24,6 +24,14 @@ export const HEADER_SHADOW = '0 1px 2px rgba(76, 29, 149, 0.08), 0 3px 10px rgba
 
 /** A3: the bare header icon height (px). */
 export const HEADER_GLYPH = 23;
+/**
+ * AX (founder 10-02: "they're really tiny"): the game-page header's home,
+ * sound and "?" icons draw at 30 px inside their unchanged 44 px tap targets
+ * (w-11 h-11), so the row and the title art's room don't move.
+ */
+export const GAME_HEADER_GLYPH = 30;
+/** The game-page header buttons' tap target (px). */
+export const GAME_HEADER_TAP = 44;
 
 export type PageAccent = 'brand' | 'vs' | 'friends' | 'leaderboard';
 

@@ -19,10 +19,12 @@ struct LeaderboardBannerView: View {
     private static let ink = Color(hex: 0x8A4A12)
 
     var body: some View {
-        VStack(spacing: 12) {
-            LeaderboardHeadline(bleed: bleed)
+        // FINISH_SPEC §AU2: a compact top so the podium shows on arrival — the day
+        // title ≤ 110 pt and the one-row scrolling picker.
+        VStack(spacing: 8) {
+            LeaderboardHeadline(bleed: bleed, maxHeight: 110)
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
-                           accent: LbStyle.gold, ink: Self.ink,
+                           accent: LbStyle.gold, ink: Self.ink, compact: true,
                            onSelect: select) {
                 strip
             }
@@ -95,13 +97,15 @@ struct LeaderboardBannerView: View {
 /// beside it. Re-reads the title each minute so it flips at local midnight.
 struct LeaderboardHeadline: View {
     var bleed: CGFloat = 16
+    /// §AU2: the Leaderboard caps the day title (nil = the style's cap).
+    var maxHeight: CGFloat? = nil
 
     var body: some View {
         TimelineView(.everyMinute) { _ in
             let title = LeaderboardBannerView.todayTitle()
             if let art = DayTitleArt.forTitle(title) {
                 // FINISH_SPEC §N1: the day title keeps its host, capped at ≈58% width / 150 pt.
-                PageHeadline(asset: art.asset, label: art.label, style: .day, bleed: bleed)
+                PageHeadline(asset: art.asset, label: art.label, style: .day, bleed: bleed, maxHeight: maxHeight)
                     // FINISH_SPEC §X: in season, a small Halloween prop beside the day title
                     // (nothing out of season or when the prop art doesn't ship).
                     .overlay(alignment: .bottomTrailing) {
@@ -111,7 +115,7 @@ struct LeaderboardHeadline: View {
                 // ART_SPEC §8: a holiday shows the whole cast around LEADERBOARD with
                 // the holiday title ("<HOLIDAY> HEROES") as a small caps line under it.
                 VStack(spacing: 2) {
-                    PageHeadline(.leaderboard, bleed: bleed)
+                    PageHeadline(.leaderboard, bleed: bleed, maxHeight: maxHeight.map { $0 * 0.6 })
                     Text(title)
                         .font(Brand.font(13, .black)).tracking(1.4)
                         .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x8A4A12))

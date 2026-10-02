@@ -23,6 +23,7 @@ struct ColdStartIntroHost: View {
                 ColdStartIntro {
                     ColdStartIntroHost.played = true
                     visible = false
+                    LaunchGate.open()   // §AU5: the deferred startup work runs now
                 }
                 .onAppear {
                     ColdStartIntroHost.played = true
@@ -30,6 +31,71 @@ struct ColdStartIntroHost: View {
                 }
             }
         }
+        .onAppear { if !visible { LaunchGate.open() } }
+    }
+}
+
+/// FINISH_SPEC §AU5: heavy startup work (network, caches, mascot composition,
+/// widget refresh, art prefetch) waits until the cold-start intro has landed, so the
+/// intro owns the main thread for its ~1.6 s. Opens at the landing, at once when
+/// no intro plays, and by a 3-s fail-safe no matter what.
+@MainActor
+enum LaunchGate {
+    private(set) static var isOpen = false
+    private static var waiters: [CheckedContinuation<Void, Never>] = []
+    private static var armed = false
+
+    static func open() {
+        guard !isOpen else { return }
+        isOpen = true
+        let ws = waiters
+        waiters = []
+        ws.forEach { $0.resume() }
+    }
+
+    /// Returns once the intro has landed (immediately after that).
+    static func wait() async {
+        if isOpen { return }
+        if !armed {
+            armed = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { open() }
+        }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+}
+
+/// §AU5: every intro image decoded BEFORE the first intro frame (off the main
+/// thread), so no figure decodes mid-animation. The plain launch color stays up
+/// until they're ready — at most `timeout`.
+@MainActor
+enum IntroArt {
+    private(set) static var images: [MascotID: UIImage] = [:]
+
+    static func image(_ m: MascotID) -> Image {
+        if let ui = images[m] { return Image(uiImage: ui) }
+        return Image(CastSkin.assetName(for: m))
+    }
+
+    static func prepare(timeout: Double) async {
+        let names = Mascots.cast.map { ($0, CastSkin.assetName(for: $0)) }
+        let decode = Task.detached(priority: .userInitiated) { () -> [(MascotID, UIImage)] in
+            var out: [(MascotID, UIImage)] = []
+            for (m, n) in names {
+                guard let ui = UIImage(named: n) else { continue }
+                out.append((m, ui.preparingForDisplay() ?? ui))
+            }
+            return out
+        }
+        let timer = Task { try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000)) }
+        // Whichever finishes first: the decode, or the launch-color cap.
+        let done = await withTaskGroup(of: [(MascotID, UIImage)]?.self) { g -> [(MascotID, UIImage)]? in
+            g.addTask { await decode.value }
+            g.addTask { await timer.value; return nil }
+            let first = await g.next() ?? nil
+            timer.cancel()
+            return first
+        }
+        if let done { for (m, ui) in done { images[m] = ui } }
     }
 }
 
@@ -97,6 +163,8 @@ private struct ColdStartIntro: View {
     @State private var start = Date()
     @State private var fade: Double = 1
     @State private var finishing = false
+    /// §AU5: the intro images are decoded (or the 300 ms cap passed).
+    @State private var ready = false
 
     /// The W's size at the center (the old launch image's 512 px @3x).
     private static let launchSize: CGFloat = 512 / 3
@@ -112,9 +180,12 @@ private struct ColdStartIntro: View {
             let safeTop = geo.safeAreaInsets.top
             let origin = geo.frame(in: .global).origin
             ZStack {
-                if still {
+                if !ready {
+                    // §AU5: the plain launch color until every intro image is decoded.
                     Self.background
-                    Image(CastSkin.assetName(for: .w)).resizable().interpolation(.high).scaledToFit()
+                } else if still {
+                    Self.background
+                    IntroArt.image(.w).resizable().interpolation(.high).scaledToFit()
                         .frame(width: Self.launchSize, height: Self.launchSize)
                         .position(x: size.width / 2, y: size.height / 2)
                 } else {
@@ -130,10 +201,12 @@ private struct ColdStartIntro: View {
         // Tap to skip: straight to the landing (step 3), then the flourish.
         .onTapGesture { land() }
         .accessibilityHidden(true)
-        // §AQ3: the clock starts on the first frame shown, so a busy launch never
-        // skips the W's entrance (or lands mid-glide).
-        .onAppear { start = Date() }
         .task {
+            // §AU5: decode first (≤ 300 ms on the launch color); §AQ3: the clock
+            // starts on the first intro frame, so a busy launch never skips ahead.
+            await IntroArt.prepare(timeout: 0.3)
+            start = Date()
+            ready = true
             if still {
                 // Reduce Motion: a 200 ms crossfade over the real row, no flourish.
                 handoff.introRunning = false
@@ -227,12 +300,14 @@ private struct ColdStartIntro: View {
             let side = Self.launchSize + (rowSide - Self.launchSize) * k
             let center = CGPoint(x: size.width / 2 + (rowPoint.x - size.width / 2) * k,
                                  y: size.height / 2 + (rowPoint.y - size.height / 2) * k)
-            Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
-                .frame(width: side, height: side)
-                .scaleEffect(x: CGFloat(bounce.sx), y: CGFloat(bounce.sy), anchor: .bottom)
-                .offset(y: CGFloat(bounce.ty) * side)
+            // §AU5: transforms + opacity only — a fixed frame, scaled and moved.
+            let k0 = side / Self.launchSize
+            IntroArt.image(m).resizable().interpolation(.high).scaledToFit()
+                .frame(width: Self.launchSize, height: Self.launchSize)
+                .scaleEffect(x: CGFloat(bounce.sx) * k0, y: CGFloat(bounce.sy) * k0, anchor: .bottom)
+                .offset(x: center.x - size.width / 2,
+                        y: center.y - size.height / 2 + CGFloat(bounce.ty) * side - (Self.launchSize - side) / 2)
                 .opacity(min(1, max(0, t) / 0.12))
-                .position(center)
         } else {
             // The other nine pop in, 60 ms apart, with a spring.
             let start = 0.42 + Double(i - 1) * 0.06
@@ -240,11 +315,13 @@ private struct ColdStartIntro: View {
             let pop = p <= 0 ? CastPose(sx: 0, sy: 0)
                 : Keyframes.sample([(0, CastPose(sx: 0.2, sy: 0.2)), (0.6, CastPose(sx: 1.12, sy: 1.12)), (1, .identity)],
                                    at: min(1, p), easing: CubicBezier(0.3, 1.4, 0.5, 1))
-            Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
-                .frame(width: rowSide, height: rowSide)
-                .scaleEffect(x: CGFloat(pop.sx), y: CGFloat(pop.sy), anchor: .bottom)
+            // §AU5: transforms + opacity only — a fixed frame, scaled and moved.
+            let k1 = rowSide / s
+            IntroArt.image(m).resizable().interpolation(.high).scaledToFit()
+                .frame(width: s, height: s)
+                .scaleEffect(x: CGFloat(pop.sx) * k1, y: CGFloat(pop.sy) * k1, anchor: .bottom)
+                .offset(x: rowPoint.x - size.width / 2, y: rowPoint.y - size.height / 2 - (s - rowSide) / 2)
                 .opacity(p <= 0 ? 0 : 1)
-                .position(rowPoint)
         }
     }
 }

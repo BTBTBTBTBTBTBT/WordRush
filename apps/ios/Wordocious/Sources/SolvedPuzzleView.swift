@@ -52,15 +52,14 @@ struct SolvedPuzzleView: View {
                         guessCount: d.guessCount, maxGuesses: maxGuesses,
                         timeSeconds: d.timeSeconds,
                         boardsSolved: d.won ? d.solutions.count : solvedCount(d),
-                        totalBoards: d.solutions.count, points: points(d))
+                        totalBoards: d.solutions.count, points: points(d),
+                        onShare: { reveal in share(reveal: reveal) })
                 }, board: { size in
                     boards(d, size: size)
                 }, dock: {
-                    HStack(alignment: .top, spacing: 6) {
-                        FinishedShareButton(onShare: { reveal in share(reveal: reveal) })
-                        NextDailyCTA(currentMode: mode.rawValue, compact: true)
-                    }
-                    .padding(.bottom, 6)
+                    // §AT1: share rides the strip; the dock centers on the full width.
+                    NextDailyCTA(currentMode: mode.rawValue, compact: true)
+                        .padding(.bottom, 6)
                 }, extras: {
                     VStack(spacing: 10) {
                         DailyRankBadge(gameMode: mode)

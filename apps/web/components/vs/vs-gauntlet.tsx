@@ -3,6 +3,7 @@
 import { keyDuringReject } from '@/lib/tile-motion';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { latestGuess } from '@/lib/key-reveal';
+import { RUNNING, activeMs, pauseAt, resumeAt, type PauseLedger } from '@/lib/active-clock';
 import { useReducer, useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { modeColor } from '@/lib/vs-lobby';
 import {
@@ -47,6 +48,10 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
   const [message, setMessage] = useState('');
   const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [elapsedTime, setElapsedTime] = useState(0);
+  // Founder 10-02 (VS matches solo): this player's race clock PAUSES while their
+  // own stage card is up; the recorded race + stage times exclude that time.
+  const pauseRef = useRef<PauseLedger>(RUNNING);
+  const activeElapsedMs = useCallback(() => activeMs(startTime, pauseRef.current, Date.now()), [startTime]);
   const [showTransition, setShowTransition] = useState(false);
   const [hasReported, setHasReported] = useState(false);
   const prevSolvedRef = useRef(0);
@@ -98,6 +103,10 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
     return currentBoard.guesses.map(g => evaluateGuess(currentBoard.solution, g));
   }, [currentBoard]);
 
+  useEffect(() => {
+    pauseRef.current = showTransition ? pauseAt(pauseRef.current, Date.now()) : resumeAt(pauseRef.current, Date.now());
+  }, [showTransition]);
+
   // Track board solves across all stages
   useEffect(() => {
     const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
@@ -129,10 +138,10 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
         const completedStageGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0);
         const currentStageGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
         const totalGuesses = completedStageGuesses + currentStageGuesses;
-        onCompleted('lost', totalGuesses, Date.now() - startTime);
+        onCompleted('lost', totalGuesses, activeElapsedMs());
       }
     }
-  }, [state.boards, state.status, gauntlet.currentStage, onStageCompleted, hasReported, onCompleted, startTime]);
+  }, [state.boards, state.status, gauntlet.currentStage, onStageCompleted, hasReported, onCompleted, activeElapsedMs]);
 
   // Check for game over
   useEffect(() => {
@@ -141,16 +150,16 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
       setHasReported(true);
       // Final NEXT_STAGE has already pushed the last stage into stageResults.
       const totalGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0);
-      onCompleted('won', totalGuesses, Date.now() - startTime);
+      onCompleted('won', totalGuesses, activeElapsedMs());
     } else if (state.status === GameStatus.LOST) {
       setHasReported(true);
       // Current stage isn't in stageResults yet; add its max-across-boards count.
       const completedStageGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0);
       const currentStageGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const totalGuesses = completedStageGuesses + currentStageGuesses;
-      onCompleted('lost', totalGuesses, Date.now() - startTime);
+      onCompleted('lost', totalGuesses, activeElapsedMs());
     }
-  }, [state.status, hasReported, gauntlet.stageResults, state.boards, startTime, onCompleted]);
+  }, [state.status, hasReported, gauntlet.stageResults, state.boards, activeElapsedMs, onCompleted]);
 
   const handleKey = useCallback((key: string) => {
     if (state.status !== GameStatus.PLAYING) return;
@@ -203,21 +212,23 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKey]);
 
-  const handleTransitionComplete = useCallback(() => {
-    setShowTransition(false);
-    dispatch({ type: 'NEXT_STAGE' });
+  // AU3: the next stage starts under the stage card as it leaves; the card unmounts after.
+  const handleTransitionAdvance = useCallback(() => {
+    // The active clock (card time excluded) times the stage, like solo.
+    dispatch({ type: 'NEXT_STAGE', elapsedMs: activeElapsedMs() });
     setCurrentGuess('');
     prevSolvedRef.current = 0; // Reset for new stage boards
-  }, []);
+  }, [activeElapsedMs]);
+  const handleTransitionDone = useCallback(() => setShowTransition(false), []);
 
   // Match clock for the stage header (solo shows it there too).
   useEffect(() => {
     if (state.status !== GameStatus.PLAYING) return;
-    const tick = () => setElapsedTime(Math.max(0, Math.floor((Date.now() - startTime) / 1000)));
+    const tick = () => setElapsedTime(Math.floor(activeElapsedMs() / 1000));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [state.status, startTime]);
+  }, [state.status, activeElapsedMs]);
 
   // Same measured sizing as the solo Gauntlet stages: the Succession stage's
   // square-tile fit and the Classic stage's exact-pixel board.
@@ -376,7 +387,8 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
           cleared={gauntlet.currentStage + 1}
           totalStages={gauntlet.totalStages}
           guessesSoFar={gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) + state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
-          onComplete={handleTransitionComplete}
+          onAdvance={handleTransitionAdvance}
+          onComplete={handleTransitionDone}
         />
       )}
     </div>

@@ -97,7 +97,7 @@ struct HeaderPopupHost: View {
                 .accessibilityAddTraits(.isModal)
             }
         }
-        .animation(Theme.animation(.spring(response: 0.3, dampingFraction: 0.85)), value: popups.shown)
+        .animation(Theme.animation(Motion.spring), value: popups.shown)   // §AZ: the shared spring
         .onChange(of: popups.shown) { shown in
             guard shown != nil else { return }
             Feedback.whoosh()   // §U: popup open

@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.game
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -119,11 +121,16 @@ internal fun GauntletFinishScreen(
     var appeared by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { appeared = true }
 
-    Box(Modifier.fillMaxSize()) {
+    // BA2 (founder 10-02): the results fit ONE screen — the hero card (scene, headline, stars,
+    // stat pills, the actions) and the compact dock; the score and stage breakdowns live behind
+    // the "More" chip like every other game. Centered in the height; scrolls only as a fallback.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val viewport = maxHeight
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp).padding(top = 52.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .heightIn(min = viewport)
+                .padding(horizontal = 16.dp).padding(top = 52.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             GauntletHeroCard(
@@ -131,33 +138,27 @@ internal fun GauntletFinishScreen(
                 isDaily = isDaily, onHome = onHome, onShare = onShare, onPlayAgain = onPlayAgain,
                 modifier = Modifier.riseIn(appeared, 0),
             )
-
-            Box(Modifier.riseIn(appeared, 500)) {
-                ScoreBreakdownCard(
-                    mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses,
-                    elapsedSeconds = totalTimeMs / 1000, boardsSolved = cumBoards, totalBoards = cumTotal,
-                    hintsUsed = hintsUsed, stagesCompleted = cleared,
-                    day = com.wordocious.core.getDailySeedDate(seed),
-                )
-            }
-
-            if (onOpenDaily != null && isDaily) {
-                Box(Modifier.riseIn(appeared, 550)) {
-                    NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
-                }
-            }
-
-            // L: the per-stage rows (each with its W / L badge, tap to expand the final
-            // boards) on the shared game tray in the Gauntlet amber.
-            GameTray(
-                GAUNTLET_ACCENT, Modifier.fillMaxWidth().riseIn(appeared, 600),
-                state = TrayState.PLAYING, padding = PaddingValues(12.dp),
-            ) {
-                GauntletStageBreakdown(
-                    g = g,
-                    totalMs = totalTimeMs,
-                    showSummary = false,      // the hero's stat pills already say it
-                    showStageHeader = true,
+            Box(Modifier.riseIn(appeared, 400)) {
+                FinishedDock(
+                    mode = GameMode.GAUNTLET, isDaily = isDaily && onOpenDaily != null, accent = GAUNTLET_ACCENT,
+                    onShare = null, // the hero card carries share
+                    onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                    more = {
+                        ScoreBreakdownCard(
+                            mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses,
+                            elapsedSeconds = totalTimeMs / 1000, boardsSolved = cumBoards, totalBoards = cumTotal,
+                            hintsUsed = hintsUsed, stagesCompleted = cleared,
+                            day = com.wordocious.core.getDailySeedDate(seed),
+                        )
+                        // L: the per-stage rows (each with its W / L badge, tap to expand the final
+                        // boards) on the shared game tray in the Gauntlet amber.
+                        GameTray(
+                            GAUNTLET_ACCENT, Modifier.fillMaxWidth(),
+                            state = TrayState.PLAYING, padding = PaddingValues(12.dp),
+                        ) {
+                            GauntletStageBreakdown(g = g, totalMs = totalTimeMs, showSummary = false, showStageHeader = true)
+                        }
+                    },
                 )
             }
         }
@@ -188,7 +189,7 @@ private fun GauntletHeroCard(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
                 GauntletLook.LOST_POSES.forEachIndexed { i, p ->
                     SceneArtPop(
-                        CastPoses.res(p.mascot, p.pose) ?: p.mascot.res, height = 124.dp,
+                        CastPoses.res(p.mascot, p.pose) ?: p.mascot.res, height = if (isShortScreen()) 92.dp else 124.dp,
                         modifier = Modifier.weight(1f), delayMs = i * 120L,
                     )
                 }
@@ -214,11 +215,8 @@ private fun GauntletHeroCard(
         if (!won) FailedAnswers(GauntletLook.failedAnswers(g))
         // B6 actions: the 3D share icon + the large amber candy (the house in the
         // controls row goes home; a finished daily's primary is "Play again tomorrow").
-        Row(
-            Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SoftControl(Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp)
+        // AT1: the primary centers on the screen; share is the trailing overlay.
+        CenteredWithTrailingShare(onShare, spacing = 12.dp) {
             if (onPlayAgain != null) {
                 CandyButton(
                     "Play again", onClick = onPlayAgain, color = CandyColor.AMBER, size = CandySize.LARGE,
@@ -262,7 +260,8 @@ private fun ChampionScene() {
         painterResource(R.drawable.art_scene_gauntlet_champion),
         contentDescription = null,
         contentScale = ContentScale.Fit,
-        modifier = Modifier.fillMaxWidth().aspectRatio(CHAMPION_ASPECT).clearAndSetSemantics { }.graphicsLayer {
+        // BA2: capped on a short screen so the whole result fits.
+        modifier = Modifier.fillMaxWidth().heightIn(max = if (isShortScreen()) 110.dp else 1000.dp).aspectRatio(CHAMPION_ASPECT).clearAndSetSemantics { }.graphicsLayer {
             scaleX = scale.value; scaleY = scale.value; this.alpha = alpha.value
             transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.9f)
             translationY = -5.dp.toPx() * bob

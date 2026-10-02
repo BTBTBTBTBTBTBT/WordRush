@@ -284,6 +284,14 @@ class VSMatchViewModel(
     var puzzleDisplay: String? = null
         private set
     private var matchStartMs = 0.0
+    /** The player's race clock: pauses during their own Gauntlet stage card (founder 10-02). */
+    private val raceClock = RaceClock()
+
+    /** The stage card is up / gone — pause / resume this player's race clock (and the game's). */
+    fun stageCardShown(shown: Boolean) {
+        val now = System.currentTimeMillis()
+        if (shown) { raceClock.pause(now); game?.pauseTimer() } else { raceClock.resume(now); game?.resumeTimer() }
+    }
     private var resultRecorded = false
     private var countdownJob: Job? = null
     private var started = false
@@ -291,7 +299,7 @@ class VSMatchViewModel(
     val isPro: Boolean get() = AuthService.isProActive
     /** Live elapsed seconds for the in-match header clock (web vs-classic parity). */
     val matchElapsedSeconds: Int get() =
-        if (matchStartMs > 0) (((System.currentTimeMillis() - matchStartMs) / 1000).toInt()).coerceAtLeast(0) else 0
+        (raceClock.elapsedMs(System.currentTimeMillis()) / 1000).toInt()
     // Daily VS is one shared Classic puzzle per day for EVERYONE (web parity:
     // dropped the !isPro guard — Pro plays the same daily VS, then gets the
     // already-played screen with a "Play Unlimited VS" prompt).
@@ -551,7 +559,7 @@ class VSMatchViewModel(
         val raced = race
         if (raced != null && screen == VSScreen.MATCH && myStatus == null && !resultRecorded && AuthService.profile.value != null) {
             resultRecorded = true
-            val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
+            val secs = (raceClock.elapsedMs(System.currentTimeMillis()) / 1000).toInt()
             val run = buildRun(GameStatus.LOST, myGuessCount, secs * 1000).copy(solved = false)
             val m = mode
             val theSeed = seed.ifEmpty { raced.seed }
@@ -576,7 +584,7 @@ class VSMatchViewModel(
             myStatus == null && !matchGone && !resultRecorded && !isLocalGame
         ) {
             resultRecorded = true
-            val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
+            val secs = (raceClock.elapsedMs(System.currentTimeMillis()) / 1000).toInt()
             val gc = game?.rowsUsed ?: 0
             val solved = game?.boardsSolvedCount ?: 0
             val total = game?.boardCount ?: 1
@@ -809,6 +817,7 @@ class VSMatchViewModel(
     private fun beginMatch(newSeed: String, startMs: Double?, solutions: List<String>? = null) {
         seed = newSeed
         matchStartMs = startMs ?: (System.currentTimeMillis().toDouble())
+        raceClock.start(matchStartMs)
         countdownIsRematch = false
         opponent.attempts = 0; opponent.solved = false
         opponent.boardsSolved = 0; opponent.totalBoards = 0
@@ -878,7 +887,7 @@ class VSMatchViewModel(
             // onBoardSolved (iOS does the same on its ProperNoundle branch):
             // a win must never leave the bar reading zero solved.
             if (status == GameStatus.WON && myBoardsSolved == 0) myBoardsSolved = 1
-            val timeMs = max(0, (System.currentTimeMillis() - matchStartMs).toInt())
+            val timeMs = raceClock.elapsedMs(System.currentTimeMillis()).toInt() // stage-card time excluded
             playerTimeMs = timeMs
             myStatus = status
             myFinalGuesses = guesses

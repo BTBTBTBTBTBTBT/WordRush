@@ -458,6 +458,7 @@ struct HomeView: View {
                 }
             }
             .task(id: auth.isAuthenticated) {
+                await LaunchGate.wait()   // §AU5: after the cold-start intro lands
                 // Concurrent, not serial — the three loads are independent.
                 async let load: Void = completions.load()
                 async let invites: Void = loadPendingInvites()
@@ -483,12 +484,17 @@ struct HomeView: View {
             // Refresh today's daily completions whenever Home reappears (returning
             // from a daily push like ProperNoundle) so a just-finished game shows
             // its completed state immediately — no longer needs a tab round-trip.
-            .onAppear { LivePlayerCount.shared.start(); reloadDaily() }
+            .onAppear {
+                // §AU5: on a cold start this waits for the intro to land.
+                if LaunchGate.isOpen { LivePlayerCount.shared.start(); reloadDaily() }
+                else { Task { await LaunchGate.wait(); LivePlayerCount.shared.start(); reloadDaily() } }
+            }
             // Stop the live-count poll while Home is off screen (founder, 2026-09-29).
             .onDisappear { LivePlayerCount.shared.stop() }
             // Today's Muddle cartoon into URLCache so its panel paints at once (founder,
             // 2026-09-29). Keyed on the flag: flags usually land after Home first appears.
             .task(id: visibleMoreModes.contains { $0.id == "scramble" }) {
+                await LaunchGate.wait()   // §AU5
                 if visibleMoreModes.contains(where: { $0.id == "scramble" }) { AppWarmup.prefetchMuddleCartoon() }
             }
             // Foreground return on a NEW local day (WordociousApp posts) → reset
@@ -825,6 +831,9 @@ struct HomeView: View {
     /// today's daily, or in Unlimited a fresh (or resumed) puzzle. `forceDaily`:
     /// the widget's chips always mean today's daily, whatever the switch says.
     private func open(_ mode: HomeMode, forceDaily: Bool = false) {
+        // §AY: no tap-through — a card under the finger right after the Home button
+        // ignores the press (deep links pass forceDaily and always open).
+        guard forceDaily || HomeNav.cardTapsAllowed else { return }
         let unlimited = !forceDaily && effectiveMode == .unlimited
         if isLocked(mode) { limitModal = mode; return }
         if isCompletedDaily(mode, daily: !unlimited) { solvedMode = mode; return }

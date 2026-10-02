@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.EaseOut
@@ -233,12 +234,22 @@ fun TileView(
         }
     }
 
-    val face = if (showFinal) finalFace else if (hasLetter) TileFace.TYPED else TileFace.EMPTY
-    val look = TileLooks.of(face, WTheme.colorblind, WTheme.isDark)
+    // AU4 (founder 10-02: "tile flips look choppy"): both faces are precomputed here and the
+    // half-turn swap ([showFinal]) is read ONLY in the draw pass (the tile paint + the glyph's
+    // ColorProducer), so a flip never recomposes — the turn itself is graphicsLayer rotationX
+    // with a camera distance (GPU only, no layout change mid-flip).
+    val colorblind = WTheme.colorblind
+    val dark = WTheme.isDark
+    val startFace = if (hasLetter) TileFace.TYPED else TileFace.EMPTY
+    val startLook = remember(startFace, colorblind, dark) { TileLooks.of(startFace, colorblind, dark) }
+    val endLook = remember(finalFace, colorblind, dark) { TileLooks.of(finalFace, colorblind, dark) }
     val glyphText = if (masked) "•" else letter.uppercase()
-    val glyphColor = if (masked) Color(0xFF8A78AD) else look.glyph
+    val glyphFor: (Boolean) -> Color = { fin -> if (masked) Color(0xFF8A78AD) else (if (fin) endLook else startLook).glyph }
+    // The shadow can't swap in the draw pass; the landed face's is used through the turn.
+    val glyphShadow = endLook.glyphShadow
 
-    BoxWithConstraints(
+    TileBox(
+        fontSize = fontSize,
         modifier = modifier
             .then(if (square) Modifier.aspectRatio(1f) else Modifier.fillMaxSize())
             .graphicsLayer {
@@ -256,6 +267,7 @@ fun TileView(
                 transformOrigin = TransformOrigin(0.5f, if (celebrate != null) 1f else 0.5f)
             }
             .drawBehind {
+                val look = if (showFinal) endLook else startLook
                 val glowAlpha: Float
                 val glowColor: Color
                 when {
@@ -269,18 +281,17 @@ fun TileView(
             .then(if (hasLetter && !masked) Modifier.semantics {
                 contentDescription = if (state != TileState.EMPTY) "$letter, ${tileStateName(state)}" else letter
             } else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        val s = minOf(maxWidth, maxHeight).value
+    ) { s ->
         if (glyphText.isNotEmpty()) {
             val clearScale = 1f - 0.6f * clearProgress
             TileGlyph(
-                glyphText, glyphColor, look.glyphShadow,
+                glyphText, glyphFor(true), glyphShadow,
                 (fontSize ?: (s * 0.56f)), s,
                 Modifier.graphicsLayer {
                     scaleX = clearScale; scaleY = clearScale
                     alpha = 1f - clearProgress
                 },
+                colorProducer = { glyphFor(showFinal) },
             )
         }
     }
@@ -327,4 +338,18 @@ fun rememberRejectClear(current: String, isInvalid: Boolean, columns: Int): Pair
     val g = ghost
     return if (g != null) g to { col: Int -> progress.getOrNull(col)?.value ?: 0f }
     else current to { _: Int -> 0f }
+}
+
+/**
+ * AU4 the tile's box: with a known [fontSize] (the boards pass one) a plain Box — no
+ * subcomposition per tile; otherwise BoxWithConstraints measures the tile for the glyph.
+ * [content] gets the tile's side in dp.
+ */
+@Composable
+private fun TileBox(fontSize: Float?, modifier: Modifier, content: @Composable (Float) -> Unit) {
+    if (fontSize != null) {
+        Box(modifier, contentAlignment = Alignment.Center) { content(fontSize / 0.56f) }
+    } else {
+        BoxWithConstraints(modifier, contentAlignment = Alignment.Center) { content(minOf(maxWidth, maxHeight).value) }
+    }
 }

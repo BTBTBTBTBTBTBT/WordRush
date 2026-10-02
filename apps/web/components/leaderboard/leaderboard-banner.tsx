@@ -24,7 +24,7 @@ import { SeasonArt } from '@/components/ui/season-art';
 // WORDOCIOUS row ends with the Sweep broom tile (no separate SWEEP pill). The
 // Records page (records-banner.tsx) reuses the clock and the headline rules.
 
-/** The day headline's height cap (FINISH_SPEC N1: ≈58% width, ≤ 150 tall). */
+/** The day headline's height cap (FINISH_SPEC N1 + AU2: ≈58% width, ≤ 110 tall). */
 export const DAY_HEADLINE_MAX_HEIGHT = DAY_HEADLINE.maxHeight;
 const NBSP = ' ';
 
@@ -109,11 +109,11 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         // One designed graphic per weekday, its host drawn in.
         season === 'halloween' ? (
           <div className="relative">
-            <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-3" />
+            <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-2" />
             <HalloweenDayProps />
           </div>
         ) : (
-          <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-3" />
+          <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-2" />
         )
       ) : holiday ? (
         <h1 className="relative m-0 mb-3 flex flex-col items-center gap-1">
@@ -124,13 +124,14 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         </h1>
       ) : (
         // Until the local day is known, hold the headline's slot so it doesn't jump.
-        <div aria-hidden="true" className="mb-3" style={{ height: 'min(56vw, 150px)' }} />
+        <div aria-hidden="true" className="mb-3" style={{ height: 'min(40vw, 110px)' }} />
       )}
 
       <GamePicker
         selected={selectedMode}
         onSelect={onSelect}
         accent={LB_GOLD}
+        layout="strip"
         label="Pick a leaderboard"
         header={
           <div className={PICKER_HEADER_CLASS} style={PICKER_HEADER_STYLE}>

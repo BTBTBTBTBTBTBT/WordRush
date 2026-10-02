@@ -17,7 +17,10 @@ cat > "$DST/Contents.json" <<'JSON'
 }
 JSON
 copied=0
+# FINISH_SPEC §AV: the cast's Halloween skins (the day host + peeking heads in season).
 for pattern in 'mascot-*' 'game-*' 'icon3d-*' 'art-bg-tiles' 'art-badge-icon-*' \
+               'art-halloween-w' 'art-halloween-o1' 'art-halloween-r' 'art-halloween-d' 'art-halloween-o2' \
+               'art-halloween-c' 'art-halloween-i' 'art-halloween-o3' 'art-halloween-u' 'art-halloween-s' \
                'wordle-grid' 'swords' 'trending-up' 'shield' 'six-hand' 'seven-hand' 'skull' 'crown'; do
   for d in $SRC/${~pattern}.imageset(N); do
     cp -R "$d" "$DST/"

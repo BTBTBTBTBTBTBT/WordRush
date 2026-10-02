@@ -584,8 +584,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords)
                 Spacer(Modifier.height(LB_CARD_GAP))
             }
-            // AS4 (founder 10-02: "the important info is halfway down"): headline · picker ·
-            // YOUR rank card · the compact play row · the standings · then the rest.
+            // AS4 / AU2 (founder 10-02): headline (≤ 110 dp) · the one-row picker · YOUR rank
+            // row · the standings (podium on arrival) · then the play row, your board, yesterday.
             // §2.3 / C2: ONE result card — crown + your rank (true total; shows even when you
             // sit outside the visible top 50), how you solved it, your points. For SWEEP this
             // is your daily-sweep rank.
@@ -596,27 +596,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     val solved = if (isSweep) mySweep?.let { sweepSolvedLine(it.isFlawless, it.modesWon, it.totalTime, com.wordocious.app.todayLocalDate()) }
                     else myEntry?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds, it.boardsSolved, it.totalBoards) }
                         ?: completions[selectedMode]?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds) }
-                    UserRankCard(
+                    // AU2: ONE compact row ("#2 of 5 · 2,005 pts · 4 guesses · 48s" + the check).
+                    CompactRankRow(
                         rank = rank.rank, total = rank.totalPlayers, mode = selectedMode,
                         friends = friendsOnly && !isSweep, points = myPoints, solvedLine = solved,
                     )
                     Spacer(Modifier.height(LB_CARD_GAP))
                 }
-            }
-            // §2.1 Play card for the selected game. The Sweep board has no single mode to
-            // play, so its card carries the ranking explanation.
-            item(key = "play") {
-                if (isSweep) {
-                    SweepInfoCard(sweepers = playerCount)
-                } else {
-                    ModeInfoCard(
-                        modeId = selectedMode, players = playerCount,
-                        // iOS: cached completions answer instantly; the rank confirms.
-                        played = completions[selectedMode] != null || userRank != null,
-                        onPlay = onPlay,
-                    )
-                }
-                Spacer(Modifier.height(LB_CARD_GAP))
             }
             // §2.4 TODAY'S BOARD: label + Everyone | Friends + the bare 3D share icon.
             item(key = "board-head") {
@@ -780,6 +766,23 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         }
                     }
                 }
+            }
+            // AU2: the play / view-board row and the rest sit BELOW the standings.
+            // §2.1 Play card for the selected game. The Sweep board has no single mode to
+            // play, so its card carries the ranking explanation.
+            item(key = "play") {
+                Spacer(Modifier.height(LB_CARD_GAP))
+                if (isSweep) {
+                    SweepInfoCard(sweepers = playerCount)
+                } else {
+                    ModeInfoCard(
+                        modeId = selectedMode, players = playerCount,
+                        // iOS: cached completions answer instantly; the rank confirms.
+                        played = completions[selectedMode] != null || userRank != null,
+                        onPlay = onPlay,
+                    )
+                }
+                Spacer(Modifier.height(LB_CARD_GAP))
             }
             // §2.2 Your board for this mode (the replay, collapsible), tinted, under the result.
             if (!isSweep) {
@@ -1047,6 +1050,40 @@ internal fun UserRankCard(
         } else null,
     )
     }
+}
+
+/**
+ * AU2 the rank as ONE compact gold row: crown, "#2" soft number, "of 5 · 2,005 pts ·
+ * 4 guesses · 48s", the movement pill and the completed check. No duplicate headline.
+ */
+@Composable
+private fun CompactRankRow(rank: Int, total: Int, mode: String, friends: Boolean, points: Double?, solvedLine: String?) {
+    LbTintedCard(LB_GOLD, bar = false, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 7.dp)) {
+        val line = compactRankLine(total, friends, points?.let { formatScore(it) }, solvedLine)
+        Row(
+            Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "Your rank: #$rank $line" },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon3D(Icon3DName.CROWN, 22.dp)
+            SoftNumber("#$rank", 18.sp)
+            Text(
+                line, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(), maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            )
+            RankDeltaBadge(mode = mode, playType = "solo", pageKey = if (friends) "daily-friends" else "daily", currentRank = rank)
+            if (solvedLine != null && !solvedLine.startsWith("Not solved")) Icon3D(Icon3DName.BADGE_CHECK, 20.dp)
+        }
+    }
+}
+
+/** AU2 "of 5 · 2,005 pts · 4 guesses · 48s" (friends: "of 5 friends"); the "Solved in" lead-in dropped. */
+internal fun compactRankLine(total: Int, friends: Boolean, points: String?, solvedLine: String?): String {
+    val parts = ArrayList<String>()
+    parts += if (friends) "of $total friends" else "of $total"
+    if (points != null) parts += "$points pts"
+    solvedLine?.removePrefix("Solved in ")?.removePrefix("Solved · ")?.takeIf { it.isNotBlank() }?.let { parts += it }
+    return parts.joinToString(" · ")
 }
 
 /** AR the rank headline: "YOU'RE #3 TODAY", "YOU'RE #2 AMONG FRIENDS", else "YOU'RE #5". */

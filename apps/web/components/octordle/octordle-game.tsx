@@ -229,6 +229,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
           fit="self"
           strip={
             <ResultStrip
+              headline={null}
               won={state.status === 'WON'}
               guesses={totalGuesses}
               time={formatTime(elapsedTime)}
@@ -240,6 +241,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
           board={<FittedBoardsRecap boards={toRecapBoards(state.boards)} />}
           dock={
             <FinishedDock
+              compactUnlimited
               currentMode="OCTORDLE"
               isDaily={!!isDaily}
               onShare={handleShare}

@@ -123,6 +123,7 @@ struct WordOfTheDayView: View {
         // Today's answer + word streak: per player and per day (sign-in/out reloads).
         .task(id: "\(LeaderboardService.todayLocal())-\(auth.profile?.id ?? "guest")") {
             answerLoaded = false
+            await LaunchGate.wait()   // §AU5: after the cold-start intro lands
             let state = await HomeStreaksService.quizState(day: LeaderboardService.todayLocal())
             if !revealing { answer = state.today; streak = state.streak }
             answerLoaded = true

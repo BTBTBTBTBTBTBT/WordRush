@@ -159,6 +159,9 @@ struct VictoryOverlay: View {
             Color(hex: 0x18182E).opacity(0.6).ignoresSafeArea()
             // §R1: one confetti burst on a win (not looping); none with Reduce Motion.
             if won && !still { ConfettiView() }
+            // FINISH_SPEC §AU1: the card is centered vertically AND horizontally in the
+            // safe area; a card taller than the space scrolls inside.
+            GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 12) {
                     hostStage
@@ -210,8 +213,10 @@ struct VictoryOverlay: View {
                 .padding(.horizontal, 22)
                 .frame(maxWidth: 400)
                 .padding(.vertical, 30)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .center)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture { if actions.isEmpty { onDismiss() } }
@@ -227,7 +232,7 @@ struct VictoryOverlay: View {
             hostIn = true; tilesIn = true; shownPoints = target
             return
         }
-        withAnimation(.spring(response: 0.36, dampingFraction: 0.6)) { hostIn = true }   // §AQ1: faster
+        withAnimation(Motion.spring) { hostIn = true }   // §AQ1 / §AZ: the shared spring
         if !calm {
             withAnimation(.linear(duration: 24).repeatForever(autoreverses: false)) { raysTurn = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
@@ -264,14 +269,17 @@ struct VictoryOverlay: View {
             RadialGradient(colors: [accent.opacity(0.30), accent.opacity(0)], center: .center, startRadius: 4, endRadius: 80)
                 .frame(width: 170, height: 150)
             if !calm {
+                // §AZ: the masked rays rasterized once, then only rotated (a GPU transform).
                 LightRays(color: accent.opacity(0.12))
                     .frame(width: 170, height: 170)
-                    .rotationEffect(.degrees(raysTurn ? 360 : 0))
                     .mask(RadialGradient(colors: [.black, .clear], center: .center, startRadius: 10, endRadius: 85))
+                    .drawingGroup()
+                    .rotationEffect(.degrees(raysTurn ? 360 : 0))
             }
-            Ellipse().fill(Color(hex: 0x3C1E6E).opacity(0.16))
-                .frame(width: size * 0.8, height: size * 0.16)
-                .blur(radius: 4)
+            // §AZ: a soft gradient ground shadow — no live blur under the moving card.
+            Ellipse().fill(RadialGradient(colors: [Color(hex: 0x3C1E6E).opacity(0.18), Color(hex: 0x3C1E6E).opacity(0)],
+                                          center: .center, startRadius: 0, endRadius: size * 0.42))
+                .frame(width: size * 0.9, height: size * 0.2)
                 .offset(y: size * 0.5)
             MascotView(host, size: size)
                 .scaleEffect(hostIn ? 1 : 0.4)
@@ -426,7 +434,8 @@ struct ConfettiView: View {
                                  Color(hex: 0xF97316), Color(hex: 0xEC4899)]
     @State private var animate = false
     /// §AD: Low Power Mode (or Reduce Motion) halves the pieces.
-    private let count = Motion.particles(50, calm: Motion.calm())
+    /// §AZ: capped at 36 (was 50).
+    private let count = Motion.particles(36, calm: Motion.calm())
 
     var body: some View {
         GeometryReader { geo in
@@ -441,11 +450,15 @@ struct ConfettiView: View {
                         .fill(Self.colors[(i * 7) % Self.colors.count])
                         .frame(width: 12, height: 12)
                         .rotationEffect(.degrees(animate ? 720 : 0))
-                        .position(x: startX, y: animate ? geo.size.height + 20 : -20)
+                        // §AZ: placed once, then moved by a transform (no per-frame layout).
+                        .position(x: startX, y: -20)
+                        .offset(y: animate ? geo.size.height + 40 : 0)
                         .opacity(animate ? 0 : 1)
                         .animation(Theme.animation(.linear(duration: duration).delay(delay)), value: animate)
                 }
             }
+            // §AZ: every piece composited into one layer.
+            .drawingGroup()
         }
         .allowsHitTesting(false)
         .onAppear { animate = true }

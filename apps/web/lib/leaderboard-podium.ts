@@ -71,3 +71,23 @@ export function solvedLine(semantics: string, guessBase: number, guesses: number
   if (semantics === 'guesses') return `Solved in ${stat} · ${time}`;
   return `Solved · ${stat} · ${time}`;
 }
+
+/**
+ * FINISH_SPEC AU2: the Leaderboard's ONE compact rank row — "#2 of 5 · 2,005 PTS
+ * · 4 guesses · 48s" (no repeated headline / "OF 5 TODAY"). Missing pieces drop
+ * out; `detail` replaces the guess + time stats (the Sweep's totals line).
+ */
+export function compactRankLine(p: {
+  rank: number | null; total: number | null; friends?: boolean; points: string | null;
+  semantics?: string; guessBase?: number; guesses?: number | null; timeSeconds?: number | null; detail?: string | null;
+}): string {
+  const parts: string[] = [];
+  if (p.rank != null) parts.push(`#${p.rank}${p.total != null ? ` of ${p.total}${p.friends ? ' friends' : ''}` : ''}`);
+  if (p.points) parts.push(`${p.points} PTS`);
+  if (p.detail) parts.push(p.detail);
+  else {
+    if (p.guesses != null) parts.push(formatGuessStat(p.semantics ?? 'guesses', p.guessBase ?? 1, p.guesses));
+    if (p.timeSeconds != null) parts.push(formatShortTime(p.timeSeconds));
+  }
+  return parts.length ? parts.join(' \u00b7 ') : 'Your result';
+}

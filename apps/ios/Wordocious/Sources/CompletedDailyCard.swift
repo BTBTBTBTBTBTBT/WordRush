@@ -244,7 +244,7 @@ struct CompletedDailyCard: View {
     @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily) -> some View {
         let bs = localBoards ?? CompletedBoardReconstruct.boards(mode: mode, seed: DailySeed.today(mode: mode), solutions: d.solutions,
                                                                  guesses: d.guesses, maxGuesses: maxGuesses)
-        let rowCount = bs.map(\.maxGuesses).max() ?? 6
+        let rowCount = bs.count > 1 ? CompletedMiniBoardView.sharedRows(bs) : (bs.map(\.maxGuesses).max() ?? 6)   // §AT2
         if bs.count == 1 {
             // §L: the single solved board sits on the shared game tray (won →
             // purple wash, lost → slate). Mini boards tray themselves (framed).

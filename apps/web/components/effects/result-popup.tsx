@@ -36,6 +36,9 @@ import { answerTileSize, countUpValue, popupFormatTime } from '@/lib/result-popu
 // - a candy CONTINUE in the game accent (tap anywhere still works).
 // Reduce Motion: no rays, bob, confetti or count-up (globals.css `.rp-*`).
 
+/** How far the host's stage rises above the card (px). */
+const HOST_OVERHANG = 74;
+
 /** The cast colors for the one confetti burst. */
 const CAST_CONFETTI = ['#7c3aed', '#f97316', '#22c55e', '#2563eb', '#ec4899', '#0ea5e9', '#10b981', '#eab308', '#8b5cf6', '#ef4444'];
 
@@ -140,7 +143,8 @@ export function ResultPopup(p: ResultPopupProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-5 animate-fade-in"
-      style={{ backgroundColor: 'rgba(30, 15, 60, 0.55)' }}
+      // AU1: centered in the SAFE AREA, vertically too.
+      style={{ backgroundColor: 'rgba(30, 15, 60, 0.55)', paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       onClick={hasActions ? undefined : p.onContinue}
       role="dialog"
       aria-modal="true"
@@ -148,9 +152,11 @@ export function ResultPopup(p: ResultPopupProps) {
     >
       {win && <Confetti colors={CAST_CONFETTI} />}
 
-      <div className="relative max-w-sm w-full animate-fade-in-scale" style={{ maxHeight: 'calc(100dvh - 24px)' }}>
+      {/* AU1: the host's stage overhangs the card by HOST_OVERHANG; that room is
+          reserved above the card so host + card center as ONE group. */}
+      <div className="relative max-w-sm w-full animate-fade-in-scale" style={{ marginTop: HOST_OVERHANG }}>
         {/* The host's stage: glow, slow rays, ground shadow; spring-in, then a bob. */}
-        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: -74, zIndex: 2 }} aria-hidden="true">
+        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: -HOST_OVERHANG, zIndex: 2 }} aria-hidden="true">
           <div className="relative" style={{ width: 150, height: 104 }}>
             <span className="absolute rp-rays" style={{ left: '50%', top: '46%', width: 190, height: 190, marginLeft: -95, marginTop: -95, borderRadius: '50%', background: `repeating-conic-gradient(${alphaHex(accent, 0.12)} 0deg 10deg, transparent 10deg 24deg)`, maskImage: 'radial-gradient(circle, #000 30%, transparent 70%)', WebkitMaskImage: 'radial-gradient(circle, #000 30%, transparent 70%)' }} />
             <span className="absolute" style={{ left: '50%', top: '46%', width: 120, height: 120, marginLeft: -60, marginTop: -60, borderRadius: '50%', background: `radial-gradient(circle, ${alphaHex(accent, 0.3)}, transparent 68%)` }} />
@@ -169,7 +175,8 @@ export function ResultPopup(p: ResultPopupProps) {
             background: `linear-gradient(${alphaHex(accent, 0.1)}, ${alphaHex(accent, 0.04)}), var(--popup-cream)`,
             borderRadius: 28,
             boxShadow: `0 24px 60px rgba(40, 15, 80, 0.3), 0 0 0 1.5px ${alphaHex(accent, 0.22)}, 0 0 36px ${alphaHex(accent, 0.28)}`,
-            maxHeight: 'calc(100dvh - 24px)',
+            // Taller than the room: it scrolls inside (the body below is overflow-y-auto).
+            maxHeight: `calc(100dvh - ${HOST_OVERHANG}px - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom)))`,
           }}
         >
           <div aria-hidden="true" style={{ height: 10, background: BRAND_BAR, flex: 'none' }} />

@@ -55,6 +55,26 @@ object ColdStart {
 
     /** F2 fix step 4: bumped on landing — the real row plays the all-cast hop flourish once. */
     var flourish by mutableStateOf(0)
+
+    /** AU5: true once the intro has landed (or never ran) — heavy startup work waits on it. */
+    val landed = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    /** AU5 the intro's ten figures for this launch's season (decoded before the first frame). */
+    fun introRes(): List<Int> {
+        val season = SeasonSkins.current()
+        return MascotId.entries.map { SeasonSkins.frame(it, season).res }
+    }
+
+    /**
+     * AU5 decode every intro figure into the shared [ArtBitmaps] cache (full size) — called
+     * off the main thread while the plain launch color is still up.
+     */
+    fun preload(context: android.content.Context) {
+        introRes().forEach { ArtBitmaps.get(context, it, INTRO_DECODE_PX) }
+    }
+
+    /** The intro's decode size (the 512 px source, unsampled). */
+    const val INTRO_DECODE_PX = 512
 }
 
 /** F2 fix step 4 the flourish timing: each character hops (the W hop) this long, this far apart. */
@@ -110,6 +130,7 @@ fun ColdStartIntro(onDone: () -> Unit) {
     remember { if (!reduced) ColdStart.hidingHeader = true; 0 }
     /** F2 fix step 3: land — in ONE frame the real row shows, this row goes, and the flourish starts. */
     fun land() {
+        ColdStart.landed.value = true
         if (!ColdStart.hidingHeader && reduced) { onDone(); return }
         ColdStart.hidingHeader = false
         if (!reduced) ColdStart.flourish++
@@ -125,11 +146,16 @@ fun ColdStartIntro(onDone: () -> Unit) {
         // A tap-to-skip lands on its own (below).
         if (!skipping) land()
     }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { ColdStart.hidingHeader = false } }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { ColdStart.hidingHeader = false; ColdStart.landed.value = true } }
     // X: in season (or the admin preview) the intro builds the row from the costumes.
     val season = rememberSeason()
     val frames = MascotId.entries.map { SeasonSkins.frame(it, season) }
-    val images = frames.map { ImageBitmap.imageResource(it.res) }
+    // AU5: the figures were decoded before the first frame (ColdStart.preload); a cache miss
+    // decodes here as before.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val images = frames.map { f ->
+        remember(f.res) { ArtBitmaps.get(context, f.res, ColdStart.INTRO_DECODE_PX) } ?: ImageBitmap.imageResource(f.res)
+    }
     var origin by remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
 

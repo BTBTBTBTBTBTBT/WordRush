@@ -1,5 +1,8 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.Motion
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -341,15 +344,37 @@ fun WinPopupFrame(
     }
     // AQ1: the popup springs in faster (was 300 ms).
     val dur = if (still) 0 else 200
-    val scale by animateFloatAsState(if (shown) 1f else 0.8f, tween(dur, easing = EaseOut), label = "winScale")
-    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(dur, easing = EaseOut), label = "winAlpha")
+    // AZ: the shared spring family for the scale (opacity stays a short fade), and a matching
+    // exit — the scrim + card fade and settle out before the dismiss action runs.
+    var leaving by remember { mutableStateOf(false) }
+    val exitScope = androidx.compose.runtime.rememberCoroutineScope()
+    val exitThen: (() -> Unit) -> Unit = { action ->
+        if (!leaving) {
+            leaving = true
+            shown = false
+            exitScope.launch { if (!still) kotlinx.coroutines.delay(Motion.EXIT_MS.toLong()); action() }
+        }
+    }
+    val scrimTap: () -> Unit = { exitThen(onScrimTap) }
+    val continueTap: (() -> Unit)? = continueAction?.let { a -> { exitThen(a) } }
+    val scale by animateFloatAsState(
+        if (shown) 1f else if (leaving) 0.94f else 0.8f,
+        if (still) tween(0) else if (leaving) Motion.exit() else Motion.springIn(), label = "winScale",
+    )
+    val alpha by animateFloatAsState(
+        if (shown) 1f else 0f,
+        if (leaving && !still) Motion.exit() else tween(dur, easing = EaseOut), label = "winAlpha",
+    )
     val host = remember(won, hostKey) {
         if (won) Mascots.hostFor(hostKey) ?: Mascots.dailyPick(com.wordocious.app.todayLocalDate(), hostKey ?: "") else Mascots.loss
     }
 
-    PopupScrim(onScrimTap) {
+    PopupScrim(scrimTap, Modifier.graphicsLayer { this.alpha = if (leaving) alpha else 1f }) {
         if (won) PopupConfetti(WIN_CAST_CONFETTI)
-        BoxWithConstraints(Modifier.fillMaxSize()) {
+        // AU1: centered vertically AND horizontally in the SAFE area (status / nav bars excluded);
+        // taller than the space, it scrolls inside. The card's own center sits on the screen's
+        // center: the host stage above the card is balanced by the same room below it.
+        BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
             val viewport = maxHeight
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = viewport)
@@ -366,7 +391,7 @@ fun WinPopupFrame(
                     // Behind the card: the glow and the slow rays.
                     StageBack(accent, Modifier.padding(top = RAYS_ROOM))
                     WinCard(accent, Modifier.padding(top = RAYS_ROOM + STAGE_TOP)) {
-                        val popupHost = remember(accent, continueAction, won) { WinPopupHost(accent, continueAction, won) }
+                        val popupHost = remember(accent, continueAction, won) { WinPopupHost(accent, continueTap, won) }
                         CompositionLocalProvider(LocalWinPopupHost provides popupHost) {
                             Column(
                                 Modifier.fillMaxWidth().then(if (glossBand != null) Modifier.glossSweep(glossBand) else Modifier).padding(bottom = 8.dp),
@@ -379,6 +404,8 @@ fun WinPopupFrame(
                     // In front: the ground shadow and the host.
                     StageFront(host, won, accent, Modifier.padding(top = RAYS_ROOM))
                 }
+                // AU1: the balancing room under the card (the host stage's height above it).
+                Spacer(Modifier.height(RAYS_ROOM + STAGE_TOP))
             }
         }
     }

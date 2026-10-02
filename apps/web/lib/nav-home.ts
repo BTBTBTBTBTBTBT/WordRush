@@ -36,3 +36,42 @@ export function closeAllOverlays(): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new Event(CLOSE_OVERLAYS_EVENT));
 }
+
+// ── AY: the top-left Home button ALWAYS lands on the Home root ─────────────
+// (founder 10-02: "sometimes the new home buttons open another game"). It
+// navigates to the root (never history-back, which could reveal the game this
+// one was opened from: Next daily, New puzzle, Gauntlet → results), closes
+// every overlay, fires once per tap (double taps are dropped), and for a
+// moment after it lands, taps on Home's cards are ignored so the finger that
+// pressed Home can't fall through onto the card now under it.
+
+export const HOME_ROOT = '/';
+/** Home's cards ignore taps this long after a Home-button navigation (ms). */
+export const HOME_TAP_GUARD_MS = 400;
+/** A second Home tap inside this window is dropped (ms). */
+export const HOME_DEBOUNCE_MS = 600;
+
+let lastHomeNav = -Infinity;
+
+/** The Home button's target: the root, or the root with its own query (`/?more=1`); anything else → the root. */
+export function homeTarget(href?: string): string {
+  if (!href) return HOME_ROOT;
+  return href === HOME_ROOT || href.startsWith('/?') ? href : HOME_ROOT;
+}
+
+/** Single-fire: true (and marks the time) for the first Home tap, false for a repeat inside HOME_DEBOUNCE_MS. */
+export function claimHomeTap(now: number = Date.now()): boolean {
+  if (now - lastHomeNav < HOME_DEBOUNCE_MS) return false;
+  lastHomeNav = now;
+  return true;
+}
+
+/** True while Home's cards should ignore taps (just after a Home-button navigation). */
+export function homeCardTapBlocked(now: number = Date.now()): boolean {
+  return now - lastHomeNav < HOME_TAP_GUARD_MS;
+}
+
+/** Tests only. */
+export function _resetHomeTapForTests(): void {
+  lastHomeNav = -Infinity;
+}

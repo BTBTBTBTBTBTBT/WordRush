@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -294,13 +295,20 @@ suspend fun androidx.compose.runtime.State<Boolean>.awaitShown() {
 
 /**
  * Hidden-but-alive tab: kept in composition so its state survives a tab switch
- * (iOS `TabView` keeps every tab alive — RootTabView.swift:8-9), but drawn as
- * nothing, laid under the active tab, and blocked from receiving touches.
+ * (iOS `TabView` keeps every tab alive — RootTabView.swift:8-9), but invisible,
+ * laid under the active tab, and blocked from receiving touches.
+ *
+ * AW (founder 10-02: "the footer takes a second to repopulate" after closing a game): hidden
+ * with a zero-alpha graphics LAYER instead of skipping the draw. A skipped draw dropped every
+ * recorded display list, so uncovering re-recorded the whole tab tree — the tab bar included —
+ * in one long frame. A zero-alpha layer is never rendered (the GPU skips it) but keeps its
+ * recorded content, so dismissing a game reveals the tabs AND the footer in the same frame,
+ * with no re-layout (nothing about the layout ever changed).
  */
 private fun Modifier.hiddenTab(): Modifier = this
     .zIndex(0f)
     .clearAndSetSemantics {} // off screen = out of the accessibility tree too (TalkBack read hidden tabs)
-    .drawWithContent { /* inactive tab: composed for state only, never drawn */ }
+    .graphicsLayer { alpha = 0f }
     .pointerInput(Unit) {
         awaitPointerEventScope {
             while (true) {
@@ -607,7 +615,10 @@ fun MainScreen() {
                                     0 -> HomeScreen(
                                         onJoinInvite = { m, code -> vsInvite = m to code },
                                         onSelectMode = { card, unlimited ->
-                                            if (card.id == "vs") {
+                                            // AY: a touch-up that followed a home tap never opens a card.
+                                            if (!HomeNav.cardTapAllowed(android.os.SystemClock.uptimeMillis())) {
+                                                // swallowed (tap-through guard)
+                                            } else if (card.id == "vs") {
                                                 // VS overhaul (2026-10-01): every VS tap opens the lobby —
                                                 // its banner holds today's Daily Battle for free and Pro alike.
                                                 vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main
@@ -743,7 +754,13 @@ fun MainScreen() {
               vsInvite == null && vsActive == null && vsChallengeCode == null && !vsLobby
       }
       val soloGameAccent = soloGame?.accent
+      // AY: every non-VS layer's top-left home button lands on the Home root (single-fire).
+      // A live VS match keeps its own home (its leave-the-match confirm / the lobby).
+      val goHome: (() -> Unit)? = if (vsActive == null && vsInvite == null) {
+          { if (HomeNav.tryGoHome(android.os.SystemClock.uptimeMillis())) goToRoot(TabNav.HOME, scrollToTop = false) }
+      } else null
       if (covered) androidx.compose.runtime.CompositionLocalProvider(
+        LocalGoHome provides goHome,
         LocalPageTint provides when {
             friendlyGameId != null -> null // a pocket game screen
             vsInvite != null || vsActive != null || vsChallengeCode != null || vsLobby -> PageTint.VS

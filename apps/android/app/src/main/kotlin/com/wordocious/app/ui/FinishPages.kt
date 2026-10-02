@@ -1,6 +1,7 @@
 package com.wordocious.app.ui
 
 import androidx.annotation.DrawableRes
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -112,12 +113,16 @@ fun PageHeadline(
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") bleed: Dp = 0.dp,
     day: Boolean = res in DAY_TITLE_RES,
+    /** AU2: cap the art's height (width follows the aspect). */
+    maxHeight: Dp? = null,
 ) {
-    val painter = painterResource(res)
+    val painter = artPainter(res, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp)
     val intrinsic = painter.intrinsicSize
     val aspect = if (intrinsic.height > 0f && intrinsic.width > 0f) intrinsic.width / intrinsic.height else 4f
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val (w, h) = HeadlineSize.fit(maxWidth.value, aspect, day)
+        val (w0, h0) = HeadlineSize.fit(maxWidth.value, aspect, day)
+        val cap = maxHeight?.value
+        val (w, h) = if (cap != null && h0 > cap) (cap * aspect) to cap else w0 to h0
         Image(
             painter,
             contentDescription = contentDescription,
@@ -213,6 +218,8 @@ fun GamePickerCard(
     badgeShown: ((String) -> Boolean)? = null,
     sweepLabel: String = "Daily Sweep board",
     header: (@Composable RowScope.() -> Unit)? = null,
+    /** AU2: ONE horizontally scrolling row of smaller tiles (Wordocious · divider · Puzzles). */
+    compact: Boolean = false,
 ) {
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
@@ -241,7 +248,9 @@ fun GamePickerCard(
                     content = header,
                 )
             }
-            Column(
+            if (compact) {
+                CompactPickerRow(words, puzzles, selected, onSelect, accent, badge, badgeShown, sweepLabel)
+            } else Column(
                 Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -278,9 +287,68 @@ private fun PickerRow(
     // Room for the selected tile's 3 dp ring + the press scale.
     Row(Modifier.fillMaxWidth().padding(horizontal = 1.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
         tiles.forEach { t ->
-            val on = t.key == selected
+            PickerTileBox(t, Modifier.weight(1f).aspectRatio(1f), t.key == selected, onSelect, corner, badge, badgeShown, sweepLabel)
+        }
+    }
+}
+
+/**
+ * AU2 the compact picker: one horizontally scrolling row of 46 dp tiles — the Wordocious
+ * dailies (+ the Sweep), a divider, the Puzzles — opening scrolled to the selected tile.
+ */
+@Composable
+private fun CompactPickerRow(
+    words: List<PickerTile>,
+    puzzles: List<PickerTile>,
+    selected: String?,
+    onSelect: (String) -> Unit,
+    accent: Color,
+    badge: ((String) -> Boolean?)?,
+    badgeShown: ((String) -> Boolean)?,
+    sweepLabel: String,
+) {
+    val state = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(Unit) {
+        val wi = words.indexOfFirst { it.key == selected }
+        val pi = puzzles.indexOfFirst { it.key == selected }
+        val idx = when { wi >= 0 -> wi; pi >= 0 -> words.size + 1 + pi; else -> 0 }
+        if (idx > 2) state.scrollToItem(idx - 2)
+    }
+    androidx.compose.foundation.lazy.LazyRow(
+        state = state,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(words.size, key = { "w-" + words[it].key }) { i ->
+            val t = words[i]
+            PickerTileBox(t, Modifier.size(46.dp), t.key == selected, onSelect, 11.dp, badge, badgeShown, sweepLabel)
+        }
+        if (puzzles.isNotEmpty()) item(key = "divider") {
+            Box(Modifier.padding(horizontal = 2.dp).width(2.dp).height(30.dp).clip(RoundedCornerShape(1.dp)).background(accentLine(accent, 0.45f)))
+        }
+        items(puzzles.size, key = { "p-" + puzzles[it].key }) { i ->
+            val t = puzzles[i]
+            PickerTileBox(t, Modifier.size(46.dp), t.key == selected, onSelect, 11.dp, badge, badgeShown, sweepLabel)
+        }
+    }
+}
+
+/** One picker tile (a mini game card tinted by game; the selected one ringed). */
+@Composable
+private fun PickerTileBox(
+    t: PickerTile,
+    modifier: Modifier,
+    on: Boolean,
+    onSelect: (String) -> Unit,
+    corner: Dp,
+    badge: ((String) -> Boolean?)?,
+    badgeShown: ((String) -> Boolean)?,
+    sweepLabel: String,
+) {
             Box(
-                Modifier.weight(1f).aspectRatio(1f)
+                modifier
                     .squishClickable(onClick = { onSelect(t.key) })
                     .semantics(mergeDescendants = true) {
                         role = Role.Tab
@@ -294,7 +362,7 @@ private fun PickerRow(
                 ) {
                     if (t.art != null) {
                         Image(
-                            painterResource(t.art), contentDescription = null,
+                            artPainter(t.art, 64.dp), contentDescription = null, // AQ2: ~900 px art at tile size
                             modifier = Modifier.fillMaxSize(0.74f).padding(top = 2.dp),
                         )
                     } else if (t.card != null) {
@@ -314,8 +382,6 @@ private fun PickerRow(
                     }
                 }
             }
-        }
-    }
 }
 
 // ── C2a · the W / L badge column ──────────────────────────────────────────

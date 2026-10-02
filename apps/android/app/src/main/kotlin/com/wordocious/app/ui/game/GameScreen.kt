@@ -686,13 +686,19 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     val accent = com.wordocious.app.ui.modeAccent(mode)
     var showGuide by remember { mutableStateOf(false) }
     // Gauntlet stage-cleared interstitial is up (see StageTransitionOverlay below).
+    var stageSkip by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val stageCleared = mode == GameMode.GAUNTLET && state.gauntlet != null &&
         state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
         state.boards.all { it.status == GameStatus.WON }
     Box(
         modifier = Modifier.fillMaxSize()
             // Physical keyboard (founder, 2026-09-30): A–Z / Enter / Backspace as the keys below.
-            .hardwareKeys(enabled = !showGuide && !stageCleared) { k ->
+            .hardwareKeys(enabled = !showGuide) { k ->
+                // AU3: while the stage card is up, Enter skips it (other keys do nothing).
+                if (stageCleared) {
+                    if (k == HwKey.Enter) stageSkip++
+                    return@hardwareKeys true
+                }
                 keyboardViewKeys(
                     onKey = { vm.typeLetter(it) },
                     onDelete = { vm.deleteLetter() },
@@ -938,12 +944,15 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // FINAL stage waits for a manual tap (StageTransitionOverlay gates its
         // auto-advance on `next != null`) so the run's finish isn't rushed.
         val gauntlet = state.gauntlet
+        // The run's clock pauses while the stage card is up (recorded stage / run times exclude it).
+        LaunchedEffect(stageCleared) { if (stageCleared) vm.pauseTimer() else vm.resumeTimer() }
         if (stageCleared && gauntlet != null) {
             StageTransitionOverlay(
                 completed = gauntlet.stages[gauntlet.currentStage],
                 next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
                 guessesSoFar = GauntletLook.guessesSoFar(gauntlet, state.boards),
-            ) { vm.advanceGauntletStage() }
+                skipSignal = stageSkip,
+            ) { stageSkip = 0; vm.advanceGauntletStage() }
         }
 
         // Rejection toast — web: absolute @ top 90px, dark pill, white 12px bold
@@ -994,7 +1003,7 @@ internal fun SoundToggleButton(@Suppress("UNUSED_PARAMETER") accent: Color, modi
     ) {
         // Muted = faded + desaturated.
         com.wordocious.app.ui.Icon3D(
-            com.wordocious.app.ui.Icon3DName.SOUND, com.wordocious.app.ui.SOFT_CONTROL_ICON,
+            com.wordocious.app.ui.Icon3DName.SOUND, GAME_CORNER_ICON,
             alpha = if (enabled) 1f else 0.4f,
             colorFilter = if (enabled) null else com.wordocious.app.ui.Icon3DMuted,
         )
@@ -1004,8 +1013,11 @@ internal fun SoundToggleButton(@Suppress("UNUSED_PARAMETER") accent: Color, modi
 /** B4 the controls row sits tucked right under the status bar. */
 internal val GAME_CONTROLS_INSET = 4.dp
 
-/** The game controls' tap area (A3: a full 44 dp; the boards and titles are laid out around it). */
-internal val GAME_CORNER = 44.dp
+/** The game controls' tap area (AX: 48 dp; the boards and titles are laid out around it). */
+internal val GAME_CORNER = 48.dp
+
+/** AX (founder 10-02: "they're really tiny") the home / sound / ? icons' visual size (was 23 dp). */
+internal val GAME_CORNER_ICON = 30.dp
 
 /**
  * The game's home control (top-left of the controls row, FINISH_SPEC A3 / B4): the
@@ -1014,8 +1026,11 @@ internal val GAME_CORNER = 44.dp
  */
 @Composable
 internal fun CornerHomeButton(@Suppress("UNUSED_PARAMETER") accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    com.wordocious.app.ui.HeaderCircle(onClick, "Home", modifier, size = GAME_CORNER) {
-        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TAB_HOME, com.wordocious.app.ui.SOFT_CONTROL_ICON)
+    // AY: inside an app layer the home button goes to the Home ROOT (MainScreen's router),
+    // single-fire; elsewhere it falls back to the screen's own action.
+    val goHome = com.wordocious.app.ui.LocalGoHome.current ?: onClick
+    com.wordocious.app.ui.HeaderCircle(goHome, "Home", modifier, size = GAME_CORNER) {
+        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TAB_HOME, GAME_CORNER_ICON)
     }
 }
 
@@ -1028,7 +1043,7 @@ internal fun CornerHelpButton(@Suppress("UNUSED_PARAMETER") accent: Color, onCli
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         SoundToggleButton(accent)
         com.wordocious.app.ui.HeaderIconButton(
-            com.wordocious.app.ui.Icon3DName.HELP, "How to play", onClick, size = GAME_CORNER,
+            com.wordocious.app.ui.Icon3DName.HELP, "How to play", onClick, size = GAME_CORNER, iconSize = GAME_CORNER_ICON,
         )
     }
 }

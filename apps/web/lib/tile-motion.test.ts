@@ -70,12 +70,24 @@ describe('reveal timing (AQ1: ~30% tighter)', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
     expect(css).toContain(`.gt-flip { animation: gt-flip ${REVEAL.flipMs}ms`);
     expect(css).toContain(`animation: gt-cover ${REVEAL.flipMs}ms`);
-    expect(css).toContain(`gt-bloom ${REVEAL.bloomMs}ms ease-out calc(var(--gt-d, 0ms) + ${REVEAL.flipMs}ms)`);
+    expect(css).toContain(`gt-glow ${REVEAL.bloomMs}ms ease-out calc(var(--gt-d, 0ms) + ${REVEAL.flipMs}ms)`);
     expect(css).toContain(`.gt-hop { animation: gt-hop ${REVEAL.hopMs}ms`);
     expect(css).toContain(`.gt-sink { animation: gt-sink ${REVEAL.sinkMs}ms`);
     expect(css).toContain(`.gt-nudge { animation: gt-nudge ${REVEAL.nudgeMs}ms`);
     expect(css).toContain(`gt-outb ${REVEAL.outMs}ms`);
     expect(css).not.toMatch(/gt-flip 720ms/);
+  });
+
+  it('flips on the GPU only (AU4): transform + opacity keyframes, no animated box-shadow or layout', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
+    const frames = (name: string) => css.match(new RegExp(`@keyframes ${name} \\{([^\\n]*)\\}`))?.[1] ?? '';
+    for (const name of ['gt-flip', 'gt-glow', 'gt-cover']) {
+      const f = frames(name);
+      expect(f, name).not.toBe('');
+      expect(f, name).not.toMatch(/box-shadow|width|height|top|left|margin|padding/);
+    }
+    expect(css).toMatch(/\.gt-flip \{ will-change: transform; backface-visibility: hidden;/);
+    expect(css).not.toContain('gt-bloom');
   });
 });
 

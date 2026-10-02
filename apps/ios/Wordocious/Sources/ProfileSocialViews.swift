@@ -576,7 +576,7 @@ struct GuardedBoardSheet: View {
         } else {
             let wordLen = boards.first?.solution.count ?? 5
             let tile = CompletedBoardLayout.tileSize(boardCount: boards.count, wordLen: wordLen)
-            let rowCount = boards.map(\.maxGuesses).max() ?? 6
+            let rowCount = boards.count > 1 ? CompletedMiniBoardView.sharedRows(boards) : (boards.map(\.maxGuesses).max() ?? 6)   // §AT2
             if boards.count == 1 {
                 CompletedMiniBoardView(board: boards[0], tileSize: tile, rowCount: rowCount, framed: false)
             } else {

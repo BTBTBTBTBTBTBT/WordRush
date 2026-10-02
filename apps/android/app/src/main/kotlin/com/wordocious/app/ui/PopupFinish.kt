@@ -94,7 +94,8 @@ fun SceneArtPop(
             if (delayMs > 0) delay(delayMs)
             com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.HOP)
             launch { alpha.animateTo(1f, tween(160)) }
-            scale.animateTo(1f, spring(dampingRatio = 0.42f, stiffness = 240f))
+            // AZ: the shared spring family (was a separate bouncy 0.42 / 240 spring).
+            scale.animateTo(1f, Motion.springIn())
         }
     }
     Box(
@@ -115,7 +116,8 @@ fun SceneArtPop(
             )
         }
         Image(
-            painterResource(res),
+            // AZ: the scene decoded at its shown size and cached, so the spring's first frame is ready.
+            artPainter(res, height * 1.6f),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxHeight().graphicsLayer {
@@ -144,7 +146,8 @@ fun PopupConfetti(
 ) {
     if (WTheme.reducedMotion) return
     // FINISH_SPEC AD: Battery Saver halves the burst.
-    val n = com.wordocious.app.ui.theme.CalmMotion.confettiCount(count, WTheme.calmMotion)
+    // AZ: capped (one Canvas, draw-phase only — the clock is read in the draw lambda).
+    val n = com.wordocious.app.ui.theme.CalmMotion.confettiCount(count, WTheme.calmMotion).coerceAtMost(Motion.CONFETTI_MAX)
     val bits = remember(colors, n) {
         List(n) {
             ConfettiBit(

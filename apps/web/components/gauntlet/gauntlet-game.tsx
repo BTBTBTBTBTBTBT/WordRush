@@ -19,6 +19,8 @@ import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
 import { StageTransition } from './stage-transition';
+import { stagePose } from '@/lib/gauntlet-look';
+import { artSrc } from '@/lib/art';
 import { GauntletSequenceMiniBoard } from './gauntlet-sequence-mini-board';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
@@ -331,13 +333,24 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKey]);
 
-  const handleTransitionComplete = useCallback(() => {
-    setShowTransition(false);
+  // AZ: decode the next stage card's pose while this stage is played, so the
+  // card's spring-in never waits on an image.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = artSrc(stagePose(Math.min(gauntlet.totalStages, gauntlet.currentStage + 1) + 1));
+    img.decode?.().catch(() => {});
+  }, [gauntlet.currentStage, gauntlet.totalStages]);
+
+  // AU3: the next stage starts under the stage card as it leaves; the card unmounts after.
+  const handleTransitionAdvance = useCallback(() => {
     // Pass the active-play elapsed so the reducer's stage-time math
     // doesn't count any tab-hidden minutes against this stage.
     dispatch({ type: 'NEXT_STAGE', elapsedMs: elapsedTime * 1000 });
     setCurrentGuess('');
   }, [elapsedTime]);
+  const handleTransitionDone = useCallback(() => setShowTransition(false), []);
 
   const handleVictoryComplete = useCallback(() => {
     setShowVictory(false);
@@ -550,9 +563,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           className="absolute left-0 right-0 z-20 flex justify-center animate-fade-in-scale"
           style={{ top: '140px' }}
         >
-          <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
+          <span className={`font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
             showStolenGuess
-              ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
+              ? 'bg-orange-600 text-white border border-orange-400/60'
               : 'bg-gray-800 text-white'
           }`}>
             {message}
@@ -599,7 +612,8 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           cleared={gauntlet.currentStage + 1}
           totalStages={gauntlet.totalStages}
           guessesSoFar={gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) + state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
-          onComplete={handleTransitionComplete}
+          onAdvance={handleTransitionAdvance}
+          onComplete={handleTransitionDone}
         />
       )}
 

@@ -425,7 +425,7 @@ fun gameTitleLabelForKey(dbKey: String): String = com.wordocious.app.ModeGen.byD
  * (84 dp on short screens, height < [GAME_TITLE_SHORT_SCREEN]); never under 44 dp.
  */
 val GAME_TITLE_ART_HEADER_MAX: Dp = 120.dp
-val GAME_TITLE_ART_HEADER_MAX_SHORT: Dp = 84.dp
+val GAME_TITLE_ART_HEADER_MAX_SHORT: Dp = 56.dp // BA1 (was 84): short screens give the board the height
 val GAME_TITLE_SHORT_SCREEN: Dp = 700.dp
 val GAME_TITLE_ART_HEADER_MIN: Dp = 44.dp
 /** §19.3 The title art's side inset (content width minus 32). */
@@ -440,10 +440,10 @@ val GAME_TITLE_ART_GUIDE_HEIGHT: Dp = 72.dp
 /** §14 Leaderboard / Records Play card art cap (was ≈40; fills the space left of Play). */
 val GAME_TITLE_ART_CARD_HEIGHT: Dp = 52.dp
 /**
- * §19.3 / FINISH_SPEC B4 The controls row of a game header (44 dp tap area + 4 dp
+ * §19.3 / FINISH_SPEC B4 / AX The controls row of a game header (48 dp tap area + 4 dp
  * inset, tucked right under the status bar): the title art starts below it.
  */
-val GAME_CORNER_ROW: Dp = 48.dp
+val GAME_CORNER_ROW: Dp = 52.dp
 
 /** The game title art's height / width when the drawable can't say (≈900 × 210). */
 private const val GAME_TITLE_ART_FALLBACK_RATIO = 0.235f
