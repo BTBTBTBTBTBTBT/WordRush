@@ -147,6 +147,16 @@
   background-color: var(--page-bg-dark-2);
   background-image: var(--page-wall, none), linear-gradient(to bottom right, var(--page-bg-dark-1), var(--page-bg-dark-2), var(--page-bg-dark-3));
 }
+/* Landscape (desktop) windows get the 2400×1500 twin so cover-fit never blows a
+   portrait wallpaper up 3×. */
+@media (min-aspect-ratio: 1/1) {
+  .page-bg {
+    background-image: var(--page-wall-wide, var(--page-wall, none)), linear-gradient(to bottom right, var(--page-bg-1), var(--page-bg-2), var(--page-bg-3));
+  }
+  [data-theme="dark"] [data-page-scheme="auto"] > .page-bg {
+    background-image: var(--page-wall-wide, var(--page-wall, none)), linear-gradient(to bottom right, var(--page-bg-dark-1), var(--page-bg-dark-2), var(--page-bg-dark-3));
+  }
+}
 [data-theme="dark"] [data-page-scheme="auto"] > .page-bg::after {
   opacity: var(--page-wall-dim, 0.58);
 }

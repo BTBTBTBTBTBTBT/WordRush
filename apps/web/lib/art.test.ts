@@ -7,7 +7,7 @@ import {
   POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
   isGameArtIcon, onPageShadow, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
   GAME_HEADER, GAME_TILES_OPACITY, accentCardShadow, artMotion, gameHeaderArtHeight, gameHeaderStyle, gameTint,
-  gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall,
+  gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall, wideWallSrc, type WallArtName,
 } from './art';
 import { MODES } from './modes.generated';
 
@@ -89,7 +89,8 @@ describe('3D UI icons (§0, §4, §5)', () => {
 describe('second pass (§6–§9)', () => {
   it('lists every art-* file in public/art (none shipped without a recorded size)', () => {
     const files = fs.readdirSync(pub('/art')).filter((f) => f.startsWith('art-') && f.endsWith('.webp'));
-    for (const f of files) expect(Object.keys(ART_SIZE), f).toContain(f.replace(/\.webp$/, ''));
+    // wallpaper `-wide` twins (desktop only) are checked with their portrait wallpaper below
+    for (const f of files) expect(Object.keys(ART_SIZE), f).toContain(f.replace(/\.webp$/, '').replace(/^(art-wall-.+)-wide$/, '$1'));
   });
 
   it('has moment lettering for every label (§6), ≈900 wide and wider than tall', () => {
@@ -217,9 +218,9 @@ describe('big game titles below the corner row (§19.3)', () => {
 });
 
 describe('wallpapers (§19.1)', () => {
-  const WALL = [1080, 1459];
+  const WALL = [1179, 2556];
 
-  it('ships a portrait 1080 px wallpaper for every page tint', () => {
+  it('ships a full-resolution portrait wallpaper + a landscape twin for every page tint', () => {
     for (const tint of Object.keys(PAGE_TINTS) as (keyof typeof PAGE_TINTS)[]) {
       const name = pageWall(tint);
       expect(name).toBe(`art-wall-${tint}`);
@@ -227,6 +228,7 @@ describe('wallpapers (§19.1)', () => {
       expect([w, h], name).toEqual(WALL);
       expect(webpSize(pub(artSrc(name))), name).toEqual([w, h]);
       expect(h, name).toBeGreaterThan(w);
+      expect(webpSize(pub(wideWallSrc(name))), `${name}-wide`).toEqual([2400, 1500]);
     }
   });
 
@@ -235,6 +237,7 @@ describe('wallpapers (§19.1)', () => {
       const name = `art-wall-game-${id}` as ArtName;
       expect(ART_SIZE[name], name).toEqual(WALL);
       expect(webpSize(pub(artSrc(name))), name).toEqual([...ART_SIZE[name]]);
+      expect(webpSize(pub(wideWallSrc(name as WallArtName))), `${name}-wide`).toEqual([2400, 1500]);
     }
     for (const m of MODES) {
       if (m.dbKey) expect(gameWallForDbKey(m.dbKey), m.dbKey).toBe(`art-wall-game-${m.id}`);
@@ -257,6 +260,8 @@ describe('wallpapers (§19.1)', () => {
     expect(block).toContain('background-size: cover, auto;');
     expect(block).not.toContain('--page-tiles');
     expect(block).toContain('@media (prefers-reduced-transparency: reduce), (prefers-contrast: more)');
+    expect(block).toContain('@media (min-aspect-ratio: 1/1)');
+    expect(block).toContain('var(--page-wall-wide, var(--page-wall, none))');
   });
 });
 

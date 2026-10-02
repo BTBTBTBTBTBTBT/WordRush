@@ -77,6 +77,24 @@ ONLY = sys.argv[1:]  # optional name prefixes to (re)ship, e.g. art-title-welcom
 def ship(name, im):
     if ONLY and not any(name.startswith(o) for o in ONLY):
         return
+    if name.startswith('art-wall-'):
+        # wallpapers v3 are full phone resolution + opaque: lighter WebP, and JPEG on iOS
+        # (a 1179×2556 PNG per screen would add ~100 MB to the app)
+        rgb = im.convert('RGB')
+        rgb.save(os.path.join(WEB, f'{name}.webp'), 'WEBP', quality=86, method=6)
+        if name.endswith('-wide'):
+            return   # desktop web only
+        rgb.save(os.path.join(DROID, name.replace('-', '_') + '.webp'), 'WEBP', quality=86, method=6)
+        iset = os.path.join(IOS_WALLS, f'{name}.imageset')
+        os.makedirs(iset, exist_ok=True)
+        for old in os.listdir(iset):
+            if old.endswith('.png'):
+                os.remove(os.path.join(iset, old))
+        rgb.save(os.path.join(iset, f'{name}.jpg'), 'JPEG', quality=88, optimize=True, progressive=False)
+        with open(os.path.join(iset, 'Contents.json'), 'w') as f:
+            json.dump({'images': [{'filename': f'{name}.jpg', 'idiom': 'universal'}],
+                       'info': {'author': 'xcode', 'version': 1}}, f, indent=2)
+        return
     im.save(os.path.join(WEB, f'{name}.webp'), 'WEBP', quality=92, method=6)
     im.save(os.path.join(DROID, name.replace('-', '_') + '.webp'), 'WEBP', quality=92, method=6)
     iset = os.path.join(IOS_WALLS if name.startswith('art-wall-') else IOS, f'{name}.imageset')
@@ -110,4 +128,8 @@ for f in sorted(os.listdir(WALLS)):
     if f.endswith('.png'):
         im = Image.open(os.path.join(WALLS, f)).convert('RGB').convert('RGBA')
         ship('art-' + f[:-4], im); n += 1
+WALLS_WIDE = os.path.join(HERE, 'wallpapers', 'out-wide')
+for f in sorted(os.listdir(WALLS_WIDE)) if os.path.isdir(WALLS_WIDE) else []:
+    if f.endswith('.png'):
+        ship('art-' + f[:-4], Image.open(os.path.join(WALLS_WIDE, f))); n += 1
 print('shipped', n)

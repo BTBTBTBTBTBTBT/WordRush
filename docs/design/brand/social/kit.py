@@ -97,7 +97,7 @@ def letter_tile(text, size, color, shadow=True):
     return img
 
 
-def sky(w, h, top='#B9A6F7', mid='#E7B8F0', bottom='#FFD3E6', seed=1):
+def sky(w, h, top='#B9A6F7', mid='#E7B8F0', bottom='#FFD3E6', seed=1, bokeh=1.0, bokeh_size=1.0, cloud=1.0):
     """Dreamy lilac→pink sky with soft cloud puffs and bokeh, any resolution."""
     rnd = random.Random(seed)
     img = vgrad(w, h, [(0, hex2rgb(top)), (0.55, hex2rgb(mid)), (1, hex2rgb(bottom))]).convert('RGBA')
@@ -109,14 +109,14 @@ def sky(w, h, top='#B9A6F7', mid='#E7B8F0', bottom='#FFD3E6', seed=1):
         for _ in range(4):
             rr = rnd.uniform(0.05, 0.13) * s
             ox = rnd.uniform(-1, 1) * rr; oy = rnd.uniform(-0.4, 0.4) * rr
-            d.ellipse((cx + ox - rr, cy + oy - rr * 0.8, cx + ox + rr, cy + oy + rr * 0.8), fill=rnd.randint(50, 100))
+            d.ellipse((cx + ox - rr, cy + oy - rr * 0.8, cx + ox + rr, cy + oy + rr * 0.8), fill=min(255, int(rnd.randint(50, 100) * cloud)))
     img.paste(Image.new('RGBA', (w, h), (255, 240, 250, 255)), (0, 0), m.filter(ImageFilter.GaussianBlur(s * 0.03)))
     for col in [(255, 250, 220), (255, 225, 245), (225, 232, 255)]:
         m = Image.new('L', (w, h), 0); d = ImageDraw.Draw(m)
-        for _ in range(int((30 + w * h / 30000) / 3)):
-            x = rnd.uniform(0, w); y = rnd.uniform(0, h); rr = rnd.uniform(0.004, 0.022) * s
+        for _ in range(int((30 + w * h / 30000) / 3 * bokeh)):
+            x = rnd.uniform(0, w); y = rnd.uniform(0, h); rr = rnd.uniform(0.004, 0.022) * s * bokeh_size
             d.ellipse((x - rr, y - rr, x + rr, y + rr), fill=rnd.randint(70, 170))
-        img.paste(Image.new('RGBA', (w, h), col + (255,)), (0, 0), m.filter(ImageFilter.GaussianBlur(s * 0.004)))
+        img.paste(Image.new('RGBA', (w, h), col + (255,)), (0, 0), m.filter(ImageFilter.GaussianBlur(s * 0.004 * bokeh_size)))
     return img
 
 

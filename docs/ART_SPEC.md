@@ -249,14 +249,16 @@ Founder: "design in a layout with the help of chat design and knock all of this 
    same wallpaper under a 58% overlay of #120D1F (games 62%). Reduce transparency/contrast:
    keep the wallpaper but add a 20% white (light) / 70% dark overlay. Remove the old gradient +
    tile pattern drawing (keep the tint values for card shadows and fallbacks if the image fails).
-   **Every screen has its own letter placement** (founder: "different letter placements too, not
-   just different colors"): `docs/design/brand/wallpapers/make-wallpapers.py` draws from several
-   ChatGPT layouts (`home-wallpaper-capture.png`, `wall2…wallN-capture.png`, each with different
-   letters and arrangement) and hands each screen its own layout + framing (full frame, or a
-   1.25× zoom anchored at a different corner), never mirrored. Add a layout by capturing it as
-   `wallN-capture.png` (`wallpapers/capture-wallpaper.py`) and re-running the script + ship-art.
-   All outputs stay 1080×1459. iOS keeps them in `Wallpapers.xcassets` (app target only, so the
-   widget bundle stays small).
+   **Every screen has its own letter placement, at full resolution** (founder: "different
+   letter placements too"; then "very low res and look like poop" — v1/v2 upscaled a 444-px
+   ChatGPT capture). v3 (`docs/design/brand/wallpapers/make-wallpapers.py`) DRAWS them in code:
+   pastel sky + clouds + soft bokeh and glossy pastel letter tiles (the §20 tile) at three
+   depths — big crisp tiles hugging the edges, mid tiles outside the calm middle, small blurred
+   far ones — seeded per screen (own letters + placements), colored from the page's / game's
+   accent. Portrait 1179×2556 for every platform; a 2400×1500 `-wide` twin for web landscape
+   viewports (`@media (min-aspect-ratio: 1/1)`). Shipped as WebP q86 (web, Android) and JPEG
+   q88 (iOS `Wallpapers.xcassets`, app target only, so the widget bundle stays small). Android
+   decodes them scaled down to the screen width (never up).
 2. **Section titles centered.** The DAILIES, PUZZLES and WORD OF THE DAY title art on Home are
    centered horizontally above their sections, same width rule for all three (≈78% of content
    width, max 340 pt). `art-title-dailies` now reads just DAILIES (shipped). Word of the Day's

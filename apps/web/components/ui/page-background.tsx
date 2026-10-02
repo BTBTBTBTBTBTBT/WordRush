@@ -1,4 +1,4 @@
-import { PAGE_TINTS, WALL_OVERLAY, accentCardShadow, artSrc, gameTintForDbKey, gameWallForDbKey, pageWall, type PageTint, type TintStops, type WallArtName } from '@/lib/art';
+import { PAGE_TINTS, WALL_OVERLAY, accentCardShadow, artSrc, wideWallSrc, gameTintForDbKey, gameWallForDbKey, pageWall, type PageTint, type TintStops, type WallArtName } from '@/lib/art';
 
 // The one shared page background (docs/ART_SPEC.md §11, §19.1). It is the
 // page's root element and draws, in a fixed layer behind everything (edge to
@@ -50,7 +50,7 @@ export function PageBackground({
     '--page-bg-dark-1': dark[0],
     '--page-bg-dark-2': dark[1],
     '--page-bg-dark-3': dark[2],
-    ...(wallName ? { '--page-wall': `url('${artSrc(wallName)}')` } : {}),
+    ...(wallName ? { '--page-wall': `url('${artSrc(wallName)}')`, '--page-wall-wide': `url('${wideWallSrc(wallName)}')` } : {}),
     '--page-wall-overlay': WALL_OVERLAY.color,
     '--page-wall-dim': String(dim),
     '--page-wall-a11y-light': String(WALL_OVERLAY.a11yLight),

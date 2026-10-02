@@ -40,7 +40,7 @@ import kotlin.math.roundToInt
 
 // ART_SPEC §11 / §19.1: one shared page background behind every tab / page. §19.1
 // (founder, 2026-10-02 late morning) replaced the §11 gradient + §18.1 tile layer with
-// a wallpaper per page / game (`art_wall_<name>.webp`, 1080 wide, portrait, opaque):
+// a wallpaper per page / game (`art_wall_<name>.webp`, 1179 × 2556, portrait, opaque):
 // aspect-filled (ContentScale.Crop) and centered on the WINDOW, fixed behind the
 // content and the status bar. Dark mode dims it under #120D1F (58% menus, 62% games);
 // the contrast settings add a 20% white (light) / 70% night (dark) veil. The tints'
@@ -127,16 +127,25 @@ private const val CONTRAST_VEIL_DARK = 0.70f
 /**
  * The decoded wallpapers, shared by every page that draws one (the header backdrop,
  * each tab and a pushed page of the same tint all paint the same bitmap), bounded
- * by bytes so a few recent ones stay warm (1080 × 1459 ≈ 6.3 MB each).
+ * by bytes so a few recent ones stay warm. The v3 art is 1179 × 2556 (full phone
+ * resolution); it is decoded scaled to the screen's width, so a 1080-px phone holds
+ * ≈ 10 MB per wallpaper and the cache keeps the last three or four.
  */
 private object Wallpapers {
-    private val cache = object : android.util.LruCache<Int, ImageBitmap>(28 * 1024 * 1024) {
+    private const val ART_WIDTH = 1179
+    private val cache = object : android.util.LruCache<Int, ImageBitmap>(40 * 1024 * 1024) {
         override fun sizeOf(key: Int, value: ImageBitmap): Int = value.width * value.height * 4
     }
 
     fun get(context: android.content.Context, @DrawableRes res: Int): ImageBitmap? =
         cache.get(res) ?: runCatching {
-            android.graphics.BitmapFactory.decodeResource(context.resources, res)?.asImageBitmap()
+            val screenW = context.resources.displayMetrics.widthPixels
+            val opts = android.graphics.BitmapFactory.Options().apply {
+                if (screenW in 1 until ART_WIDTH) {   // scale down while decoding, never up
+                    inScaled = true; inDensity = ART_WIDTH; inTargetDensity = screenW
+                }
+            }
+            android.graphics.BitmapFactory.decodeResource(context.resources, res, opts)?.asImageBitmap()
         }.getOrNull()?.also { cache.put(res, it) }
 }
 

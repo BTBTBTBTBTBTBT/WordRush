@@ -45,8 +45,9 @@ export type TitleArtName =
 export type BackgroundArtName = 'art-bg-tiles';
 
 /**
- * Wallpapers (§19.1): 1080 px wide, portrait, opaque, each with its own tile
- * arrangement in the page's / game's color. One per page tint (`art-wall-home`,
+ * Wallpapers (§19.1, v3 drawn in code at full phone resolution): 1179×2556,
+ * portrait, opaque, each with its own tile arrangement in the page's / game's
+ * color, plus a 2400×1500 `<name>-wide` twin for landscape (desktop) viewports. One per page tint (`art-wall-home`,
  * …) and one per solo game (`art-wall-game-<mode id>`, the same 18 ids as the
  * game title art).
  */
@@ -182,29 +183,29 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-game-wordsearch': [846, 226],
   'art-game-regions': [900, 214],
   // §19.1 wallpapers.
-  'art-wall-home': [1080, 1459],
-  'art-wall-leaderboard': [1080, 1459],
-  'art-wall-stats': [1080, 1459],
-  'art-wall-friends': [1080, 1459],
-  'art-wall-vs': [1080, 1459],
-  'art-wall-game-practice': [1080, 1459],
-  'art-wall-game-gauntlet': [1080, 1459],
-  'art-wall-game-quordle': [1080, 1459],
-  'art-wall-game-octordle': [1080, 1459],
-  'art-wall-game-sequence': [1080, 1459],
-  'art-wall-game-rescue': [1080, 1459],
-  'art-wall-game-six': [1080, 1459],
-  'art-wall-game-seven': [1080, 1459],
-  'art-wall-game-propernoundle': [1080, 1459],
-  'art-wall-game-sudoku': [1080, 1459],
-  'art-wall-game-scramble': [1080, 1459],
-  'art-wall-game-hub': [1080, 1459],
-  'art-wall-game-crossword': [1080, 1459],
-  'art-wall-game-groups': [1080, 1459],
-  'art-wall-game-ladder': [1080, 1459],
-  'art-wall-game-cryptogram': [1080, 1459],
-  'art-wall-game-wordsearch': [1080, 1459],
-  'art-wall-game-regions': [1080, 1459],
+  'art-wall-home': [1179, 2556],
+  'art-wall-leaderboard': [1179, 2556],
+  'art-wall-stats': [1179, 2556],
+  'art-wall-friends': [1179, 2556],
+  'art-wall-vs': [1179, 2556],
+  'art-wall-game-practice': [1179, 2556],
+  'art-wall-game-gauntlet': [1179, 2556],
+  'art-wall-game-quordle': [1179, 2556],
+  'art-wall-game-octordle': [1179, 2556],
+  'art-wall-game-sequence': [1179, 2556],
+  'art-wall-game-rescue': [1179, 2556],
+  'art-wall-game-six': [1179, 2556],
+  'art-wall-game-seven': [1179, 2556],
+  'art-wall-game-propernoundle': [1179, 2556],
+  'art-wall-game-sudoku': [1179, 2556],
+  'art-wall-game-scramble': [1179, 2556],
+  'art-wall-game-hub': [1179, 2556],
+  'art-wall-game-crossword': [1179, 2556],
+  'art-wall-game-groups': [1179, 2556],
+  'art-wall-game-ladder': [1179, 2556],
+  'art-wall-game-cryptogram': [1179, 2556],
+  'art-wall-game-wordsearch': [1179, 2556],
+  'art-wall-game-regions': [1179, 2556],
 };
 
 const GAME_TITLE_ART_SET: ReadonlySet<string> = new Set(GAME_TITLE_ART_IDS);
@@ -309,6 +310,11 @@ export function gameTitleArtForGuide(slug: string | null | undefined): GameTitle
 }
 
 /** Public path of a title / day / game / icon art file. */
+/** The landscape (desktop) twin of a wallpaper. */
+export function wideWallSrc(name: WallArtName): string {
+  return artSrc(`${name}-wide`);
+}
+
 export function artSrc(name: string): string {
   return `/art/${name}.webp`;
 }
