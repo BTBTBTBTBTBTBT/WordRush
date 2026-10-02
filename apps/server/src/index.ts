@@ -164,22 +164,6 @@ httpServer.on('request', (req, res) => {
     }));
     return;
   }
-  // TEMP diagnostic — live queue/connection snapshot (VS pairing debug 2026-06-18).
-  if (req.url.startsWith('/debug/queue')) {
-    const sockets: { id: string; presence: string | null }[] = [];
-    io.sockets.sockets.forEach((sock) => {
-      sockets.push({ id: sock.id, presence: (sock.data as { presenceId?: string }).presenceId ?? null });
-    });
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-    res.end(JSON.stringify({
-      now: Date.now(),
-      connectedSockets: sockets,
-      queue: queue.snapshot(),
-      privateLobbies: [...privateLobbies.keys()],
-      activeMatches: matches.size,
-    }, null, 2));
-    return;
-  }
   // Live VS activity per mode — players WAITING in queue + players PLAYING an
   // active match, so the lobby can show "N waiting · M playing" on each mode row.
   if (req.url.startsWith('/vs/counts')) {
@@ -200,14 +184,6 @@ httpServer.on('request', (req, res) => {
       'Cache-Control': 'no-store',
     });
     res.end(JSON.stringify({ waiting, playing }));
-    return;
-  }
-  // TEMP diagnostic — recent VS match-event log (Sequence/Succession relay debug
-  // 2026-06-30). Ring buffer of the last 300 events so we can see exactly which
-  // submit_guess / board_solved / player_completed events reach the server.
-  if (req.url.startsWith('/debug/vslog')) {
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-    res.end(JSON.stringify({ now: Date.now(), count: vsLog.length, events: vsLog }, null, 2));
     return;
   }
   // Unknown path — 404 cleanly rather than hanging.
@@ -255,9 +231,10 @@ const submittedWordsByMatch = new Map<string, { p1: Set<string>; p2: Set<string>
 // at match end so the result screen can show both final boards with letters.
 const guessLogByMatch = new Map<string, { p1: { boardIndex: number; guess: string }[]; p2: { boardIndex: number; guess: string }[] }>();
 
-// TEMP diagnostic ring buffer (Sequence/Succession VS relay debug 2026-06-30).
-// Records the last 300 VS match events so /debug/vslog can show exactly which
-// submit_guess / board_solved / player_completed events the server received.
+// Ring buffer of the last 300 VS match events (Sequence/Succession relay debug
+// 2026-06-30): which submit_guess / board_solved / player_completed events the
+// server received. In memory only — its /debug/vslog endpoint (and /debug/queue)
+// were removed 2026-10-01 because both listed signed-in user ids to anyone.
 const vsLog: { t: number; ev: string; who: string | null; detail: Record<string, unknown> }[] = [];
 function logVS(ev: string, who: string | null, detail: Record<string, unknown>): void {
   vsLog.push({ t: Date.now(), ev, who, detail });
