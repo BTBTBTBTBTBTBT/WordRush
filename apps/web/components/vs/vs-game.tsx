@@ -49,7 +49,7 @@ import { MatchIntro, headToHeadLine, INTRO_DURATION_MS } from './match-intro';
 import { FinalBoards, VsResultWindow, logSolved, type EvaluatedRow } from './vs-result-detail';
 import { ResultHost } from '@/components/ui/mascot';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
+import { PAGE_SCENES, resultMoment } from '@/lib/art';
 import { MomentArt } from '@/components/ui/art-title';
 import { vsResultHost } from '@/lib/mascots';
 import { OpponentLiveBoards } from './opponent-mini-board';
@@ -2278,14 +2278,10 @@ function DailyVsAlreadyPlayed({
           </h1>
         </div>
 
-        {/* Today's outcome — W/L pill (iOS/Android parity). */}
+        {/* Today's outcome as YOU WIN! / YOU LOSE lettering, ≈28 tall
+            (docs/ART_SPEC.md §10 parity with Android). */}
         {won !== null && (
-          <div
-            className="inline-block px-4 py-1.5 rounded-full text-xs font-black tracking-widest animate-fade-in-scale"
-            style={won ? { background: '#7c3aed', color: '#ffffff' } : { background: '#e2e8f0', color: '#475569' }}
-          >
-            {won ? 'YOU WON' : 'YOU LOST'}
-          </div>
+          <MomentArt moment={resultMoment(won ? 'win' : 'loss')} maxHeight={28} as="div" className="animate-fade-in-scale" />
         )}
 
         {/* Answer tiles */}

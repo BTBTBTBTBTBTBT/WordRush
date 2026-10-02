@@ -388,4 +388,19 @@ extension View {
             self
         }
     }
+
+    /// ART_SPEC §10 game screen headers: the game's title art (lettering + host,
+    /// ≈38 pt tall, fit to the title width) in place of this title text + host.
+    /// Without the art it stays the text with `.gameHost` beside it. `inset` keeps
+    /// the (wider) art clear of the overlaid corner Home / Help circles in headers
+    /// that don't pad the title themselves.
+    @ViewBuilder
+    func gameTitleArt(_ mode: GameMode, height: CGFloat = 38, hostSize: CGFloat = 30, inset: CGFloat = 0) -> some View {
+        if let art = GameTitleArt.forMode(mode) {
+            GameTitleArtView(asset: art.asset, label: art.label, height: height)
+                .padding(.horizontal, inset)
+        } else {
+            gameHost(mode, size: hostSize)
+        }
+    }
 }

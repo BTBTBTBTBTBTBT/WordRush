@@ -725,8 +725,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 // draws ProperNoundle flat red at 24pt (ProperNoundleView header);
                 // every other mode gets the 28pt gradient mode title.
                 val stageName = state.gauntlet?.let { it.stages.getOrNull(it.currentStage)?.name }
-                // The game's host stands at the left of its title (MASCOT_SPEC §5), static.
-                com.wordocious.app.ui.HostedGameTitle(mode.name) {
+                // The game's title art (ART_SPEC §10: lettering + host); Gauntlet keeps its
+                // stage-name text with the host at its left (MASCOT_SPEC §5), static.
+                com.wordocious.app.ui.HostedGameTitle(mode.name, art = mode != GameMode.GAUNTLET) {
                 when {
                     mode == GameMode.GAUNTLET -> Text(
                         stageName ?: com.wordocious.app.ui.modeTitle(mode),

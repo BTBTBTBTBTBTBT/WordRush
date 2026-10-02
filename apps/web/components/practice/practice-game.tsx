@@ -394,10 +394,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         {(() => {
-          const modeConfig: Record<string, { title: string; accent: string; gradient: string }> = {
-            DUEL:   { title: 'CLASSIC',       accent: '#7c3aed', gradient: 'linear-gradient(135deg, #a78bfa, #ec4899)' },
-            DUEL_6: { title: 'CLASSIC SIX',   accent: '#06b6d4', gradient: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
-            DUEL_7: { title: 'CLASSIC SEVEN', accent: '#84cc16', gradient: 'linear-gradient(135deg, #84cc16, #a3e635)' },
+          const modeConfig: Record<string, { title: string; label: string; accent: string; gradient: string }> = {
+            DUEL:   { title: 'CLASSIC',       label: 'Classic',       accent: '#7c3aed', gradient: 'linear-gradient(135deg, #a78bfa, #ec4899)' },
+            DUEL_6: { title: 'CLASSIC SIX',   label: 'Classic Six',   accent: '#06b6d4', gradient: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
+            DUEL_7: { title: 'CLASSIC SEVEN', label: 'Classic Seven', accent: '#84cc16', gradient: 'linear-gradient(135deg, #84cc16, #a3e635)' },
           };
           const cfg = modeConfig[mode] || modeConfig.DUEL;
           return (
@@ -405,7 +405,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
               <GameHomeButton accentColor={cfg.accent} />
               <GameGuideButton slug={mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'classic'} accentColor={cfg.accent} />
               <SoundToggle accentColor={cfg.accent} />
-              <GameHostTitle mode={mode}>
+              <GameHostTitle mode={mode} label={cfg.label}>
                 <h1 className={`text-3xl font-black ${cfg.title.length > 11 ? 'max-[430px]:text-[26px]' : ''}`} style={{ backgroundImage: cfg.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}>
                   {cfg.title}
                 </h1>

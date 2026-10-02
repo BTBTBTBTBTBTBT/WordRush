@@ -443,7 +443,7 @@ struct ProperNoundleView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.propernoundle)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.propernoundle, inset: 46)
             HStack(spacing: 8) {
                 if let p = vm.puzzle {
                     Text(categoryLabel(p.themeCategory))
@@ -786,7 +786,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             HStack(spacing: 8) {
                 Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
                     .lineLimit(1).minimumScaleFactor(0.6)
-                    .gameHost(.propernoundle)
+                    .gameTitleArt(.propernoundle)
                 VSTagPill()
             }
             HStack(spacing: 8) {

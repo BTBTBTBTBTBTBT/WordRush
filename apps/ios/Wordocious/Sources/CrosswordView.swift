@@ -429,7 +429,7 @@ struct CrosswordView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("CROSSWORDOCIOUS").font(Brand.font(24, .black)).foregroundStyle(crosswordAccent)
-                .lineLimit(1).minimumScaleFactor(0.6).gameHost(.crossword).padding(.horizontal, 48)
+                .lineLimit(1).minimumScaleFactor(0.6).gameTitleArt(.crossword).padding(.horizontal, 48)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 48)
             HStack(spacing: 8) {

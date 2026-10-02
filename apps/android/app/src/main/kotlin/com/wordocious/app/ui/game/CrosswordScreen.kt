@@ -568,7 +568,8 @@ private fun CrosswordHeader(session: CrosswordSession) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 6.dp)) {
-        FitTitle("CROSSWORDOCIOUS")
+        // The game's title art: lettering + host (ART_SPEC §10); the fitted text otherwise.
+        com.wordocious.app.ui.GameHeaderTitle("CROSSWORD") { FitTitle("CROSSWORDOCIOUS") }
         Text(s.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.padding(horizontal = 52.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

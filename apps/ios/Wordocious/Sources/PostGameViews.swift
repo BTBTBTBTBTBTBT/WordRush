@@ -80,7 +80,7 @@ struct FinishedStatsHeader: View {
             Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .gameHost(mode)
+                .gameTitleArt(mode)
                 .padding(.horizontal, 52)
 
             HStack(spacing: 12) {

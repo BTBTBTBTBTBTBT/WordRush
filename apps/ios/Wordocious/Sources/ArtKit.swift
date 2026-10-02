@@ -9,7 +9,9 @@ import WordociousCore
 // in HeaderKit.swift. Second pass: the moment lettering (§6), the empty / error /
 // done scenes (§7, drawn by `MascotMessage` in Mascots.swift), the WELCOME! and
 // LEADERBOARD whole-cast titles (§8) and the pocket game icons (§9, drawn by
-// `FriendlyGameIcon` in FriendsKit.swift). Art is presentation only: every caller
+// `FriendlyGameIcon` in FriendsKit.swift). Third pass: the game title art (§10, the
+// game headers via `.gameTitleArt` in Mascots.swift, the guide sheet top and the
+// Leaderboard / Records game cards). Art is presentation only: every caller
 // keeps its behavior.
 
 /// Whether an image set ships in the bundle (cached), so a missing piece of art
@@ -302,5 +304,40 @@ extension FriendlyKind {
     var pocketArt: String? {
         let name = "game-pocket-\(rawValue)"
         return ArtAsset.exists(name) ? name : nil
+    }
+}
+
+// MARK: - §10 Game title art
+
+/// `art-game-<mode id>`: the game's name lettered in its accent color with its host
+/// (MASCOT_SPEC §5) at the end (≈900 wide), keyed by the catalog id of the engine mode.
+enum GameTitleArt {
+    /// The art + its words (the catalog title the lettering spells, e.g. "Classic Six")
+    /// for a mode, when the image ships; nil → the caller keeps its text title + host.
+    static func forMode(_ mode: GameMode) -> (asset: String, label: String)? {
+        guard let g = ModeGen.byDbKey(mode.rawValue) else { return nil }
+        let asset = "art-game-\(g.id)"
+        return ArtAsset.exists(asset) ? (asset, g.shareLabel) : nil
+    }
+}
+
+/// A game title as art: fits the offered width up to `maxWidth`, at most `height`
+/// tall, never stretched, labeled with the game's title as a header.
+struct GameTitleArtView: View {
+    let asset: String
+    let label: String
+    var height: CGFloat = 38
+    var maxWidth: CGFloat = 320
+    var alignment: Alignment = .center
+
+    var body: some View {
+        Image(asset)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(maxWidth: maxWidth, alignment: alignment)
+            .frame(height: height)
+            .accessibilityLabel(label)
+            .accessibilityAddTraits(.isHeader)
     }
 }

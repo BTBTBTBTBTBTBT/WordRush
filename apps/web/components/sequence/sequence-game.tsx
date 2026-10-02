@@ -278,7 +278,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         <GameHomeButton accentColor="#2563eb" />
         <GameGuideButton slug="succession" accentColor="#2563eb" />
         <SoundToggle accentColor="#2563eb" />
-        <GameHostTitle mode="SEQUENCE">
+        <GameHostTitle mode="SEQUENCE" label="Succession">
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
             SUCCESSION
           </h1>

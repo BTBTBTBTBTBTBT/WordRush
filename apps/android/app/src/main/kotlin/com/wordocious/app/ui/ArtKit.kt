@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +34,7 @@ import com.wordocious.app.R
 // day titles (§1), the whole-cast page titles (§2), the glossy 3D game icons (§3)
 // and the W / L / ✓ completion badges (§4); second pass: moment lettering (§6),
 // empty / error / done scenes (§7), WELCOME + holiday LEADERBOARD titles (§8) and
-// the pocket game icons (§9). All art lives in res/drawable-nodpi as
+// the pocket game icons (§9); third pass: the game title art (§10). All art lives in res/drawable-nodpi as
 // WebP. Mirrors the web /art/ assets and the iOS image sets of the same names.
 
 /** §2 page titles: lettering with the whole cast perched on it (≈1080 wide). */
@@ -299,4 +300,87 @@ fun pocketArtRes(kind: com.wordocious.core.FriendlyKind): Int = when (kind) {
     com.wordocious.core.FriendlyKind.PASS -> R.drawable.game_pocket_pass
     com.wordocious.core.FriendlyKind.GHOST -> R.drawable.game_pocket_ghost
     com.wordocious.core.FriendlyKind.CHAIN -> R.drawable.game_pocket_chain
+}
+
+// ── Third pass (ART_SPEC §10): game title art ─────────────────────────────
+
+/**
+ * §10 The game's name lettered in its accent color with its host on the end
+ * (`art_game_<id>.webp`, ≈900 wide) for a catalog mode id, or null for an id
+ * without one (VS, More, unknown): callers keep today's text + host.
+ */
+@DrawableRes
+fun gameTitleArtRes(modeId: String?): Int? = when (modeId) {
+    "practice" -> R.drawable.art_game_practice
+    "gauntlet" -> R.drawable.art_game_gauntlet
+    "quordle" -> R.drawable.art_game_quordle
+    "octordle" -> R.drawable.art_game_octordle
+    "sequence" -> R.drawable.art_game_sequence
+    "rescue" -> R.drawable.art_game_rescue
+    "six" -> R.drawable.art_game_six
+    "seven" -> R.drawable.art_game_seven
+    "propernoundle" -> R.drawable.art_game_propernoundle
+    "sudoku" -> R.drawable.art_game_sudoku
+    "scramble" -> R.drawable.art_game_scramble
+    "hub" -> R.drawable.art_game_hub
+    "crossword" -> R.drawable.art_game_crossword
+    "groups" -> R.drawable.art_game_groups
+    "ladder" -> R.drawable.art_game_ladder
+    "cryptogram" -> R.drawable.art_game_cryptogram
+    "wordsearch" -> R.drawable.art_game_wordsearch
+    "regions" -> R.drawable.art_game_regions
+    else -> null
+}
+
+/** §10 [gameTitleArtRes] for a mode db key (DUEL, DUEL_6, CROSSWORD, …). */
+@DrawableRes
+fun gameTitleArtResForKey(dbKey: String?): Int? =
+    gameTitleArtRes(dbKey?.let { com.wordocious.app.ModeGen.byDbKey(it)?.id })
+
+/** §10 The game title's accessibility label: the catalog title ("Letter Ladder"), else the key. */
+fun gameTitleLabelForKey(dbKey: String): String = com.wordocious.app.ModeGen.byDbKey(dbKey)?.title ?: dbKey
+
+/** §10 Game screen header title art height (≈36–40). */
+val GAME_TITLE_ART_HEADER_HEIGHT: Dp = 38.dp
+/** §10 Guide sheet top art height (≈56). */
+val GAME_TITLE_ART_GUIDE_HEIGHT: Dp = 56.dp
+/** §10 Leaderboard / Records Play card art height (≈40). */
+val GAME_TITLE_ART_CARD_HEIGHT: Dp = 40.dp
+
+/**
+ * §10 A game's title art at [height], width following the aspect ratio and
+ * shrinking (never stretching) to the width it is given. TalkBack reads [label]
+ * (the game title), as a heading when [heading].
+ */
+@Composable
+fun GameTitleArt(
+    @DrawableRes res: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    height: Dp = GAME_TITLE_ART_HEADER_HEIGHT,
+    heading: Boolean = true,
+) {
+    Image(
+        painterResource(res),
+        contentDescription = label,
+        contentScale = ContentScale.Fit,
+        modifier = modifier.height(height).semantics { if (heading) heading() },
+    )
+}
+
+/**
+ * §10 A game screen header's title art, centered between the corner Home / ?
+ * buttons (44 dp + 8 each side), for [dbKey]; [fallback] (today's text + host)
+ * when the key has no art.
+ */
+@Composable
+fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, fallback: @Composable () -> Unit) {
+    val res = gameTitleArtResForKey(dbKey)
+    if (res == null) {
+        fallback()
+        return
+    }
+    Box(modifier.fillMaxWidth().padding(horizontal = 52.dp), contentAlignment = Alignment.Center) {
+        GameTitleArt(res, gameTitleLabelForKey(dbKey))
+    }
 }

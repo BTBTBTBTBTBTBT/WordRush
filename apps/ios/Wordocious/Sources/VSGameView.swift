@@ -1160,7 +1160,7 @@ struct VSMatchHeader: View {
                     .font(Brand.font(28, .black))
                     .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1).minimumScaleFactor(0.6)
-                    .gameHost(mode)
+                    .gameTitleArt(mode)
                 VSTagPill()
             }
             HStack(spacing: 12) {
@@ -1640,7 +1640,8 @@ struct CyclingStatus: View {
 }
 
 /// Freemium "already played today" screen — ports DailyVsAlreadyPlayed, in
-/// the VS aesthetic: a teal one-window card (caps headline, W/L chip, the
+/// the VS aesthetic: a teal one-window card (caps headline, YOU WIN! / YOU LOSE
+/// lettering, U's all-done scene, the
 /// answer in solo tiles, the next-battle clock), then the actions.
 private struct DailyVsAlreadyPlayed: View {
     let answer: String
@@ -1686,18 +1687,23 @@ private struct DailyVsAlreadyPlayed: View {
                     Text("ALREADY PLAYED").font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
                 }
                 Spacer(minLength: 6)
-                // Today's daily VS outcome — W/L chip (purple win, slate loss).
+                // Today's daily VS outcome as moment lettering (ART_SPEC §6/§10: YOU WIN! /
+                // YOU LOSE, ≈28 pt); the W/L chip (purple win, slate loss) without the art.
                 if let won {
-                    Text(won ? "YOU WON" : "YOU LOST")
-                        .font(Brand.font(11, .black)).tracking(0.6).foregroundStyle(.white)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(Capsule().fill(won ? VsLobbyKit.purple : Color(hex: 0x64748B)))
+                    MomentLettering(won ? .youwin : .youlose, maxWidth: 140, maxHeight: 28) {
+                        Text(won ? "YOU WON" : "YOU LOST")
+                            .font(Brand.font(11, .black)).tracking(0.6).foregroundStyle(.white)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Capsule().fill(won ? VsLobbyKit.purple : Color(hex: 0x64748B)))
+                    }
                 }
             }
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white.opacity(0.5))
 
             VStack(spacing: 14) {
+                // Played today: U's all-done scene (ART_SPEC §7; §10 parity with Android).
+                SceneArt(.allDone, height: 110, fallbackSize: 72)
                 if !answer.isEmpty {
                     HStack(spacing: 5) {
                         ForEach(Array(answer.uppercased().enumerated()), id: \.offset) { _, ch in

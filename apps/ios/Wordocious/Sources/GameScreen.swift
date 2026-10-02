@@ -274,12 +274,12 @@ struct GameScreen: View {
 
     private var standardHeader: some View {
         VStack(spacing: 4) {
-            // The game's host stands at the left of the title, static during play (MASCOT_SPEC §5).
+            // The game's title art (lettering + host, ART_SPEC §10); text + host when it's missing.
             Text(ModeStyle.title(mode))
                 .font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .gameHost(mode)
+                .gameTitleArt(mode)
                 .padding(.horizontal, 52)
             HStack(spacing: 12) {
                 Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

@@ -521,6 +521,7 @@ struct DailyRecordsView: View {
         LbGameHeaderCard(
             accent: accent, icon: m?.icon ?? .symbol("trophy"), title: m?.title ?? mode.rawValue,
             sub: "\(total) player\(total == 1 ? "" : "s") today", subSymbol: "person.2.fill",
+            mode: mode,
             right: {
                 if !loading && !entries.isEmpty {
                     LbShareButton(busy: sharingLb, label: "Share leaderboard", action: share)

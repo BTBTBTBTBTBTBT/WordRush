@@ -437,7 +437,7 @@ private fun CodebreakerHeader(session: CodebreakerSession) {
     val codes = cryptogramCodeLetters(s.cipher)
     val resolved = codes.count { it in s.locked || !s.mapping[it].isNullOrEmpty() }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
-        // The game's host stands at the left of its title (MASCOT_SPEC §5), static.
+        // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("CRYPTOGRAM") { Text("CODEBREAKER", fontSize = 24.sp, fontWeight = FontWeight.Black, color = CRYPTOGRAM_ACCENT, fontFamily = Nunito) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

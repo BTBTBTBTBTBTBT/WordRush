@@ -244,7 +244,7 @@ struct SudokuView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text(ModeStyle.title(.sudoku)).font(Brand.font(24, .black)).foregroundStyle(sudokuAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.sudoku)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.sudoku, inset: 46)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

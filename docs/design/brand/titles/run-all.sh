@@ -29,6 +29,7 @@ done <<'LIST'
 1790928433041-fjqe5h magenta gt4
 1790928583049-rfyqp1 magenta gt5
 1790928742040-w9qufe magenta gt6
+1790929278479-1h1flm cyan youwin-solo
 LIST
 python3 split-lines.py records-vs-keyed.png records,vs >/dev/null
 python3 split-lines.py puzzles-wotd-keyed.png puzzles,wotd >/dev/null
@@ -44,4 +45,6 @@ python3 split-lines.py gt3-keyed.png gt-hub,gt-groups,gt-cryptogram >/dev/null
 python3 split-lines.py gt4-keyed.png gt-sequence,gt-rescue,gt-six >/dev/null
 python3 split-lines.py gt5-keyed.png gt-seven,gt-sudoku,gt-crossword >/dev/null
 python3 split-lines.py gt6-keyed.png gt-ladder,gt-wordsearch,gt-regions >/dev/null
+# The re-rolled YOU WIN! (clean '!') replaces the one from sweep-flawless-win.
+python3 split-lines.py youwin-solo-keyed.png youwin >/dev/null
 echo

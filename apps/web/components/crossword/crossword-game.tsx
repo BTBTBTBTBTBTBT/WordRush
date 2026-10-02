@@ -344,7 +344,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
         <GameHomeButton accentColor={CROSSWORD_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="crosswordocious" accentColor={CROSSWORD_ACCENT} />
         <SoundToggle accentColor={CROSSWORD_ACCENT} />
-        <GameHostTitle mode="CROSSWORD" className="px-12">
+        <GameHostTitle mode="CROSSWORD" label="Crosswordocious" className="px-12">
           <h1 className="font-black whitespace-nowrap" style={{ color: CROSSWORD_ACCENT, fontSize: 'clamp(15px, 5vw, 24px)' }}>CROSSWORDOCIOUS</h1>
         </GameHostTitle>
         <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{state.title}</div>

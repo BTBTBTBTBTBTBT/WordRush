@@ -198,7 +198,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
         <GameHomeButton accentColor="#059669" />
         <GameGuideButton slug="deliverance" accentColor="#059669" />
         <SoundToggle accentColor="#059669" />
-        <GameHostTitle mode="RESCUE">
+        <GameHostTitle mode="RESCUE" label="Deliverance">
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400">
             DELIVERANCE
           </h1>

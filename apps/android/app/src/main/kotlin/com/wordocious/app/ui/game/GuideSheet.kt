@@ -91,6 +91,15 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                     .padding(horizontal = 16.dp).padding(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
+                // ART_SPEC §10: the game's title art (lettering + host, ≈56 dp) replaces the
+                // waving host + title text; the tagline stays under it.
+                val titleArt = com.wordocious.app.ui.gameTitleArtResForKey(mode.name)
+                if (titleArt != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        com.wordocious.app.ui.GameTitleArt(titleArt, g.title, height = com.wordocious.app.ui.GAME_TITLE_ART_GUIDE_HEIGHT)
+                        Text(g.tagline, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
+                } else
                 // The game's host waves hello beside the title (MASCOT_SPEC §5: 72 dp, wave).
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {

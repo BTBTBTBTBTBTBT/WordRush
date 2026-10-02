@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// The pieces the Leaderboard tab and the Records screens share, so both pages wear
 /// one look (docs/LEADERBOARD_REDESIGN_SPEC.md §2, docs/RECORDS_REDESIGN_SPEC.md §2):
@@ -182,6 +183,8 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
     let title: String
     var sub: String? = nil
     var subSymbol: String? = nil
+    /// ART_SPEC §10: the card's game — its title art (≈40 pt) replaces the name text.
+    var mode: GameMode? = nil
     @ViewBuilder var right: () -> Right
     @ViewBuilder var extra: () -> Extra
 
@@ -190,8 +193,12 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
             HStack(spacing: 12) {
                 ModeIconView(icon: icon, accent: accent, box: 32)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    if let art = mode.flatMap(GameTitleArt.forMode) {
+                        GameTitleArtView(asset: art.asset, label: art.label, height: 40, maxWidth: 240, alignment: .leading)
+                    } else {
+                        Text(title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
                     if let sub {
                         HStack(spacing: 4) {
                             if let subSymbol { Image(systemName: subSymbol).font(.system(size: 10)) }

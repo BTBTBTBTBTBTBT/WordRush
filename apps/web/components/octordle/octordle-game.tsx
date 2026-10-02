@@ -192,7 +192,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
         <GameHomeButton accentColor="#7e22ce" />
         <GameGuideButton slug="octoword" accentColor="#7e22ce" />
         <SoundToggle accentColor="#7e22ce" />
-        <GameHostTitle mode="OCTORDLE">
+        <GameHostTitle mode="OCTORDLE" label="OctoWord">
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
             OCTOWORD
           </h1>

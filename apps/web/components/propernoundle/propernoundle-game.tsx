@@ -742,7 +742,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         <GameHomeButton accentColor="#dc2626"  href={MORE_HOME_HREF} />
         <GameGuideButton slug="propernoundle" accentColor="#dc2626" />
         <SoundToggle accentColor="#dc2626" />
-        <GameHostTitle mode="PROPERNOUNDLE">
+        <GameHostTitle mode="PROPERNOUNDLE" label="ProperNoundle">
           <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
             PROPERNOUNDLE
           </h1>

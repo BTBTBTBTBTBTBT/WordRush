@@ -1443,11 +1443,18 @@ struct LeaderboardTab: View {
         // fallback showed their raw keys ("SCRAMBLE", "HUB") with no icon (founder, 2026-09-27).
         let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
+        // ART_SPEC §10: the game's title art (lettering + host, ≈40 pt) stands in for
+        // the name text and the host beside Play.
+        let titleArt = GameTitleArt.forMode(mode)
         return HStack(spacing: 12) {
             if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
             VStack(alignment: .leading, spacing: 2) {
-                Text(m?.title ?? mode.rawValue).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                if let titleArt {
+                    GameTitleArtView(asset: titleArt.asset, label: titleArt.label, height: 40, maxWidth: 240, alignment: .leading)
+                } else {
+                    Text(m?.title ?? mode.rawValue).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
                 HStack(spacing: 4) {
                     Image(systemName: "person.2.fill").font(.system(size: 10))
                     // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
@@ -1460,7 +1467,7 @@ struct LeaderboardTab: View {
             }
             Spacer(minLength: 6)
             // The selected game's host stands inside the card, beside Play (MASCOT_SPEC §5).
-            if let host = Mascots.host(mode) { MascotView(host, size: 44) }
+            if titleArt == nil, let host = Mascots.host(mode) { MascotView(host, size: 44) }
             // Already finished today's daily for this mode → open the read-only
             // solved board, matching the home cards. The cached completions
             // answer instantly; userRank confirms once the leaderboard loads.

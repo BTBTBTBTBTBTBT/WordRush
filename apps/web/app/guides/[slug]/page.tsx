@@ -7,6 +7,8 @@ import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 import { Mascot } from '@/components/ui/mascot';
 import { guideHost } from '@/lib/mascots';
+import { ArtTitle } from '@/components/ui/art-title';
+import { GAME_TITLE_ART_HEIGHT, gameTitleArtForGuide, gameTitleArtLabel } from '@/lib/art';
 
 export function generateStaticParams() {
   return MODE_GUIDES.map((g) => ({ slug: g.slug }));
@@ -33,19 +35,26 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
   // The long-form playbook for this mode on /strategy, when one exists.
   const playbook = STRATEGY_ARTICLES.find((a) => a.guide === guide.slug);
   const host = guideHost(guide.slug);
+  const titleArt = gameTitleArtForGuide(guide.slug);
 
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
       <InfoPageHeader title="Guides" backHref="/guides" titleTag="div" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <div className="flex items-center gap-2.5 mb-1">
-          <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>
-            <GuideIcon slug={guide.slug} accent={guide.accent} className="w-5 h-5" />
-          </span>
-          <h1 className="text-3xl font-black uppercase min-w-0" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
-          {/* The game's host waves beside its guide title. */}
-          {host && <Mascot id={host} size={56} motion="wave" priority className="ml-auto" />}
-        </div>
+        {titleArt ? (
+          // ART_SPEC §10: the game's title art (lettering + host) replaces the
+          // icon, title text and waving host.
+          <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.guide} align="left" className="mb-1" />
+        ) : (
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>
+              <GuideIcon slug={guide.slug} accent={guide.accent} className="w-5 h-5" />
+            </span>
+            <h1 className="text-3xl font-black uppercase min-w-0" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
+            {/* The game's host waves beside its guide title. */}
+            {host && <Mascot id={host} size={56} motion="wave" priority className="ml-auto" />}
+          </div>
+        )}
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
 
         {/* Quick facts */}

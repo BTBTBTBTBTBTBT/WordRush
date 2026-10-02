@@ -1057,8 +1057,13 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
             if (card != null) ModeGlyph(card, accent, box = 36.dp)
             else Icon3D(Icon3DName.TROPHY, 22.dp)
         }
+        // ART_SPEC §10: the selected game's title art (lettering + host, ≈40 dp) in
+        // place of the game name text and the separate host.
+        val titleArt = gameTitleArtResForKey(modeId)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
+            if (titleArt != null) {
+                GameTitleArt(titleArt, card?.title ?: gameTitleLabelForKey(modeId), height = GAME_TITLE_ART_CARD_HEIGHT, heading = false)
+            } else Text(
                 card?.title ?: modeId, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
@@ -1072,8 +1077,8 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
             // Founder-approved clarity (iOS parity): this board ranks DAILY games only.
             Text("Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
         }
-        // The selected game's host stands inside the card, right side (MASCOT_SPEC §5), static.
-        Mascots.hostFor(modeId)?.let { Mascot(it, 44.dp) }
+        // No title art: the selected game's host stands inside the card, right side (MASCOT_SPEC §5), static.
+        if (titleArt == null) Mascots.hostFor(modeId)?.let { Mascot(it, 44.dp) }
         card?.engineMode?.let { gm -> LbPlayButton(accent, played) { onPlay(gm) } }
     }
 }

@@ -103,18 +103,29 @@ struct GuideSheet: View {
     private func content(_ g: ModeGuide) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                // Title + tagline, the game's host waving hello at the top (MASCOT_SPEC §5).
-                HStack(alignment: .center, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(g.title.uppercased()).font(Brand.font(26, .black))
-                            .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
-                            .lineLimit(1).minimumScaleFactor(0.6)
+                // The game's title art (lettering + host, ≈56 pt, ART_SPEC §10) over the
+                // tagline; without the art, the title text with the host waving hello
+                // beside it (MASCOT_SPEC §5).
+                if let art = GameTitleArt.forMode(mode) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        GameTitleArtView(asset: art.asset, label: art.label, height: 56, maxWidth: 360, alignment: .leading)
                         Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    if let host = Mascots.host(mode) {
-                        MascotView(host, size: 72, motion: .wave)
+                } else {
+                    HStack(alignment: .center, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(g.title.uppercased()).font(Brand.font(26, .black))
+                                .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+                                .lineLimit(1).minimumScaleFactor(0.6)
+                            Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        if let host = Mascots.host(mode) {
+                            MascotView(host, size: 72, motion: .wave)
+                        }
                     }
                 }
 

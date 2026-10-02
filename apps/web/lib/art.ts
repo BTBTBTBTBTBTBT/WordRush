@@ -4,6 +4,8 @@
 // the true aspect ratio (never stretched). iOS image sets and Android
 // drawable-nodpi carry the same names (docs/design/brand/ship-art.py).
 
+import { MODES, MODE_BY_DBKEY } from './modes.generated';
+
 /** Leaderboard day titles (§1), one per weekday, Sunday first (Date#getUTCDay order). */
 export const DAY_ART = [
   'art-day-sunday',
@@ -91,7 +93,20 @@ export const PAGE_SCENES = {
   stats: 'd-nostats',
 } as const satisfies Record<string, SceneName>;
 
-export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName;
+/**
+ * Game title art (§10, third pass): each game's name lettered in its own accent
+ * color with its host at the end, ≈900 wide. Keyed by mode id (modes.json `id`);
+ * VS and More Games have none.
+ */
+export const GAME_TITLE_ART_IDS = [
+  'practice', 'gauntlet', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven',
+  'propernoundle', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder', 'cryptogram',
+  'wordsearch', 'regions',
+] as const;
+export type GameTitleArtId = (typeof GAME_TITLE_ART_IDS)[number];
+export type GameTitleArtName = `art-game-${GameTitleArtId}`;
+
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -118,7 +133,7 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-moment-soclose': [899, 179],
   'art-moment-sweep': [609, 150],
   'art-moment-flawless': [826, 149],
-  'art-moment-youwin': [789, 157],
+  'art-moment-youwin': [898, 197],
   'art-moment-youlose': [707, 139],
   'art-moment-draw': [540, 156],
   'art-moment-newrecord': [898, 139],
@@ -129,7 +144,60 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-scene-o3-notfound': [374, 298],
   'art-scene-i-invite': [291, 340],
   'art-scene-d-nostats': [332, 277],
+  'art-game-practice': [900, 236],
+  'art-game-gauntlet': [895, 208],
+  'art-game-quordle': [900, 204],
+  'art-game-octordle': [900, 196],
+  'art-game-sequence': [900, 217],
+  'art-game-rescue': [900, 179],
+  'art-game-six': [900, 201],
+  'art-game-seven': [900, 163],
+  'art-game-propernoundle': [900, 155],
+  'art-game-sudoku': [617, 234],
+  'art-game-scramble': [817, 211],
+  'art-game-hub': [898, 231],
+  'art-game-crossword': [900, 220],
+  'art-game-groups': [895, 231],
+  'art-game-ladder': [900, 168],
+  'art-game-cryptogram': [900, 181],
+  'art-game-wordsearch': [846, 226],
+  'art-game-regions': [900, 214],
 };
+
+const GAME_TITLE_ART_SET: ReadonlySet<string> = new Set(GAME_TITLE_ART_IDS);
+
+/** A game's title art (§10) by mode id, or null when it has none (VS, More Games). */
+export function gameTitleArt(id: string | null | undefined): GameTitleArtName | null {
+  return id && GAME_TITLE_ART_SET.has(id) ? (`art-game-${id}` as GameTitleArtName) : null;
+}
+
+/** The words a game's title art says, its accessible name: the catalog title, except Classic Six / Seven. */
+export function gameTitleArtLabel(name: GameTitleArtName): string {
+  const id = name.slice('art-game-'.length);
+  if (id === 'six') return 'Classic Six';
+  if (id === 'seven') return 'Classic Seven';
+  return MODES.find((m) => m.id === id)?.title ?? id;
+}
+
+/** Rendered heights of the game title art (§10), CSS px. */
+export const GAME_TITLE_ART_HEIGHT = {
+  /** Game screen header: ≈36–40 pt, fit to the width between the corner buttons. */
+  header: 38,
+  /** Guide sheet / guide page top: ≈56 pt. */
+  guide: 56,
+  /** Leaderboard / Records Play card, in place of the host + game name: ≈40 pt. */
+  playCard: 40,
+} as const;
+
+/** A game's title art (§10) by db key (DUEL, DUEL_6, SCRAMBLE, …), or null (SWEEP, VS). */
+export function gameTitleArtForDbKey(dbKey: string | null | undefined): GameTitleArtName | null {
+  return dbKey ? gameTitleArt(MODE_BY_DBKEY[dbKey]?.id) : null;
+}
+
+/** A game's title art (§10) by guide slug (classic, quadword, letter-ladder, …), or null. */
+export function gameTitleArtForGuide(slug: string | null | undefined): GameTitleArtName | null {
+  return slug ? gameTitleArt(MODES.find((m) => m.guideSlug === slug)?.id) : null;
+}
 
 /** Public path of a title / day / game / icon art file. */
 export function artSrc(name: string): string {

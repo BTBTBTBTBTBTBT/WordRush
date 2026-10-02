@@ -268,7 +268,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
         <GameHomeButton accentColor={LADDER_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="letter-ladder" accentColor={LADDER_ACCENT} />
         <SoundToggle accentColor={LADDER_ACCENT} />
-        <GameHostTitle mode="LADDER">
+        <GameHostTitle mode="LADDER" label="Letter Ladder">
           <h1 className="text-2xl font-black" style={{ color: LADDER_ACCENT }}>LETTER LADDER</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>

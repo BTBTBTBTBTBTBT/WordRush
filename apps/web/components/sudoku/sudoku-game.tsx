@@ -311,7 +311,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
         <GameHomeButton accentColor={SUDOKU_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="sudocious" accentColor={SUDOKU_ACCENT} />
         <SoundToggle accentColor={SUDOKU_ACCENT} />
-        <GameHostTitle mode="SUDOKU">
+        <GameHostTitle mode="SUDOKU" label="Sudocious">
           <h1 className="text-2xl font-black" style={{ color: SUDOKU_ACCENT }}>SUDOCIOUS</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>

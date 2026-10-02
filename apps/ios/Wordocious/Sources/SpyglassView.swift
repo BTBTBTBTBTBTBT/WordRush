@@ -271,7 +271,7 @@ struct SpyglassView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("SPYGLASS").font(Brand.font(24, .black)).foregroundStyle(spyglassAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.wordsearch)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.wordsearch, inset: 46)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }

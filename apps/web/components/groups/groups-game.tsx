@@ -287,7 +287,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
         <GameHomeButton accentColor={GROUPS_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="kindred" accentColor={GROUPS_ACCENT} />
         <SoundToggle accentColor={GROUPS_ACCENT} />
-        <GameHostTitle mode="GROUPS">
+        <GameHostTitle mode="GROUPS" label="Kindred">
           <h1 className="text-2xl font-black" style={{ color: GROUPS_ACCENT }}>KINDRED</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>

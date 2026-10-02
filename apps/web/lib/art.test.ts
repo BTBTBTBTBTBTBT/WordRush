@@ -3,7 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { FRIENDLY_KINDS, leaderboardTitle } from '@wordle-duel/core';
 import {
-  ART_SIZE, DAY_ART, GAME_ART_IDS, MOMENT_LABEL, PAGE_SCENES, POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc,
+  ART_SIZE, DAY_ART, GAME_ART_IDS, GAME_TITLE_ART_HEIGHT, GAME_TITLE_ART_IDS, MOMENT_LABEL, PAGE_SCENES, POCKET_ART_KINDS,
+  artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
   isGameArtIcon, pocketArtSrc, resultMoment, type ArtName,
 } from './art';
 import { MODES } from './modes.generated';
@@ -123,5 +124,54 @@ describe('second pass (§6–§9)', () => {
     }
     expect(pocketArtSrc('nope')).toBeNull();
     expect(pocketArtSrc(undefined)).toBeNull();
+  });
+});
+
+describe('game title art (§10)', () => {
+  it('ships all 18 titles, ≈900 wide and much wider than tall', () => {
+    expect(GAME_TITLE_ART_IDS).toHaveLength(18);
+    for (const id of GAME_TITLE_ART_IDS) {
+      const name = gameTitleArt(id) as ArtName;
+      expect(name).toBe(`art-game-${id}`);
+      const [w, h] = ART_SIZE[name];
+      expect(w, name).toBeGreaterThanOrEqual(600);
+      expect(w, name).toBeLessThanOrEqual(1000);
+      expect(w, name).toBeGreaterThan(h * 2.5);
+      expect(fs.existsSync(pub(artSrc(name))), name).toBe(true);
+    }
+  });
+
+  it('has a title for every game with a db key, none for VS / More / Sweep', () => {
+    for (const m of MODES) {
+      if (m.dbKey) expect(gameTitleArtForDbKey(m.dbKey), m.dbKey).toBe(`art-game-${m.id}`);
+      else expect(gameTitleArt(m.id), m.id).toBeNull();
+    }
+    expect(gameTitleArtForDbKey('SWEEP')).toBeNull();
+    expect(gameTitleArtForDbKey(null)).toBeNull();
+    expect(gameTitleArt('nope')).toBeNull();
+  });
+
+  it('tops every game guide', () => {
+    for (const m of MODES) {
+      if (m.guideSlug) expect(gameTitleArtForGuide(m.guideSlug), m.guideSlug).toBe(`art-game-${m.id}`);
+    }
+    expect(gameTitleArtForGuide('letter-ladder')).toBe('art-game-ladder');
+    expect(gameTitleArtForGuide('nope')).toBeNull();
+    expect(gameTitleArtForGuide(undefined)).toBeNull();
+  });
+
+  it('names each title by the words it draws', () => {
+    expect(gameTitleArtLabel('art-game-practice')).toBe('Classic');
+    expect(gameTitleArtLabel('art-game-six')).toBe('Classic Six');
+    expect(gameTitleArtLabel('art-game-seven')).toBe('Classic Seven');
+    expect(gameTitleArtLabel('art-game-regions')).toBe('Starsweep');
+    expect(gameTitleArtLabel('art-game-scramble')).toBe('Muddle');
+  });
+
+  it('draws at the spec heights', () => {
+    expect(GAME_TITLE_ART_HEIGHT.header).toBeGreaterThanOrEqual(36);
+    expect(GAME_TITLE_ART_HEIGHT.header).toBeLessThanOrEqual(40);
+    expect(GAME_TITLE_ART_HEIGHT.guide).toBe(56);
+    expect(GAME_TITLE_ART_HEIGHT.playCard).toBe(40);
   });
 });

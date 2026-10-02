@@ -333,7 +333,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         <GameHomeButton accentColor={CRYPTOGRAM_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="codebreaker" accentColor={CRYPTOGRAM_ACCENT} />
         <SoundToggle accentColor={CRYPTOGRAM_ACCENT} />
-        <GameHostTitle mode="CRYPTOGRAM">
+        <GameHostTitle mode="CRYPTOGRAM" label="Codebreaker">
           <h1 className="text-2xl font-black" style={{ color: CRYPTOGRAM_ACCENT }}>CODEBREAKER</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>

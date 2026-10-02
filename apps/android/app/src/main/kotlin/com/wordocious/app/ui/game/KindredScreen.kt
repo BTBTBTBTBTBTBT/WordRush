@@ -455,7 +455,7 @@ fun KindredScreen(
 private fun KindredHeader(session: KindredSession) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
-        // The game's host stands at the left of its title (MASCOT_SPEC §5), static.
+        // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("GROUPS") { Text("KINDRED", fontSize = 24.sp, fontWeight = FontWeight.Black, color = GROUPS_ACCENT, fontFamily = Nunito) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

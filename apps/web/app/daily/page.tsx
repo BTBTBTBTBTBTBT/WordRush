@@ -18,7 +18,8 @@ import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
 import { Mascot } from '@/components/ui/mascot';
 import { MASCOT_LINES, gameHost } from '@/lib/mascots';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
+import { GAME_TITLE_ART_HEIGHT, PAGE_SCENES, gameTitleArtForDbKey, gameTitleArtLabel } from '@/lib/art';
+import { ArtTitle } from '@/components/ui/art-title';
 import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
@@ -415,6 +416,8 @@ export default function DailyPage() {
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
   const Icon = mode.icon;
+  // ART_SPEC §10: the Play card's title art (null for Sweep).
+  const titleArt = isSweep ? null : gameTitleArtForDbKey(selectedMode);
   // URL slugs that differ from internal mode ids (mark scrub 2026-08-11):
   // routes wear the display-name slug; ids stay put (they key play limits,
   // saves, and the shared catalog).
@@ -729,9 +732,15 @@ export default function DailyPage() {
               <GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />
             </GameTileChip>
             <div className="flex-1 min-w-0">
-              <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>
-                {mode.title}
-              </div>
+              {/* ART_SPEC §10: the selected game's title art (lettering + host)
+                  in place of the game name and the host beside it. */}
+              {titleArt ? (
+                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.playCard} align="left" as="div" priority={false} className="mb-0.5" />
+              ) : (
+                <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>
+                  {mode.title}
+                </div>
+              )}
               <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 <Users className="w-3 h-3 shrink-0" />
                 <span className="truncate">
@@ -749,7 +758,7 @@ export default function DailyPage() {
               )}
             </div>
             {/* The selected game's host stands on the card's right side. */}
-            {!isSweep && gameHost(selectedMode) && (
+            {!isSweep && !titleArt && gameHost(selectedMode) && (
               <Mascot id={gameHost(selectedMode)!} size={44} motion="bob" />
             )}
             {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so

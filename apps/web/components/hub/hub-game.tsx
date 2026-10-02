@@ -475,7 +475,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         <GameHomeButton accentColor={HUB_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="hubbub" accentColor={HUB_ACCENT} />
         <SoundToggle accentColor={HUB_ACCENT} />
-        <GameHostTitle mode="HUB">
+        <GameHostTitle mode="HUB" label="Hubbub">
           <h1 className="text-2xl font-black" style={{ color: HUB_ACCENT }}>HUBBUB</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>

@@ -238,7 +238,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         <GameHomeButton accentColor={WORDSEARCH_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="spyglass" accentColor={WORDSEARCH_ACCENT} />
         <SoundToggle accentColor={WORDSEARCH_ACCENT} />
-        <GameHostTitle mode="WORDSEARCH">
+        <GameHostTitle mode="WORDSEARCH" label="Spyglass">
           <h1 className="text-2xl font-black" style={{ color: WORDSEARCH_ACCENT }}>SPYGLASS</h1>
         </GameHostTitle>
         <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{state.title}</div>

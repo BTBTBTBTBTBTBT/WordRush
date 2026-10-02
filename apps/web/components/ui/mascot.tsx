@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import { CAST, gameHost, mascotSrc, type MascotId } from '@/lib/mascots';
 import { Icon3D } from '@/components/ui/icon3d';
+import { ArtTitle } from '@/components/ui/art-title';
+import { GAME_TITLE_ART_HEIGHT, gameTitleArtForDbKey } from '@/lib/art';
 
 // The cast components (docs/MASCOT_SPEC.md §0): Mascot(id, size, motion) and
 // CastRow(size, motion). Decorative only: aria-hidden, empty alt, never takes a
@@ -138,8 +140,24 @@ export function BannerHost({ id, crown = false, children }: { id: MascotId; crow
 /**
  * §5 game screen title: the game's 30 px host standing at the left of its
  * title, static (no motion during play). Wraps the existing h1 unchanged.
+ *
+ * ART_SPEC §10: given `label` (the game title, the art's accessible name) and a
+ * game with title art, the art (lettering + host in one image) draws instead,
+ * ≈38 px tall, fit to the width between the header's corner buttons. Headers
+ * too tight for it (Muddle's compact header) pass no label and keep the text.
  */
-export function GameHostTitle({ mode, className = '', children }: { mode: string; className?: string; children: React.ReactNode }) {
+export function GameHostTitle({ mode, label, className = '', children }: {
+  mode: string;
+  label?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const art = label ? gameTitleArtForDbKey(mode) : null;
+  if (art && label) {
+    // px-14 keeps the art clear of the 44 px corner buttons (left-2 / right-2);
+    // `className` is the text title's (e.g. Crosswordocious' px-12), not used here.
+    return <ArtTitle name={art} label={label} height={GAME_TITLE_ART_HEIGHT.header} as="h1" className="px-14" />;
+  }
   const id = gameHost(mode);
   return (
     <div className={`flex items-center justify-center gap-1.5 ${className}`}>

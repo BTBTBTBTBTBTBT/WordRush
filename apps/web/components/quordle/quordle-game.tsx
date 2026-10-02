@@ -197,7 +197,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
         <GameHomeButton accentColor="#ec4899" />
         <GameGuideButton slug="quadword" accentColor="#ec4899" />
         <SoundToggle accentColor="#ec4899" />
-        <GameHostTitle mode="QUORDLE">
+        <GameHostTitle mode="QUORDLE" label="QuadWord">
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
             QUADWORD
           </h1>

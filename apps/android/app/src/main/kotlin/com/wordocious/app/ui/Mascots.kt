@@ -357,12 +357,18 @@ fun CastLoader(
 // Empty states draw their ART_SPEC §7 scene: SceneEmptyState in ArtKit.kt.
 
 /**
- * A game screen's title with its host (MASCOT_SPEC §5): the 30 dp host stands at
- * the left of [title], static (no motion during play). Keys without a host
- * render the title alone.
+ * A game screen's title with its host (MASCOT_SPEC §5). ART_SPEC §10: a game with
+ * title art shows `art_game_<id>` (lettering + host, ≈38 dp tall, centered between
+ * the corner buttons) instead; [art] = false keeps the text (Gauntlet's stage name).
+ * Otherwise the 30 dp host stands at the left of [title], static (no motion during
+ * play); keys without a host render the title alone.
  */
 @Composable
-fun HostedGameTitle(dbKey: String?, modifier: Modifier = Modifier, title: @Composable () -> Unit) {
+fun HostedGameTitle(dbKey: String?, modifier: Modifier = Modifier, art: Boolean = true, title: @Composable () -> Unit) {
+    if (art && dbKey != null && gameTitleArtResForKey(dbKey) != null) {
+        GameHeaderTitle(dbKey, modifier, fallback = title)
+        return
+    }
     val host = Mascots.hostFor(dbKey)
     if (host == null) {
         Box(modifier) { title() }

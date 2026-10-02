@@ -352,7 +352,7 @@ private fun SpyglassCapsules(session: SpyglassSession, onFinished: () -> Unit) {
 private fun SpyglassHeader(session: SpyglassSession) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(top = 6.dp)) {
-        // The game's host stands at the left of its title (MASCOT_SPEC §5), static.
+        // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("WORDSEARCH") { Text("SPYGLASS", fontSize = 24.sp, fontWeight = FontWeight.Black, color = SPY_ACCENT, fontFamily = Nunito) }
         Text(session.state.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

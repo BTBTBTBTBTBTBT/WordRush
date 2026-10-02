@@ -7,6 +7,8 @@ import { getGuide } from '@/lib/guide-content';
 import { setGuidePaused } from '@/hooks/use-active-play-timer';
 import { Mascot } from '@/components/ui/mascot';
 import { guideHost } from '@/lib/mascots';
+import { ArtTitle } from '@/components/ui/art-title';
+import { GAME_TITLE_ART_HEIGHT, gameTitleArtForGuide, gameTitleArtLabel } from '@/lib/art';
 
 interface Props {
   /** Guide slug (matches lib/guide-content.ts): classic, six, quadword, … */
@@ -30,6 +32,8 @@ export function GameGuideButton({
   const [open, setOpen] = useState(false);
   const guide = getGuide(slug);
   const host = guideHost(slug);
+  // ART_SPEC §10: the game's title art (lettering + host) tops its guide.
+  const titleArt = gameTitleArtForGuide(slug);
 
   // Pause the clock while the guide is open.
   useEffect(() => {
@@ -82,21 +86,26 @@ export function GameGuideButton({
               <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }} />
             </div>
 
-            {/* The game's host waves hello at the top of its guide. */}
-            {host && (
+            {/* The game's host waves hello at the top of its guide (when the
+                game has no title art; the art carries its host, ART_SPEC §10). */}
+            {host && !titleArt && (
               <div className="flex justify-center px-5 pt-1 pb-1">
                 <Mascot id={host} size={72} motion="wave" priority />
               </div>
             )}
 
-            <div className="flex items-start justify-between px-5 pb-2">
-              <div>
-                <h2
-                  className="text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text"
-                  style={{ backgroundImage: GUIDE_TITLE_GRADIENTS[slug] ?? `linear-gradient(135deg, ${accentColor}, ${accentColor})` }}
-                >
-                  {guide.title}
-                </h2>
+            <div className="flex items-start justify-between gap-2 px-5 pb-2">
+              <div className="min-w-0 flex-1">
+                {titleArt ? (
+                  <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.guide} as="h2" align="left" className="mb-1" />
+                ) : (
+                  <h2
+                    className="text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text"
+                    style={{ backgroundImage: GUIDE_TITLE_GRADIENTS[slug] ?? `linear-gradient(135deg, ${accentColor}, ${accentColor})` }}
+                  >
+                    {guide.title}
+                  </h2>
+                )}
                 <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
               </div>
               <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />

@@ -315,7 +315,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
         <GameHomeButton accentColor={REGIONS_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="starsweep" accentColor={REGIONS_ACCENT} />
         <SoundToggle accentColor={REGIONS_ACCENT} />
-        <GameHostTitle mode="REGIONS">
+        <GameHostTitle mode="REGIONS" label="Starsweep">
           <h1 className="text-2xl font-black" style={{ color: REGIONS_ACCENT }}>{REGIONS_HEADER}</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>

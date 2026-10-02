@@ -385,7 +385,7 @@ struct CodebreakerView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("CODEBREAKER").font(Brand.font(24, .black)).foregroundStyle(codebreakerAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.cryptogram)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.cryptogram, inset: 46)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(codebreakerAccent) }

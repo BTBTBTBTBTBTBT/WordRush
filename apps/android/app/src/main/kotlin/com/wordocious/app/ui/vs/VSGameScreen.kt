@@ -1437,7 +1437,7 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
                     won?.let {
                         com.wordocious.app.ui.MomentTitle(
                             if (it) com.wordocious.app.ui.MomentArt.YOU_WIN else com.wordocious.app.ui.MomentArt.YOU_LOSE,
-                            widthFraction = 0.6f, maxHeight = 52.dp,
+                            widthFraction = 0.6f, maxHeight = 28.dp,
                         )
                     }
                     if (answer.isNotEmpty()) {
