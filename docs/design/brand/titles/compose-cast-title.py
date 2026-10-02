@@ -29,15 +29,17 @@ POSES6 = {
     's': ['flex', 'trophy', 'slide', 'stopwatch', 'sit', 'blocks'],
 }
 PAGE_ORDER = ['welcome', 'dailies', 'puzzles', 'wotd', 'friends', 'stats', 'leaderboard', 'records',
-              'vs', 'settings', 'howto', 'gopro', 'moregames']
+              'vs', 'settings', 'howto', 'gopro', 'moregames',
+              'guides', 'strategy', 'words', 'faq', 'privacy', 'terms']  # footer pages (founder 10-02)
 LETTERING = {n: f'{n}-lettering-keyed.png' for n in PAGE_ORDER}
-WIDE = {'welcome', 'friends', 'leaderboard', 'records', 'vs', 'wotd', 'howto', 'moregames'}
+WIDE = {'welcome', 'friends', 'leaderboard', 'records', 'vs', 'wotd', 'howto', 'moregames', 'strategy', 'privacy'}
 
 
 def layout(name):
     k = PAGE_ORDER.index(name)
     ids = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']
-    pick = {cid: POSES6[cid][(k + 2 * j) % 6] for j, cid in enumerate(ids)}
+    step = 2 if k < 13 else 3   # footer pages (k >= 13) use their own rotation so no set repeats a main page's
+    pick = {cid: POSES6[cid][(k + step * j) % 6] for j, cid in enumerate(ids)}
     ends = 1 if name in WIDE else 2
     left = [(cid, pick[cid], False) for cid in ids[:ends]]
     right = [(cid, pick[cid], False) for cid in ids[-ends:]]

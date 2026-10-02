@@ -27,7 +27,7 @@ os.makedirs(WEB, exist_ok=True)
 
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 PAGES = ['friends', 'stats', 'records', 'vs', 'puzzles', 'wotd', 'settings', 'howto', 'gopro', 'moregames',
-         'welcome', 'leaderboard', 'dailies']
+         'welcome', 'leaderboard', 'dailies', 'guides', 'strategy', 'words', 'faq', 'privacy', 'terms']
 GAMES = ['practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven', 'gauntlet',
          'propernoundle', 'more', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder',
          'cryptogram', 'wordsearch', 'regions',

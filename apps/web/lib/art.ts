@@ -29,6 +29,12 @@ export type TitleArtName =
   | 'art-title-wotd'
   | 'art-title-settings'
   | 'art-title-howto'
+  | 'art-title-guides'
+  | 'art-title-strategy'
+  | 'art-title-words'
+  | 'art-title-faq'
+  | 'art-title-privacy'
+  | 'art-title-terms'
   | 'art-title-gopro'
   | 'art-title-moregames'
   // Second pass (§8): WELCOME! on the sign-in / signed-out landing, and the
@@ -143,6 +149,12 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-title-wotd': [1080, 174],
   'art-title-settings': [1080, 205],
   'art-title-howto': [1080, 211],
+  'art-title-guides': [1080, 238],
+  'art-title-strategy': [1080, 239],
+  'art-title-words': [1080, 244],
+  'art-title-faq': [966, 290],
+  'art-title-privacy': [1080, 254],
+  'art-title-terms': [1080, 246],
   'art-title-gopro': [1080, 218],
   'art-title-moregames': [1080, 211],
   'art-title-welcome': [1049, 233],
