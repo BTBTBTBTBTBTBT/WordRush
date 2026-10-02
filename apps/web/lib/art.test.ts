@@ -7,7 +7,7 @@ import {
   POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
   isGameArtIcon, onPageShadow, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
   GAME_HEADER, GAME_TILES_OPACITY, accentCardShadow, artMotion, gameHeaderArtHeight, gameHeaderStyle, gameTint,
-  gameTintForDbKey, gameToastTop, mixOver,
+  gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall,
 } from './art';
 import { MODES } from './modes.generated';
 
@@ -170,82 +170,93 @@ describe('game title art (§10)', () => {
     expect(gameTitleArtLabel('art-game-scramble')).toBe('Muddle');
   });
 
-  it('draws at the spec height caps (§14: larger, sized by width)', () => {
-    expect(GAME_TITLE_ART_HEIGHT.header).toBe(72);
+  it('draws at the spec height caps (§14; §19.3 game headers much bigger)', () => {
+    expect(GAME_TITLE_ART_HEIGHT.header).toBe(120);
+    expect(GAME_TITLE_ART_HEIGHT.headerShort).toBe(84);
+    expect(GAME_TITLE_ART_HEIGHT.shortViewport).toBe(700);
     expect(GAME_TITLE_ART_HEIGHT.headerMin).toBe(44);
     expect(GAME_TITLE_ART_HEIGHT.guide).toBe(72);
     expect(GAME_TITLE_ART_HEIGHT.playCard).toBe(52);
   });
 });
 
-describe('page tint + tiles (§11)', () => {
-  it('ships the seamless tile pattern v2 (§18.1), 720 px square, drawn at 360 px, opacity baked in', () => {
-    expect(ART_SIZE['art-bg-tiles']).toEqual([720, 720]);
-    expect(webpSize(pub(artSrc(PAGE_TILES.name)))).toEqual([720, 720]);
-    expect(PAGE_TILES.size).toBe(360);
-    expect(PAGE_TILES.opacity).toEqual({ light: 1, dark: 0.6 });
-  });
-
-  it('has the five tints with the spec stops, light and dark', () => {
-    expect(PAGE_TINTS.home.light).toEqual(['#F3EEFF', '#FBEFFF', '#FFF1F7']);
-    expect(PAGE_TINTS.leaderboard.dark).toEqual(['#1E1608', '#23160D', '#241221']);
-    expect(PAGE_TINTS.stats.light).toEqual(['#EEF4FF', '#EEEBFF', '#F4EEFF']);
-    expect(PAGE_TINTS.friends.dark).toEqual(['#241024', '#22102A', '#1A1030']);
-    expect(PAGE_TINTS.vs.light).toEqual(['#E9FBF8', '#ECF6FF', '#F1EEFF']);
-    for (const [tint, t] of Object.entries(PAGE_TINTS)) {
-      for (const c of [...t.light, ...t.dark, t.accent]) expect(c, tint).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(t.light, tint).toHaveLength(3);
-      expect(t.dark, tint).toHaveLength(3);
-    }
-  });
-
-  it('tints card shadows toward the page accent at ~11%, y 5, blur 14', () => {
-    expect(pageCardShadow('home')).toBe('0 5px 14px rgba(124,58,237,0.11)');
-    expect(pageCardShadow('leaderboard')).toBe('0 5px 14px rgba(245,158,11,0.11)');
-    expect(pageCardShadow('stats')).toBe('0 5px 14px rgba(37,99,235,0.11)');
-    expect(pageCardShadow('friends')).toBe('0 5px 14px rgba(236,72,153,0.11)');
-    expect(pageCardShadow('vs')).toBe('0 5px 14px rgba(13,148,136,0.11)');
-    expect(onPageShadow()).toBe('var(--page-card-shadow, none)');
-    expect(onPageShadow('0 1px 2px #000')).toBe('var(--page-card-shadow, 0 1px 2px #000)');
-  });
-});
-
-describe('Home section titles (§12)', () => {
-  it('ships WORDOCIOUS DAILIES as wide as PUZZLES and WORD OF THE DAY', () => {
-    const [w, h] = ART_SIZE['art-title-dailies'];
-    expect(webpSize(pub(artSrc('art-title-dailies')))).toEqual([w, h]);
-    expect(w).toBe(ART_SIZE['art-title-puzzles'][0]);
-    expect(w).toBe(ART_SIZE['art-title-wotd'][0]);
-    expect(w).toBeGreaterThan(h * 4);
-  });
-});
-
-describe('game titles fill the header (§14)', () => {
-  it('sizes the header art by the room between the corner buttons, 44–72 px', () => {
+describe('big game titles below the corner row (§19.3)', () => {
+  it('sizes the header art by the full width minus 32, 44 px up to the cap var (120 / 84)', () => {
     const [w, h] = ART_SIZE['art-game-scramble'];
-    const room = 2 * (GAME_HEADER.side + GAME_HEADER.clearance);
     expect(GAME_HEADER.pad).toBeLessThanOrEqual(6);
-    expect(GAME_HEADER.clearance).toBeGreaterThanOrEqual(GAME_HEADER.button);
+    expect(GAME_HEADER.inset).toBe(32);
     expect(gameHeaderArtHeight('art-game-scramble')).toBe(
-      `clamp(44px, calc((100vw - ${room}px) * ${(h / w).toFixed(4)}), 72px)`,
+      `clamp(44px, calc((100vw - 32px) * ${(h / w).toFixed(4)}), var(--game-title-cap, 120px))`,
     );
   });
 
-  it('centers the corner buttons on the art and moves toasts down by the growth', () => {
+  it('keeps the corner buttons in their own top row, the title below it, toasts moved down by the growth', () => {
+    expect(GAME_TITLE_TOP).toBe(GAME_HEADER.pad + GAME_HEADER.button + GAME_HEADER.gap);
     const style = gameHeaderStyle('QUORDLE') as Record<string, string>;
     expect(style['--game-art-h']).toBe(gameHeaderArtHeight('art-game-quordle'));
-    expect(style['--game-corner-top']).toBe('calc(6px + (var(--game-art-h) - 44px) / 2)');
-    expect(style['--game-header-shift']).toBe('calc(var(--game-art-h) + -40px)');
-    expect((gameHeaderStyle('SCRAMBLE', 36) as Record<string, string>)['--game-header-shift']).toBe('calc(var(--game-art-h) + -30px)');
+    expect(style['--game-corner-top']).toBe('6px');
+    expect(style['--game-title-top']).toBe(`${GAME_TITLE_TOP}px`);
+    expect(style['--game-header-shift']).toBe(`calc(var(--game-art-h) + ${GAME_TITLE_TOP - 46}px)`);
+    expect((gameHeaderStyle('SCRAMBLE', 36) as Record<string, string>)['--game-header-shift']).toBe(`calc(var(--game-art-h) + ${GAME_TITLE_TOP - 36}px)`);
     expect(gameHeaderStyle('VS')).toEqual({});
     expect(gameToastTop(90)).toBe('calc(90px + var(--game-header-shift, 0px))');
+  });
+
+  it('caps the title at 120, or 84 on viewports under 700 tall (globals.css)', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
+    expect(css).toMatch(/\.game-art-header \{\s*--game-title-cap: 120px;\s*padding-top: var\(--game-title-top, 6px\);/);
+    expect(css).toMatch(/@media \(max-height: 699\.98px\) \{\s*\.game-art-header \{ --game-title-cap: 84px; \}/);
   });
 
   it('gives every solo game with a header title art', () => {
     for (const key of ['DUEL', 'DUEL_6', 'DUEL_7', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'PROPERNOUNDLE', 'SUDOKU',
       'SCRAMBLE', 'HUB', 'CROSSWORD', 'GROUPS', 'LADDER', 'CRYPTOGRAM', 'WORDSEARCH', 'REGIONS']) {
-      expect(Object.keys(gameHeaderStyle(key)), key).toHaveLength(3);
+      expect(Object.keys(gameHeaderStyle(key)), key).toHaveLength(4);
     }
+  });
+});
+
+describe('wallpapers (§19.1)', () => {
+  const WALL = [1080, 1459];
+
+  it('ships a portrait 1080 px wallpaper for every page tint', () => {
+    for (const tint of Object.keys(PAGE_TINTS) as (keyof typeof PAGE_TINTS)[]) {
+      const name = pageWall(tint);
+      expect(name).toBe(`art-wall-${tint}`);
+      const [w, h] = ART_SIZE[name];
+      expect([w, h], name).toEqual(WALL);
+      expect(webpSize(pub(artSrc(name))), name).toEqual([w, h]);
+      expect(h, name).toBeGreaterThan(w);
+    }
+  });
+
+  it('ships a wallpaper for every solo game, none for VS / Sweep', () => {
+    for (const id of GAME_TITLE_ART_IDS) {
+      const name = `art-wall-game-${id}` as ArtName;
+      expect(ART_SIZE[name], name).toEqual(WALL);
+      expect(webpSize(pub(artSrc(name))), name).toEqual([...ART_SIZE[name]]);
+    }
+    for (const m of MODES) {
+      if (m.dbKey) expect(gameWallForDbKey(m.dbKey), m.dbKey).toBe(`art-wall-game-${m.id}`);
+    }
+    expect(gameWallForDbKey('DUEL_6')).toBe('art-wall-game-six');
+    expect(gameWallForDbKey('VS')).toBeNull();
+    expect(gameWallForDbKey('SWEEP')).toBeNull();
+    expect(gameWallForDbKey(undefined)).toBeNull();
+  });
+
+  it('dims 58% (games 62%) in dark mode, 20% white / 70% dark under reduce transparency', () => {
+    expect(WALL_OVERLAY).toEqual({ color: '#120D1F', dark: 0.58, darkGame: 0.62, a11yLight: 0.2, a11yDark: 0.7 });
+  });
+
+  it('draws the wallpaper fixed and cover-fit, the tile pattern gone from pages (globals.css)', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
+    const block = css.slice(css.indexOf('.page-bg {'), css.indexOf('/* Tile/keyboard state utilities'));
+    expect(block).toContain('position: fixed;');
+    expect(block).toContain('background-image: var(--page-wall, none), linear-gradient(');
+    expect(block).toContain('background-size: cover, auto;');
+    expect(block).not.toContain('--page-tiles');
+    expect(block).toContain('@media (prefers-reduced-transparency: reduce), (prefers-contrast: more)');
   });
 });
 

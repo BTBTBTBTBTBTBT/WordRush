@@ -329,9 +329,9 @@ export default function HomePage() {
           }}
         />
 
-        {/* WORDOCIOUS DAILIES and PUZZLES: the whole-cast title art
-            (docs/ART_SPEC.md §2, §12), one header style, ~70% width, left aligned. */}
-        <HomeSectionTitle name="art-title-dailies" label="Wordocious Dailies" />
+        {/* DAILIES and PUZZLES: the whole-cast title art (docs/ART_SPEC.md §2,
+            §12, §19.2), one header style, ~78% width, centered. */}
+        <HomeSectionTitle name="art-title-dailies" label="Dailies" />
         {grid(wordCards)}
 
         <HomeSectionTitle id="puzzles" name="art-title-puzzles" label="Puzzles" />

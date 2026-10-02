@@ -35,7 +35,7 @@ struct SolvedPuzzleView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(mode))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(mode))  // ART_SPEC §15 / §19: the game's wallpaper
             if !loaded {
                 CastLoader(label: "LOADING \(ModeStyle.title(mode).uppercased())")
             } else if mode == .gauntlet, let g = gauntlet {

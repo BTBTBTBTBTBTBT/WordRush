@@ -177,7 +177,7 @@ struct SudokuView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.sudoku))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.sudoku))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; board.padding(.horizontal, 6); result }.padding(.horizontal, 10) }
             } else {
@@ -246,7 +246,7 @@ struct SudokuView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text(ModeStyle.title(.sudoku)).font(Brand.font(24, .black)).foregroundStyle(sudokuAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.sudoku, inset: 46, centerY: GameCornerButton.centerY)
+                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.sudoku)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

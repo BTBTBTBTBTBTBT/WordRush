@@ -317,7 +317,7 @@ struct MuddleView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.scramble))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.scramble))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView {
                     VStack(spacing: 12) {
@@ -490,13 +490,13 @@ struct MuddleView: View {
         .accessibilityLabel(label)
     }
 
-    /// Title plus ONE meta line, tight. The title is the game's art (ART_SPEC §14:
-    /// the compact header grows to fit it), centered on the corner buttons.
+    /// Title plus ONE meta line, tight. The title is the game's art (ART_SPEC §19.3:
+    /// below the corner-button row, full width, capped at 120 / 84 pt).
     private var header: some View {
         VStack(spacing: 1) {
             Text("MUDDLE").font(Brand.font(20, .black)).foregroundStyle(muddleAccent)
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .gameTitleArt(.scramble, hostSize: 24, centerY: GameCornerButton.centerY)
+                .soloGameTitle(.scramble, hostSize: 24)
             HStack(spacing: 6) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(11)).foregroundStyle(muddleAccent) }

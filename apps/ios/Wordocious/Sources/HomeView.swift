@@ -255,19 +255,17 @@ struct HomeView: View {
                             // Unlimited / Sweep heroes and the top Word of the Day card.
                             homeBanner
                             if showFirstGameCard { firstGameCard }
-                            // ART_SPEC §12: the whole-cast WORDOCIOUS DAILIES art, styled exactly
-                            // like the PUZZLES header below (~70% width, left aligned).
-                            ArtTitle(.dailies, maxWidth: 250)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            // ART_SPEC §12 / §19.2: the whole-cast DAILIES art, centered on the
+                            // same width rule as PUZZLES and WORD OF THE DAY below.
+                            SectionTitleArt(.dailies)
                                 .padding(.top, 2)
                             LazyVGrid(columns: columns, spacing: 8) {
                                 ForEach(wordModes) { mode in card(mode) }
                             }
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
-                                // ART_SPEC §2: the whole-cast PUZZLES art (~70% width, left aligned).
-                                ArtTitle(.puzzles, maxWidth: 250)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                // ART_SPEC §2 / §19.2: the whole-cast PUZZLES art, centered.
+                                SectionTitleArt(.puzzles)
                                     .padding(.top, 2)
                                     .id(Self.puzzlesAnchor)
                                 LazyVGrid(columns: columns, spacing: 8) {

@@ -199,27 +199,25 @@ struct WordOfTheDayView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    /// ART_SPEC §12: the whole-cast WORD OF THE DAY art as a section header ABOVE the
-    /// card, at the PUZZLES header's size and alignment (~70% width, left aligned),
-    /// with "Past words" as a link at the right of the row.
+    /// ART_SPEC §12 / §19.2: the whole-cast WORD OF THE DAY art as a section header
+    /// ABOVE the card, centered on the DAILIES / PUZZLES width rule, with a small
+    /// centered "Past words" link under it.
     private var header: some View {
         let link = scheme == .dark ? Color(hex: 0xC4B5FD) : Theme.primary
-        return HStack(alignment: .center, spacing: 8) {
-            ArtTitle(.wotd, maxWidth: 250)
-                .layoutPriority(1)
-            Spacer(minLength: 0)
+        return VStack(spacing: 0) {
+            SectionTitleArt(.wotd)
             Button { showWords = true } label: {
                 HStack(spacing: 2) {
                     Text("Past words").font(Brand.font(11, .heavy)).foregroundStyle(link)
                     Image(systemName: "chevron.right").font(.system(size: 9, weight: .black)).foregroundStyle(link)
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, 6).padding(.horizontal, 8)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .fixedSize()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(.top, 2)
     }
 

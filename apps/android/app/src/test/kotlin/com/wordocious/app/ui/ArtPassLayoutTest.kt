@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate
 
-/** docs/ART_SPEC.md §14 (header art sizing), §15 (game tints), §17 (the widget's day host). */
+/** docs/ART_SPEC.md §14 (header art sizing), §15 (game tints), §17 (the widget's day host), §19 (wallpapers, section titles, big game titles). */
 class ArtPassLayoutTest {
     @Test fun headerArtFillsTheWidthBetweenTheCorners() {
         // ≈900 × 220 art on a 236 dp gap: the width rule lands mid-range.
@@ -57,5 +57,32 @@ class ArtPassLayoutTest {
         // 2026-10-05 is a Monday.
         val expected = listOf(MascotId.D, MascotId.I, MascotId.U, MascotId.S, MascotId.O2, MascotId.O1, MascotId.O3)
         expected.forEachIndexed { i, id -> assertEquals(id, Mascots.dayHost(LocalDate.of(2026, 10, 5).plusDays(i.toLong()))) }
+    }
+
+    @Test fun bigGameTitleCapsAt120And84OnShortScreens() {
+        assertEquals(120f, gameHeaderTitleMax(800.dp).value, 0f)
+        assertEquals(120f, gameHeaderTitleMax(700.dp).value, 0f)
+        assertEquals(84f, gameHeaderTitleMax(699.dp).value, 0f)
+        // A 411 dp phone: 411 − 20 (screen inset) − 32 = 359 dp wide; ≈900 × 280 art → ≈112 dp.
+        assertEquals(111.69f, gameTitleArtHeight(359.dp, 280f / 900f, 44.dp, gameHeaderTitleMax(914.dp)).value, 0.01f)
+    }
+
+    @Test fun sectionTitlesAre78PercentUpTo340() {
+        assertEquals(280.8f, sectionTitleArtWidth(360.dp).value, 0.01f)
+        assertEquals(340f, sectionTitleArtWidth(600.dp).value, 0f)
+    }
+
+    @Test fun everyGameWithTitleArtHasAWallpaper() {
+        val ids = listOf(
+            "practice", "gauntlet", "quordle", "octordle", "sequence", "rescue", "six", "seven", "propernoundle",
+            "sudoku", "scramble", "hub", "crossword", "groups", "ladder", "cryptogram", "wordsearch", "regions",
+        )
+        ids.forEach { id ->
+            assert(gameTitleArtRes(id) != null) { id }
+            assert(gameWallpaperRes(id) != null) { id }
+        }
+        assertEquals(ids.size, ids.mapNotNull { gameWallpaperRes(it) }.toSet().size)
+        assertEquals(null, gameWallpaperRes("vs"))
+        assertEquals(PageTint.values().size, PageTint.values().map { it.wallpaperRes() }.toSet().size)
     }
 }

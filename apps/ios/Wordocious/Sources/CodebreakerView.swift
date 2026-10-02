@@ -255,7 +255,7 @@ struct CodebreakerView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.cryptogram))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.cryptogram))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView {
                     VStack(spacing: 10) {
@@ -387,7 +387,7 @@ struct CodebreakerView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("CODEBREAKER").font(Brand.font(24, .black)).foregroundStyle(codebreakerAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.cryptogram, inset: 46, centerY: GameCornerButton.centerY)
+                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.cryptogram)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(codebreakerAccent) }

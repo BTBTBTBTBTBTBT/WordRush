@@ -405,4 +405,22 @@ extension View {
             gameHost(mode, size: hostSize)
         }
     }
+
+    /// ART_SPEC §19.3 solo game screen headers: the corner buttons (Home left, ? /
+    /// sound right) keep their own top row, and the game's title art sits BELOW it,
+    /// spanning the content width minus 32 pt — height from the aspect ratio, capped
+    /// at 120 pt (84 on screens under 700 pt). Without the art it stays this title text
+    /// with `.gameHost` beside it, `fallbackInset` clear of the corner circles.
+    /// (VS matches keep `.gameTitleArt`.)
+    @ViewBuilder
+    func soloGameTitle(_ mode: GameMode, hostSize: CGFloat = 30, fallbackInset: CGFloat = 0) -> some View {
+        if let art = GameTitleArt.forMode(mode) {
+            GameTitleArtView(asset: art.asset, label: art.label, maxHeight: GameTitleArtView.soloCap, minHeight: 44)
+                .padding(.horizontal, 16)
+                .padding(.top, GameCornerButton.rowHeight)
+        } else {
+            gameHost(mode, size: hostSize)
+                .padding(.horizontal, fallbackInset)
+        }
+    }
 }

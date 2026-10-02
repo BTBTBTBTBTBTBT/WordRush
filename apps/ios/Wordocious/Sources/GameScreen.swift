@@ -42,7 +42,7 @@ struct GameScreen: View {
     var body: some View {
         GeometryReader { root in
         ZStack {
-            PageBackground(tint: .forGame(mode))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(mode))  // ART_SPEC §15 / §19: the game's wallpaper
 
             VStack(spacing: 0) {
                 // Gauntlet finishes (win OR loss) show the dedicated animated
@@ -280,8 +280,7 @@ struct GameScreen: View {
                 .font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .gameTitleArt(mode, centerY: GameCornerButton.centerY)
-                .padding(.horizontal, 52)
+                .soloGameTitle(mode, fallbackInset: 52)
             HStack(spacing: 12) {
                 Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                 if !vm.stageCleared {

@@ -114,7 +114,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "228"
+        CURRENT_PROJECT_VERSION: "229"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -149,7 +149,10 @@ targets:
       # day host mascot-*, icon3d-flame, icon3d-badge-w / -l) — single-sourced
       # instead of a copied catalog. NOTE: since the art pass the catalog is
       # ~20 MB, all of it duplicated into the extension; a slim widget-only
-      # catalog would cut that if app size matters.
+      # catalog would cut that if app size matters. The §19 page / game
+      # wallpapers (art-wall-*, ~18 MB) live in their own catalog,
+      # Wordocious/Resources/Wallpapers.xcassets, which only the app target
+      # picks up (via Wordocious/Resources) — the widget never bundles them.
       - path: Wordocious/Resources/Assets.xcassets
     info:
       path: WordociousWidget/Info.plist
@@ -168,7 +171,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "228"
+        CURRENT_PROJECT_VERSION: "229"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES

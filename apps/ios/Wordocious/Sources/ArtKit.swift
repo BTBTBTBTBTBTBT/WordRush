@@ -16,8 +16,11 @@ import WordociousCore
 // WORDOCIOUS DAILIES title (§12) and the W / L row badges (§13). Fifth pass: game
 // titles sized by the header width (§14, `GameTitleArtView`), the per-game page tint
 // behind solo game screens (§15, `PageTint.forGame`), the title art pop-in + idle float
-// (§16, `.titleArtMotion`) and the share-card chrome (§17, `ShareArt`). Art is
-// presentation only: every caller keeps its behavior.
+// (§16, `.titleArtMotion`) and the share-card chrome (§17, `ShareArt`). Sixth pass
+// (§19): the `art-wall-*` wallpapers replace the tint + tile drawing in
+// `PageBackground`, the Home section titles center (`SectionTitleArt`) and the solo
+// game titles grow below the corner-button row (`.soloGameTitle` in Mascots.swift,
+// `GameTitleArtView.soloCap`). Art is presentation only: every caller keeps its behavior.
 
 /// Whether an image set ships in the bundle (cached), so a missing piece of art
 /// falls back to the old text / glyph instead of drawing blank.
@@ -114,7 +117,7 @@ enum ArtTitleName: String, CaseIterable {
         case .moregames: return "More Games"
         case .welcome: return "Welcome"
         case .leaderboard: return "Leaderboard"
-        case .dailies: return "Wordocious Dailies"
+        case .dailies: return "Dailies"
         }
     }
 }
@@ -149,6 +152,47 @@ struct ArtTitle: View {
                 .accessibilityAddTraits(.isHeader)
         } else {
             PageTitle(label ?? name.label, colors: colors)
+        }
+    }
+}
+
+/// ART_SPEC §19.2: a Home section title (DAILIES, PUZZLES, WORD OF THE DAY) centered
+/// above its section, all three on one width rule — ≈78% of the content width, at
+/// most 340 pt; the height follows the art's aspect ratio.
+struct SectionTitleArt: View {
+    let name: ArtTitleName
+    static let fraction: CGFloat = 0.78
+    static let maxWidth: CGFloat = 340
+
+    init(_ name: ArtTitleName) { self.name = name }
+
+    var body: some View {
+        CenteredFractionLayout(fraction: Self.fraction, maxWidth: Self.maxWidth) {
+            ArtTitle(name, maxWidth: Self.maxWidth)
+        }
+    }
+}
+
+/// Offers its child `fraction` of the proposed width (≤ `maxWidth`), takes the full
+/// width itself and centers the child in it.
+private struct CenteredFractionLayout: Layout {
+    let fraction: CGFloat
+    let maxWidth: CGFloat
+
+    private func inner(_ width: CGFloat) -> CGFloat { min(width * fraction, maxWidth) }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? maxWidth / fraction
+        let child = subviews.first?.sizeThatFits(ProposedViewSize(width: inner(width), height: nil)) ?? .zero
+        return CGSize(width: width, height: child.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let w = inner(bounds.width)
+        for view in subviews {
+            let size = view.sizeThatFits(ProposedViewSize(width: w, height: nil))
+            view.place(at: CGPoint(x: bounds.midX, y: bounds.minY), anchor: .top,
+                       proposal: ProposedViewSize(width: w, height: size.height))
         }
     }
 }
@@ -350,6 +394,10 @@ enum GameTitleArt {
 /// game's title as a header. Pops in once (§16; no idle float — game headers stay
 /// still during play).
 struct GameTitleArtView: View {
+    /// §19.3: the solo game header's title cap — 120 pt, 84 pt on short screens
+    /// (height < 700 pt).
+    static var soloCap: CGFloat { UIScreen.main.bounds.height < 700 ? 84 : 120 }
+
     let asset: String
     let label: String
     /// The height cap (72 pt in game headers and the guide sheet, 52 on the Play cards).
@@ -496,22 +544,45 @@ enum PageTint: Equatable {
     case friends
     /// The VS pages.
     case vs
-    /// §15: a solo game screen, tinted from its accent (0xRRGGBB).
-    case game(UInt)
+    /// §15: a solo game screen, tinted from its accent (0xRRGGBB); `id` is the
+    /// catalog id that names its §19 wallpaper.
+    case game(UInt, id: String)
 
     /// §15: a game's tint from its catalog accent (`accentHex`).
     static func forGame(_ mode: GameMode) -> PageTint {
-        .game(ModeGen.byDbKey(mode.rawValue).flatMap { UInt($0.accentHex.dropFirst(), radix: 16) } ?? 0x7C3AED)
+        let g = ModeGen.byDbKey(mode.rawValue)
+        return .game(g.flatMap { UInt($0.accentHex.dropFirst(), radix: 16) } ?? 0x7C3AED, id: g?.id ?? "")
     }
 
-    /// The diagonal gradient's three stops (top-left → bottom-right).
+    /// §19.1: the page's wallpaper image set (`art-wall-<name>` / `art-wall-game-<id>`).
+    var wallpaper: String {
+        switch self {
+        case .home: return "art-wall-home"
+        case .leaderboard: return "art-wall-leaderboard"
+        case .stats: return "art-wall-stats"
+        case .friends: return "art-wall-friends"
+        case .vs: return "art-wall-vs"
+        case .game(_, let id): return "art-wall-game-\(id)"
+        }
+    }
+
+    /// §19.1: the dark-mode overlay of #120D1F over the wallpaper — 58% on pages,
+    /// 62% on game screens.
+    var darkOverlay: Double {
+        if case .game = self { return 0.62 }
+        return 0.58
+    }
+
+    /// The diagonal gradient's three stops (top-left → bottom-right). Since §19 the
+    /// page draws its wallpaper; the stops stay for strips, share cards and the
+    /// fallback when a wallpaper is missing.
     func stops(dark: Bool) -> [Color] {
         switch (self, dark) {
         // §15: accent at 6% / 10% over white → 4% over #FFF7FB; dark: 10% / 14% over
         // #120D1F → 8% over #120D1F.
-        case (.game(let a), false):
+        case (.game(let a, _), false):
             return [Self.mix(a, 0.06, over: 0xFFFFFF), Self.mix(a, 0.10, over: 0xFFFFFF), Self.mix(a, 0.04, over: 0xFFF7FB)]
-        case (.game(let a), true):
+        case (.game(let a, _), true):
             return [Self.mix(a, 0.10, over: 0x120D1F), Self.mix(a, 0.14, over: 0x120D1F), Self.mix(a, 0.08, over: 0x120D1F)]
         case (.home, false): return [Color(hex: 0xF3EEFF), Color(hex: 0xFBEFFF), Color(hex: 0xFFF1F7)]
         case (.home, true): return [Color(hex: 0x160F26), Color(hex: 0x1C1231), Color(hex: 0x22122C)]
@@ -538,7 +609,7 @@ enum PageTint: Equatable {
         case .stats: return Color(hex: 0x2563EB)
         case .friends: return Color(hex: 0xEC4899)
         case .vs: return Color(hex: 0x0D9488)
-        case .game(let a): return Color(hex: a)
+        case .game(let a, _): return Color(hex: a)
         }
     }
 
@@ -571,23 +642,16 @@ extension EnvironmentValues {
     }
 }
 
-/// The shipped seamless letter-tile pattern (`art-bg-tiles`, §18 v2: 720 px of big
-/// glossy, softly blurred tiles, opacity baked in) re-scaled so one tile draws at 360 pt.
-private enum TilePattern {
-    static let image: UIImage? = {
-        guard let src = UIImage(named: "art-bg-tiles"), let cg = src.cgImage else { return nil }
-        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 360, orientation: .up)
-    }()
-}
-
-/// ART_SPEC §11: the page backdrop. A soft diagonal gradient per tint (light or
-/// dark stops from the color scheme), with the letter-tile pattern repeated on top
-/// (§18: 100% light / 60% dark — 55% / 35% on a game screen, §15) — fixed to the page, edge to edge behind the status
-/// bar. Reduce Transparency or Increase Contrast → the gradient alone. Decorative.
+/// ART_SPEC §19.1: the page backdrop is the tint's wallpaper (`art-wall-*`, 1080 px
+/// wide, opaque): aspect-FILLED and centered, fixed to the screen (it never scrolls
+/// with content), edge to edge behind the status bar. Dark mode lays #120D1F over it
+/// (58% pages / 62% games). Reduce Transparency or Increase Contrast keeps the
+/// wallpaper but adds a 20% white (light) / 70% #120D1F (dark) overlay. If the image
+/// is missing, the tint's old diagonal gradient (§11) draws instead. Decorative.
 struct PageBackground: View {
     let tint: PageTint
     /// The VS and Friends pages are drawn light in every theme (their cards and
-    /// ink are fixed light colors), so their backdrop stays on the light stops.
+    /// ink are fixed light colors), so their backdrop stays on the light look.
     var lightOnly = false
 
     @Environment(\.colorScheme) private var scheme
@@ -601,22 +665,37 @@ struct PageBackground: View {
 
     var body: some View {
         let dark = scheme == .dark && !lightOnly
-        ZStack {
-            LinearGradient(colors: tint.stops(dark: dark), startPoint: .topLeading, endPoint: .bottomTrailing)
-            if !reduceTransparency, contrast != .increased, let tile = TilePattern.image {
-                Image(uiImage: tile)
-                    .resizable(resizingMode: .tile)
-                    .opacity(tint.tileOpacity(dark: dark))
+        let a11y = reduceTransparency || contrast == .increased
+        let wall = tint.wallpaper
+        Group {
+            if ArtAsset.exists(wall) {
+                GeometryReader { geo in
+                    Image(wall)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                        .overlay(overlay(dark: dark, a11y: a11y))
+                }
+                .ignoresSafeArea()
+            } else {
+                LinearGradient(colors: tint.stops(dark: dark), startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
             }
         }
-        .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func overlay(dark: Bool, a11y: Bool) -> Color {
+        if dark { return Color(hex: 0x120D1F).opacity(a11y ? 0.70 : tint.darkOverlay) }
+        return Color.white.opacity(a11y ? 0.20 : 0)
     }
 }
 
 extension View {
-    /// §11: draw the page tint + tiles behind this page and tint its cards' shadows.
+    /// §11 / §19: draw the page's wallpaper behind this page and tint its cards' shadows.
     func pageBackground(_ tint: PageTint, lightOnly: Bool = false) -> some View {
         background(PageBackground(tint: tint, lightOnly: lightOnly))
             .environment(\.pageTint, tint)

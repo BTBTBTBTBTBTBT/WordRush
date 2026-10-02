@@ -117,36 +117,50 @@
   --key-present: #6aaef0;
 }
 
-/* Page tint + tiles (docs/ART_SPEC.md §11): components/ui/page-background.tsx
-   sets the tint's stops as vars on the page root; this fixed layer paints the
-   diagonal gradient and, on top, the letter-tile pattern behind everything on
-   the page. Dark theme swaps in the dark stops and a fainter pattern, except
-   on light-only pages (data-page-scheme="light"). */
+/* Wallpapers (docs/ART_SPEC.md §19.1; replaced the §11 tint gradient + tile
+   pattern): components/ui/page-background.tsx sets the page's wallpaper and
+   tint stops as vars on the page root; this fixed layer paints the wallpaper
+   cover-fit and centered behind everything on the page (it does not scroll
+   with the content), over the tint gradient that only shows if the image
+   fails. ::after is the overlay: the dark theme dims the wallpaper with
+   --page-wall-overlay at --page-wall-dim (58%, games 62%), except on
+   light-only pages (data-page-scheme="light"). */
 .page-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(to bottom right, var(--page-bg-1), var(--page-bg-2), var(--page-bg-3));
+  background-color: var(--page-bg-2);
+  background-image: var(--page-wall, none), linear-gradient(to bottom right, var(--page-bg-1), var(--page-bg-2), var(--page-bg-3));
+  background-size: cover, auto;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .page-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--page-tiles);
-  background-size: var(--page-tiles-size) var(--page-tiles-size);
-  background-repeat: repeat;
-  opacity: var(--page-tiles-opacity);
+  background: var(--page-wall-overlay, #120D1F);
+  opacity: 0;
 }
 [data-theme="dark"] [data-page-scheme="auto"] > .page-bg {
-  background: linear-gradient(to bottom right, var(--page-bg-dark-1), var(--page-bg-dark-2), var(--page-bg-dark-3));
+  background-color: var(--page-bg-dark-2);
+  background-image: var(--page-wall, none), linear-gradient(to bottom right, var(--page-bg-dark-1), var(--page-bg-dark-2), var(--page-bg-dark-3));
 }
 [data-theme="dark"] [data-page-scheme="auto"] > .page-bg::after {
-  opacity: var(--page-tiles-opacity-dark);
+  opacity: var(--page-wall-dim, 0.58);
 }
-/* Reduce transparency / more contrast: the gradient only. */
+/* Reduce transparency / more contrast: keep the wallpaper, lay 20% white
+   (light) / 70% dark over it (lib/art.ts WALL_OVERLAY). */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .page-bg::after { display: none; }
+  .page-bg::after {
+    background: #ffffff;
+    opacity: var(--page-wall-a11y-light, 0.2);
+  }
+  [data-theme="dark"] [data-page-scheme="auto"] > .page-bg::after {
+    background: var(--page-wall-overlay, #120D1F);
+    opacity: var(--page-wall-a11y-dark, 0.7);
+  }
 }
 
 /* Tile/keyboard state utilities — the only sanctioned way to color game
@@ -775,12 +789,19 @@
   .banner-frost { background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
-/* Game screen headers wearing title art (docs/ART_SPEC.md §14; lib/art.ts
-   gameHeaderStyle): ≤ 6 px top / bottom padding so the art, not empty space,
-   sets the header's height. */
+/* Game screen headers wearing title art (docs/ART_SPEC.md §14, §19.3;
+   lib/art.ts gameHeaderStyle): the corner buttons keep their own top row and
+   the title art starts below it (--game-title-top), as wide as the screen
+   minus 32 and at most --game-title-cap tall (120, or 84 on viewports under
+   700 tall); 6 px under the header so the board starts right after the
+   status line. */
 .game-art-header {
-  padding-top: 6px;
+  --game-title-cap: 120px;
+  padding-top: var(--game-title-top, 6px);
   padding-bottom: 6px;
+}
+@media (max-height: 699.98px) {
+  .game-art-header { --game-title-cap: 84px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

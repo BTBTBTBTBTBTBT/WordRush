@@ -188,7 +188,7 @@ struct SpyglassView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.wordsearch))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.wordsearch))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; SpyglassGridView(vm: vm, revealMissing: vm.state.status == .lost).padding(.horizontal, 6); wordChips; result }.padding(.horizontal, 10) }
             } else {
@@ -273,7 +273,7 @@ struct SpyglassView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("SPYGLASS").font(Brand.font(24, .black)).foregroundStyle(spyglassAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.wordsearch, inset: 46, centerY: GameCornerButton.centerY)
+                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.wordsearch)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }

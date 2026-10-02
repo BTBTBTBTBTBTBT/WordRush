@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,30 +19,33 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageShader
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.wordocious.app.R
 import com.wordocious.app.ui.theme.WTheme
+import kotlin.math.roundToInt
 
-// ART_SPEC §11 "page tint + tiles" (founder pick, 2026-10-02 morning): one shared page
-// background behind every tab / page — a soft 3-stop diagonal gradient per tint, the
-// seamless letter-tile pattern (`art_bg_tiles.webp`; §18.1 v2: 720 px, opacity baked
-// in) repeated on top at 100% (light) / 60% (dark), 360 dp per tile, and cards whose
-// shadow leans toward the page's accent. §15 game screens use the game's own tint with
-// the tiles at 55% / 35%. Mirrors the web and iOS PageBackground.
+// ART_SPEC §11 / §19.1: one shared page background behind every tab / page. §19.1
+// (founder, 2026-10-02 late morning) replaced the §11 gradient + §18.1 tile layer with
+// a wallpaper per page / game (`art_wall_<name>.webp`, 1080 wide, portrait, opaque):
+// aspect-filled (ContentScale.Crop) and centered on the WINDOW, fixed behind the
+// content and the status bar. Dark mode dims it under #120D1F (58% menus, 62% games);
+// the contrast settings add a 20% white (light) / 70% night (dark) veil. The tints'
+// gradient stays as the fallback when a wallpaper can't load, and their accents still
+// lean the card shadows. Mirrors the web and iOS PageBackground.
 
 /** §11 The page tints: light / dark gradient stops (top-left → bottom-right) + the card-shadow accent. */
 enum class PageTint(val light: List<Color>, val dark: List<Color>, val accent: Color) {
@@ -75,17 +79,66 @@ enum class PageTint(val light: List<Color>, val dark: List<Color>, val accent: C
     ),
 }
 
+/** §19.1 The wallpaper behind each page tint (`art_wall_<name>`). */
+@DrawableRes
+fun PageTint.wallpaperRes(): Int = when (this) {
+    PageTint.HOME -> R.drawable.art_wall_home
+    PageTint.LEADERBOARD -> R.drawable.art_wall_leaderboard
+    PageTint.STATS -> R.drawable.art_wall_stats
+    PageTint.FRIENDS -> R.drawable.art_wall_friends
+    PageTint.VS -> R.drawable.art_wall_vs
+}
+
+/** §19.1 A solo game's wallpaper (`art_wall_game_<id>`) for a catalog mode id, or null (no wallpaper: the tint gradient). */
+@DrawableRes
+fun gameWallpaperRes(modeId: String?): Int? = when (modeId) {
+    "practice" -> R.drawable.art_wall_game_practice
+    "gauntlet" -> R.drawable.art_wall_game_gauntlet
+    "quordle" -> R.drawable.art_wall_game_quordle
+    "octordle" -> R.drawable.art_wall_game_octordle
+    "sequence" -> R.drawable.art_wall_game_sequence
+    "rescue" -> R.drawable.art_wall_game_rescue
+    "six" -> R.drawable.art_wall_game_six
+    "seven" -> R.drawable.art_wall_game_seven
+    "propernoundle" -> R.drawable.art_wall_game_propernoundle
+    "sudoku" -> R.drawable.art_wall_game_sudoku
+    "scramble" -> R.drawable.art_wall_game_scramble
+    "hub" -> R.drawable.art_wall_game_hub
+    "crossword" -> R.drawable.art_wall_game_crossword
+    "groups" -> R.drawable.art_wall_game_groups
+    "ladder" -> R.drawable.art_wall_game_ladder
+    "cryptogram" -> R.drawable.art_wall_game_cryptogram
+    "wordsearch" -> R.drawable.art_wall_game_wordsearch
+    "regions" -> R.drawable.art_wall_game_regions
+    else -> null
+}
+
 /** The tint of the page a composable sits on (null off the tinted pages: game screens, sheets). */
 val LocalPageTint = compositionLocalOf<PageTint?> { null }
 
+/** §19.1 Dark mode: the wallpaper under #120D1F at 58% (menus) / 62% (games). */
+private val NIGHT = Color(0xFF120D1F)
+private const val DIM_DARK_PAGE = 0.58f
+private const val DIM_DARK_GAME = 0.62f
+/** §19.1 Reduce transparency / raised contrast: a 20% white (light) / 70% night (dark) veil. */
+private const val CONTRAST_VEIL_LIGHT = 0.20f
+private const val CONTRAST_VEIL_DARK = 0.70f
+
 /**
- * §18.1 Tile pattern v2: `art_bg_tiles` is a 720 px seamless pattern of big glossy,
- * softly blurred letter tiles with its opacity BAKED IN — drawn at 360 dp per tile,
- * 100% in light mode and 60% in dark on the menu pages.
+ * The decoded wallpapers, shared by every page that draws one (the header backdrop,
+ * each tab and a pushed page of the same tint all paint the same bitmap), bounded
+ * by bytes so a few recent ones stay warm (1080 × 1459 ≈ 6.3 MB each).
  */
-private val PAGE_TILE_SIZE: Dp = 360.dp
-private const val TILE_ALPHA_LIGHT = 1f
-private const val TILE_ALPHA_DARK = 0.6f
+private object Wallpapers {
+    private val cache = object : android.util.LruCache<Int, ImageBitmap>(28 * 1024 * 1024) {
+        override fun sizeOf(key: Int, value: ImageBitmap): Int = value.width * value.height * 4
+    }
+
+    fun get(context: android.content.Context, @DrawableRes res: Int): ImageBitmap? =
+        cache.get(res) ?: runCatching {
+            android.graphics.BitmapFactory.decodeResource(context.resources, res)?.asImageBitmap()
+        }.getOrNull()?.also { cache.put(res, it) }
+}
 
 /**
  * Android's contrast settings (the reduce-transparency / increase-contrast fallback,
@@ -107,38 +160,38 @@ private fun rememberHighContrast(): Boolean {
 }
 
 /**
- * §11 The page background as a modifier: [tint]'s gradient (light / dark by the app
- * theme) plus the tile pattern, both anchored to the WINDOW rather than to this
- * node — so the background behind the header, a tab and a page pushed inside a tab
- * line up seamlessly, and a nested page of the same tint repaints identical pixels.
- * Drawn behind the content (fixed: the page's scroll content moves over it).
- * [alwaysLight]: the VS and Friends pages are fixed-light designs (white cards, fixed
- * ink) in every theme, so they keep the light stops there too.
+ * §11 / §19.1 The page background as a modifier: [tint]'s wallpaper, aspect-filled
+ * and centered on the WINDOW rather than on this node — so the background behind the
+ * header, a tab and a page pushed inside a tab line up seamlessly, and a nested page
+ * of the same tint repaints identical pixels. Drawn behind the content (fixed: the
+ * page's scroll content moves over it). [alwaysLight]: the VS and Friends pages are
+ * fixed-light designs (white cards, fixed ink) in every theme, so they skip the dark
+ * dimming there too.
  */
 fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modifier =
-    tintBackground(tint.light, tint.dark, TILE_ALPHA_LIGHT, TILE_ALPHA_DARK, alwaysLight)
+    wallpaperBackground(tint.wallpaperRes(), tint.light, tint.dark, DIM_DARK_PAGE, alwaysLight)
 
 /**
- * The shared tint painter behind §11 pages and §15 game screens: a 3-stop diagonal
- * gradient across the window ([light] / [dark] stops by the theme) with the tile
- * pattern on top at [tileLight] / [tileDark] alpha (dropped under the contrast
- * settings: gradient only).
+ * The shared painter behind §19.1 pages and game screens: wallpaper [res] scaled
+ * like ContentScale.Crop to the window and centered on it, clipped to this node;
+ * dark mode lays #120D1F at [darkDim] over it and the contrast settings add their
+ * veil. If the wallpaper can't load (or [res] is null), the §11 / §15 diagonal
+ * gradient ([light] / [dark] stops) across the window instead.
  */
-private fun Modifier.tintBackground(
+private fun Modifier.wallpaperBackground(
+    @DrawableRes res: Int?,
     light: List<Color>,
     dark: List<Color>,
-    tileLight: Float,
-    tileDark: Float,
+    darkDim: Float,
     alwaysLight: Boolean = false,
 ): Modifier = composed {
     val isDark = WTheme.isDark && !alwaysLight
-    val tiles: ImageBitmap = ImageBitmap.imageResource(R.drawable.art_bg_tiles)
-    val tileBrush = remember(tiles) { ShaderBrush(ImageShader(tiles, TileMode.Repeated, TileMode.Repeated)) }
+    val context = LocalContext.current
+    val wall: ImageBitmap? = remember(res) { res?.let { Wallpapers.get(context, it) } }
     val highContrast = rememberHighContrast()
     var origin by remember { mutableStateOf(Offset.Zero) }
     var rootSize by remember { mutableStateOf(Size.Zero) }
     val stops = if (isDark) dark else light
-    val tileAlpha = if (isDark) tileDark else tileLight
     this
         .onGloballyPositioned { c ->
             origin = c.positionInRoot()
@@ -146,31 +199,34 @@ private fun Modifier.tintBackground(
         }
         .drawBehind {
             val root = if (rootSize.width > 0f && rootSize.height > 0f) rootSize else size
-            // Top-left → bottom-right of the window, in this node's coordinates.
-            drawRect(Brush.linearGradient(stops, start = -origin, end = Offset(root.width, root.height) - origin))
-            if (!highContrast && tiles.width > 0) {
-                val s = PAGE_TILE_SIZE.toPx() / tiles.width
-                val w = size.width
-                val h = size.height
-                translate(-origin.x, -origin.y) {
-                    scale(s, pivot = Offset.Zero) {
-                        drawRect(
-                            tileBrush,
-                            topLeft = Offset(origin.x / s, origin.y / s),
-                            size = Size(w / s, h / s),
-                            alpha = tileAlpha,
-                        )
-                    }
+            if (wall == null || wall.width <= 0 || wall.height <= 0) {
+                // Fallback: the tint's gradient, top-left → bottom-right of the window.
+                drawRect(Brush.linearGradient(stops, start = -origin, end = Offset(root.width, root.height) - origin))
+            } else {
+                val src = Size(wall.width.toFloat(), wall.height.toFloat())
+                val scale = ContentScale.Crop.computeScaleFactor(src, root)
+                val dw = src.width * scale.scaleX
+                val dh = src.height * scale.scaleY
+                // Centered on the window, in this node's coordinates.
+                val left = (root.width - dw) / 2f - origin.x
+                val top = (root.height - dh) / 2f - origin.y
+                clipRect {
+                    drawImage(
+                        wall,
+                        dstOffset = IntOffset(left.roundToInt(), top.roundToInt()),
+                        dstSize = IntSize(dw.roundToInt(), dh.roundToInt()),
+                        filterQuality = FilterQuality.Medium,
+                    )
                 }
+            }
+            if (isDark) drawRect(NIGHT, alpha = darkDim)
+            if (highContrast) {
+                if (isDark) drawRect(NIGHT, alpha = CONTRAST_VEIL_DARK) else drawRect(Color.White, alpha = CONTRAST_VEIL_LIGHT)
             }
         }
 }
 
 // ── §15 Game screens: a soft tint in the game's color ─────────────────────
-
-/** §15 / §18.1 Tiles behind a game: quieter than the menus (55% light / 35% dark of the baked-in pattern). */
-private const val GAME_TILE_ALPHA_LIGHT = 0.55f
-private const val GAME_TILE_ALPHA_DARK = 0.35f
 
 /**
  * The accent of the solo game on screen (§15), provided by MainScreen around the
@@ -178,12 +234,15 @@ private const val GAME_TILE_ALPHA_DARK = 0.35f
  */
 val LocalGameTint = compositionLocalOf<Color?> { null }
 
+/** §19.1 The solo game's wallpaper (`art_wall_game_<id>`), provided beside [LocalGameTint]; null off a game. */
+val LocalGameWallpaper = compositionLocalOf<Int?> { null }
+
 /**
- * §15 The game screen background: the game's accent ([LocalGameTint]) as a 3-stop
- * diagonal gradient (see [TintMath.gameLight] / [TintMath.gameDark]) with the tiles
- * at 8% / 5%. Boards, keyboards and tiles draw their own opaque fills on top, so
- * play is never affected. Off a game (no tint provided) it keeps [fallback], the
- * screen's old flat background.
+ * §15 / §19.1 The game screen background: the game's wallpaper ([LocalGameWallpaper])
+ * dimmed 62% in dark mode, or — without one — the game's accent ([LocalGameTint]) as a
+ * 3-stop diagonal gradient (see [TintMath.gameLight] / [TintMath.gameDark]). Boards,
+ * keyboards and tiles draw their own opaque fills on top, so play is never affected.
+ * Off a game (no tint provided) it keeps [fallback], the screen's old flat background.
  */
 fun Modifier.gameBackground(fallback: Modifier.() -> Modifier): Modifier = composed {
     val accent = LocalGameTint.current
@@ -192,7 +251,7 @@ fun Modifier.gameBackground(fallback: Modifier.() -> Modifier): Modifier = compo
         val argb = accent.toArgb()
         val light = remember(argb) { TintMath.gameLight(argb).map { Color(it) } }
         val dark = remember(argb) { TintMath.gameDark(argb).map { Color(it) } }
-        tintBackground(light, dark, GAME_TILE_ALPHA_LIGHT, GAME_TILE_ALPHA_DARK)
+        wallpaperBackground(LocalGameWallpaper.current, light, dark, DIM_DARK_GAME)
     }
 }
 

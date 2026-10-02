@@ -35,7 +35,7 @@ export type TitleArtName =
   // LEADERBOARD title holidays show over their HEROES text.
   | 'art-title-welcome'
   | 'art-title-leaderboard'
-  // §12: WORDOCIOUS DAILIES, the Home section header above the daily games.
+  // §12: the Home section header above the daily games (§19.2: reads just DAILIES).
   | 'art-title-dailies';
 
 /**
@@ -43,6 +43,14 @@ export type TitleArtName =
  * glossy, softly blurred letter tiles with their opacity baked in.
  */
 export type BackgroundArtName = 'art-bg-tiles';
+
+/**
+ * Wallpapers (§19.1): 1080 px wide, portrait, opaque, each with its own tile
+ * arrangement in the page's / game's color. One per page tint (`art-wall-home`,
+ * …) and one per solo game (`art-wall-game-<mode id>`, the same 18 ids as the
+ * game title art).
+ */
+export type WallArtName = `art-wall-${PageTint}` | `art-wall-game-${GameTitleArtId}`;
 
 /**
  * Moment lettering (§6): glossy result / celebration headlines drawn in place
@@ -115,7 +123,7 @@ export const GAME_TITLE_ART_IDS = [
 export type GameTitleArtId = (typeof GAME_TITLE_ART_IDS)[number];
 export type GameTitleArtName = `art-game-${GameTitleArtId}`;
 
-export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName;
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -126,19 +134,19 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-day-thursday': [879, 482],
   'art-day-friday': [853, 591],
   'art-day-saturday': [898, 502],
-  'art-title-friends': [996, 249],
+  'art-title-friends': [980, 249],
   'art-title-stats': [1080, 257],
-  'art-title-records': [1080, 153],
-  'art-title-vs': [777, 158],
-  'art-title-puzzles': [1080, 201],
-  'art-title-wotd': [1080, 173],
+  'art-title-records': [1080, 154],
+  'art-title-vs': [757, 158],
+  'art-title-puzzles': [1080, 206],
+  'art-title-wotd': [1080, 174],
   'art-title-settings': [1080, 205],
-  'art-title-howto': [1080, 208],
+  'art-title-howto': [1080, 211],
   'art-title-gopro': [1080, 218],
-  'art-title-moregames': [1080, 212],
-  'art-title-welcome': [1042, 233],
-  'art-title-leaderboard': [1080, 215],
-  'art-title-dailies': [1080, 174],
+  'art-title-moregames': [1080, 211],
+  'art-title-welcome': [1049, 233],
+  'art-title-leaderboard': [1080, 214],
+  'art-title-dailies': [1080, 246],
   'art-bg-tiles': [720, 720],
   'art-moment-victory': [880, 180],
   'art-moment-soclose': [899, 179],
@@ -173,6 +181,30 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-game-cryptogram': [900, 181],
   'art-game-wordsearch': [846, 226],
   'art-game-regions': [900, 214],
+  // §19.1 wallpapers.
+  'art-wall-home': [1080, 1459],
+  'art-wall-leaderboard': [1080, 1459],
+  'art-wall-stats': [1080, 1459],
+  'art-wall-friends': [1080, 1459],
+  'art-wall-vs': [1080, 1459],
+  'art-wall-game-practice': [1080, 1459],
+  'art-wall-game-gauntlet': [1080, 1459],
+  'art-wall-game-quordle': [1080, 1459],
+  'art-wall-game-octordle': [1080, 1459],
+  'art-wall-game-sequence': [1080, 1459],
+  'art-wall-game-rescue': [1080, 1459],
+  'art-wall-game-six': [1080, 1459],
+  'art-wall-game-seven': [1080, 1459],
+  'art-wall-game-propernoundle': [1080, 1459],
+  'art-wall-game-sudoku': [1080, 1459],
+  'art-wall-game-scramble': [1080, 1459],
+  'art-wall-game-hub': [1080, 1459],
+  'art-wall-game-crossword': [1080, 1459],
+  'art-wall-game-groups': [1080, 1459],
+  'art-wall-game-ladder': [1080, 1459],
+  'art-wall-game-cryptogram': [1080, 1459],
+  'art-wall-game-wordsearch': [1080, 1459],
+  'art-wall-game-regions': [1080, 1459],
 };
 
 const GAME_TITLE_ART_SET: ReadonlySet<string> = new Set(GAME_TITLE_ART_IDS);
@@ -193,11 +225,17 @@ export function gameTitleArtLabel(name: GameTitleArtName): string {
 /**
  * Rendered heights of the game title art, CSS px. §14 (founder, 2026-10-02
  * midday: "much larger on the page"): every place is sized by the width it
- * has, and these are the height caps.
+ * has, and these are the height caps. §19.3 (late morning: "much bigger"):
+ * the game screen title moves below the corner-button row and spans the full
+ * width minus 32, ≤ 120 tall (≤ 84 on short viewports, height < 700).
  */
 export const GAME_TITLE_ART_HEIGHT = {
-  /** Game screen header cap: width = the room between the corner buttons, ≤ 72 tall. */
-  header: 72,
+  /** Game screen header cap (§19.3): full width minus 32, ≤ 120 tall. */
+  header: 120,
+  /** The cap on short viewports (height < `shortViewport`). */
+  headerShort: 84,
+  /** Viewport height (CSS px) under which the short cap applies. */
+  shortViewport: 700,
   /** Game screen header floor, so short names (MUDDLE) never look tiny. */
   headerMin: 44,
   /** Guide sheet / guide page top: full width minus 32, ≤ 72 tall (§14; was 56). */
@@ -207,43 +245,51 @@ export const GAME_TITLE_ART_HEIGHT = {
 } as const;
 
 /**
- * The game screen header around the title art (§14): ≤ 6 px top / bottom
- * padding, 8 px side padding (px-2), 44 px corner buttons at left-2 / right-2,
- * and the art keeps `clearance` px clear on each side of the header's content
- * box (the 44 px button plus 8 px air). Game screens run the full viewport
- * width, so the room between the buttons is 100vw − 2 × (side + clearance).
+ * The game screen header around the title art (§19.3): the 44 px corner
+ * buttons (Home left, ? / sound right) sit in their own top row `pad` px from
+ * the top; the title art starts `gap` px under that row and spans the full
+ * viewport width minus `inset` (16 px each side; the header's own side padding
+ * is `side`, px-2), so its height is (100vw − inset) × the art's aspect ratio.
+ * The guess / timer status line follows the art; `pad` px under the header.
  */
-export const GAME_HEADER = { pad: 6, side: 8, button: 44, clearance: 52 } as const;
+export const GAME_HEADER = { pad: 6, side: 8, button: 44, gap: 2, inset: 32 } as const;
+
+/** Where the title art starts, px from the header top: under the corner-button row (§19.3). */
+export const GAME_TITLE_TOP = GAME_HEADER.pad + GAME_HEADER.button + GAME_HEADER.gap;
 
 /**
- * A header art's rendered height as CSS (§14): the width between the corner
- * buttons times the art's aspect ratio, clamped to [headerMin, header].
+ * A header art's rendered height as CSS (§19.3): the full width minus 32 times
+ * the art's aspect ratio, clamped to [headerMin, cap], where the cap is
+ * `--game-title-cap` (globals.css .game-art-header: 120, or 84 when the
+ * viewport is under 700 tall).
  */
 export function gameHeaderArtHeight(name: GameTitleArtName): string {
   const [w, h] = ART_SIZE[name];
-  const room = 2 * (GAME_HEADER.side + GAME_HEADER.clearance);
-  return `clamp(${GAME_TITLE_ART_HEIGHT.headerMin}px, calc((100vw - ${room}px) * ${(h / w).toFixed(4)}), ${GAME_TITLE_ART_HEIGHT.header}px)`;
+  return `clamp(${GAME_TITLE_ART_HEIGHT.headerMin}px, calc((100vw - ${GAME_HEADER.inset}px) * ${(h / w).toFixed(4)}), var(--game-title-cap, ${GAME_TITLE_ART_HEIGHT.header}px))`;
 }
 
 /**
- * The style a game screen header wearing title art takes (§14), with
- * className `game-art-header` (globals.css: 6 px top / bottom padding):
- * - `--game-corner-top` drops the corner buttons so they sit vertically
- *   centered on the art (GameHomeButton / GameGuideButton / SoundToggle read it);
+ * The style a game screen header wearing title art takes (§19.3), with
+ * className `game-art-header` (globals.css: the title cap, the top padding
+ * from `--game-title-top`, 6 px bottom padding):
+ * - `--game-corner-top` keeps the corner buttons in their own top row
+ *   (GameHomeButton / GameGuideButton / SoundToggle read it);
+ * - `--game-title-top` drops the title art below that row;
  * - `--game-header-shift` is how much lower the line under the title now sits
- *   than it did (`titleBottom`: where the old title ended, px from the header
- *   top: 46 for the 8 px + 38 px art headers, 34 for Muddle's compact one), so
- *   absolutely placed toasts keep their spot under the header (gameToastTop).
+ *   than it did before the art (`titleBottom`: where the old text title ended,
+ *   px from the header top: 46 for the 8 px + 38 px headers, 36 for Muddle's
+ *   compact one), so absolutely placed toasts keep their spot under the header
+ *   (gameToastTop).
  * Games without title art get no change.
  */
 export function gameHeaderStyle(dbKey: string, titleBottom = 46): CSSProperties {
   const art = gameTitleArtForDbKey(dbKey);
   if (!art) return {};
-  const h = gameHeaderArtHeight(art);
   return {
-    '--game-art-h': h,
-    '--game-corner-top': `calc(${GAME_HEADER.pad}px + (var(--game-art-h) - ${GAME_HEADER.button}px) / 2)`,
-    '--game-header-shift': `calc(var(--game-art-h) + ${GAME_HEADER.pad - titleBottom}px)`,
+    '--game-art-h': gameHeaderArtHeight(art),
+    '--game-corner-top': `${GAME_HEADER.pad}px`,
+    '--game-title-top': `${GAME_TITLE_TOP}px`,
+    '--game-header-shift': `calc(var(--game-art-h) + ${GAME_TITLE_TOP - titleBottom}px)`,
   } as CSSProperties;
 }
 
@@ -338,10 +384,38 @@ export const PAGE_TINTS: Record<PageTint, {
 };
 
 /**
- * The tile pattern (v2, §18.1): its opacity is baked into the file, so menus
- * draw it at 100% in light and 60% in dark, 360 CSS px per 720 px tile.
+ * The tile pattern (v2, §18.1): its opacity is baked into the file, drawn at
+ * 100% in light and 60% in dark, 360 CSS px per 720 px tile. Pages draw the
+ * wallpapers now (§19.1); the share cards (lib/share-image.ts) still tile it.
  */
 export const PAGE_TILES = { name: 'art-bg-tiles', size: 360, opacity: { light: 1, dark: 0.6 } } as const;
+
+// ── Wallpapers (§19.1) ──────────────────────────────────────────────────────
+
+/** A page tint's wallpaper: Home tint pages `art-wall-home`, Leaderboard + Records `art-wall-leaderboard`, … */
+export function pageWall(tint: PageTint): WallArtName {
+  return `art-wall-${tint}`;
+}
+
+/** A solo game screen's wallpaper by db key (DUEL, QUORDLE, SCRAMBLE, …), or null (VS, Sweep, unknown). */
+export function gameWallForDbKey(dbKey: string | null | undefined): WallArtName | null {
+  const art = gameTitleArtForDbKey(dbKey);
+  return art ? (`art-wall-game-${art.slice('art-game-'.length)}` as WallArtName) : null;
+}
+
+/**
+ * The overlays on a wallpaper (§19.1), a flat `color` layer over the fixed,
+ * cover-fit image: dark mode 58% (game screens 62%); Reduce transparency /
+ * more contrast keeps the wallpaper but lays 20% white (light) / 70% `color`
+ * (dark) over it so text on the page stays legible.
+ */
+export const WALL_OVERLAY = {
+  color: '#120D1F',
+  dark: 0.58,
+  darkGame: 0.62,
+  a11yLight: 0.2,
+  a11yDark: 0.7,
+} as const;
 
 /** A card's shadow on a tinted page: the tint's accent at 11% alpha, blur 14, y 5. */
 export function pageCardShadow(tint: PageTint): string {
@@ -393,7 +467,7 @@ export function gameTintForDbKey(dbKey: string | null | undefined): TintStops | 
   return accent ? gameTint(accent) : null;
 }
 
-/** Game screens draw the tile pattern quieter than menus (§15, v2 §18.1): 55% light, 35% dark. */
+/** Game share cards draw the tile pattern quieter than menus (§15, v2 §18.1): 55% light, 35% dark. */
 export const GAME_TILES_OPACITY = { light: 0.55, dark: 0.35 } as const;
 
 // ── Title art motion (§16) ──────────────────────────────────────────────────

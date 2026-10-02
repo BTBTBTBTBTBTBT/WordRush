@@ -67,24 +67,24 @@ private sealed interface WotdLoad {
  * that link does (a tap on a choice answers), and once answered the whole card
  * opens it again, as it always has.
  *
- * ART_SPEC §12: the whole-cast WORD OF THE DAY art is the section header ABOVE the
- * card (same size / alignment as the PUZZLES header), with "Past words" at the right
- * of that row; the card keeps its content.
+ * ART_SPEC §12 / §19.2: the whole-cast WORD OF THE DAY art is the section header
+ * ABOVE the card, centered (same size as the DAILIES / PUZZLES headers), with "Past
+ * words" small and centered under it; the card keeps its content.
  */
 @Composable
 internal fun WordOfTheDayCard(onPastWords: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitleArt(TitleArt.WOTD, trailing = { PastWordsLink(onPastWords) })
+        SectionTitleArt(TitleArt.WOTD, below = { PastWordsLink(onPastWords) })
         WordOfTheDayCardBody(onPastWords)
     }
 }
 
-/** "Past words ›" — the archive link at the right of the WORD OF THE DAY header row. */
+/** "Past words ›" — the archive link centered under the WORD OF THE DAY title (§19.2). */
 @Composable
 private fun PastWordsLink(onPastWords: () -> Unit) {
     CappedFontScale {
         Row(
-            Modifier.heightIn(min = 32.dp).clickableNoRipple(onPastWords).padding(start = 8.dp),
+            Modifier.heightIn(min = 32.dp).clickableNoRipple(onPastWords).padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))

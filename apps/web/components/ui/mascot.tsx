@@ -140,12 +140,13 @@ export function BannerHost({ id, crown = false, children }: { id: MascotId; crow
  * §5 game screen title: the game's 30 px host standing at the left of its
  * title, static (no motion during play). Wraps the existing h1 unchanged.
  *
- * ART_SPEC §10 + §14: given `label` (the game title, the art's accessible name)
- * and a game with title art, the art (lettering + host in one image) draws
- * instead, sized by the width between the header's corner buttons (height
- * follows the aspect ratio, 44–72 px; lib/art.ts gameHeaderArtHeight). The
- * header takes `game-art-header` + gameHeaderStyle(mode) so it hugs the art
- * and the corner buttons center on it. The art pops in once (§16), no float.
+ * ART_SPEC §10 + §19.3: given `label` (the game title, the art's accessible
+ * name) and a game with title art, the art (lettering + host in one image)
+ * draws instead, BELOW the corner-button row, spanning the full width minus
+ * 32 (height follows the aspect ratio, ≤ 120 px, ≤ 84 on short viewports;
+ * lib/art.ts gameHeaderArtHeight). The header takes `game-art-header` +
+ * gameHeaderStyle(mode) so the buttons keep their own top row and the status
+ * line follows the art. The art pops in once (§16), no float.
  */
 export function GameHostTitle({ mode, label, className = '', children }: {
   mode: string;
@@ -172,8 +173,8 @@ export function GameHostTitle({ mode, label, className = '', children }: {
             aspectRatio: `${w} / ${h}`,
             height: '100%',
             width: 'auto',
-            // Never under the corner buttons, even where the header is narrower than the viewport.
-            maxWidth: `calc(100% - ${GAME_HEADER.clearance * 2}px)`,
+            // Full width minus 32 (16 a side, the header's own px-2 included), even where the header is narrower than the viewport.
+            maxWidth: `calc(100% - ${GAME_HEADER.inset - 2 * GAME_HEADER.side}px)`,
             objectFit: 'contain',
           }}
         />

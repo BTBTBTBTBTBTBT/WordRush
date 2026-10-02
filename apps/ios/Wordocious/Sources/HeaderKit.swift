@@ -253,6 +253,9 @@ struct GameCornerButton: View {
     /// The circles' vertical center from the screen's top: 8 pt inset + half the
     /// 44 pt circle. Game headers center their title art on it (ART_SPEC §14).
     static let centerY: CGFloat = 30
+    /// ART_SPEC §19.3: the corner-button row's height (8 pt inset + the 44 pt circle
+    /// + a 4 pt gap) — solo game titles start below it.
+    static let rowHeight: CGFloat = 56
 
     let kind: Kind
     let action: () -> Void

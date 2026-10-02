@@ -571,12 +571,16 @@ fun MuddleScreen(
 private fun MuddleHeader(session: MuddleSession) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
-    // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) sit either side.
+    // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) keep the row above the art.
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 2.dp)) {
-        // ART_SPEC §14: Muddle uses its title art too (lettering + R, 44–72 dp, filling the
-        // width between the corner buttons); the compact header grows to fit it and the
-        // cartoon band below absorbs the difference. The text + host stays as the fallback.
-        com.wordocious.app.ui.GameHeaderTitle("SCRAMBLE") {
+        // ART_SPEC §14 / §19.3: Muddle uses its title art too (lettering + R, below the
+        // corner-button row); the cartoon band below absorbs the difference. In play the
+        // one-screen compact layout keeps the short-screen cap (84 dp) so the whole puzzle
+        // still fits. The text + host stays as the fallback.
+        com.wordocious.app.ui.GameHeaderTitle(
+            "SCRAMBLE",
+            maxHeight = if (session.isFinished) null else com.wordocious.app.ui.GAME_TITLE_ART_HEADER_MAX_SHORT,
+        ) {
             // The game's host (R, groggy: MASCOT_SPEC §5) at the left of the title, static. It
             // overhangs the compact 22 dp title line instead of growing the header.
             Row(Modifier.padding(horizontal = 52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

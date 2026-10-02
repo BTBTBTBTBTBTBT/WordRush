@@ -194,7 +194,7 @@ struct RegionsView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.regions))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.regions))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; board.padding(.horizontal, 6); result }.padding(.horizontal, 10) }
             } else {
@@ -264,7 +264,7 @@ struct RegionsView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("STARSWEEP").font(Brand.font(24, .black)).foregroundStyle(regionsAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.regions, inset: 46, centerY: GameCornerButton.centerY)
+                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.regions)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(vm.sizeLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

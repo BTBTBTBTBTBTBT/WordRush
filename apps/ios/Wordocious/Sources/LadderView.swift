@@ -201,7 +201,7 @@ struct LadderView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.ladder))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.ladder))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; LadderBoardView(vm: vm, revealPath: vm.state.status == .lost).padding(.horizontal, 6); result }.padding(.horizontal, 10) }
             } else {
@@ -286,7 +286,7 @@ struct LadderView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("LETTER LADDER").font(Brand.font(24, .black)).foregroundStyle(ladderAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.ladder, inset: 46, centerY: GameCornerButton.centerY)
+                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.ladder)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("Par \(vm.state.par)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

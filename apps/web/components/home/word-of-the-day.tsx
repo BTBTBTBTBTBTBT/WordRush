@@ -17,9 +17,10 @@ import { onPageShadow } from '@/lib/art';
 // with ONLY the real definition, plus a small flame and the word streak after a
 // right answer. The wrong choices never come back that day.
 //
-// Art pass §12 (docs/ART_SPEC.md): the WORD OF THE DAY title art sits OUT of
-// the card, as a Home section header above it (same size as PUZZLES), with
-// "Past words" at the right of that header row; the card keeps its content.
+// Art pass §12 + §19.2 (docs/ART_SPEC.md): the WORD OF THE DAY title art sits
+// OUT of the card, as a centered Home section header above it (same size as
+// DAILIES and PUZZLES), with a small "Past words" link centered under the
+// title; the card keeps its content.
 
 interface WordInfo {
   word: string;
@@ -44,14 +45,14 @@ const CARD_STYLE: React.CSSProperties = {
   background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px', boxShadow: onPageShadow(),
 };
 
-/** The section: the header row (title art + Past words) above the card. */
+/** The section: the header (title art, Past words under it) above the card. */
 function WotdSection({ children }: { children: React.ReactNode }) {
   return (
     <section aria-label="Word of the Day">
       <HomeSectionTitle
         name="art-title-wotd"
         label="Word of the Day"
-        trailing={(
+        below={(
           <Link href="/words" className="text-[10px] font-bold hover:underline" style={{ color: '#8b5cf6' }}>
             Past words →
           </Link>

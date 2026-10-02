@@ -314,7 +314,7 @@ struct CrosswordView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.crossword))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.crossword))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
                 ScrollView {
                     VStack(spacing: 12) {
@@ -431,7 +431,7 @@ struct CrosswordView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("CROSSWORDOCIOUS").font(Brand.font(24, .black)).foregroundStyle(crosswordAccent)
-                .lineLimit(1).minimumScaleFactor(0.6).gameTitleArt(.crossword, centerY: GameCornerButton.centerY).padding(.horizontal, 48)
+                .lineLimit(1).minimumScaleFactor(0.6).soloGameTitle(.crossword, fallbackInset: 48)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 48)
             HStack(spacing: 8) {

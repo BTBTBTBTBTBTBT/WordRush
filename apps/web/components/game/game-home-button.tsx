@@ -19,8 +19,8 @@ interface GameHomeButtonProps {
   onClick?: () => void;
   /**
    * Override positioning. Defaults to top-left at `--game-corner-top` (8 px
-   * when unset): a header wearing game title art sets it so the button sits
-   * vertically centered on the art (ART_SPEC §14, lib/art.ts gameHeaderStyle).
+   * when unset): a header wearing game title art sets it so the buttons keep
+   * their own top row above the art (ART_SPEC §19.3, lib/art.ts gameHeaderStyle).
    * Gauntlet uses `top-1` because its header sits tighter.
    */
   positionClass?: string;

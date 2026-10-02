@@ -339,8 +339,8 @@ fun HomeScreen(
             // Two sections of the SAME mode card, two across: the Wordocious dailies,
             // then the Puzzles (the old More Games sheet's cards, catalog order, same
             // lock/badge rules). The More Games band and sheet are gone.
-            // ART_SPEC §2 / §12: each section's header is its whole-cast title art (~70% width,
-            // left aligned) — WORDOCIOUS DAILIES, PUZZLES, then WORD OF THE DAY above its card.
+            // ART_SPEC §12 / §19.2: each section's header is its whole-cast title art (≈78%
+            // width, max 340, centered) — DAILIES, PUZZLES, then WORD OF THE DAY above its card.
             SectionTitleArt(TitleArt.DAILIES)
             ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
             SectionTitleArt(TitleArt.PUZZLES)

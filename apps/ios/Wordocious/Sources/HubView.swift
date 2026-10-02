@@ -223,7 +223,7 @@ struct HubView: View {
 
     var body: some View {
         ZStack {
-            PageBackground(tint: .forGame(.hub))  // ART_SPEC §15: the game's soft tint + quiet tiles
+            PageBackground(tint: .forGame(.hub))  // ART_SPEC §15 / §19: the game's wallpaper
             VStack(spacing: 8) {
                 header
                 if vm.showResults { results } else { board }
@@ -305,7 +305,7 @@ struct HubView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("HUBBUB").font(Brand.font(24, .black)).foregroundStyle(hubAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.hub, inset: 46, centerY: GameCornerButton.centerY)
+                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.hub)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("\(vm.state.found.count)/\(vm.state.words.count) words").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

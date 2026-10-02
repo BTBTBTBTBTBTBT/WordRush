@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -33,29 +31,19 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -87,8 +75,8 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     WELCOME(R.drawable.art_title_welcome, "Welcome"),
     /** §8 the whole cast around LEADERBOARD (holiday banner title slot). */
     LEADERBOARD(R.drawable.art_title_leaderboard, "Leaderboard"),
-    /** §12 the whole cast around WORDOCIOUS DAILIES (Home's daily games section). */
-    DAILIES(R.drawable.art_title_dailies, "Wordocious Dailies"),
+    /** §12 / §19.2 the whole cast around DAILIES (Home's daily games section). */
+    DAILIES(R.drawable.art_title_dailies, "Dailies"),
 }
 
 /** Title art's widest size (§2: fill the content width up to ~420). */
@@ -116,28 +104,31 @@ fun PageTitleArt(
     )
 }
 
-/** §2 / §12 Home section title art: ~70% of the content width, at most this wide. */
-val SECTION_TITLE_ART_MAX_WIDTH: Dp = 294.dp
-private const val SECTION_TITLE_ART_WIDTH_FRACTION = 0.7f
+/** §19.2 Home section title art: ≈78% of the content width, at most this wide. */
+val SECTION_TITLE_ART_MAX_WIDTH: Dp = 340.dp
+const val SECTION_TITLE_ART_WIDTH_FRACTION = 0.78f
+
+/** §19.2 The section title art's width for a content width of [available]. */
+fun sectionTitleArtWidth(available: Dp): Dp =
+    (available * SECTION_TITLE_ART_WIDTH_FRACTION).coerceAtMost(SECTION_TITLE_ART_MAX_WIDTH)
 
 /**
- * §2 / §12 A Home section header (WORDOCIOUS DAILIES, PUZZLES, WORD OF THE DAY): the
- * title art at ~70% of the width it is given (max [SECTION_TITLE_ART_MAX_WIDTH]),
- * left aligned, with an optional [trailing] link at the right of the row (WOTD's
- * "Past words"). Every section header gets the same size, alignment and spacing.
+ * §12 / §19.2 A Home section header (DAILIES, PUZZLES, WORD OF THE DAY): the title art
+ * centered horizontally at ≈78% of the width it is given (max
+ * [SECTION_TITLE_ART_MAX_WIDTH]), with optional small [below] content centered under
+ * it (WOTD's "Past words"). Every section header gets the same size and spacing.
  */
 @Composable
 fun SectionTitleArt(
     art: TitleArt,
     modifier: Modifier = Modifier,
-    trailing: (@Composable () -> Unit)? = null,
+    below: (@Composable () -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth().padding(top = 2.dp)) {
-        val artWidth = (maxWidth * SECTION_TITLE_ART_WIDTH_FRACTION).coerceAtMost(SECTION_TITLE_ART_MAX_WIDTH)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            PageTitleArt(art, Modifier.width(artWidth), maxWidth = artWidth, alignment = Alignment.CenterStart)
-            Spacer(Modifier.weight(1f))
-            trailing?.invoke()
+        val artWidth = sectionTitleArtWidth(maxWidth)
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            PageTitleArt(art, Modifier.width(artWidth), maxWidth = artWidth, alignment = Alignment.Center)
+            below?.invoke()
         }
     }
 }
@@ -405,15 +396,31 @@ fun gameTitleArtResForKey(dbKey: String?): Int? =
 /** §10 The game title's accessibility label: the catalog title ("Letter Ladder"), else the key. */
 fun gameTitleLabelForKey(dbKey: String): String = com.wordocious.app.ModeGen.byDbKey(dbKey)?.title ?: dbKey
 
-/** §14 Game screen header title art: sized by the width between the corner buttons, 44–72 tall. */
-val GAME_TITLE_ART_HEADER_MAX: Dp = 72.dp
+/**
+ * §19.3 Game screen header title art: below the corner-button row, spanning the
+ * content width minus 32 dp, height following the aspect ratio, capped at 120 dp
+ * (84 dp on short screens, height < [GAME_TITLE_SHORT_SCREEN]); never under 44 dp.
+ */
+val GAME_TITLE_ART_HEADER_MAX: Dp = 120.dp
+val GAME_TITLE_ART_HEADER_MAX_SHORT: Dp = 84.dp
+val GAME_TITLE_SHORT_SCREEN: Dp = 700.dp
 val GAME_TITLE_ART_HEADER_MIN: Dp = 44.dp
+/** §19.3 The title art's side inset (content width minus 32). */
+val GAME_TITLE_ART_SIDE_INSET: Dp = 16.dp
+
+/** §19.3 The header title's height cap for a screen [screenHeight] tall. */
+fun gameHeaderTitleMax(screenHeight: Dp): Dp =
+    if (screenHeight < GAME_TITLE_SHORT_SCREEN) GAME_TITLE_ART_HEADER_MAX_SHORT else GAME_TITLE_ART_HEADER_MAX
+
 /** §14 Guide sheet top art cap (was ≈56; full sheet width minus 32). */
 val GAME_TITLE_ART_GUIDE_HEIGHT: Dp = 72.dp
 /** §14 Leaderboard / Records Play card art cap (was ≈40; fills the space left of Play). */
 val GAME_TITLE_ART_CARD_HEIGHT: Dp = 52.dp
-/** §14 The corner buttons' side of a game header (44 dp circle + 8 dp inset). */
-val GAME_HEADER_SIDE: Dp = 52.dp
+/**
+ * §19.3 The corner-button row of a game header (44 dp circle + 8 dp inset): the
+ * title art starts below it.
+ */
+val GAME_CORNER_ROW: Dp = 52.dp
 
 /** The game title art's height / width when the drawable can't say (≈900 × 210). */
 private const val GAME_TITLE_ART_FALLBACK_RATIO = 0.235f
@@ -430,8 +437,7 @@ fun gameTitleArtHeight(availableWidth: Dp, ratio: Float, min: Dp, max: Dp): Dp =
  * §10 / §14 A game's title art filling the width it is given (height following the
  * aspect ratio, between [minHeight] and [maxHeight]), never stretched. TalkBack reads
  * [label] (the game title), as a heading when [heading]. §16: pops in once (no idle
- * float: this art sits in game headers and cards). [onArt] decorates the image
- * itself (the header reports its center through it, before the pop-in transform).
+ * float: this art sits in game headers and cards).
  */
 @Composable
 fun FittedGameTitleArt(
@@ -442,7 +448,6 @@ fun FittedGameTitleArt(
     minHeight: Dp = 0.dp,
     alignment: Alignment = Alignment.Center,
     heading: Boolean = true,
-    onArt: Modifier = Modifier,
 ) {
     val painter = painterResource(res)
     val intrinsic = painter.intrinsicSize
@@ -454,7 +459,7 @@ fun FittedGameTitleArt(
             painter,
             contentDescription = label,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.requiredSize(h / ratio, h).then(onArt)
+            modifier = Modifier.requiredSize(h / ratio, h)
                 .semantics { if (heading) heading() }
                 .titleArtMotion(float = false),
         )
@@ -482,74 +487,26 @@ fun GameTitleArt(
 }
 
 /**
- * §10 / §14 A game screen header's title art for [dbKey], filling the width between
- * the corner Home / ? buttons ([GAME_HEADER_SIDE] each side), 44–72 dp tall; the
- * corner buttons center on it ([gameCornerCentered]). [fallback] (today's text +
- * host) when the key has no art.
+ * §10 / §19.3 A game screen header's title art for [dbKey]: the corner Home / ? /
+ * sound buttons keep their own top row ([GAME_CORNER_ROW]) and the art sits below
+ * it, spanning the width minus 32 dp, 44–120 dp tall (84 cap on short screens); the
+ * header's status line follows under it. [fallback] (today's text + host, between
+ * the corner buttons) when the key has no art. [maxHeight] lowers the cap (Muddle's
+ * one-screen compact layout keeps the short-screen cap).
  */
 @Composable
-fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, fallback: @Composable () -> Unit) {
+fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, maxHeight: Dp? = null, fallback: @Composable () -> Unit) {
     val res = gameTitleArtResForKey(dbKey)
     if (res == null) {
         fallback()
         return
     }
+    val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
     FittedGameTitleArt(
         res, gameTitleLabelForKey(dbKey),
-        modifier.fillMaxWidth().padding(horizontal = GAME_HEADER_SIDE),
-        maxHeight = GAME_TITLE_ART_HEADER_MAX, minHeight = GAME_TITLE_ART_HEADER_MIN,
-        onArt = Modifier.reportGameHeaderArt(),
+        modifier.fillMaxWidth().padding(top = GAME_CORNER_ROW).padding(horizontal = GAME_TITLE_ART_SIDE_INSET),
+        maxHeight = minOf(gameHeaderTitleMax(screenHeight), maxHeight ?: GAME_TITLE_ART_HEADER_MAX), minHeight = GAME_TITLE_ART_HEADER_MIN,
     )
-}
-
-// ── §14 The corner buttons center on the header art ──────────────────────
-
-/**
- * Where the game header's title art is centered (root px; NaN when no art is
- * showing), so the corner buttons can center on it. One per game screen, provided
- * by MainScreen through [LocalGameHeaderAnchor].
- */
-@Stable
-class GameHeaderAnchor {
-    var artCenterY by mutableFloatStateOf(Float.NaN)
-}
-
-val LocalGameHeaderAnchor = staticCompositionLocalOf<GameHeaderAnchor?> { null }
-
-/**
- * How far a corner button may move down to center on a taller art. Never up: the
- * shortest art (44 dp) already centers within a few dp of the buttons, and a
- * finished screen's art scrolling away then just lets the buttons settle back.
- */
-private val CORNER_SHIFT_DOWN: Dp = 24.dp
-
-/** Reports this node's vertical center to the screen's [GameHeaderAnchor]. */
-private fun Modifier.reportGameHeaderArt(): Modifier = composed {
-    val anchor = LocalGameHeaderAnchor.current
-    if (anchor == null) this
-    else {
-        DisposableEffect(anchor) { onDispose { anchor.artCenterY = Float.NaN } }
-        this.onGloballyPositioned { c -> anchor.artCenterY = c.positionInRoot().y + c.size.height / 2f }
-    }
-}
-
-/**
- * §14 A game corner button (Home / ? / sound): stays in its corner, nudged
- * vertically so it centers on the header's title art. The nudge is clamped, so a
- * finished screen's art scrolling away leaves the button at its own spot.
- */
-fun Modifier.gameCornerCentered(): Modifier = composed {
-    val anchor = LocalGameHeaderAnchor.current
-    if (anchor == null) this
-    else {
-        var natural by remember { mutableFloatStateOf(Float.NaN) }
-        val down = with(LocalDensity.current) { CORNER_SHIFT_DOWN.toPx() }
-        this.onGloballyPositioned { c -> natural = c.positionInRoot().y + c.size.height / 2f }
-            .offset {
-                val d = anchor.artCenterY - natural
-                IntOffset(0, if (d.isNaN()) 0 else d.coerceIn(0f, down).roundToInt())
-            }
-    }
 }
 
 // ── §16 Title art motion ──────────────────────────────────────────────────

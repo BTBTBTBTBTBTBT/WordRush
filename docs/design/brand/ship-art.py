@@ -9,7 +9,7 @@
 #   game titles  titles/gt-<id>-title.png    → art-game-<id>       (width 900)
 # Web:     apps/web/public/art/<name>.webp
 # Android: res/drawable-nodpi/<name with _>.webp
-# iOS:     Assets.xcassets/<name>.imageset/<name>.png
+# iOS:     Assets.xcassets/<name>.imageset/<name>.png (art-wall-*: Wallpapers.xcassets)
 import json
 import os
 import sys
@@ -19,6 +19,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..', '..'))
 WEB = os.path.join(REPO, 'apps', 'web', 'public', 'art')
 IOS = os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources', 'Assets.xcassets')
+# The §19 wallpapers get their own iOS catalog so the widget extension (which
+# compiles Assets.xcassets) doesn't bundle them.
+IOS_WALLS = os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources', 'Wallpapers.xcassets')
 DROID = os.path.join(REPO, 'apps', 'android', 'app', 'src', 'main', 'res', 'drawable-nodpi')
 os.makedirs(WEB, exist_ok=True)
 
@@ -76,7 +79,7 @@ def ship(name, im):
         return
     im.save(os.path.join(WEB, f'{name}.webp'), 'WEBP', quality=92, method=6)
     im.save(os.path.join(DROID, name.replace('-', '_') + '.webp'), 'WEBP', quality=92, method=6)
-    iset = os.path.join(IOS, f'{name}.imageset')
+    iset = os.path.join(IOS_WALLS if name.startswith('art-wall-') else IOS, f'{name}.imageset')
     os.makedirs(iset, exist_ok=True)
     im.save(os.path.join(iset, f'{name}.png'), optimize=True)
     with open(os.path.join(iset, 'Contents.json'), 'w') as f:

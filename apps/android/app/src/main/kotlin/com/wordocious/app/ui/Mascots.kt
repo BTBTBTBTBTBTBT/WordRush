@@ -373,9 +373,10 @@ fun CastLoader(
 // Empty states draw their ART_SPEC §7 scene: SceneEmptyState in ArtKit.kt.
 
 /**
- * A game screen's title with its host (MASCOT_SPEC §5). ART_SPEC §10: a game with
- * title art shows `art_game_<id>` (lettering + host, ≈38 dp tall, centered between
- * the corner buttons) instead; [art] = false keeps the text (Gauntlet's stage name).
+ * A game screen's title with its host (MASCOT_SPEC §5). ART_SPEC §10 / §19.3: a game
+ * with title art shows `art_game_<id>` (lettering + host, below the corner-button row,
+ * up to 120 dp tall: [GameHeaderTitle]) instead; [art] = false keeps the text
+ * (Gauntlet's stage name).
  * Otherwise the 30 dp host stands at the left of [title], static (no motion during
  * play); keys without a host render the title alone.
  */

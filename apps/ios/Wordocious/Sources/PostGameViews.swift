@@ -80,8 +80,7 @@ struct FinishedStatsHeader: View {
             Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .gameTitleArt(mode, centerY: GameCornerButton.centerY)
-                .padding(.horizontal, 52)
+                .soloGameTitle(mode, fallbackInset: 52)
 
             HStack(spacing: 12) {
                 if isMulti {
