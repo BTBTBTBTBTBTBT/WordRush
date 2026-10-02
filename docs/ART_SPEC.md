@@ -63,3 +63,47 @@ Use the new Icon3D names where the matching line icon is still drawn: `lock` (lo
 Pro gates), `bell` (Friends notifications), `add-friend`, `share` (share buttons in headers and
 result cards), `sound` (game sound toggle), `back` (back circles). Keep sizes; the art fills its
 square, so ~1.2× the old symbol size reads the same.
+
+## 6. Moment lettering (second pass)
+
+New assets `art-moment-<victory, soclose, sweep, flawless, youwin, youlose, draw, newrecord,
+streak>` (≈900 wide, glossy lettering; gold for wins, purple-pink for SO CLOSE / DRAW, slate for
+YOU LOSE, fire for STREAK). Show the image in place of the matching text headline, ~70% of the
+card width, max ≈72 pt tall, accessibility label = the words:
+- Solo daily result card: win headline (VICTORY) → `victory`; loss headline → `soclose` (keep any
+  subtext like the answer reveal).
+- VS / bot / challenge result: YOU WIN → `youwin`, YOU LOSE (or lost/forfeit headline) →
+  `youlose`, draw → `draw`.
+- Sweep celebration headline → `sweep`; Flawless headline/state → `flawless`.
+- Personal-best / new-record callouts (wherever a "New record" / "New best" headline or toast
+  exists) → `newrecord`.
+- Streak milestone modal / streak headline → `streak`.
+The game's host mascot pop (MASCOT_SPEC §3) stays above the lettering.
+
+## 7. Scenes for empty / error / done states (second pass)
+
+New assets `art-scene-<name>` (≈600 wide, one character with a prop):
+- `r-asleep`: empty lists/boards ("nobody's on yet", empty leaderboard/friends feeds).
+- `r-unplugged`: offline / failed-to-load / error screens.
+- `u-alldone`: all dailies done / played-today limit / "fresh puzzles in …".
+- `o3-notfound`: web 404, profile-not-found, missing-item states.
+- `i-invite`: empty Friends ("add a friend") states and the invite sheet header.
+- `d-nostats`: Stats empty ("play a game and I'll crunch the numbers").
+They replace the plain mascot in the existing empty-state component (MASCOT_SPEC §6) at ~140 pt
+tall (≈60% width max), keeping the one-line voice text under it. Decorative (no label).
+
+## 8. Welcome hero + holiday Leaderboard (second pass)
+
+- `art-title-welcome` (whole cast around WELCOME!) at the top of the sign-in / onboarding screen
+  (and the signed-out landing on web), label "Welcome".
+- `art-title-leaderboard` (whole cast around LEADERBOARD): on holidays, show it in the Leaderboard
+  banner title slot with the holiday title text (`<HOLIDAY> HEROES`) as a small caps subtitle
+  under it, instead of the text-only title.
+
+## 9. Friends pocket game icons (second pass)
+
+New assets `game-pocket-<rps, ttt, coin, pass, ghost, chain>` (256 sq, glossy 3D: rock fist, X+O,
+star coin, puzzle piece, little ghost, chain links), keyed by the core friendly-game kind. Use them
+wherever a pocket game's icon/emoji/glyph is drawn (Friends games grid, quick-play sheet, game
+headers, invites, activity feed rows), same size rules as §3. The RPS hand art inside the game
+stays as is.

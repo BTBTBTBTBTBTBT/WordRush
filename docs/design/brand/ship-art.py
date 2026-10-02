@@ -4,11 +4,14 @@
 #   page titles  titles/<name>-cast.png      → art-title-<name>    (width 1080)
 #   game icons   games/<mode id>.png         → game-<mode id>      (256 square)
 #   UI icons     icons/<name>-capture.png    → icon3d-<name>       (256 square)
+#   moments      titles/<m>-lettering-keyed  → art-moment-<m>      (width 900)
+#   scenes       scenes/<scene>.png          → art-scene-<scene>   (width 600)
 # Web:     apps/web/public/art/<name>.webp
 # Android: res/drawable-nodpi/<name with _>.webp
 # iOS:     Assets.xcassets/<name>.imageset/<name>.png
 import json
 import os
+import sys
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -19,10 +22,14 @@ DROID = os.path.join(REPO, 'apps', 'android', 'app', 'src', 'main', 'res', 'draw
 os.makedirs(WEB, exist_ok=True)
 
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-PAGES = ['friends', 'stats', 'records', 'vs', 'puzzles', 'wotd', 'settings', 'howto', 'gopro', 'moregames']
+PAGES = ['friends', 'stats', 'records', 'vs', 'puzzles', 'wotd', 'settings', 'howto', 'gopro', 'moregames',
+         'welcome', 'leaderboard']
 GAMES = ['practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven', 'gauntlet',
          'propernoundle', 'more', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder',
-         'cryptogram', 'wordsearch', 'regions']
+         'cryptogram', 'wordsearch', 'regions',
+         'pocket-rps', 'pocket-ttt', 'pocket-coin', 'pocket-pass', 'pocket-ghost', 'pocket-chain']
+MOMENTS = ['victory', 'soclose', 'sweep', 'flawless', 'youwin', 'youlose', 'draw', 'newrecord', 'streak']
+SCENES = ['r-asleep', 'r-unplugged', 'u-alldone', 'o3-notfound', 'i-invite', 'd-nostats']
 UI = ['badge-w', 'badge-l', 'badge-check', 'lock', 'bell', 'add-friend', 'share', 'sound', 'back']
 
 
@@ -47,7 +54,12 @@ def square(path, size=256, margin=0.06):
     return out
 
 
+ONLY = sys.argv[1:]  # optional name prefixes to (re)ship, e.g. art-title-welcome
+
+
 def ship(name, im):
+    if ONLY and not any(name.startswith(o) for o in ONLY):
+        return
     im.save(os.path.join(WEB, f'{name}.webp'), 'WEBP', quality=92, method=6)
     im.save(os.path.join(DROID, name.replace('-', '_') + '.webp'), 'WEBP', quality=92, method=6)
     iset = os.path.join(IOS, f'{name}.imageset')
@@ -67,4 +79,8 @@ for g in GAMES:
     ship(f'game-{g}', square(os.path.join(HERE, 'games', f'{g}.png'))); n += 1
 for u in UI:
     ship(f'icon3d-{u}', square(os.path.join(HERE, 'icons', f'{u}-capture.png'))); n += 1
+for m in MOMENTS:
+    ship(f'art-moment-{m}', wide(os.path.join(HERE, 'titles', f'{m}-lettering-keyed.png'), 900)); n += 1
+for sc in SCENES:
+    ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), 600)); n += 1
 print('shipped', n)

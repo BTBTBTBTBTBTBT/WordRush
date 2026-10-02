@@ -12,4 +12,5 @@ cp $S/wordsearch.png $S/regions.png games/
 for n in badge-w badge-l badge-check lock bell add-friend share; do cp $S/$n.png icons/$n-capture.png; done
 OUTDIR=$S python3 poses/split-poses.py $B-1790925439024-29me11.jpg cyan - hub,sound,back >/dev/null
 cp $S/hub.png games/; cp $S/sound.png icons/sound-capture.png; cp $S/back.png icons/back-capture.png
+OUTDIR=$PWD/games python3 poses/split-poses.py $B-1790927640043-q7job2.jpg green - pocket-rps,pocket-ttt,pocket-coin,pocket-pass,pocket-ghost,pocket-chain >/dev/null
 echo ok

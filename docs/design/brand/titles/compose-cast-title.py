@@ -84,6 +84,20 @@ LAYOUTS = {
         'top': [('o1', 'cheer'), ('r', 'lean'), ('d', 'lean'), ('o2', 'cheer'),
                 ('c', 'sit'), ('i', 'cheer'), ('o3', 'sit'), ('u', 'spin')],
     },
+    'welcome': {
+        'lettering': 'welcome-lettering-keyed.png',
+        'left': [('w', 'cheer', False), ('o1', 'cheer', False)],
+        'right': [('u', 'stretch', False), ('s', 'flex', False)],
+        'top': [('r', 'cheer'), ('d', 'cheer'), ('o2', 'cheer'), ('c', 'cheer'),
+                ('i', 'cheer'), ('o3', 'handstand')],
+    },
+    'leaderboard': {
+        'lettering': 'leaderboard-lettering-keyed.png',
+        'left': [('w', 'lean', True)],
+        'right': [('s', 'flex', False)],
+        'top': [('o1', 'cheer'), ('r', 'sit'), ('d', 'sit'), ('o2', 'cheer'),
+                ('c', 'sit'), ('i', 'cheer'), ('o3', 'sit'), ('u', 'meditate')],
+    },
 }
 
 

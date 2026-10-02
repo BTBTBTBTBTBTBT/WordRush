@@ -7,5 +7,7 @@ while read -r blob key names; do
   OUTDIR=$PWD/scenes python3 poses/split-poses.py "$B-$blob.jpg" "$key" - "$names" >/dev/null && echo -n "$names "
 done <<'LIST'
 1790926782029-4txo7y green r-asleep,r-unplugged
+1790927105029-r29v4p green u-alldone,o3-notfound
+1790927270040-hepx1y magenta i-invite,d-nostats
 LIST
 echo
